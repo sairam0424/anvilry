@@ -1,0 +1,24 @@
+---
+slug: agent-forge
+name: Agent-Forge
+tagline: Self-improving AI agent infrastructure.
+group: Agent Frameworks & Infrastructure
+repo: https://github.com/sairam0424/Agent-Forge
+commits: 201
+tech: [Python, FastAPI, pgvector, Celery, MCP, Docker]
+pinned: true
+pinRank: 1
+featured: true
+order: 3
+excerpt: A Karpathy-style propose/eval/score/commit-or-revert loop over a git-versioned agent spec, with an LLM-judge eval harness. Framework-agnostic.
+---
+
+**Agent-Forge** runs a Karpathy-style **propose → eval → score → commit-or-revert** loop over a mutable, git-versioned `AGENT.md` specification — so agents iteratively improve against a measurable eval suite without human intervention between iterations.
+
+It is **framework-agnostic** (LangChain, LangGraph, CrewAI, AutoGen, or raw SDKs), using an **LLM-judge eval harness** with held-out validation to guard against overfitting, and git as the safety net: every proposed change is committed or reverted on its score. Built on Python 3.12+ with FastAPI, SQLAlchemy 2.0, Pydantic v2, a Celery + Redis pipeline, pgvector/sentence-transformers retrieval, and MCP — containerized with Docker Compose and fronted by a Next.js trust dashboard.
+
+- **Git-native** improvement loop with full audit trail
+- **LLM-judge evals** + held-out validation
+- Framework-agnostic adapters · pgvector memory · Celery orchestration
+
+> *Forge agents worth trusting.* 201 commits.

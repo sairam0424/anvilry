@@ -1,0 +1,24 @@
+---
+slug: contextos
+name: ContextOS
+tagline: Intelligence layer for autonomous AI agents.
+group: Agent Frameworks & Infrastructure
+repo: https://github.com/sairam0424/ContextOS
+commits: 175
+tech: [TypeScript, SQLite, "Vector Search", MCP, React, "Three.js"]
+pinned: true
+pinRank: 5
+featured: false
+order: 4
+excerpt: SQLite/vector indexing, multi-agent orchestration, and resilience — shipped as core/CLI/MCP npm packages plus a 3D spatial dashboard.
+---
+
+**ContextOS** is a context + resilience layer for autonomous AI agents, shipped as **three published npm packages** — `@context-os/core` (a DI-container engine), `@context-os/cli` (Commander surface), and `@context-os/mcp` (an MCP server over dual stdio + HTTP/SSE transport) — plus a React 19 + Vite + Tailwind v4 + Three.js **spatial dashboard** rendering a force-directed 3D knowledge graph.
+
+The core wires multi-agent orchestration (TaskGraph DAG scheduler, SwarmOrchestrator, ConflictResolver) with genuinely hard resilience primitives: **Merkle-linked tamper-evident audit logs, sliding-window circuit breakers with auto-quarantine, and CUSUM predictive-failure detection**. Retrieval uses `better-sqlite3` + `sqlite-vec` with local `@xenova/transformers` embeddings and tree-sitter parsing.
+
+- **3 real npm packages** + an MCP server
+- Merkle audit logs · circuit breakers · DAG orchestration
+- `sqlite-vec` vector search · local embeddings
+
+> Clean, shipped, and complementary to Agent-Forge. 175 commits.

@@ -1,0 +1,24 @@
+---
+slug: ag-bash
+name: ag-bash
+tagline: AI-native bash interpreter, in TypeScript.
+group: Code Intelligence & Engines
+repo: https://github.com/sairam0424/ag-bash
+commits: 392
+tech: [TypeScript, WebAssembly, MCP, Tree-sitter, pnpm]
+pinned: true
+pinRank: 4
+featured: false
+order: 5
+excerpt: A sandboxed bash interpreter for AI agents — Tree-sitter WASM parser, in-process WASM runtimes (CPython, QuickJS, SQLite3), exposed over MCP.
+---
+
+AI agents need **deterministic, sandboxed shell execution** for tool-calling. **ag-bash** is a bash interpreter implemented entirely in TypeScript that gives them exactly that — exposed as the `@ag-bash/bash` shell engine plus an MCP server and an agent terminal bridge.
+
+It parses shell syntax with a **Tree-sitter WASM grammar** and executes against sandboxed **WASM runtimes (CPython, QuickJS, SQLite3)** instead of the host shell, enabling patterns like fork-speculation (try N approaches, keep the winner) and self-healing recovery. Built and bundled with esbuild (ESM + CJS); 5 green CI workflows including CodeQL and security fuzzing.
+
+- In-process **sandboxed** execution, no host shell
+- Tree-sitter WASM parser · WASM language runtimes
+- MCP server · fork-speculation · self-healing
+
+> Systems + security breadth. 392 commits, 5 CI gates.

@@ -1,0 +1,25 @@
+---
+slug: mindforge
+name: MindForge
+tagline: Agentic-intelligence framework for Claude Code.
+group: Agent Frameworks & Infrastructure
+repo: https://github.com/sairam0424/MindForge
+commits: 1193
+tech: [Node.js, TypeScript, MCP, sql.js, WebSocket]
+pinned: true
+pinRank: 6
+featured: true
+order: 1
+excerpt: Command-driven multi-agent orchestration for Claude Code — 174 commands, 154 subagents, cost-aware model routing, and true wave parallelism. Ships as npx mindforge-cc.
+---
+
+Multi-agent AI workflows are powerful but chaotic: unbounded token spend, logic drift in long loops, and no audit trail. **MindForge** is a command-driven orchestration framework for Claude Code that brings governance to that chaos.
+
+It exposes **174 slash commands, 154 specialized subagents, and 73 skills** plus a hooks system, cost-aware model routing (Haiku/Sonnet/Opus tier escalation), SHA-256 audit chains, and stuck-detection with auto-repair. Execution runs on a semaphore-based **wave (parallel) model** with a streaming WebSocket SDK, persisted through an embedded `sql.js` datastore. Ships as `npx mindforge-cc`.
+
+- **174 commands · 154 subagents · 73 skills**
+- **Wave parallelism** via a DAG + dependency tracking
+- **Cost-aware routing** + audit/replay via hash-linked logs
+- Built on a pure Node.js + WASM runtime with a strict-TypeScript SDK
+
+> 1,193 commits — the most-invested project in the portfolio.

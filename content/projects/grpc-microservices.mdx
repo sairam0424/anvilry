@@ -1,0 +1,24 @@
+---
+slug: grpc-microservices
+name: Order Processing System
+tagline: Distributed, event-driven gRPC microservices.
+group: Code Intelligence & Engines
+repo: https://github.com/sairam0424/gRPC-micro-services
+tech: [Go, Python, gRPC, PostgreSQL, Kafka, etcd]
+pinned: true
+pinRank: 3
+featured: true
+order: 8
+excerpt: A polyglot Go + Python/FastAPI order-processing backend — Saga orchestration, CDC outbox, etcd leader election, and metric-based replica read routing.
+---
+
+A production-grade, event-driven order-processing backend built as **polyglot Go + Python/FastAPI microservices** that communicate over gRPC internally behind a REST gateway — the most classic-backend, no-LLM system in the portfolio, and exactly what distributed-systems interviews probe.
+
+**The hard parts, up front:** Saga-orchestrated distributed transactions (no 2PC) · ACID inventory reservations · a **Debezium/WAL CDC transactional outbox** for exactly-once-ish delivery · idempotency keys + Dead-Letter Queue · **etcd leader election** for single-writer coordination · **metric-driven read routing** across PostgreSQL replicas · Bloom-filter short-circuiting · Redis caching — all fronted by an Envoy L7 proxy with OpenTelemetry / Prometheus / Grafana observability.
+
+- **Saga** distributed transactions + CDC outbox
+- **etcd** leader election · replica read routing
+- DLQ + idempotency · Bloom filters · Redis cache
+- Full observability via Envoy L7
+
+> Senior-grade distributed-systems work without an LLM in the loop.

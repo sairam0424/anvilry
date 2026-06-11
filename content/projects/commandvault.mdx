@@ -1,0 +1,23 @@
+---
+slug: commandvault
+name: CommandVault
+tagline: Universal AI command manager.
+group: Tooling & Lab
+repo: https://github.com/sairam0424/CommandVault
+commits: 139
+tech: [TypeScript, "VS Code Extension", CLI, SQLite]
+pinned: false
+featured: false
+order: 7
+excerpt: Indexes 350+ slash commands, skills, agents, and plugins across Claude Code, Cursor, Copilot, Windsurf, and Aider into one searchable vault.
+---
+
+**CommandVault** indexes the **350+ slash commands, skills, agents, plugins, rules, and hooks** scattered across Claude Code, Cursor, Copilot, Windsurf, and Aider into a single searchable vault.
+
+Built as a pnpm + Turborepo monorepo with three packages: a **core engine** (parsers for all six entry types, a three-tier search stack of Fuse.js fuzzy + MiniSearch indexed + SQLite FTS5 full-text with weighted ranking, an LRU cache, and a Chokidar file watcher), an **18-command Commander.js CLI**, and a **VS Code extension** with a TreeView sidebar and React stats webview. SQLite persistence handles favorites, usage, tags, and versioned schema migrations, with FTS5 token sanitization and SSRF protection on remote sync.
+
+- **Three-tier search:** fuzzy + indexed + FTS5
+- VS Code extension · 18-command CLI · core engine
+- 6 AI-assistant formats unified
+
+> 139 commits.

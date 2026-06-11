@@ -1,0 +1,29 @@
+---
+slug: pensieve
+name: Pensieve
+role: AI Process-Orchestration Engine · Ascendion
+register: Co-built · production-hardened
+summary: A multi-agent LLM orchestration engine with human-in-the-loop approval gates, real-time streaming, and governed LLM routing across cloud providers.
+metrics:
+  - { value: "2K+", label: "daily users across domains" }
+  - { value: "HITL", label: "approval gates" }
+  - { value: "Multi-cloud", label: "governed LLM routing" }
+tech: [Python, "LLM Orchestration", "Multi-Agent", SSE, "Redis Streams", "Cloud Routing"]
+order: 1
+---
+
+## Problem
+
+Running multi-agent LLM workflows in production is hard to trust: outputs need human sign-off at the right moments, results must stream in real time, and LLM calls have to be routed and governed across providers for cost and reliability — without losing the audit trail.
+
+## Approach
+
+I **co-built and production-hardened Pensieve**, an AI process-orchestration engine that runs multi-agent LLM workflows through **human-in-the-loop approval gates**, **real-time streaming**, and **governed LLM routing across cloud providers**. The architecture decouples orchestration from execution so agents, gates, and streams compose cleanly under concurrent load.
+
+## Impact
+
+- Adopted by **2K+ users daily** across domains.
+- Human-in-the-loop approval gates make multi-agent output trustworthy in production.
+- Governed, multi-cloud LLM routing for cost and reliability.
+
+> **Contribution:** Co-built and production-hardened — a collaborative effort I contributed to substantially.

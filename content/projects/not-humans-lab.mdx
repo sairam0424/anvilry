@@ -1,0 +1,23 @@
+---
+slug: not-humans-lab
+name: Not-Humans-Lab
+tagline: Federated AI-infrastructure workspace.
+group: Tooling & Lab
+repo: https://github.com/sairam0424/not-humans-lab
+commits: 289
+tech: [TypeScript, Python, Go, Temporal, Qdrant]
+pinned: false
+featured: false
+order: 6
+excerpt: A polyglot monorepo federating four independent AI-infra sub-projects, each with its own toolchain — Turborepo + Temporal + FastAPI + Go + Qdrant.
+---
+
+**Not-Humans-Lab** is a thin root workspace that federates four independent AI-infrastructure sub-projects (SkillStack, Deep-Research, Agent-Hub, rate-limit-observatory) — each retaining its own toolchain rather than a single shared build graph.
+
+It is polyglot by design: a **Turborepo + pnpm** workspace with Next.js apps, Python services on **uv + Temporal** (durable workflow orchestration) + FastAPI, Go services, and a **Qdrant** vector store. Root tooling standardizes commit hygiene (Commitizen, commitlint, Husky) across the heterogeneous sub-projects.
+
+- Federates 4 AI-infra sub-projects
+- Temporal durable workflows · Qdrant vectors
+- Polyglot: TypeScript · Python · Go
+
+> 289 commits.

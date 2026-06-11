@@ -64,6 +64,23 @@ html {
   html { scroll-behavior: auto; }
 }
 
+/*
+  Hero entrance — pure CSS, runs on first paint with NO JS/hydration gate, so the
+  above-the-fold hero is never invisible-then-faded-in (that caused a load flicker
+  and delayed LCP). Below-the-fold sections still use the JS-gated <Reveal>.
+*/
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-rise {
+  opacity: 0;
+  animation: hero-rise 0.5s cubic-bezier(0.21, 0.47, 0.32, 0.98) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise { opacity: 1; animation: none; }
+}
+
 body {
   background: var(--bg-base);
   color: var(--fg);

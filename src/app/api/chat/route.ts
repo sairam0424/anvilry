@@ -1,6 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
 import { buildCorpus } from "@/lib/corpus";
 import { profile } from "@/lib/profile";
+import { isConfigured, streamWithFallback } from "@/lib/llm";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -13,6 +14,9 @@ const MAX_CHARS = 600;
  * The entire verified portfolio corpus is given as context (small enough to fit),
  * with strict guardrails: answer ONLY from the corpus, stay in first person as
  * Sairam, refuse off-topic / injection attempts, never invent facts or metrics.
+ *
+ * The LLM provider (AWS Bedrock by default, direct Anthropic API as a toggle) and
+ * the Opus 4.6 -> Sonnet 4.6 -> Haiku 4.5 fallback chain live in src/lib/llm.ts.
  */
 const systemPrompt = (corpus: string) => `You are an assistant embedded on ${profile.name}'s portfolio website, answering recruiter and hiring-manager questions about him in the FIRST PERSON, as if you are Sairam.
 
@@ -30,7 +34,7 @@ ${corpus}`;
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!isConfigured()) {
     return Response.json({ error: "Chat is not configured." }, { status: 503 });
   }
 
@@ -52,33 +56,19 @@ export async function POST(req: Request) {
     return Response.json({ error: "Expected a user message." }, { status: 400 });
   }
 
-  const client = new Anthropic();
-
-  const stream = client.messages.stream({
-    model: "claude-opus-4-7",
-    max_tokens: 1024,
-    system: [{ type: "text", text: systemPrompt(buildCorpus()), cache_control: { type: "ephemeral" } }],
-    messages,
-  });
-
-  const encoder = new TextEncoder();
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-            controller.enqueue(encoder.encode(event.delta.text));
-          }
-        }
-      } catch {
-        controller.enqueue(encoder.encode("\n\n[Sorry — something went wrong. Please email " + profile.email + ".]"));
-      } finally {
-        controller.close();
-      }
+  const stream = streamWithFallback(
+    {
+      max_tokens: 1024,
+      system: [{ type: "text", text: systemPrompt(buildCorpus()), cache_control: { type: "ephemeral" } }],
+      messages,
     },
-  });
+    {
+      onError: (err, model) =>
+        console.warn(`[chat] model ${model} failed: ${(err as Error)?.name ?? "error"}`),
+    },
+  );
 
-  return new Response(readable, {
+  return new Response(stream, {
     headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
   });
 }

@@ -19,10 +19,18 @@ export function AskPortfolio() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Restore focus to the trigger when the panel closes (WCAG 2.4.3 focus order).
+  useEffect(() => {
+    if (wasOpen.current && !open) triggerRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
 
   const send = useCallback(
     async (text: string) => {
@@ -70,6 +78,7 @@ export function AskPortfolio() {
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={() => setOpen((o) => !o)}
         aria-label="Ask my portfolio"
         className="fixed bottom-5 left-5 z-40 inline-flex items-center gap-2 rounded-full border border-accent/40 bg-bg-surface/90 px-4 py-2.5 text-sm font-medium text-fg shadow-lg shadow-accent/10 backdrop-blur transition-colors hover:border-accent"
@@ -79,13 +88,13 @@ export function AskPortfolio() {
       </button>
 
       {open && (
-        <div className="fixed bottom-20 left-5 z-50 flex h-[28rem] w-[min(92vw,24rem)] flex-col overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl">
+        <div className="fixed bottom-20 left-5 z-50 flex h-[28rem] max-h-[calc(100vh-7rem)] w-[min(92vw,24rem)] flex-col overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl">
           <header className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <Sparkles size={15} className="text-accent" />
               <span className="text-sm font-medium">Ask my portfolio</span>
             </div>
-            <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-subtle hover:text-fg">
+            <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-muted hover:text-fg">
               <X size={16} />
             </button>
           </header>
@@ -119,7 +128,7 @@ export function AskPortfolio() {
                       : "border border-border bg-bg-elevated text-fg-muted",
                   )}
                 >
-                  {m.content || (busy ? "…" : "")}
+                  {m.content || (busy ? "Thinking…" : "")}
                 </div>
               </div>
             ))}
@@ -136,8 +145,9 @@ export function AskPortfolio() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question…"
+              aria-label="Ask a question about Sairam"
               disabled={busy}
-              className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-subtle focus:border-accent disabled:opacity-60"
+              className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-muted focus:border-accent disabled:opacity-60"
             />
             <button
               type="submit"

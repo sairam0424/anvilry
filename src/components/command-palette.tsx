@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import {
@@ -29,6 +29,8 @@ type Action = {
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -40,6 +42,12 @@ export function CommandPalette() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  // Restore focus to the trigger when the palette closes (WCAG 2.4.3).
+  useEffect(() => {
+    if (wasOpen.current && !open) triggerRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
 
   const go = useCallback(
     (href: string, external = false) => {
@@ -87,6 +95,7 @@ export function CommandPalette() {
     <>
       {/* Trigger pill — bottom-right, terminal-styled */}
       <button
+        ref={triggerRef}
         onClick={() => setOpen(true)}
         aria-label="Open command palette"
         className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
@@ -108,8 +117,9 @@ export function CommandPalette() {
             <span className="font-mono text-accent">{">"}</span>
             <Command.Input
               autoFocus
+              aria-label="Search commands"
               placeholder="Jump to a page, project, or link…"
-              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-subtle"
+              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
             />
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">

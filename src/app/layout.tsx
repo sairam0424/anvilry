@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -15,6 +15,12 @@ const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
 
 const siteUrl = "https://sairam.dev";
+
+// Dark browser chrome (address bar / status bar) to match the site.
+export const viewport: Viewport = {
+  themeColor: "#07080d",
+  colorScheme: "dark",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

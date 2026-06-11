@@ -18,7 +18,6 @@ export const profile = {
   links: {
     github: "https://github.com/sairam0424",
     linkedin: "https://linkedin.com/in/sairam0424",
-    naukri: "https://www.naukri.com/mnjuser/profile",
     resume: "/resume",
   },
   githubUser: "sairam0424",

@@ -24,6 +24,8 @@ pnpm install
 pnpm dev          # http://localhost:3000  (Velite runs in watch mode)
 pnpm build        # velite --clean && next build
 pnpm lint
+pnpm clean        # wipe .next/.turbo/.velite caches — run after moving/renaming the project
+                  # folder (Turbopack bakes absolute paths into .next and will panic otherwise)
 ```
 
 ## Content (single source of truth)

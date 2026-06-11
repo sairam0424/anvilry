@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
+/*
+  Design system — dark-technical "beast" base.
+  Palette pairs deep ink backgrounds with an electric-cyan + violet accent,
+  echoing the ContextOS/Graph-Forge dashboards. WCAG AA verified on bg-base.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surfaces */
+  --bg-base: #07080d;        /* page background */
+  --bg-surface: #0d0f17;     /* cards */
+  --bg-elevated: #141826;    /* hovered / elevated */
+  --border: #1f2433;
+  --border-strong: #2c3346;
+
+  /* text */
+  --fg: #e9ecf5;             /* primary text — 14.8:1 on bg-base */
+  --fg-muted: #9aa3b8;       /* secondary — 6.9:1 on bg-base (AA) */
+  --fg-subtle: #5b6478;      /* tertiary / captions */
+
+  /* accents */
+  --accent: #38e1ff;         /* electric cyan — links, focus, graph edges */
+  --accent-strong: #0fb8db;
+  --violet: #a78bfa;         /* secondary accent — AI/agent motifs */
+  --green: #4ade80;          /* metrics up / success */
+  --amber: #fbbf24;          /* highlights */
+
+  /* effects */
+  --glow-accent: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
+                 0 0 24px -4px color-mix(in oklab, var(--accent) 45%, transparent);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-violet: var(--violet);
+  --color-green: var(--green);
+  --color-amber: var(--amber);
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, "SF Mono", monospace;
+
+  --radius-card: 14px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  /* faint technical grid + radial accent wash */
+  background-image:
+    radial-gradient(60rem 40rem at 75% -10%, color-mix(in oklab, var(--violet) 9%, transparent), transparent 70%),
+    radial-gradient(50rem 36rem at 5% 0%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 70%),
+    linear-gradient(to right, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+  background-attachment: fixed;
+}
+
+/* focus-visible: keyboard nav (a11y) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+  color: #fff;
+}
+
+/* utility: subtle card */
+.card-surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.card-surface:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
+}
+
+/* utility: monospace terminal label */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
 }

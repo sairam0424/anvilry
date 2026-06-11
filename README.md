@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Anvilry
 
-## Getting Started
+> The works where the Forges converge — Sairam Ugge's portfolio, live at **[sairam.dev](https://sairam.dev)**.
 
-First, run the development server:
+Recruiter-facing portfolio for **Sairam Ugge** — GenAI & Backend Engineer. A fast, content-first
+Next.js site with a WebGL knowledge-graph hero, a ⌘K command palette, and an "Ask my portfolio"
+RAG chatbot grounded in real work. *(Anvilry is the project codename; the public site is sairam.dev.)*
+
+## Stack
+
+- **Next.js 16 (App Router)** + TypeScript (strict)
+- **Tailwind v4** — dark-technical design system (`src/app/globals.css`)
+- **Velite** — type-safe MDX content layer (`content/` → `.velite/`)
+- **Motion** — scroll reveals, `prefers-reduced-motion` honored app-wide
+- **React Three Fiber** — instanced knowledge-graph hero (lazy, demand-rendered, mobile/reduced-motion fallbacks)
+- **cmdk** — terminal-styled command palette
+- **Anthropic SDK** (`claude-opus-4-7`) — grounded first-person chatbot
+- **Vercel** — hosting + Analytics + Speed Insights
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev          # http://localhost:3000  (Velite runs in watch mode)
+pnpm build        # velite --clean && next build
+pnpm lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Content (single source of truth)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All site content is data-driven — no fabrication, mirrors the résumé/LinkedIn/GitHub pack:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `content/work/*.mdx` — production case studies (Pensieve, AAVA Code), honest "Co-built / architected" register
+- `content/projects/*.mdx` — 8 open-source repos (architecture + tech + commit counts only)
+- `src/lib/profile.ts` — identity, headline, skills, achievements, résumé variants
 
-## Learn More
+Edit those files; the home grids, case-study pages, sitemap, chatbot corpus, and JSON-LD all update automatically.
 
-To learn more about Next.js, take a look at the following resources:
+## Chatbot
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The "Ask my portfolio" widget needs an Anthropic API key. Without it, the widget degrades gracefully
+(tells visitors to email / check the résumé).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cp .env.example .env.local
+# set ANTHROPIC_API_KEY=sk-ant-...
+```
 
-## Deploy on Vercel
+The corpus is built in-context from `src/lib/corpus.ts` (the whole portfolio is small enough — no vector DB).
+Upgrade path: move to pgvector + BM25 hybrid retrieval if the corpus grows (e.g. blog posts).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy (Vercel + sairam.dev)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push to GitHub (`github.com/sairam0424/portfolio`).
+2. Import the repo at [vercel.com/new](https://vercel.com/new) — framework auto-detected as Next.js.
+3. Add env var **`ANTHROPIC_API_KEY`** in Project Settings → Environment Variables (Production + Preview).
+4. Add the custom domain **sairam.dev** under Project Settings → Domains; point DNS per Vercel's instructions.
+5. Every push to `main` deploys to production; PRs get preview URLs.
+
+The base URL is hardcoded as `https://sairam.dev` in `src/app/layout.tsx`, `sitemap.ts`, `robots.ts`,
+and `json-ld.tsx` — update those if the domain changes.

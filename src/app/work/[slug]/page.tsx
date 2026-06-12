@@ -18,7 +18,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const work = getWork(slug);
   if (!work) return {};
-  return { title: work.name, description: work.summary };
+  return {
+    title: work.name,
+    description: work.summary,
+    alternates: { canonical: `/work/${slug}` },
+  };
 }
 
 export default async function WorkPage({ params }: { params: Promise<{ slug: string }> }) {

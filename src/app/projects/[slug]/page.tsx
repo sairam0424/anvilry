@@ -19,7 +19,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) return {};
-  return { title: project.name, description: project.excerpt };
+  return {
+    title: project.name,
+    description: project.excerpt,
+    alternates: { canonical: `/projects/${slug}` },
+  };
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {

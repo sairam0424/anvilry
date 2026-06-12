@@ -6,6 +6,7 @@ import { Reveal } from "@/components/ui/reveal";
 export const metadata: Metadata = {
   title: "About",
   description: `About ${profile.name} — ${profile.role} at ${profile.company}.`,
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

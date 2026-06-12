@@ -9,6 +9,7 @@ import { GithubStats } from "@/components/github-stats";
 export const metadata: Metadata = {
   title: "Projects",
   description: `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, and developer tooling.`,
+  alternates: { canonical: "/projects" },
 };
 
 export default function ProjectsPage() {

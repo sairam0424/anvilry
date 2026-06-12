@@ -7,6 +7,7 @@ import { Reveal } from "@/components/ui/reveal";
 export const metadata: Metadata = {
   title: "Résumé",
   description: `Download ${profile.name}'s résumé — role-targeted variants for Backend, GenAI, and Full-Stack.`,
+  alternates: { canonical: "/resume" },
 };
 
 const master = resumeVariants[0];

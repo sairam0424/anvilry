@@ -43,9 +43,12 @@ export function ChatView() {
         </p>
       </div>
 
+      {/* Bordered "console" panel — frames the whole conversation so it reads as a
+          contained concierge terminal, not scattered elements in an empty void. */}
+      <section className="mt-4 flex flex-1 flex-col rounded-2xl border border-border-strong bg-bg-surface/40 p-5 shadow-xl shadow-black/20 backdrop-blur sm:p-6">
       {/* Answer-first greeting + verified impact strip (recruiter visual triage). */}
       {empty && (
-        <header className="mt-8">
+        <header>
           <h1 className="text-2xl font-semibold tracking-tight">
             Ask me anything about {profile.name.split(" ")[0]}&apos;s work
           </h1>
@@ -132,6 +135,7 @@ export function ChatView() {
       <p className="mt-2 text-center text-[11px] text-fg-subtle">
         Grounded in real work · may simplify details
       </p>
+      </section>
     </main>
   );
 }

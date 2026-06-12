@@ -51,7 +51,9 @@ export function useChat() {
           const msg =
             res.status === 503
               ? "The chat isn't switched on yet — but you can reach Sairam by email or check the résumé."
-              : "Something went wrong. Please try again.";
+              : res.status === 429
+                ? "That's a lot of questions! Give it a moment and try again."
+                : "Something went wrong. Please try again.";
           setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: msg }]);
           setStatus("error");
           return;

@@ -3,6 +3,7 @@ import { buildCorpus } from "@/lib/corpus";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { isConfigured, streamWithFallback } from "@/lib/llm";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -48,6 +49,16 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 export async function POST(req: Request) {
   if (!isConfigured()) {
     return Response.json({ error: "Chat is not configured." }, { status: 503 });
+  }
+
+  // Per-IP rate limit BEFORE any Bedrock call, so a bot can't run up cost. Fails
+  // open when Upstash isn't configured (local dev) — see src/lib/rate-limit.ts.
+  const rl = await checkRateLimit(req);
+  if (!rl.ok) {
+    return Response.json(
+      { error: "Too many requests — please slow down a moment." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
   }
 
   let body: { messages?: ChatMessage[] };

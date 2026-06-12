@@ -34,9 +34,16 @@ export function HeroGraph() {
       <div className="absolute right-[-10%] top-[-20%] h-[36rem] w-[36rem] rounded-full bg-accent/10 blur-3xl" />
       <div className="absolute left-[10%] top-[10%] h-[28rem] w-[28rem] rounded-full bg-violet/10 blur-3xl" />
       {showWebGL && (
-        <div className="absolute inset-0 opacity-70 [mask-image:radial-gradient(60%_60%_at_70%_30%,#000_40%,transparent_100%)]">
-          <HeroGraphScene />
-        </div>
+        <>
+          {/* Graph confined to the RIGHT side and dimmed, so nodes don't collide with
+              the headline. Mask hotspot pushed to ~82% x; lower opacity = backdrop. */}
+          <div className="absolute inset-0 opacity-45 [mask-image:radial-gradient(50%_55%_at_82%_42%,#000_30%,transparent_78%)]">
+            <HeroGraphScene />
+          </div>
+          {/* Left-to-right scrim: keeps the text column (left ~55%) on a dark base for
+              contrast, fading to transparent so the graph still shines on the right. */}
+          <div className="absolute inset-0 bg-gradient-to-r from-bg-base via-bg-base/85 via-45% to-transparent" />
+        </>
       )}
     </div>
   );

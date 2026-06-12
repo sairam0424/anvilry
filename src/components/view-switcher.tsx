@@ -19,6 +19,10 @@ const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGr
 
 export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   const { view, setView } = useView();
+  // Unique per instance: the switcher is rendered TWICE (desktop + compact mobile),
+  // both in the DOM at once. A shared layoutId would make Motion animate ONE pill
+  // between the two instances, breaking which button shows active. Scope it.
+  const layoutId = `view-switcher-active-${compact ? "compact" : "full"}`;
 
   return (
     <div
@@ -47,7 +51,7 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
           >
             {active && (
               <motion.span
-                layoutId="view-switcher-active"
+                layoutId={layoutId}
                 aria-hidden="true"
                 className="absolute inset-0 z-0 rounded-full bg-accent"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}

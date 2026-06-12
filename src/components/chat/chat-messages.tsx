@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
+import { useChatA11y } from "@/components/chat/use-chat-a11y";
 
 /**
  * Renders the conversation. Assistant text is rendered as React TEXT NODES (never
  * dangerouslySetInnerHTML) so model output can't inject markup. Generative cards
  * are resolved from a slug allowlist (parse-cards.ts) against real Velite content,
  * not parsed from model HTML — so a card can't show fabricated data and its href is
- * server-sourced. The aria-live announce-on-settle region + pin-aware autoscroll
- * land in 2.3.
+ * server-sourced. Pin-aware autoscroll + a single announce-on-settle aria-live
+ * region come from useChatA11y.
  */
 export function ChatMessages({
   messages,
@@ -20,17 +21,22 @@ export function ChatMessages({
   messages: ChatMessage[];
   isStreaming: boolean;
 }) {
-  const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { liveMessage } = useChatA11y(messages, isStreaming, scrollRef);
 
-  // Placeholder autoscroll — replaced by pin-aware logic in 2.3.
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages]);
+  // A single polite live region: announces "Answering…" then the settled answer
+  // once. Always present (even when empty) so the region is registered with AT.
+  const liveRegion = (
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
+      {liveMessage}
+    </div>
+  );
 
-  if (messages.length === 0) return <div className="flex-1" />;
+  if (messages.length === 0) return <div className="flex-1">{liveRegion}</div>;
 
   return (
-    <div className="mt-6 flex-1 space-y-4 overflow-y-auto">
+    <div ref={scrollRef} className="mt-6 flex-1 space-y-4 overflow-y-auto">
+      {liveRegion}
       {messages.map((m, i) => {
         const isLast = i === messages.length - 1;
         if (m.role === "user") {
@@ -71,7 +77,6 @@ export function ChatMessages({
           </div>
         );
       })}
-      <div ref={endRef} />
     </div>
   );
 }

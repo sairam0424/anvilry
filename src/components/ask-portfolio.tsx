@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useView } from "@/components/view-context";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -14,6 +15,7 @@ const SUGGESTED = [
 ];
 
 export function AskPortfolio() {
+  const { view } = useView();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -74,6 +76,9 @@ export function AskPortfolio() {
     },
     [busy, messages],
   );
+
+  // The full Chat view IS the concierge — don't also float the widget over it.
+  if (view === "chat") return null;
 
   return (
     <>

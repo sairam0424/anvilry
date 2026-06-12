@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { ViewSwitcher } from "@/components/view-switcher";
+import { MobileNav } from "@/components/mobile-nav";
 
 const navLinks = [
   { href: "/#work", label: "Work" },
@@ -39,7 +40,8 @@ export function SiteNav() {
           <ViewSwitcher compact />
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Desktop: social + résumé icons. Mobile: these move into the drawer. */}
+        <div className="hidden items-center gap-3 sm:flex">
           <a
             href={profile.links.github}
             target="_blank"
@@ -62,6 +64,9 @@ export function SiteNav() {
             <FileText size={18} />
           </Link>
         </div>
+
+        {/* Mobile: hamburger opens the drawer with the full nav + social links. */}
+        <MobileNav links={navLinks} />
       </nav>
     </header>
   );

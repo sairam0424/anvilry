@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
+import { ViewSwitcher } from "@/components/view-switcher";
 
 const navLinks = [
   { href: "/#work", label: "Work" },
@@ -13,8 +14,8 @@ const navLinks = [
 export function SiteNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md">
-      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-6">
-        <Link href="/" className="font-mono text-sm font-semibold tracking-tight">
+      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6">
+        <Link href="/" className="shrink-0 font-mono text-sm font-semibold tracking-tight">
           <span className="text-accent">~/</span>sairam
         </Link>
 
@@ -28,6 +29,14 @@ export function SiteNav() {
               {l.label}
             </Link>
           ))}
+        </div>
+
+        {/* View switcher — full on desktop, compact icon pill on mobile (always visible). */}
+        <div className="hidden sm:block">
+          <ViewSwitcher />
+        </div>
+        <div className="sm:hidden">
+          <ViewSwitcher compact />
         </div>
 
         <div className="flex items-center gap-3">

@@ -12,10 +12,14 @@ import {
   Briefcase,
   ArrowUpRight,
   TerminalSquare,
+  LayoutGrid,
+  Gamepad2,
+  MessagesSquare,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
+import { useView } from "@/components/view-context";
 
 type Action = {
   id: string;
@@ -29,6 +33,7 @@ type Action = {
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { setView } = useView();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -57,6 +62,20 @@ export function CommandPalette() {
     },
     [router],
   );
+
+  const switchTo = useCallback(
+    (v: Parameters<typeof setView>[0]) => {
+      setOpen(false);
+      setView(v);
+    },
+    [setView],
+  );
+
+  const views: Action[] = [
+    { id: "v-classic", label: "Classic view", hint: "the standard portfolio", icon: <LayoutGrid size={16} />, run: () => switchTo("classic"), keywords: "default standard reset" },
+    { id: "v-play", label: "Play view", hint: "explorable build graph", icon: <Gamepad2 size={16} />, run: () => switchTo("gamified"), keywords: "game gamified graph terminal explore" },
+    { id: "v-chat", label: "Chat view", hint: "ask my portfolio", icon: <MessagesSquare size={16} />, run: () => switchTo("chat"), keywords: "ai concierge conversation assistant" },
+  ];
 
   const nav: Action[] = [
     { id: "home", label: "Home", icon: <Home size={16} />, run: () => go("/") },
@@ -126,6 +145,7 @@ export function CommandPalette() {
             <Command.Empty className="px-3 py-6 text-center text-sm text-fg-subtle">
               No results.
             </Command.Empty>
+            <Group heading="Switch view" actions={views} />
             <Group heading="Navigate" actions={nav} />
             <Group heading="Work" actions={workItems} />
             <Group heading="Projects" actions={projItems} />

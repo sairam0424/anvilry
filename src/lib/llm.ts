@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
+import { profile } from "@/lib/profile";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -151,7 +152,8 @@ export function streamWithFallback(
   const client = makeClient();
   const chain = modelChain();
   const encoder = new TextEncoder();
-  const apologyTail = "\n\n[Sorry — something went wrong. Please email uggesairam0000@gmail.com.]";
+  // Derive the contact from the single source so the failure path can't go stale.
+  const apologyTail = `\n\n[Sorry — something went wrong. Please email ${profile.email}.]`;
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {

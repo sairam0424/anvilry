@@ -4,6 +4,7 @@ import { Gamepad2 } from "lucide-react";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { GraphIndex } from "@/components/game/graph-index";
 import { BuildGraph } from "@/components/game/build-graph";
+import { Terminal } from "@/components/game/terminal";
 import { EasterEggs } from "@/components/game/easter-eggs";
 
 /**
@@ -35,6 +36,9 @@ export function GameView() {
 
       {/* Desktop + full-motion: interactive 3D graph. Renders nothing otherwise. */}
       <BuildGraph />
+
+      {/* Optional power-user command bar — keyboard-native, gates no content. */}
+      <Terminal />
 
       {/* Accessible default + the mobile / reduced-motion / SR / keyboard layer. */}
       <GraphIndex />

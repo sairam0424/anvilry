@@ -10,6 +10,9 @@ export const profile = {
   company: "Ascendion",
   tenure: "Jun 2024 – Present",
   location: "Hyderabad, India",
+  // Structured location for JSON-LD (single source — keep in sync with `location`).
+  locationCity: "Hyderabad",
+  locationCountry: "IN",
   headline:
     "GenAI & Backend Engineer building production multi-agent LLM systems and the event-driven backends behind them.",
   subhead:

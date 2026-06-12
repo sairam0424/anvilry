@@ -13,7 +13,7 @@ export function PersonJsonLd() {
     email: `mailto:${profile.email}`,
     url: "https://sairam.dev",
     worksFor: { "@type": "Organization", name: profile.company },
-    address: { "@type": "PostalAddress", addressLocality: "Hyderabad", addressCountry: "IN" },
+    address: { "@type": "PostalAddress", addressLocality: profile.locationCity, addressCountry: profile.locationCountry },
     sameAs: [profile.links.github, profile.links.linkedin],
     knowsAbout: skills.flatMap((s) => s.items),
   };

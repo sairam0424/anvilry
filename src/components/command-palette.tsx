@@ -132,7 +132,10 @@ export function CommandPalette() {
       >
         <div className="fixed inset-0 bg-bg-base/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
         <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-border-strong bg-bg-surface shadow-2xl">
-          <div className="flex items-center gap-2 border-b border-border px-4">
+          {/* The search row carries the focus affordance (accent bottom-border via
+              focus-within) — cleaner than the glaring global :focus-visible box that
+              would otherwise ring the autofocused input inside the modal. */}
+          <div className="flex items-center gap-2 border-b border-border px-4 transition-colors focus-within:border-accent">
             <span className="font-mono text-accent">{">"}</span>
             <Command.Input
               autoFocus
@@ -140,7 +143,7 @@ export function CommandPalette() {
               placeholder="Jump to a page, project, or link…"
               spellCheck={false}
               autoComplete="off"
-              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
+              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none [&:focus-visible]:outline-none placeholder:text-fg-muted"
             />
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">

@@ -116,7 +116,9 @@ export function Terminal() {
           <span className="ml-auto text-[10px]">optional · keyboard-native · gates nothing</span>
         </div>
 
-        <div ref={histRef} className="max-h-56 space-y-1 overflow-y-auto px-4 py-3" aria-live="polite">
+        {/* aria-atomic stays false (the default): a growing log should announce only
+            the NEW lines a command adds, not re-read the whole scrollback each time. */}
+        <div ref={histRef} className="max-h-56 space-y-1 overflow-y-auto px-4 py-3" aria-live="polite" aria-atomic="false">
           {lines.map((l, i) => (
             <pre
               key={i}
@@ -150,7 +152,7 @@ export function Terminal() {
             spellCheck={false}
             autoCapitalize="off"
             autoCorrect="off"
-            className="flex-1 bg-transparent py-1 text-fg outline-none placeholder:text-fg-subtle"
+            className="flex-1 rounded bg-transparent px-1 py-1 text-fg outline-none placeholder:text-fg-subtle focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
           />
         </form>
       </div>

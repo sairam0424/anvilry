@@ -56,9 +56,10 @@ export function ChatView() {
           <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {impactMetrics.map((m) => (
               <div key={m.label + m.sub} className="rounded-xl border border-border bg-bg-surface/60 px-3 py-2.5">
-                <dd className="font-mono text-lg font-semibold text-fg">{m.value}</dd>
-                <dt className="text-xs text-fg-muted">{m.label}</dt>
-                <dt className="text-[11px] text-fg-subtle">{m.sub}</dt>
+                {/* dt = term (the metric), dd = description (its value+context) */}
+                <dt className="font-mono text-lg font-semibold text-fg">{m.value}</dt>
+                <dd className="text-xs text-fg-muted">{m.label}</dd>
+                <dd className="text-[11px] text-fg-subtle">{m.sub}</dd>
               </div>
             ))}
           </dl>
@@ -107,7 +108,7 @@ export function ChatView() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about my work, projects, or what I'm looking for…"
           aria-label="Ask a question about Sairam"
-          className="flex-1 rounded-xl border border-border bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent"
+          className="flex-1 rounded-xl border border-border bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
         />
         {isStreaming ? (
           <button
@@ -122,7 +123,7 @@ export function ChatView() {
             type="submit"
             disabled={!input.trim()}
             aria-label="Send"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-bg-base transition-opacity disabled:opacity-40"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-bg-base transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
           >
             <Send size={16} />
           </button>

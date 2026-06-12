@@ -34,7 +34,8 @@ Credential values may be **base64-encoded or raw** — the app decodes base64 au
 | `LLM_PROVIDER` | `bedrock` | Default. Use `anthropic` to switch to the direct API. |
 | `BEDROCK_ACCESS_KEY_ID` | *(base64 or raw AWS access key)* | **Not** `AWS_ACCESS_KEY_ID` — the `BEDROCK_*` names are deliberate (avoid clashing with the AWS default credential chain). |
 | `BEDROCK_SECRET_ACCESS_KEY` | *(base64 or raw AWS secret)* | |
-| `AWS_REGION` | `us-east-1` | Must be the region where the Bedrock models are enabled. |
+| `BEDROCK_REGION` | `us-east-1` | **Preferred** region var (read first). `AWS_REGION` is RESERVED on Vercel/Lambda and was seen corrupted to `s-east-1` in prod → "Connection error". Use the `BEDROCK_` name. |
+| `AWS_REGION` | `us-east-1` | Fallback region (local dev). Code reads `BEDROCK_REGION` → `AWS_REGION` → `us-east-1`. |
 | `BEDROCK_SESSION_TOKEN` | *(optional)* | Only for temporary STS credentials. |
 
 > The chatbot degrades gracefully: if these are absent/invalid, `POST /api/chat` returns
@@ -149,7 +150,12 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
 ## 6. Notes & gotchas
 - **`/api/chat` runtime:** `nodejs`, `maxDuration = 30`. The Bedrock SDK needs the Node runtime
   (not Edge). A 3-model sequential fallback fits well inside 30s (each attempt has a 15s timeout).
-- **Region lock:** the Opus 4.6 `-v1` profile must be enabled in `AWS_REGION`. A wrong region or
+- **Region var gotcha (real prod incident):** on the first prod deploy, `AWS_REGION` arrived in the
+  Lambda corrupted as `s-east-1` (missing `u`) → an invalid Bedrock endpoint → all 3 models failed
+  with `Connection error` (status=undefined) → the apology tail. `AWS_REGION` is a Vercel/Lambda
+  RESERVED var; the fix is `BEDROCK_REGION` (read first in `src/lib/llm.ts`). If chat returns the
+  apology in prod, check the resolved region first.
+- **Region lock:** the Opus 4.6 `-v1` profile must be enabled in the configured region. A wrong region or
   un-enabled model surfaces as a 400 "model identifier is invalid" → the chain treats it as an
   availability error and falls through to Sonnet (so the chatbot stays up even if Opus is
   misconfigured — but check logs).

@@ -74,7 +74,10 @@ function bedrockCreds() {
     sessionToken: process.env.BEDROCK_SESSION_TOKEN
       ? decodeSecret(process.env.BEDROCK_SESSION_TOKEN)
       : undefined,
-    region: process.env.AWS_REGION || "us-east-1",
+    // Prefer BEDROCK_REGION: AWS_REGION is a RESERVED var on Vercel/Lambda and was
+    // observed corrupted in prod ("s-east-1") — using a non-reserved name avoids the
+    // platform mangling it. Fall back to AWS_REGION (local dev) then a sane default.
+    region: process.env.BEDROCK_REGION || process.env.AWS_REGION || "us-east-1",
   };
 }
 

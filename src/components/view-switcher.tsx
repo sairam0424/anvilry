@@ -40,7 +40,7 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
             aria-pressed={active}
             aria-label={`${opt.label} view`}
             className={cn(
-              "relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
               active ? "text-bg-base" : "text-fg-muted hover:text-fg",
             )}
@@ -48,13 +48,19 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
             {active && (
               <motion.span
                 layoutId="view-switcher-active"
-                className="absolute inset-0 -z-10 rounded-full bg-accent"
+                aria-hidden="true"
+                className="absolute inset-0 z-0 rounded-full bg-accent"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
-            <Icon size={14} aria-hidden="true" />
-            {!compact && <span>{opt.label}</span>}
-            {compact && <span className="sr-only">{opt.label}</span>}
+            {/* Content sits ABOVE the pill via a positive z-index wrapper — never a
+                negative one (which could sink the pill behind the container bg and
+                render the active dark text dark-on-dark). */}
+            <span className="relative z-10 inline-flex items-center gap-1.5">
+              <Icon size={14} aria-hidden="true" />
+              {!compact && <span>{opt.label}</span>}
+              {compact && <span className="sr-only">{opt.label}</span>}
+            </span>
           </button>
         );
       })}

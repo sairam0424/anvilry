@@ -36,6 +36,12 @@ function Nodes() {
     invalidate();
   }, [color, dummy, invalidate]);
 
+  // Release the GPU geometry/material when the hero unmounts (e.g. switching views).
+  useEffect(() => () => {
+    geo.dispose();
+    mat.dispose();
+  }, [geo, mat]);
+
   return <instancedMesh ref={mesh} args={[geo, mat, graphNodes.length]} />;
 }
 
@@ -53,6 +59,8 @@ function Edges() {
     g.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
     return g;
   }, []);
+  // Release the GPU buffer when the hero unmounts.
+  useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <lineSegments geometry={geometry}>
       <lineBasicMaterial color="#3a4258" transparent opacity={0.7} toneMapped={false} />

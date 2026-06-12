@@ -32,6 +32,8 @@ export function useChatA11y(
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom < 120) el.scrollTop = el.scrollHeight; // within ~a bubble
+    // scrollRef is a stable ref (never changes) so it adds no extra runs; kept in
+    // deps to satisfy exhaustive-deps. The audit's "remove it" was a false positive.
   }, [messages, scrollRef]);
 
   // 2. Announce-on-settle (deferred via timer — no synchronous setState-in-effect).

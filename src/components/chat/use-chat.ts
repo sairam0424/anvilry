@@ -68,8 +68,15 @@ export function useChat() {
         }
         setStatus("idle");
       } catch (err) {
-        // Abort is a user action, not an error — leave whatever streamed in place.
+        // Abort is a user action, not an error — keep what streamed, but mark it
+        // stopped so a half-finished answer isn't mistaken for a complete one.
         if (err instanceof DOMException && err.name === "AbortError") {
+          setMessages((m) => {
+            const last = m[m.length - 1];
+            if (!last || last.role !== "assistant") return m;
+            const stopped = last.content ? `${last.content} …[stopped]` : "[stopped]";
+            return [...m.slice(0, -1), { role: "assistant", content: stopped }];
+          });
           setStatus("idle");
           return;
         }

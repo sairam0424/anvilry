@@ -48,7 +48,7 @@ export function ViewHint() {
   if (dismissed || view !== "classic") return null;
 
   return (
-    <div className="fixed bottom-24 right-5 z-30 max-w-xs rounded-xl border border-accent/40 bg-bg-surface/95 p-3 text-sm shadow-lg shadow-accent/10 backdrop-blur sm:bottom-5 sm:right-44">
+    <div className="fixed bottom-20 right-3 z-30 max-w-[16rem] rounded-xl border border-accent/40 bg-bg-surface/95 p-3 text-sm shadow-lg shadow-accent/10 backdrop-blur sm:bottom-5 sm:right-44">
       <button
         type="button"
         onClick={dismissHint}

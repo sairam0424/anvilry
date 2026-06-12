@@ -14,8 +14,19 @@ const SUGGESTED = [
   "What are you looking for?",
 ];
 
+/**
+ * View-gate: the full Chat view IS the concierge, so the floating widget is hidden
+ * there. Keying the inner widget by `view` remounts it on any view change, so its
+ * transcript/open state never leaks across a classic<->gamified switch (no
+ * setState-in-effect needed).
+ */
 export function AskPortfolio() {
   const { view } = useView();
+  if (view === "chat") return null;
+  return <AskPortfolioWidget key={view} />;
+}
+
+function AskPortfolioWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -76,9 +87,6 @@ export function AskPortfolio() {
     },
     [busy, messages],
   );
-
-  // The full Chat view IS the concierge — don't also float the widget over it.
-  if (view === "chat") return null;
 
   return (
     <>

@@ -1,10 +1,18 @@
 "use client";
 
 import { useRef } from "react";
+import dynamic from "next/dynamic";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
 import { useChatA11y } from "@/components/chat/use-chat-a11y";
+
+// Lazy-loaded so the ~46KB react-markdown tree stays OUT of the initial route
+// bundle — the chat is interaction-gated, so it only loads when a view/widget opens.
+const MarkdownMessage = dynamic(
+  () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Renders the conversation. Assistant text is rendered as React TEXT NODES (never
@@ -62,9 +70,9 @@ export function ChatMessages({
                   seg.text.trim() ? (
                     <div
                       key={j}
-                      className="max-w-[88%] whitespace-pre-wrap rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm leading-relaxed text-fg"
+                      className="max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm leading-relaxed text-fg"
                     >
-                      {seg.text}
+                      <MarkdownMessage text={seg.text} />
                     </div>
                   ) : null
                 ) : (

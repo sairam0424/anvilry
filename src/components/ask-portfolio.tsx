@@ -1,9 +1,18 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useView } from "@/components/view-context";
+import { parseCards } from "@/components/chat/parse-cards";
+import { ChatCard } from "@/components/chat/chat-card";
+
+// Lazy markdown renderer — same safe config as the full chat view, kept off the
+// initial bundle (the widget is interaction-gated).
+const MarkdownMessage = dynamic(
+  () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
+  { ssr: false, loading: () => null },
+);
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -139,20 +148,48 @@ function AskPortfolioWidget() {
                 </div>
               </div>
             )}
-            {messages.map((m, i) => (
-              <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                <div
-                  className={cn(
-                    "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm",
-                    m.role === "user"
-                      ? "bg-accent text-bg-base"
-                      : "border border-border bg-bg-elevated text-fg-muted",
+            {messages.map((m, i) => {
+              if (m.role === "user") {
+                return (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-accent px-3.5 py-2 text-sm text-bg-base">
+                      {m.content}
+                    </div>
+                  </div>
+                );
+              }
+              // Assistant: render markdown text segments + resolved cards (same safe
+              // model as the full chat view — tokens parsed out before markdown).
+              if (!m.content) {
+                return busy ? (
+                  <div key={i} className="flex justify-start">
+                    <div className="rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted">
+                      Thinking…
+                    </div>
+                  </div>
+                ) : null;
+              }
+              return (
+                <div key={i} className="flex flex-col items-start gap-2">
+                  {parseCards(m.content).map((seg, j) =>
+                    seg.type === "text" ? (
+                      seg.text.trim() ? (
+                        <div
+                          key={j}
+                          className="max-w-[85%] rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted"
+                        >
+                          <MarkdownMessage text={seg.text} />
+                        </div>
+                      ) : null
+                    ) : (
+                      <div key={j} className="w-full">
+                        <ChatCard segment={seg} />
+                      </div>
+                    ),
                   )}
-                >
-                  {m.content || (busy ? "Thinking…" : "")}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <form

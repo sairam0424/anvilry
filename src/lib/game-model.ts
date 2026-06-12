@@ -26,9 +26,12 @@ export type ContentKind = "work" | "project";
  * Keep this exhaustive: the build-time test fails if any graphNode id is missing.
  */
 export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> = {
-  // Flagship production work
+  // Flagship production work (Ascendion)
   pensieve: { kind: "work", slug: "pensieve" },
   aava: { kind: "work", slug: "aava-code" }, // node id != slug
+  "wireframe-generator": { kind: "work", slug: "wireframe-generator" },
+  "prompt-to-react": { kind: "work", slug: "prompt-to-react" },
+  "execution-engine": { kind: "work", slug: "execution-engine" },
   // Agent frameworks & infra (projects)
   mindforge: { kind: "project", slug: "mindforge" },
   "agent-forge": { kind: "project", slug: "agent-forge" },

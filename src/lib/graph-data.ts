@@ -1,6 +1,6 @@
 /**
  * Knowledge-graph data for the hero WebGL scene.
- * Nodes = the 2 flagship work systems + 8 OSS repos; edges = real lineage
+ * Nodes = the 5 flagship work systems + 8 OSS repos; edges = real lineage
  * (shared themes / build-on relationships from the workspace CLAUDE.md).
  * Positions are deterministic (no Math.random) so SSR/build stays stable.
  */
@@ -15,9 +15,12 @@ export type GraphNode = {
 export type GraphEdge = [string, string];
 
 export const graphNodes: GraphNode[] = [
-  // Flagship work (center mass)
+  // Flagship work (center mass) — Ascendion systems
   { id: "pensieve", label: "Pensieve", kind: "work", pos: [0, 0.4, 0] },
   { id: "aava", label: "AAVA Code", kind: "work", pos: [1.3, -0.2, 0.4] },
+  { id: "wireframe-generator", label: "Wireframe Gen", kind: "work", pos: [0.6, -0.9, 0.5] },
+  { id: "prompt-to-react", label: "Prompt→React", kind: "work", pos: [-0.5, 0.6, 0.7] },
+  { id: "execution-engine", label: "Execution Engine", kind: "work", pos: [0.4, 1.1, -0.4] },
   // Agent frameworks & infra
   { id: "mindforge", label: "MindForge", kind: "agent", pos: [-1.6, 0.9, -0.3] },
   { id: "agent-forge", label: "Agent-Forge", kind: "agent", pos: [-2.1, -0.3, 0.5] },
@@ -44,6 +47,12 @@ export const graphEdges: GraphEdge[] = [
   ["pensieve", "graph-forge"],
   ["aava", "agent-forge"],
   ["aava", "ag-bash"],
+  // Experience Studio GenAI pipeline lineage (wireframe -> prompt-to-react),
+  // and the prompt-driven execution engine ties into the agent-orchestration cluster
+  ["wireframe-generator", "prompt-to-react"],
+  ["prompt-to-react", "aava"],
+  ["execution-engine", "pensieve"],
+  ["execution-engine", "mindforge"],
   // lab federates tooling
   ["nhl", "commandvault"],
   ["nhl", "contextos"],

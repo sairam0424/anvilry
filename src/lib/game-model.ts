@@ -1,5 +1,5 @@
 import { allProjects, allWork, getProject, getWork, type Project, type Work } from "@/lib/content";
-import { graphNodes, type GraphNode } from "@/lib/graph-data";
+import { graphNodes, graphEdges, type GraphNode } from "@/lib/graph-data";
 
 /**
  * Derivation layer that lets the GAMIFIED view render from the SAME canonical
@@ -99,6 +99,18 @@ export const questNodes: QuestNode[] = graphNodes.flatMap((n) => {
       href: hrefFor(resolved),
     },
   ];
+});
+
+/**
+ * Graph edges with their endpoint node positions resolved — so the interactive 3D
+ * scene can draw lines without re-deriving the node index. Only edges whose BOTH
+ * endpoints are shipped quest nodes are kept.
+ */
+const nodePos = new Map(questNodes.map((n) => [n.id, n.pos]));
+export const graphEdgesResolved: { pos: GraphNode["pos"] }[][] = graphEdges.flatMap(([a, b]) => {
+  const pa = nodePos.get(a);
+  const pb = nodePos.get(b);
+  return pa && pb ? [[{ pos: pa }, { pos: pb }]] : [];
 });
 
 /** A single honest fact shown on a dossier card — every value traces to content/profile. */

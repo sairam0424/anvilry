@@ -15,3 +15,33 @@ export function useMediaQuery(query: string): boolean {
     () => false,
   );
 }
+
+let webglSupport: boolean | null = null;
+
+/**
+ * Whether the browser can actually create a WebGL context. R3F surfaces a failed
+ * context as an async unhandledRejection that React error boundaries CANNOT catch,
+ * so we probe proactively (once, memoized) and skip mounting the Canvas entirely
+ * when unsupported — GPU-blocklisted, headless software-GL refused, or WebGL off.
+ * The probe canvas is created + discarded; the result is cached for the session.
+ */
+export function useWebGLSupported(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (webglSupport !== null) return webglSupport;
+      try {
+        const canvas = document.createElement("canvas");
+        const gl =
+          canvas.getContext("webgl2") ||
+          canvas.getContext("webgl") ||
+          canvas.getContext("experimental-webgl");
+        webglSupport = gl != null;
+      } catch {
+        webglSupport = false;
+      }
+      return webglSupport;
+    },
+    () => false, // server: never attempt WebGL during SSR
+  );
+}

@@ -3,12 +3,16 @@
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "motion/react";
 import { useMediaQuery } from "@/lib/use-media-query";
+import { useView } from "@/components/view-context";
 
 // Client-only, lazily loaded — Three.js never enters the critical path / SSR.
 const HeroGraphScene = dynamic(() => import("./scene"), { ssr: false });
 
 /**
  * Hero WebGL slot. Mounts the R3F graph ONLY when:
+ *  - the Classic view is active (so the hidden Classic page doesn't keep a live
+ *    WebGL context while the gamified view uses one — avoids a leaked/second
+ *    context on low-end mobile, and frees the single context in software-GL envs), AND
  *  - not reduced-motion (verified useReducedMotion gate), AND
  *  - viewport is desktop-width (research: drop the WebGL layer on mobile).
  * Otherwise renders a lightweight CSS fallback. Absolutely positioned behind the
@@ -17,8 +21,9 @@ const HeroGraphScene = dynamic(() => import("./scene"), { ssr: false });
 export function HeroGraph() {
   const reduced = useReducedMotion();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { view } = useView();
 
-  const showWebGL = isDesktop && !reduced;
+  const showWebGL = isDesktop && !reduced && view === "classic";
 
   return (
     <div

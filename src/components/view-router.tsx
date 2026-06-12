@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
+import { motion } from "motion/react";
 import { useView } from "@/components/view-context";
 
 /**
@@ -34,11 +35,20 @@ export function ViewRouter({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* Chat — lazy, unmounts on exit. */}
-      {view === "chat" && <ChatView />}
+      {/* Chat — lazy, unmounts on exit. Subtle fade-in (MotionConfig disables it
+          under prefers-reduced-motion). */}
+      {view === "chat" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+          <ChatView />
+        </motion.div>
+      )}
 
       {/* Gamified — lazy, unmounts on exit so the WebGL context disposes. */}
-      {view === "gamified" && <GameView />}
+      {view === "gamified" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+          <GameView />
+        </motion.div>
+      )}
     </>
   );
 }

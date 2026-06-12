@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { CommandPalette } from "@/components/command-palette";
 import { AskPortfolio } from "@/components/ask-portfolio";
+import { ViewHint } from "@/components/view-hint";
 import { PersonJsonLd } from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteFooter />
           <CommandPalette />
           <AskPortfolio />
+          <ViewHint />
         </Providers>
         <Analytics />
         <SpeedInsights />

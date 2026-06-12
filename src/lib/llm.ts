@@ -149,7 +149,6 @@ export function streamWithFallback(
   params: Omit<Anthropic.MessageStreamParams, "model">,
   opts?: { onError?: (err: unknown, model: string) => void },
 ): ReadableStream<Uint8Array> {
-  const client = makeClient();
   const chain = modelChain();
   const encoder = new TextEncoder();
   // Derive the contact from the single source so the failure path can't go stale.
@@ -165,6 +164,19 @@ export function streamWithFallback(
           controller.close();
         }
       };
+
+      // Build the client INSIDE start() so a constructor failure (bad cred shape,
+      // SDK init error) becomes a graceful apology stream — not an uncaught 500 at
+      // the route. (makeClient ran synchronously outside the stream before.)
+      let client: Anthropic;
+      try {
+        client = makeClient();
+      } catch (err) {
+        opts?.onError?.(err, "client-init");
+        controller.enqueue(encoder.encode(apologyTail.replace(/^\n\n/, "")));
+        close();
+        return;
+      }
 
       for (let i = 0; i < chain.length; i++) {
         const model = chain[i];

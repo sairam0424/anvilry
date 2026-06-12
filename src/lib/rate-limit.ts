@@ -38,13 +38,23 @@ function clientIp(req: Request): string {
 /**
  * Returns { ok: true } when the request is within budget (or when no limiter is
  * configured), or { ok: false, retryAfter } when the per-IP budget is exhausted.
+ *
+ * FAILS OPEN on ANY error — if Upstash is unreachable / times out / 5xxs mid-request,
+ * we let the request through rather than 500 the chat. A rate limiter must never be
+ * a single point of failure for the feature it protects: a cost guard going down
+ * should degrade to "no limit", not "no chat".
  */
 export async function checkRateLimit(
   req: Request,
 ): Promise<{ ok: true } | { ok: false; retryAfter: number }> {
-  if (!limiter) return { ok: true }; // fail open
-  const { success, reset } = await limiter.limit(clientIp(req));
-  if (success) return { ok: true };
-  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-  return { ok: false, retryAfter };
+  if (!limiter) return { ok: true }; // not configured -> fail open
+  try {
+    const { success, reset } = await limiter.limit(clientIp(req));
+    if (success) return { ok: true };
+    const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    return { ok: false, retryAfter };
+  } catch (err) {
+    console.warn(`[rate-limit] check failed, failing open: ${(err as Error)?.name ?? "error"}`);
+    return { ok: true };
+  }
 }

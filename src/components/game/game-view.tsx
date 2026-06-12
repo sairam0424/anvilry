@@ -4,6 +4,7 @@ import { Gamepad2 } from "lucide-react";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { GraphIndex } from "@/components/game/graph-index";
 import { BuildGraph } from "@/components/game/build-graph";
+import { EasterEggs } from "@/components/game/easter-eggs";
 
 /**
  * GAMIFIED view — "The Build Graph". The accessible DOM-first index is the DEFAULT
@@ -37,6 +38,9 @@ export function GameView() {
 
       {/* Accessible default + the mobile / reduced-motion / SR / keyboard layer. */}
       <GraphIndex />
+
+      {/* Zero-cost delight — console greeting + Konami toast. Gates no content. */}
+      <EasterEggs />
     </main>
   );
 }

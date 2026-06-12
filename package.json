@@ -5,9 +5,11 @@
   "scripts": {
     "predev": "velite",
     "dev": "next dev",
-    "build": "velite --clean && next build",
+    "build": "velite --clean && vitest run && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "content": "velite --clean",
     "clean": "rm -rf .next .turbo node_modules/.cache .velite"
   },
@@ -39,6 +41,12 @@
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "velite": "^0.3.1"
+    "velite": "^0.3.1",
+    "vitest": "^4.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

@@ -104,7 +104,7 @@ export function MobileNav({ links }: { links: NavLink[] }) {
                 rel="noopener noreferrer"
                 aria-label="GitHub"
                 onClick={() => setOpen(false)}
-                className="text-fg-muted transition-colors hover:text-accent"
+                className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <Github size={20} />
               </a>
@@ -114,7 +114,7 @@ export function MobileNav({ links }: { links: NavLink[] }) {
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
                 onClick={() => setOpen(false)}
-                className="text-fg-muted transition-colors hover:text-accent"
+                className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <Linkedin size={20} />
               </a>

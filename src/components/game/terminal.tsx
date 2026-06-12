@@ -150,6 +150,7 @@ export function Terminal() {
             placeholder="type a command — e.g. ls, open mindforge, whoami"
             aria-label="Terminal command input"
             spellCheck={false}
+            autoComplete="off"
             autoCapitalize="off"
             autoCorrect="off"
             className="flex-1 rounded bg-transparent px-1 py-1 text-fg outline-none placeholder:text-fg-subtle focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"

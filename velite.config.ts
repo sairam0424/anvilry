@@ -56,7 +56,11 @@ export default defineConfig({
     assets: "public/static",
     base: "/static/",
     name: "[name]-[hash:6].[ext]",
-    clean: true,
+    // Default to NOT cleaning: the `predev` hook + dev watcher regenerate in place,
+    // so .velite/*.json is never momentarily deleted mid-session (which raced
+    // webpack -> "Can't resolve './projects.json'"). The `build`/`content` scripts
+    // pass --clean explicitly for a pristine production build.
+    clean: false,
   },
   collections: { projects, work },
   mdx: { gfm: true },

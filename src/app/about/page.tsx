@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   // Derive the headline numbers from the single source so the prose can't drift.
-  const [pensieve, aava, throughput] = impactMetrics;
+  const [pensieve, aava] = impactMetrics;
   return (
     <main className="flex-1">
       <Section label="// whoami" title={`I'm ${profile.name}.`}>
@@ -27,8 +27,8 @@ export default function AboutPage() {
               I co-built and production-hardened <span className="text-fg">Pensieve</span>, a multi-agent
               orchestration engine serving {pensieve.value} users daily, and architected the backend for{" "}
               <span className="text-fg">AAVA Code</span>, an AI coding plugin for VS Code adopted by {aava.value} users
-              daily across 5+ client environments. On the backend I&apos;ve owned systems end-to-end — scaling
-              throughput {throughput.value} {throughput.sub} via a decoupled Redis Streams + SSE pub/sub architecture.
+              daily across 5+ client environments. On the backend I&apos;ve owned systems end-to-end — building
+              decoupled, event-driven services with a Redis Streams + SSE pub/sub architecture.
             </p>
             <p>
               Beyond work, I build open-source AI infrastructure in the open — agent frameworks, code-intelligence

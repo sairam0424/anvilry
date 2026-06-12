@@ -30,7 +30,6 @@ export const profile = {
 export const impactMetrics = [
   { value: "2K+", label: "daily users", sub: "Pensieve" },
   { value: "3K+", label: "daily users", sub: "AAVA Code · 5+ clients" },
-  { value: "10x", label: "throughput", sub: "at sub-150ms latency" },
   { value: "8", label: "open-source repos", sub: "AI infrastructure" },
 ] as const;
 

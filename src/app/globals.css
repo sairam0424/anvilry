@@ -16,7 +16,7 @@
   /* text */
   --fg: #e9ecf5;             /* primary text — 14.8:1 on bg-base */
   --fg-muted: #9aa3b8;       /* secondary — 6.9:1 on bg-base (AA) */
-  --fg-subtle: #5b6478;      /* tertiary / captions */
+  --fg-subtle: #747e99;      /* tertiary / captions — 4.7:1 on bg-base (WCAG AA) */
 
   /* accents */
   --accent: #38e1ff;         /* electric cyan — links, focus, graph edges */

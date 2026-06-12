@@ -35,8 +35,12 @@ function AskPortfolioWidget() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
+  // Pin-aware autoscroll: only follow new content when already near the bottom, so
+  // a user who scrolled up to re-read isn't yanked down (mirrors use-chat-a11y.ts).
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) el.scrollTop = el.scrollHeight;
   }, [messages, busy]);
 
   // Restore focus to the trigger when the panel closes (WCAG 2.4.3 focus order).
@@ -107,7 +111,11 @@ function AskPortfolioWidget() {
               <Sparkles size={15} className="text-accent" />
               <span className="text-sm font-medium">Ask my portfolio</span>
             </div>
-            <button onClick={() => setOpen(false)} aria-label="Close" className="text-fg-muted hover:text-fg">
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+              className="rounded text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
               <X size={16} />
             </button>
           </header>
@@ -160,13 +168,13 @@ function AskPortfolioWidget() {
               placeholder="Ask a question…"
               aria-label="Ask a question about Sairam"
               disabled={busy}
-              className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-muted focus:border-accent disabled:opacity-60"
+              className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface disabled:opacity-60"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
               aria-label="Send"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-bg-base transition-opacity disabled:opacity-40"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-bg-base transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface"
             >
               <Send size={15} />
             </button>

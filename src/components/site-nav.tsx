@@ -47,7 +47,7 @@ export function SiteNav() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
-            className="text-fg-muted transition-colors hover:text-accent"
+            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <Github size={18} />
           </a>
@@ -56,11 +56,11 @@ export function SiteNav() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="LinkedIn"
-            className="text-fg-muted transition-colors hover:text-accent"
+            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <Linkedin size={18} />
           </a>
-          <Link href="/resume" aria-label="Résumé" className="text-fg-muted transition-colors hover:text-accent">
+          <Link href="/resume" aria-label="Résumé" className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             <FileText size={18} />
           </Link>
         </div>

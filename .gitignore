@@ -44,3 +44,6 @@ next-env.d.ts
 # velite generated content
 .velite
 .gstack/
+
+# Private working notes (daily logs, scratch) — never commit
+scratch-pad/

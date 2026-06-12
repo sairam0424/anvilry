@@ -47,6 +47,41 @@ change only, no code change.
 
 ---
 
+## 2b. Chat rate limiting (Upstash Redis) — recommended for production
+
+`POST /api/chat` invokes Bedrock on every message, so each request costs real money. A per-IP
+rate limiter (`src/lib/rate-limit.ts`) caps abuse at **8 requests / minute / IP** using an
+Upstash Redis sliding window — distributed, so it holds across Vercel instances and regions.
+
+> **Fails open by design.** If the two `UPSTASH_*` vars below are absent, the limiter is a
+> no-op and the chatbot still works (fine for local dev). It activates automatically once the
+> vars are set — no code change to turn it on.
+
+**Setup:**
+1. Create a free database at [console.upstash.com](https://console.upstash.com/) → **Redis**:
+   - Name e.g. `anvilry-chat-ratelimit`; **Regional** (not Global — a limiter doesn't need it);
+     pick the region nearest your Vercel deploy (e.g. **`us-east-1` / N. Virginia** to match Bedrock).
+   - **Free** tier is plenty (~2 Redis commands per chat message).
+2. On the database page, open the **REST API** section (the `UPSTASH_REDIS_REST_*` values — **not**
+   the `redis://…` connection string). There's usually a `.env` tab to copy both at once.
+3. Add both to **Project → Settings → Environment Variables** (Production, + Preview if desired):
+
+| Variable | Value | Notes |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | `https://<db>.upstash.io` | The **REST** URL (not `redis://…`). |
+| `UPSTASH_REDIS_REST_TOKEN` | *(long REST token)* | Read+write; keep secret. |
+
+> Window/limit is `Ratelimit.slidingWindow(8, "60 s")` with prefix `anvilry:chat` in
+> `src/lib/rate-limit.ts` — change there if you want a different budget. On limit, the route
+> returns `429 {"error":"Too many requests — please slow down a moment."}` with a `Retry-After`
+> header; the chat UI shows *"That's a lot of questions! Give it a moment and try again."*
+>
+> **Verified end-to-end** against a live Upstash DB: a clean burst returns ~8×200 then `429`
+> with `Retry-After`, state persists across server restarts (distributed, not in-memory), the
+> window recovers after 60s, and a legitimate first request always succeeds (fail-safe).
+
+---
+
 ## 3. Verified model chain (tested live against this AWS account, us-east-1)
 
 The chatbot tries these in order, falling through **only** on availability errors
@@ -101,6 +136,11 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
      stream a grounded answer. (Verified locally end-to-end: Opus 4.6 answered in ~8s; the
      Opus→Sonnet fallback also fires cleanly when the primary is unavailable.)
    - `sairam.dev/sitemap.xml`, `/robots.txt`, and the OG image (`/opengraph-image`) resolve.
+   - **Three views:** the Classic · Play · Chat switcher works; `/?view=gamified` and
+     `/?view=chat` still serve the full Classic HTML to crawlers (view swaps client-side), and
+     `rel=canonical` on every page points to the query-less URL.
+   - **Rate limit (if Upstash is set):** fire ~10 quick chat messages → the later ones should
+     return `429` with the friendly "give it a moment" message, then recover after ~60s.
 3. Watch **Functions → /api/chat** logs in Vercel for the `[chat] model … failed` line if a
    fallback ever fires.
 
@@ -115,6 +155,10 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
   misconfigured — but check logs).
 - **Secrets:** `.env.local` is git-ignored and is **local-dev only**. Production reads from
   Vercel env vars. Never commit real credentials.
+- **Rate limiter is optional but cost-protective:** without the `UPSTASH_*` vars it fails open
+  (chat works, no limit). With them, it guards Bedrock spend from bots. The Upstash free tier is
+  ample; if you ever hit its daily command cap the limiter just stops limiting (fails open) — it
+  never blocks legitimate chat.
 - **Prompt caching:** the system prompt (the corpus in `src/lib/corpus.ts`) is cached per model;
   keep it byte-stable to preserve cache hits. A fallback to a different model re-pays the corpus
   input (acceptable for a rare event).

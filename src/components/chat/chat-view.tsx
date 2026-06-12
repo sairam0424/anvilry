@@ -56,7 +56,7 @@ export function ChatView() {
             Grounded in real projects and production systems — GenAI, backend, and open source.
             I answer in the first person and never invent details.
           </p>
-          <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {impactMetrics.map((m) => (
               <div key={m.label + m.sub} className="rounded-xl border border-border bg-bg-surface/60 px-3 py-2.5">
                 {/* dt = term (the metric), dd = description (its value+context) */}

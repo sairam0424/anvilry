@@ -55,9 +55,11 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Impact strip — headline metrics above the fold (all real, work-context). */}
+        {/* Impact strip — headline metrics above the fold (all real, work-context).
+            sm:grid-cols-3 matches the 3 metrics so the grid never leaves an empty
+            trailing cell (was sm:grid-cols-4 → a blank 4th box after the 10x removal). */}
         <dl
-          className="hero-rise mt-14 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4"
+          className="hero-rise mt-14 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3"
           style={{ animationDelay: "0.2s" }}
         >
           {impactMetrics.map((m) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { LayoutGrid, Gamepad2, MessagesSquare } from "lucide-react";
+import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare } from "lucide-react";
 import { useView, type View } from "@/components/view-context";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGr
   { view: "classic", label: "Classic", short: "Classic", icon: LayoutGrid },
   { view: "gamified", label: "Play", short: "Play", icon: Gamepad2 },
   { view: "chat", label: "Chat", short: "Chat", icon: MessagesSquare },
+  { view: "developer", label: "Dev", short: "Dev", icon: TerminalSquare },
 ];
 
 export function ViewSwitcher({ compact = false }: { compact?: boolean }) {

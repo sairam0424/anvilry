@@ -35,7 +35,12 @@ export function ChatView() {
   };
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
+    // Fixed height (not min-h): the console must be a BOUNDED flex container so the
+    // transcript scrolls INTERNALLY. With only min-height the element is content-sized
+    // and unbounded, so a tall conversation grows the document and the inner
+    // overflow-y-auto never engages (the autoscroll snap then no-ops). `dvh` (not vh)
+    // keeps the composer clear of iOS Safari's address bar.
+    <main className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
       <div className="flex items-center justify-between gap-3">
         <ViewEscapeHatch />
         <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
@@ -45,7 +50,9 @@ export function ChatView() {
 
       {/* Bordered "console" panel — frames the whole conversation so it reads as a
           contained concierge terminal, not scattered elements in an empty void. */}
-      <section className="mt-4 flex flex-1 flex-col rounded-2xl border border-border-strong bg-bg-surface/40 p-5 shadow-xl shadow-black/20 backdrop-blur sm:p-6">
+      {/* min-h-0 lets this flex child shrink below its content so the transcript
+          (the flex-1 child below) can own the overflow instead of pushing the page. */}
+      <section className="mt-4 flex min-h-0 flex-1 flex-col rounded-2xl border border-border-strong bg-bg-surface/40 p-5 shadow-xl shadow-black/20 backdrop-blur sm:p-6">
       {/* Answer-first greeting + verified impact strip (recruiter visual triage). */}
       {empty && (
         <header>

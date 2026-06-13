@@ -13,10 +13,10 @@ import { useView } from "@/components/view-context";
  * recruiter-in-a-hurry default. We toggle its visibility with `hidden` rather
  * than unmounting, so switching back is instant and its scroll position survives.
  *
- * GAMIFIED and CHAT are client-only, lazily imported on first activation, and
- * UNMOUNTED when not active. Unmounting (not hiding) the gamified view is what
- * lets its R3F canvas dispose the WebGL GL context — a hidden-but-live context
- * leaks GPU memory on low-end mobile.
+ * GAMIFIED, CHAT, and DEVELOPER are client-only, lazily imported on first
+ * activation, and UNMOUNTED when not active. Unmounting (not hiding) the gamified
+ * view is what lets its R3F canvas dispose the WebGL GL context — a hidden-but-live
+ * context leaks GPU memory on low-end mobile.
  */
 const ChatView = dynamic(() => import("@/components/chat/chat-view").then((m) => m.ChatView), {
   ssr: false,
@@ -24,6 +24,10 @@ const ChatView = dynamic(() => import("@/components/chat/chat-view").then((m) =>
 const GameView = dynamic(() => import("@/components/game/game-view").then((m) => m.GameView), {
   ssr: false,
 });
+const DeveloperView = dynamic(
+  () => import("@/components/game/developer-view").then((m) => m.DeveloperView),
+  { ssr: false },
+);
 
 export function ViewRouter({ children }: { children: ReactNode }) {
   const { view } = useView();
@@ -47,6 +51,13 @@ export function ViewRouter({ children }: { children: ReactNode }) {
       {view === "gamified" && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
           <GameView />
+        </motion.div>
+      )}
+
+      {/* Developer — lazy, unmounts on exit. The focused full-page terminal. */}
+      {view === "developer" && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
+          <DeveloperView />
         </motion.div>
       )}
     </>

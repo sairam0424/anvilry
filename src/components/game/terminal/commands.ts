@@ -136,6 +136,12 @@ const classic: Command = {
   run: () => ({ lines: out("switching to classic view …"), nav: { type: "view", view: "classic" } }),
 };
 
+const developer: Command = {
+  name: "developer",
+  description: "open the full-page developer terminal",
+  run: () => ({ lines: out("opening developer mode …"), nav: { type: "view", view: "developer" } }),
+};
+
 const clear: Command = {
   name: "clear",
   description: "clear the screen",
@@ -207,7 +213,7 @@ const theme: Command = {
 
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
-  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, theme, classic, clear, sudo,
+  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, theme, classic, developer, clear, sudo,
 };
 
 export function runCommand(raw: string): CommandResult {
@@ -225,3 +231,14 @@ export function runCommand(raw: string): CommandResult {
 
 /** Command names for autocomplete. */
 export const COMMAND_NAMES = Object.keys(COMMANDS);
+
+/**
+ * The canonical command word for an analytics event — PII-safe by construction. Returns
+ * the registered command name (e.g. "grep", "open") or "unknown" for an unrecognized
+ * first token; NEVER the raw input or its arguments, so free-text args (a searched term,
+ * a typo) can't leak into analytics. Pure + unit-tested.
+ */
+export function commandEventName(raw: string): string {
+  const first = raw.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  return first in COMMANDS ? first : "unknown";
+}

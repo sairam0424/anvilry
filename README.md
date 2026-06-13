@@ -2,11 +2,12 @@
 
 > **Sairam Ugge** — GenAI & Backend Engineer. Live at **[anvilry.vercel.app](https://anvilry.vercel.app)**.
 
-A recruiter-facing engineering portfolio built as a **beast with three switchable experiences over one canonical content source** — pick the way you want to explore the same verified work:
+A recruiter-facing engineering portfolio built as a **beast with four switchable experiences over one canonical content source** — pick the way you want to explore the same verified work:
 
 - **🗂 Classic** — a fast, static (SSG) portfolio. The SEO-indexed default and the recruiter-in-a-hurry path.
-- **🎮 Play** — an explorable **WebGL "Build Graph" + terminal**: every node is a real project/work system that opens its actual card. Accessible DOM-first index as the mobile / reduced-motion / no-JS fallback.
+- **🎮 Play** — an explorable **WebGL "Build Graph"**: every node is a real project/work system that opens its actual card. Accessible DOM-first index as the mobile / reduced-motion / no-JS fallback.
 - **💬 Chat** — an **AI concierge console**: a RAG-grounded, first-person chatbot over the real résumé, with streaming markdown answers and generative project/work cards.
+- **⌨️ Developer** — a focused, full-page **keyboard-native terminal** over the same content: ~16 commands (`whoami`, `ls work`, `cat <slug>`, `grep`, `open <slug>`, `tree`, …) with history, autocomplete, a boot banner, theme cycling, and a fullscreen overlay. Reachable from the nav switcher, ⌘K, the `developer` command, or `?view=developer`.
 
 All three render from **one content layer** — zero duplication, zero fabrication. The honest contribution register (*Co-built / architected / Owned / Led*) is preserved everywhere, and every metric traces to a source file.
 
@@ -14,7 +15,7 @@ All three render from **one content layer** — zero duplication, zero fabricati
 
 ## ✨ Highlights
 
-- **3-view architecture** — a single client `ViewProvider` switches Classic / Play / Chat without a navigation, so the WebGL context and chat transcript survive a switch. `/` stays SSG; `?view=` deep-links collapse to one canonical URL (no duplicate-content SEO hit).
+- **4-view architecture** — a single client `ViewProvider` switches Classic / Play / Chat / Developer without a navigation, so the WebGL context and chat transcript survive a switch. `/` stays SSG; `?view=` deep-links collapse to one canonical URL (no duplicate-content SEO hit).
 - **AI concierge (AWS Bedrock)** — Claude **Opus 4.6 → Sonnet 4.6 → Haiku 4.5** availability fallback with a streaming byte-gate invariant, in-context RAG grounding, prompt-injection guardrails, and per-IP rate limiting (Upstash, fails open).
 - **Generative chat cards** — the model emits only a `[[card:work:slug]]` intent token; the client resolves it against a build-time slug allowlist and renders the *real* Velite card. Zero fabrication is structural, not prompt-based.
 - **Safe streaming markdown** — `react-markdown` + `rehype-sanitize` + `skipHtml` (no raw model HTML, `javascript:` links stripped), with a preprocessor that gracefully renders partial markdown mid-stream.

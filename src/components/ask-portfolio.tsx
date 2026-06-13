@@ -6,6 +6,8 @@ import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { useView } from "@/components/view-context";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
+import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
+import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 
 // Lazy markdown renderer — same safe config as the full chat view, kept off the
 // initial bundle (the widget is interaction-gated).
@@ -40,17 +42,18 @@ function AskPortfolioWidget() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
-  // Pin-aware autoscroll: only follow new content when already near the bottom, so
-  // a user who scrolled up to re-read isn't yanked down (mirrors use-chat-a11y.ts).
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) el.scrollTop = el.scrollHeight;
-  }, [messages, busy]);
+  // Autoscroll via the shared engine (intent flag + ResizeObserver). enabled:open so
+  // it attaches nothing while the panel is closed. bottom-pin only (the widget is
+  // small; message-top framing is a full-view concern).
+  const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useAutoScroll({
+    threshold: 120,
+    enabled: open,
+    surface: "widget",
+    mode: "bottom-pin",
+  });
 
   // Restore focus to the trigger when the panel closes (WCAG 2.4.3 focus order).
   useEffect(() => {
@@ -129,7 +132,16 @@ function AskPortfolioWidget() {
             </button>
           </header>
 
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+          {/* relative wrapper anchors the floating JumpToLatest over the transcript. */}
+          <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 outline-none [overflow-anchor:none]"
+            tabIndex={-1}
+          >
+            {/* contentRef wrapper: the ResizeObserver target that grows as messages and
+                the late dynamic-markdown mount, so the follow snap fires post-layout. */}
+            <div ref={contentRef} className="space-y-3">
             {messages.length === 0 && (
               <div className="space-y-3">
                 <p className="text-sm text-fg-muted">
@@ -190,6 +202,12 @@ function AskPortfolioWidget() {
                 </div>
               );
             })}
+            </div>
+          </div>
+            <JumpToLatest
+              show={!isAtBottom && messages.length > 0}
+              onClick={scrollToBottom}
+            />
           </div>
 
           <form

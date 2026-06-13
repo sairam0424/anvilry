@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { COMMANDS, runCommand, COMMAND_NAMES } from "./commands";
+import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
 import { skills, achievements, impactMetrics } from "@/lib/profile";
 
@@ -125,5 +125,20 @@ describe("terminal command registry", () => {
     // ...and the derived repo count must equal the real project total (anti-drift).
     const repoMetric = impactMetrics.find((m) => m.label === "open-source repos");
     expect(repoMetric?.value).toBe(`${allProjects.length}`);
+  });
+
+  it("commandEventName is PII-safe: returns the command WORD only, never args", () => {
+    // Known commands map to their canonical name.
+    expect(commandEventName("whoami")).toBe("whoami");
+    expect(commandEventName("HELP")).toBe("help"); // case-insensitive
+    // Args are STRIPPED — a searched term / slug / email never reaches analytics.
+    expect(commandEventName("grep someone@example.com")).toBe("grep");
+    expect(commandEventName("open my-private-slug")).toBe("open");
+    expect(commandEventName("cat   pensieve")).toBe("cat"); // multi-space
+    // Unrecognized first token folds into a single bucket (no free-text leak).
+    expect(commandEventName("rm -rf /")).toBe("unknown");
+    expect(commandEventName("")).toBe("unknown");
+    // Every registered command round-trips to itself.
+    for (const name of COMMAND_NAMES) expect(commandEventName(name)).toBe(name);
   });
 });

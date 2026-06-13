@@ -231,3 +231,14 @@ export function runCommand(raw: string): CommandResult {
 
 /** Command names for autocomplete. */
 export const COMMAND_NAMES = Object.keys(COMMANDS);
+
+/**
+ * The canonical command word for an analytics event — PII-safe by construction. Returns
+ * the registered command name (e.g. "grep", "open") or "unknown" for an unrecognized
+ * first token; NEVER the raw input or its arguments, so free-text args (a searched term,
+ * a typo) can't leak into analytics. Pure + unit-tested.
+ */
+export function commandEventName(raw: string): string {
+  const first = raw.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  return first in COMMANDS ? first : "unknown";
+}

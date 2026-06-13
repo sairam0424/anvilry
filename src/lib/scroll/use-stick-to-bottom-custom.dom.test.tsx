@@ -188,6 +188,35 @@ describe("useStickToBottomCustom — state machine", () => {
     expect(result.current.isAtBottom).toBe(true);
   });
 
+  it("message-top mode parks the anchored message near the container top", async () => {
+    const { result } = renderHook(() =>
+      useStickToBottomCustom({ threshold: 120, mode: "message-top" }),
+    );
+    const scroller = makeScroller(2000, 300);
+    const content = document.createElement("div");
+    // Anchor (newest user message) sits 1500px down the content.
+    const anchor = document.createElement("div");
+    Object.defineProperty(anchor, "offsetTop", { get: () => 1500, configurable: true });
+    // el.contains(anchor) must be true for the message-top branch.
+    scroller.appendChild(anchor);
+
+    act(() => {
+      result.current.scrollRef(scroller);
+      result.current.contentRef(content);
+      result.current.anchorRef?.(anchor);
+    });
+
+    act(() => {
+      scroller.setGeometry(2000, 300);
+      roCallback?.([], {} as ResizeObserver);
+    });
+    await flushRAF();
+
+    // Parked at anchor.offsetTop - 12 (offset), not at the absolute bottom (1700).
+    expect(scroller.scrollTop).toBe(1488);
+    expect(result.current.isAtBottom).toBe(true);
+  });
+
   it("does nothing when disabled", async () => {
     const { result } = renderHook(() => useStickToBottomCustom({ enabled: false }));
     const scroller = makeScroller(1000, 300);

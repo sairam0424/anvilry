@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ScrollMetric, UseAutoScroll, UseAutoScrollOptions } from "./types";
+import type { ScrollMetric, ScrollMode, UseAutoScroll, UseAutoScrollOptions } from "./types";
 
 /**
  * In-repo "stick to bottom" engine for streaming chat + terminal output. Fixes the
@@ -19,11 +19,18 @@ import type { ScrollMetric, UseAutoScroll, UseAutoScrollOptions } from "./types"
  * observer's own write is never misread as a "user scrolled away" (the #1 hand-roll
  * regression). React 19 callback refs with cleanup; handlers read live config from
  * refs so the refs stay stable (no re-attach churn, StrictMode-safe).
+ *
+ * MODE: "bottom-pin" follows the bottom of the stream. "message-top" (ChatGPT/Claude
+ * style) instead brings the NEWEST user message to the top of the viewport — the same
+ * pin/guard machinery, only the snap TARGET differs. The chat marks its latest user
+ * bubble via anchorRef; the answer streams below it. The intent flag still means
+ * "keep following", so growth keeps the anchor parked at top until the user scrolls.
  */
 const PROGRAMMATIC_WINDOW_MS = 150;
+const MESSAGE_TOP_OFFSET_PX = 12; // small breathing room above the anchored message
 
 export function useStickToBottomCustom(opts: UseAutoScrollOptions = {}): UseAutoScroll {
-  const { threshold = 120, enabled = true, onMetric, surface } = opts;
+  const { threshold = 120, enabled = true, onMetric, surface, mode = "bottom-pin" } = opts;
 
   const [isAtBottom, setIsAtBottom] = useState(true);
 
@@ -33,29 +40,46 @@ export function useStickToBottomCustom(opts: UseAutoScrollOptions = {}): UseAuto
   const cfg = useRef<{
     threshold: number;
     enabled: boolean;
+    mode: ScrollMode;
     surface?: string;
     onMetric?: (m: ScrollMetric) => void;
-  }>({ threshold, enabled, surface, onMetric });
+  }>({ threshold, enabled, mode, surface, onMetric });
   useEffect(() => {
-    cfg.current = { threshold, enabled, surface, onMetric };
-  }, [threshold, enabled, surface, onMetric]);
+    cfg.current = { threshold, enabled, mode, surface, onMetric };
+  }, [threshold, enabled, mode, surface, onMetric]);
 
   const scrollElRef = useRef<HTMLElement | null>(null);
+  const anchorElRef = useRef<HTMLElement | null>(null); // newest user message (message-top)
   const pinnedRef = useRef(true); // follow INTENT — the load-bearing flag
   const programmaticScrollAtRef = useRef(0);
   const lastHeightRef = useRef(0);
 
-  /** Instant snap to the true bottom. Stamps the time so the scroll listener can tell
-   *  this apart from a user scroll. Marks us at-bottom directly (the resulting scroll
-   *  event is inside the guard window and won't update isAtBottom). */
-  const snapToBottom = useCallback(() => {
+  /** Instant snap. Stamps the time so the scroll listener can tell this apart from a
+   *  user scroll. In "message-top" mode, parks the anchored user message near the top
+   *  of the container; otherwise pins the bottom. Marks us at-bottom directly (the
+   *  resulting scroll event is inside the guard window and won't update isAtBottom). */
+  const snap = useCallback(() => {
     const el = scrollElRef.current;
     if (!el) return;
     const before = el.scrollTop;
     programmaticScrollAtRef.current =
       typeof performance !== "undefined" ? performance.now() : 0;
-    el.scrollTop = el.scrollHeight;
+
+    const anchor = anchorElRef.current;
+    if (cfg.current.mode === "message-top" && anchor && el.contains(anchor)) {
+      // Position the anchor's top near the container's top. offsetTop is relative to
+      // the offset parent; for a normally-positioned content wrapper inside the
+      // scroller this equals the anchor's distance from the scrollable top.
+      const target = anchor.offsetTop - MESSAGE_TOP_OFFSET_PX;
+      el.scrollTop = Math.min(Math.max(0, target), el.scrollHeight - el.clientHeight);
+    } else {
+      el.scrollTop = el.scrollHeight;
+    }
+    // snap only runs while following (scrollToBottom, or a pinned resize), so we're
+    // caught up — hide the jump button. (In message-top a long answer may extend below
+    // the fold, but we're still following it, which is what the button reflects.)
     setIsAtBottom(true);
+
     const { onMetric: metric, surface } = cfg.current;
     if (metric && before !== el.scrollTop) {
       metric({
@@ -71,8 +95,8 @@ export function useStickToBottomCustom(opts: UseAutoScrollOptions = {}): UseAuto
   /** Imperative re-pin (button / terminal keydown): restore intent, then snap. */
   const scrollToBottom = useCallback(() => {
     pinnedRef.current = true;
-    snapToBottom();
-  }, [snapToBottom]);
+    snap();
+  }, [snap]);
 
   /** USER scroll listener — the ONLY place intent changes. Position-based: after a
    *  user scroll, we're pinned iff they're within `threshold` of the bottom. */
@@ -98,8 +122,8 @@ export function useStickToBottomCustom(opts: UseAutoScrollOptions = {}): UseAuto
     if (!grew || !pinnedRef.current) return;
     // Defer the write past the observation frame: dodges the "ResizeObserver loop"
     // warning and reads true post-layout height after the late child painted.
-    requestAnimationFrame(snapToBottom);
-  }, [snapToBottom]);
+    requestAnimationFrame(snap);
+  }, [snap]);
 
   // --- Callback refs (stable: empty dep arrays; handlers read refs) ---
 
@@ -130,5 +154,10 @@ export function useStickToBottomCustom(opts: UseAutoScrollOptions = {}): UseAuto
     [handleResize],
   );
 
-  return { scrollRef, contentRef, isAtBottom, scrollToBottom };
+  // Plain setter ref — the latest user message (message-top mode); no listeners.
+  const anchorRef = useCallback((node: HTMLElement | null) => {
+    anchorElRef.current = node;
+  }, []);
+
+  return { scrollRef, contentRef, isAtBottom, scrollToBottom, anchorRef };
 }

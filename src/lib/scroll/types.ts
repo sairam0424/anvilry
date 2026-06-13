@@ -51,6 +51,13 @@ export type UseAutoScroll = {
   contentRef: (node: HTMLElement | null) => void;
   /** Geometric: are we pinned at (or within ~1px of) the bottom? Drives the jump button. */
   isAtBottom: boolean;
-  /** Imperative re-pin + snap to bottom. Used by the jump button and terminal keydown. */
+  /** Imperative re-pin + snap. Used by the jump button and terminal keydown. */
   scrollToBottom: () => void;
+  /**
+   * "message-top" mode only: callback ref the chat marks on its NEWEST user message,
+   * so the snap can bring that message to the top of the viewport (and stream the
+   * answer below it). No-op in bottom-pin mode and for engines/surfaces that don't
+   * support it (the library adapter, the widget, the terminal).
+   */
+  anchorRef?: (node: HTMLElement | null) => void;
 };

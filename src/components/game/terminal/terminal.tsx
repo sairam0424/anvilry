@@ -25,10 +25,19 @@ const THEME_TEXT: Record<string, string> = {
 
 export function Terminal({
   maxHeightClass = "max-h-72",
+  fill = false,
   onMaximize,
   maximizeRef,
 }: {
   maxHeightClass?: string;
+  /**
+   * Fill the parent's height instead of capping the scroll region. The outer card
+   * becomes `flex h-full flex-col` and the scrollback becomes `flex-1 min-h-0` (the
+   * min-h-0 is mandatory — without it the flex child refuses to shrink and the chips +
+   * input get pushed off-screen). Used by the full-page Developer view; the overlay and
+   * inline contexts keep the default capped (maxHeightClass) behavior.
+   */
+  fill?: boolean;
   /** When provided, a maximize control appears in the title bar (opens the overlay). */
   onMaximize?: () => void;
   /** Ref to the maximize button so the overlay can restore focus on close (WCAG 2.4.3). */
@@ -83,7 +92,14 @@ export function Terminal({
     // Plain <div>, not a labelled <section>: the parent (the game-view "developer
     // mode" section, or the overlay's Dialog) already provides the region/dialog
     // landmark + accessible name — a second named landmark here would duplicate it.
-    <div className="overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs">
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs",
+        // fill: become a full-height flex column so the scrollback can grow to fill the
+        // parent (the Developer view). Otherwise stay auto-height (overlay / inline).
+        fill && "flex h-full flex-col",
+      )}
+    >
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-fg-subtle">
         <TerminalSquare size={13} className="shrink-0 text-accent" />
         <span className="truncate">sairam@anvilry</span>
@@ -110,7 +126,9 @@ export function Terminal({
         ref={scrollRef}
         className={cn(
           "terminal-boot overflow-y-auto px-4 py-3 [overflow-anchor:none]",
-          maxHeightClass,
+          // fill: grow to take the leftover column height (min-h-0 lets it shrink so the
+          // chips + input row stay on-screen). Otherwise: the capped max-height.
+          fill ? "min-h-0 flex-1" : maxHeightClass,
         )}
         role="log"
         aria-live="polite"

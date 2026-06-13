@@ -43,4 +43,22 @@ describe("terminal command registry", () => {
   it("every help-listed command name resolves (no orphan in registry)", () => {
     for (const name of COMMAND_NAMES) expect(COMMANDS[name]).toBeTruthy();
   });
+
+  it("cat shows a real dossier with the honest register; rejects a fake slug", () => {
+    const text = runCommand("cat pensieve").lines.map((l) => l.text).join("\n");
+    expect(text).toContain("Pensieve");
+    expect(text).toMatch(/register:.*Co-built/);
+    expect(runCommand("cat nope").lines.some((l) => l.kind === "err")).toBe(true);
+  });
+
+  it("tree lists real system groups", () => {
+    const text = runCommand("tree").lines.map((l) => l.text).join("\n");
+    expect(text).toContain("Production Work");
+  });
+
+  it("grep returns only real corpus lines; empty term errors", () => {
+    expect(runCommand("grep").lines.some((l) => l.kind === "err")).toBe(true);
+    const hit = runCommand("grep ascendion").lines.map((l) => l.text).join("\n").toLowerCase();
+    expect(hit).toContain("ascendion");
+  });
 });

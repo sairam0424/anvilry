@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
-import { skills, achievements } from "@/lib/profile";
+import { skills, achievements, impactMetrics } from "@/lib/profile";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -65,10 +65,16 @@ describe("terminal command registry", () => {
     expect(text).toContain("Production Work");
   });
 
-  it("grep returns only real corpus lines; empty term errors", () => {
+  it("grep: empty term errors; a real hit leads with a count header; zero-match is a non-error", () => {
     expect(runCommand("grep").lines.some((l) => l.kind === "err")).toBe(true);
-    const hit = runCommand("grep ascendion").lines.map((l) => l.text).join("\n").toLowerCase();
-    expect(hit).toContain("ascendion");
+    const res = runCommand("grep ascendion");
+    const text = res.lines.map((l) => l.text).join("\n").toLowerCase();
+    expect(text).toContain("ascendion");
+    expect(res.lines[1]?.text).toMatch(/^\d+ match(es)? for "ascendion":/); // [0]=echo, [1]=header
+    // A valid term with no matches is informational (out), not an error.
+    const none = runCommand("grep zzzznotarealtermzzzz");
+    expect(none.lines.some((l) => l.kind === "err")).toBe(false);
+    expect(none.lines.map((l) => l.text).join("\n")).toContain("no matches");
   });
 
   it("stack lists real skill groups", () => {
@@ -92,5 +98,17 @@ describe("terminal command registry", () => {
     const neo = runCommand("neofetch").lines.map((l) => l.text).join("\n");
     expect(neo).toContain("Sairam");
     expect(runCommand("sudo rm -rf /").lines.some((l) => l.kind === "err")).toBe(true);
+  });
+
+  it("whoami banner is grounded: every impactMetric value/label appears, no extra metric is invented", () => {
+    const banner = runCommand("whoami").lines.map((l) => l.text).join("\n");
+    // Every real metric must be present...
+    for (const m of impactMetrics) {
+      expect(banner, `metric "${m.value} ${m.label}" must be in the banner`).toContain(m.value);
+      expect(banner).toContain(m.label);
+    }
+    // ...and the derived repo count must equal the real project total (anti-drift).
+    const repoMetric = impactMetrics.find((m) => m.label === "open-source repos");
+    expect(repoMetric?.value).toBe(`${allProjects.length}`);
   });
 });

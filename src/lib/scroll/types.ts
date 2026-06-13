@@ -34,6 +34,8 @@ export type UseAutoScrollOptions = {
   enabled?: boolean;
   /** Chat scroll UX. Ignored by the terminal (always bottom-pin). Default "bottom-pin". */
   mode?: ScrollMode;
+  /** Label for benchmark samples, e.g. "chat" | "widget" | "terminal". */
+  surface?: string;
   /** Dev-only benchmark sink. No-op (undefined) in production. */
   onMetric?: (m: ScrollMetric) => void;
 };

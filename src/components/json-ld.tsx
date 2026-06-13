@@ -11,7 +11,7 @@ export function PersonJsonLd() {
     name: profile.name,
     jobTitle: profile.role,
     email: `mailto:${profile.email}`,
-    url: "https://sairam.dev",
+    url: "https://anvilry.vercel.app",
     worksFor: { "@type": "Organization", name: profile.company },
     address: { "@type": "PostalAddress", addressLocality: profile.locationCity, addressCountry: profile.locationCountry },
     sameAs: [profile.links.github, profile.links.linkedin],

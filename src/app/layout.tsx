@@ -15,7 +15,7 @@ import { profile } from "@/lib/profile";
 const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
 
-const siteUrl = "https://sairam.dev";
+const siteUrl = "https://anvilry.vercel.app";
 
 // Dark browser chrome (address bar / status bar) to match the site.
 export const viewport: Viewport = {

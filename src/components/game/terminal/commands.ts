@@ -1,7 +1,7 @@
 import { allWork, allProjects, getWork, getProject } from "@/lib/content";
 import { questNodes, dossierFor, questGroups } from "@/lib/game-model";
 import { buildCorpus } from "@/lib/corpus";
-import { skills, achievements, resumeVariants } from "@/lib/profile";
+import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
 import { bootBanner } from "./boot-banner";
 import type { Command, CommandResult, Line } from "./types";
 
@@ -52,11 +52,15 @@ const ls: Command = {
 
 const open: Command = {
   name: "open",
-  description: "open a system's dossier page",
-  usage: "open <slug>",
+  description: "open a system's dossier (or github/linkedin/resume)",
+  usage: "open <slug|github|linkedin|resume>",
   run: (args) => {
     const slug = args[0];
-    if (!slug) return { lines: err("usage: open <slug>  (try 'ls')") };
+    if (!slug) return { lines: err("usage: open <slug>  (try 'ls', or 'open github')") };
+    // Quick targets for the common recruiter destinations.
+    if (slug === "github") return { lines: out(`opening ${profile.links.github} …`), nav: { type: "external", href: profile.links.github } };
+    if (slug === "linkedin") return { lines: out(`opening ${profile.links.linkedin} …`), nav: { type: "external", href: profile.links.linkedin } };
+    if (slug === "resume" || slug === "résumé") return { lines: out("opening /resume …"), nav: { type: "route", href: profile.links.resume } };
     const target = getWork(slug) ?? getProject(slug);
     if (!target) return { lines: err(`not found: ${slug}  (try 'ls')`) };
     return { lines: out(`opening ${target.name} …`), nav: { type: "route", href: target.url } };
@@ -190,6 +194,154 @@ const chat: Command = {
   run: () => ({ lines: out("opening the AI concierge …"), nav: { type: "view", view: "chat" } }),
 };
 
+const contact: Command = {
+  name: "contact",
+  description: "how to reach me",
+  run: () => ({
+    lines: out(
+      `${profile.name} — ${profile.role} @ ${profile.company}`,
+      `location: ${profile.location}`,
+      "",
+      `email:    ${profile.email}`,
+      `github:   ${profile.links.github}`,
+      `linkedin: ${profile.links.linkedin}`,
+      `résumé:   run 'resume' to download a variant`,
+    ),
+  }),
+};
+
+const email: Command = {
+  name: "email",
+  description: "open a mail draft",
+  // Print the address as selectable text FIRST (works even if the popup is blocked /
+  // for SR users), THEN attempt the mailto.
+  run: () => ({
+    lines: out(profile.email, "opening your mail client …"),
+    nav: { type: "external", href: `mailto:${profile.email}` },
+  }),
+};
+
+const social: Command = {
+  name: "social",
+  description: "my profiles",
+  run: () => ({
+    lines: out(`github:   ${profile.links.github}`, `linkedin: ${profile.links.linkedin}`),
+  }),
+};
+
+const summary: Command = {
+  name: "summary",
+  description: "everything in one hit (identity, work, projects, skills, awards)",
+  run: () => {
+    const lines: Line[] = [];
+    lines.push({ kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})` });
+    lines.push({ kind: "out", text: profile.headline });
+    lines.push({ kind: "out", text: "" }, { kind: "out", text: "PRODUCTION WORK" });
+    for (const w of allWork) lines.push({ kind: "out", text: `  ${w.name} — ${w.register} · ${w.role}` });
+    lines.push({ kind: "out", text: "" }, { kind: "out", text: "OPEN-SOURCE PROJECTS" });
+    for (const p of allProjects) lines.push({ kind: "out", text: `  ${p.name} — ${p.tagline}` });
+    lines.push({ kind: "out", text: "" }, { kind: "out", text: "SKILLS" });
+    for (const s of skills) lines.push({ kind: "out", text: `  ${s.group}: ${s.items.join(", ")}` });
+    lines.push({ kind: "out", text: "" }, { kind: "out", text: "RECOGNITION" });
+    for (const a of achievements) lines.push({ kind: "out", text: `  ${a.title} — ${a.detail}` });
+    lines.push({ kind: "out", text: "" }, { kind: "out", text: "→ run 'resume' to download · 'contact' to reach me" });
+    return { lines };
+  },
+};
+
+const career: Command = {
+  name: "career",
+  description: "experience, grouped by employer",
+  // Group under the single Ascendion tenure. The content has NO per-item dates, so we
+  // deliberately print NO per-item years — implying a chronology would be fabrication.
+  run: () => {
+    const lines: Line[] = [
+      { kind: "out", text: `${profile.company} · ${profile.tenure}` },
+      { kind: "out", text: `  ${profile.role}` },
+      { kind: "out", text: "" },
+    ];
+    for (const w of allWork) {
+      lines.push({ kind: "out", text: `  ${w.name}` });
+      lines.push({ kind: "out", text: `    ${w.register} · ${w.role}` });
+      if (w.metrics[0]) lines.push({ kind: "out", text: `    ${w.metrics[0].value} ${w.metrics[0].label}` });
+    }
+    return { lines };
+  },
+};
+
+/** Frequency of each tech across all work + projects (case-insensitive, label-preserving). */
+function techFrequency(): { tech: string; count: number }[] {
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const item of [...allWork, ...allProjects]) {
+    for (const t of item.tech) {
+      const key = t.toLowerCase();
+      const existing = counts.get(key);
+      if (existing) existing.count += 1;
+      else counts.set(key, { label: t, count: 1 });
+    }
+  }
+  return [...counts.values()]
+    .map((c) => ({ tech: c.label, count: c.count }))
+    .sort((a, b) => b.count - a.count || a.tech.localeCompare(b.tech));
+}
+
+const TOP_LIMIT = 12;
+
+const find: Command = {
+  name: "find",
+  description: "which systems use a tech",
+  usage: "find <tech>",
+  run: (args) => {
+    const term = args.join(" ").toLowerCase();
+    if (!term) return { lines: err("usage: find <tech>  (try 'find kafka')") };
+    const hits = [...allWork, ...allProjects].filter((item) =>
+      item.tech.some((t) => t.toLowerCase().includes(term)),
+    );
+    if (hits.length === 0) return { lines: out(`no systems use "${term}"  (try 'top' for the full stack)`) };
+    const header = `${hits.length} system${hits.length === 1 ? "" : "s"} use "${term}":`;
+    return { lines: out(header, ...hits.map((h) => `  ${h.slug.padEnd(22)} ${h.name}`)) };
+  },
+};
+
+const top: Command = {
+  name: "top",
+  description: "most-used tech across my work",
+  run: () => {
+    const freq = techFrequency();
+    const shown = freq.slice(0, TOP_LIMIT);
+    // Number lives in TEXT (not only a bar) so screen readers get the real value.
+    const lines = out(
+      `most-used tech (${freq.length} total across ${allWork.length + allProjects.length} systems):`,
+      ...shown.map((f) => `  ${f.tech.padEnd(20)} ×${f.count}`),
+    );
+    if (freq.length > TOP_LIMIT) {
+      lines.push({ kind: "out", text: `  … +${freq.length - TOP_LIMIT} more — run 'stack' for all skills` });
+    }
+    return { lines };
+  },
+};
+
+const stats: Command = {
+  name: "stats",
+  description: "portfolio rollup (computed)",
+  // Aggregates the boot banner does NOT already show (skip the 2K/3K user metrics).
+  run: () => {
+    const commits = allProjects.reduce((sum, p) => sum + (p.commits ?? 0), 0);
+    const distinctTech = techFrequency().length;
+    return {
+      lines: out(
+        `production systems:  ${allWork.length}`,
+        `open-source repos:   ${allProjects.length}`,
+        `OSS commits:         ${commits} (snapshot)`,
+        `distinct tech:       ${distinctTech}`,
+        `skill groups:        ${skills.length}`,
+        `recognitions:        ${achievements.length}`,
+        `résumé variants:     ${resumeVariants.length}`,
+      ),
+    };
+  },
+};
+
 const neofetch: Command = { ...whoami, name: "neofetch", description: "system info (alias of whoami)" };
 
 const sudo: Command = {
@@ -213,7 +365,8 @@ const theme: Command = {
 
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
-  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, theme, classic, developer, clear, sudo,
+  help, whoami, neofetch, ls, cat, tree, grep, find, top, stats, stack, awards, summary, career,
+  resume, open, contact, email, social, chat, theme, classic, developer, clear, sudo,
 };
 
 export function runCommand(raw: string): CommandResult {

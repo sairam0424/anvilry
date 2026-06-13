@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
-import { skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
+import { profile, skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -132,6 +132,62 @@ describe("terminal command registry", () => {
     // ...and the derived repo count must equal the real project total (anti-drift).
     const repoMetric = impactMetrics.find((m) => m.label === "open-source repos");
     expect(repoMetric?.value).toBe(`${allProjects.length}`);
+  });
+
+  it("contact/email/social surface real profile links; email navs to mailto", () => {
+    const contact = runCommand("contact").lines.map((l) => l.text).join("\n");
+    expect(contact).toContain(profile.email);
+    expect(contact).toContain(profile.links.github);
+    const em = runCommand("email");
+    expect(em.lines.map((l) => l.text).join("\n")).toContain(profile.email); // selectable text first
+    expect(em.nav).toEqual({ type: "external", href: `mailto:${profile.email}` });
+  });
+
+  it("summary prints identity + every work + project + skills + awards (one-hit)", () => {
+    const text = runCommand("summary").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(profile.name);
+    for (const w of allWork) expect(text).toContain(w.name);
+    for (const p of allProjects) expect(text).toContain(p.name);
+    expect(text).toContain(skills[0].group);
+    expect(text).toContain(achievements[0].title);
+  });
+
+  it("career groups under the employer and invents NO per-item year (anti-fabrication)", () => {
+    const text = runCommand("career").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(profile.company);
+    expect(text).toContain(profile.tenure);
+    // The ONLY 4-digit years allowed are those already in profile.tenure — no per-item
+    // chronology may be invented (the content has zero per-item dates).
+    const allowed = profile.tenure.match(/\d{4}/g) ?? [];
+    const found = text.match(/\d{4}/g) ?? [];
+    for (const y of found) expect(allowed).toContain(y);
+  });
+
+  it("find <tech> lists systems using a tech; zero-match is a non-error", () => {
+    // Use a tech known to exist in the content (Python appears widely). lines[0] is the
+    // echoed "$ find python"; the count header is the first OUTPUT line.
+    const res = runCommand("find python");
+    expect(res.lines.map((l) => l.text).join("\n")).toMatch(/\d+ system(s)? use "python":/i);
+    const none = runCommand("find zzzznotatechzzzz");
+    expect(none.lines.some((l) => l.kind === "err")).toBe(false);
+    expect(none.lines.map((l) => l.text).join("\n")).toContain("no systems use");
+  });
+
+  it("top renders counts as readable text (number in text, not just a bar)", () => {
+    const text = runCommand("top").lines.map((l) => l.text).join("\n");
+    expect(text).toMatch(/most-used tech/i);
+    expect(text).toMatch(/×\d+/); // a real count appears in the text
+  });
+
+  it("stats reports computed aggregates that match the content layer", () => {
+    const text = runCommand("stats").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(`open-source repos:   ${allProjects.length}`);
+    expect(text).toContain(`production systems:  ${allWork.length}`);
+  });
+
+  it("open routes to github/linkedin/resume quick targets", () => {
+    expect(runCommand("open github").nav).toEqual({ type: "external", href: profile.links.github });
+    expect(runCommand("open resume").nav).toEqual({ type: "route", href: profile.links.resume });
   });
 
   it("commandEventName is PII-safe: returns the command WORD only, never args", () => {

@@ -12,6 +12,10 @@ if (isDev && !process.env.VELITE_STARTED) {
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (multiple lockfiles exist on the machine).
   turbopack: { root: __dirname },
+  // Inline critical CSS into <head> to cut a render-blocking stylesheet request —
+  // Tailwind v4 is the exact use case this flag targets. Kept only if a before/after
+  // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
+  experimental: { inlineCss: true },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

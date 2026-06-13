@@ -61,9 +61,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PersonJsonLd />
       </head>
       <body className="min-h-full flex flex-col antialiased">
+        {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         <Providers>
           <SiteNav />
-          {children}
+          <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+            {children}
+          </div>
           <SiteFooter />
           <CommandPalette />
           <AskPortfolio />

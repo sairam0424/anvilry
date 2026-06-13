@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { profile, skills, impactMetrics } from "@/lib/profile";
+import { personal, now, hasNow, hasPersonalContent } from "@/lib/personal";
 import { allProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
+
+/** Format an ISO date as an absolute, human-readable string (no relative drift). */
+function formatUpdated(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+}
 
 export const metadata: Metadata = {
   title: "About",
@@ -39,6 +47,52 @@ export default function AboutPage() {
           </div>
         </Reveal>
       </Section>
+
+      {/* Currently — the strongest hire signal ("open to new roles") on the indexed
+          recruiter path. Owner-curated content from personal.ts; empty-safe (renders
+          nothing until populated). Absolute date, never a drifting "N days ago". */}
+      {hasNow && (
+        <Section label="// now" title="What I'm focused on">
+          <Reveal>
+            <div className="max-w-2xl">
+              <ul className="space-y-2 text-fg-muted">
+                {now.focus.map((f) => (
+                  <li key={f} className="flex gap-2">
+                    <span className="text-accent" aria-hidden="true">
+                      →
+                    </span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4 text-xs text-fg-subtle">Last updated {formatUpdated(now.updated)}</p>
+            </div>
+          </Reveal>
+        </Section>
+      )}
+
+      {/* Uses — a compact toolkit teaser (the full list lives behind the `uses`
+          terminal command). Empty-safe. */}
+      {hasPersonalContent && personal.uses.length > 0 && (
+        <Section label="// uses" title="My toolkit">
+          <div className="grid gap-5 sm:grid-cols-2">
+            {personal.uses.map((g, i) => (
+              <Reveal key={g.group} delay={(i % 2) * 0.06}>
+                <div className="card-surface p-5">
+                  <p className="mono-label">{g.group}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {g.items.map((item) => (
+                      <span key={item} className="rounded-md border border-border px-2 py-1 text-xs text-fg-muted">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section label="// skills" title="What I work with">
         <div className="grid gap-5 sm:grid-cols-2">

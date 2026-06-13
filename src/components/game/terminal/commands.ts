@@ -105,6 +105,8 @@ const tree: Command = {
   },
 };
 
+const GREP_LIMIT = 30; // cap shown hits — keep the polite live region orientable
+
 const grep: Command = {
   name: "grep",
   description: "search across my work + skills",
@@ -116,7 +118,15 @@ const grep: Command = {
       .split("\n")
       .filter((line) => line.toLowerCase().includes(term));
     if (hits.length === 0) return { lines: out(`no matches for "${term}"`) };
-    return { lines: hits.slice(0, 30).map((t) => ({ kind: "out", text: t })) };
+    // Lead with a count so screen-reader users get orientation before the burst, and
+    // never truncate silently — tell the user how many were hidden (no silent swallow).
+    const header = `${hits.length} match${hits.length === 1 ? "" : "es"} for "${term}":`;
+    const shown = hits.slice(0, GREP_LIMIT);
+    const lines = out(header, ...shown);
+    if (hits.length > GREP_LIMIT) {
+      lines.push({ kind: "out", text: `… +${hits.length - GREP_LIMIT} more — refine with a longer term` });
+    }
+    return { lines };
   },
 };
 
@@ -184,13 +194,15 @@ const sudo: Command = {
   }),
 };
 
-// `theme` is intercepted by the shell hook (it owns the cosmetic theme state); this
-// registry entry exists so `help` + autocomplete list it. The fallback output is
-// only reached if run outside the shell (e.g. in a unit test).
+// `theme` is intercepted by the shell hook (use-terminal.ts), which owns the cosmetic
+// theme state and prints the live "theme → <next>" line. This registry entry exists so
+// `help` + autocomplete list the command; its run() is only reached OUTSIDE the shell
+// (e.g. a unit test or a non-interactive caller), where there is no theme to cycle — so
+// it returns an honest explanation rather than a misleading "theme cycled." success.
 const theme: Command = {
   name: "theme",
   description: "cycle the prompt theme (cyan/green/amber)",
-  run: () => ({ lines: out("theme cycled.") }),
+  run: () => ({ lines: out("theme cycling is interactive — use the terminal prompt.") }),
 };
 
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */

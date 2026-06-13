@@ -44,6 +44,12 @@ const work = defineCollection({
       metrics: s.array(s.object({ value: s.string(), label: s.string() })),
       tech: s.array(s.string()),
       order: s.number().default(100),
+      // OPTIONAL hiring-manager depth — owner-authored, interview-defensible. Each
+      // renders ONLY when present, so existing case studies are unchanged until filled.
+      constraints: s.string().optional(), // the real limits the system had to work within
+      tradeoffs: s.string().optional(), // what was deliberately chosen NOT to do, and why
+      diagram: s.string().optional(), // path to an owner-authored architecture diagram (e.g. /static/...)
+      diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a test
       body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),

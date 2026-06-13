@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import { profile } from "@/lib/profile";
+import { TRACE_DELIMITER } from "@/lib/llm-trace";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -148,6 +149,10 @@ export function isFallbackEligible(err: unknown): boolean {
  * is whether any text byte has already been sent to the client — once bytes are
  * on the wire we cannot un-send them, so a later error is terminal.
  */
+// TRACE_DELIMITER lives in the client-safe llm-trace module (so the chat client can
+// import it without the Bedrock SDK); re-exported here for existing server callers.
+export { TRACE_DELIMITER };
+
 export function streamWithFallback(
   params: Omit<Anthropic.MessageStreamParams, "model">,
   opts?: { onError?: (err: unknown, model: string) => void },
@@ -156,6 +161,8 @@ export function streamWithFallback(
   const encoder = new TextEncoder();
   // Derive the contact from the single source so the failure path can't go stale.
   const apologyTail = `\n\n[Sorry — something went wrong. Please email ${profile.email}.]`;
+  const traceFrame = (model: string, index: number) =>
+    encoder.encode(`${TRACE_DELIMITER}${JSON.stringify({ model, fellBack: index > 0 })}`);
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -191,7 +198,10 @@ export function streamWithFallback(
               emittedAny = true;
             }
           }
-          close(); // clean finish
+          // Clean finish — append the honest trace frame (which model served the bytes,
+          // and whether a fallback fired). Only on a real answer (emittedAny).
+          if (emittedAny) controller.enqueue(traceFrame(model, i));
+          close();
           return;
         } catch (err) {
           opts?.onError?.(err, model);

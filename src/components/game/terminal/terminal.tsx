@@ -24,10 +24,13 @@ const THEME_TEXT: Record<string, string> = {
 export function Terminal({
   maxHeightClass = "max-h-72",
   onMaximize,
+  maximizeRef,
 }: {
   maxHeightClass?: string;
   /** When provided, a maximize control appears in the title bar (opens the overlay). */
   onMaximize?: () => void;
+  /** Ref to the maximize button so the overlay can restore focus on close (WCAG 2.4.3). */
+  maximizeRef?: React.Ref<HTMLButtonElement>;
 }) {
   const { lines, input, setInput, run, recall, complete, theme } = useTerminal();
   const histRef = useRef<HTMLDivElement>(null);
@@ -61,16 +64,17 @@ export function Terminal({
   };
 
   return (
-    <section
-      aria-label="Developer mode terminal"
-      className="overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs"
-    >
+    // Plain <div>, not a labelled <section>: the parent (the game-view "developer
+    // mode" section, or the overlay's Dialog) already provides the region/dialog
+    // landmark + accessible name — a second named landmark here would duplicate it.
+    <div className="overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-fg-subtle">
         <TerminalSquare size={13} className="text-accent" />
         <span>sairam@anvilry</span>
         <span className="ml-auto text-[10px]">keyboard-native · type &apos;help&apos;</span>
         {onMaximize && (
           <button
+            ref={maximizeRef}
             type="button"
             onClick={onMaximize}
             aria-label="Maximize terminal to fullscreen"
@@ -151,6 +155,6 @@ export function Terminal({
           </span>
         )}
       </form>
-    </section>
+    </div>
   );
 }

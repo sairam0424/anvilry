@@ -6,9 +6,14 @@ import { Terminal } from "./terminal";
 
 /**
  * Fullscreen "beast mode" wrapper for the terminal. Radix Dialog gives us a focus
- * trap, Esc-to-close, and focus restoration to the trigger for free (WCAG 2.4.3) —
- * a CSS-only fixed overlay can't. The visually-hidden Title/Description satisfy the
- * "DialogContent requires DialogTitle" a11y contract (same pattern as the ⌘K palette).
+ * trap and Esc-to-close for free — a CSS-only fixed overlay can't. The visually-hidden
+ * Title/Description satisfy the "DialogContent requires DialogTitle" a11y contract
+ * (same pattern as the ⌘K palette).
+ *
+ * Focus restoration (WCAG 2.4.3): because this is a CONTROLLED dialog opened by an
+ * external button (not a <Dialog.Trigger>), Radix doesn't know the trigger and would
+ * drop focus to <body> on close. We restore it ourselves via onCloseAutoFocus +
+ * triggerRef — mirroring command-palette.tsx's triggerRef pattern.
  *
  * Note: the overlay renders its OWN <Terminal> — a fresh session, not the inline
  * terminal's scrollback. Acceptable for v1; lifting state up is a future-only concern.
@@ -16,15 +21,38 @@ import { Terminal } from "./terminal";
 export function TerminalOverlay({
   open,
   onOpenChange,
+  triggerRef,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  /** The maximize button to return focus to when the overlay closes. */
+  triggerRef?: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bg-base/80 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,56rem)] -translate-x-1/2 -translate-y-1/2 focus:outline-none">
+        <Dialog.Content
+          onOpenAutoFocus={(e) => {
+            // It's a terminal — land focus on the command input, not the Close button.
+            const content = e.currentTarget as HTMLElement | null;
+            const input = content?.querySelector<HTMLInputElement>(
+              'input[aria-label="Terminal command input"]',
+            );
+            if (input) {
+              e.preventDefault();
+              input.focus();
+            }
+          }}
+          onCloseAutoFocus={(e) => {
+            // Override Radix's default (focus -> body): return focus to the trigger.
+            if (triggerRef?.current) {
+              e.preventDefault();
+              triggerRef.current.focus();
+            }
+          }}
+          className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,56rem)] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
+        >
           <Dialog.Title className="sr-only">Developer mode terminal</Dialog.Title>
           <Dialog.Description className="sr-only">
             A command-line interface to explore Sairam&apos;s work. Type &apos;help&apos; for commands, or press Escape to close.

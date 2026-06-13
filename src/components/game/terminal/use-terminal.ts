@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useView } from "@/components/view-context";
 import { runCommand, COMMAND_NAMES } from "./commands";
 import { bootBanner } from "./boot-banner";
+import { nextHistoryIndex } from "./history";
 import type { Line, Theme } from "./types";
 
-const greeting: Line[] = bootBanner().map((t) => ({ kind: "out", text: t }));
+const greeting: Line[] = bootBanner();
 const THEMES: Theme[] = ["cyan", "green", "amber"];
 
 /**
@@ -57,21 +58,12 @@ export function useTerminal() {
     [router, setView, theme],
   );
 
-  /** ↑/↓ history navigation; returns the value to put in the input, or null to ignore. */
+  /** ↑/↓ history navigation; returns the value to put in the input, or null to ignore.
+   *  The index arithmetic lives in the pure, unit-tested nextHistoryIndex helper. */
   const recall = useCallback((dir: "up" | "down"): string | null => {
-    const h = history.current;
-    if (h.length === 0) return null;
-    if (dir === "up") {
-      histIndex.current = histIndex.current < 0 ? h.length - 1 : Math.max(0, histIndex.current - 1);
-    } else {
-      if (histIndex.current < 0) return null;
-      histIndex.current += 1;
-      if (histIndex.current >= h.length) {
-        histIndex.current = -1;
-        return "";
-      }
-    }
-    return h[histIndex.current] ?? "";
+    const { idx, value } = nextHistoryIndex(history.current, histIndex.current, dir);
+    histIndex.current = idx;
+    return value;
   }, []);
 
   /** Autocomplete: command-name prefix match on the first (and only) token. */

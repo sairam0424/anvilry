@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
-import { skills, achievements, impactMetrics } from "@/lib/profile";
+import { skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -106,6 +106,13 @@ describe("terminal command registry", () => {
     expect(runCommand("resume").lines.length).toBeGreaterThan(1);
     expect(runCommand("resume master").nav?.type).toBe("external");
     expect(runCommand("resume nope").lines.some((l) => l.kind === "err")).toBe(true);
+  });
+
+  it("resume <substring> is first-wins on label .includes() (resume f -> Full-Stack)", () => {
+    // Order is Master, Backend, Full-Stack, Frontend, Gen-AI. "master"/"backend" do NOT
+    // contain 'f', so the FIRST label containing 'f' is Full-Stack — not Frontend.
+    const fullStack = resumeVariants.find((r) => r.label === "Full-Stack");
+    expect(runCommand("resume f").nav).toEqual({ type: "external", href: fullStack!.file });
   });
 
   it("chat switches to chat view; neofetch aliases whoami; sudo is a harmless gag", () => {

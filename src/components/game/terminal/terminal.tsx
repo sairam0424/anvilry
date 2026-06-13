@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { TerminalSquare } from "lucide-react";
+import { TerminalSquare, Maximize2 } from "lucide-react";
 import { useTerminal } from "./use-terminal";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,14 @@ const THEME_TEXT: Record<string, string> = {
   amber: "text-amber",
 };
 
-export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: string }) {
+export function Terminal({
+  maxHeightClass = "max-h-72",
+  onMaximize,
+}: {
+  maxHeightClass?: string;
+  /** When provided, a maximize control appears in the title bar (opens the overlay). */
+  onMaximize?: () => void;
+}) {
   const { lines, input, setInput, run, recall, complete, theme } = useTerminal();
   const histRef = useRef<HTMLDivElement>(null);
   const promptColor = THEME_TEXT[theme] ?? "text-accent";
@@ -62,6 +69,16 @@ export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: str
         <TerminalSquare size={13} className="text-accent" />
         <span>sairam@anvilry</span>
         <span className="ml-auto text-[10px]">keyboard-native · type &apos;help&apos;</span>
+        {onMaximize && (
+          <button
+            type="button"
+            onClick={onMaximize}
+            aria-label="Maximize terminal to fullscreen"
+            className="-mr-1 inline-flex h-6 w-6 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <Maximize2 size={13} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <div

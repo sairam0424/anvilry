@@ -11,9 +11,10 @@ import { ArrowDown } from "lucide-react";
  *
  * Presentational only — visibility and the snap are owned by the autoscroll hook. The
  * caller passes `onClick` (which calls scrollToBottom() and then moves focus back to
- * the transcript/input). Positioned by the parent (the parent is `relative`); this
- * renders centered above the composer with a target size >= 44px (2.5.8 AA) and a
- * visible focus ring (2.4.7). Reduced-motion is handled in the hook's snap (instant).
+ * the transcript/input). Floats centered at the BOTTOM of the transcript (above the
+ * composer) — the parent must be `relative`. Target height 36px with a 44px tap area
+ * via padding (2.5.8 AA) and a visible focus ring (2.4.7). Reduced-motion is handled
+ * in the hook's snap (instant).
  */
 export function JumpToLatest({
   show,
@@ -26,7 +27,7 @@ export function JumpToLatest({
 }) {
   if (!show) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 -top-1 z-10 flex -translate-y-full justify-center">
+    <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center">
       <button
         type="button"
         onClick={onClick}

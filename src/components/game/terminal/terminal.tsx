@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
 import { TerminalSquare, Maximize2 } from "lucide-react";
 import { useTerminal } from "./use-terminal";
+import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { cn } from "@/lib/utils";
 
 /** Quick-run chips so non-typers (and touch users) get the full experience. Each
@@ -34,15 +34,29 @@ export function Terminal({
   maximizeRef?: React.Ref<HTMLButtonElement>;
 }) {
   const { lines, input, setInput, run, recall, complete, theme } = useTerminal();
-  const histRef = useRef<HTMLDivElement>(null);
   const promptColor = THEME_TEXT[theme] ?? "text-accent";
 
-  useEffect(() => {
-    const el = histRef.current;
-    if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 80) el.scrollTop = el.scrollHeight;
-  }, [lines]);
+  // Autoscroll via the shared engine. Terminal semantics: a small re-pin threshold
+  // (log-tailing) and always bottom-pin. The ResizeObserver on the inner content
+  // wrapper follows new output to the true bottom only while pinned.
+  const { scrollRef, contentRef, scrollToBottom } = useAutoScroll({
+    threshold: 32,
+    surface: "terminal",
+    mode: "bottom-pin",
+  });
+
+  /** Run a command and re-pin to the bottom (a chip/Enter is intent to see the result,
+   *  even if the user had scrolled up to read history). */
+  const runAndPin = (cmd: string) => {
+    run(cmd);
+    scrollToBottom();
+  };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Typing a character re-pins to the bottom (xterm parity): a user who scrolled up
+    // to read history and then starts typing expects to be back at the prompt. (Enter
+    // is handled by the form submit's runAndPin; ↑/↓/Tab below must NOT re-pin.)
+    if (e.key.length === 1) scrollToBottom();
     if (e.key === "ArrowUp") {
       const v = recall("up");
       if (v !== null) {
@@ -89,34 +103,38 @@ export function Terminal({
       </div>
 
       <div
-        ref={histRef}
+        ref={scrollRef}
         className={cn(
-          "terminal-boot space-y-1 overflow-y-auto px-4 py-3 [overflow-anchor:none]",
+          "terminal-boot overflow-y-auto px-4 py-3 [overflow-anchor:none]",
           maxHeightClass,
         )}
         role="log"
         aria-live="polite"
         aria-atomic="false"
       >
-        {lines.map((l, i) => (
-          <pre
-            key={i}
-            // Decorative figlet rows are hidden from assistive tech (they'd announce
-            // as meaningless punctuation); the real identity lines stay readable.
-            aria-hidden={l.kind === "art" || undefined}
-            className={
-              l.kind === "in"
-                ? "whitespace-pre-wrap text-accent"
-                : l.kind === "err"
-                  ? "whitespace-pre-wrap text-amber"
-                  : l.kind === "art"
-                    ? "whitespace-pre text-fg-subtle"
-                    : "whitespace-pre-wrap text-fg-muted"
-            }
-          >
-            {l.text}
-          </pre>
-        ))}
+        {/* contentRef wrapper = the ResizeObserver target that grows as output appends,
+            so the follow snap tracks new lines to the true bottom while pinned. */}
+        <div ref={contentRef} className="space-y-1">
+          {lines.map((l, i) => (
+            <pre
+              key={i}
+              // Decorative figlet rows are hidden from assistive tech (they'd announce
+              // as meaningless punctuation); the real identity lines stay readable.
+              aria-hidden={l.kind === "art" || undefined}
+              className={
+                l.kind === "in"
+                  ? "whitespace-pre-wrap text-accent"
+                  : l.kind === "err"
+                    ? "whitespace-pre-wrap text-amber"
+                    : l.kind === "art"
+                      ? "whitespace-pre text-fg-subtle"
+                      : "whitespace-pre-wrap text-fg-muted"
+              }
+            >
+              {l.text}
+            </pre>
+          ))}
+        </div>
       </div>
 
       <div
@@ -128,7 +146,7 @@ export function Terminal({
           <button
             key={c}
             type="button"
-            onClick={() => run(c)}
+            onClick={() => runAndPin(c)}
             className="rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {c}
@@ -139,7 +157,7 @@ export function Terminal({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          run(input);
+          runAndPin(input);
           setInput("");
         }}
         // A ring (box-shadow), NOT border-color, is the focus affordance: the global

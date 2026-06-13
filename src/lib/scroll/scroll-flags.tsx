@@ -28,9 +28,12 @@ type Flags = { engine: ScrollEngine; mode: ScrollMode };
 
 let current: Flags = { engine: DEFAULT_ENGINE, mode: DEFAULT_MODE };
 const listeners = new Set<() => void>();
-// Cached snapshot so getClientSnapshot returns a stable reference between changes
-// (useSyncExternalStore requires snapshot identity stability or it loops).
+// Cached snapshots so getClientSnapshot/getServerSnapshot each return a STABLE
+// reference between changes — useSyncExternalStore compares snapshots by identity and
+// warns ("should be cached to avoid an infinite loop") / re-renders forever if a fresh
+// object is returned on every call.
 let snapshot: Flags = current;
+const SERVER_SNAPSHOT: Flags = { engine: DEFAULT_ENGINE, mode: DEFAULT_MODE };
 
 const emit = () => {
   snapshot = { ...current };
@@ -43,7 +46,7 @@ const subscribe = (onChange: () => void) => {
 };
 
 const getClientSnapshot = (): Flags => snapshot;
-const getServerSnapshot = (): Flags => ({ engine: DEFAULT_ENGINE, mode: DEFAULT_MODE });
+const getServerSnapshot = (): Flags => SERVER_SNAPSHOT;
 
 function readStored(key: string): string | null {
   if (typeof window === "undefined") return null;

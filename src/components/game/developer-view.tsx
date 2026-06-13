@@ -6,6 +6,7 @@ import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { Terminal } from "@/components/game/terminal/terminal";
 import { TerminalOverlay } from "@/components/game/terminal/terminal-overlay";
 import { DeveloperRail } from "@/components/game/developer-rail";
+import { hasPersonalContent } from "@/lib/personal";
 
 /**
  * DEVELOPER view — a focused, full-page terminal destination. The keyboard-native CLI
@@ -47,6 +48,17 @@ export function DeveloperView() {
           <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">ls work</code>,{" "}
           <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">about</code>.
         </p>
+        {/* A quiet nudge so a curious visitor can DISCOVER the eggs (the personal-reveal
+            commands are hidden from help by design). Only shown when there's real
+            content to find — empty-safe, mirrors the whoami breadcrumb. Subtle enough to
+            never distract the recruiter-in-a-hurry. */}
+        {hasPersonalContent && (
+          <p className="mt-2 font-mono text-xs text-fg-subtle">
+            psst — this terminal keeps a few secrets. <code className="text-fg-muted">help</code> is a
+            good start, and the Konami code (<span aria-hidden="true">↑↑↓↓←→←→ B A</span>
+            <span className="sr-only">up up down down left right left right B A</span>) works anywhere.
+          </p>
+        )}
       </header>
 
       {/* Content region: single column on mobile; on lg+ a [terminal | 19rem rail] grid.

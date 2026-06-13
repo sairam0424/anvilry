@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { X, Sparkles } from "lucide-react";
 import { profile } from "@/lib/profile";
 import { personal, hasPersonalContent } from "@/lib/personal";
@@ -18,9 +18,8 @@ import { personal, hasPersonalContent } from "@/lib/personal";
  *     brief celebratory toast (no fabricated content). The arrow-key listener is
  *     IGNORED while a text input/terminal is focused, so it never fights ↑/↓ history.
  *
- * No XP, no levels, no score — honest delight only. Found-eggs persist (localStorage)
- * so a returning visitor isn't re-hidden-from. Personal content is ALSO reachable via
- * the always-visible `about`/`secret` terminal commands (never egg-locked — a11y).
+ * No XP, no levels, no score — honest delight only. Personal content is ALSO reachable
+ * via the always-visible `about`/`secret` terminal commands (never egg-locked — a11y).
  */
 const KONAMI = [
   "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
@@ -28,20 +27,7 @@ const KONAMI = [
   "b", "a",
 ];
 
-const FOUND_KEY = "anvilry-eggs-found";
-
 let consoleGreeted = false;
-
-/** Mark an egg found (best-effort persistence; private mode is a no-op). */
-function markFound(id: string) {
-  try {
-    const set = new Set<string>(JSON.parse(localStorage.getItem(FOUND_KEY) || "[]"));
-    set.add(id);
-    localStorage.setItem(FOUND_KEY, JSON.stringify([...set]));
-  } catch {
-    /* private mode — ignore */
-  }
-}
 
 /** Is a text input / terminal currently focused? (don't let Konami fight typing) */
 function isTypingTarget(): boolean {
@@ -61,6 +47,10 @@ export function EasterEggs() {
   const [open, setOpen] = useState(false);
   const progress = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
+  // Element focused BEFORE the card opened, so close() can restore it (WCAG 2.4.3 —
+  // mirrors the maximize overlay's onCloseAutoFocus restoration).
+  const prevFocus = useRef<HTMLElement | null>(null);
 
   // 1. Console greeting (once per session) — extended with both breadcrumbs.
   useEffect(() => {
@@ -86,11 +76,13 @@ export function EasterEggs() {
         progress.current += 1;
         if (progress.current === KONAMI.length) {
           progress.current = 0;
-          markFound("konami");
+          // Remember where focus was so close() can restore it (WCAG 2.4.3).
+          prevFocus.current = document.activeElement as HTMLElement | null;
           setOpen(true);
         }
       } else {
-        progress.current = e.key === KONAMI[0] ? 1 : 0;
+        // Case-insensitive reset too, so the comparison matches the forward match above.
+        progress.current = e.key.toLowerCase() === KONAMI[0].toLowerCase() ? 1 : 0;
       }
     };
     window.addEventListener("keydown", onKey);
@@ -102,7 +94,12 @@ export function EasterEggs() {
     if (open) cardRef.current?.focus();
   }, [open]);
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    setOpen(false);
+    // Restore focus to wherever the user was (never leave it dropped to <body>).
+    prevFocus.current?.focus();
+    prevFocus.current = null;
+  }, []);
 
   // Esc closes (disclosure affordance — never traps focus).
   useEffect(() => {
@@ -119,24 +116,32 @@ export function EasterEggs() {
   const fact = konamiReveal();
 
   return (
+    // Non-modal disclosure dialog: labelled by its heading, focusable, Esc-dismissible,
+    // NO focus trap / backdrop (never blocks the hire path). role="dialog" + a real
+    // accessible name beats a focus-stealing role=status (which announces AND lands an
+    // unnamed focus stop). z-40 so it sits below the maximize overlay (z-50).
     <div
       ref={cardRef}
-      role="status"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby={headingId}
       tabIndex={-1}
       // .hero-rise is an existing CSS keyframe (rise + fade) that is itself
       // reduced-motion-gated in globals.css — reuse it instead of a phantom animate-in
       // utility (Tailwind v4 here has no tailwindcss-animate, so those silently no-op).
-      className="hero-rise fixed bottom-6 left-1/2 z-50 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-accent/50 bg-bg-elevated p-5 text-sm text-fg shadow-2xl shadow-accent/20 outline-none"
+      className="hero-rise fixed bottom-6 left-1/2 z-40 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-accent/50 bg-bg-elevated p-5 text-sm text-fg shadow-2xl shadow-accent/20 outline-none"
     >
       <button
         type="button"
         onClick={close}
         aria-label="Dismiss"
-        className="absolute right-3 top-3 text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        // >=24px hit target (WCAG 2.5.8) — without explicit sizing the button collapses
+        // to the ~15px icon (Tailwind preflight zeroes button padding).
+        className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <X size={15} />
+        <X size={15} aria-hidden="true" />
       </button>
-      <p className="flex items-center gap-1.5 font-medium text-accent">
+      <p id={headingId} className="flex items-center gap-1.5 font-medium text-accent">
         <Sparkles size={15} aria-hidden="true" /> You know the code.
       </p>
       {fact ? (

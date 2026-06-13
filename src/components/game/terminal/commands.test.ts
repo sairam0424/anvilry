@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
 import { profile, skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
-import { hasPersonalContent } from "@/lib/personal";
+import { personal, now, hasPersonalContent } from "@/lib/personal";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -35,14 +35,45 @@ describe("terminal command registry", () => {
     expect(text).toContain(profile.name);
   });
 
-  it("personal reveal commands are EMPTY-SAFE (no fabricated output when unpopulated)", () => {
-    // With personal.ts empty, the reveals must print honest 'coming soon', never a fact.
-    if (!hasPersonalContent) {
-      expect(runCommand("secret").lines.map((l) => l.text).join("\n")).toMatch(/coming soon/i);
-      expect(runCommand("uses").lines.map((l) => l.text).join("\n")).toMatch(/coming soon/i);
-      expect(runCommand("now").lines.map((l) => l.text).join("\n")).toMatch(/nothing pinned/i);
-      // No err, and the breadcrumb is absent from whoami when there's nothing to find.
-      expect(runCommand("whoami").lines.map((l) => l.text).join("\n")).not.toMatch(/try 'secret'/);
+  it("personal reveal commands print the REAL owner content (populated path)", () => {
+    // personal.ts is populated in the repo, so the live reveals must surface each field
+    // from the single source (anti-fabrication: what's shown == what's authored).
+    const secret = runCommand("secret").lines.map((l) => l.text).join("\n");
+    for (const h of personal.hobbies) expect(secret).toContain(h);
+    for (const f of personal.funFacts) expect(secret).toContain(f);
+    for (const l of personal.currentlyLearning) expect(secret).toContain(l);
+
+    const uses = runCommand("uses").lines.map((l) => l.text).join("\n");
+    for (const g of personal.uses) {
+      expect(uses).toContain(g.group);
+      for (const item of g.items) expect(uses).toContain(item);
+    }
+
+    const nowOut = runCommand("now").lines.map((l) => l.text).join("\n");
+    for (const f of now.focus) expect(nowOut).toContain(f);
+
+    // The whoami breadcrumb appears precisely when there is content to find.
+    const whoami = runCommand("whoami").lines.map((l) => l.text).join("\n");
+    expect(whoami).toMatch(/try 'secret'/);
+    expect(hasPersonalContent).toBe(true); // sanity: this test asserts the populated path
+  });
+
+  it("`now` staleness line is honest: today / stale / NaN-guarded (fake timers)", () => {
+    // now.updated is a real ISO date; pin the day-diff math at fixed clocks.
+    const updated = now.updated; // e.g. "2026-06-14"
+    expect(updated).not.toBe("");
+
+    vi.useFakeTimers();
+    try {
+      // Same day -> "updated today".
+      vi.setSystemTime(new Date(`${updated}T12:00:00Z`));
+      expect(runCommand("now").lines.map((l) => l.text).join("\n")).toMatch(/updated today/i);
+
+      // 91 days later -> stale warning.
+      vi.setSystemTime(new Date(Date.parse(`${updated}T00:00:00Z`) + 91 * 86_400_000));
+      expect(runCommand("now").lines.map((l) => l.text).join("\n")).toMatch(/may be stale/i);
+    } finally {
+      vi.useRealTimers();
     }
   });
 

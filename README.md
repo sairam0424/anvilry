@@ -1,6 +1,6 @@
 # Anvilry
 
-> **Sairam Ugge** — GenAI & Backend Engineer. Live at **[anvilry.vercel.app](https://anvilry.vercel.app)** _(custom domain **sairam.dev** in progress)_.
+> **Sairam Ugge** — GenAI & Backend Engineer. Live at **[sairam.dev](https://sairam.dev)**.
 
 A recruiter-facing engineering portfolio built as a **beast with three switchable experiences over one canonical content source** — pick the way you want to explore the same verified work:
 
@@ -79,7 +79,7 @@ See **[`DEPLOY.md`](./DEPLOY.md)** for the full guide (env vars, verified Bedroc
 2. Import at [vercel.com/new](https://vercel.com/new) — framework auto-detected as Next.js.
 3. Add env vars (Production + Preview): `LLM_PROVIDER`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_REGION`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 4. **Branch model:** `develop` = primary working branch (Preview deploys) · `main` = release branch (Production → the live domain).
-5. Add the custom domain **sairam.dev** under Settings → Domains.
+5. Custom domain **[sairam.dev](https://sairam.dev)** is live (Settings → Domains).
 
 The base URL is `https://sairam.dev` in `src/app/layout.tsx`, `sitemap.ts`, `robots.ts`, and `json-ld.tsx` — update those if the domain changes.
 

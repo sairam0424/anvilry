@@ -12,8 +12,9 @@ const CHIPS = ["whoami", "ls work", "stack", "tree", "resume"];
 /**
  * Presentational terminal shell. Output is a polite role="log" live region (only new
  * lines announce). Keyboard-native: ↑/↓ history, Tab autocomplete, Enter to run. The
- * input opts out of the global focus ring (no-focus-ring) — the section is the
- * affordance. Pin-aware autoscroll. All logic lives in useTerminal + the registry.
+ * input opts out of the harsh global focus box (no-focus-ring); its row instead shows
+ * an inset accent ring on focus-within — a visible, less jarring focus indicator
+ * (WCAG 2.4.7). Pin-aware autoscroll. Logic lives in useTerminal.
  */
 const THEME_TEXT: Record<string, string> = {
   cyan: "text-accent",
@@ -69,16 +70,18 @@ export function Terminal({
     // landmark + accessible name — a second named landmark here would duplicate it.
     <div className="overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-fg-subtle">
-        <TerminalSquare size={13} className="text-accent" />
-        <span>sairam@anvilry</span>
-        <span className="ml-auto text-[10px]">keyboard-native · type &apos;help&apos;</span>
+        <TerminalSquare size={13} className="shrink-0 text-accent" />
+        <span className="truncate">sairam@anvilry</span>
+        {/* Hidden on narrow screens so the row can't overflow and clip the maximize
+            button (the bar is overflow-hidden); reappears at sm+. */}
+        <span className="ml-auto hidden text-[10px] sm:inline">keyboard-native · type &apos;help&apos;</span>
         {onMaximize && (
           <button
             ref={maximizeRef}
             type="button"
             onClick={onMaximize}
             aria-label="Maximize terminal to fullscreen"
-            className="-mr-1 inline-flex h-6 w-6 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="-mr-1 ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:ml-0"
           >
             <Maximize2 size={13} aria-hidden="true" />
           </button>
@@ -95,12 +98,17 @@ export function Terminal({
         {lines.map((l, i) => (
           <pre
             key={i}
+            // Decorative figlet rows are hidden from assistive tech (they'd announce
+            // as meaningless punctuation); the real identity lines stay readable.
+            aria-hidden={l.kind === "art" || undefined}
             className={
               l.kind === "in"
                 ? "whitespace-pre-wrap text-accent"
                 : l.kind === "err"
                   ? "whitespace-pre-wrap text-amber"
-                  : "whitespace-pre-wrap text-fg-muted"
+                  : l.kind === "art"
+                    ? "whitespace-pre text-fg-subtle"
+                    : "whitespace-pre-wrap text-fg-muted"
             }
           >
             {l.text}
@@ -131,7 +139,11 @@ export function Terminal({
           run(input);
           setInput("");
         }}
-        className="flex items-center gap-2 border-t border-border px-4 py-2"
+        // A ring (box-shadow), NOT border-color, is the focus affordance: the global
+        // `* { border-color: var(--border) }` rule is UNLAYERED and beats any layered
+        // `focus-within:border-*` utility, so a border-color swap is silently a no-op.
+        // A ring has no such universal override and reliably shows keyboard focus (2.4.7).
+        className="flex items-center gap-2 border-t border-border px-4 py-2 transition-shadow focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent"
       >
         <span className={promptColor} aria-hidden="true">
           {">"}

@@ -4,7 +4,7 @@ import { Gamepad2 } from "lucide-react";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { GraphIndex } from "@/components/game/graph-index";
 import { BuildGraph } from "@/components/game/build-graph";
-import { Terminal } from "@/components/game/terminal";
+import { Terminal } from "@/components/game/terminal/terminal";
 import { EasterEggs } from "@/components/game/easter-eggs";
 
 /**

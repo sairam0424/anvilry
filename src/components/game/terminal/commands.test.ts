@@ -19,6 +19,21 @@ describe("terminal command registry", () => {
     expect(res.lines.some((l) => l.kind === "err" && /command not found/.test(l.text))).toBe(true);
   });
 
+  it("normalizes input: trims, collapses inner whitespace, is case-insensitive on the name", () => {
+    // empty / whitespace-only -> no output, no error
+    expect(runCommand("   ").lines).toEqual([]);
+    expect(runCommand("").lines).toEqual([]);
+    // leading/trailing space is trimmed before dispatch (HELP resolves; echo is trimmed)
+    const padded = runCommand("   help   ");
+    expect(padded.lines[0]).toEqual({ kind: "in", text: "$ help" });
+    expect(padded.lines.some((l) => /Available commands/.test(l.text))).toBe(true);
+    // command name is matched case-insensitively
+    expect(runCommand("HELP").lines.some((l) => /Available commands/.test(l.text))).toBe(true);
+    // multi-space between name and args still parses the args (open <slug>)
+    const real = allWork[0].slug;
+    expect(runCommand(`open    ${real}`).nav).toEqual({ type: "route", href: `/work/${real}` });
+  });
+
   it("ls lists real work + project slugs only", () => {
     const text = runCommand("ls").lines.map((l) => l.text).join("\n");
     for (const w of allWork) expect(text).toContain(w.slug);

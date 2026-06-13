@@ -6,10 +6,11 @@ import { useView } from "@/components/view-context";
 import { runCommand, COMMAND_NAMES } from "./commands";
 import { bootBanner } from "./boot-banner";
 import { nextHistoryIndex } from "./history";
+import { completeCommand } from "./completion";
+import { nextTheme } from "./theme";
 import type { Line, Theme } from "./types";
 
 const greeting: Line[] = bootBanner();
-const THEMES: Theme[] = ["cyan", "green", "amber"];
 
 /**
  * Terminal session state: scrollback, input, command history (↑/↓), prefix
@@ -34,7 +35,7 @@ export function useTerminal() {
       }
       // `theme` is a shell concern (cosmetic state) — handle before the pure registry.
       if (trimmed.toLowerCase() === "theme") {
-        const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+        const next = nextTheme(theme);
         setTheme(next);
         setLines((prev) => [
           ...prev,
@@ -66,12 +67,10 @@ export function useTerminal() {
     return value;
   }, []);
 
-  /** Autocomplete: command-name prefix match on the first (and only) token. */
+  /** Autocomplete: command-name prefix match on the first (and only) token.
+   *  The matching logic lives in the pure, unit-tested completeCommand helper. */
   const complete = useCallback((value: string): string | null => {
-    const parts = value.split(/\s+/);
-    if (parts.length !== 1 || !parts[0]) return null; // only complete the command word
-    const matches = COMMAND_NAMES.filter((n) => n.startsWith(parts[0].toLowerCase()));
-    return matches.length === 1 ? matches[0] + " " : null;
+    return completeCommand(value, COMMAND_NAMES);
   }, []);
 
   return { lines, input, setInput, run, recall, complete, theme };

@@ -5,15 +5,26 @@ import { TerminalSquare } from "lucide-react";
 import { useTerminal } from "./use-terminal";
 import { cn } from "@/lib/utils";
 
+/** Quick-run chips so non-typers (and touch users) get the full experience. Each
+ *  runs through the same registry path as typing the command. */
+const CHIPS = ["whoami", "ls work", "stack", "tree", "resume"];
+
 /**
  * Presentational terminal shell. Output is a polite role="log" live region (only new
  * lines announce). Keyboard-native: ↑/↓ history, Tab autocomplete, Enter to run. The
  * input opts out of the global focus ring (no-focus-ring) — the section is the
  * affordance. Pin-aware autoscroll. All logic lives in useTerminal + the registry.
  */
+const THEME_TEXT: Record<string, string> = {
+  cyan: "text-accent",
+  green: "text-green",
+  amber: "text-amber",
+};
+
 export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: string }) {
-  const { lines, input, setInput, run, recall, complete } = useTerminal();
+  const { lines, input, setInput, run, recall, complete, theme } = useTerminal();
   const histRef = useRef<HTMLDivElement>(null);
+  const promptColor = THEME_TEXT[theme] ?? "text-accent";
 
   useEffect(() => {
     const el = histRef.current;
@@ -55,7 +66,7 @@ export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: str
 
       <div
         ref={histRef}
-        className={cn("space-y-1 overflow-y-auto px-4 py-3", maxHeightClass)}
+        className={cn("terminal-boot space-y-1 overflow-y-auto px-4 py-3", maxHeightClass)}
         role="log"
         aria-live="polite"
         aria-atomic="false"
@@ -76,6 +87,23 @@ export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: str
         ))}
       </div>
 
+      <div
+        className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2"
+        role="group"
+        aria-label="Quick commands"
+      >
+        {CHIPS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => run(c)}
+            className="rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -84,7 +112,7 @@ export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: str
         }}
         className="flex items-center gap-2 border-t border-border px-4 py-2"
       >
-        <span className="text-accent" aria-hidden="true">
+        <span className={promptColor} aria-hidden="true">
           {">"}
         </span>
         <input
@@ -97,8 +125,14 @@ export function Terminal({ maxHeightClass = "max-h-72" }: { maxHeightClass?: str
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
-          className="no-focus-ring flex-1 bg-transparent py-1 text-fg outline-none placeholder:text-fg-subtle"
+          className="no-focus-ring min-w-0 flex-1 bg-transparent py-1 text-fg outline-none placeholder:text-fg-subtle"
         />
+        {/* Cosmetic blinking cursor when the input is empty (decorative only). */}
+        {input === "" && (
+          <span className={cn("terminal-cursor select-none", promptColor)} aria-hidden="true">
+            ▍
+          </span>
+        )}
       </form>
     </section>
   );

@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useView } from "@/components/view-context";
 import { runCommand, COMMAND_NAMES } from "./commands";
 import { bootBanner } from "./boot-banner";
-import type { Line } from "./types";
+import type { Line, Theme } from "./types";
 
 const greeting: Line[] = bootBanner().map((t) => ({ kind: "out", text: t }));
+const THEMES: Theme[] = ["cyan", "green", "amber"];
 
 /**
  * Terminal session state: scrollback, input, command history (↑/↓), prefix
@@ -19,17 +20,29 @@ export function useTerminal() {
   const { setView } = useView();
   const [lines, setLines] = useState<Line[]>(greeting);
   const [input, setInput] = useState("");
+  const [theme, setTheme] = useState<Theme>("cyan");
   const history = useRef<string[]>([]); // past commands (newest last)
   const histIndex = useRef<number>(-1); // -1 = not browsing history
 
   const run = useCallback(
     (raw: string) => {
       const trimmed = raw.trim();
-      const { lines: newLines, nav } = runCommand(raw);
       if (trimmed) {
         history.current = [...history.current, trimmed];
         histIndex.current = -1;
       }
+      // `theme` is a shell concern (cosmetic state) — handle before the pure registry.
+      if (trimmed.toLowerCase() === "theme") {
+        const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+        setTheme(next);
+        setLines((prev) => [
+          ...prev,
+          { kind: "in", text: "$ theme" },
+          { kind: "out", text: `theme → ${next}` },
+        ]);
+        return;
+      }
+      const { lines: newLines, nav } = runCommand(raw);
       if (nav?.type === "clear") {
         setLines([]);
         return;
@@ -41,7 +54,7 @@ export function useTerminal() {
         window.open(nav.href, "_blank", "noopener,noreferrer");
       }
     },
-    [router, setView],
+    [router, setView, theme],
   );
 
   /** ↑/↓ history navigation; returns the value to put in the input, or null to ignore. */
@@ -69,5 +82,5 @@ export function useTerminal() {
     return matches.length === 1 ? matches[0] + " " : null;
   }, []);
 
-  return { lines, input, setInput, run, recall, complete };
+  return { lines, input, setInput, run, recall, complete, theme };
 }

@@ -184,9 +184,18 @@ const sudo: Command = {
   }),
 };
 
+// `theme` is intercepted by the shell hook (it owns the cosmetic theme state); this
+// registry entry exists so `help` + autocomplete list it. The fallback output is
+// only reached if run outside the shell (e.g. in a unit test).
+const theme: Command = {
+  name: "theme",
+  description: "cycle the prompt theme (cyan/green/amber)",
+  run: () => ({ lines: out("theme cycled.") }),
+};
+
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
-  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, classic, clear, sudo,
+  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, theme, classic, clear, sudo,
 };
 
 export function runCommand(raw: string): CommandResult {

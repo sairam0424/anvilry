@@ -3,6 +3,7 @@
  * achievements, and links. Mirrors the locked résumé / LinkedIn / GitHub / Naukri pack.
  * Every value is real and defensible; honest "Co-built" register preserved.
  */
+import { allProjects } from "@/lib/content";
 
 export const profile = {
   name: "Sairam Ugge",
@@ -26,12 +27,15 @@ export const profile = {
   githubUser: "sairam0424",
 } as const;
 
-/** Headline metrics for the above-the-fold impact strip (all real, work-context). */
-export const impactMetrics = [
+/** Headline metrics for the above-the-fold impact strip (all real, work-context).
+ *  The repo count is DERIVED from the content layer (allProjects.length), not hand-typed,
+ *  so it can never drift from the actual published projects — structurally pinning the
+ *  one banner number the audit flagged as un-sourced. */
+export const impactMetrics: { value: string; label: string; sub: string }[] = [
   { value: "2K+", label: "daily users", sub: "Pensieve" },
   { value: "3K+", label: "daily users", sub: "AAVA Code · 5+ clients" },
-  { value: "8", label: "open-source repos", sub: "AI infrastructure" },
-] as const;
+  { value: `${allProjects.length}`, label: "open-source repos", sub: "AI infrastructure" },
+];
 
 export const skills: { group: string; items: string[] }[] = [
   { group: "Languages", items: ["Python", "Go", "TypeScript"] },

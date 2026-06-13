@@ -81,6 +81,21 @@ html {
   .hero-rise { opacity: 1; animation: none; }
 }
 
+/* Terminal cursor — cosmetic blink; solid (no animation) under reduced-motion. */
+@keyframes terminal-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.terminal-cursor { animation: terminal-blink 1s steps(1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .terminal-cursor { animation: none; opacity: 1; }
+}
+
+/* Terminal boot — one-time fade-in of the scrollback on mount (the "boot" feel).
+   Text is fully in the DOM (screen-reader-safe); this only animates opacity. */
+@keyframes terminal-boot { from { opacity: 0; } to { opacity: 1; } }
+.terminal-boot { animation: terminal-boot 0.4s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .terminal-boot { animation: none; }
+}
+
 body {
   background: var(--bg-base);
   color: var(--fg);

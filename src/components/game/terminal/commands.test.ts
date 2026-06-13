@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
+import { skills, achievements } from "@/lib/profile";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -60,5 +61,28 @@ describe("terminal command registry", () => {
     expect(runCommand("grep").lines.some((l) => l.kind === "err")).toBe(true);
     const hit = runCommand("grep ascendion").lines.map((l) => l.text).join("\n").toLowerCase();
     expect(hit).toContain("ascendion");
+  });
+
+  it("stack lists real skill groups", () => {
+    const text = runCommand("stack").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(skills[0].group);
+  });
+
+  it("awards lists real achievements", () => {
+    const text = runCommand("awards").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(achievements[0].title);
+  });
+
+  it("resume lists variants, opens a real one externally, rejects fake", () => {
+    expect(runCommand("resume").lines.length).toBeGreaterThan(1);
+    expect(runCommand("resume master").nav?.type).toBe("external");
+    expect(runCommand("resume nope").lines.some((l) => l.kind === "err")).toBe(true);
+  });
+
+  it("chat switches to chat view; neofetch aliases whoami; sudo is a harmless gag", () => {
+    expect(runCommand("chat").nav).toEqual({ type: "view", view: "chat" });
+    const neo = runCommand("neofetch").lines.map((l) => l.text).join("\n");
+    expect(neo).toContain("Sairam");
+    expect(runCommand("sudo rm -rf /").lines.some((l) => l.kind === "err")).toBe(true);
   });
 });

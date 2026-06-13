@@ -1,6 +1,7 @@
 import { allWork, allProjects, getWork, getProject } from "@/lib/content";
 import { questNodes, dossierFor, questGroups } from "@/lib/game-model";
 import { buildCorpus } from "@/lib/corpus";
+import { skills, achievements, resumeVariants } from "@/lib/profile";
 import { bootBanner } from "./boot-banner";
 import type { Command, CommandResult, Line } from "./types";
 
@@ -131,9 +132,61 @@ const clear: Command = {
   run: () => ({ lines: [], nav: { type: "clear" } }),
 };
 
+const stack: Command = {
+  name: "stack",
+  description: "my skills by area",
+  run: () => ({
+    lines: skills.map((s) => ({ kind: "out", text: `  ${s.group}: ${s.items.join(", ")}` })),
+  }),
+};
+
+const awards: Command = {
+  name: "awards",
+  description: "achievements & recognition",
+  run: () => ({ lines: achievements.map((a) => ({ kind: "out", text: `  ${a.title} — ${a.detail}` })) }),
+};
+
+const resume: Command = {
+  name: "resume",
+  description: "open a résumé variant",
+  usage: "resume [variant]",
+  run: (args) => {
+    const arg = (args[0] ?? "").toLowerCase();
+    if (!arg) {
+      return {
+        lines: out(
+          "résumé variants (resume <name>):",
+          ...resumeVariants.map(
+            (r) => `  ${r.label.toLowerCase().split(" ")[0].padEnd(12)} ${r.label} — ${r.tag}`,
+          ),
+        ),
+      };
+    }
+    const match = resumeVariants.find((r) => r.label.toLowerCase().includes(arg));
+    if (!match) return { lines: err(`no variant: ${arg}  (run 'resume')`) };
+    return { lines: out(`opening ${match.label} …`), nav: { type: "external", href: match.file } };
+  },
+};
+
+const chat: Command = {
+  name: "chat",
+  description: "ask the AI concierge",
+  run: () => ({ lines: out("opening the AI concierge …"), nav: { type: "view", view: "chat" } }),
+};
+
+const neofetch: Command = { ...whoami, name: "neofetch", description: "system info (alias of whoami)" };
+
+const sudo: Command = {
+  name: "sudo",
+  description: "nice try",
+  run: (args) => ({
+    lines: err(`sudo: ${args.join(" ") || "permission"} denied — this résumé is read-only ☺`),
+  }),
+};
+
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
-  help, whoami, ls, cat, tree, grep, open, classic, clear,
+  help, whoami, neofetch, ls, cat, tree, grep, stack, awards, resume, open, chat, classic, clear, sudo,
 };
 
 export function runCommand(raw: string): CommandResult {

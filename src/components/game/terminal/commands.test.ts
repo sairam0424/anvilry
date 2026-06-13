@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
 import { profile, skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
+import { hasPersonalContent } from "@/lib/personal";
 
 /**
  * Coverage + anti-fabrication gate for the terminal command registry. Every command
@@ -9,9 +10,40 @@ import { profile, skills, achievements, impactMetrics, resumeVariants } from "@/
  * registry (single source); unknown input fails closed. Chained into `pnpm build`.
  */
 describe("terminal command registry", () => {
-  it("help lists every registered command (single source of truth)", () => {
+  it("help lists every VISIBLE command (COMMAND_NAMES = visible single source)", () => {
     const text = runCommand("help").lines.map((l) => l.text).join("\n");
     for (const name of COMMAND_NAMES) expect(text).toContain(name);
+  });
+
+  it("hidden egg commands dispatch but are absent from help + autocomplete", () => {
+    const help = runCommand("help").lines.map((l) => l.text).join("\n");
+    for (const hidden of ["secret", "personal", "uses", "now"]) {
+      // Not advertised…
+      expect(COMMAND_NAMES).not.toContain(hidden);
+      expect(help).not.toMatch(new RegExp(`\\b${hidden}\\b`));
+      // …but fully dispatchable (no "command not found").
+      const res = runCommand(hidden);
+      expect(res.lines.some((l) => l.kind === "err" && /not found/.test(l.text))).toBe(false);
+    }
+    // commandEventName still tracks hidden commands (PII-safe, full registry).
+    expect(commandEventName("secret")).toBe("secret");
+  });
+
+  it("about is ALWAYS visible (the non-secret a11y door to personal content)", () => {
+    expect(COMMAND_NAMES).toContain("about");
+    const text = runCommand("about").lines.map((l) => l.text).join("\n");
+    expect(text).toContain(profile.name);
+  });
+
+  it("personal reveal commands are EMPTY-SAFE (no fabricated output when unpopulated)", () => {
+    // With personal.ts empty, the reveals must print honest 'coming soon', never a fact.
+    if (!hasPersonalContent) {
+      expect(runCommand("secret").lines.map((l) => l.text).join("\n")).toMatch(/coming soon/i);
+      expect(runCommand("uses").lines.map((l) => l.text).join("\n")).toMatch(/coming soon/i);
+      expect(runCommand("now").lines.map((l) => l.text).join("\n")).toMatch(/nothing pinned/i);
+      // No err, and the breadcrumb is absent from whoami when there's nothing to find.
+      expect(runCommand("whoami").lines.map((l) => l.text).join("\n")).not.toMatch(/try 'secret'/);
+    }
   });
 
   it("unknown command fails closed with a hint", () => {

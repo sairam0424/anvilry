@@ -2,6 +2,7 @@ import { allWork, allProjects, getWork, getProject } from "@/lib/content";
 import { questNodes, dossierFor, questGroups } from "@/lib/game-model";
 import { buildCorpus } from "@/lib/corpus";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
+import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
 import { bootBanner } from "./boot-banner";
 import type { Command, CommandResult, Line } from "./types";
 
@@ -14,9 +15,10 @@ const help: Command = {
   run: (_args, ctx) => ({
     lines: out(
       "Available commands:",
-      ...Object.values(ctx.registry).map(
-        (c) => `  ${(c.usage ?? c.name).padEnd(16)} ${c.description}`,
-      ),
+      // Hidden commands (the personal-reveal eggs) are dispatchable but never listed.
+      ...Object.values(ctx.registry)
+        .filter((c) => !c.hidden)
+        .map((c) => `  ${(c.usage ?? c.name).padEnd(16)} ${c.description}`),
     ),
   }),
 };
@@ -342,6 +344,86 @@ const stats: Command = {
   },
 };
 
+// ── Personal / "beyond the résumé" — see src/lib/personal.ts (owner-authored). ──
+// `about` is ALWAYS visible (the non-secret a11y door); secret/uses/now are HIDDEN
+// (discoverable via the whoami breadcrumb + console hint). All are EMPTY-SAFE: with no
+// owner content they print an honest "coming soon" — never a fabricated fact.
+
+const about: Command = {
+  name: "about",
+  description: "a short bio (and what else is hidden here)",
+  run: () => {
+    const lines: Line[] = [
+      { kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company}` },
+      { kind: "out", text: profile.subhead },
+    ];
+    if (hasPersonalContent) {
+      lines.push({ kind: "out", text: "" });
+      lines.push({ kind: "out", text: "there's more than the résumé here — run 'secret' for the personal side." });
+    }
+    return { lines };
+  },
+};
+
+const secret: Command = {
+  name: "secret",
+  description: "the personal side (hobbies, fun facts, what I'm learning)",
+  hidden: true,
+  run: () => {
+    if (!hasPersonalContent) {
+      return { lines: out("personal notes coming soon — meanwhile, try 'whoami' or 'summary'.") };
+    }
+    const lines: Line[] = [];
+    const section = (title: string, items: readonly string[]) => {
+      if (items.length === 0) return;
+      lines.push({ kind: "out", text: title });
+      for (const it of items) lines.push({ kind: "out", text: `  • ${it}` });
+      lines.push({ kind: "out", text: "" });
+    };
+    section("hobbies", personal.hobbies);
+    section("fun facts", personal.funFacts);
+    section("currently learning", personal.currentlyLearning);
+    section("ask me about", personal.askMeAbout);
+    lines.push({ kind: "out", text: "→ also try 'uses' (my toolkit) and 'now' (current focus)." });
+    return { lines };
+  },
+};
+
+const personalAlias: Command = { ...secret, name: "personal" };
+
+const uses: Command = {
+  name: "uses",
+  description: "my editor, terminal & daily toolkit",
+  hidden: true,
+  run: () => {
+    if (personal.uses.length === 0) {
+      return { lines: out("toolkit coming soon — meanwhile, run 'stack' for my professional skills.") };
+    }
+    return {
+      lines: personal.uses.map((g) => ({ kind: "out" as const, text: `  ${g.group}: ${g.items.join(", ")}` })),
+    };
+  },
+};
+
+const nowCmd: Command = {
+  name: "now",
+  description: "what I'm focused on right now",
+  hidden: true,
+  run: () => {
+    if (!hasNow) return { lines: out("nothing pinned right now — run 'summary' for the full picture.") };
+    const lines: Line[] = now.focus.map((f) => ({ kind: "out" as const, text: `  • ${f}` }));
+    // Honest staleness line (no implied-current). Date is read at call time (client).
+    const updatedMs = Date.parse(now.updated);
+    if (!Number.isNaN(updatedMs)) {
+      const days = Math.floor((Date.now() - updatedMs) / 86_400_000);
+      const when = days <= 0 ? "today" : days === 1 ? "1 day ago" : `${days} days ago`;
+      lines.push({ kind: "out", text: "" });
+      lines.push({ kind: "out", text: days > 90 ? `(last updated ${when} — may be stale)` : `(updated ${when})` });
+    }
+    return { lines };
+  },
+};
+
 const neofetch: Command = { ...whoami, name: "neofetch", description: "system info (alias of whoami)" };
 
 const sudo: Command = {
@@ -366,7 +448,9 @@ const theme: Command = {
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
   help, whoami, neofetch, ls, cat, tree, grep, find, top, stats, stack, awards, summary, career,
-  resume, open, contact, email, social, chat, theme, classic, developer, clear, sudo,
+  about, resume, open, contact, email, social, chat, theme, classic, developer, clear, sudo,
+  // hidden (dispatchable + tracked, but absent from help + autocomplete) — the eggs:
+  secret, personal: personalAlias, uses, now: nowCmd,
 };
 
 export function runCommand(raw: string): CommandResult {
@@ -382,8 +466,11 @@ export function runCommand(raw: string): CommandResult {
   return { lines: [echo, ...result.lines], nav: result.nav };
 }
 
-/** Command names for autocomplete. */
-export const COMMAND_NAMES = Object.keys(COMMANDS);
+/** Command names for autocomplete — VISIBLE commands only, so Tab never broadcasts the
+ *  hidden egg commands (secret/personal/uses/now). Full dispatch still uses COMMANDS. */
+export const COMMAND_NAMES = Object.entries(COMMANDS)
+  .filter(([, c]) => !c.hidden)
+  .map(([name]) => name);
 
 /**
  * The canonical command word for an analytics event — PII-safe by construction. Returns

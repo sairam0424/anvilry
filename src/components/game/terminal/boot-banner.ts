@@ -1,4 +1,5 @@
 import { profile, impactMetrics } from "@/lib/profile";
+import { hasPersonalContent } from "@/lib/personal";
 import type { Line } from "./types";
 
 /**
@@ -18,7 +19,7 @@ export function bootBanner(): Line[] {
     "                            |__/ ",
   ].map((text) => ({ kind: "art", text }));
 
-  return [
+  const lines: Line[] = [
     ...art,
     { kind: "out", text: "" },
     { kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company}` },
@@ -29,4 +30,10 @@ export function bootBanner(): Line[] {
     { kind: "out", text: "" },
     { kind: "out", text: "Type 'help' to explore — or tap a chip below." },
   ];
+  // Breadcrumb to the hidden personal eggs — ONLY when there's real content to find
+  // (empty-safe: no content → no dead-end hint).
+  if (hasPersonalContent) {
+    lines.push({ kind: "out", text: "tip: there's more than the résumé here — try 'secret'." });
+  }
+  return lines;
 }

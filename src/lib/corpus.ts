@@ -1,5 +1,6 @@
 import { allProjects, allWork } from "@/lib/content";
 import { profile, skills, achievements } from "@/lib/profile";
+import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
 
 /**
  * Builds the grounding corpus for the chatbot from the SAME content sources as the
@@ -30,6 +31,19 @@ export function buildCorpus(): string {
   const skillsText = skills.map((s) => `${s.group}: ${s.items.join(", ")}`).join("\n");
   const achievementsText = achievements.map((a) => `${a.title} — ${a.detail}`).join("\n");
 
+  // Personal "beyond the résumé" section — included ONLY when the owner has populated
+  // src/lib/personal.ts, so the concierge can answer "what does Sairam do for fun?"
+  // truthfully. Still grounded: the system prompt forbids invention. Empty => omitted
+  // entirely (no change to today's corpus).
+  const personalSection = hasPersonalContent || hasNow ? `\n\n## Personal (beyond the résumé)\n${[
+    personal.hobbies.length ? `Hobbies: ${personal.hobbies.join("; ")}` : "",
+    personal.funFacts.length ? `Fun facts: ${personal.funFacts.join("; ")}` : "",
+    personal.currentlyLearning.length ? `Currently learning: ${personal.currentlyLearning.join("; ")}` : "",
+    personal.askMeAbout.length ? `Ask me about: ${personal.askMeAbout.join("; ")}` : "",
+    personal.uses.length ? `Uses: ${personal.uses.map((g) => `${g.group} — ${g.items.join(", ")}`).join("; ")}` : "",
+    hasNow ? `Right now: ${now.focus.join("; ")}` : "",
+  ].filter(Boolean).join("\n")}` : "";
+
   return `# ${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})
 Location: ${profile.location}
 Summary: ${profile.headline} ${profile.subhead}
@@ -46,5 +60,5 @@ ${projects}
 ${skillsText}
 
 ## Achievements
-${achievementsText}`;
+${achievementsText}${personalSection}`;
 }

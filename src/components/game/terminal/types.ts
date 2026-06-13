@@ -29,6 +29,13 @@ export type Command = {
   name: string;
   description: string; // shown by `help`
   usage?: string; // e.g. "open <slug>"
+  /**
+   * Hidden from `help` + Tab autocomplete (but fully dispatchable + analytics-tracked).
+   * For the easter-egg personal commands (secret/uses/now) — discoverable via the
+   * whoami/console breadcrumb, never broadcast. The always-visible `about` is the
+   * non-secret door so the personal content is never keyboard/SR-locked.
+   */
+  hidden?: boolean;
   /** Pure: given args + ctx, return lines to print and/or a nav action. */
   run: (args: string[], ctx: CommandContext) => CommandResult;
 };

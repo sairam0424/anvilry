@@ -143,7 +143,7 @@ export function CommandPalette() {
               placeholder="Jump to a page, project, or link…"
               spellCheck={false}
               autoComplete="off"
-              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none [&:focus-visible]:outline-none placeholder:text-fg-muted"
+              className="no-focus-ring w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
             />
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">

@@ -3,6 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
+// Radix Dialog Title/Description — same instance cmdk bundles (deduped to one
+// version), so these register with cmdk's internal <Dialog.Content> context and
+// satisfy the a11y requirement (resolves the "DialogContent requires DialogTitle"
+// console error). Hidden via the existing sr-only class (no extra dep).
+import { Title as DialogTitle, Description as DialogDescription } from "@radix-ui/react-dialog";
 import {
   Home,
   FolderGit2,
@@ -130,6 +135,13 @@ export function CommandPalette() {
         label="Command palette"
         className="fixed inset-0 z-50 flex items-start justify-center pt-[14vh]"
       >
+        {/* Accessible name + description for the underlying Radix DialogContent
+            (visually hidden). Resolves the "DialogContent requires DialogTitle" a11y
+            console error; these register because they share cmdk's Radix instance. */}
+        <DialogTitle className="sr-only">Command palette</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search and jump to a page, project, link, or switch the view.
+        </DialogDescription>
         <div className="fixed inset-0 bg-bg-base/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
         <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-border-strong bg-bg-surface shadow-2xl">
           {/* The search row carries the focus affordance (accent bottom-border via
@@ -143,7 +155,7 @@ export function CommandPalette() {
               placeholder="Jump to a page, project, or link…"
               spellCheck={false}
               autoComplete="off"
-              className="w-full bg-transparent py-3.5 text-sm text-fg outline-none [&:focus-visible]:outline-none placeholder:text-fg-muted"
+              className="no-focus-ring w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
             />
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">

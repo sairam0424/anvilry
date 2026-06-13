@@ -9,7 +9,7 @@ import { ViewRouter } from "@/components/view-router";
 // Explicit query-stripped canonical (resolved absolute via layout's metadataBase).
 // `/` is the only route that carries ?view=, and a literal self-canonical would
 // canonicalize each ?view= variant to itself — so pin it to the bare path to
-// collapse /?view=gamified and /?view=chat back to https://sairam.dev/.
+// collapse /?view=gamified and /?view=chat back to the bare site URL.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };

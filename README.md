@@ -1,6 +1,6 @@
 # Anvilry
 
-> **Sairam Ugge** — GenAI & Backend Engineer. Live at **[sairam.dev](https://sairam.dev)**.
+> **Sairam Ugge** — GenAI & Backend Engineer. Live at **[anvilry.vercel.app](https://anvilry.vercel.app)**.
 
 A recruiter-facing engineering portfolio built as a **beast with three switchable experiences over one canonical content source** — pick the way you want to explore the same verified work:
 
@@ -79,10 +79,10 @@ See **[`DEPLOY.md`](./DEPLOY.md)** for the full guide (env vars, verified Bedroc
 2. Import at [vercel.com/new](https://vercel.com/new) — framework auto-detected as Next.js.
 3. Add env vars (Production + Preview): `LLM_PROVIDER`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_REGION`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 4. **Branch model:** `develop` = primary working branch (Preview deploys) · `main` = release branch (Production → the live domain).
-5. Custom domain **[sairam.dev](https://sairam.dev)** is live (Settings → Domains).
+5. Live at **[anvilry.vercel.app](https://anvilry.vercel.app)** (custom domain optional, via Settings → Domains).
 
-The base URL is `https://sairam.dev` in `src/app/layout.tsx`, `sitemap.ts`, `robots.ts`, and `json-ld.tsx` — update those if the domain changes.
+The public base URL is `https://anvilry.vercel.app` (in `src/app/layout.tsx` `siteUrl`, plus `sitemap.ts`, `robots.ts`, `json-ld.tsx`, `opengraph-image.tsx`) — update those four files if you point a custom domain at the deployment.
 
 ---
 
-<sub>Anvilry is the project codename; the public site is **sairam.dev**.</sub>
+<sub>Anvilry is the project codename; the deployed site is **[anvilry.vercel.app](https://anvilry.vercel.app)**.</sub>

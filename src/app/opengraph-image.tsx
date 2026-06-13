@@ -34,7 +34,7 @@ export default function OpengraphImage() {
           Multi-agent LLM systems · event-driven backends · open-source AI infrastructure
         </div>
         <div style={{ display: "flex", gap: 24, marginTop: 48, fontSize: 24, color: "#5b6478" }}>
-          <span>sairam.dev</span>
+          <span>anvilry.vercel.app</span>
           <span>·</span>
           <span>github.com/{profile.githubUser}</span>
         </div>

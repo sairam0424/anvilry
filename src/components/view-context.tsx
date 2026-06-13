@@ -12,14 +12,15 @@ import {
 import { useSearchParams } from "next/navigation";
 
 /**
- * The three top-level experiences a visitor can switch between. CLASSIC is the
- * SSG-indexed default rendered on first paint; GAMIFIED and CHAT are additive
- * client-only views selected without a navigation (so the WebGL context and the
- * chat transcript survive a switch).
+ * The four top-level experiences a visitor can switch between. CLASSIC is the
+ * SSG-indexed default rendered on first paint; GAMIFIED, CHAT, and DEVELOPER are
+ * additive client-only views selected without a navigation (so the WebGL context and
+ * the chat transcript survive a switch). DEVELOPER is a focused full-page terminal
+ * destination (the keyboard-native CLI over the same content).
  */
-export type View = "classic" | "gamified" | "chat";
+export type View = "classic" | "gamified" | "chat" | "developer";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat"] as const;
+const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer"] as const;
 const DEFAULT_VIEW: View = "classic";
 
 const isView = (v: string | null | undefined): v is View =>
@@ -113,4 +114,6 @@ export function useView(): ViewContextValue {
   return ctx;
 }
 
-export { VIEWS, DEFAULT_VIEW };
+// getServerSnapshot + isView are exported for the SSG-safety regression test
+// (assert the server/first-client snapshot stays "classic" no matter what VIEWS holds).
+export { VIEWS, DEFAULT_VIEW, isView, getServerSnapshot };

@@ -3,7 +3,8 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useView } from "@/components/view-context";
-import { runCommand, COMMAND_NAMES } from "./commands";
+import { track } from "@vercel/analytics";
+import { runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { bootBanner } from "./boot-banner";
 import { nextHistoryIndex } from "./history";
 import { completeCommand } from "./completion";
@@ -32,6 +33,9 @@ export function useTerminal() {
       if (trimmed) {
         history.current = [...history.current, trimmed];
         histIndex.current = -1;
+        // PII-safe usage signal: the command WORD only (commandEventName strips args).
+        // Above all branching so it also captures theme/clear early-returns below.
+        track("terminal_command", { name: commandEventName(trimmed) });
       }
       // `theme` is a shell concern (cosmetic state) — handle before the pure registry.
       if (trimmed.toLowerCase() === "theme") {

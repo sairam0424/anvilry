@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { TerminalSquare, Maximize2 } from "lucide-react";
 import { useTerminal } from "./use-terminal";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
@@ -93,7 +94,10 @@ export function Terminal({
           <button
             ref={maximizeRef}
             type="button"
-            onClick={onMaximize}
+            onClick={() => {
+              track("terminal_maximize");
+              onMaximize();
+            }}
             aria-label="Maximize terminal to fullscreen"
             className="-mr-1 ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:ml-0"
           >
@@ -146,7 +150,11 @@ export function Terminal({
           <button
             key={c}
             type="button"
-            onClick={() => runAndPin(c)}
+            onClick={() => {
+              // `c` is from the hardcoded CHIPS allowlist — PII-free by construction.
+              track("terminal_chip", { name: c });
+              runAndPin(c);
+            }}
             className="rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {c}

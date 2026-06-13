@@ -22,15 +22,38 @@ export type UsesGroup = { group: string; items: string[] };
 
 export const personal = {
   /** Short, character-revealing, recruiter-safe lines. */
-  hobbies: [] as string[],
+  hobbies: [
+    "Competitive programming",
+    "Building & customizing mechanical keyboards",
+    "Reading — tech, sci-fi, and non-fiction",
+    "Food & travelling",
+  ] as string[],
   /** True "beyond the résumé" facts (don't restate achievements verbatim). */
-  funFacts: [] as string[],
+  funFacts: [
+    "Solved 1000+ data-structures & algorithms problems",
+    "Mentored 250–300 students on DSA",
+  ] as string[],
   /** Things actively being learned right now. */
-  currentlyLearning: [] as string[],
+  currentlyLearning: [
+    "Rust & Go for systems-level work",
+    "Distributed consensus protocols",
+    "System design & architecture at scale",
+    "Deeper LLM / agent internals",
+  ] as string[],
   /** Conversation starters for a recruiter / fellow engineer. */
-  askMeAbout: [] as string[],
+  askMeAbout: [
+    "Multi-agent orchestration tradeoffs",
+    "Scaling an event-driven backend to 3K daily users",
+    "Redis Streams vs Kafka for streaming",
+    "Mentoring & teaching DSA",
+  ] as string[],
   /** uses.tech-style personal toolkit — distinct from the professional `skills`. */
-  uses: [] as UsesGroup[],
+  uses: [
+    { group: "Editor & terminal", items: ["VS Code", "Cursor", "Warp", "iTerm2 + zsh + tmux"] },
+    { group: "Hardware", items: ["MacBook Pro (Apple Silicon)", "A mechanical keyboard"] },
+    { group: "Infra & ops", items: ["Docker", "Kubernetes", "Argo CD", "AWS", "Azure"] },
+    { group: "Daily tools", items: ["Git & GitHub", "Postman", "Notion", "Obsidian"] },
+  ] as UsesGroup[],
 } as const;
 
 /**
@@ -40,10 +63,17 @@ export const personal = {
  * "" to keep the `now` command dark.
  */
 export const now = {
-  /** ISO date, e.g. "2026-06-14". "" => the `now` command stays dark. */
-  updated: "",
+  /** ISO date, e.g. "2026-06-14". "" => the `now` command stays dark.
+   *  Typed as plain string (not the literal) so the empty-safe `!== ""` gate stays
+   *  valid whether or not it's been filled in. */
+  updated: "2026-06-14" as string,
   /** 1–4 short lines: what I'm building / learning right now. */
-  focus: [] as string[],
+  focus: [
+    "Pensieve & AAVA Code work at Ascendion",
+    "Architecting solutions across work and open source",
+    "Building open-source AI infrastructure",
+    "Deepening systems & distributed-systems knowledge — open to new roles",
+  ] as string[],
 } as const;
 
 /**

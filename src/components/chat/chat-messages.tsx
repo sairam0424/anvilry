@@ -43,7 +43,14 @@ export function ChatMessages({
   if (messages.length === 0) return <div className="flex-1">{liveRegion}</div>;
 
   return (
-    <div ref={scrollRef} className="mt-6 flex-1 space-y-4 overflow-y-auto">
+    // min-h-0: without it this flex child's default min-height:auto refuses to shrink
+    // below content, so overflow-y-auto never engages and the document scrolls instead
+    // (measured live: clientHeight === scrollHeight). [overflow-anchor:none] stops the
+    // browser's scroll-anchoring from fighting the JS pin (defensive; Safari 27).
+    <div
+      ref={scrollRef}
+      className="mt-6 min-h-0 flex-1 space-y-4 overflow-y-auto [overflow-anchor:none]"
+    >
       {liveRegion}
       {messages.map((m, i) => {
         const isLast = i === messages.length - 1;

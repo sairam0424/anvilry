@@ -129,7 +129,7 @@ function AskPortfolioWidget() {
             </button>
           </header>
 
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 [overflow-anchor:none]">
             {messages.length === 0 && (
               <div className="space-y-3">
                 <p className="text-sm text-fg-muted">

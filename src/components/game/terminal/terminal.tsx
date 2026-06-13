@@ -90,7 +90,10 @@ export function Terminal({
 
       <div
         ref={histRef}
-        className={cn("terminal-boot space-y-1 overflow-y-auto px-4 py-3", maxHeightClass)}
+        className={cn(
+          "terminal-boot space-y-1 overflow-y-auto px-4 py-3 [overflow-anchor:none]",
+          maxHeightClass,
+        )}
         role="log"
         aria-live="polite"
         aria-atomic="false"

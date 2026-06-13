@@ -52,6 +52,14 @@ describe("terminal command registry", () => {
     expect(runCommand("cat nope").lines.some((l) => l.kind === "err")).toBe(true);
   });
 
+  it("every slug `ls` lists is also `cat`-able (cat resolves via the graph chain, ls via content — pin the contract)", () => {
+    for (const item of [...allWork, ...allProjects]) {
+      const res = runCommand(`cat ${item.slug}`);
+      const failed = res.lines.some((l) => l.kind === "err");
+      expect(failed, `cat ${item.slug} should resolve (ls lists it)`).toBe(false);
+    }
+  });
+
   it("tree lists real system groups", () => {
     const text = runCommand("tree").lines.map((l) => l.text).join("\n");
     expect(text).toContain("Production Work");

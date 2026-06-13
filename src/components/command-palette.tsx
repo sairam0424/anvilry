@@ -25,6 +25,7 @@ import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
+import { requestDevMode } from "@/components/game/dev-mode-intent";
 
 type Action = {
   id: string;
@@ -79,7 +80,7 @@ export function CommandPalette() {
   const views: Action[] = [
     { id: "v-classic", label: "Classic view", hint: "the standard portfolio", icon: <LayoutGrid size={16} />, run: () => switchTo("classic"), keywords: "default standard reset" },
     { id: "v-play", label: "Play view", hint: "explorable build graph", icon: <Gamepad2 size={16} />, run: () => switchTo("gamified"), keywords: "game gamified graph terminal explore" },
-    { id: "v-dev", label: "Developer mode", hint: "terminal — query my work", icon: <TerminalSquare size={16} />, run: () => switchTo("gamified"), keywords: "terminal cli console command shell whoami grep developer" },
+    { id: "v-dev", label: "Developer mode", hint: "terminal — query my work", icon: <TerminalSquare size={16} />, run: () => { requestDevMode(); switchTo("gamified"); }, keywords: "terminal cli console command shell whoami grep developer" },
     { id: "v-chat", label: "Chat view", hint: "ask my portfolio", icon: <MessagesSquare size={16} />, run: () => switchTo("chat"), keywords: "ai concierge conversation assistant" },
   ];
 

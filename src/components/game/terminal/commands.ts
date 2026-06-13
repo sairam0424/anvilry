@@ -24,7 +24,7 @@ const help: Command = {
 const whoami: Command = {
   name: "whoami",
   description: "who is Sairam (boot banner)",
-  run: () => ({ lines: bootBanner().map((t) => ({ kind: "out", text: t })) }),
+  run: () => ({ lines: bootBanner() }),
 };
 
 const ls: Command = {

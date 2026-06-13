@@ -4,7 +4,8 @@ import type { View } from "@/components/view-context";
 export type Line =
   | { kind: "in"; text: string } // echoed command (the "$ cmd" line)
   | { kind: "out"; text: string }
-  | { kind: "err"; text: string };
+  | { kind: "err"; text: string }
+  | { kind: "art"; text: string }; // decorative ASCII (figlet) — aria-hidden, never announced
 
 /**
  * A command may navigate instead of (or after) printing. The SHELL executes this;

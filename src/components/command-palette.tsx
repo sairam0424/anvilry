@@ -24,11 +24,14 @@ import {
   Copy,
   Download,
   Plug,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
 
 type Action = {
   id: string;
@@ -69,6 +72,7 @@ export function CommandPalette() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { setView } = useView();
+  const { settings, toggle } = useVoiceSettings();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -190,6 +194,29 @@ export function CommandPalette() {
     { id: "mcp", label: "Open MCP endpoint", hint: "for AI agents", icon: <Plug size={16} />, run: () => go("/mcp"), keywords: "ai agent model context protocol tools api" },
   ];
 
+  // Voice toggles — opt-in, persisted. "Read answers aloud" only appears where the
+  // browser supports speech synthesis (else it would toggle a no-op). The toggle
+  // flips the pref and closes the palette; a "Listen" button then appears under each
+  // answer. We feature-detect at render (the palette is client-only).
+  const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const voice: Action[] = ttsSupported
+    ? [
+        {
+          id: "voice-tts",
+          label: settings.ttsEnabled ? "Turn off read-aloud" : "Read answers aloud",
+          hint: settings.ttsEnabled ? "on" : "spoken responses",
+          icon: settings.ttsEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />,
+          run: () => {
+            toggle("ttsEnabled");
+            setOpen(false);
+          },
+          keywords: "voice speak audio tts text to speech accessibility listen sound",
+          // Label flips with state, so pin a stable search value (cmdk re-scores on change).
+          value: "Read answers aloud voice speak audio tts accessibility listen sound",
+        },
+      ]
+    : [];
+
   const workItems: Action[] = allWork.map((w) => ({
     id: `w-${w.slug}`,
     label: w.name,
@@ -211,7 +238,7 @@ export function CommandPalette() {
   // Resolve recent ids → live Action objects (ignoring any that no longer exist,
   // e.g. a removed project slug). Shown ONLY on an empty query, so a recent item
   // is never on-screen alongside its canonical copy during filtering.
-  const allActions = [...views, ...nav, ...actions, ...workItems, ...projItems, ...links];
+  const allActions = [...views, ...nav, ...actions, ...voice, ...workItems, ...projItems, ...links];
   const byId = new Map(allActions.map((a) => [a.id, a]));
   const recentItems: Action[] = recent.map((id) => byId.get(id)).filter((a): a is Action => Boolean(a));
   const showRecent = search.trim() === "" && recentItems.length > 0;
@@ -277,6 +304,7 @@ export function CommandPalette() {
             <Group heading="Switch view" actions={views} onRun={record} />
             <Group heading="Navigate" actions={nav} onRun={record} />
             <Group heading="Actions" actions={actions} onRun={record} />
+            {voice.length > 0 && <Group heading="Voice" actions={voice} onRun={record} />}
             <Group heading="Work" actions={workItems} onRun={record} />
             <Group heading="Projects" actions={projItems} onRun={record} />
             <Group heading="Links" actions={links} onRun={record} />

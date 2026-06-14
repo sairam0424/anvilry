@@ -22,7 +22,7 @@ const ROLE_TO_LABEL: Record<ResumeRole, string> = {
   backend: "Backend",
   fullstack: "Full-Stack",
   frontend: "Frontend",
-  genai: "Gen-AI",
+  genai: "GenAI",
 };
 
 // Zod input schemas (raw-shape form for mcp-handler's registerTool).

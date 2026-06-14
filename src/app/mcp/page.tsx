@@ -46,7 +46,7 @@ export default function McpPage() {
           <p>
             This portfolio runs a small <span className="text-fg">MCP server</span> — the same protocol AI
             assistants use to call tools. Connect it to Claude Desktop or Cursor and ask your own AI about my
-            work; it answers from {profile.name.split(" ")[0]}&apos;s real projects and résumé.
+            work; it answers from my real projects and résumé.
           </p>
           <p className="text-sm text-fg-subtle">
             Read-only · grounded in the same content as this site · no LLM cost on the server · it can only

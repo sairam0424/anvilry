@@ -28,6 +28,7 @@ import {
   VolumeX,
   AudioLines,
   Mic,
+  Ear,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
@@ -300,6 +301,27 @@ export function CommandPalette() {
             },
             keywords: "voice talk surface full view modal overlay layout preference",
             value: "Voice talk surface full view modal overlay layout preference",
+          },
+        ]
+      : []),
+    // Wake word — opt-in, OFF by default, highest trust cost. Switches to the Chat
+    // view (where it's scoped) and flips the pref; the WakeWordController then shows a
+    // cloud-audio disclosure before arming the mic, plus a persistent banner + kill.
+    ...(sttSupported
+      ? [
+          {
+            id: "voice-wake",
+            label: settings.wakeWord ? "Turn off wake word" : "Enable wake word (Hey portfolio)",
+            hint: settings.wakeWord ? "listening" : "hands-free, opt-in",
+            icon: <Ear size={16} />,
+            run: () => {
+              const turningOn = !settings.wakeWord;
+              set({ wakeWord: turningOn });
+              setOpen(false);
+              if (turningOn) setView("chat"); // scope it to where the banner lives
+            },
+            keywords: "wake word hey portfolio hands-free always listen hotword voice activate",
+            value: "Enable wake word hey portfolio hands-free always listen hotword voice",
           },
         ]
       : []),

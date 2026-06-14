@@ -37,6 +37,10 @@ type Action = {
   icon: React.ReactNode;
   run: () => void;
   keywords?: string;
+  // Stable cmdk search value. Defaults to label+hint+keywords, but actions whose LABEL
+  // mutates (e.g. copy-email flipping to "Copied!") set this so the value cmdk scores
+  // against never changes mid-interaction.
+  value?: string;
 };
 
 // Recently-run actions persist in localStorage so the palette opens to "what you
@@ -171,6 +175,9 @@ export function CommandPalette() {
       icon: <Copy size={16} />,
       run: copyEmail,
       keywords: "clipboard contact mail address",
+      // Fixed value — the label flips to "Copied!" for ~1.5s, but the search value must
+      // not mutate (cmdk re-scores on value change).
+      value: `Copy email ${profile.email} clipboard contact mail address`,
     },
     ...resumeVariants.map((v) => ({
       id: `dl-${v.file}`,
@@ -254,6 +261,12 @@ export function CommandPalette() {
               className="no-focus-ring w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
             />
           </div>
+          {/* Status messages (WCAG 2.2 SC 4.1.3): the copy-email confirmation flips a
+              cmdk option's label, which is NOT a live region — screen readers wouldn't
+              announce it. This polite region speaks the success without moving focus. */}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {copied ? "Email copied to clipboard" : ""}
+          </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">
             <Command.Empty className="px-3 py-6 text-center text-sm text-fg-subtle">
               No results.
@@ -293,7 +306,7 @@ function Group({
       {actions.map((a) => (
         <Command.Item
           key={valuePrefix ? `${valuePrefix}-${a.id}` : a.id}
-          value={`${valuePrefix ? `${valuePrefix} ` : ""}${a.label} ${a.hint ?? ""} ${a.keywords ?? ""}`}
+          value={`${valuePrefix ? `${valuePrefix} ` : ""}${a.value ?? `${a.label} ${a.hint ?? ""} ${a.keywords ?? ""}`}`}
           onSelect={() => {
             onRun?.(a.id);
             a.run();

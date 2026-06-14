@@ -47,13 +47,19 @@ export function useTraceRunner(scenario: Scenario, reduced: boolean) {
     let elapsed = 0;
     scenario.steps.forEach((step, i) => {
       elapsed += step.ms;
+      const isLast = i === scenario.steps.length - 1;
       timers.current.push(
         setTimeout(() => {
           setRevealedCount(i + 1);
-          setLiveMessage(`${step.agent}: ${step.action}`);
-          if (i === scenario.steps.length - 1) {
+          // On the last step, fold the settle into the SAME live message — two
+          // setLiveMessage calls in one tick collapse to one commit, so a separate
+          // "Trace complete." would silently overwrite the final step and AT would
+          // never hear the last agent. One combined string announces both.
+          if (isLast) {
             setStatus("done");
-            setLiveMessage("Trace complete.");
+            setLiveMessage(`${step.agent}: ${step.action}. Trace complete.`);
+          } else {
+            setLiveMessage(`${step.agent}: ${step.action}`);
           }
         }, elapsed),
       );

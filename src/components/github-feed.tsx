@@ -41,7 +41,7 @@ export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-mono text-sm font-medium text-fg">{r.name}</span>
-                <span className="flex items-center gap-3 font-mono text-xs text-fg-subtle">
+                <span className="flex items-center gap-3 font-mono text-xs text-fg-muted">
                   <span className="inline-flex items-center gap-1">
                     <Star size={12} aria-hidden="true" />
                     <span className="sr-only">Stars: </span>
@@ -57,7 +57,7 @@ export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
               {r.description && (
                 <p className="line-clamp-2 text-sm text-fg-muted">{r.description}</p>
               )}
-              <div className="mt-auto flex items-center gap-3 pt-1 font-mono text-[11px] text-fg-subtle">
+              <div className="mt-auto flex items-center gap-3 pt-1 font-mono text-[11px] text-fg-muted">
                 {r.language && (
                   <span className="inline-flex items-center gap-1.5">
                     <span className="size-2 rounded-full bg-accent" aria-hidden="true" />

@@ -90,7 +90,13 @@ const handler = createMcpHandler(
     );
   },
   {},
-  { basePath: "/api/mcp" },
+  // disableSse: SSE was removed from the MCP spec (2025-03-26) and the only transport
+  // the /mcp page advertises is Streamable HTTP (/api/mcp/mcp). Without this, a GET to the
+  // legacy /api/mcp/sse path (the [transport] segment matches "sse") falls through to
+  // mcp-handler's Redis init, which throws "redisUrl is required" → an unhandled 500 in
+  // prod (this project uses Upstash REST, not REDIS_URL/KV_URL). Disabling it 404s that
+  // dead path and drops the needless redis dependency from the bundle.
+  { basePath: "/api/mcp", disableSse: true },
 );
 
 export { handler as GET, handler as POST, handler as DELETE };

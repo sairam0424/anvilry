@@ -36,6 +36,16 @@ describe("useTraceRunner", () => {
     act(() => vi.advanceTimersByTime(500));
     expect(result.current.revealedCount).toBe(3);
     expect(result.current.status).toBe("done");
+    // The final live message folds the last step AND the settle into ONE string. Two
+    // setLiveMessage calls in the same tick collapse to one commit, so a separate
+    // "Trace complete." would silently overwrite the last agent — a screen reader would
+    // never hear it. Assert BOTH the final agent's content and the completion survive.
+    expect(result.current.liveMessage).toBe("Presenter: a3. Trace complete.");
+  });
+
+  it("reduced=true still announces completion in the live region", () => {
+    const { result } = renderHook(() => useTraceRunner(SCENARIO, true));
+    act(() => result.current.run());
     expect(result.current.liveMessage).toBe("Trace complete.");
   });
 

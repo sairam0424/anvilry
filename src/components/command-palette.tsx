@@ -26,12 +26,14 @@ import {
   Plug,
   Volume2,
   VolumeX,
+  AudioLines,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { openTalkMode } from "@/components/chat/talk-overlay-store";
 
 type Action = {
   id: string;
@@ -199,23 +201,46 @@ export function CommandPalette() {
   // flips the pref and closes the palette; a "Listen" button then appears under each
   // answer. We feature-detect at render (the palette is client-only).
   const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
-  const voice: Action[] = ttsSupported
-    ? [
-        {
-          id: "voice-tts",
-          label: settings.ttsEnabled ? "Turn off read-aloud" : "Read answers aloud",
-          hint: settings.ttsEnabled ? "on" : "spoken responses",
-          icon: settings.ttsEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />,
-          run: () => {
-            toggle("ttsEnabled");
-            setOpen(false);
+  const sttSupported =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  const voice: Action[] = [
+    // Hands-free two-way talk mode — only on the modal surface (the 5th-view surface
+    // is entered via the ViewSwitcher) and only where speech recognition exists.
+    ...(sttSupported && settings.talkSurface === "modal"
+      ? [
+          {
+            id: "voice-talk",
+            label: "Start voice conversation",
+            hint: "hands-free talk mode",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              setOpen(false);
+              openTalkMode();
+            },
+            keywords: "voice talk conversation speak hands-free microphone mic chat assistant",
           },
-          keywords: "voice speak audio tts text to speech accessibility listen sound",
-          // Label flips with state, so pin a stable search value (cmdk re-scores on change).
-          value: "Read answers aloud voice speak audio tts accessibility listen sound",
-        },
-      ]
-    : [];
+        ]
+      : []),
+    // Read-aloud toggle — only where speech synthesis exists.
+    ...(ttsSupported
+      ? [
+          {
+            id: "voice-tts",
+            label: settings.ttsEnabled ? "Turn off read-aloud" : "Read answers aloud",
+            hint: settings.ttsEnabled ? "on" : "spoken responses",
+            icon: settings.ttsEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />,
+            run: () => {
+              toggle("ttsEnabled");
+              setOpen(false);
+            },
+            keywords: "voice speak audio tts text to speech accessibility listen sound",
+            // Label flips with state, so pin a stable search value (cmdk re-scores on change).
+            value: "Read answers aloud voice speak audio tts accessibility listen sound",
+          },
+        ]
+      : []),
+  ];
 
   const workItems: Action[] = allWork.map((w) => ({
     id: `w-${w.slug}`,

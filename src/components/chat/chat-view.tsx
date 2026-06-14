@@ -6,6 +6,7 @@ import { useChat } from "@/components/chat/use-chat";
 import { RECRUITER_CHIPS, STARTER_CHIPS } from "@/components/chat/chat-suggestions";
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { MicButton } from "@/components/chat/mic-button";
+import { TalkLaunchButton } from "@/components/chat/talk-launch-button";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { profile, impactMetrics } from "@/lib/profile";
 
@@ -44,9 +45,14 @@ export function ChatView() {
     <main className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
       <div className="flex items-center justify-between gap-3">
         <ViewEscapeHatch />
-        <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
-          <Sparkles size={13} aria-hidden="true" /> AI Concierge
-        </p>
+        <div className="flex items-center gap-3">
+          {/* Hands-free voice conversation (modal surface; null on the 5th-view surface
+              or unsupported browsers). */}
+          <TalkLaunchButton />
+          <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
+            <Sparkles size={13} aria-hidden="true" /> AI Concierge
+          </p>
+        </div>
       </div>
 
       {/* Bordered "console" panel — frames the whole conversation so it reads as a

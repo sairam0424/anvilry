@@ -6,6 +6,7 @@ import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { CommandPalette } from "@/components/command-palette";
 import { AskPortfolio } from "@/components/ask-portfolio";
+import { TalkModeMount } from "@/components/chat/talk-mode-mount";
 import { ViewHint } from "@/components/view-hint";
 import { EasterEggs } from "@/components/game/easter-eggs";
 import { PersonJsonLd } from "@/components/json-ld";
@@ -78,6 +79,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteFooter />
           <CommandPalette />
           <AskPortfolio />
+          {/* Single global mount for the two-way talk-mode modal — opened from the
+              Chat-view "Talk" button or the ⌘K command via a shared module store. */}
+          <TalkModeMount />
           <ViewHint />
           {/* Global "subtle delight" — console greeting + Konami reveal, every view. */}
           <EasterEggs />

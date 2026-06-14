@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
-      { protocol: "https", hostname: "github-readme-stats.vercel.app" },
+      // github-readme-stats removed: the /projects feed is now first-party
+      // (src/lib/github.ts, server-fetched + ISR) — no external <img> embed.
       { protocol: "https", hostname: "img.shields.io" },
     ],
   },

@@ -4,7 +4,8 @@ import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProjectCard } from "@/components/project-card";
-import { GithubStats } from "@/components/github-stats";
+import { GithubFeed } from "@/components/github-feed";
+import { getRepoFeed } from "@/lib/github";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -12,8 +13,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "/projects" },
 };
 
-export default function ProjectsPage() {
+// ISR: prerender at build with whatever repos resolve, regenerate at most once/hour.
+// The GitHub API is fetched server-side here (never in the visitor's request path),
+// so the page stays static-served — cacheComponents is OFF, so this segment config
+// is valid. Empty-safe: getRepoFeed() returns [] on failure and the feed hides.
+export const revalidate = 3600;
+
+export default async function ProjectsPage() {
   const groups = projectsByGroup();
+  const repos = await getRepoFeed();
   return (
     <main className="flex-1">
       <Section label="// open-source AI infrastructure" title="Projects I build in the open">
@@ -23,9 +31,11 @@ export default function ProjectsPage() {
             tech, not adoption — clone any repo and inspect it.
           </p>
         </Reveal>
-        <div className="mt-8">
-          <GithubStats />
-        </div>
+        {repos.length > 0 && (
+          <div className="mt-8">
+            <GithubFeed repos={repos} />
+          </div>
+        )}
       </Section>
 
       {groups.map((g) => (

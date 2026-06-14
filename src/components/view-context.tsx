@@ -9,6 +9,7 @@ import {
   Suspense,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams } from "next/navigation";
 
 /**
@@ -52,6 +53,32 @@ const getClientSnapshot = () => current;
 const getServerSnapshot = (): View => DEFAULT_VIEW;
 
 /**
+ * Commit a view change, cross-fading via the View Transitions API when available.
+ *
+ * The swap is a useSyncExternalStore emit() → React commits it ASYNCHRONOUSLY
+ * (batched). startViewTransition snapshots the DOM before/after its callback, so
+ * we must flushSync the emit INSIDE the callback — otherwise the "after" snapshot
+ * is still the old view and nothing animates. flushSync forces the new view to
+ * paint synchronously within the transition.
+ *
+ * Skipped (plain emit) when: the API is missing (older browsers) OR the user
+ * prefers reduced motion — the kill-switch keeps the swap instant and jank-free.
+ */
+function commitViewChange() {
+  const prefersReducedMotion =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const doc = typeof document !== "undefined" ? document : undefined;
+  if (!doc || typeof doc.startViewTransition !== "function" || prefersReducedMotion) {
+    emit();
+    return;
+  }
+  doc.startViewTransition(() => flushSync(emit));
+}
+
+/**
  * Set the active view and reflect it in the URL (?view=) without a navigation.
  *
  * Deliberately NO cookie/localStorage persistence: the owner's decision is
@@ -59,7 +86,10 @@ const getServerSnapshot = (): View => DEFAULT_VIEW;
  * The ?view= query param (shareable + survives in-session history) is the only
  * persistence, so a fresh load of bare `/` is always Classic.
  */
-function setViewInternal(view: View, { updateUrl = true }: { updateUrl?: boolean } = {}) {
+function setViewInternal(
+  view: View,
+  { updateUrl = true, transition = true }: { updateUrl?: boolean; transition?: boolean } = {},
+) {
   if (!isView(view) || view === current) return;
   current = view;
   if (updateUrl && typeof window !== "undefined") {
@@ -68,7 +98,10 @@ function setViewInternal(view: View, { updateUrl = true }: { updateUrl?: boolean
     else url.searchParams.set("view", view);
     window.history.replaceState(window.history.state, "", url);
   }
-  emit();
+  // Deep-link sync on mount commits instantly (no cross-fade on first paint);
+  // user-initiated switches cross-fade via the View Transitions API.
+  if (transition) commitViewChange();
+  else emit();
 }
 
 type ViewContextValue = { view: View; setView: (v: View) => void };
@@ -86,8 +119,9 @@ function ViewQuerySync() {
 
   useEffect(() => {
     const fromUrl = params.get("view");
-    // Don't rewrite the URL we just read from.
-    if (isView(fromUrl)) setViewInternal(fromUrl, { updateUrl: false });
+    // Don't rewrite the URL we just read from, and don't cross-fade on first
+    // paint — the deep-linked view should appear immediately, not animate in.
+    if (isView(fromUrl)) setViewInternal(fromUrl, { updateUrl: false, transition: false });
   }, [params]);
 
   return null;

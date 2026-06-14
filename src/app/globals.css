@@ -176,3 +176,30 @@ body {
   text-transform: uppercase;
   color: var(--accent);
 }
+
+/*
+  View transitions — cross-fade when switching the top-level view (Classic / Chat /
+  Play / Developer). Driven from setViewInternal via document.startViewTransition.
+  Only `view-body` cross-fades; `site-header` is its own group and is pinned (no
+  animation) so the sticky nav stays put across a switch.
+*/
+::view-transition-group(view-body) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.21, 0.47, 0.32, 0.98);
+}
+::view-transition-old(site-header),
+::view-transition-new(site-header) {
+  /* Pin the persistent chrome — don't fade it with the body. */
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Reduced-motion kill-switch (belt-and-suspenders — JS already skips the API for
+   these users; this guarantees no cross-fade even if a transition is ever started). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

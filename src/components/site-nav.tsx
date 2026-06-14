@@ -17,7 +17,10 @@ const navLinks = [
 
 export function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
+      style={{ viewTransitionName: "site-header" }}
+    >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6">
         <Link href="/" className="shrink-0 font-mono text-sm font-semibold tracking-tight">
           <span className="text-accent">~/</span>sairam

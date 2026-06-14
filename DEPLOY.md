@@ -118,6 +118,23 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
 (Cross-region inference profiles fan out to regional foundation models, hence the
 `foundation-model/anthropic.*` resource alongside the profiles.)
 
+### Optional: voice upgrades (Polly TTS / Transcribe STT)
+Only needed if you turn on the in-app voice flags ("Use higher-quality voice (Polly)"
+/ "Mic: use private transcription (AWS)"). They reuse the SAME `BEDROCK_*` key — add
+these actions to the policy above. **Both fail closed**: without permission the routes
+return non-2xx and the client silently falls back to the free browser voice, so the
+site works fine without them.
+```json
+{
+  "Effect": "Allow",
+  "Action": ["polly:SynthesizeSpeech", "transcribe:StartStreamTranscription"],
+  "Resource": "*"
+}
+```
+Cost: browser voice is free. Polly Neural is free for 1M chars/mo for the first 12
+months, then ~$16/1M (answers are cached + per-IP rate-limited); Transcribe streaming
+is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default.
+
 ---
 
 ## 4. Custom domain (optional)

@@ -12,19 +12,18 @@ export type SttEngine = "browser" | "transcribe";
  * start() is called). Returns the unified UseSpeechRecognition shape so the mic button
  * and talk session are engine-agnostic.
  *
- * Fallback: if "transcribe" is selected but unsupported, we transparently return the
- * browser engine instead (so a Firefox visitor who picked Transcribe still gets the
- * browser path if available, and vice-versa). Per-request failures (route 5xx) are
- * surfaced via `error` for the caller to react to; the browser engine remains the
- * always-available default.
+ * Fallback (the always-available default is the browser engine): when "transcribe" is
+ * selected we use it only when it is BOTH supported AND has not errored. A static
+ * unsupported (Firefox without AudioContext, etc.) OR a runtime failure — permission
+ * denied, no device, or a route 503/5xx surfaced as `error` — transparently degrades to
+ * the browser engine, honoring the "voice always degrades to the text composer" promise.
  */
 export function useStt(engine: SttEngine = "browser"): UseSpeechRecognition {
   const browser = useSpeechRecognition();
   const transcribe = useTranscribeRecognition();
 
-  if (engine === "transcribe") {
-    // Prefer Transcribe when selected AND usable; else fall back to the browser engine.
-    return transcribe.supported ? transcribe : browser;
+  if (engine === "transcribe" && transcribe.supported && !transcribe.error) {
+    return transcribe;
   }
   return browser;
 }

@@ -76,6 +76,7 @@ export function MicButton({
         <div
           id={disclosureId}
           role="dialog"
+          aria-modal="false"
           aria-label="Microphone privacy notice"
           className="absolute bottom-full right-0 z-10 mb-2 w-72 rounded-xl border border-border-strong bg-bg-surface p-3 text-left shadow-2xl"
         >

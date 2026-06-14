@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { SpeechErrorKind, UseSpeechRecognition } from "@/components/chat/use-speech-recognition";
 
 /**
@@ -23,6 +23,13 @@ function getSupported(): boolean {
   return Boolean(navigator.mediaDevices?.getUserMedia) && hasAudioContext;
 }
 
+// SSR-safe support flag via useSyncExternalStore (server snapshot = false, client
+// upgrades after hydration) — matches use-speech-recognition.ts / use-mounted.ts. Using
+// useState(getSupported) here caused an SSR/hydration mismatch (server omits the mic
+// button, client renders it).
+const noopSubscribe = () => () => {};
+const getSupportedServer = () => false;
+
 /** Downsample Float32 mono @ ctxRate to 16-bit PCM @ 16kHz (Transcribe's required format). */
 function floatToPcm16k(input: Float32Array, ctxRate: number): Int16Array {
   const ratio = ctxRate / 16_000;
@@ -37,7 +44,7 @@ function floatToPcm16k(input: Float32Array, ctxRate: number): Int16Array {
 }
 
 export function useTranscribeRecognition(): UseSpeechRecognition {
-  const [supported] = useState(getSupported);
+  const supported = useSyncExternalStore(noopSubscribe, getSupported, getSupportedServer);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<SpeechErrorKind>(null);
 
@@ -84,7 +91,11 @@ export function useTranscribeRecognition(): UseSpeechRecognition {
     })
       .then(async (res) => {
         if (!res.ok) {
-          setError(res.status === 503 ? "unknown" : "network");
+          // 503 = Transcribe not configured (a deploy state, not a failure): set the
+          // error so useStt transparently falls back to browser STT, but the caller
+          // treats it as a quiet engine-unavailable signal, not a user-facing fault.
+          // 5xx during transcription (502/504) is a genuine service error.
+          setError("unknown");
           return;
         }
         const data = (await res.json()) as { transcript?: string };

@@ -162,6 +162,9 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onPrimary}
           aria-label={primaryLabel}
+          // The dynamic aria-label carries the action; aria-pressed exposes the
+          // dominant mic on/off state to AT (true while actively listening) — WCAG 4.1.2.
+          aria-pressed={listening}
           className={`inline-flex h-14 w-14 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base ${
             active && !speaking && state !== "paused"
               ? "border-accent bg-accent text-bg-base"

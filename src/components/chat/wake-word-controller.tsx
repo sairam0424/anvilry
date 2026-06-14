@@ -61,6 +61,7 @@ export function WakeWordController() {
     return (
       <div
         role="dialog"
+        aria-modal="false"
         aria-label="Enable wake word"
         className="fixed bottom-5 left-1/2 z-50 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-border-strong bg-bg-surface p-4 shadow-2xl backdrop-blur"
       >

@@ -37,4 +37,11 @@ describe("useStt engine selection", () => {
     const { result } = renderHook(() => useStt("transcribe"));
     expect(result.current.interim).toBe("b");
   });
+
+  it("falls back to the browser engine when Transcribe errored at runtime (denied/503)", () => {
+    transcribe.supported = true;
+    transcribe.error = "denied";
+    const { result } = renderHook(() => useStt("transcribe"));
+    expect(result.current.interim).toBe("b"); // degraded to browser, not stuck on the error
+  });
 });

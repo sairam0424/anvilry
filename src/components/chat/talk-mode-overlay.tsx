@@ -31,6 +31,16 @@ export function TalkModeOverlay({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-bg-base/85 backdrop-blur-sm" />
         <Dialog.Content
+          onOpenAutoFocus={(e) => {
+            // Land focus on the primary (mic/start) control rather than the dialog
+            // container, so a keyboard user can start talking immediately (WCAG 2.4.3).
+            const content = e.currentTarget as HTMLElement | null;
+            const primary = content?.querySelector<HTMLButtonElement>('button[type="button"]');
+            if (primary) {
+              e.preventDefault();
+              primary.focus();
+            }
+          }}
           onCloseAutoFocus={(e) => {
             const opener = getOpener?.();
             if (opener) {

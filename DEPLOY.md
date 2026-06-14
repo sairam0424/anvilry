@@ -1,4 +1,4 @@
-# Deploying Anvilry → Vercel (sairam.dev)
+# Deploying Anvilry → Vercel (anvilry.vercel.app)
 
 Production deploy guide for the Anvilry portfolio. The site is a Next.js 16 app; the only
 runtime dependency beyond the static build is the **"Ask my portfolio" chatbot**, which calls
@@ -120,10 +120,10 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
 
 ---
 
-## 4. Custom domain (sairam.dev)
-1. Project → Settings → Domains → add `sairam.dev` (and `www.sairam.dev` if desired).
+## 4. Custom domain (optional)
+1. Project → Settings → Domains → add your domain (e.g. `example.com` and `www.example.com`).
 2. Point DNS per Vercel's instructions (A/ALIAS to Vercel, or move nameservers).
-3. The base URL is hardcoded as `https://sairam.dev` in `src/app/layout.tsx`, `sitemap.ts`,
+3. The base URL is hardcoded as `https://anvilry.vercel.app` in `src/app/layout.tsx`, `sitemap.ts`,
    `robots.ts`, and `json-ld.tsx` — update those if you use a different domain.
 
 ---
@@ -136,8 +136,8 @@ Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
    - **Chatbot:** open "Ask my portfolio", ask *"What did you build at Ascendion?"* → it should
      stream a grounded answer. (Verified locally end-to-end: Opus 4.6 answered in ~8s; the
      Opus→Sonnet fallback also fires cleanly when the primary is unavailable.)
-   - `sairam.dev/sitemap.xml`, `/robots.txt`, and the OG image (`/opengraph-image`) resolve.
-   - **Three views:** the Classic · Play · Chat switcher works; `/?view=gamified` and
+   - `anvilry.vercel.app/sitemap.xml`, `/robots.txt`, and the OG image (`/opengraph-image`) resolve.
+   - **Four views:** the Classic · Play · Chat · Developer switcher works; `/?view=gamified` and
      `/?view=chat` still serve the full Classic HTML to crawlers (view swaps client-side), and
      `rel=canonical` on every page points to the query-less URL.
    - **Rate limit (if Upstash is set):** fire ~10 quick chat messages → the later ones should

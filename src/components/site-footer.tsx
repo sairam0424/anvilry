@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
+import { useView } from "@/components/view-context";
 
 // Machine-readable surfaces — the AI-crawler / agent-native artifacts. Grouped here so
 // they're discoverable (previously /llms.txt + /api/resume.json existed but weren't
@@ -12,7 +15,18 @@ const MACHINE_LINKS = [
   { href: "/api/resume.json", label: "resume.json" },
 ];
 
+// Views whose <main> fills the full viewport below the nav (h-[calc(100dvh-3.5rem)]) —
+// a global marketing footer underneath them has nowhere to go but past the fold, where it
+// converges with / overlaps the immersive console on short viewports. Hidden there; the
+// document-flow Classic and Play views keep it. Client-gated, so Classic (the SSG default)
+// still ships the footer in its prerendered HTML for crawlers — it only hides post-hydration
+// when a full-height view is active.
+const FULL_HEIGHT_VIEWS = new Set(["chat", "developer"]);
+
 export function SiteFooter() {
+  const { view } = useView();
+  if (FULL_HEIGHT_VIEWS.has(view)) return null;
+
   return (
     <footer className="mt-auto border-t border-border/60">
       <div className="mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-6 px-6 py-10 sm:flex-row sm:items-center">

@@ -26,7 +26,7 @@ export const personal = {
     "Competitive programming",
     "Building & customizing mechanical keyboards",
     "Reading — tech, sci-fi, and non-fiction",
-    "Food & travelling",
+    "Food & travel",
   ] as string[],
   /** True "beyond the résumé" facts (don't restate achievements verbatim). */
   funFacts: [

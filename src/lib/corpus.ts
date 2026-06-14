@@ -1,4 +1,4 @@
-import { allProjects, allWork } from "@/lib/content";
+import { allProjects, allWork, allNotes } from "@/lib/content";
 import { profile, skills, achievements } from "@/lib/profile";
 import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
 import { testimonials, hasTestimonials } from "@/lib/testimonials";
@@ -51,6 +51,12 @@ export function buildCorpus(): string {
     ? `\n\n## Recommendations\n${testimonials.map((t) => `"${t.quote}" — ${t.name}, ${t.role} (${t.relationship})`).join("\n")}`
     : "";
 
+  // Engineering notes — title + summary so the concierge / terminal grep can surface
+  // writing. Empty => omitted (the notes section ships dark until posts exist).
+  const notesSection = allNotes.length
+    ? `\n\n## Writing / Notes\n${allNotes.map((n) => `### ${n.title}\n${n.summary}`).join("\n\n")}`
+    : "";
+
   return `# ${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})
 Location: ${profile.location}
 Summary: ${profile.headline} ${profile.subhead}
@@ -67,5 +73,5 @@ ${projects}
 ${skillsText}
 
 ## Achievements
-${achievementsText}${personalSection}${testimonialsSection}`;
+${achievementsText}${personalSection}${testimonialsSection}${notesSection}`;
 }

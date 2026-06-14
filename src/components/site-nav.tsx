@@ -2,12 +2,15 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
+import { hasNotes } from "@/lib/content";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { MobileNav } from "@/components/mobile-nav";
 
+// Notes link appears ONLY when posts exist (empty-safe — no dead "coming soon" link).
 const navLinks = [
   { href: "/#work", label: "Work" },
   { href: "/projects", label: "Projects" },
+  ...(hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
 ];

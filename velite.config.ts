@@ -55,6 +55,24 @@ const work = defineCollection({
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),
 });
 
+/** Engineering notes / writing — EMPTY-SAFE: no .mdx files exist yet, so the collection
+ *  is [] and the /notes nav link stays dark until the owner publishes real posts. */
+const notes = defineCollection({
+  name: "Note",
+  pattern: "notes/**/*.mdx",
+  schema: s
+    .object({
+      slug: s.slug("note"),
+      title: s.string(),
+      date: s.isodate(),
+      summary: s.string(),
+      tags: s.array(s.string()).default([]),
+      draft: s.boolean().default(false),
+      body: s.mdx(),
+    })
+    .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),
+});
+
 export default defineConfig({
   root: "content",
   output: {
@@ -68,6 +86,6 @@ export default defineConfig({
     // pass --clean explicitly for a pristine production build.
     clean: false,
   },
-  collections: { projects, work },
+  collections: { projects, work, notes },
   mdx: { gfm: true },
 });

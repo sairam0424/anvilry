@@ -9,16 +9,18 @@ import { VIEWS, DEFAULT_VIEW, isView, getServerSnapshot } from "./view-context";
  * default. This runs in the node project, inside `vitest run` in the build chain.
  */
 describe("view-context view model", () => {
-  it("includes the four first-class views", () => {
+  it("includes the five views (the four first-class + optional voice)", () => {
     expect(VIEWS).toContain("classic");
     expect(VIEWS).toContain("gamified");
     expect(VIEWS).toContain("chat");
     expect(VIEWS).toContain("developer");
+    expect(VIEWS).toContain("voice");
   });
 
   it("isView accepts every real view and rejects anything else", () => {
     for (const v of VIEWS) expect(isView(v)).toBe(true);
     expect(isView("developer")).toBe(true);
+    expect(isView("voice")).toBe(true);
     expect(isView("bogus")).toBe(false);
     expect(isView(null)).toBe(false);
     expect(isView(undefined)).toBe(false);

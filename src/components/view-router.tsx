@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useView } from "@/components/view-context";
+import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 
 /**
  * Swaps the top-level experience based on the active view.
@@ -36,9 +37,12 @@ const DeveloperView = dynamic(
   () => import("@/components/game/developer-view").then((m) => m.DeveloperView),
   { ssr: false },
 );
+const TalkMode = dynamic(() => import("@/components/chat/talk-mode").then((m) => m.TalkMode), {
+  ssr: false,
+});
 
 export function ViewRouter({ children }: { children: ReactNode }) {
-  const { view } = useView();
+  const { view, setView } = useView();
 
   return (
     <div style={{ viewTransitionName: "view-body" }}>
@@ -55,6 +59,21 @@ export function ViewRouter({ children }: { children: ReactNode }) {
 
       {/* Developer — lazy, unmounts on exit. The focused full-page terminal. */}
       {view === "developer" && <DeveloperView />}
+
+      {/* Voice — the optional full-page two-way talk surface (talkSurface "view").
+          Lazy + unmounts on exit, which tears the voice session down (mic + speech).
+          Closing returns to Classic. Normally unused — the default surface is the
+          modal overlay; this view only renders if the visitor opts into "view". */}
+      {view === "voice" && (
+        <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
+          <div className="mb-4">
+            <ViewEscapeHatch />
+          </div>
+          <div className="flex flex-1 items-center justify-center">
+            <TalkMode onClose={() => setView("classic")} />
+          </div>
+        </main>
+      )}
     </div>
   );
 }

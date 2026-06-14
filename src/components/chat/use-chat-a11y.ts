@@ -15,8 +15,18 @@ import type { ChatMessage } from "@/components/chat/use-chat";
  * (Autoscroll used to live here too, as a per-frame distance check; it moved to the
  * shared useAutoScroll engine — intent flag + ResizeObserver — which fixes the de-pin
  * and stale-height bugs this couldn't.)
+ *
+ * NO DOUBLE-SPEAK: when text-to-speech is reading the answer aloud (read-aloud button
+ * or talk mode), `disableLiveAnnounce` is set true — we then announce only a short
+ * STATUS ("Speaking answer aloud.") instead of the full text, so a screen-reader user
+ * doesn't hear the answer twice (synthetic voice + their AT reading the live region).
+ * Exactly one channel conveys the answer at a time.
  */
-export function useChatA11y(messages: ChatMessage[], isStreaming: boolean) {
+export function useChatA11y(
+  messages: ChatMessage[],
+  isStreaming: boolean,
+  disableLiveAnnounce = false,
+) {
   const [liveMessage, setLiveMessage] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -27,13 +37,16 @@ export function useChatA11y(messages: ChatMessage[], isStreaming: boolean) {
     if (timer.current) clearTimeout(timer.current);
     if (isStreaming) {
       timer.current = setTimeout(() => setLiveMessage("Answering…"), 0);
+    } else if (disableLiveAnnounce) {
+      // TTS owns the audio for this answer — announce a status, not the full text.
+      timer.current = setTimeout(() => setLiveMessage("Speaking answer aloud."), 150);
     } else if (lastText) {
       timer.current = setTimeout(() => setLiveMessage(lastText), 150);
     }
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [isStreaming, lastText]);
+  }, [isStreaming, lastText, disableLiveAnnounce]);
 
   return { liveMessage };
 }

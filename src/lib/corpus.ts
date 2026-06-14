@@ -1,6 +1,7 @@
 import { allProjects, allWork } from "@/lib/content";
 import { profile, skills, achievements } from "@/lib/profile";
 import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
+import { testimonials, hasTestimonials } from "@/lib/testimonials";
 
 /**
  * Builds the grounding corpus for the chatbot from the SAME content sources as the
@@ -44,6 +45,12 @@ export function buildCorpus(): string {
     hasNow ? `Right now: ${now.focus.join("; ")}` : "",
   ].filter(Boolean).join("\n")}` : "";
 
+  // Testimonials — third-person, attributed, included ONLY when real source-linked
+  // recommendations exist (empty => omitted; the concierge never invents praise).
+  const testimonialsSection = hasTestimonials
+    ? `\n\n## Recommendations\n${testimonials.map((t) => `"${t.quote}" — ${t.name}, ${t.role} (${t.relationship})`).join("\n")}`
+    : "";
+
   return `# ${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})
 Location: ${profile.location}
 Summary: ${profile.headline} ${profile.subhead}
@@ -60,5 +67,5 @@ ${projects}
 ${skillsText}
 
 ## Achievements
-${achievementsText}${personalSection}`;
+${achievementsText}${personalSection}${testimonialsSection}`;
 }

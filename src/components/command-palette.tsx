@@ -74,7 +74,7 @@ export function CommandPalette() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { setView } = useView();
-  const { settings, toggle } = useVoiceSettings();
+  const { settings, toggle, set } = useVoiceSettings();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -237,6 +237,27 @@ export function CommandPalette() {
             keywords: "voice speak audio tts text to speech accessibility listen sound",
             // Label flips with state, so pin a stable search value (cmdk re-scores on change).
             value: "Read answers aloud voice speak audio tts accessibility listen sound",
+          },
+        ]
+      : []),
+    // Talk-surface preference — lets the visitor choose modal overlay (default) vs a
+    // full-page view for the two-way talk mode. Only meaningful where STT exists.
+    ...(sttSupported
+      ? [
+          {
+            id: "voice-surface",
+            label:
+              settings.talkSurface === "view"
+                ? "Voice as modal (not full view)"
+                : "Voice as full view",
+            hint: settings.talkSurface === "view" ? "full view" : "modal overlay",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              set({ talkSurface: settings.talkSurface === "view" ? "modal" : "view" });
+              setOpen(false);
+            },
+            keywords: "voice talk surface full view modal overlay layout preference",
+            value: "Voice talk surface full view modal overlay layout preference",
           },
         ]
       : []),

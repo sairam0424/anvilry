@@ -110,8 +110,12 @@ export type UseSpeechRecognition = {
   interim: string;
   /** Last user-facing error (null when none / on a clean abort). */
   error: SpeechErrorKind;
-  /** Begin listening (an explicit user gesture). `onFinal` fires once per final result. */
-  start: (onFinal: (transcript: string) => void) => void;
+  /**
+   * Begin listening (an explicit user gesture). `onFinal` fires once per final result;
+   * optional `onInterim` fires with live partial text so the composer can show it as
+   * the user speaks (also exposed as the `interim` field for direct binders).
+   */
+  start: (onFinal: (transcript: string) => void, onInterim?: (text: string) => void) => void;
   /** Stop listening and release the mic indicator. */
   stop: () => void;
 };
@@ -128,6 +132,7 @@ export function useSpeechRecognition(): UseSpeechRecognition {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const onFinalRef = useRef<((t: string) => void) | null>(null);
+  const onInterimRef = useRef<((t: string) => void) | null>(null);
 
   /** Drop the sibling mic stream (clears the OS recording indicator). */
   const releaseMic = useCallback(() => {
@@ -144,10 +149,11 @@ export function useSpeechRecognition(): UseSpeechRecognition {
   }, [releaseMic]);
 
   const start = useCallback(
-    (onFinal: (transcript: string) => void) => {
+    (onFinal: (transcript: string) => void, onInterim?: (text: string) => void) => {
       const Ctor = getCtor();
       if (!Ctor || isListening) return;
       onFinalRef.current = onFinal;
+      onInterimRef.current = onInterim ?? null;
       setError(null);
       setInterim("");
 
@@ -166,7 +172,10 @@ export function useSpeechRecognition(): UseSpeechRecognition {
           if (result.isFinal) final += text;
           else live += text;
         }
-        if (live) setInterim(live);
+        if (live) {
+          setInterim(live);
+          onInterimRef.current?.(live);
+        }
         if (final && onFinalRef.current) {
           setInterim("");
           onFinalRef.current(final.trim());

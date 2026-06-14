@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { useView } from "@/components/view-context";
 import { useChat } from "@/components/chat/use-chat";
+import { MicButton } from "@/components/chat/mic-button";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
@@ -192,6 +193,9 @@ function AskPortfolioWidget() {
               disabled={isStreaming}
               className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface disabled:opacity-60"
             />
+            {/* Push-to-talk — compact (h-9) to match the widget's smaller controls;
+                renders only where Web Speech is supported. */}
+            <MicButton onText={setInput} disabled={isStreaming} compact />
             <button
               type="submit"
               disabled={isStreaming || !input.trim()}

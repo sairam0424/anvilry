@@ -5,6 +5,7 @@ import { Sparkles, Send } from "lucide-react";
 import { useChat } from "@/components/chat/use-chat";
 import { RECRUITER_CHIPS, STARTER_CHIPS } from "@/components/chat/chat-suggestions";
 import { ChatMessages } from "@/components/chat/chat-messages";
+import { MicButton } from "@/components/chat/mic-button";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { profile, impactMetrics } from "@/lib/profile";
 
@@ -126,6 +127,9 @@ export function ChatView() {
           aria-label="Ask a question about Sairam"
           className="flex-1 rounded-xl border border-border bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
         />
+        {/* Push-to-talk mic — renders only where Web Speech is supported (else nothing,
+            the text input is untouched). Transcripts fill the input for review. */}
+        <MicButton onText={setInput} disabled={isStreaming} />
         {isStreaming ? (
           <button
             type="button"

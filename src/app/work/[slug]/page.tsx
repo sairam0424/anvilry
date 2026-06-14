@@ -5,6 +5,9 @@ import { ArrowLeft } from "lucide-react";
 import { allWork, getWork } from "@/lib/content";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
+import { BreadcrumbJsonLd, CreativeWorkJsonLd } from "@/components/json-ld";
+
+const BASE = "https://anvilry.vercel.app";
 
 export function generateStaticParams() {
   return allWork.map((w) => ({ slug: w.slug }));
@@ -65,7 +68,60 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
         <div className="prose-portfolio mt-8">
           <MDXContent code={work.body} />
         </div>
+
+        {/* Hiring-manager depth — each block renders ONLY when the owner has authored it
+            (empty-safe). The architecture diagram is an owner-supplied, interview-
+            defensible asset; alt text is required (a build-time test enforces it). */}
+        {work.constraints && (
+          <Reveal>
+            <section className="mt-10 border-t border-border pt-8">
+              <h2 className="mono-label">{"// constraints"}</h2>
+              <p className="mt-3 text-fg-muted">{work.constraints}</p>
+            </section>
+          </Reveal>
+        )}
+
+        {work.tradeoffs && (
+          <Reveal>
+            <section className="mt-10 border-t border-border pt-8">
+              <h2 className="mono-label">{"// tradeoffs"}</h2>
+              <p className="mt-3 text-fg-muted">{work.tradeoffs}</p>
+            </section>
+          </Reveal>
+        )}
+
+        {work.diagram && (
+          <Reveal>
+            <section className="mt-10 border-t border-border pt-8">
+              <h2 className="mono-label">{"// architecture"}</h2>
+              {/* Owner-authored diagram asset. eslint-disable next line: deliberate use of
+                  a plain img for an arbitrary static asset path (not a Next-optimized
+                  remote/known image); diagramAlt is schema-required when diagram is set. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={work.diagram}
+                alt={work.diagramAlt ?? `${work.name} architecture diagram`}
+                className="mt-3 w-full rounded-xl border border-border"
+              />
+            </section>
+          </Reveal>
+        )}
       </article>
+
+      {/* Breadcrumb + CreativeWork structured data — SERP breadcrumb + entity-graph. */}
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: `${BASE}/` },
+          { name: "Work", url: `${BASE}/#work` },
+          { name: work.name, url: `${BASE}${work.url}` },
+        ]}
+      />
+      <CreativeWorkJsonLd
+        name={work.name}
+        description={work.summary}
+        url={`${BASE}${work.url}`}
+        keywords={work.tech}
+      />
     </main>
   );
 }

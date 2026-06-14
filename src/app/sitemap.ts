@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { allProjects, allWork } from "@/lib/content";
+import { allProjects, allWork, allNotes } from "@/lib/content";
 
 const base = "https://anvilry.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/projects", "/about", "/resume"].map((path) => ({
+  const staticRoutes = ["", "/projects", "/about", "/resume", "/mcp"].map((path) => ({
     url: `${base}${path}`,
     changeFrequency: "monthly" as const,
     priority: path === "" ? 1 : 0.8,
@@ -22,5 +22,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...workRoutes, ...projectRoutes];
+  // Notes — empty-safe: emits nothing while the collection is empty (the /notes index
+  // 404s and the nav link is dark until a post exists), so the sitemap matches reality.
+  const noteRoutes = allNotes.length
+    ? [
+        { url: `${base}/notes`, changeFrequency: "weekly" as const, priority: 0.6 },
+        ...allNotes.map((n) => ({
+          url: `${base}${n.url}`,
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        })),
+      ]
+    : [];
+
+  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes];
 }

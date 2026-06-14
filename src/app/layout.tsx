@@ -55,15 +55,26 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // data-scroll-behavior="smooth": Next 16 no longer overrides scroll-behavior on navigation
+  // by default. We set `scroll-behavior: smooth` in globals.css and rely on it for in-page
+  // anchor nav (/#work, /#contact), so opt back in explicitly. This also silences the Next 16
+  // dev warning. (Reduced-motion still forces `auto` via the CSS media query — the attribute
+  // only opts into the override, it doesn't defeat that.)
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} h-full`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${sans.variable} ${mono.variable} h-full`}>
       <head>
         <PersonJsonLd />
       </head>
       <body className="min-h-full flex flex-col antialiased">
+        {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
         <Providers>
           <SiteNav />
-          {children}
+          <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+            {children}
+          </div>
           <SiteFooter />
           <CommandPalette />
           <AskPortfolio />

@@ -8,6 +8,7 @@ import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
+import { TRACE_DELIMITER } from "@/lib/llm-trace";
 
 // Lazy markdown renderer — same safe config as the full chat view, kept off the
 // initial bundle (the widget is interaction-gated).
@@ -93,7 +94,10 @@ function AskPortfolioWidget() {
           const { value, done } = await reader.read();
           if (done) break;
           acc += decoder.decode(value, { stream: true });
-          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: acc }]);
+          // Strip the server's trailing trace frame (model metadata) from the displayed
+          // text — the compact widget doesn't show the model badge, just the answer.
+          const text = acc.split(TRACE_DELIMITER)[0];
+          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: text }]);
         }
       } catch {
         setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: "Network error — please try again." }]);

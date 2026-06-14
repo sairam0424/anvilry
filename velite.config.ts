@@ -44,9 +44,33 @@ const work = defineCollection({
       metrics: s.array(s.object({ value: s.string(), label: s.string() })),
       tech: s.array(s.string()),
       order: s.number().default(100),
+      // OPTIONAL hiring-manager depth — owner-authored, interview-defensible. Each
+      // renders ONLY when present, so existing case studies are unchanged until filled.
+      constraints: s.string().optional(), // the real limits the system had to work within
+      tradeoffs: s.string().optional(), // what was deliberately chosen NOT to do, and why
+      diagram: s.string().optional(), // path to an owner-authored architecture diagram (e.g. /static/...)
+      diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a test
       body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),
+});
+
+/** Engineering notes / writing — EMPTY-SAFE: no .mdx files exist yet, so the collection
+ *  is [] and the /notes nav link stays dark until the owner publishes real posts. */
+const notes = defineCollection({
+  name: "Note",
+  pattern: "notes/**/*.mdx",
+  schema: s
+    .object({
+      slug: s.slug("note"),
+      title: s.string(),
+      date: s.isodate(),
+      summary: s.string(),
+      tags: s.array(s.string()).default([]),
+      draft: s.boolean().default(false),
+      body: s.mdx(),
+    })
+    .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),
 });
 
 export default defineConfig({
@@ -62,6 +86,6 @@ export default defineConfig({
     // pass --clean explicitly for a pristine production build.
     clean: false,
   },
-  collections: { projects, work },
+  collections: { projects, work, notes },
   mdx: { gfm: true },
 });

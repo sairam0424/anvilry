@@ -2,9 +2,16 @@
  * Content access layer — re-exports Velite's generated output with sort/filter
  * helpers. Imported via the relative path since `.velite` lives at repo root.
  */
-import { projects as rawProjects, work as rawWork, type Project, type Work } from "../../.velite";
+import {
+  projects as rawProjects,
+  work as rawWork,
+  notes as rawNotes,
+  type Project,
+  type Work,
+  type Note,
+} from "../../.velite";
 
-export type { Project, Work };
+export type { Project, Work, Note };
 
 const byOrder = <T extends { order: number }>(a: T, b: T) => a.order - b.order;
 
@@ -33,3 +40,12 @@ export function projectsByGroup() {
 
 export const getProject = (slug: string) => allProjects.find((p) => p.slug === slug);
 export const getWork = (slug: string) => allWork.find((w) => w.slug === slug);
+
+/** Published notes (drafts excluded), newest first. Empty until the owner writes posts —
+ *  the /notes nav link + section gate on allNotes.length so it ships dark. */
+export const allNotes: Note[] = [...rawNotes]
+  .filter((n) => !n.draft)
+  .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+export const getNote = (slug: string) => allNotes.find((n) => n.slug === slug);
+export const hasNotes = allNotes.length > 0;

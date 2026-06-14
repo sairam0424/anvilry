@@ -9,6 +9,15 @@ import { useChatA11y } from "@/components/chat/use-chat-a11y";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 
+/** Map a Bedrock/Anthropic model id to a readable name for the badge. */
+function friendlyModel(id: string): string {
+  const m = id.toLowerCase();
+  if (m.includes("opus")) return "Claude Opus";
+  if (m.includes("sonnet")) return "Claude Sonnet";
+  if (m.includes("haiku")) return "Claude Haiku";
+  return "Claude";
+}
+
 // Lazy-loaded so the ~46KB react-markdown tree stays OUT of the initial route
 // bundle — the chat is interaction-gated, so it only loads when a view/widget opens.
 const MarkdownMessage = dynamic(
@@ -111,6 +120,7 @@ export function ChatMessages({
             }
             // Assistant: split into text + resolved cards. Cards render full-width below text.
             const segments = parseCards(m.content);
+            const showBadge = !!m.model && (!isStreaming || !isLast);
             return (
               <div key={i} className="flex flex-col items-start gap-2">
                 {segments.length === 0 && isStreaming && isLast ? (
@@ -134,6 +144,15 @@ export function ChatMessages({
                       </div>
                     ),
                   )
+                )}
+                {/* Honest, server-sourced model badge — which model served the bytes,
+                    and (if so) that the Opus→Sonnet→Haiku fallback chain fired. Makes the
+                    production-grade fallback in llm.ts legible. NOT a RAG citation. */}
+                {showBadge && (
+                  <p className="px-1 font-mono text-[10px] text-fg-subtle">
+                    {m.fellBack ? "↳ primary unavailable · " : ""}Answered by {friendlyModel(m.model!)} ·
+                    Bedrock
+                  </p>
                 )}
               </div>
             );

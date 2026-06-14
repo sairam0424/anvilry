@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { motion } from "motion/react";
 import { useView } from "@/components/view-context";
 
 /**
@@ -17,6 +16,15 @@ import { useView } from "@/components/view-context";
  * activation, and UNMOUNTED when not active. Unmounting (not hiding) the gamified
  * view is what lets its R3F canvas dispose the WebGL GL context — a hidden-but-live
  * context leaks GPU memory on low-end mobile.
+ *
+ * The cross-fade between views is owned by the View Transitions API (driven from
+ * setViewInternal in view-context). The swapped subtree carries
+ * `view-transition-name: view-body` so the API animates ONLY the body content;
+ * the sticky header is pinned to its own `site-header` group (see site-nav) and
+ * stays put. We deliberately do NOT wrap these in motion.div fades anymore — two
+ * competing crossfades double-animated opacity and could snapshot-tear the R3F
+ * canvas mid-transition. Reduced-motion users get an instant swap (the API call
+ * is skipped in commitViewChange).
  */
 const ChatView = dynamic(() => import("@/components/chat/chat-view").then((m) => m.ChatView), {
   ssr: false,
@@ -33,33 +41,20 @@ export function ViewRouter({ children }: { children: ReactNode }) {
   const { view } = useView();
 
   return (
-    <>
+    <div style={{ viewTransitionName: "view-body" }}>
       {/* Classic — always mounted; the SSG default. Hidden (not unmounted) when inactive. */}
       <div hidden={view !== "classic"} aria-hidden={view !== "classic"}>
         {children}
       </div>
 
-      {/* Chat — lazy, unmounts on exit. Subtle fade-in (MotionConfig disables it
-          under prefers-reduced-motion). */}
-      {view === "chat" && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-          <ChatView />
-        </motion.div>
-      )}
+      {/* Chat — lazy, unmounts on exit. */}
+      {view === "chat" && <ChatView />}
 
       {/* Gamified — lazy, unmounts on exit so the WebGL context disposes. */}
-      {view === "gamified" && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-          <GameView />
-        </motion.div>
-      )}
+      {view === "gamified" && <GameView />}
 
       {/* Developer — lazy, unmounts on exit. The focused full-page terminal. */}
-      {view === "developer" && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-          <DeveloperView />
-        </motion.div>
-      )}
-    </>
+      {view === "developer" && <DeveloperView />}
+    </div>
   );
 }

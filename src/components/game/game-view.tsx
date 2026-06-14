@@ -4,6 +4,7 @@ import { Gamepad2 } from "lucide-react";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { GraphIndex } from "@/components/game/graph-index";
 import { BuildGraph } from "@/components/game/build-graph";
+import { GlassBoxDemo } from "@/components/game/glass-box-demo";
 
 /**
  * GAMIFIED view — "The Build Graph". The accessible DOM-first index is the DEFAULT
@@ -41,6 +42,10 @@ export function GameView() {
 
       {/* Accessible default + the mobile / reduced-motion / SR / keyboard layer. */}
       <GraphIndex />
+
+      {/* Glass-box multi-agent demo — renders only once the owner has approved the
+          scripted traces (ships dark otherwise). Last child; escape hatch stays first. */}
+      <GlassBoxDemo />
     </main>
   );
 }

@@ -1,9 +1,27 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { TRACE_DELIMITER } from "@/lib/llm-trace";
 
 export type ChatRole = "user" | "assistant";
-export type ChatMessage = { role: ChatRole; content: string };
+/** `model`/`fellBack` come from the server's honest trailing trace frame (which model
+ *  served the bytes), parsed out of the stream — never shown as message text. */
+export type ChatMessage = { role: ChatRole; content: string; model?: string; fellBack?: boolean };
+
+/** Split a streamed assistant chunk into visible text + an optional parsed trace frame.
+ *  The frame (if present) is the LAST record after TRACE_DELIMITER. */
+function splitTrace(acc: string): { text: string; trace?: { model: string; fellBack: boolean } } {
+  const idx = acc.indexOf(TRACE_DELIMITER);
+  if (idx === -1) return { text: acc };
+  const text = acc.slice(0, idx);
+  const rest = acc.slice(idx + TRACE_DELIMITER.length);
+  try {
+    return { text, trace: JSON.parse(rest) };
+  } catch {
+    // Frame not fully arrived yet — show text, hold the trace until it parses.
+    return { text };
+  }
+}
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
@@ -66,7 +84,13 @@ export function useChat() {
           const { value, done } = await reader.read();
           if (done) break;
           acc += decoder.decode(value, { stream: true });
-          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: acc }]);
+          // Strip the trailing trace frame from the DISPLAYED text; capture the model
+          // (honest, server-sourced — which model served the bytes / did it fall back).
+          const { text, trace } = splitTrace(acc);
+          setMessages((m) => [
+            ...m.slice(0, -1),
+            { role: "assistant", content: text, model: trace?.model, fellBack: trace?.fellBack },
+          ]);
         }
         setStatus("idle");
       } catch (err) {

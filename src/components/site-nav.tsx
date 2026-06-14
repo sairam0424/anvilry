@@ -2,19 +2,25 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
+import { hasNotes } from "@/lib/content";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { MobileNav } from "@/components/mobile-nav";
 
+// Notes link appears ONLY when posts exist (empty-safe — no dead "coming soon" link).
 const navLinks = [
   { href: "/#work", label: "Work" },
   { href: "/projects", label: "Projects" },
+  ...(hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
 ];
 
 export function SiteNav() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
+      style={{ viewTransitionName: "site-header" }}
+    >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6">
         <Link href="/" className="shrink-0 font-mono text-sm font-semibold tracking-tight">
           <span className="text-accent">~/</span>sairam

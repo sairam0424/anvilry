@@ -21,9 +21,12 @@ import {
   LayoutGrid,
   Gamepad2,
   MessagesSquare,
+  Copy,
+  Download,
+  Plug,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
-import { profile } from "@/lib/profile";
+import { profile, resumeVariants } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
 
@@ -34,10 +37,36 @@ type Action = {
   icon: React.ReactNode;
   run: () => void;
   keywords?: string;
+  // Stable cmdk search value. Defaults to label+hint+keywords, but actions whose LABEL
+  // mutates (e.g. copy-email flipping to "Copied!") set this so the value cmdk scores
+  // against never changes mid-interaction.
+  value?: string;
 };
+
+// Recently-run actions persist in localStorage so the palette opens to "what you
+// just did" instead of a cold list. SSR-safe: read only after mount (the dialog
+// content mounts on open, post-hydration, so there's no markup to mismatch).
+const RECENT_KEY = "anvilry:cmd:recent";
+const RECENT_MAX = 5;
+
+function loadRecent(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    const arr: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr)
+      ? arr.filter((x): x is string => typeof x === "string").slice(0, RECENT_MAX)
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [recent, setRecent] = useState<string[]>([]);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { setView } = useView();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -54,11 +83,33 @@ export function CommandPalette() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  // Load recents + reset the query each time the palette opens (so it always
+  // greets you with your most-used actions, never a stale search string).
+  useEffect(() => {
+    if (open) {
+      setRecent(loadRecent());
+      setSearch("");
+    }
+  }, [open]);
+
   // Restore focus to the trigger when the palette closes (WCAG 2.4.3).
   useEffect(() => {
     if (wasOpen.current && !open) triggerRef.current?.focus();
     wasOpen.current = open;
   }, [open]);
+
+  // Push an action id to the front of the MRU list (deduped, capped, persisted).
+  const record = useCallback((id: string) => {
+    setRecent((prev) => {
+      const next = [id, ...prev.filter((x) => x !== id)].slice(0, RECENT_MAX);
+      try {
+        window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {
+        /* private mode / quota — recents are best-effort, never block the action */
+      }
+      return next;
+    });
+  }, []);
 
   const go = useCallback(
     (href: string, external = false) => {
@@ -76,6 +127,19 @@ export function CommandPalette() {
     },
     [setView],
   );
+
+  // Copy email to the clipboard WITHOUT closing — shows a transient "Copied!"
+  // so the action confirms itself in place (recruiters often want it on the
+  // clipboard, not a mail-client launch).
+  const copyEmail = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(profile.email);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      go(`mailto:${profile.email}`, true); // clipboard blocked → fall back to mail client
+    }
+  }, [go]);
 
   const views: Action[] = [
     { id: "v-classic", label: "Classic view", hint: "the standard portfolio", icon: <LayoutGrid size={16} />, run: () => switchTo("classic"), keywords: "default standard reset" },
@@ -99,6 +163,33 @@ export function CommandPalette() {
     { id: "email", label: "Email me", hint: profile.email, icon: <Mail size={16} />, run: () => go(`mailto:${profile.email}`, true) },
   ];
 
+  // In-palette actions — things you DO, not pages you go to. Copy-email confirms
+  // in place; each role-targeted résumé downloads directly; /mcp surfaces the
+  // agent endpoint. Résumé entries derive from profile.resumeVariants (single
+  // source — a new variant appears here automatically).
+  const actions: Action[] = [
+    {
+      id: "copy-email",
+      label: copied ? "Copied!" : "Copy email",
+      hint: profile.email,
+      icon: <Copy size={16} />,
+      run: copyEmail,
+      keywords: "clipboard contact mail address",
+      // Fixed value — the label flips to "Copied!" for ~1.5s, but the search value must
+      // not mutate (cmdk re-scores on value change).
+      value: `Copy email ${profile.email} clipboard contact mail address`,
+    },
+    ...resumeVariants.map((v) => ({
+      id: `dl-${v.file}`,
+      label: `Download résumé — ${v.label}`,
+      hint: v.tag,
+      icon: <Download size={16} />,
+      run: () => go(v.file, true),
+      keywords: `resume cv pdf ${v.label} ${v.tag}`,
+    })),
+    { id: "mcp", label: "Open MCP endpoint", hint: "for AI agents", icon: <Plug size={16} />, run: () => go("/mcp"), keywords: "ai agent model context protocol tools api" },
+  ];
+
   const workItems: Action[] = allWork.map((w) => ({
     id: `w-${w.slug}`,
     label: w.name,
@@ -116,6 +207,14 @@ export function CommandPalette() {
     run: () => go(p.url),
     keywords: p.tech.join(" "),
   }));
+
+  // Resolve recent ids → live Action objects (ignoring any that no longer exist,
+  // e.g. a removed project slug). Shown ONLY on an empty query, so a recent item
+  // is never on-screen alongside its canonical copy during filtering.
+  const allActions = [...views, ...nav, ...actions, ...workItems, ...projItems, ...links];
+  const byId = new Map(allActions.map((a) => [a.id, a]));
+  const recentItems: Action[] = recent.map((id) => byId.get(id)).filter((a): a is Action => Boolean(a));
+  const showRecent = search.trim() === "" && recentItems.length > 0;
 
   return (
     <>
@@ -153,22 +252,34 @@ export function CommandPalette() {
             <span className="font-mono text-accent">{">"}</span>
             <Command.Input
               autoFocus
+              value={search}
+              onValueChange={setSearch}
               aria-label="Search commands"
-              placeholder="Jump to a page, project, or link…"
+              placeholder="Jump to a page, run an action, or switch view…"
               spellCheck={false}
               autoComplete="off"
               className="no-focus-ring w-full bg-transparent py-3.5 text-sm text-fg outline-none placeholder:text-fg-muted"
             />
           </div>
+          {/* Status messages (WCAG 2.2 SC 4.1.3): the copy-email confirmation flips a
+              cmdk option's label, which is NOT a live region — screen readers wouldn't
+              announce it. This polite region speaks the success without moving focus. */}
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {copied ? "Email copied to clipboard" : ""}
+          </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">
             <Command.Empty className="px-3 py-6 text-center text-sm text-fg-subtle">
               No results.
             </Command.Empty>
-            <Group heading="Switch view" actions={views} />
-            <Group heading="Navigate" actions={nav} />
-            <Group heading="Work" actions={workItems} />
-            <Group heading="Projects" actions={projItems} />
-            <Group heading="Links" actions={links} />
+            {/* Recent — MRU, idle-only (empty query). Prefixed value keeps it from
+                colliding with the canonical copy under cmdk's value-based nav. */}
+            {showRecent && <Group heading="Recent" actions={recentItems} onRun={record} valuePrefix="recent" />}
+            <Group heading="Switch view" actions={views} onRun={record} />
+            <Group heading="Navigate" actions={nav} onRun={record} />
+            <Group heading="Actions" actions={actions} onRun={record} />
+            <Group heading="Work" actions={workItems} onRun={record} />
+            <Group heading="Projects" actions={projItems} onRun={record} />
+            <Group heading="Links" actions={links} onRun={record} />
           </Command.List>
         </div>
       </Command.Dialog>
@@ -176,7 +287,17 @@ export function CommandPalette() {
   );
 }
 
-function Group({ heading, actions }: { heading: string; actions: Action[] }) {
+function Group({
+  heading,
+  actions,
+  onRun,
+  valuePrefix,
+}: {
+  heading: string;
+  actions: Action[];
+  onRun?: (id: string) => void;
+  valuePrefix?: string;
+}) {
   return (
     <Command.Group
       heading={heading}
@@ -184,9 +305,12 @@ function Group({ heading, actions }: { heading: string; actions: Action[] }) {
     >
       {actions.map((a) => (
         <Command.Item
-          key={a.id}
-          value={`${a.label} ${a.hint ?? ""} ${a.keywords ?? ""}`}
-          onSelect={a.run}
+          key={valuePrefix ? `${valuePrefix}-${a.id}` : a.id}
+          value={`${valuePrefix ? `${valuePrefix} ` : ""}${a.value ?? `${a.label} ${a.hint ?? ""} ${a.keywords ?? ""}`}`}
+          onSelect={() => {
+            onRun?.(a.id);
+            a.run();
+          }}
           className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-fg-muted data-[selected=true]:bg-bg-elevated data-[selected=true]:text-fg"
         >
           <span className="text-accent">{a.icon}</span>

@@ -27,6 +27,7 @@ import {
   Volume2,
   VolumeX,
   AudioLines,
+  Mic,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
@@ -262,6 +263,25 @@ export function CommandPalette() {
           },
         ]
       : []),
+    // STT engine — free browser Web Speech (default) vs AWS Transcribe (audio
+    // processed on the owner's own AWS, a stronger privacy story + works in Firefox).
+    // Always offered: even where browser STT is absent, Transcribe (getUserMedia +
+    // AudioContext) may still work, so this is how a Firefox visitor enables voice.
+    {
+      id: "voice-stt-engine",
+      label:
+        settings.sttEngine === "transcribe"
+          ? "Mic: use browser speech"
+          : "Mic: use private transcription (AWS)",
+      hint: settings.sttEngine === "transcribe" ? "AWS Transcribe" : "browser default",
+      icon: <Mic size={16} />,
+      run: () => {
+        set({ sttEngine: settings.sttEngine === "transcribe" ? "browser" : "transcribe" });
+        setOpen(false);
+      },
+      keywords: "voice mic stt speech recognition transcribe aws privacy firefox input",
+      value: "Mic speech recognition engine transcribe aws browser privacy input",
+    },
     // Talk-surface preference — lets the visitor choose modal overlay (default) vs a
     // full-page view for the two-way talk mode. Only meaningful where STT exists.
     ...(sttSupported

@@ -17,6 +17,9 @@ importers:
       '@aws-sdk/client-polly':
         specifier: ^3.1068.0
         version: 3.1068.0
+      '@aws-sdk/client-transcribe-streaming':
+        specifier: ^3.1068.0
+        version: 3.1068.0
       '@modelcontextprotocol/sdk':
         specifier: 1.26.0
         version: 1.26.0(zod@3.25.76)
@@ -192,6 +195,10 @@ packages:
     resolution: {integrity: sha512-X107Xwlwb9Uquw8uOx1laJV6ZTkGTlGdJgZdu6DWJgfLcUOpTnw9jrRihzvWaapFc6le/7DMbsvcpU/9i4yN1g==}
     engines: {node: '>=20.0.0'}
 
+  '@aws-sdk/client-transcribe-streaming@3.1068.0':
+    resolution: {integrity: sha512-VZiuN2SHCdC0JwuEjBlPeS84iGg5AfK35E7nUirJHPP8Sw9Czel9w8mWQM6Nn7f4v9PLg9xIX32mYxvpV8dg2w==}
+    engines: {node: '>=20.0.0'}
+
   '@aws-sdk/core@3.974.20':
     resolution: {integrity: sha512-7sDi2B2N3mc3nf1nz6FyEx/FCrJ1N1QnBmraHHQNabFaeAh2IaOOLml48/rHOD1bICHgTRkbBgNTvUzEr5Z35g==}
     engines: {node: '>=20.0.0'}
@@ -242,6 +249,10 @@ packages:
 
   '@aws-sdk/middleware-eventstream@3.972.17':
     resolution: {integrity: sha512-tdbnXbw73ww62ABWP0G0Z/euvFowEEvAoi/zG4NaZo7HJFpfGho/Z65HyVzkJLT1cMsUregr4pTyxljlarT0wA==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/middleware-sdk-transcribe-streaming@3.972.20':
+    resolution: {integrity: sha512-G9ogjZ+jXf3nY3RZ62+NfJ78bxBaGtD4XjsQPIk/1faWx1XGzkgvgO8NAHfte7lRic7oE+K7dAbEbYvu+a99Qw==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/middleware-websocket@3.972.28':
@@ -4426,6 +4437,23 @@ snapshots:
       '@smithy/types': 4.14.3
       tslib: 2.8.1
 
+  '@aws-sdk/client-transcribe-streaming@3.1068.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/core': 3.974.20
+      '@aws-sdk/credential-provider-node': 3.972.55
+      '@aws-sdk/eventstream-handler-node': 3.972.21
+      '@aws-sdk/middleware-eventstream': 3.972.17
+      '@aws-sdk/middleware-sdk-transcribe-streaming': 3.972.20
+      '@aws-sdk/middleware-websocket': 3.972.28
+      '@aws-sdk/types': 3.973.12
+      '@smithy/core': 3.24.6
+      '@smithy/fetch-http-handler': 5.4.6
+      '@smithy/node-http-handler': 4.7.7
+      '@smithy/types': 4.14.3
+      tslib: 2.8.1
+
   '@aws-sdk/core@3.974.20':
     dependencies:
       '@aws-sdk/types': 3.973.12
@@ -4557,6 +4585,13 @@ snapshots:
       tslib: 2.8.1
 
   '@aws-sdk/middleware-eventstream@3.972.17':
+    dependencies:
+      '@aws-sdk/types': 3.973.12
+      '@smithy/core': 3.24.6
+      '@smithy/types': 4.14.3
+      tslib: 2.8.1
+
+  '@aws-sdk/middleware-sdk-transcribe-streaming@3.972.20':
     dependencies:
       '@aws-sdk/types': 3.973.12
       '@smithy/core': 3.24.6

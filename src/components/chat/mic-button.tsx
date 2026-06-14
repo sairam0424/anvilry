@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { Mic, MicOff, Square } from "lucide-react";
-import { useSpeechRecognition } from "@/components/chat/use-speech-recognition";
+import { useStt } from "@/components/chat/use-stt";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 
 /**
@@ -32,8 +32,8 @@ export function MicButton({
   /** Smaller (h-9 w-9) variant to match the floating widget's compact controls. */
   compact?: boolean;
 }) {
-  const { supported, isListening, error, start, stop } = useSpeechRecognition();
   const { settings, set } = useVoiceSettings();
+  const { supported, isListening, error, start, stop } = useStt(settings.sttEngine);
   const [showDisclosure, setShowDisclosure] = useState(false);
   const disclosureId = useId();
 
@@ -80,8 +80,9 @@ export function MicButton({
           className="absolute bottom-full right-0 z-10 mb-2 w-72 rounded-xl border border-border-strong bg-bg-surface p-3 text-left shadow-2xl"
         >
           <p className="text-xs leading-relaxed text-fg-muted">
-            Voice is optional. Your browser (Chrome/Safari) may send the audio to Google
-            or Apple to turn speech into text. Nothing is recorded or stored here.
+            {settings.sttEngine === "transcribe"
+              ? "Voice is optional. Your speech is transcribed on Sairam's own AWS — not a third party — and nothing is stored."
+              : "Voice is optional. Your browser (Chrome/Safari) may send the audio to Google or Apple to turn speech into text. Nothing is recorded or stored here."}
           </p>
           <div className="mt-3 flex justify-end gap-2">
             <button

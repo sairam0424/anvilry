@@ -240,6 +240,28 @@ export function CommandPalette() {
           },
         ]
       : []),
+    // TTS engine — free browser voice (default) vs AWS Polly Neural (higher quality,
+    // owner's existing AWS creds). Only offered when read-aloud is on + browser TTS
+    // exists; Polly falls back to browser automatically if the route errors.
+    ...(ttsSupported && settings.ttsEnabled
+      ? [
+          {
+            id: "voice-engine",
+            label:
+              settings.ttsEngine === "polly"
+                ? "Use free browser voice"
+                : "Use higher-quality voice (Polly)",
+            hint: settings.ttsEngine === "polly" ? "Polly Neural" : "browser default",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              set({ ttsEngine: settings.ttsEngine === "polly" ? "browser" : "polly" });
+              setOpen(false);
+            },
+            keywords: "voice engine polly neural quality aws browser tts",
+            value: "Voice engine polly neural quality aws browser tts",
+          },
+        ]
+      : []),
     // Talk-surface preference — lets the visitor choose modal overlay (default) vs a
     // full-page view for the two-way talk mode. Only meaningful where STT exists.
     ...(sttSupported

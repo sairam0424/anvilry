@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "@/components/chat/use-chat";
 import { useSpeechRecognition } from "@/components/chat/use-speech-recognition";
 import { useSpeechSynthesis } from "@/components/chat/use-speech-synthesis";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { parseCards } from "@/components/chat/parse-cards";
 
 /**
@@ -42,9 +43,10 @@ function stripForSpeech(content: string): string {
 }
 
 export function useVoiceSession() {
+  const { settings } = useVoiceSettings();
   const { messages, send, stop: stopStream, isStreaming } = useChat();
   const recognition = useSpeechRecognition();
-  const tts = useSpeechSynthesis();
+  const tts = useSpeechSynthesis(settings.ttsEngine);
 
   // `active` (session open?) is the ONLY stored state — everything else (listening /
   // thinking / speaking / paused) is DERIVED from the child-hook signals below, so the

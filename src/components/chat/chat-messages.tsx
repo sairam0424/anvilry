@@ -53,7 +53,7 @@ export function ChatMessages({
   // the active state and the answer's live-region announcement is suppressed (no
   // double-speak). Gated by the opt-in ttsEnabled pref + runtime support.
   const { settings } = useVoiceSettings();
-  const tts = useSpeechSynthesis();
+  const tts = useSpeechSynthesis(settings.ttsEngine);
   const ttsAvailable = settings.ttsEnabled && tts.supported;
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   // When the engine stops on its own (answer finished), clear the active index.

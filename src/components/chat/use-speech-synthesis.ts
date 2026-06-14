@@ -66,6 +66,9 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
 const isAndroid = () =>
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
+/** Which engine speaks: free browser speechSynthesis (default) or AWS Polly via /api/tts. */
+export type TtsEngine = "browser" | "polly";
+
 export type UseSpeechSynthesis = {
   supported: boolean;
   isSpeaking: boolean;
@@ -77,14 +80,36 @@ export type UseSpeechSynthesis = {
   cancel: () => void;
 };
 
-export function useSpeechSynthesis(): UseSpeechSynthesis {
-  const supported = useSyncExternalStore(noopSubscribe, getSupportedClient, getSupportedServer);
+export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynthesis {
+  const browserSupported = useSyncExternalStore(
+    noopSubscribe,
+    getSupportedClient,
+    getSupportedServer,
+  );
+  // Polly plays through an <audio> element, so "supported" only needs the browser to
+  // do audio playback (effectively always) — but we still report browser support so
+  // callers can gate a "read aloud" button even before an engine choice. With Polly
+  // selected, a fetch failure transparently falls back to the browser path below.
+  const supported = browserSupported;
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   // For speakChunk streaming: how many chunks of the current answer we've already
   // enqueued, so a re-call only speaks the NEW sentences.
   const spokenCountRef = useRef(0);
+
+  // --- Polly playback (engine="polly") ------------------------------------------
+  // <audio> plays one source at a time, so we run our own sentence queue: fetch
+  // sentence N, play it, advance on `ended`. A monotonically-increasing token
+  // invalidates an in-flight fetch when cancel() fires (so a late response can't
+  // resurrect stopped speech). Any fetch/play failure falls back to the browser path.
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const pollyQueueRef = useRef<string[]>([]);
+  const pollyIdxRef = useRef(0);
+  const pollyTokenRef = useRef(0);
+  // Ref to the browser enqueue fn so the Polly fallback can call it without a forward
+  // dependency (enqueue is defined below). Assigned in an effect.
+  const enqueueBrowserRef = useRef<(chunks: string[], from: number) => void>(() => {});
   // Desktop-only keep-alive against Chromium's ~15s cutoff (pause/resume). Skipped on
   // Android, where pause() behaves like cancel() and would truncate speech.
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -120,13 +145,85 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     }, 12_000);
   }, []);
 
-  const cancel = useCallback(() => {
-    if (!supported) return;
+  /** Stop the browser engine. */
+  const cancelBrowser = useCallback(() => {
     stopKeepAlive();
-    window.speechSynthesis.cancel();
+    if (browserSupported) window.speechSynthesis.cancel();
+  }, [browserSupported, stopKeepAlive]);
+
+  /** Stop the Polly <audio> playback + invalidate any in-flight fetch. */
+  const cancelPolly = useCallback(() => {
+    pollyTokenRef.current += 1; // invalidate pending fetches
+    pollyQueueRef.current = [];
+    pollyIdxRef.current = 0;
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.removeAttribute("src");
+    }
+  }, []);
+
+  const cancel = useCallback(() => {
+    cancelBrowser();
+    cancelPolly();
     spokenCountRef.current = 0;
     setIsSpeaking(false);
-  }, [supported, stopKeepAlive]);
+  }, [cancelBrowser, cancelPolly]);
+
+  /** Play the Polly queue from pollyIdxRef; fetch each sentence then play it. On any
+   *  failure, fall back to speaking the WHOLE remaining text via the browser engine. */
+  const playPollyFrom = useCallback(
+    async (token: number) => {
+      const fallback = () => {
+        const rest = pollyQueueRef.current.slice(pollyIdxRef.current).join(" ");
+        cancelPolly();
+        if (rest && browserSupported) {
+          spokenCountRef.current = 0;
+          enqueueBrowserRef.current(splitSentences(rest), 0);
+        }
+      };
+      while (pollyIdxRef.current < pollyQueueRef.current.length) {
+        if (token !== pollyTokenRef.current) return; // cancelled
+        const sentence = pollyQueueRef.current[pollyIdxRef.current];
+        let url: string;
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: sentence }),
+          });
+          if (!res.ok) return fallback();
+          const blob = await res.blob();
+          if (token !== pollyTokenRef.current) return;
+          url = URL.createObjectURL(blob);
+        } catch {
+          return fallback();
+        }
+        // An HTMLAudioElement is an imperative media object — assigning .src and
+        // wiring .onended/.onerror is the only way to drive it (the same exception
+        // hero-graph/scene.tsx makes for its WebGL objects).
+        const a = audioRef.current ?? new Audio();
+        audioRef.current = a;
+        setIsSpeaking(true);
+        try {
+          await new Promise<void>((resolve, reject) => {
+            a.src = url;
+            a.onended = () => resolve();
+            a.onerror = () => reject(new Error("audio"));
+            void a.play().catch(reject);
+          });
+        } catch {
+          URL.revokeObjectURL(url);
+          return fallback();
+        }
+        URL.revokeObjectURL(url);
+        if (token !== pollyTokenRef.current) return;
+        pollyIdxRef.current += 1;
+      }
+      if (token === pollyTokenRef.current) setIsSpeaking(false);
+    },
+    [browserSupported, cancelPolly],
+  );
 
   /** Enqueue chunks[from..] as utterances; wire speaking state on first/last. */
   const enqueue = useCallback(
@@ -162,36 +259,56 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
     [startKeepAlive, stopKeepAlive],
   );
 
+  // Keep the fallback ref pointing at the live enqueue fn (set in an effect, never
+  // during render — react-hooks/refs).
+  useEffect(() => {
+    enqueueBrowserRef.current = enqueue;
+  }, [enqueue]);
+
   const speak = useCallback(
     (text: string) => {
-      if (!supported || !text.trim()) return;
-      window.speechSynthesis.cancel(); // replace anything in flight
+      if (!text.trim()) return;
+      cancel(); // replace anything in flight (both engines)
       const chunks = splitSentences(text);
       spokenCountRef.current = chunks.length;
-      enqueue(chunks, 0);
+      if (engine === "polly") {
+        pollyQueueRef.current = chunks;
+        pollyIdxRef.current = 0;
+        const token = (pollyTokenRef.current += 1);
+        void playPollyFrom(token);
+      } else if (browserSupported) {
+        enqueue(chunks, 0);
+      }
     },
-    [supported, enqueue],
+    [engine, browserSupported, cancel, enqueue, playPollyFrom],
   );
 
   const speakChunk = useCallback(
     (fullTextSoFar: string) => {
-      if (!supported) return;
       // Only complete sentences are safe to speak mid-stream; hold back a trailing
       // partial (no terminal punctuation) until more arrives or speak() finalizes it.
       const all = splitSentences(fullTextSoFar);
       const endsClean = /[.!?]["')\]]?\s*$/.test(fullTextSoFar);
       const ready = endsClean ? all : all.slice(0, -1);
-      if (ready.length > spokenCountRef.current) {
+      if (ready.length <= spokenCountRef.current) return;
+
+      if (engine === "polly") {
+        const wasEmpty = pollyIdxRef.current >= pollyQueueRef.current.length;
+        pollyQueueRef.current = ready;
+        spokenCountRef.current = ready.length;
+        // If the queue had drained, restart the player at the current index.
+        if (wasEmpty) void playPollyFrom(pollyTokenRef.current);
+      } else if (browserSupported) {
         enqueue(ready, spokenCountRef.current);
         spokenCountRef.current = ready.length;
       }
     },
-    [supported, enqueue],
+    [engine, browserSupported, enqueue, playPollyFrom],
   );
 
-  // Stop speech if the tab is hidden (visibilitychange) and always on unmount.
+  // Stop speech if the tab is hidden (visibilitychange) and always on unmount —
+  // covers both engines (cancel() stops the browser synth AND Polly <audio>).
   useEffect(() => {
-    if (!supported) return;
     const onHide = () => {
       if (document.hidden) cancel();
     };
@@ -200,7 +317,7 @@ export function useSpeechSynthesis(): UseSpeechSynthesis {
       document.removeEventListener("visibilitychange", onHide);
       cancel();
     };
-  }, [supported, cancel]);
+  }, [cancel]);
 
   return { supported, isSpeaking, speak, speakChunk, cancel };
 }

@@ -68,7 +68,10 @@ function decodeSecret(value: string | undefined): string {
   return value;
 }
 
-function bedrockCreds() {
+// Exported so other AWS-backed routes (e.g. /api/tts -> Polly, which uses the SAME
+// account + region) reuse the exact base64-decode + reserved-var handling instead of
+// re-deriving it. Returns decoded creds + region; values are "" when unset.
+export function bedrockCreds() {
   return {
     accessKeyId: decodeSecret(process.env.BEDROCK_ACCESS_KEY_ID),
     secretAccessKey: decodeSecret(process.env.BEDROCK_SECRET_ACCESS_KEY),

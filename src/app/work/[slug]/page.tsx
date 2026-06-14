@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { allWork, getWork } from "@/lib/content";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
-import { BreadcrumbJsonLd } from "@/components/json-ld";
+import { BreadcrumbJsonLd, CreativeWorkJsonLd } from "@/components/json-ld";
 
 const BASE = "https://anvilry.vercel.app";
 
@@ -108,13 +108,19 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
         )}
       </article>
 
-      {/* Breadcrumb structured data — earns SERP breadcrumb features. */}
+      {/* Breadcrumb + CreativeWork structured data — SERP breadcrumb + entity-graph. */}
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: `${BASE}/` },
           { name: "Work", url: `${BASE}/#work` },
           { name: work.name, url: `${BASE}${work.url}` },
         ]}
+      />
+      <CreativeWorkJsonLd
+        name={work.name}
+        description={work.summary}
+        url={`${BASE}${work.url}`}
+        keywords={work.tech}
       />
     </main>
   );

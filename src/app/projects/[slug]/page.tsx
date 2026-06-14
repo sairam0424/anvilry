@@ -6,6 +6,9 @@ import { Github } from "@/components/icons";
 import { allProjects, getProject } from "@/lib/content";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
+import { SoftwareSourceCodeJsonLd, BreadcrumbJsonLd } from "@/components/json-ld";
+
+const BASE = "https://anvilry.vercel.app";
 
 export function generateStaticParams() {
   return allProjects.map((p) => ({ slug: p.slug }));
@@ -75,6 +78,21 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <MDXContent code={project.body} />
         </div>
       </article>
+
+      <SoftwareSourceCodeJsonLd
+        name={project.name}
+        description={project.tagline}
+        url={`${BASE}${project.url}`}
+        codeRepository={project.repo}
+        tech={project.tech}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: `${BASE}/` },
+          { name: "Projects", url: `${BASE}/projects` },
+          { name: project.name, url: `${BASE}${project.url}` },
+        ]}
+      />
     </main>
   );
 }

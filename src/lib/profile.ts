@@ -76,5 +76,5 @@ export const resumeVariants = [
   { label: "Backend", file: "/resume/Sairam_Resume_MX_BE.pdf", tag: "Distributed Systems" },
   { label: "Full-Stack", file: "/resume/Sairam_Resume_MX_FS.pdf", tag: "GenAI Platforms" },
   { label: "Frontend", file: "/resume/Sairam_Resume_MX_FE.pdf", tag: "GenAI Platforms" },
-  { label: "Gen-AI", file: "/resume/Sairam_Resume_MX_GAI.pdf", tag: "LLM Systems" },
+  { label: "GenAI", file: "/resume/Sairam_Resume_MX_GAI.pdf", tag: "LLM Systems" },
 ];

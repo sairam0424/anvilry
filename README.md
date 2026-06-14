@@ -9,7 +9,7 @@ A recruiter-facing engineering portfolio built as a **beast with four switchable
 - **💬 Chat** — an **AI concierge console**: a RAG-grounded, first-person chatbot over the real résumé, with streaming markdown answers and generative project/work cards.
 - **⌨️ Developer** — a focused, full-page **keyboard-native terminal** over the same content: ~16 commands (`whoami`, `ls work`, `cat <slug>`, `grep`, `open <slug>`, `tree`, …) with history, autocomplete, a boot banner, theme cycling, and a fullscreen overlay. Reachable from the nav switcher, ⌘K, the `developer` command, or `?view=developer`.
 
-All three render from **one content layer** — zero duplication, zero fabrication. The honest contribution register (*Co-built / architected / Owned / Led*) is preserved everywhere, and every metric traces to a source file.
+All four render from **one content layer** — zero duplication, zero fabrication. The honest contribution register (*Co-built / Architected / Owned / Led*) is preserved everywhere, and every metric traces to a source file.
 
 ---
 

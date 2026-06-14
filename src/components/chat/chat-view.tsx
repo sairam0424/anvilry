@@ -53,9 +53,13 @@ export function ChatView() {
       {/* min-h-0 lets this flex child shrink below its content so the transcript
           (the flex-1 child below) can own the overflow instead of pushing the page. */}
       <section className="mt-4 flex min-h-0 flex-1 flex-col rounded-2xl border border-border-strong bg-bg-surface/40 p-5 shadow-xl shadow-black/20 backdrop-blur sm:p-6">
-      {/* Answer-first greeting + verified impact strip (recruiter visual triage). */}
+      {/* Answer-first greeting + verified impact strip (recruiter visual triage).
+          min-h-0 + overflow-y-auto + shrink: on a SHORT viewport this tall block (greeting +
+          6-tile metric grid) must scroll WITHIN itself rather than push the composer out of
+          the bordered console (it was a rigid flex sibling, so it shoved the composer + caption
+          past the section border). It collapses to nothing once a conversation starts (empty). */}
       {empty && (
-        <header>
+        <header className="min-h-0 shrink overflow-y-auto">
           <h1 className="text-2xl font-semibold tracking-tight">
             Ask me anything about {profile.name.split(" ")[0]}&apos;s work
           </h1>
@@ -79,8 +83,9 @@ export function ChatView() {
       {/* Conversation. Grows to fill; messages + a11y live region live here (2.3). */}
       <ChatMessages messages={messages} isStreaming={isStreaming} />
 
-      {/* Persistent recruiter chip-rail — one-tap strongest-work / impact paths. */}
-      <div className="mt-4">
+      {/* Persistent recruiter chip-rail — one-tap strongest-work / impact paths.
+          shrink-0: never let a short viewport compress the chips into the transcript. */}
+      <div className="mt-4 shrink-0">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
           {RECRUITER_CHIPS.map((c) => (
             <button
@@ -111,8 +116,9 @@ export function ChatView() {
         )}
       </div>
 
-      {/* Composer. */}
-      <form onSubmit={onSubmit} className="mt-3 flex items-center gap-2">
+      {/* Composer. shrink-0: the input the user types in must NEVER be compressed or
+          pushed below the console border on a short viewport (it was escaping the section). */}
+      <form onSubmit={onSubmit} className="mt-3 flex shrink-0 items-center gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -139,7 +145,7 @@ export function ChatView() {
           </button>
         )}
       </form>
-      <p className="mt-2 text-center text-[11px] text-fg-subtle">
+      <p className="mt-2 shrink-0 text-center text-[11px] text-fg-subtle">
         Grounded in real work · may simplify details
       </p>
       </section>

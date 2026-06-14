@@ -15,11 +15,11 @@ excerpt: Models code as a Neo4j knowledge graph + Chroma embeddings over ~19 pol
 
 **Graph-Forge** understands polyglot code by modeling an entire codebase as a **Neo4j knowledge graph augmented with Chroma vector embeddings** — a dual index that answers both *"what breaks if I refactor this?"* (structure) and *"find similar patterns"* (semantics) in one platform.
 
-It runs as **~19 polyglot microservices** (Go + Python) communicating over gRPC internally and REST externally, behind a Go API gateway. Kafka-driven ingestion and Tree-Sitter AST parsing feed the graph and embedding stores; PostgreSQL holds metadata and MinIO holds objects. Full **OpenTelemetry → Jaeger / Prometheus / Loki / Grafana** observability sits behind an Envoy L7 proxy, with a Next.js 3D graph explorer on top.
+It runs as **~19 polyglot microservices** (Go + Python) communicating over gRPC internally and REST externally, behind a Go API gateway. Kafka-driven ingestion and Tree-sitter AST parsing feed the graph and embedding stores; PostgreSQL holds metadata and MinIO holds objects. Full **OpenTelemetry → Jaeger / Prometheus / Loki / Grafana** observability sits behind an Envoy L7 proxy, with a Next.js 3D graph explorer on top.
 
 - **~19 microservices**, gRPC internal / REST external
 - **Dual index:** Neo4j (structure) + Chroma (semantics)
-- Tree-Sitter polyglot parsing · Kafka ingestion · RAG over large repos
+- Tree-sitter polyglot parsing · Kafka ingestion · RAG over large repos
 - Full observability stack + Kubernetes substrate
 
 > The portfolio's strongest distributed-systems credential. 555 commits.

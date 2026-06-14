@@ -62,11 +62,20 @@ export function DeveloperView() {
       </header>
 
       {/* Content region: single column on mobile; on lg+ a [terminal | 19rem rail] grid.
-          flex-1 + min-h-0 lets the terminal column own the leftover height. */}
-      <div className="mt-6 flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-6 lg:items-stretch">
+          flex-1 + min-h-0 lets the terminal column own the leftover height.
+
+          lg:grid-rows-[minmax(0,1fr)] is load-bearing: a grid's implicit ROW track
+          defaults to `auto`, which sizes to content and REFUSES to shrink below it. So
+          even with min-h-0 on the cell, the row stayed content-sized and the terminal
+          overflowed the height-bounded <main> onto the global footer (visible because the
+          terminal card is translucent). minmax(0,1fr) makes the row shrinkable — mirroring
+          why the COLUMNS already use minmax(0,1fr) — so the terminal scrolls internally. */}
+      <div className="mt-6 flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_19rem] lg:grid-rows-[minmax(0,1fr)] lg:gap-6 lg:items-stretch">
         {/* Terminal cell — fills the available column height (real-tool feel). The
-            min-h-[24rem] floor keeps it usable if the viewport is very short. */}
-        <div className="flex min-h-[24rem] flex-1 flex-col">
+            min-h-[24rem] floor keeps it usable on a short SINGLE-COLUMN (mobile) layout;
+            dropped at lg, where the shrinkable grid row governs height instead (keeping the
+            floor there would re-trigger the overflow on short laptop viewports). */}
+        <div className="flex min-h-[24rem] flex-1 flex-col lg:min-h-0">
           <Terminal fill onMaximize={() => setTermMax(true)} maximizeRef={maximizeRef} />
         </div>
 

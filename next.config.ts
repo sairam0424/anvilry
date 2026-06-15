@@ -48,9 +48,17 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Voice requests the mic — scope it to same-origin and deny camera/geo/etc.
   { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()" },
-  // Report-Only first: observe violations without breaking anything; promote to
-  // "Content-Security-Policy" once a live check confirms zero violations.
-  { key: "Content-Security-Policy-Report-Only", value: csp },
+  // ENFORCED. Shipped Report-Only in v1.4.0; a live Playwright sweep across all four
+  // views (incl. the WebGL Play view) logged ZERO violations, and a per-directive
+  // audit against the real resource loads (scripts/styles/fonts/img/media/connect/
+  // worker — including the Polly-audio blob: and AWS paths the sweep didn't exercise)
+  // confirmed every browser-loadable resource is covered. The policy string is
+  // unchanged from the Report-Only version — only the header key flips to enforce, so
+  // the proven-safe baseline is exactly what's now blocking. `upgrade-insecure-requests`
+  // is retained (it becomes meaningful once enforced). `'unsafe-inline'` on script/
+  // style is intentional + unavoidable (Next inline bootstrap + inlineCss + Motion
+  // runtime style attributes, which nonces can't cover) — accepted on an auth-less site.
+  { key: "Content-Security-Policy", value: csp },
 ];
 
 const nextConfig: NextConfig = {

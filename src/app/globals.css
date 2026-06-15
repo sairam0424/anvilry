@@ -100,6 +100,27 @@ html {
   .terminal-boot { animation: none; }
 }
 
+/* Anvil header-orb idle — a small gradient blob that gently breathes. PURE CSS (no rAF,
+   no WebGL) so it costs nothing on the Classic/SSG path every visitor lands on; the live
+   3D orb only ever runs inside the open voice overlay. Reduced-motion → calm + static. */
+@keyframes anvil-orb-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 10px -2px color-mix(in oklab, var(--accent) 55%, transparent); }
+  50% { transform: scale(1.08); box-shadow: 0 0 16px -1px color-mix(in oklab, var(--accent) 75%, transparent); }
+}
+.anvil-orb-idle {
+  background: radial-gradient(circle at 35% 30%,
+    color-mix(in oklab, var(--accent) 90%, white) 0%,
+    var(--accent) 45%,
+    var(--accent-strong) 100%);
+  animation: anvil-orb-breathe 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anvil-orb-idle {
+    animation: none;
+    box-shadow: 0 0 10px -2px color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+}
+
 body {
   background: var(--bg-base);
   color: var(--fg);

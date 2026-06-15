@@ -8,6 +8,7 @@ import { useMediaQuery, useWebGLSupported } from "@/lib/use-media-query";
 import { questNodes } from "@/lib/game-model";
 import { DossierCard } from "@/components/game/dossier-card";
 import { WebGLBoundary } from "@/components/game/webgl-boundary";
+import { useTalkModeOpen } from "@/components/chat/talk-overlay-store";
 
 // Client-only, lazily loaded — Three.js never enters the critical path / SSR.
 const BuildGraphScene = dynamic(() => import("./build-graph-scene"), { ssr: false });
@@ -24,6 +25,11 @@ export function BuildGraph() {
   const reduced = useReducedMotion();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const webglOk = useWebGLSupported();
+  // While the voice overlay is open, the Anvil 3D orb owns a live WebGL context. The
+  // talk modal is layout-global and does NOT change the active view, so it can open over
+  // the gamified view — unmount this scene meanwhile so there's only ONE live context
+  // (avoids two concurrent GL contexts on lower-end GPUs / the per-page context cap).
+  const talkOpen = useTalkModeOpen();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [webglFailed, setWebglFailed] = useState(false);
 
@@ -32,9 +38,10 @@ export function BuildGraph() {
   const selected = selectedId ? questNodes.find((n) => n.id === selectedId) ?? null : null;
 
   // No 3D on mobile / reduced-motion, if WebGL is unsupported (probed proactively —
-  // R3F's context failure is an async rejection an error boundary can't catch), or
-  // if a context was lost at runtime: the DOM index below is the whole experience.
-  if (!isDesktop || reduced || !webglOk || webglFailed) return null;
+  // R3F's context failure is an async rejection an error boundary can't catch), if a
+  // context was lost at runtime, or while the voice orb holds the one live context:
+  // the DOM index below is the whole experience in every such case.
+  if (!isDesktop || reduced || !webglOk || webglFailed || talkOpen) return null;
 
   return (
     <div className="relative mt-6 hidden sm:block">

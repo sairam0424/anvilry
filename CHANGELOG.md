@@ -7,6 +7,19 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.4.1] — 2026-06-15
+
+### Security
+- **Content-Security-Policy is now enforced** (promoted from `Report-Only`, which
+  shipped in 1.4.0 to observe safely). The policy string is unchanged — only the header
+  key flips — so the exact policy that logged zero violations in the live 1.4.0
+  production sweep (all four views incl. the WebGL Play view) is now actually blocking.
+  Backed by a per-directive audit against every real resource load (scripts, styles,
+  fonts, images, media, network, workers), including the optional AWS Polly-audio
+  `blob:` path the click-through sweep didn't exercise. `next/font` self-hosting,
+  same-origin `/api/*`, and server-side AWS calls were all confirmed covered;
+  `upgrade-insecure-requests` is retained (it becomes meaningful once enforced).
+
 ## [1.4.0] — 2026-06-15
 
 The voice release — speak to the portfolio, hear it answer back — plus a
@@ -83,6 +96,7 @@ strictly additive, and any unsupported browser or runtime error degrades to text
 - Initial public portfolio: four switchable views (Classic · Play · Chat · Developer)
   over one canonical content source, with the AWS Bedrock "Ask my portfolio" chat.
 
+[1.4.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.1
 [1.4.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.0
 [1.3.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.3.1
 [1.3.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.3.0

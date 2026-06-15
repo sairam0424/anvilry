@@ -7,6 +7,33 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.5.0] — 2026-06-15
+
+The streaming voice release — talk mode now speaks the answer **as it streams**, with a
+clean caption and an audio-reactive 3D orb. All free, browser-native, opt-in.
+
+### Fixed
+- **Talk-mode caption** rendered the assistant answer raw, leaking `**markdown**` and
+  `[[card:…]]` tokens to screen while the spoken path was already clean. Both paths now
+  share one `toCaptionText` helper (strips card tokens + display markdown), so the
+  caption shows exactly what is spoken. Live interim (user STT) stays verbatim.
+
+### Added
+- **Speak-as-it-streams** — talk mode wires the existing per-sentence `tts.speakChunk()`
+  into the streaming loop, so the first audio starts ~one sentence after the first token
+  instead of after the whole answer settles. Honest framing: *speaks as it streams with
+  instant interrupt* — not gapless (inter-sentence timing is browser-controlled). Always
+  on. Barge-in (tap/Space) now also **aborts the in-flight `/api/chat` stream**, not just
+  the speech.
+- **Audio-reactive voice orb** — a desktop R3F GLSL "Siri orb" (noise-displaced
+  icosahedron, behind the existing WebGL + min-width + reduced-motion gates, lazy-loaded
+  so three stays off the talk-mode critical path) with a universal 2D-canvas orb
+  fallback, driven by a smoothed per-state amplitude `level`. Reduced-motion → a calm
+  static ring. (The speaking envelope is synthetic — browser `speechSynthesis` exposes
+  no audio node to tap; the orb reacts to state, not raw output.)
+- **Captions toggle** (cc) in talk mode, on by default (a11y), persisted in voice
+  settings; a turn-affordance footer ("Tap the orb or press Space to take your turn").
+
 ## [1.4.1] — 2026-06-15
 
 ### Security
@@ -96,6 +123,7 @@ strictly additive, and any unsupported browser or runtime error degrades to text
 - Initial public portfolio: four switchable views (Classic · Play · Chat · Developer)
   over one canonical content source, with the AWS Bedrock "Ask my portfolio" chat.
 
+[1.5.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.5.0
 [1.4.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.1
 [1.4.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.0
 [1.3.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.3.1

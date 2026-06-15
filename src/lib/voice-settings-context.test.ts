@@ -15,6 +15,7 @@ describe("voice settings DEFAULTS", () => {
       micEnabled: false,
       ttsEnabled: false,
       wakeWord: false,
+      captions: true, // captions default ON (a11y) — the one non-false default
       sttEngine: "browser",
       ttsEngine: "browser",
       talkSurface: "modal",
@@ -36,6 +37,7 @@ describe("parse()", () => {
       micEnabled: true,
       ttsEnabled: true,
       wakeWord: true,
+      captions: false,
       sttEngine: "transcribe",
       ttsEngine: "polly",
       talkSurface: "view",

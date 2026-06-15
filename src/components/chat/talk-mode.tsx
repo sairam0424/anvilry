@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { Mic, Square, X } from "lucide-react";
+import { Mic, Square, X, Captions, CaptionsOff } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -41,6 +42,7 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
   const session = useVoiceSession();
   const { supported, active, state, interim, messages, start, stop, interrupt, pause, resume } =
     session;
+  const { settings, toggle } = useVoiceSettings();
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
@@ -129,18 +131,22 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         {active ? STATUS_LABEL[state] : "Tap the mic to talk"}
       </p>
 
-      {/* Live transcript caption — voice is never the only channel (WCAG 1.2.2). */}
-      <div className="min-h-[3.5rem] w-full max-w-md text-center">
-        {caption ? (
-          <p className={`text-sm leading-relaxed ${interim ? "text-fg-muted" : "text-fg"}`}>
-            {caption}
-          </p>
-        ) : (
-          <p className="text-sm text-fg-subtle">
-            Ask about my work, projects, or what I&apos;m looking for.
-          </p>
-        )}
-      </div>
+      {/* Live caption — the spoken phrase as text so voice is never the only channel
+          (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't "live").
+          Toggleable via the cc control below; default on. */}
+      {settings.captions && (
+        <div className="min-h-[3.5rem] w-full max-w-md text-center">
+          {caption ? (
+            <p className={`text-sm leading-relaxed ${interim ? "text-fg-muted" : "text-fg"}`}>
+              {caption}
+            </p>
+          ) : (
+            <p className="text-sm text-fg-subtle">
+              Ask about my work, projects, or what I&apos;m looking for.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Controls. */}
       <div className="flex items-center gap-3">
@@ -171,10 +177,27 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
           <X size={15} aria-hidden="true" />
           End
         </button>
+        {/* Captions on/off (cc) — default on; persists in voice settings. */}
+        <button
+          type="button"
+          onClick={() => toggle("captions")}
+          aria-pressed={settings.captions}
+          aria-label={settings.captions ? "Hide captions" : "Show captions"}
+          title={settings.captions ? "Hide captions" : "Show captions"}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+            settings.captions
+              ? "border-accent/60 text-accent"
+              : "border-border text-fg-muted hover:border-accent hover:text-fg"
+          }`}
+        >
+          {settings.captions ? <Captions size={16} /> : <CaptionsOff size={16} />}
+        </button>
       </div>
 
       <p className="text-center text-[11px] text-fg-subtle">
-        Turn-based voice · grounded in real work · press Space to talk, Esc to close
+        {active
+          ? "Tap the orb or press Space to take your turn · Esc to close"
+          : "Tap the orb or press Space to start · grounded in real work"}
       </p>
     </div>
   );

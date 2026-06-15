@@ -35,6 +35,8 @@ export type VoiceSettings = {
   ttsEnabled: boolean;
   /** Always-listening wake word ("Hey portfolio"). Off by default — highest trust cost. */
   wakeWord: boolean;
+  /** Show the live caption (spoken-text transcript) in talk mode. Default ON (a11y). */
+  captions: boolean;
   sttEngine: SttEngine;
   ttsEngine: TtsEngine;
   talkSurface: TalkSurface;
@@ -44,6 +46,7 @@ const DEFAULTS: VoiceSettings = {
   micEnabled: false,
   ttsEnabled: false,
   wakeWord: false,
+  captions: true,
   sttEngine: "browser",
   ttsEngine: "browser",
   talkSurface: "modal",
@@ -68,6 +71,7 @@ function parse(raw: string | null): VoiceSettings {
       micEnabled: typeof o.micEnabled === "boolean" ? o.micEnabled : DEFAULTS.micEnabled,
       ttsEnabled: typeof o.ttsEnabled === "boolean" ? o.ttsEnabled : DEFAULTS.ttsEnabled,
       wakeWord: typeof o.wakeWord === "boolean" ? o.wakeWord : DEFAULTS.wakeWord,
+      captions: typeof o.captions === "boolean" ? o.captions : DEFAULTS.captions,
       sttEngine: isSttEngine(o.sttEngine) ? o.sttEngine : DEFAULTS.sttEngine,
       ttsEngine: isTtsEngine(o.ttsEngine) ? o.ttsEngine : DEFAULTS.ttsEngine,
       talkSurface: isTalkSurface(o.talkSurface) ? o.talkSurface : DEFAULTS.talkSurface,
@@ -133,12 +137,13 @@ function update(patch: Partial<VoiceSettings>): void {
 export function useVoiceSettings(): {
   settings: VoiceSettings;
   set: (patch: Partial<VoiceSettings>) => void;
-  toggle: (key: "micEnabled" | "ttsEnabled" | "wakeWord") => void;
+  toggle: (key: "micEnabled" | "ttsEnabled" | "wakeWord" | "captions") => void;
 } {
   const settings = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
   const set = useCallback((patch: Partial<VoiceSettings>) => update(patch), []);
   const toggle = useCallback(
-    (key: "micEnabled" | "ttsEnabled" | "wakeWord") => update({ [key]: !current[key] }),
+    (key: "micEnabled" | "ttsEnabled" | "wakeWord" | "captions") =>
+      update({ [key]: !current[key] }),
     [],
   );
   return { settings, set, toggle };

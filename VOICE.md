@@ -36,11 +36,13 @@ Voice is a **progressive enhancement over the text chat** — opt-in, free-first
    - Per-sentence chunking dodges Chromium's ~15s utterance cutoff.
    - Both engines drive the same `UseSpeechSynthesis` interface, so callers are engine-agnostic.
 
-4. **Two-way talk mode** (`src/components/chat/use-voice-session.ts`) — a turn-based (half-duplex), grounded state machine.
+4. **Two-way talk mode** (`src/components/chat/use-voice-session.ts`) — a half-duplex, grounded state machine that **speaks the answer as it streams** (since v1.5.0).
    - Lifecycle: `idle` → `listening` → `thinking` → `speaking` → `listening` (loop).
    - State is **derived** (not stored) from child-hook signals: `recognition.isListening`, `isStreaming`, `tts.isSpeaking`.
+   - **Speak-as-it-streams:** while `/api/chat` is still streaming, each completed sentence is spoken via `tts.speakChunk()` (deduped; trailing partial held back), so the first audio starts ~one sentence after the first token instead of after the whole answer settles. Honest limit: it **speaks as it streams with instant interrupt** but is **not gapless** (inter-sentence timing is browser-controlled) — it feels like a fast assistant, not ChatGPT Advanced Voice's continuous overlap. Barge-in (tap/Space) cancels TTS **and** aborts the in-flight stream.
+   - **Audio-reactive orb** (`voice-orb.tsx`): a desktop R3F GLSL "Siri orb" (noise-displaced icosahedron, behind WebGL + min-width + reduced-motion gates) with a universal 2D-canvas orb fallback, driven by a smoothed `level` (`use-voice-level.ts`). The level is a **synthetic per-state envelope** — browser `speechSynthesis` exposes no audio node to tap, so the speaking orb is event-timed, not true amplitude. Reduced-motion → a calm static ring.
+   - **Captions** on by default (a11y), toggleable (cc control); show the spoken prose stripped of markdown + card tokens (`toCaptionText` — the same helper feeds the audio so caption == speech).
    - Avoids self-hearing by design: the mic stops after the final result (off during thinking + speaking) and re-opens only after speech fully ends.
-   - Filters answer text to prose only (card tokens never speak) and respects the no-double-speak rules.
 
 5. **UI surfaces**
    - **Mic button** (`src/components/chat/mic-button.tsx`) — push-to-talk in the composer; first-use disclosure (engine-aware copy); fill-for-review (interim + final text flows to the input for edit/confirm).

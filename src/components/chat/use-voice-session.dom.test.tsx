@@ -85,25 +85,37 @@ describe("useVoiceSession", () => {
     expect(result.current.state).toBe("thinking"); // derived from isStreaming
   });
 
-  it("when the stream settles it speaks the grounded answer (mic off first)", () => {
+  it("speaks AS the answer streams (speakChunk per growing chunk, not after settle)", () => {
     chat.isStreaming = true;
     const { result, rerender } = renderHook(() => useVoiceSession());
     act(() => result.current.start());
-
-    // Stream produces an answer, then settles + the engine starts speaking.
+    // A partial answer arrives WHILE still streaming.
     chat.messages = [
       { role: "user", content: "tell me about mindforge" },
+      { role: "assistant", content: "MindForge is an agentic framework." },
+    ];
+    act(() => rerender());
+    // It spoke the chunk DURING the stream (card tokens stripped), not waiting for settle.
+    expect(synth.speakChunk).toHaveBeenCalledWith("MindForge is an agentic framework.");
+  });
+
+  it("the settle finalizer uses speakChunk (NOT speak) so it never re-speaks", () => {
+    chat.isStreaming = true;
+    const { result, rerender } = renderHook(() => useVoiceSession());
+    act(() => result.current.start());
+    chat.messages = [
+      { role: "user", content: "q" },
       { role: "assistant", content: "MindForge is an agentic framework. [[card:project:mindforge]]" },
     ];
+    // Stream settles + the engine is speaking.
     chat.isStreaming = false;
-    synth.isSpeaking = true; // the speak() call would flip this in the real hook
+    synth.isSpeaking = true;
     act(() => rerender());
-
-    // Card token stripped; only prose spoken.
-    expect(synth.speak).toHaveBeenCalledWith("MindForge is an agentic framework.");
-    // Mic was stopped before speaking (no self-hearing).
-    expect(recog.stop).toHaveBeenCalled();
-    expect(result.current.state).toBe("speaking"); // derived from isSpeaking
+    // Finalizer flushes via speakChunk (card token stripped); speak() is NEVER called
+    // (speak() would cancel + reset the counter and re-speak the whole answer).
+    expect(synth.speakChunk).toHaveBeenCalledWith("MindForge is an agentic framework.");
+    expect(synth.speak).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("speaking");
   });
 
   it("after speech ends it loops back to listening", () => {
@@ -131,11 +143,14 @@ describe("useVoiceSession", () => {
     expect(result.current.state).toBe("paused");
   });
 
-  it("interrupt() cancels speech and listens again", () => {
+  it("interrupt() cancels speech, ABORTS the in-flight stream, and listens again", () => {
     const { result } = renderHook(() => useVoiceSession());
     act(() => result.current.start());
     act(() => result.current.interrupt());
     expect(synth.cancel).toHaveBeenCalled();
+    // With speak-as-it-streams a tap can land mid-stream, so interrupt must also abort
+    // the /api/chat fetch (useChat.stop) — not just cancel TTS.
+    expect(chat.stop).toHaveBeenCalled();
     expect(recog.start).toHaveBeenCalledTimes(2); // initial + after interrupt
   });
 

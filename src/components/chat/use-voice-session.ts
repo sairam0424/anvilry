@@ -112,11 +112,14 @@ export function useVoiceSession() {
     stopStream();
   }, [recognition, tts, stopStream]);
 
-  /** Barge-in / "stop speaking": cancel the spoken answer and listen again. */
+  /** Barge-in / "stop speaking": cancel the spoken answer AND abort any in-flight
+   *  /api/chat stream (with speak-as-it-streams a tap can land mid-stream, not just
+   *  mid-speech), then listen again. stopStream() is the AbortController in useChat. */
   const interrupt = useCallback(() => {
     tts.cancel();
+    stopStream();
     beginListening();
-  }, [tts, beginListening]);
+  }, [tts, stopStream, beginListening]);
 
   /** Mute: park the mic without closing the session (derived state -> "paused"). */
   const pause = useCallback(() => {
@@ -127,8 +130,25 @@ export function useVoiceSession() {
   /** Resume listening from a parked state. */
   const resume = useCallback(() => beginListening(), [beginListening]);
 
-  // THINKING -> SPEAKING: when the stream settles, speak the grounded answer. speak()
-  // chunks per-sentence internally, dodging the Chromium ~15s cutoff. Side-effect only.
+  // SPEAK-AS-IT-STREAMS: while the answer is still streaming, feed each growing chunk
+  // to tts.speakChunk() — it splits complete sentences, holds back the trailing
+  // partial, and enqueues only NEW sentences (deduped via its own spokenCountRef). So
+  // the first sentence starts speaking ~one sentence after the first token instead of
+  // after the whole answer settles. Per-sentence utterances also stay under Chromium's
+  // ~15s cutoff. The mic is already OFF here (continuous=false stopped it on the final
+  // transcript), so no self-hearing. Side-effect only — never setState.
+  useEffect(() => {
+    if (!active || !isStreaming) return;
+    const last = messages[messages.length - 1];
+    if (last?.role !== "assistant") return;
+    const text = stripForSpeech(last.content);
+    if (text) tts.speakChunk(text);
+  }, [active, isStreaming, messages, tts]);
+
+  // SETTLE FINALIZER: when the stream ends, flush the final (trailing) partial sentence
+  // that speakChunk held back. MUST be speakChunk(), NOT speak() — speak() calls
+  // cancel() and resets the spoken counter, which would RE-SPEAK the whole answer
+  // (double-speak). If nothing was streamed (e.g. aborted -> empty), re-listen.
   useEffect(() => {
     if (!active) return;
     const wasStreaming = prevStreaming.current;
@@ -136,14 +156,10 @@ export function useVoiceSession() {
     if (wasStreaming && !isStreaming) {
       const last = messages[messages.length - 1];
       const text = last?.role === "assistant" ? stripForSpeech(last.content) : "";
-      if (text) {
-        recognition.stop(); // belt-and-suspenders: mic off before we speak
-        tts.speak(text);
-      } else {
-        beginListening(); // nothing to say (e.g. aborted) — listen again
-      }
+      if (text) tts.speakChunk(text); // finalizer: flush the trailing sentence
+      else beginListening(); // nothing to say — listen again
     }
-  }, [active, isStreaming, messages, tts, recognition, beginListening]);
+  }, [active, isStreaming, messages, tts, beginListening]);
 
   // SPEAKING -> LISTENING: once speech fully ends, re-open the mic (hands-free loop).
   // Side-effect only (recognition.start is a child-hook callback, not local setState).

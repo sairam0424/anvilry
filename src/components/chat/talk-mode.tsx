@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Mic, Square, X, Volume2, Loader2 } from "lucide-react";
-import { useVoiceSession, type VoiceSessionState } from "@/components/chat/use-voice-session";
+import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -62,9 +62,11 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [active, state, start, stop, interrupt, pause, resume, onClose]);
 
-  // The transcript caption: the user's live interim words, or the latest answer.
+  // The transcript caption: the user's live interim words (verbatim — already plain
+  // STT text), or the latest answer stripped of markdown + card tokens so the screen
+  // shows exactly what is SPOKEN (was leaking raw **markdown** / [[card:...]] tokens).
   const answer = lastAssistantText(messages);
-  const caption = interim || answer;
+  const caption = interim || toCaptionText(answer);
 
   if (!supported) {
     return (

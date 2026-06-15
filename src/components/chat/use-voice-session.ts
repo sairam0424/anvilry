@@ -33,14 +33,37 @@ import { parseCards } from "@/components/chat/parse-cards";
 
 export type VoiceSessionState = "idle" | "listening" | "thinking" | "speaking" | "paused";
 
-/** Spoken text = the prose only (card tokens are never read aloud). */
-function stripForSpeech(content: string): string {
-  return parseCards(content)
+/**
+ * Plain prose for BOTH the spoken answer and the visible caption — the single source
+ * so the two can never drift (the caption used to render raw content while only the
+ * spoken path was stripped, leaking `**markdown**` and `[[card:...]]` to screen).
+ *
+ * Steps: (1) parseCards() drops card tokens and keeps text segments; (2) strip the
+ * display-only markdown markers the eye sees but the synthesizer already ignores —
+ * block structure (leading `#` headings, `-`/`*`/`1.` list markers, ``` fences) and
+ * inline emphasis/code (`**`, `__`, `*`, `_`, backticks). A dangling unclosed `[[card`
+ * fragment mid-stream (before the closing `]]` arrives) is also dropped so a half-
+ * written token is never spoken or shown.
+ */
+export function toCaptionText(content: string): string {
+  const prose = parseCards(content)
     .filter((s): s is { type: "text"; text: string } => s.type === "text")
     .map((s) => s.text)
-    .join(" ")
+    .join(" ");
+  return prose
+    .replace(/\[\[card:[^\]]*$/i, "") // dangling, not-yet-closed card token mid-stream
+    .replace(/```[^\n]*\n?/g, "") // code fences
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "") // leading heading hashes
+    .replace(/^\s{0,3}(?:[-*+]|\d+\.)\s+/gm, "") // leading list markers
+    .replace(/(\*\*|__)(.*?)\1/g, "$2") // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2") // italic
+    .replace(/`([^`]+)`/g, "$1") // inline code
+    .replace(/[ \t]{2,}/g, " ")
     .trim();
 }
+
+/** @deprecated use toCaptionText — kept as the spoken-path name for clarity. */
+const stripForSpeech = toCaptionText;
 
 export function useVoiceSession() {
   const { settings } = useVoiceSettings();

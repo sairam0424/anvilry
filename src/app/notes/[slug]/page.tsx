@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { allNotes, getNote } from "@/lib/content";
 import { MDXContent } from "@/components/mdx-content";
+import { BreadcrumbJsonLd } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
 import { profile } from "@/lib/profile";
 
@@ -67,7 +68,16 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
           <MDXContent code={note.body} />
         </div>
       </article>
+      {/* BlogPosting + breadcrumb structured data — article entity + SERP breadcrumb,
+          mirroring the /work and /projects detail pages. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Home", url: BASE },
+          { name: "Notes", url: `${BASE}/notes` },
+          { name: note.title, url: `${BASE}${note.url}` },
+        ]}
+      />
     </main>
   );
 }

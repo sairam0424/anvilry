@@ -6,7 +6,7 @@ A recruiter-facing engineering portfolio built as a **beast with four switchable
 
 - **🗂 Classic** — a fast, static (SSG) portfolio. The SEO-indexed default and the recruiter-in-a-hurry path.
 - **🎮 Play** — an explorable **WebGL "Build Graph"**: every node is a real project/work system that opens its actual card. Accessible DOM-first index as the mobile / reduced-motion / no-JS fallback.
-- **💬 Chat** — an **AI concierge console**: a RAG-grounded, first-person chatbot over the real résumé, with streaming markdown answers and generative project/work cards.
+- **💬 Chat** — an **AI concierge console**: a RAG-grounded, first-person chatbot over the real résumé, with streaming markdown answers and generative project/work cards. Optional **voice** — push-to-talk mic input, read-aloud answers, and a hands-free two-way "talk mode" (all opt-in, free, browser-native).
 - **⌨️ Developer** — a focused, full-page **keyboard-native terminal** over the same content: ~16 commands (`whoami`, `ls work`, `cat <slug>`, `grep`, `open <slug>`, `tree`, …) with history, autocomplete, a boot banner, theme cycling, and a fullscreen overlay. Reachable from the nav switcher, ⌘K, the `developer` command, or `?view=developer`.
 
 All four render from **one content layer** — zero duplication, zero fabrication. The honest contribution register (*Co-built / Architected / Owned / Led*) is preserved everywhere, and every metric traces to a source file.
@@ -21,7 +21,8 @@ All four render from **one content layer** — zero duplication, zero fabricatio
 - **Safe streaming markdown** — `react-markdown` + `rehype-sanitize` + `skipHtml` (no raw model HTML, `javascript:` links stripped), with a preprocessor that gracefully renders partial markdown mid-stream.
 - **Interactive 3D Build Graph** — R3F scene with clickable/keyboard-focusable nodes, gated behind a WebGL capability probe (graceful DOM fallback), with GL-context disposal on view exit.
 - **Anti-drift content layer** — a build-time test asserts a bijection between graph nodes and content (fails the deploy on an orphaned node).
-- **WCAG 2.2 AA** — keyboard operability, focus management, `aria-live` announce-on-settle chat, reduced-motion + mobile fallbacks throughout.
+- **Voice (opt-in, free-first)** — push-to-talk **mic input**, per-answer **read-aloud**, and a hands-free turn-based **talk mode** (modal or a 5th view), all bolted onto the existing `useChat` transport with **zero backend change**. Browser-native (`SpeechRecognition` + `speechSynthesis`) by default; optional **AWS Polly / Transcribe** behind flags using the existing Bedrock creds (no new vendor). Strictly opt-in, feature-detected (degrades to text on Firefox), with cloud-audio disclosure, a no-double-speak `aria-live` reconciliation, and a wake word that is off by default behind a disclosure + persistent "Listening" banner.
+- **WCAG 2.2 AA** — keyboard operability, focus management, `aria-live` announce-on-settle chat, reduced-motion + mobile fallbacks throughout; voice is an addition, never a requirement (text always works).
 
 ## 🧱 Stack
 
@@ -32,6 +33,7 @@ All four render from **one content layer** — zero duplication, zero fabricatio
 | Content | **Velite** — type-safe MDX content layer (`content/` → `.velite/`) |
 | Motion / 3D | **Motion** (reduced-motion aware) · **React Three Fiber** + **three.js** |
 | Chat | **AWS Bedrock** (`@anthropic-ai/bedrock-sdk`) · **react-markdown** · **Upstash** rate limiting |
+| Voice | **Web Speech API** (`SpeechRecognition` + `speechSynthesis`, free, browser-native) · optional **AWS Polly** / **Transcribe** behind flags (existing creds) |
 | UI | **cmdk** (⌘K command palette) · lucide icons |
 | Hosting | **Vercel** — Analytics + Speed Insights |
 | Tests | **Vitest** — content-coverage + chat injection/XSS guards (chained into `build`) |
@@ -71,6 +73,35 @@ cp .env.example .env.local
 ```
 
 The grounding corpus is built in-context from `src/lib/corpus.ts` — the portfolio is small enough that no vector DB is needed (upgrade path: pgvector + BM25 if a blog is added). The model chain + streaming fallback live in `src/lib/llm.ts`.
+
+## 🎙️ Voice (optional, opt-in)
+
+Voice is **progressive enhancement over the text chat** — it attaches to the existing `useChat` transport, so the chat backend is unchanged. Everything defaults **off** and is toggled from the ⌘K palette's **Voice** group; the text composer is always the primary channel.
+
+| Feature | How | Cost |
+|---|---|---|
+| **Mic input** (push-to-talk) | A mic button in the chat composer. Speak → transcript fills the input for review. | **$0** — browser `SpeechRecognition`. |
+| **Read-aloud** | A per-answer "Listen" button speaks the reply (per-sentence, starts early). | **$0** — browser `speechSynthesis`. |
+| **Talk mode** | Hands-free turn-based loop (listen → think → speak) as a modal or an optional 5th view. | **$0** — STT + Bedrock + TTS. |
+| **Wake word** | "Hey portfolio" continuous listen. **Off by default**, behind a disclosure + a persistent "Listening" banner with one-tap kill. | **$0** — browser `SpeechRecognition`. |
+
+**Privacy:** on Chrome/Edge, browser `SpeechRecognition` sends audio to the browser vendor's cloud (Google) — disclosed in-UI before the first listen; nothing is stored server-side. `getUserMedia` runs only on an explicit gesture, with a visible mic indicator and a one-tap stop that releases the mic.
+
+**Browser support:** feature-detected. Chrome/Edge/Safari get full voice; **Firefox** (where `SpeechRecognition` is off-by-default) silently keeps the text composer — or can use the AWS Transcribe path.
+
+**Optional AWS upgrades (flags, no new vendor — reuse the Bedrock creds):**
+
+```bash
+# Higher-quality voice output: AWS Polly Neural via /api/tts (else free browser voice).
+#   Toggle in-app: ⌘K → "Use higher-quality voice (Polly)"
+# Private speech-to-text: AWS Transcribe via /api/transcribe (audio processed on your
+#   own AWS, not Google; also enables voice in Firefox).
+#   Toggle in-app: ⌘K → "Mic: use private transcription (AWS)"
+```
+
+Both reuse `BEDROCK_*` creds, are per-IP rate-limited (Upstash), and **fail closed** — any error degrades to the free browser path, so voice never breaks. Needs IAM `polly:SynthesizeSpeech` / `transcribe:StartStreamTranscription` on the same key (see `DEPLOY.md`).
+
+📖 **Full reference: [`VOICE.md`](./VOICE.md)** — architecture, the complete feature-flag/settings table, env + IAM + cost, the privacy & a11y model, and developer notes (testing, adding an engine).
 
 ## 🌐 Deploy (Vercel)
 

@@ -28,6 +28,23 @@ const limiter =
 /** Whether a distributed limiter is configured (false -> fail-open no-op). */
 export const isRateLimitEnabled = limiter != null;
 
+/**
+ * Loud guard against a SILENT fail-open in production. Failing open on a *transient*
+ * Upstash error mid-request is intentional (a cost guard must never take the chat
+ * down). But shipping to PRODUCTION with the limiter entirely UNCONFIGURED means the
+ * cost-bearing routes (/api/chat, /api/tts, /api/transcribe) have NO protection and no
+ * signal — a misconfig that only surfaces as an AWS bill. We emit one clear warning at
+ * module load so it's visible in the deploy logs. (Local dev stays quiet — fail-open is
+ * the right default there.)
+ */
+if (!isRateLimitEnabled && process.env.NODE_ENV === "production") {
+  console.warn(
+    "[rate-limit] CRITICAL: UPSTASH_REDIS_REST_URL / _TOKEN are not set in production — " +
+      "/api/chat, /api/tts, and /api/transcribe are UNPROTECTED against per-IP abuse and " +
+      "AWS cost attacks. Configure Upstash in the deploy environment.",
+  );
+}
+
 /** Derive a best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
 function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");

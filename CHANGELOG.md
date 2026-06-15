@@ -7,6 +7,39 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.6.0] — 2026-06-16
+
+**Anvil** — the voice surface, brought up from underground. The two-way talk mode is now
+a first-class part of the site, sharing one grounded engine with the existing modal.
+
+### Added
+- **Anvil voice view** — a fifth view alongside Classic · Play · Chat · Dev (always shown
+  in the desktop switcher; `?view=voice` deep-links). A lean voice landing — "Talk to
+  Anvil — the voice of Sairam's work", example-prompt chips, an open-to-roles hook —
+  wrapping the shared talk mode. Chips ask **by voice** through the session's own seam
+  (one transcript, one mic); the answer streams and is spoken like a spoken turn.
+- **Anvil header orb** — a small Siri-style orb in the global header (every route, every
+  viewport) that opens the voice overlay on click, with a "bloom open" entrance. Behind a
+  build-time flag `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (default **off**); ships dark until
+  enabled. Pure-CSS idle (no WebGL/rAF in the header), ≥44px hit area, STT-gated, focus
+  restored to the orb on close (WCAG 2.4.3).
+- **"Beast while speaking"** — the 3D orb surges (more turbulence, HDR heat, rim glow,
+  spin) while the answer is spoken, eased in/out. Desktop + WebGL + motion only;
+  reduced-motion keeps the calm orb.
+
+### Changed
+- The command-palette voice-surface toggle is relabeled "Show / Hide voice modal
+  shortcuts" — it now governs only the modal doors (the Talk pill + ⌘K), since the Voice
+  view is always available. The existing modal talk mode is otherwise unchanged.
+- The wake word is scoped to the Chat view only (no longer the voice view), so it can't
+  open a second voice session over the always-live Anvil view.
+
+### Internal
+- A single live WebGL context is guaranteed: the gamified BuildGraph canvas unmounts
+  while the voice overlay is open (it can layer over `?view=gamified`).
+- The voice view is server-safe: the SSR/first-client snapshot stays `classic` (the
+  switcher upgrades to five entries post-hydration) — no hydration mismatch.
+
 ## [1.5.0] — 2026-06-15
 
 The streaming voice release — talk mode now speaks the answer **as it streams**, with a
@@ -138,6 +171,7 @@ strictly additive, and any unsupported browser or runtime error degrades to text
 - Initial public portfolio: four switchable views (Classic · Play · Chat · Developer)
   over one canonical content source, with the AWS Bedrock "Ask my portfolio" chat.
 
+[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0
 [1.5.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.5.0
 [1.4.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.1
 [1.4.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.0

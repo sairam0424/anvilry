@@ -163,8 +163,13 @@ const HALO_FRAG = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   void main() {
-    float f = pow(1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0), 3.0);
-    gl_FragColor = vec4(uHaloColor * f * (0.6 + uLevel * 1.2), f);
+    // Softer, wider bloom: a higher fresnel exponent pushes the glow to the rim and
+    // feathers the falloff, and squaring the alpha makes the OUTER edge fade to fully
+    // transparent (no hard disc). The body stays dim so it reads as light, not a sphere.
+    float rim = 1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0);
+    float f = pow(rim, 4.5);
+    float alpha = f * f; // square → gentler outer feather to 0
+    gl_FragColor = vec4(uHaloColor * f * (0.5 + uLevel * 1.1), alpha);
   }
 `;
 
@@ -227,8 +232,10 @@ function OrbMesh({
   return (
     <group>
       {/* Additive halo, drawn first (renderOrder -1) so the orb composites over it; both
-          depthWrite:false + additive blending make the co-located sort deterministic. */}
-      <mesh scale={1.6} renderOrder={-1}>
+          depthWrite:false + additive blending make the co-located sort deterministic.
+          Scale 1.8 (still inside the ~1.9 visible half-height at z=4.6/fov45) gives the
+          softened, feathered glow room to fade out before the canvas edge. */}
+      <mesh scale={1.8} renderOrder={-1}>
         <sphereGeometry args={[1, 64, 64]} />
         <shaderMaterial
           ref={haloRef}

@@ -9,9 +9,9 @@ import { openTalkMode } from "@/components/chat/talk-overlay-store";
  * one overlay instance, focus restored here on close). Visible on every route + every
  * viewport when enabled.
  *
- * Build-time flag (NEXT_PUBLIC_ENABLE_ANVIL_ORB): OFF by default so it ships dark and
- * the owner flips it on after a live prod pass. STT-gated at runtime — a voice door is
- * pointless where the browser can't listen.
+ * Build-time flag (NEXT_PUBLIC_ENABLE_ANVIL_ORB): ON by default (visible to every
+ * visitor) — set it to "false" as a kill-switch to ship dark. STT-gated at runtime — a
+ * voice door is pointless where the browser can't listen.
  *
  * The orb is a real <button> (Enter/Space free); the gradient blob inside is aria-hidden.
  * Idle visual is a pure CSS breathe (no rAF, no WebGL — it must cost nothing on the
@@ -20,8 +20,10 @@ import { openTalkMode } from "@/components/chat/talk-overlay-store";
  * taps start. The 3D orb lives only inside the open overlay, never here.
  */
 
-// Read once at module load — NEXT_PUBLIC_ vars are inlined at build time.
-const ORB_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ANVIL_ORB === "true";
+// Read once at module load — NEXT_PUBLIC_ vars are inlined at build time. Default ON
+// (the orb is meant to be visible to every visitor); set the flag to "false" to disable
+// it (a kill-switch), not to opt in.
+const ORB_ENABLED = process.env.NEXT_PUBLIC_ENABLE_ANVIL_ORB !== "false";
 
 // SSR-safe STT support flag (no setState-in-effect; the use-mounted idiom). The voice
 // loop needs recognition; gate on it so we never show a dead door.

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Mic, Square, X } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
-import { VoiceOrbCanvas } from "@/components/chat/voice-orb-canvas";
+import { VoiceOrb } from "@/components/chat/voice-orb";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -118,7 +118,7 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
           from the synthetic per-state `level`; a centered state icon stays for a quick
           glance. Reduced-motion -> the canvas draws a calm static ring (handled inside). */}
       <div className="relative flex h-40 w-40 items-center justify-center" aria-hidden="true">
-        <VoiceOrbCanvas level={level} state={state} size={160} />
+        <VoiceOrb level={level} state={state} size={160} />
         <span className="pointer-events-none absolute text-accent">
           {speaking ? <Square size={26} className="fill-current" /> : <Mic size={26} />}
         </span>

@@ -218,7 +218,9 @@ export function CommandPalette() {
             icon: <AudioLines size={16} />,
             run: () => {
               setOpen(false);
-              openTalkMode();
+              // Pass the palette trigger as the focus-restore target so closing the
+              // talk modal returns focus there (WCAG 2.4.3), not to <body>.
+              openTalkMode(triggerRef.current);
             },
             keywords: "voice talk conversation speak hands-free microphone mic chat assistant",
           },

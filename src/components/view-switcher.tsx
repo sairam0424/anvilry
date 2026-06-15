@@ -1,8 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare } from "lucide-react";
+import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare, AudioLines } from "lucide-react";
 import { useView, type View } from "@/components/view-context";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { useMounted } from "@/lib/use-mounted";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,8 +20,20 @@ const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGr
   { view: "developer", label: "Dev", short: "Dev", icon: TerminalSquare },
 ];
 
+// The "Voice" entry is appended only when the visitor opts into the full-page talk
+// surface (talkSurface "view"); the default keeps the 4-way switcher and talk mode
+// opens as a modal instead.
+const VOICE_OPTION = { view: "voice" as View, label: "Voice", short: "Voice", icon: AudioLines };
+
 export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   const { view, setView } = useView();
+  const { settings } = useVoiceSettings();
+  // Gate the optional 5th entry behind useMounted: the talkSurface pref reads from
+  // localStorage (client-only), so SSR renders the 4-way switcher and the client
+  // upgrades to 5-way after hydration — no markup mismatch.
+  const mounted = useMounted();
+  const options =
+    mounted && settings.talkSurface === "view" ? [...OPTIONS, VOICE_OPTION] : OPTIONS;
   // Unique per instance: the switcher is rendered TWICE (desktop + compact mobile),
   // both in the DOM at once. A shared layoutId would make Motion animate ONE pill
   // between the two instances, breaking which button shows active. Scope it.
@@ -34,7 +48,7 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
         compact ? "gap-0.5" : "gap-0.5",
       )}
     >
-      {OPTIONS.map((opt) => {
+      {options.map((opt) => {
         const Icon = opt.icon;
         const active = view === opt.view;
         return (

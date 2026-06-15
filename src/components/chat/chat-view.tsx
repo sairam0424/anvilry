@@ -5,6 +5,8 @@ import { Sparkles, Send } from "lucide-react";
 import { useChat } from "@/components/chat/use-chat";
 import { RECRUITER_CHIPS, STARTER_CHIPS } from "@/components/chat/chat-suggestions";
 import { ChatMessages } from "@/components/chat/chat-messages";
+import { MicButton } from "@/components/chat/mic-button";
+import { TalkLaunchButton } from "@/components/chat/talk-launch-button";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { profile, impactMetrics } from "@/lib/profile";
 
@@ -43,9 +45,14 @@ export function ChatView() {
     <main className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
       <div className="flex items-center justify-between gap-3">
         <ViewEscapeHatch />
-        <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
-          <Sparkles size={13} aria-hidden="true" /> AI Concierge
-        </p>
+        <div className="flex items-center gap-3">
+          {/* Hands-free voice conversation (modal surface; null on the 5th-view surface
+              or unsupported browsers). */}
+          <TalkLaunchButton />
+          <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
+            <Sparkles size={13} aria-hidden="true" /> AI Concierge
+          </p>
+        </div>
       </div>
 
       {/* Bordered "console" panel — frames the whole conversation so it reads as a
@@ -126,6 +133,9 @@ export function ChatView() {
           aria-label="Ask a question about Sairam"
           className="flex-1 rounded-xl border border-border bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
         />
+        {/* Push-to-talk mic — renders only where Web Speech is supported (else nothing,
+            the text input is untouched). Transcripts fill the input for review. */}
+        <MicButton onText={setInput} disabled={isStreaming} />
         {isStreaming ? (
           <button
             type="button"

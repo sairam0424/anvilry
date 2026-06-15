@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
+import { ReadAloudButton } from "@/components/chat/read-aloud-button";
 import { useChatA11y } from "@/components/chat/use-chat-a11y";
+import { useSpeechSynthesis } from "@/components/chat/use-speech-synthesis";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 
@@ -45,7 +48,32 @@ export function ChatMessages({
   messages: ChatMessage[];
   isStreaming: boolean;
 }) {
-  const { liveMessage } = useChatA11y(messages, isStreaming);
+  // Single TTS engine for the whole transcript (speechSynthesis is a singleton).
+  // `speakingIdx` tracks WHICH message is being read aloud so only its button shows
+  // the active state and the answer's live-region announcement is suppressed (no
+  // double-speak). Gated by the opt-in ttsEnabled pref + runtime support.
+  const { settings } = useVoiceSettings();
+  const tts = useSpeechSynthesis(settings.ttsEngine);
+  const ttsAvailable = settings.ttsEnabled && tts.supported;
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
+  // When the engine stops on its own (answer finished), clear the active index.
+  const activeIdx = tts.isSpeaking ? speakingIdx : null;
+
+  const toggleRead = useCallback(
+    (idx: number, text: string) => {
+      if (activeIdx === idx) {
+        tts.cancel();
+        setSpeakingIdx(null);
+        return;
+      }
+      setSpeakingIdx(idx);
+      tts.speak(text);
+    },
+    [activeIdx, tts],
+  );
+
+  // Suppress the full-text announce-on-settle while TTS is reading the latest answer.
+  const { liveMessage } = useChatA11y(messages, isStreaming, activeIdx !== null);
   const { scrollRef, contentRef, anchorRef, isAtBottom, scrollToBottom } = useAutoScroll({
     threshold: 120,
     surface: "chat",
@@ -121,6 +149,14 @@ export function ChatMessages({
             // Assistant: split into text + resolved cards. Cards render full-width below text.
             const segments = parseCards(m.content);
             const showBadge = !!m.model && (!isStreaming || !isLast);
+            // Plain prose for TTS = the text segments only (card tokens never spoken).
+            // Read-aloud is offered once an answer is complete (not mid-stream).
+            const spokenText = segments
+              .filter((s): s is { type: "text"; text: string } => s.type === "text")
+              .map((s) => s.text)
+              .join(" ")
+              .trim();
+            const canRead = ttsAvailable && !!spokenText && (!isStreaming || !isLast);
             return (
               <div key={i} className="flex flex-col items-start gap-2">
                 {segments.length === 0 && isStreaming && isLast ? (
@@ -145,14 +181,25 @@ export function ChatMessages({
                     ),
                   )
                 )}
-                {/* Honest, server-sourced model badge — which model served the bytes,
-                    and (if so) that the Opus→Sonnet→Haiku fallback chain fired. Makes the
-                    production-grade fallback in llm.ts legible. NOT a RAG citation. */}
-                {showBadge && (
-                  <p className="px-1 font-mono text-[10px] text-fg-subtle">
-                    {m.fellBack ? "↳ primary unavailable · " : ""}Answered by {friendlyModel(m.model!)} ·
-                    Bedrock
-                  </p>
+                {/* Answer footer: the honest model badge + the optional read-aloud
+                    toggle. The badge shows which model served the bytes (and if the
+                    Opus→Sonnet→Haiku fallback fired) — NOT a RAG citation. Read-aloud
+                    appears only when TTS is opted in + supported + the answer is done. */}
+                {(showBadge || canRead) && (
+                  <div className="flex items-center gap-2 px-1">
+                    {showBadge && (
+                      <p className="font-mono text-[10px] text-fg-subtle">
+                        {m.fellBack ? "↳ primary unavailable · " : ""}Answered by{" "}
+                        {friendlyModel(m.model!)} · Bedrock
+                      </p>
+                    )}
+                    {canRead && (
+                      <ReadAloudButton
+                        speaking={activeIdx === i}
+                        onToggle={() => toggleRead(i, spokenText)}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             );

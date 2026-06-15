@@ -24,11 +24,18 @@ import {
   Copy,
   Download,
   Plug,
+  Volume2,
+  VolumeX,
+  AudioLines,
+  Mic,
+  Ear,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
+import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { openTalkMode } from "@/components/chat/talk-overlay-store";
 
 type Action = {
   id: string;
@@ -69,6 +76,7 @@ export function CommandPalette() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { setView } = useView();
+  const { settings, toggle, set } = useVoiceSettings();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -190,6 +198,137 @@ export function CommandPalette() {
     { id: "mcp", label: "Open MCP endpoint", hint: "for AI agents", icon: <Plug size={16} />, run: () => go("/mcp"), keywords: "ai agent model context protocol tools api" },
   ];
 
+  // Voice toggles — opt-in, persisted. "Read answers aloud" only appears where the
+  // browser supports speech synthesis (else it would toggle a no-op). The toggle
+  // flips the pref and closes the palette; a "Listen" button then appears under each
+  // answer. We feature-detect at render (the palette is client-only).
+  const ttsSupported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const sttSupported =
+    typeof window !== "undefined" &&
+    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  const voice: Action[] = [
+    // Hands-free two-way talk mode — only on the modal surface (the 5th-view surface
+    // is entered via the ViewSwitcher) and only where speech recognition exists.
+    ...(sttSupported && settings.talkSurface === "modal"
+      ? [
+          {
+            id: "voice-talk",
+            label: "Start voice conversation",
+            hint: "hands-free talk mode",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              setOpen(false);
+              // Pass the palette trigger as the focus-restore target so closing the
+              // talk modal returns focus there (WCAG 2.4.3), not to <body>.
+              openTalkMode(triggerRef.current);
+            },
+            keywords: "voice talk conversation speak hands-free microphone mic chat assistant",
+          },
+        ]
+      : []),
+    // Read-aloud toggle — only where speech synthesis exists.
+    ...(ttsSupported
+      ? [
+          {
+            id: "voice-tts",
+            label: settings.ttsEnabled ? "Turn off read-aloud" : "Read answers aloud",
+            hint: settings.ttsEnabled ? "on" : "spoken responses",
+            icon: settings.ttsEnabled ? <VolumeX size={16} /> : <Volume2 size={16} />,
+            run: () => {
+              toggle("ttsEnabled");
+              setOpen(false);
+            },
+            keywords: "voice speak audio tts text to speech accessibility listen sound",
+            // Label flips with state, so pin a stable search value (cmdk re-scores on change).
+            value: "Read answers aloud voice speak audio tts accessibility listen sound",
+          },
+        ]
+      : []),
+    // TTS engine — free browser voice (default) vs AWS Polly Neural (higher quality,
+    // owner's existing AWS creds). Only offered when read-aloud is on + browser TTS
+    // exists; Polly falls back to browser automatically if the route errors.
+    ...(ttsSupported && settings.ttsEnabled
+      ? [
+          {
+            id: "voice-engine",
+            label:
+              settings.ttsEngine === "polly"
+                ? "Use free browser voice"
+                : "Use higher-quality voice (Polly)",
+            hint: settings.ttsEngine === "polly" ? "Polly Neural" : "browser default",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              set({ ttsEngine: settings.ttsEngine === "polly" ? "browser" : "polly" });
+              setOpen(false);
+            },
+            keywords: "voice engine polly neural quality aws browser tts",
+            value: "Voice engine polly neural quality aws browser tts",
+          },
+        ]
+      : []),
+    // STT engine — free browser Web Speech (default) vs AWS Transcribe (audio
+    // processed on the owner's own AWS, a stronger privacy story + works in Firefox).
+    // Always offered: even where browser STT is absent, Transcribe (getUserMedia +
+    // AudioContext) may still work, so this is how a Firefox visitor enables voice.
+    {
+      id: "voice-stt-engine",
+      label:
+        settings.sttEngine === "transcribe"
+          ? "Mic: use browser speech"
+          : "Mic: use private transcription (AWS)",
+      hint: settings.sttEngine === "transcribe" ? "AWS Transcribe" : "browser default",
+      icon: <Mic size={16} />,
+      run: () => {
+        set({ sttEngine: settings.sttEngine === "transcribe" ? "browser" : "transcribe" });
+        setOpen(false);
+      },
+      keywords: "voice mic stt speech recognition transcribe aws privacy firefox input",
+      value: "Mic speech recognition engine transcribe aws browser privacy input",
+    },
+    // Talk-surface preference — lets the visitor choose modal overlay (default) vs a
+    // full-page view for the two-way talk mode. Only meaningful where STT exists.
+    ...(sttSupported
+      ? [
+          {
+            id: "voice-surface",
+            label:
+              settings.talkSurface === "view"
+                ? "Voice as modal (not full view)"
+                : "Voice as full view",
+            hint: settings.talkSurface === "view" ? "full view" : "modal overlay",
+            icon: <AudioLines size={16} />,
+            run: () => {
+              set({ talkSurface: settings.talkSurface === "view" ? "modal" : "view" });
+              setOpen(false);
+            },
+            keywords: "voice talk surface full view modal overlay layout preference",
+            value: "Voice talk surface full view modal overlay layout preference",
+          },
+        ]
+      : []),
+    // Wake word — opt-in, OFF by default, highest trust cost. Switches to the Chat
+    // view (where it's scoped) and flips the pref; the WakeWordController then shows a
+    // cloud-audio disclosure before arming the mic, plus a persistent banner + kill.
+    ...(sttSupported
+      ? [
+          {
+            id: "voice-wake",
+            label: settings.wakeWord ? "Turn off wake word" : "Enable wake word (Hey portfolio)",
+            hint: settings.wakeWord ? "listening" : "hands-free, opt-in",
+            icon: <Ear size={16} />,
+            run: () => {
+              const turningOn = !settings.wakeWord;
+              set({ wakeWord: turningOn });
+              setOpen(false);
+              if (turningOn) setView("chat"); // scope it to where the banner lives
+            },
+            keywords: "wake word hey portfolio hands-free always listen hotword voice activate",
+            value: "Enable wake word hey portfolio hands-free always listen hotword voice",
+          },
+        ]
+      : []),
+  ];
+
   const workItems: Action[] = allWork.map((w) => ({
     id: `w-${w.slug}`,
     label: w.name,
@@ -211,7 +350,7 @@ export function CommandPalette() {
   // Resolve recent ids → live Action objects (ignoring any that no longer exist,
   // e.g. a removed project slug). Shown ONLY on an empty query, so a recent item
   // is never on-screen alongside its canonical copy during filtering.
-  const allActions = [...views, ...nav, ...actions, ...workItems, ...projItems, ...links];
+  const allActions = [...views, ...nav, ...actions, ...voice, ...workItems, ...projItems, ...links];
   const byId = new Map(allActions.map((a) => [a.id, a]));
   const recentItems: Action[] = recent.map((id) => byId.get(id)).filter((a): a is Action => Boolean(a));
   const showRecent = search.trim() === "" && recentItems.length > 0;
@@ -277,6 +416,7 @@ export function CommandPalette() {
             <Group heading="Switch view" actions={views} onRun={record} />
             <Group heading="Navigate" actions={nav} onRun={record} />
             <Group heading="Actions" actions={actions} onRun={record} />
+            {voice.length > 0 && <Group heading="Voice" actions={voice} onRun={record} />}
             <Group heading="Work" actions={workItems} onRun={record} />
             <Group heading="Projects" actions={projItems} onRun={record} />
             <Group heading="Links" actions={links} onRun={record} />

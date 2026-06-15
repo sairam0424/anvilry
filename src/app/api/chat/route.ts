@@ -61,6 +61,14 @@ export async function POST(req: Request) {
     );
   }
 
+  // Reject an oversized payload by its declared length BEFORE reading the body — a
+  // cheap guard so a malicious client can't stream a huge JSON to exhaust memory. The
+  // real chat payload (<=12 msgs x <=600 chars + envelope) fits comfortably under 64KB.
+  const declaredLen = Number(req.headers.get("content-length") ?? 0);
+  if (declaredLen > 64 * 1024) {
+    return Response.json({ error: "Request too large." }, { status: 413 });
+  }
+
   let body: { messages?: ChatMessage[] };
   try {
     body = await req.json();

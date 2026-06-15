@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { useView } from "@/components/view-context";
+import { useChat } from "@/components/chat/use-chat";
+import { MicButton } from "@/components/chat/mic-button";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
-import { TRACE_DELIMITER } from "@/lib/llm-trace";
 
 // Lazy markdown renderer — same safe config as the full chat view, kept off the
 // initial bundle (the widget is interaction-gated).
@@ -16,8 +17,6 @@ const MarkdownMessage = dynamic(
   () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
   { ssr: false, loading: () => null },
 );
-
-type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTED = [
   "What did you build at Ascendion?",
@@ -30,7 +29,8 @@ const SUGGESTED = [
  * View-gate: the full Chat view IS the concierge, so the floating widget is hidden
  * there. Keying the inner widget by `view` remounts it on any view change, so its
  * transcript/open state never leaks across a classic<->gamified switch (no
- * setState-in-effect needed).
+ * setState-in-effect needed). The remount also resets useChat's internal message
+ * list, so the shared transport stays isolated per surface.
  */
 export function AskPortfolio() {
   const { view } = useView();
@@ -40,9 +40,12 @@ export function AskPortfolio() {
 
 function AskPortfolioWidget() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
+  // Shared transport (Phase 0 unification): the widget no longer hand-rolls its own
+  // fetch/stream/trace-stripping loop — it streams through the SAME tested useChat
+  // hook as the full Chat view, so mic input + read-aloud (later phases) work in both
+  // surfaces from one place. useChat also adds 429/abort handling the widget lacked.
+  const { messages, send, isStreaming } = useChat();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -62,51 +65,12 @@ function AskPortfolioWidget() {
     wasOpen.current = open;
   }, [open]);
 
-  const send = useCallback(
-    async (text: string) => {
-      const q = text.trim();
-      if (!q || busy) return;
-      const next = [...messages, { role: "user" as const, content: q }];
-      setMessages(next);
-      setInput("");
-      setBusy(true);
-      setMessages((m) => [...m, { role: "assistant", content: "" }]);
-
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: next }),
-        });
-        if (!res.ok || !res.body) {
-          const msg =
-            res.status === 503
-              ? "The chat isn't switched on yet — but you can reach Sairam by email or check the résumé."
-              : "Something went wrong. Please try again.";
-          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: msg }]);
-          setBusy(false);
-          return;
-        }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let acc = "";
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          acc += decoder.decode(value, { stream: true });
-          // Strip the server's trailing trace frame (model metadata) from the displayed
-          // text — the compact widget doesn't show the model badge, just the answer.
-          const text = acc.split(TRACE_DELIMITER)[0];
-          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: text }]);
-        }
-      } catch {
-        setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: "Network error — please try again." }]);
-      } finally {
-        setBusy(false);
-      }
-    },
-    [busy, messages],
-  );
+  const submit = (text: string) => {
+    const q = text.trim();
+    if (!q || isStreaming) return;
+    send(q);
+    setInput("");
+  };
 
   return (
     <>
@@ -155,7 +119,7 @@ function AskPortfolioWidget() {
                   {SUGGESTED.map((s) => (
                     <button
                       key={s}
-                      onClick={() => send(s)}
+                      onClick={() => submit(s)}
                       className="rounded-lg border border-border px-3 py-2 text-left text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg"
                     >
                       {s}
@@ -177,7 +141,7 @@ function AskPortfolioWidget() {
               // Assistant: render markdown text segments + resolved cards (same safe
               // model as the full chat view — tokens parsed out before markdown).
               if (!m.content) {
-                return busy ? (
+                return isStreaming ? (
                   <div key={i} className="flex justify-start">
                     <div className="rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted">
                       Thinking…
@@ -217,7 +181,7 @@ function AskPortfolioWidget() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              send(input);
+              submit(input);
             }}
             className="flex items-center gap-2 border-t border-border p-3"
           >
@@ -226,12 +190,15 @@ function AskPortfolioWidget() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask a question…"
               aria-label="Ask a question about Sairam"
-              disabled={busy}
+              disabled={isStreaming}
               className="flex-1 rounded-lg border border-border bg-bg-base px-3 py-2 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface disabled:opacity-60"
             />
+            {/* Push-to-talk — compact (h-9) to match the widget's smaller controls;
+                renders only where Web Speech is supported. */}
+            <MicButton onText={setInput} disabled={isStreaming} compact />
             <button
               type="submit"
-              disabled={busy || !input.trim()}
+              disabled={isStreaming || !input.trim()}
               aria-label="Send"
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-bg-base transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-surface"
             >

@@ -1,0 +1,138 @@
+import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { bedrockCreds } from "@/lib/llm";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+export const runtime = "nodejs";
+export const maxDuration = 15;
+
+/**
+ * Optional, flag-gated TTS upgrade: AWS Polly Neural via the SAME AWS account/creds
+ * the chat already uses for Bedrock (no new vendor). The client only hits this when
+ * the visitor sets ttsEngine="polly"; otherwise it speaks via the free browser
+ * speechSynthesis and this route is never called.
+ *
+ * Cost note: Polly Neural is free for the first 1M chars/mo (first 12 months) then
+ * ~$16/1M. The client sends ONE sentence per request (so audio starts early), and we
+ * cap length hard; a tiny in-process LRU caches identical sentences so a repeated
+ * answer costs nothing. The per-IP Upstash limit also applies, so a bot can't run up
+ * Polly spend.
+ *
+ * Fails CLOSED to the free path: any misconfiguration/error returns a non-2xx and the
+ * client falls back to browser speechSynthesis — voice never breaks, it just degrades.
+ */
+
+const MAX_CHARS = 600;
+const VOICE_ID = "Joanna"; // a clear US-English neural voice
+const REGION_FALLBACK = "us-east-1";
+
+// Tiny in-process LRU: hash-free (the key IS the text, capped) Map with FIFO eviction.
+// Per-instance only — good enough to dedupe a re-read of the same answer; not a CDN.
+const CACHE_MAX = 100;
+const cache = new Map<string, Buffer>();
+
+function cacheGet(key: string): Buffer | undefined {
+  const v = cache.get(key);
+  if (v) {
+    cache.delete(key);
+    cache.set(key, v); // bump to most-recently-used
+  }
+  return v;
+}
+function cacheSet(key: string, val: Buffer): void {
+  cache.set(key, val);
+  if (cache.size > CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest !== undefined) cache.delete(oldest);
+  }
+}
+
+function isConfigured(): boolean {
+  const { accessKeyId, secretAccessKey } = bedrockCreds();
+  return Boolean(accessKeyId && secretAccessKey);
+}
+
+let client: PollyClient | null = null;
+function getClient(): PollyClient {
+  if (client) return client;
+  const { accessKeyId, secretAccessKey, sessionToken, region } = bedrockCreds();
+  client = new PollyClient({
+    region: region || REGION_FALLBACK,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+      ...(sessionToken ? { sessionToken } : {}),
+    },
+  });
+  return client;
+}
+
+export async function POST(req: Request) {
+  if (!isConfigured()) {
+    // Not wired up -> client falls back to browser TTS.
+    return Response.json({ error: "TTS not configured." }, { status: 503 });
+  }
+
+  // Same per-IP guard as /api/chat — Polly is real spend, so bound it.
+  const rl = await checkRateLimit(req);
+  if (!rl.ok) {
+    return Response.json(
+      { error: "Too many requests." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    );
+  }
+
+  // A single sentence is tiny; reject an oversized body by declared length up front.
+  if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
+    return Response.json({ error: "Request too large." }, { status: 413 });
+  }
+
+  let body: { text?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
+  if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
+
+  const cached = cacheGet(text);
+  if (cached) {
+    return new Response(new Uint8Array(cached), {
+      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "hit" },
+    });
+  }
+
+  try {
+    const out = await getClient().send(
+      new SynthesizeSpeechCommand({
+        Text: text,
+        OutputFormat: "mp3",
+        VoiceId: VOICE_ID,
+        Engine: "neural",
+      }),
+    );
+    if (!out.AudioStream) {
+      return Response.json({ error: "No audio." }, { status: 502 });
+    }
+    // The SDK stream -> bytes. transformToByteArray() can hang mid-stream on a stalled
+    // connection (no built-in timeout), which would burn the whole maxDuration window.
+    // Race it against a 10s cap so a hang fails FAST to 502 -> the client falls back to
+    // free browser TTS, instead of blocking the function for the full 15s.
+    const bytes = await Promise.race([
+      out.AudioStream.transformToByteArray(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("polly-timeout")), 10_000),
+      ),
+    ]);
+    const buf = Buffer.from(bytes);
+    cacheSet(text, buf);
+    return new Response(new Uint8Array(buf), {
+      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "miss" },
+    });
+  } catch (err) {
+    console.warn(`[tts] Polly failed: ${(err as Error)?.name ?? "error"}`);
+    // Fail closed — client falls back to browser speechSynthesis.
+    return Response.json({ error: "TTS failed." }, { status: 502 });
+  }
+}

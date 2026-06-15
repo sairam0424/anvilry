@@ -13,15 +13,16 @@ import { flushSync } from "react-dom";
 import { useSearchParams } from "next/navigation";
 
 /**
- * The four top-level experiences a visitor can switch between. CLASSIC is the
- * SSG-indexed default rendered on first paint; GAMIFIED, CHAT, and DEVELOPER are
- * additive client-only views selected without a navigation (so the WebGL context and
- * the chat transcript survive a switch). DEVELOPER is a focused full-page terminal
- * destination (the keyboard-native CLI over the same content).
+ * The top-level experiences a visitor can switch between. CLASSIC is the SSG-indexed
+ * default rendered on first paint; GAMIFIED, CHAT, DEVELOPER, and VOICE are additive
+ * client-only views selected without a navigation (so the WebGL context and the chat
+ * transcript survive a switch). DEVELOPER is a focused full-page terminal; VOICE is the
+ * optional full-page two-way talk surface (only offered when the visitor opts into the
+ * "view" talk-surface — the default is a modal overlay, so VOICE is normally unused).
  */
-export type View = "classic" | "gamified" | "chat" | "developer";
+export type View = "classic" | "gamified" | "chat" | "developer" | "voice";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer"] as const;
+const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice"] as const;
 const DEFAULT_VIEW: View = "classic";
 
 const isView = (v: string | null | undefined): v is View =>

@@ -129,4 +129,63 @@ describe("useSpeechSynthesis", () => {
     expect(fakeSynth.cancel).toHaveBeenCalled();
     expect(result.current.isSpeaking).toBe(false);
   });
+
+  /**
+   * REGRESSION (the v1.5.0 talk-mode mute): speakChunk dedups against a per-hook spoken
+   * counter that only ever climbs. Across MULTIPLE assistant turns — each a fresh answer
+   * string growing from empty — turn N's sentence count is ≤ the previous turn's, so the
+   * guard `ready.length <= spokenCount` silently dropped EVERY answer after the first.
+   * resetTurn() (called by the session on each turn's streaming rising edge) is what
+   * restarts the counter. The shipped tests never crossed a turn boundary, so the bug was
+   * invisible — these tests pin it.
+   */
+  it("speakChunk drops a second turn WITHOUT resetTurn (documents the shipped bug)", () => {
+    const { result } = renderHook(() => useSpeechSynthesis());
+    act(() => result.current.speakChunk("One. Two. Three.")); // turn 1 → 3 sentences
+    expect(spoken.map((u) => u.text)).toEqual(["One.", "Two.", "Three."]);
+    spoken.length = 0;
+    // Turn 2 (2 sentences) with the counter still at 3 → dropped (this was the bug).
+    act(() => result.current.speakChunk("Alpha. Beta."));
+    expect(spoken.length).toBe(0);
+  });
+
+  it("speakChunk speaks EVERY turn when resetTurn() runs at each turn boundary", () => {
+    const { result } = renderHook(() => useSpeechSynthesis());
+    // Turn 1.
+    act(() => result.current.resetTurn());
+    act(() => result.current.speakChunk("One. Two. Three."));
+    expect(spoken.map((u) => u.text)).toEqual(["One.", "Two.", "Three."]);
+    spoken.length = 0;
+    // Turn 2 (fewer sentences) — must still speak both.
+    act(() => result.current.resetTurn());
+    act(() => result.current.speakChunk("Alpha. Beta."));
+    expect(spoken.map((u) => u.text)).toEqual(["Alpha.", "Beta."]);
+    spoken.length = 0;
+    // Turn 3 (more sentences) — must speak ALL five, not just [oldCount..].
+    act(() => result.current.resetTurn());
+    act(() => result.current.speakChunk("A. B. C. D. E."));
+    expect(spoken.map((u) => u.text)).toEqual(["A.", "B.", "C.", "D.", "E."]);
+  });
+
+  it("resetTurn() once per turn does NOT re-speak already-spoken sentences mid-stream", () => {
+    const { result } = renderHook(() => useSpeechSynthesis());
+    act(() => result.current.resetTurn()); // turn rising edge (once)
+    act(() => result.current.speakChunk("One. Two")); // "One." speaks; "Two" held back
+    act(() => result.current.speakChunk("One. Two. Three.")); // only "Two.","Three." new
+    expect(spoken.map((u) => u.text)).toEqual(["One.", "Two.", "Three."]); // "One." not repeated
+  });
+
+  it("resetTurn() lets the settle finalizer flush the trailing sentence on a later turn", () => {
+    const { result } = renderHook(() => useSpeechSynthesis());
+    // Turn 1 settles.
+    act(() => result.current.resetTurn());
+    act(() => result.current.speakChunk("First answer done."));
+    spoken.length = 0;
+    // Turn 2 streams a partial then the finalizer flushes the completed trailing sentence.
+    act(() => result.current.resetTurn());
+    act(() => result.current.speakChunk("Second answer streaming")); // partial held back
+    expect(spoken.length).toBe(0);
+    act(() => result.current.speakChunk("Second answer streaming now.")); // finalizer flush
+    expect(spoken.map((u) => u.text)).toEqual(["Second answer streaming now."]);
+  });
 });

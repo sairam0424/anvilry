@@ -33,14 +33,37 @@ import { parseCards } from "@/components/chat/parse-cards";
 
 export type VoiceSessionState = "idle" | "listening" | "thinking" | "speaking" | "paused";
 
-/** Spoken text = the prose only (card tokens are never read aloud). */
-function stripForSpeech(content: string): string {
-  return parseCards(content)
+/**
+ * Plain prose for BOTH the spoken answer and the visible caption — the single source
+ * so the two can never drift (the caption used to render raw content while only the
+ * spoken path was stripped, leaking `**markdown**` and `[[card:...]]` to screen).
+ *
+ * Steps: (1) parseCards() drops card tokens and keeps text segments; (2) strip the
+ * display-only markdown markers the eye sees but the synthesizer already ignores —
+ * block structure (leading `#` headings, `-`/`*`/`1.` list markers, ``` fences) and
+ * inline emphasis/code (`**`, `__`, `*`, `_`, backticks). A dangling unclosed `[[card`
+ * fragment mid-stream (before the closing `]]` arrives) is also dropped so a half-
+ * written token is never spoken or shown.
+ */
+export function toCaptionText(content: string): string {
+  const prose = parseCards(content)
     .filter((s): s is { type: "text"; text: string } => s.type === "text")
     .map((s) => s.text)
-    .join(" ")
+    .join(" ");
+  return prose
+    .replace(/\[\[card:[^\]]*$/i, "") // dangling, not-yet-closed card token mid-stream
+    .replace(/```[^\n]*\n?/g, "") // code fences
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "") // leading heading hashes
+    .replace(/^\s{0,3}(?:[-*+]|\d+\.)\s+/gm, "") // leading list markers
+    .replace(/(\*\*|__)(.*?)\1/g, "$2") // bold
+    .replace(/(\*|_)(.*?)\1/g, "$2") // italic
+    .replace(/`([^`]+)`/g, "$1") // inline code
+    .replace(/[ \t]{2,}/g, " ")
     .trim();
 }
+
+/** @deprecated use toCaptionText — kept as the spoken-path name for clarity. */
+const stripForSpeech = toCaptionText;
 
 export function useVoiceSession() {
   const { settings } = useVoiceSettings();
@@ -60,6 +83,10 @@ export function useVoiceSession() {
   // during render — so the react-hooks/refs rule is satisfied).
   const prevStreaming = useRef(false);
   const prevSpeaking = useRef(false);
+  // True once the current assistant turn has had its dedup counter reset. Set on the
+  // turn's first streaming render, cleared when the stream settles — so resetTurn()
+  // fires EXACTLY ONCE per turn (never mid-stream, which would re-speak earlier sentences).
+  const turnStartedRef = useRef(false);
 
   // `force` lets start() begin listening in the same tick it calls setActive(true),
   // before the `active` state has committed — avoiding a stale-closure read.
@@ -89,11 +116,14 @@ export function useVoiceSession() {
     stopStream();
   }, [recognition, tts, stopStream]);
 
-  /** Barge-in / "stop speaking": cancel the spoken answer and listen again. */
+  /** Barge-in / "stop speaking": cancel the spoken answer AND abort any in-flight
+   *  /api/chat stream (with speak-as-it-streams a tap can land mid-stream, not just
+   *  mid-speech), then listen again. stopStream() is the AbortController in useChat. */
   const interrupt = useCallback(() => {
     tts.cancel();
+    stopStream();
     beginListening();
-  }, [tts, beginListening]);
+  }, [tts, stopStream, beginListening]);
 
   /** Mute: park the mic without closing the session (derived state -> "paused"). */
   const pause = useCallback(() => {
@@ -104,8 +134,35 @@ export function useVoiceSession() {
   /** Resume listening from a parked state. */
   const resume = useCallback(() => beginListening(), [beginListening]);
 
-  // THINKING -> SPEAKING: when the stream settles, speak the grounded answer. speak()
-  // chunks per-sentence internally, dodging the Chromium ~15s cutoff. Side-effect only.
+  // SPEAK-AS-IT-STREAMS: while the answer is still streaming, feed each growing chunk
+  // to tts.speakChunk() — it splits complete sentences, holds back the trailing
+  // partial, and enqueues only NEW sentences (deduped via its own spokenCountRef). So
+  // the first sentence starts speaking ~one sentence after the first token instead of
+  // after the whole answer settles. Per-sentence utterances also stay under Chromium's
+  // ~15s cutoff. The mic is already OFF here (continuous=false stopped it on the final
+  // transcript), so no self-hearing. Side-effect only — never setState.
+  useEffect(() => {
+    if (!active || !isStreaming) return;
+    const last = messages[messages.length - 1];
+    if (last?.role !== "assistant") return;
+    // A NEW assistant turn just began streaming — restart the dedup counter at 0 BEFORE
+    // the first speakChunk so this answer isn't dropped by the (stale, monotonically
+    // climbing) counter from the previous turn. Guarded by turnStartedRef so it fires
+    // once per turn and never mid-stream (a mid-stream reset would re-speak sentence 1).
+    // The reset and the first enqueue are sequential statements in ONE effect, so the
+    // order is guaranteed (no two-effect race).
+    if (!turnStartedRef.current) {
+      tts.resetTurn();
+      turnStartedRef.current = true;
+    }
+    const text = stripForSpeech(last.content);
+    if (text) tts.speakChunk(text);
+  }, [active, isStreaming, messages, tts]);
+
+  // SETTLE FINALIZER: when the stream ends, flush the final (trailing) partial sentence
+  // that speakChunk held back. MUST be speakChunk(), NOT speak() — speak() calls
+  // cancel() and resets the spoken counter, which would RE-SPEAK the whole answer
+  // (double-speak). If nothing was streamed (e.g. aborted -> empty), re-listen.
   useEffect(() => {
     if (!active) return;
     const wasStreaming = prevStreaming.current;
@@ -113,14 +170,12 @@ export function useVoiceSession() {
     if (wasStreaming && !isStreaming) {
       const last = messages[messages.length - 1];
       const text = last?.role === "assistant" ? stripForSpeech(last.content) : "";
-      if (text) {
-        recognition.stop(); // belt-and-suspenders: mic off before we speak
-        tts.speak(text);
-      } else {
-        beginListening(); // nothing to say (e.g. aborted) — listen again
-      }
+      if (text) tts.speakChunk(text); // finalizer: flush the trailing sentence
+      else beginListening(); // nothing to say — listen again
+      // Re-arm: the NEXT turn's streaming effect must reset the dedup counter again.
+      turnStartedRef.current = false;
     }
-  }, [active, isStreaming, messages, tts, recognition, beginListening]);
+  }, [active, isStreaming, messages, tts, beginListening]);
 
   // SPEAKING -> LISTENING: once speech fully ends, re-open the mic (hands-free loop).
   // Side-effect only (recognition.start is a child-hook callback, not local setState).
@@ -132,12 +187,23 @@ export function useVoiceSession() {
   }, [active, tts.isSpeaking, isStreaming, beginListening]);
 
   // Safety net: tear down if the session is somehow left active on unmount.
+  // CRITICAL: recognition/tts are FRESH objects every render, so listing them as deps
+  // would re-run this effect's CLEANUP on every render — and the cleanup calls
+  // tts.cancel(), which clears the speech queue + zeroes the dedup counter. That is
+  // exactly the "no audio" bug: speech is enqueued, then cancelled, every render. Run
+  // the teardown ONLY on true unmount (empty deps) and reach the LATEST hooks via a ref.
+  const teardownRef = useRef({ recognition, tts });
+  // Keep the ref pointing at the latest hooks (set in an effect, never during render —
+  // react-hooks/refs), mirroring the enqueueBrowserRef idiom in use-speech-synthesis.ts.
+  useEffect(() => {
+    teardownRef.current = { recognition, tts };
+  }, [recognition, tts]);
   useEffect(
     () => () => {
-      recognition.stop();
-      tts.cancel();
+      teardownRef.current.recognition.stop();
+      teardownRef.current.tts.cancel();
     },
-    [recognition, tts],
+    [],
   );
 
   // Derive the externally-visible state from the live child-hook signals — single

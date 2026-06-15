@@ -285,24 +285,27 @@ export function CommandPalette() {
       keywords: "voice mic stt speech recognition transcribe aws privacy firefox input",
       value: "Mic speech recognition engine transcribe aws browser privacy input",
     },
-    // Talk-surface preference — lets the visitor choose modal overlay (default) vs a
-    // full-page view for the two-way talk mode. Only meaningful where STT exists.
+    // Voice modal-shortcut visibility. The dedicated "Voice" view (5th switcher entry)
+    // is always available; this only controls whether the quick MODAL doors — the Chat
+    // "Talk" pill and the ⌘K "Start voice conversation" entry — are shown ("modal") or
+    // hidden in favor of the full view ("view"). Relabeled to match that real behavior
+    // (it no longer selects where talk *opens* — the view is always on). STT-gated.
     ...(sttSupported
       ? [
           {
             id: "voice-surface",
             label:
               settings.talkSurface === "view"
-                ? "Voice as modal (not full view)"
-                : "Voice as full view",
-            hint: settings.talkSurface === "view" ? "full view" : "modal overlay",
+                ? "Show voice modal shortcuts"
+                : "Hide voice modal shortcuts",
+            hint: settings.talkSurface === "view" ? "use the full Voice view" : "Talk pill + ⌘K",
             icon: <AudioLines size={16} />,
             run: () => {
               set({ talkSurface: settings.talkSurface === "view" ? "modal" : "view" });
               setOpen(false);
             },
-            keywords: "voice talk surface full view modal overlay layout preference",
-            value: "Voice talk surface full view modal overlay layout preference",
+            keywords: "voice talk modal shortcuts pill command palette quick door visibility",
+            value: "Voice modal shortcuts talk pill command palette quick door visibility",
           },
         ]
       : []),

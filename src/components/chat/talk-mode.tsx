@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Mic, Square, X, Captions, CaptionsOff } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
@@ -45,14 +45,34 @@ function lastUserText(messages: { role: string; content: string }[]): string {
   return "";
 }
 
-export function TalkMode({ onClose }: { onClose: () => void }) {
+export function TalkMode({
+  onClose,
+  prompts,
+}: {
+  onClose: () => void;
+  /** Optional example-prompt chips (Anvil view). Each is asked by voice via the
+   *  session's own seam — one transcript, one mic. The modal passes none (unchanged). */
+  prompts?: readonly string[];
+}) {
   const session = useVoiceSession();
-  const { supported, active, state, interim, messages, start, stop, interrupt, pause, resume } =
+  const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
     session;
   const { settings, toggle } = useVoiceSettings();
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
+  // The persistent primary control (mic/orb). Focus rescues here when the prompt chips
+  // unmount on the first turn (else focus would orphan to <body> — WCAG 2.4.3).
+  const primaryRef = useRef<HTMLButtonElement>(null);
+  const hadMessages = useRef(false);
+  useEffect(() => {
+    const has = messages.length > 0;
+    if (has && !hadMessages.current && document.activeElement === document.body) {
+      // The just-clicked chip has unmounted; move focus to the always-present control.
+      primaryRef.current?.focus();
+    }
+    hadMessages.current = has;
+  }, [messages.length]);
 
   // Space toggles the current turn (talk / stop-speaking / resume); Esc closes.
   useEffect(() => {
@@ -166,9 +186,29 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
+      {/* Example-prompt chips (Anvil view only) — solve the "what do I say?" problem.
+          Shown before the conversation starts; each is asked BY VOICE through the
+          session's own ask() (one transcript, one mic). Hidden once a turn exists, and
+          omitted entirely where STT is unsupported (the text fallback covers that). */}
+      {prompts && prompts.length > 0 && messages.length === 0 && (
+        <div className="flex max-w-md flex-wrap items-center justify-center gap-2">
+          {prompts.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => ask(p)}
+              className="rounded-full border border-border bg-bg-surface px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Controls. */}
       <div className="flex items-center gap-3">
         <button
+          ref={primaryRef}
           type="button"
           onClick={onPrimary}
           aria-label={primaryLabel}

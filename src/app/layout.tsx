@@ -62,12 +62,25 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // anchor nav (/#work, /#contact), so opt back in explicitly. This also silences the Next 16
   // dev warning. (Reduced-motion still forces `auto` via the CSS media query — the attribute
   // only opts into the override, it doesn't defeat that.)
+  //
+  // suppressHydrationWarning on the three root tags: browser extensions (locator/inspector,
+  // Grammarly, dark-mode, password managers, etc.) inject attributes onto <html>/<head>/<body>
+  // BEFORE React hydrates, which otherwise throws a hydration-mismatch warning (e.g. the
+  // `data-locator-hook-status-message` a DOM-locator extension adds to <head>). This is a
+  // client-only artifact — the server HTML is clean and real visitors are unaffected — so we
+  // suppress it ONLY on these three elements. The flag does NOT cascade to children, so any
+  // genuine mismatch inside the app still surfaces normally.
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${sans.variable} ${mono.variable} h-full`}>
-      <head>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${sans.variable} ${mono.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <head suppressHydrationWarning>
         <PersonJsonLd />
       </head>
-      <body className="min-h-full flex flex-col antialiased">
+      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}
         <a href="#main-content" className="skip-link">
           Skip to content

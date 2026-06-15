@@ -93,6 +93,33 @@ describe("TalkMode", () => {
     expect(screen.getByText("I build agent backends.")).toBeTruthy();
   });
 
+  it("strips markdown + card tokens from the answer caption (the screenshot bug)", () => {
+    session.active = true;
+    session.state = "speaking";
+    session.messages = [
+      { role: "user", content: "q" },
+      {
+        role: "assistant",
+        content: "I build **agent** backends. [[card:work:aava-code]]\n[[card:project:mindforge]]",
+      },
+    ];
+    render(<TalkMode onClose={vi.fn()} />);
+    // Caption shows the clean prose — no asterisks, no card tokens.
+    expect(screen.getByText("I build agent backends.")).toBeTruthy();
+    expect(screen.queryByText(/\*\*/)).toBeNull();
+    expect(screen.queryByText(/\[\[card:/)).toBeNull();
+  });
+
+  it("leaves the live interim transcript verbatim (user STT is already plain)", () => {
+    session.active = true;
+    session.state = "listening";
+    // Even if interim somehow contains markdown-ish chars, it is the user's words —
+    // shown verbatim, not stripped (only the assistant answer is stripped).
+    session.interim = "what is your **strongest";
+    render(<TalkMode onClose={vi.fn()} />);
+    expect(screen.getByText("what is your **strongest")).toBeTruthy();
+  });
+
   it("Esc closes the surface", () => {
     const onClose = vi.fn();
     render(<TalkMode onClose={onClose} />);

@@ -83,6 +83,10 @@ export function useVoiceSession() {
   // during render — so the react-hooks/refs rule is satisfied).
   const prevStreaming = useRef(false);
   const prevSpeaking = useRef(false);
+  // True once the current assistant turn has had its dedup counter reset. Set on the
+  // turn's first streaming render, cleared when the stream settles — so resetTurn()
+  // fires EXACTLY ONCE per turn (never mid-stream, which would re-speak earlier sentences).
+  const turnStartedRef = useRef(false);
 
   // `force` lets start() begin listening in the same tick it calls setActive(true),
   // before the `active` state has committed — avoiding a stale-closure read.
@@ -141,6 +145,16 @@ export function useVoiceSession() {
     if (!active || !isStreaming) return;
     const last = messages[messages.length - 1];
     if (last?.role !== "assistant") return;
+    // A NEW assistant turn just began streaming — restart the dedup counter at 0 BEFORE
+    // the first speakChunk so this answer isn't dropped by the (stale, monotonically
+    // climbing) counter from the previous turn. Guarded by turnStartedRef so it fires
+    // once per turn and never mid-stream (a mid-stream reset would re-speak sentence 1).
+    // The reset and the first enqueue are sequential statements in ONE effect, so the
+    // order is guaranteed (no two-effect race).
+    if (!turnStartedRef.current) {
+      tts.resetTurn();
+      turnStartedRef.current = true;
+    }
     const text = stripForSpeech(last.content);
     if (text) tts.speakChunk(text);
   }, [active, isStreaming, messages, tts]);
@@ -158,6 +172,8 @@ export function useVoiceSession() {
       const text = last?.role === "assistant" ? stripForSpeech(last.content) : "";
       if (text) tts.speakChunk(text); // finalizer: flush the trailing sentence
       else beginListening(); // nothing to say — listen again
+      // Re-arm: the NEXT turn's streaming effect must reset the dedup counter again.
+      turnStartedRef.current = false;
     }
   }, [active, isStreaming, messages, tts, beginListening]);
 
@@ -171,12 +187,23 @@ export function useVoiceSession() {
   }, [active, tts.isSpeaking, isStreaming, beginListening]);
 
   // Safety net: tear down if the session is somehow left active on unmount.
+  // CRITICAL: recognition/tts are FRESH objects every render, so listing them as deps
+  // would re-run this effect's CLEANUP on every render — and the cleanup calls
+  // tts.cancel(), which clears the speech queue + zeroes the dedup counter. That is
+  // exactly the "no audio" bug: speech is enqueued, then cancelled, every render. Run
+  // the teardown ONLY on true unmount (empty deps) and reach the LATEST hooks via a ref.
+  const teardownRef = useRef({ recognition, tts });
+  // Keep the ref pointing at the latest hooks (set in an effect, never during render —
+  // react-hooks/refs), mirroring the enqueueBrowserRef idiom in use-speech-synthesis.ts.
+  useEffect(() => {
+    teardownRef.current = { recognition, tts };
+  }, [recognition, tts]);
   useEffect(
     () => () => {
-      recognition.stop();
-      tts.cancel();
+      teardownRef.current.recognition.stop();
+      teardownRef.current.tts.cancel();
     },
-    [recognition, tts],
+    [],
   );
 
   // Derive the externally-visible state from the live child-hook signals — single

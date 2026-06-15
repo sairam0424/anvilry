@@ -13,6 +13,19 @@ The streaming voice release — talk mode now speaks the answer **as it streams*
 clean caption and an audio-reactive 3D orb. All free, browser-native, opt-in.
 
 ### Fixed
+- **Talk mode was silent** — the session's unmount-teardown effect listed the (freshly
+  re-created every render) `recognition`/`tts` objects in its dependency array, so its
+  cleanup ran on *every* render during streaming and called `tts.cancel()`, clearing the
+  speech queue as fast as it filled. The teardown now runs only on true unmount (empty
+  deps, latest hooks reached via a ref). Verified headless: spurious `speechSynthesis`
+  cancels during a turn went from ~67 to **0**, and each sentence enqueues exactly once.
+- **Per-answer speech counter** (`speakChunk`'s dedup) only reset on `cancel()`, so every
+  answer after the first was dropped once the loop ran. A new `resetTurn()` restarts it on
+  each turn's streaming rising edge (without re-speaking). Both fixes are pinned by
+  regression tests that exercise the **real** synth across turns (the prior tests mocked
+  it, hiding the bug).
+- **User's spoken words** now persist in a dedicated "You said" caption line above the
+  answer (was a transient shared slot, wiped the instant the final transcript landed).
 - **Talk-mode caption** rendered the assistant answer raw, leaking `**markdown**` and
   `[[card:…]]` tokens to screen while the spoken path was already clean. Both paths now
   share one `toCaptionText` helper (strips card tokens + display markdown), so the
@@ -25,12 +38,14 @@ clean caption and an audio-reactive 3D orb. All free, browser-native, opt-in.
   instant interrupt* — not gapless (inter-sentence timing is browser-controlled). Always
   on. Barge-in (tap/Space) now also **aborts the in-flight `/api/chat` stream**, not just
   the speech.
-- **Audio-reactive voice orb** — a desktop R3F GLSL "Siri orb" (noise-displaced
-  icosahedron, behind the existing WebGL + min-width + reduced-motion gates, lazy-loaded
-  so three stays off the talk-mode critical path) with a universal 2D-canvas orb
-  fallback, driven by a smoothed per-state amplitude `level`. Reduced-motion → a calm
-  static ring. (The speaking envelope is synthetic — browser `speechSynthesis` exposes
-  no audio node to tap; the orb reacts to state, not raw output.)
+- **Audio-reactive voice orb** — a desktop R3F GLSL "Siri orb": a fractal-noise
+  (domain-warped fBm) displaced icosahedron with a 3-stop deep-blue→cyan→violet gradient,
+  a fresnel rim, an additive halo back-sphere for a volumetric bloom (HDR output through
+  ACES tone-mapping — no postprocessing dependency), and organic breathing motion. Behind
+  the existing WebGL + min-width + reduced-motion gates, lazy-loaded so three stays off
+  the talk-mode critical path, with a universal 2D-canvas orb fallback. Reduced-motion → a
+  calm static ring. (The speaking envelope is synthetic — browser `speechSynthesis`
+  exposes no audio node to tap; the orb reacts to state, not raw output.)
 - **Captions toggle** (cc) in talk mode, on by default (a11y), persisted in voice
   settings; a turn-affordance footer ("Tap the orb or press Space to take your turn").
 

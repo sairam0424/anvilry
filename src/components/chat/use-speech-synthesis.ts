@@ -78,6 +78,15 @@ export type UseSpeechSynthesis = {
   speakChunk: (fullTextSoFar: string) => void;
   /** Stop all speech immediately (synchronous) and reset streaming state. */
   cancel: () => void;
+  /**
+   * Restart the per-answer dedup counter at a NEW assistant turn — WITHOUT cancelling
+   * what is still playing (a prior tail finishes cleanly) and WITHOUT re-speaking. Must
+   * be called once on each new turn's rising edge: speakChunk() dedups against
+   * spokenCountRef, which only ever climbs, so a fresh answer (whose sentence count is
+   * ≤ the previous turn's) would otherwise be silently dropped by the guard. This is
+   * the surgical alternative to speak(), which cancels + re-speaks the whole answer.
+   */
+  resetTurn: () => void;
 };
 
 export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynthesis {
@@ -229,7 +238,15 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
   const enqueue = useCallback(
     (chunks: string[], from: number) => {
       const synth = window.speechSynthesis;
-      const voice = pickVoice(voicesRef.current);
+      // Harden the turn-1 race: getVoices() is async on Chromium ([] until
+      // 'voiceschanged'). If the first utterance enqueues before the cache fills, re-read
+      // synchronously so we pick a real voice instead of falling back to the engine default.
+      let cached = voicesRef.current;
+      if (cached.length === 0 && browserSupported) {
+        cached = synth.getVoices();
+        voicesRef.current = cached;
+      }
+      const voice = pickVoice(cached);
       for (let i = from; i < chunks.length; i++) {
         const u = new SpeechSynthesisUtterance(chunks[i]);
         if (voice) u.voice = voice;
@@ -256,7 +273,7 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
         synth.speak(u);
       }
     },
-    [startKeepAlive, stopKeepAlive],
+    [browserSupported, startKeepAlive, stopKeepAlive],
   );
 
   // Keep the fallback ref pointing at the live enqueue fn (set in an effect, never
@@ -282,6 +299,17 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
     },
     [engine, browserSupported, cancel, enqueue, playPollyFrom],
   );
+
+  /**
+   * Zero ONLY the browser dedup counter so the next speakChunk() of a NEW answer starts
+   * fresh. Deliberately does NOT touch the Polly queue/index/token: those self-manage
+   * (speakChunk's `wasEmpty` restart + pollyTokenRef invalidation), and clearing them
+   * mid-tail could truncate a still-playing Polly sentence or trip a false isSpeaking
+   * flip that re-opens the mic while audio is audible (self-hearing).
+   */
+  const resetTurn = useCallback(() => {
+    spokenCountRef.current = 0;
+  }, []);
 
   const speakChunk = useCallback(
     (fullTextSoFar: string) => {
@@ -319,5 +347,5 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
     };
   }, [cancel]);
 
-  return { supported, isSpeaking, speak, speakChunk, cancel };
+  return { supported, isSpeaking, speak, speakChunk, cancel, resetTurn };
 }

@@ -37,11 +37,16 @@ const synth = {
   speak: vi.fn(),
   speakChunk: vi.fn(),
   cancel: vi.fn(),
+  resetTurn: vi.fn(),
 };
 
-vi.mock("@/components/chat/use-chat", () => ({ useChat: () => chat }));
-vi.mock("@/components/chat/use-speech-recognition", () => ({ useSpeechRecognition: () => recog }));
-vi.mock("@/components/chat/use-speech-synthesis", () => ({ useSpeechSynthesis: () => synth }));
+// Return a FRESH object literal each render (spreading the shared vi.fn() refs so
+// assertions still target the same spies). This mirrors the real hooks, which return new
+// objects every render — the identity churn that caused the "cancel-every-render" audio
+// bug. A stable mock object hid it; this exposes it.
+vi.mock("@/components/chat/use-chat", () => ({ useChat: () => ({ ...chat }) }));
+vi.mock("@/components/chat/use-speech-recognition", () => ({ useSpeechRecognition: () => ({ ...recog }) }));
+vi.mock("@/components/chat/use-speech-synthesis", () => ({ useSpeechSynthesis: () => ({ ...synth }) }));
 
 import { useVoiceSession } from "./use-voice-session";
 
@@ -57,7 +62,9 @@ beforeEach(() => {
   recog.stop.mockClear();
   synth.isSpeaking = false;
   synth.speak.mockClear();
+  synth.speakChunk.mockClear();
   synth.cancel.mockClear();
+  synth.resetTurn.mockClear();
 });
 
 describe("useVoiceSession", () => {
@@ -97,6 +104,62 @@ describe("useVoiceSession", () => {
     act(() => rerender());
     // It spoke the chunk DURING the stream (card tokens stripped), not waiting for settle.
     expect(synth.speakChunk).toHaveBeenCalledWith("MindForge is an agentic framework.");
+  });
+
+  it("resets the TTS dedup counter once at each new turn's streaming rising edge", () => {
+    chat.isStreaming = true;
+    const { result, rerender } = renderHook(() => useVoiceSession());
+    act(() => result.current.start());
+    // Turn 1 begins streaming → resetTurn() fires once before the first speakChunk.
+    chat.messages = [
+      { role: "user", content: "q1" },
+      { role: "assistant", content: "Answer one." },
+    ];
+    act(() => rerender());
+    expect(synth.resetTurn).toHaveBeenCalledTimes(1);
+    // More tokens of the SAME turn must NOT reset again (would re-speak sentence 1).
+    chat.messages = [
+      { role: "user", content: "q1" },
+      { role: "assistant", content: "Answer one. And more." },
+    ];
+    act(() => rerender());
+    expect(synth.resetTurn).toHaveBeenCalledTimes(1);
+    // Stream settles, then a SECOND turn starts streaming → resetTurn re-arms and fires.
+    chat.isStreaming = false;
+    act(() => rerender());
+    chat.isStreaming = true;
+    chat.messages = [
+      { role: "user", content: "q1" },
+      { role: "assistant", content: "Answer one. And more." },
+      { role: "user", content: "q2" },
+      { role: "assistant", content: "Second answer." },
+    ];
+    act(() => rerender());
+    expect(synth.resetTurn).toHaveBeenCalledTimes(2);
+  });
+
+  it("does NOT cancel TTS on re-renders during a normal turn (the cancel-every-render bug)", () => {
+    chat.isStreaming = true;
+    const { result, rerender } = renderHook(() => useVoiceSession());
+    act(() => result.current.start());
+    // Several streamed-token re-renders of the SAME turn — the teardown effect must NOT
+    // re-run its cleanup (which calls tts.cancel() and would clear the speech queue +
+    // zero the dedup counter on every render → total silence). Regression guard: the
+    // teardown deps must be [] (empty), not [recognition, tts] (fresh objects each render).
+    chat.messages = [
+      { role: "user", content: "q" },
+      { role: "assistant", content: "MindForge is an agentic framework." },
+    ];
+    act(() => rerender());
+    chat.messages = [
+      { role: "user", content: "q" },
+      { role: "assistant", content: "MindForge is an agentic framework. It scales backends." },
+    ];
+    act(() => rerender());
+    act(() => rerender());
+    // start() itself never cancels; only stop/interrupt/pause/unmount do. So across a
+    // whole streaming turn, cancel must be untouched.
+    expect(synth.cancel).not.toHaveBeenCalled();
   });
 
   it("the settle finalizer uses speakChunk (NOT speak) so it never re-speaks", () => {

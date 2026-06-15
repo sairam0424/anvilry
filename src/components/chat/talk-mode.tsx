@@ -38,6 +38,13 @@ function lastAssistantText(messages: { role: string; content: string }[]): strin
   return "";
 }
 
+function lastUserText(messages: { role: string; content: string }[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === "user") return messages[i].content;
+  }
+  return "";
+}
+
 export function TalkMode({ onClose }: { onClose: () => void }) {
   const session = useVoiceSession();
   const { supported, active, state, interim, messages, start, stop, interrupt, pause, resume } =
@@ -67,11 +74,14 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [active, state, start, stop, interrupt, pause, resume, onClose]);
 
-  // The transcript caption: the user's live interim words (verbatim — already plain
-  // STT text), or the latest answer stripped of markdown + card tokens so the screen
-  // shows exactly what is SPOKEN (was leaking raw **markdown** / [[card:...]] tokens).
-  const answer = lastAssistantText(messages);
-  const caption = interim || toCaptionText(answer);
+  // Two distinct caption tracks so the user always sees BOTH sides of the turn:
+  //  - "You said" — the live interim words (verbatim, already plain STT) while speaking,
+  //    falling through to the last COMMITTED user message once interim clears, so the
+  //    user's words persist instead of flashing empty the instant the final lands.
+  //  - the answer — the latest assistant reply stripped of markdown + card tokens, so
+  //    the screen shows exactly what is SPOKEN (was leaking **markdown** / [[card:...]]).
+  const youSaid = interim || lastUserText(messages);
+  const answerText = toCaptionText(lastAssistantText(messages));
 
   if (!supported) {
     return (
@@ -116,13 +126,15 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         {active ? STATUS_LABEL[state] : ""}
       </div>
 
-      {/* Audio-reactive orb (decorative, aria-hidden). The canvas blob pulses/glows
-          from the synthetic per-state `level`; a centered state icon stays for a quick
-          glance. Reduced-motion -> the canvas draws a calm static ring (handled inside). */}
+      {/* Audio-reactive orb (decorative, aria-hidden). The orb pulses/glows from the
+          synthetic per-state `level`; a FAINT, blurred state hint sits inside the glow
+          (demoted from a solid glyph that read as a sticker) — meaning is carried by the
+          visible label + the aria-live region, so this is a glance cue only.
+          Reduced-motion -> the canvas draws a calm static ring (handled inside). */}
       <div className="relative flex h-40 w-40 items-center justify-center" aria-hidden="true">
         <VoiceOrb level={level} state={state} size={160} />
-        <span className="pointer-events-none absolute text-accent">
-          {speaking ? <Square size={26} className="fill-current" /> : <Mic size={26} />}
+        <span className="pointer-events-none absolute text-accent/30 blur-[1px]">
+          {speaking ? <Square size={18} className="fill-current" /> : <Mic size={18} />}
         </span>
       </div>
 
@@ -131,16 +143,22 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         {active ? STATUS_LABEL[state] : "Tap the mic to talk"}
       </p>
 
-      {/* Live caption — the spoken phrase as text so voice is never the only channel
-          (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't "live").
+      {/* Live captions — both sides of the turn as text so voice is never the only
+          channel (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't
+          "live"). "You said" persists the user's words; the answer shows what is SPOKEN.
           Toggleable via the cc control below; default on. */}
       {settings.captions && (
-        <div className="min-h-[3.5rem] w-full max-w-md text-center">
-          {caption ? (
-            <p className={`text-sm leading-relaxed ${interim ? "text-fg-muted" : "text-fg"}`}>
-              {caption}
-            </p>
-          ) : (
+        <div className="flex min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 text-center">
+          {youSaid && (
+            <>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
+                You said
+              </p>
+              <p className="text-sm leading-relaxed text-fg-muted">{youSaid}</p>
+            </>
+          )}
+          {answerText && <p className="text-sm leading-relaxed text-fg">{answerText}</p>}
+          {!youSaid && !answerText && (
             <p className="text-sm text-fg-subtle">
               Ask about my work, projects, or what I&apos;m looking for.
             </p>

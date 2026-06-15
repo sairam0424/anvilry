@@ -33,16 +33,18 @@ function targetFor(state: VoiceSessionState, t: number): number {
   // t is elapsed seconds; combine sinusoids for an organic, non-repetitive feel.
   switch (state) {
     case "listening": {
-      const breath = 0.32 + 0.12 * Math.sin(t * 1.6);
+      // Lower, serene floor so the contrast with speaking reads clearly in the orb.
+      const breath = 0.26 + 0.12 * Math.sin(t * 1.6);
       const shimmer = 0.1 * Math.sin(t * 7.3 + 1.1);
       return Math.max(0, breath + shimmer);
     }
     case "thinking":
       return 0.18 + 0.08 * Math.sin(t * 2.2);
     case "speaking": {
+      // Punchier syllabic transient so the HDR heat/halo/scale coupling visibly blooms.
       const breath = 0.45 + 0.14 * Math.sin(t * 2.1);
-      const syllable = 0.28 * Math.abs(Math.sin(t * 9.5)) + 0.12 * Math.sin(t * 14.2 + 0.7);
-      return Math.min(1, Math.max(0.2, breath + syllable));
+      const syllable = 0.34 * Math.abs(Math.sin(t * 9.5)) + 0.14 * Math.sin(t * 14.2 + 0.7);
+      return Math.min(1, Math.max(0.18, breath + syllable));
     }
     default:
       return 0; // idle / paused

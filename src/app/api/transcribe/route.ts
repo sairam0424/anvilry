@@ -64,6 +64,13 @@ export async function POST(req: Request) {
     );
   }
 
+  // Reject by declared length BEFORE buffering the whole audio into memory — a cheap
+  // guard against a client streaming more than the cap. (The post-read byteLength check
+  // below still backstops a missing/lying Content-Length.)
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES) {
+    return Response.json({ error: "Audio too long." }, { status: 413 });
+  }
+
   const ab = await req.arrayBuffer();
   if (!ab.byteLength) return Response.json({ error: "Expected audio." }, { status: 400 });
   if (ab.byteLength > MAX_BYTES) {

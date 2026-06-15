@@ -81,6 +81,11 @@ export async function POST(req: Request) {
     );
   }
 
+  // A single sentence is tiny; reject an oversized body by declared length up front.
+  if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
+    return Response.json({ error: "Request too large." }, { status: 413 });
+  }
+
   let body: { text?: unknown };
   try {
     body = await req.json();
@@ -110,8 +115,16 @@ export async function POST(req: Request) {
     if (!out.AudioStream) {
       return Response.json({ error: "No audio." }, { status: 502 });
     }
-    // The SDK stream -> bytes. transformToByteArray() is available on the Node stream.
-    const bytes = await out.AudioStream.transformToByteArray();
+    // The SDK stream -> bytes. transformToByteArray() can hang mid-stream on a stalled
+    // connection (no built-in timeout), which would burn the whole maxDuration window.
+    // Race it against a 10s cap so a hang fails FAST to 502 -> the client falls back to
+    // free browser TTS, instead of blocking the function for the full 15s.
+    const bytes = await Promise.race([
+      out.AudioStream.transformToByteArray(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("polly-timeout")), 10_000),
+      ),
+    ]);
     const buf = Buffer.from(bytes);
     cacheSet(text, buf);
     return new Response(new Uint8Array(buf), {

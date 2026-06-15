@@ -7,10 +7,14 @@ import { ProjectCard } from "@/components/project-card";
 import { GithubFeed } from "@/components/github-feed";
 import { getRepoFeed } from "@/lib/github";
 
+const description = `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, and developer tooling.`;
 export const metadata: Metadata = {
   title: "Projects",
-  description: `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, and developer tooling.`,
+  description,
   alternates: { canonical: "/projects" },
+  // Page-specific OG so a share of /projects shows this page (Next replaces the nested
+  // openGraph per segment, otherwise it inherits the homepage identity).
+  openGraph: { type: "website", url: "/projects", title: `Projects — ${profile.name}`, description },
 };
 
 // ISR: prerender at build with whatever repos resolve, regenerate at most once/hour.
@@ -24,7 +28,7 @@ export default async function ProjectsPage() {
   const repos = await getRepoFeed();
   return (
     <main className="flex-1">
-      <Section label="// open-source AI infrastructure" title="Projects I build in the open">
+      <Section label="// open-source AI infrastructure" title="Projects I build in the open" titleAs="h1">
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
             Agent frameworks, code-intelligence engines, and AI-native tooling. Each card describes architecture and

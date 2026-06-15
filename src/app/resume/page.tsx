@@ -4,10 +4,14 @@ import { profile, resumeVariants } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
+const description = `Download ${profile.name}'s résumé — role-targeted variants for Backend, GenAI, and Full-Stack.`;
 export const metadata: Metadata = {
   title: "Résumé",
-  description: `Download ${profile.name}'s résumé — role-targeted variants for Backend, GenAI, and Full-Stack.`,
+  description,
   alternates: { canonical: "/resume" },
+  // Page-specific OG (Next replaces the nested openGraph wholesale per segment) so a
+  // share of /resume shows this page, not the homepage identity.
+  openGraph: { type: "website", url: "/resume", title: `Résumé — ${profile.name}`, description },
 };
 
 const master = resumeVariants[0];
@@ -15,7 +19,7 @@ const master = resumeVariants[0];
 export default function ResumePage() {
   return (
     <main className="flex-1">
-      <Section label="// résumé" title="Role-targeted résumés">
+      <Section label="// résumé" title="Role-targeted résumés" titleAs="h1">
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
             One page, tuned per role. Pick the variant that matches the opening — every version shares the same

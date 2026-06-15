@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion, useReducedMotion } from "motion/react";
-import { Mic, Square, X, Volume2, Loader2 } from "lucide-react";
+import { Mic, Square, X } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
+import { useVoiceLevel } from "@/components/chat/use-voice-level";
+import { VoiceOrbCanvas } from "@/components/chat/voice-orb-canvas";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -38,9 +39,11 @@ function lastAssistantText(messages: { role: string; content: string }[]): strin
 
 export function TalkMode({ onClose }: { onClose: () => void }) {
   const session = useVoiceSession();
-  const reduced = useReducedMotion();
   const { supported, active, state, interim, messages, start, stop, interrupt, pause, resume } =
     session;
+  // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
+  // TTS isn't audio-tappable; see use-voice-level).
+  const level = useVoiceLevel(state);
 
   // Space toggles the current turn (talk / stop-speaking / resume); Esc closes.
   useEffect(() => {
@@ -88,7 +91,6 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
 
   const speaking = state === "speaking";
   const listening = state === "listening";
-  const thinking = state === "thinking";
 
   // Primary control depends on the turn: start / stop-speaking / resume / mute.
   const onPrimary = () => {
@@ -112,32 +114,14 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         {active ? STATUS_LABEL[state] : ""}
       </div>
 
-      {/* Orb — decorative. Pulses while listening/speaking; STATIC under reduced motion. */}
+      {/* Audio-reactive orb (decorative, aria-hidden). The canvas blob pulses/glows
+          from the synthetic per-state `level`; a centered state icon stays for a quick
+          glance. Reduced-motion -> the canvas draws a calm static ring (handled inside). */}
       <div className="relative flex h-40 w-40 items-center justify-center" aria-hidden="true">
-        {(listening || speaking) && !reduced && (
-          <motion.span
-            className="absolute inset-0 rounded-full bg-accent/20"
-            animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0.2, 0.6] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          />
-        )}
-        <div
-          className={`flex h-28 w-28 items-center justify-center rounded-full border transition-colors ${
-            speaking
-              ? "border-accent bg-accent/15 text-accent"
-              : listening
-                ? "border-accent/70 bg-accent/10 text-accent"
-                : "border-border bg-bg-surface text-fg-muted"
-          }`}
-        >
-          {thinking ? (
-            <Loader2 size={34} className={reduced ? "" : "animate-spin"} />
-          ) : speaking ? (
-            <Volume2 size={34} />
-          ) : (
-            <Mic size={34} />
-          )}
-        </div>
+        <VoiceOrbCanvas level={level} state={state} size={160} />
+        <span className="pointer-events-none absolute text-accent">
+          {speaking ? <Square size={26} className="fill-current" /> : <Mic size={26} />}
+        </span>
       </div>
 
       {/* Visible status label (sighted mirror of the live region). */}

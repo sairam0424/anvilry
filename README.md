@@ -101,6 +101,8 @@ Voice is **progressive enhancement over the text chat** — it attaches to the e
 
 Both reuse `BEDROCK_*` creds, are per-IP rate-limited (Upstash), and **fail closed** — any error degrades to the free browser path, so voice never breaks. Needs IAM `polly:SynthesizeSpeech` / `transcribe:StartStreamTranscription` on the same key (see `DEPLOY.md`).
 
+📖 **Full reference: [`VOICE.md`](./VOICE.md)** — architecture, the complete feature-flag/settings table, env + IAM + cost, the privacy & a11y model, and developer notes (testing, adding an engine).
+
 ## 🌐 Deploy (Vercel)
 
 See **[`DEPLOY.md`](./DEPLOY.md)** for the full guide (env vars, verified Bedrock model chain + IAM policy, rate limiting, the region gotcha). In short:

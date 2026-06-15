@@ -9,6 +9,50 @@ if (isDev && !process.env.VELITE_STARTED) {
   import("velite").then(({ build }) => build({ watch: true, clean: false }));
 }
 
+/**
+ * Content-Security-Policy — shipped as Report-Only first (observe, don't break), to be
+ * promoted to enforced (`Content-Security-Policy`) once a live check shows zero
+ * violations. Scoped to the site's REAL surfaces (all verified against the code):
+ *  - connect-src: 'self' covers every /api/* route (chat, tts, transcribe — Bedrock/
+ *    Polly/Transcribe are called SERVER-side, so the browser never connects to AWS).
+ *    Vercel analytics/insights endpoints added for the injected beacons.
+ *  - script/style 'unsafe-inline': Next inline bootstrap + the inlineCss experiment +
+ *    R3F/Vercel inline. (No auth/secrets on this site, so the residual XSS surface is
+ *    low; rehype-sanitize + skipHtml already neutralize chat markdown.)
+ *  - img/media 'self' data: blob:: WebGL textures (data:) and the Polly <audio> blob:
+ *    URL (URL.createObjectURL in use-speech-synthesis.ts).
+ *  - frame-ancestors 'none': clickjacking defense (pairs with X-Frame-Options: DENY).
+ */
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://img.shields.io",
+  "media-src 'self' blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+// Static security headers applied to every route. HSTS is already set by Vercel's
+// platform default, so it is intentionally omitted here (avoids a weaker duplicate).
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Voice requests the mic — scope it to same-origin and deny camera/geo/etc.
+  { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()" },
+  // Report-Only first: observe violations without breaking anything; promote to
+  // "Content-Security-Policy" once a live check confirms zero violations.
+  { key: "Content-Security-Policy-Report-Only", value: csp },
+];
+
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (multiple lockfiles exist on the machine).
   turbopack: { root: __dirname },
@@ -23,6 +67,9 @@ const nextConfig: NextConfig = {
       // (src/lib/github.ts, server-fetched + ISR) — no external <img> embed.
       { protocol: "https", hostname: "img.shields.io" },
     ],
+  },
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
   },
 };
 

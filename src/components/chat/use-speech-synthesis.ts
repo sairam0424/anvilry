@@ -66,8 +66,11 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
 const isAndroid = () =>
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
-/** Which engine speaks: free browser speechSynthesis (default) or AWS Polly via /api/tts. */
-export type TtsEngine = "browser" | "polly";
+/** Which engine speaks: free browser speechSynthesis (default), AWS Polly via /api/tts,
+ *  or Google Cloud TTS via /api/tts-google. Imported from the settings store so the
+ *  hook + the store agree on the union — there is one source of truth for engine ids. */
+import type { TtsEngine } from "@/lib/voice-settings-context";
+export type { TtsEngine };
 
 export type UseSpeechSynthesis = {
   supported: boolean;

@@ -100,6 +100,83 @@ html {
   .terminal-boot { animation: none; }
 }
 
+/* Anvil header-orb idle — a FLUID, swirling, color-shifting Siri-style orb. The "metaball
+   by blur+contrast" recipe: several conic-gradient color lobes painted on one pseudo, then
+   fused by `filter: blur() contrast()` so they bleed + merge into liquid blobs (the contrast
+   re-sharpens the blurred edges into rounded metaballs), with the conic `from` angle spun by
+   a registered @property for the swirl, and a slow hue-rotate for the color shift — all in
+   ONE filter chain (filter is a single property). PURE CSS, ZERO JS/rAF/WebGL/new-dep. COST:
+   animating a @property angle is a per-frame MAIN-THREAD style-recalc + paint of the small
+   ~38px pseudo (custom-property animation is NOT compositor-promoted) — negligible at this
+   size and never the LCP element, but do NOT scale this recipe up while animated. The heavy
+   3D orb only mounts inside the open voice surface. NOTE: NO mix-blend-mode — the conic
+   layers self-fuse via overlap+contrast, which also sidesteps the WebKit backdrop-filter +
+   descendant-blend glitch (bug 176830) under the header's backdrop-blur. isolation +
+   overflow:hidden + translateZ(0) keep it on its own layer. Reduced-motion → a STATIC but
+   still rich/fused orb (keeps blur+contrast — never `filter:none`, which would shatter the
+   metaballs into hard arcs). Pre-Baseline browsers (Safari <16.4) ignore @property → the
+   conic `from` is unset and the orb degrades to the solid `--accent-strong` disc + glow (a
+   fine fallback, not the fused metaball). blur is tuned for the real 28px host, not a preview. */
+
+@property --anvil-swirl {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 40deg;
+}
+@property --anvil-hue {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes anvil-swirl-spin { to { --anvil-swirl: 400deg; } }
+@keyframes anvil-hue-drift { to { --anvil-hue: 360deg; } }
+@keyframes anvil-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.anvil-orb-idle {
+  position: relative;
+  isolation: isolate;          /* own stacking context (keeps the fuse off the header backdrop) */
+  overflow: hidden;            /* clip the fused blobs to the orb circle */
+  border-radius: 9999px;
+  background: var(--accent-strong); /* base wash behind the metaballs */
+  box-shadow: 0 0 12px -2px color-mix(in oklab, var(--accent) 65%, transparent);
+  animation: anvil-breathe 3.6s ease-in-out infinite;
+}
+/* The fluid layer: 4 conic color lobes at distinct off-center origins + signed swirl
+   multipliers, fused by blur+contrast into liquid metaballs, hue-rotated for the shift. */
+.anvil-orb-idle::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  border-radius: 9999px;
+  transform: translateZ(0);    /* promote to its own layer (Safari backdrop-root guard) */
+  background:
+    conic-gradient(from calc(var(--anvil-swirl) * 2)  at 32% 38%, var(--accent) 0deg, transparent 110deg),
+    conic-gradient(from calc(var(--anvil-swirl) * -3) at 68% 36%, var(--violet, #a78bfa) 0deg, transparent 120deg),
+    conic-gradient(from calc(var(--anvil-swirl) * 1)  at 40% 70%, color-mix(in oklab, var(--accent) 80%, white) 0deg, transparent 100deg),
+    conic-gradient(from calc(var(--anvil-swirl) * -2) at 64% 66%, var(--accent-strong) 0deg, transparent 130deg);
+  /* blur tuned for the REAL 28px host (~1.4px ≈ 5% of diameter) — fuses the lobes without
+     washing them into a uniform smear; contrast re-sharpens into rounded metaballs. */
+  filter: blur(1.4px) contrast(4.5) hue-rotate(var(--anvil-hue));
+  animation:
+    anvil-swirl-spin 18s linear infinite,
+    anvil-hue-drift 22s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anvil-orb-idle,
+  .anvil-orb-idle::before {
+    animation: none;
+  }
+  /* Keep the fused metaballs (static): freeze the swirl at its balanced initial angle and
+     KEEP blur+contrast (a one-time raster, free) + a fixed hue — never `filter: none`. */
+  .anvil-orb-idle::before {
+    filter: blur(1.4px) contrast(4.5) hue-rotate(0deg);
+  }
+}
+
 body {
   background: var(--bg-base);
   color: var(--fg);

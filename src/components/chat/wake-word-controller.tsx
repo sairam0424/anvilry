@@ -16,11 +16,17 @@ import { openTalkMode } from "@/components/chat/talk-overlay-store";
  *  - off by default (the wakeWord pref starts false);
  *  - the banner is ALWAYS visible while listening (never a hidden hot mic);
  *  - one tap on the banner's Stop disarms the engine AND releases the mic;
- *  - leaving the Chat/voice view (or disabling the pref) disarms immediately.
- * On detection it opens the two-way talk mode.
+ *  - leaving the Chat view (or disabling the pref) disarms immediately.
+ * On detection it opens the two-way talk-mode modal.
+ *
+ * SCOPED TO CHAT ONLY (not the voice view): the Anvil voice view already IS a live
+ * talk surface with its own useVoiceSession/mic. Arming the wake word there would open
+ * the modal's SECOND session over it — two concurrent mics, which breaks the
+ * single-session invariant the streamed-audio path depends on. The voice view is
+ * hands-free by construction, so wake word there is both redundant and unsafe.
  */
 
-const ACTIVE_VIEWS = new Set(["chat", "voice"]);
+const ACTIVE_VIEWS = new Set(["chat"]);
 
 export function WakeWordController() {
   const { settings, toggle, set } = useVoiceSettings();

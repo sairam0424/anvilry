@@ -26,13 +26,13 @@ const PER_ATTEMPT_TIMEOUT_MS = 15_000;
  * "model identifier is invalid". Sonnet 4.6's bare id resolves fine.
  */
 const BEDROCK_CHAIN = [
-  "us.anthropic.claude-opus-4-6-v1", // primary
-  "us.anthropic.claude-sonnet-4-6", // secondary
+  "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+  "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
   "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
 ];
 
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
-const ANTHROPIC_CHAIN = ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5"];
+const ANTHROPIC_CHAIN = ["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"];
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
  *  un-enabled / mistyped inference-profile id as a 400, not a 404). Only these

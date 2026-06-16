@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { allWork, getWork } from "@/lib/content";
+import { profile } from "@/lib/profile";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
 import { BreadcrumbJsonLd, CreativeWorkJsonLd } from "@/components/json-ld";
@@ -21,10 +22,21 @@ export async function generateMetadata({
   const { slug } = await params;
   const work = getWork(slug);
   if (!work) return {};
+  const url = `/work/${slug}`;
+  // Page-specific OpenGraph (Next merges segments shallowly + replaces nested objects):
+  // without this the page would inherit the root layout's homepage og:title/og:url. The
+  // per-route opengraph-image.tsx (file-based) keeps the share image correct.
   return {
     title: work.name,
     description: work.summary,
-    alternates: { canonical: `/work/${slug}` },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: `${work.name} — ${profile.name}`,
+      description: work.summary,
+    },
+    twitter: { card: "summary_large_image", title: `${work.name} — ${profile.name}`, description: work.summary },
   };
 }
 

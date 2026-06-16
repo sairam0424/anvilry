@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, GitCommitHorizontal } from "lucide-react";
 import { Github } from "@/components/icons";
 import { allProjects, getProject } from "@/lib/content";
+import { profile } from "@/lib/profile";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
 import { SoftwareSourceCodeJsonLd, BreadcrumbJsonLd } from "@/components/json-ld";
@@ -22,10 +23,22 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) return {};
+  const url = `/projects/${slug}`;
+  // Page-specific OpenGraph: Next merges metadata segments SHALLOWLY and REPLACES nested
+  // objects wholesale, so without this the page inherits the root layout's homepage
+  // og:title/og:url. The per-route opengraph-image.tsx is file-based (higher priority),
+  // so the share IMAGE stays correct; we override only the text + canonical url here.
   return {
     title: project.name,
     description: project.excerpt,
-    alternates: { canonical: `/projects/${slug}` },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: `${project.name} — ${profile.name}`,
+      description: project.excerpt,
+    },
+    twitter: { card: "summary_large_image", title: `${project.name} — ${profile.name}`, description: project.excerpt },
   };
 }
 

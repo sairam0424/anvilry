@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Mic, Square, X, Captions, CaptionsOff } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
@@ -45,14 +45,56 @@ function lastUserText(messages: { role: string; content: string }[]): string {
   return "";
 }
 
-export function TalkMode({ onClose }: { onClose: () => void }) {
+export function TalkMode({
+  onClose,
+  prompts,
+  autoStart = false,
+}: {
+  onClose: () => void;
+  /** Optional example-prompt chips (Anvil view). Each is asked by voice via the
+   *  session's own seam — one transcript, one mic. The modal passes none (unchanged). */
+  prompts?: readonly string[];
+  /** Start listening immediately on mount (the Siri "tap = talk" feel) — used by the
+   *  desktop inline panel, which mounts from the orb click. Best-effort: the mic open
+   *  (getUserMedia) is async and runs a few ticks after the click, so on iOS Safari's
+   *  first permission grant the user-activation may have lapsed and a second tap on the
+   *  mic is needed; it degrades safely (the session falls to "paused — tap to talk", and
+   *  the primary control rescues it — never a hot mic or a hang). Chrome/Edge honor it. */
+  autoStart?: boolean;
+}) {
   const session = useVoiceSession();
-  const { supported, active, state, interim, messages, start, stop, interrupt, pause, resume } =
+  const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
     session;
   const { settings, toggle } = useVoiceSettings();
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
+  // The persistent primary control (mic/orb). Focus rescues here when the prompt chips
+  // unmount on the first turn (else focus would orphan to <body> — WCAG 2.4.3).
+  const primaryRef = useRef<HTMLButtonElement>(null);
+  // Root, so the Space turn-toggle fires ONLY when focus is within this surface. In the
+  // page-covering modal that didn't matter (nothing behind was reachable); in the
+  // NON-MODAL inline panel the page stays scrollable, so an unscoped window Space would
+  // hijack the page's Space. Esc stays window-wide (close-from-anywhere, idempotent).
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Auto-start once on mount (Siri "tap = talk"). Guarded by a ref so it fires exactly
+  // once and never re-triggers across re-renders; only when supported + not already active.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStart && supported && !active && !autoStarted.current) {
+      autoStarted.current = true;
+      start();
+    }
+  }, [autoStart, supported, active, start]);
+  const hadMessages = useRef(false);
+  useEffect(() => {
+    const has = messages.length > 0;
+    if (has && !hadMessages.current && document.activeElement === document.body) {
+      // The just-clicked chip has unmounted; move focus to the always-present control.
+      primaryRef.current?.focus();
+    }
+    hadMessages.current = has;
+  }, [messages.length]);
 
   // Space toggles the current turn (talk / stop-speaking / resume); Esc closes.
   useEffect(() => {
@@ -60,9 +102,14 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
-      } else if (e.key === " " && !(e.target instanceof HTMLButtonElement)) {
-        // Space is the universal turn toggle (skip when a button is focused so it
-        // doesn't double-fire the button's own activation).
+      } else if (
+        e.key === " " &&
+        !(e.target instanceof HTMLButtonElement) &&
+        containerRef.current?.contains(document.activeElement)
+      ) {
+        // Space is the turn toggle — but ONLY when focus is within this surface (so it
+        // never hijacks the page's Space behind the non-modal panel). Skipped when a
+        // button is focused so it doesn't double-fire the button's own activation.
         e.preventDefault();
         if (!active) start();
         else if (state === "speaking") interrupt();
@@ -120,7 +167,7 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         : "Mute microphone";
 
   return (
-    <div className="flex flex-col items-center gap-6 px-6 py-8">
+    <div ref={containerRef} className="flex flex-col items-center gap-6 px-6 py-8">
       {/* Status (polite, atomic — announced without stealing focus). */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {active ? STATUS_LABEL[state] : ""}
@@ -166,9 +213,29 @@ export function TalkMode({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
+      {/* Example-prompt chips (Anvil view only) — solve the "what do I say?" problem.
+          Shown before the conversation starts; each is asked BY VOICE through the
+          session's own ask() (one transcript, one mic). Hidden once a turn exists, and
+          omitted entirely where STT is unsupported (the text fallback covers that). */}
+      {prompts && prompts.length > 0 && messages.length === 0 && (
+        <div className="flex max-w-md flex-wrap items-center justify-center gap-2">
+          {prompts.map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => ask(p)}
+              className="rounded-full border border-border bg-bg-surface px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Controls. */}
       <div className="flex items-center gap-3">
         <button
+          ref={primaryRef}
           type="button"
           onClick={onPrimary}
           aria-label={primaryLabel}

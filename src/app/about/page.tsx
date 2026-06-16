@@ -12,10 +12,13 @@ function formatUpdated(iso: string): string {
   return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 }
 
+const description = `About ${profile.name} — ${profile.role} at ${profile.company}.`;
 export const metadata: Metadata = {
   title: "About",
-  description: `About ${profile.name} — ${profile.role} at ${profile.company}.`,
+  description,
   alternates: { canonical: "/about" },
+  // Page-specific OG so a share of /about shows this page, not the homepage identity.
+  openGraph: { type: "profile", url: "/about", title: `About — ${profile.name}`, description },
 };
 
 export default function AboutPage() {
@@ -23,7 +26,7 @@ export default function AboutPage() {
   const [pensieve, aava] = impactMetrics;
   return (
     <main className="flex-1">
-      <Section label="// whoami" title={`I'm ${profile.name}.`}>
+      <Section label="// whoami" title={`I'm ${profile.name}.`} titleAs="h1">
         <Reveal>
           <div className="max-w-2xl space-y-4 text-fg-muted">
             <p>
@@ -34,8 +37,8 @@ export default function AboutPage() {
             <p>
               I co-built and production-hardened <span className="text-fg">Pensieve</span>, a multi-agent
               orchestration engine serving {pensieve.value} users daily, and architected the backend for{" "}
-              <span className="text-fg">AAVA Code</span>, an AI coding plugin for VS Code adopted by {aava.value} users
-              daily across 5+ client environments. On the backend I&apos;ve owned systems end-to-end — building
+              <span className="text-fg">AAVA Code</span>, an AI coding plugin for VS Code adopted by {aava.value}{" "}
+              users daily across 5+ client environments. On the backend I&apos;ve owned systems end-to-end — building
               decoupled, event-driven services with a Redis Streams + SSE pub/sub architecture.
             </p>
             <p>

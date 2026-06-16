@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useView } from "@/components/view-context";
-import { ViewEscapeHatch } from "@/components/view-escape-hatch";
+import { isViewEnabled } from "@/lib/enabled-views";
 
 /**
  * Swaps the top-level experience based on the active view.
@@ -37,7 +37,7 @@ const DeveloperView = dynamic(
   () => import("@/components/game/developer-view").then((m) => m.DeveloperView),
   { ssr: false },
 );
-const TalkMode = dynamic(() => import("@/components/chat/talk-mode").then((m) => m.TalkMode), {
+const AnvilView = dynamic(() => import("@/components/chat/anvil-view").then((m) => m.AnvilView), {
   ssr: false,
 });
 
@@ -51,29 +51,12 @@ export function ViewRouter({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* Chat — lazy, unmounts on exit. */}
-      {view === "chat" && <ChatView />}
-
-      {/* Gamified — lazy, unmounts on exit so the WebGL context disposes. */}
-      {view === "gamified" && <GameView />}
-
-      {/* Developer — lazy, unmounts on exit. The focused full-page terminal. */}
-      {view === "developer" && <DeveloperView />}
-
-      {/* Voice — the optional full-page two-way talk surface (talkSurface "view").
-          Lazy + unmounts on exit, which tears the voice session down (mic + speech).
-          Closing returns to Classic. Normally unused — the default surface is the
-          modal overlay; this view only renders if the visitor opts into "view". */}
-      {view === "voice" && (
-        <main className="mx-auto flex min-h-[calc(100dvh-3.5rem)] w-full max-w-3xl flex-col px-6 py-6">
-          <div className="mb-4">
-            <ViewEscapeHatch />
-          </div>
-          <div className="flex flex-1 items-center justify-center">
-            <TalkMode onClose={() => setView("classic")} />
-          </div>
-        </main>
-      )}
+      {/* Each optional view is gated by the build-time NEXT_PUBLIC_ENABLED_VIEWS flag.
+          If disabled, navigating to ?view=X stays on Classic (hidden=false above). */}
+      {view === "chat" && isViewEnabled("chat") && <ChatView />}
+      {view === "gamified" && isViewEnabled("gamified") && <GameView />}
+      {view === "developer" && isViewEnabled("developer") && <DeveloperView />}
+      {view === "voice" && isViewEnabled("voice") && <AnvilView onClose={() => setView("classic")} />}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { CommandPalette } from "@/components/command-palette";
 import { AskPortfolio } from "@/components/ask-portfolio";
 import { TalkModeMount } from "@/components/chat/talk-mode-mount";
+import { AnvilInlinePanel } from "@/components/chat/anvil-inline-panel";
 import { WakeWordController } from "@/components/chat/wake-word-controller";
 import { ViewHint } from "@/components/view-hint";
 import { EasterEggs } from "@/components/game/easter-eggs";
@@ -96,6 +97,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {/* Single global mount for the two-way talk-mode modal — opened from the
               Chat-view "Talk" button or the ⌘K command via a shared module store. */}
           <TalkModeMount />
+          {/* Single global mount for the in-place "Anvil" voice panel — the Siri-style
+              surface that expands from the header orb (desktop) instead of the modal.
+              Self-gates on its store (renders null when closed). */}
+          <AnvilInlinePanel />
           {/* Opt-in wake word (off by default). Renders its persistent "Listening"
               banner + kill switch only while active, and only on the voice views. */}
           <WakeWordController />

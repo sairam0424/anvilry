@@ -285,22 +285,26 @@ This STT-engine toggle is the primary control and is **always shown** (even on F
 - **Prompt chips** ("What are you looking for in your next role?", "Walk me through your strongest project", …) call `useVoiceSession.ask(text)` — they ask **by voice** through the session's own `send()` (never a sibling `useChat`), so the answer streams + is spoken like a spoken turn, then the loop re-listens. Chips show only before the first turn; where STT is unsupported they're omitted and the "type instead" fallback covers it.
 - **SSR-safe:** the view store's server + first-client snapshot stays `classic`; the 5th switcher entry appears post-hydration (the `useMounted` idiom) — no mismatch. The compact (mobile) switcher omits the pill; the **header orb** is the mobile voice door.
 
-**B. The Anvil header orb (build-flagged).** A small Siri-style orb in the global site header — visible on **every route and every viewport** — that opens the voice overlay (the existing modal) on click, via `openTalkMode(e.currentTarget)` (focus restored to the orb on close, WCAG 2.4.3).
-- **Build-time flag:** `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (default **off** — ships dark until flipped + re-deployed). STT-gated at runtime.
-- **Zero header cost:** the idle visual is a pure-CSS gradient blob that gently breathes (`.anvil-orb-idle`); **no WebGL, no rAF in the header** (the live 3D orb runs only inside the open overlay). Reduced-motion → static. ≥44px hit area (WCAG 2.5.8). It is a button, not a listener — the mic opens only after the overlay is open and the user starts a turn.
-- **Bloom-open entrance:** opening the overlay scales + fades the panel up (Motion spring; reduced-motion → opacity-only), reading as the orb expanding — a single in-portal element, NOT a cross-portal layout morph (which would churn the WebGL context).
+**B. The Anvil header orb — the in-place Siri orb.** A small "beast" Siri-style orb in the global site header — visible on **every route and every viewport, ON by default**. Tapping it does NOT open a centered modal: like macOS Siri, it **expands in place** into a NON-MODAL panel anchored under the orb (top-right) and **starts listening immediately**. The page stays visible + interactive behind it (no overlay/takeover).
+- **Build-time flag:** `NEXT_PUBLIC_ANVIL_ORB_MODE = inplace` (default) | `modal` | `off`. `inplace` = the in-place panel on desktop (mobile falls back to the centered modal — iOS Siri is itself a full-screen takeover on phones); `modal` = always the centered modal (the prior behavior — instant revert); `off` = ship dark. (The old boolean `NEXT_PUBLIC_ENABLE_ANVIL_ORB="false"` still maps to `off`.) STT-gated at runtime.
+- **Beast idle orb:** a layered, multi-hued CSS orb — a hue-rotating radial core (`@property --anvil-hue`), a gentle breathe, and two violet/cyan blurred lobes drifting + screen-blended for the fluid Siri bleed (`.anvil-orb-idle`). **No WebGL, no rAF, no main-thread work** in the header (the transforms are compositor-only; the hue-rotate/blur are a small constant GPU raster cost — negligible for 28px, off the LCP element). Reduced-motion → a static (still layered) orb. ≥44px hit area (WCAG 2.5.8).
+- **Non-modal a11y (hand-rolled — no Radix focus-trap):** the orb carries `aria-expanded`/`aria-controls`; the panel is a `role="region"`; focus moves into the panel on open and back to the orb on close (WCAG 2.4.3); Esc + outside-pointerdown (excluding the orb) close and **fully end the session** (stop mic + TTS); the Space turn-toggle is scoped to the panel so it never hijacks the page behind it.
+- **Genie entrance:** the panel scales/fades from the orb's measured rect (Motion spring, `transform-origin: top right`; reduced-motion → opacity-only), reading as the orb blooming in place.
+- **Tap = talk:** the orb tap auto-starts listening (best-effort on iOS first-grant; degrades to "paused — tap to talk", never a hot mic).
+- **On the Voice view the orb is disabled** (that view is itself the live talk surface).
 
-**The "beast" while speaking:** on desktop + WebGL + motion, a `uSpeaking` shader uniform surges the 3D orb (more turbulence, HDR heat, rim glow, spin) while the answer is spoken, eased in/out. Reduced-motion / mobile / no-WebGL keep the calm 2D orb.
+**The "beast" while speaking:** on desktop + WebGL + motion, a `uSpeaking` shader uniform surges the 3D orb inside the panel (more turbulence, HDR heat, rim glow, spin) while the answer is spoken. Reduced-motion / mobile / no-WebGL keep the calm 2D orb.
 
-**One live WebGL context guaranteed:** the talk modal is layout-global and can open over `?view=gamified`; the gamified BuildGraph canvas unmounts while the overlay is open (`useTalkModeOpen()` guard), so there are never two concurrent contexts.
+**One mic, always (the mutex):** the modal, the in-place panel, and the `?view=voice` view each mount their own session/mic, so a tiny arbiter (`voice-surface-mutex`) guarantees only one is open at a time — opening one closes the others (the view is excluded by routing: the orb is disabled there). **One live WebGL context** likewise: the gamified BuildGraph canvas unmounts while EITHER voice overlay is open (it reads both stores).
 
 | Aspect | Detail |
 |---|---|
 | **View** | Always-on 5th switcher entry (desktop) + `?view=voice` deep link; `anvil-view.tsx` |
-| **Orb** | Header, all routes/viewports, behind `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (default off); opens the modal |
+| **Orb** | Header, all routes/viewports, `NEXT_PUBLIC_ANVIL_ORB_MODE=inplace` (default); expands IN PLACE (desktop) / modal (mobile); auto-starts |
 | **Engine** | The same `useVoiceSession` (browser Web Speech default) — one session, one mic, grounded via `/api/chat` |
 | **Chips** | Ask-by-voice via `session.ask()` (one transcript); hidden when STT unsupported |
-| **Idle orb** | Pure CSS (no WebGL/rAF in header); reduced-motion static |
+| **Idle orb** | Beast layered CSS (no WebGL/rAF in header); reduced-motion static |
+| **One-mic mutex** | `voice-surface-mutex` — modal ↔ inline mutually exclusive; orb disabled on the Voice view |
 | **Coexistence** | Existing modal (Chat "Talk" pill + ⌘K) is unchanged; both doors share one overlay |
 
 ### Accessibility & Browser Fallback Summary

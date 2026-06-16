@@ -18,11 +18,19 @@ a first-class part of the site, sharing one grounded engine with the existing mo
   Anvil — the voice of Sairam's work", example-prompt chips, an open-to-roles hook —
   wrapping the shared talk mode. Chips ask **by voice** through the session's own seam
   (one transcript, one mic); the answer streams and is spoken like a spoken turn.
-- **Anvil header orb** — a small Siri-style orb in the global header (every route, every
-  viewport) that opens the voice overlay on click, with a "bloom open" entrance. Behind a
-  build-time flag `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (default **off**); ships dark until
-  enabled. Pure-CSS idle (no WebGL/rAF in the header), ≥44px hit area, STT-gated, focus
-  restored to the orb on close (WCAG 2.4.3).
+- **Anvil header orb — an in-place Siri orb.** A "beast" multi-hued animated orb in the
+  global header (every route, every viewport, **on by default**). Like macOS Siri, tapping
+  it doesn't open a centered modal — it **expands in place** into a non-modal panel
+  anchored under the orb (desktop) and **starts listening immediately** (the page stays
+  visible behind it). Mobile falls back to the centered modal (iOS Siri is a full-screen
+  takeover on phones). Build-time mode `NEXT_PUBLIC_ANVIL_ORB_MODE = inplace | modal | off`
+  (default `inplace`). The idle orb is pure CSS (layered hue-drifting gradient + drifting
+  blurred lobes — no WebGL/rAF/main-thread work in the header); ≥44px hit area; STT-gated;
+  hand-rolled non-modal a11y (aria-expanded, focus in/out, Esc + outside-click fully end
+  the session, panel-scoped Space).
+- **One-mic mutex** — the modal, the in-place panel, and the Voice view each own a session/
+  mic, so a small arbiter guarantees exactly one is open at a time; the gamified WebGL
+  canvas unmounts while either voice overlay is open (one live GL context).
 - **"Beast while speaking"** — the 3D orb surges (more turbulence, HDR heat, rim glow,
   spin) while the answer is spoken, eased in/out. Desktop + WebGL + motion only;
   reduced-motion keeps the calm orb.

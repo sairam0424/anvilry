@@ -72,6 +72,11 @@ export function TalkMode({
   // The persistent primary control (mic/orb). Focus rescues here when the prompt chips
   // unmount on the first turn (else focus would orphan to <body> — WCAG 2.4.3).
   const primaryRef = useRef<HTMLButtonElement>(null);
+  // Root, so the Space turn-toggle fires ONLY when focus is within this surface. In the
+  // page-covering modal that didn't matter (nothing behind was reachable); in the
+  // NON-MODAL inline panel the page stays scrollable, so an unscoped window Space would
+  // hijack the page's Space. Esc stays window-wide (close-from-anywhere, idempotent).
+  const containerRef = useRef<HTMLDivElement>(null);
   // Auto-start once on mount (Siri "tap = talk"). Guarded by a ref so it fires exactly
   // once and never re-triggers across re-renders; only when supported + not already active.
   const autoStarted = useRef(false);
@@ -97,9 +102,14 @@ export function TalkMode({
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
-      } else if (e.key === " " && !(e.target instanceof HTMLButtonElement)) {
-        // Space is the universal turn toggle (skip when a button is focused so it
-        // doesn't double-fire the button's own activation).
+      } else if (
+        e.key === " " &&
+        !(e.target instanceof HTMLButtonElement) &&
+        containerRef.current?.contains(document.activeElement)
+      ) {
+        // Space is the turn toggle — but ONLY when focus is within this surface (so it
+        // never hijacks the page's Space behind the non-modal panel). Skipped when a
+        // button is focused so it doesn't double-fire the button's own activation.
         e.preventDefault();
         if (!active) start();
         else if (state === "speaking") interrupt();
@@ -157,7 +167,7 @@ export function TalkMode({
         : "Mute microphone";
 
   return (
-    <div className="flex flex-col items-center gap-6 px-6 py-8">
+    <div ref={containerRef} className="flex flex-col items-center gap-6 px-6 py-8">
       {/* Status (polite, atomic — announced without stealing focus). */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {active ? STATUS_LABEL[state] : ""}

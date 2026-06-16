@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
@@ -16,6 +16,12 @@ import {
   type VoiceCharacterTone,
 } from "@/lib/voice-settings-context";
 import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
+import {
+  getVoicesRaceHardened,
+  isAndroid,
+  isFirefox,
+  isLinuxESpeak,
+} from "@/components/chat/voice-pitfalls";
 
 /**
  * The CANONICAL voice settings surface — one dialog with every voice-related
@@ -169,6 +175,25 @@ export function VoiceSettingsDialog({
   const currentVoiceEntry = getVoiceById(currentVoiceId);
   const character = settings.voiceCharacter;
 
+  // Platform advisories — surface relevant pitfalls only when applicable so
+  // they're informational, not noisy. Resolved once on dialog open (the voice
+  // list never changes mid-session and UA is stable). null while loading so
+  // we don't flash an inaccurate advisory before the voice list lands.
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[] | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void getVoicesRaceHardened().then((list) => {
+      if (!cancelled) setVoices(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+  const linuxESpeakOnly = voices ? isLinuxESpeak(voices) : false;
+  const androidUA = isAndroid();
+  const firefoxLinux = isFirefox() && linuxESpeakOnly;
+
   const characterIgnored =
     settings.ttsEngine === "google" ||
     (settings.ttsEngine === "polly" && currentVoiceEntry?.pollyTier === "generative");
@@ -248,29 +273,61 @@ export function VoiceSettingsDialog({
                 Engine
               </h3>
               <div className="flex flex-col gap-1.5">
-                {(Object.keys(ENGINE_LABEL) as TtsEngine[]).map((engine) => (
-                  <label
-                    key={engine}
-                    className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
-                      settings.ttsEngine === engine
-                        ? "border-accent bg-accent/5"
-                        : "border-border-strong/40 bg-bg-base hover:border-border-strong"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="tts-engine"
-                      value={engine}
-                      checked={settings.ttsEngine === engine}
-                      onChange={() => set({ ttsEngine: engine })}
-                      className="mt-1 cursor-pointer accent-accent"
-                    />
-                    <span className="flex flex-col gap-0.5">
-                      <span className="text-xs font-medium text-fg">{ENGINE_LABEL[engine]}</span>
-                      <span className="text-[11px] text-fg-muted">{ENGINE_HINT[engine]}</span>
-                    </span>
-                  </label>
-                ))}
+                {(Object.keys(ENGINE_LABEL) as TtsEngine[]).map((engine) => {
+                  // Browser-engine advisories per pitfall — disable + explain when the
+                  // platform's only voice option is bad-quality (Linux eSpeak, Firefox
+                  // on Linux). Android Chrome gets a softer "consider Polly" hint
+                  // since browser TTS works there but with quality variance.
+                  const browserDisabledReason: string | undefined =
+                    engine === "browser"
+                      ? firefoxLinux
+                        ? "Firefox on Linux falls back to eSpeak — pick Polly or Google for natural audio."
+                        : linuxESpeakOnly
+                          ? "Only eSpeak voices available — pick Polly or Google for natural audio."
+                          : undefined
+                      : undefined;
+                  const browserAdvisory: string | undefined =
+                    engine === "browser" && !browserDisabledReason && androidUA
+                      ? "Chrome on Android voices vary — Polly Neural is clearer if you have AWS configured."
+                      : undefined;
+                  const isDisabled = Boolean(browserDisabledReason);
+                  return (
+                    <label
+                      key={engine}
+                      className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+                        isDisabled
+                          ? "cursor-not-allowed border-border-strong/30 bg-bg-base/50 opacity-60"
+                          : settings.ttsEngine === engine
+                            ? "cursor-pointer border-accent bg-accent/5"
+                            : "cursor-pointer border-border-strong/40 bg-bg-base hover:border-border-strong"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="tts-engine"
+                        value={engine}
+                        checked={settings.ttsEngine === engine}
+                        disabled={isDisabled}
+                        onChange={() => set({ ttsEngine: engine })}
+                        className="mt-1 cursor-pointer accent-accent disabled:cursor-not-allowed"
+                      />
+                      <span className="flex flex-col gap-0.5">
+                        <span className="text-xs font-medium text-fg">{ENGINE_LABEL[engine]}</span>
+                        <span className="text-[11px] text-fg-muted">{ENGINE_HINT[engine]}</span>
+                        {browserDisabledReason && (
+                          <span className="mt-1 text-[11px] text-fg-subtle">
+                            ⚠ {browserDisabledReason}
+                          </span>
+                        )}
+                        {browserAdvisory && (
+                          <span className="mt-1 text-[11px] text-fg-subtle">
+                            ⚠ {browserAdvisory}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </section>
 

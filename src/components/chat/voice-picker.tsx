@@ -12,6 +12,10 @@ import {
 } from "@/lib/voice-catalog";
 import { VOICE_PICKER_MODE } from "@/lib/voice-picker-mode";
 import { useSpeechSynthesis } from "@/components/chat/use-speech-synthesis";
+import {
+  applePremiumIsMissing,
+  getVoicesRaceHardened,
+} from "@/components/chat/voice-pitfalls";
 
 /**
  * Shared voice-picker UI. Mounted in three surfaces (talk-mode header, Cmd+K
@@ -61,12 +65,17 @@ function VoiceCard({
   entry,
   isCurrent,
   isPreviewing,
+  applePremiumMissing,
   onPick,
   onPreview,
 }: {
   entry: VoiceEntry;
   isCurrent: boolean;
   isPreviewing: boolean;
+  /** When true, the curated Apple Premium voice this card references is not on
+   *  disk — show a "download in System Settings" hint (pitfall #6). Only set
+   *  for `engine: "browser"` entries with an Apple Premium URI prefix. */
+  applePremiumMissing: boolean;
   onPick: (id: string) => void;
   onPreview: (entry: VoiceEntry) => void;
 }) {
@@ -110,6 +119,12 @@ function VoiceCard({
         <span aria-hidden="true">·</span>
         <span>{engineLabel(entry)}</span>
       </div>
+      {applePremiumMissing && (
+        <p className="text-[10px] leading-snug text-fg-subtle">
+          ⚠ Download this Apple Premium voice in macOS Settings → Accessibility →
+          Spoken Content → Voices.
+        </p>
+      )}
     </div>
   );
 }
@@ -139,19 +154,25 @@ function engineLabel(entry: VoiceEntry): string {
 
 /* ---------------------------- Layout primitives ---------------------------- */
 
+type GridProps = {
+  voices: ReadonlyArray<VoiceEntry>;
+  currentVoiceId?: string;
+  previewingId: string | null;
+  /** Voices in window.speechSynthesis.getVoices() — drives the Apple Premium
+   *  download hint (pitfall #6). Empty array on SSR / before voices load. */
+  browserVoices: ReadonlyArray<{ voiceURI: string }>;
+  onPick: (id: string) => void;
+  onPreview: (entry: VoiceEntry) => void;
+};
+
 function DescriptorGrid({
   voices,
   currentVoiceId,
   previewingId,
+  browserVoices,
   onPick,
   onPreview,
-}: {
-  voices: ReadonlyArray<VoiceEntry>;
-  currentVoiceId?: string;
-  previewingId: string | null;
-  onPick: (id: string) => void;
-  onPreview: (entry: VoiceEntry) => void;
-}) {
+}: GridProps) {
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {voices.map((v) => (
@@ -160,6 +181,7 @@ function DescriptorGrid({
           entry={v}
           isCurrent={v.id === currentVoiceId}
           isPreviewing={v.id === previewingId}
+          applePremiumMissing={applePremiumIsMissing(v.browserVoiceURIPrefix, browserVoices)}
           onPick={onPick}
           onPreview={onPreview}
         />
@@ -172,21 +194,32 @@ function GenderColumns({
   voices,
   currentVoiceId,
   previewingId,
+  browserVoices,
   onPick,
   onPreview,
-}: {
-  voices: ReadonlyArray<VoiceEntry>;
-  currentVoiceId?: string;
-  previewingId: string | null;
-  onPick: (id: string) => void;
-  onPreview: (entry: VoiceEntry) => void;
-}) {
+}: GridProps) {
   const female = voices.filter((v) => v.gender === "female");
   const male = voices.filter((v) => v.gender === "male");
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <ColumnSection label="Female" voices={female} {...{ currentVoiceId, previewingId, onPick, onPreview }} />
-      <ColumnSection label="Male" voices={male} {...{ currentVoiceId, previewingId, onPick, onPreview }} />
+      <ColumnSection
+        label="Female"
+        voices={female}
+        currentVoiceId={currentVoiceId}
+        previewingId={previewingId}
+        browserVoices={browserVoices}
+        onPick={onPick}
+        onPreview={onPreview}
+      />
+      <ColumnSection
+        label="Male"
+        voices={male}
+        currentVoiceId={currentVoiceId}
+        previewingId={previewingId}
+        browserVoices={browserVoices}
+        onPick={onPick}
+        onPreview={onPreview}
+      />
     </div>
   );
 }
@@ -196,16 +229,10 @@ function ColumnSection({
   voices,
   currentVoiceId,
   previewingId,
+  browserVoices,
   onPick,
   onPreview,
-}: {
-  label: string;
-  voices: ReadonlyArray<VoiceEntry>;
-  currentVoiceId?: string;
-  previewingId: string | null;
-  onPick: (id: string) => void;
-  onPreview: (entry: VoiceEntry) => void;
-}) {
+}: GridProps & { label: string }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="text-[10px] font-mono uppercase tracking-widest text-fg-muted">
@@ -218,6 +245,7 @@ function ColumnSection({
             entry={v}
             isCurrent={v.id === currentVoiceId}
             isPreviewing={v.id === previewingId}
+            applePremiumMissing={applePremiumIsMissing(v.browserVoiceURIPrefix, browserVoices)}
             onPick={onPick}
             onPreview={onPreview}
           />
@@ -241,6 +269,19 @@ function PickerBody({
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  // Browser voice list — race-hardened load (sync read + voiceschanged + 2s
+  // timeout). Used to flip the Apple Premium "download in System Settings"
+  // hint per card. Empty until loaded; the hint then resolves correctly.
+  const [browserVoices, setBrowserVoices] = useState<ReadonlyArray<SpeechSynthesisVoice>>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void getVoicesRaceHardened().then((list) => {
+      if (!cancelled) setBrowserVoices(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Two preview hooks so the curated grid + the overflow dialog can each have
   // their own engine binding (the catalog tells us which engine to use per
@@ -311,6 +352,7 @@ function PickerBody({
         voices={CURATED_VOICES}
         currentVoiceId={currentVoiceId}
         previewingId={previewingId}
+        browserVoices={browserVoices}
         onPick={onPick}
         onPreview={handlePreview}
       />
@@ -352,6 +394,7 @@ function PickerBody({
                 voices={EXTENDED_VOICES}
                 currentVoiceId={currentVoiceId}
                 previewingId={previewingId}
+                browserVoices={browserVoices}
                 onPick={(id) => {
                   onPick(id);
                   setOverflowOpen(false);

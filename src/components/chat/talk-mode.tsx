@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Mic, Square, X, Captions, CaptionsOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Mic, Square, X, Captions, CaptionsOff, ChevronDown } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
+import { VoicePicker } from "@/components/chat/voice-picker";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -65,7 +67,15 @@ export function TalkMode({
   const session = useVoiceSession();
   const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
     session;
-  const { settings, toggle } = useVoiceSettings();
+  const { settings, toggle, set } = useVoiceSettings();
+  // Voice picker mounted INSIDE TalkMode so it inherits the voice-settings store
+  // (one source of truth) and so opening the picker doesn't tear down the session.
+  // Resolves the current voice via the catalog default when settings.voiceId is unset
+  // (preserves v1.6 Joanna behavior for legacy localStorage payloads).
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const voiceLabelRef = useRef<HTMLButtonElement>(null);
+  const currentVoiceId = settings.voiceId ?? getDefaultVoiceId();
+  const currentVoiceName = getVoiceById(currentVoiceId)?.displayName ?? "Default";
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
@@ -279,11 +289,41 @@ export function TalkMode({
         </button>
       </div>
 
+      {/* Voice picker trigger — sits BELOW the controls so it doesn't compete with
+          the primary mic button for visual weight. Mirrors the captions toggle's
+          height + frosted-pill aesthetic. */}
+      <button
+        ref={voiceLabelRef}
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={pickerOpen}
+        aria-label={`Pick voice — current: ${currentVoiceName}`}
+        title="Pick voice"
+        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-bg-surface/40 px-3 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <span className="font-mono uppercase tracking-widest">Voice:</span>
+        <span className="text-fg">{currentVoiceName}</span>
+        <ChevronDown size={12} aria-hidden="true" className="opacity-60" />
+      </button>
+
       <p className="text-center text-[11px] text-fg-subtle">
         {active
           ? "Tap the orb or press Space to take your turn · Esc to close"
           : "Tap the orb or press Space to start · grounded in real work"}
       </p>
+
+      {/* Voice picker dialog. Picking a voice persists to the settings store; the
+          session's TTS hook (Phase 2.3) re-renders on the next utterance with the
+          new voiceId — no in-flight audio is interrupted by the swap. */}
+      <VoicePicker
+        mode="dialog"
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        currentVoiceId={currentVoiceId}
+        onPick={(id) => set({ voiceId: id })}
+        getOpener={() => voiceLabelRef.current}
+      />
     </div>
   );
 }

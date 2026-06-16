@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare, AudioLines } from "lucide-react";
 import { useView, type View } from "@/components/view-context";
 import { useMounted } from "@/lib/use-mounted";
+import { isViewEnabled } from "@/lib/enabled-views";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,7 +33,9 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   // the Anvil header orb is the mobile voice door; the full view stays reachable on
   // desktop + via the ?view=voice deep link.
   const mounted = useMounted();
-  const options = mounted && !compact ? [...OPTIONS, VOICE_OPTION] : OPTIONS;
+  // Filter views by the build-time NEXT_PUBLIC_ENABLED_VIEWS flag (Classic is always on).
+  const base = OPTIONS.filter((o) => isViewEnabled(o.view));
+  const options = mounted && !compact && isViewEnabled("voice") ? [...base, VOICE_OPTION] : base;
   // Unique per instance: the switcher is rendered TWICE (desktop + compact mobile),
   // both in the DOM at once. A shared layoutId would make Motion animate ONE pill
   // between the two instances, breaking which button shows active. Scope it.

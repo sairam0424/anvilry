@@ -61,6 +61,17 @@ silently falls back to the free browser voice.
 All `NEXT_PUBLIC_*` variables are inlined at build time by Next.js. Changing them
 requires a **redeploy** — they are not runtime-toggleable.
 
+### Enabled Views
+
+| Variable | Values | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_ENABLED_VIEWS` | Comma-separated: `gamified`, `chat`, `developer`, `voice` | (unset = ALL on) | Which views are available beyond Classic. Classic is ALWAYS on (non-disableable — SSG/crawler/no-JS default). If unset, all views are enabled. If set to empty string, Classic-only. |
+
+**Examples:**
+- `NEXT_PUBLIC_ENABLED_VIEWS=gamified,chat,developer,voice` — all on (same as default)
+- `NEXT_PUBLIC_ENABLED_VIEWS=chat,voice` — only Chat + Voice; Play + Dev hidden
+- `NEXT_PUBLIC_ENABLED_VIEWS=` — Classic only
+
 ### Anvil Header Orb — Placement & Kill-Switch
 
 | Variable | Values | Default | Description |

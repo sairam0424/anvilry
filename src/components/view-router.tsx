@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useView } from "@/components/view-context";
+import { isViewEnabled } from "@/lib/enabled-views";
 
 /**
  * Swaps the top-level experience based on the active view.
@@ -50,19 +51,12 @@ export function ViewRouter({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* Chat — lazy, unmounts on exit. */}
-      {view === "chat" && <ChatView />}
-
-      {/* Gamified — lazy, unmounts on exit so the WebGL context disposes. */}
-      {view === "gamified" && <GameView />}
-
-      {/* Developer — lazy, unmounts on exit. The focused full-page terminal. */}
-      {view === "developer" && <DeveloperView />}
-
-      {/* Voice — the first-class "Anvil" two-way talk surface (5th switcher entry,
-          ?view=voice). Lazy + unmounts on exit, which tears the voice session down
-          (mic + speech). Closing returns to Classic. */}
-      {view === "voice" && <AnvilView onClose={() => setView("classic")} />}
+      {/* Each optional view is gated by the build-time NEXT_PUBLIC_ENABLED_VIEWS flag.
+          If disabled, navigating to ?view=X stays on Classic (hidden=false above). */}
+      {view === "chat" && isViewEnabled("chat") && <ChatView />}
+      {view === "gamified" && isViewEnabled("gamified") && <GameView />}
+      {view === "developer" && isViewEnabled("developer") && <DeveloperView />}
+      {view === "voice" && isViewEnabled("voice") && <AnvilView onClose={() => setView("classic")} />}
     </div>
   );
 }

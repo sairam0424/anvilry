@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { useVoiceSession, toCaptionText } from "@/components/chat/use-voice-session";
-import { useVoiceLevel } from "@/components/chat/use-voice-level";
-import { VoiceOrb } from "@/components/chat/voice-orb";
+import { useVoiceSession } from "@/components/chat/use-voice-session";
+import { MarkdownMessage } from "@/components/chat/markdown-message";
 import {
   useCoreVoiceOpen,
   setCoreVoiceOpen,
@@ -35,7 +34,6 @@ export function AnvilCoreSurface() {
   const panelRef = useRef<HTMLDivElement>(null);
   const { supported, active, state, messages, isStreaming, start, stop } =
     useVoiceSession();
-  const level = useVoiceLevel(state);
 
   // Auto-start on open (the orb tap is the gesture).
   const autoStarted = useRef(false);
@@ -88,28 +86,25 @@ export function AnvilCoreSurface() {
     else orb.removeAttribute("aria-controls");
   }, [open]);
 
-  // Anchor to the orb's right edge (measured on open, updated on resize).
-  const rightRef = useRef(16);
+  // Anchor DIRECTLY below the orb button (Siri-style, attached to trigger).
+  const posRef = useRef({ top: 64, right: 16 });
   useEffect(() => {
     if (!open) return;
     const orb = getCoreVoiceOpener();
     if (!orb) return;
-    const update = () => {
-      const r = orb.getBoundingClientRect();
-      rightRef.current = Math.max(12, Math.round(window.innerWidth - r.right));
-      panelRef.current?.style.setProperty("right", `${rightRef.current}px`);
+    const r = orb.getBoundingClientRect();
+    posRef.current = {
+      top: Math.round(r.bottom + 8),
+      right: Math.max(8, Math.round(window.innerWidth - r.right)),
     };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
   }, [open]);
 
   if (!open) return null;
 
-  // The last assistant answer (answer-only, no "You said").
+  // The last assistant answer (raw content for markdown rendering, answer-only).
   const lastAnswer = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return toCaptionText(messages[i].content);
+      if (messages[i].role === "assistant") return messages[i].content;
     }
     return "";
   })();
@@ -127,17 +122,18 @@ export function AnvilCoreSurface() {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
-      style={{ transformOrigin: "top right", right: rightRef.current }}
-      className="fixed top-16 z-50 flex flex-col items-center gap-3 p-4"
+      style={{ transformOrigin: "top right", top: posRef.current.top, right: posRef.current.right }}
+      className="fixed z-50 flex flex-col items-center gap-2 p-3"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : ""}
       </div>
 
-      {/* The enlarged reactive orb — state conveyed by animation alone. */}
+      {/* Compact orb — the SAME fluid CSS metaball as the header orb, just larger.
+          Visually identical/consistent. No WebGL needed for this compact popup. */}
       <div className="relative" aria-hidden="true">
-        <VoiceOrb level={level} state={state} size={200} />
+        <span className="anvil-orb-idle block h-16 w-16 rounded-full" />
       </div>
 
       {/* Mic-hot trust cue — a tiny pulsing dot when listening, muted when paused. */}
@@ -158,18 +154,18 @@ export function AnvilCoreSurface() {
 
       {/* Minimal frosted result card — answer only, no "You said", scrollable. */}
       {lastAnswer && (
-        <div className="w-[min(88vw,22rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
-          <p
-            className="max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed text-fg"
+        <div className="w-[min(80vw,16rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+          <div
+            className="prose-portfolio max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed"
             style={{ maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)" }}
           >
-            {lastAnswer}
-          </p>
+            <MarkdownMessage text={lastAnswer} />
+          </div>
         </div>
       )}
       {/* Streaming shimmer while waiting for the answer. */}
       {(thinking || isStreaming) && !lastAnswer && (
-        <div className="w-[min(88vw,22rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+        <div className="w-[min(80vw,16rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
           <div className="h-4 w-3/4 animate-pulse rounded bg-fg-subtle/20" />
         </div>
       )}

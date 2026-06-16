@@ -159,16 +159,87 @@ export function isFallbackEligible(err: unknown): boolean {
 // import it without the Bedrock SDK); re-exported here for existing server callers.
 export { TRACE_DELIMITER };
 
+/**
+ * Per-attempt usage block captured from the streamed events. Snake-case fields
+ * mirror the Anthropic SDK shape exactly (the Bedrock Converse API uses camelCase
+ * — Anvilry uses the SDK, NOT raw Converse, so snake_case is correct here). A
+ * future SDK swap that returns camelCase fields would silently zero this out;
+ * the fixture test in llm.test.ts pins the snake_case names so that regression
+ * is caught at build time, not in production after a $200 Polly bill.
+ */
+export type LlmUsage = {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+};
+
+/** Per-attempt span surfaced via the onAttempt callback. One emission per model
+ *  in the fallback chain — success OR error. The chat route passes onAttempt to
+ *  emit() a structured llm.attempt event for the dashboard's cache-hit-rate +
+ *  fallback-dynamics tiles. */
+export type LlmAttempt = {
+  model: string;
+  attempt_index: number;
+  fell_back: boolean;
+  /** Time from the first byte of the request to the first content_block_delta event,
+   *  in ms. Undefined if the attempt errored before any delta arrived. */
+  ttft_ms?: number;
+  /** Total wall-clock from attempt start to attempt resolution (success or error). */
+  latency_ms: number;
+  /** Bedrock-side reason (end_turn / max_tokens / stop_sequence / tool_use / error). */
+  finish_reason?: string;
+  usage?: LlmUsage;
+  error?: { name: string; message: string; status?: number };
+};
+
 export function streamWithFallback(
   params: Omit<Anthropic.MessageStreamParams, "model">,
-  opts?: { onError?: (err: unknown, model: string) => void },
+  opts?: {
+    onError?: (err: unknown, model: string) => void;
+    /** Per-attempt span callback — fires once per model in the fallback chain
+     *  (success or error). Use this in the chat route to emit() llm.attempt
+     *  telemetry events. Synchronous + non-throwing by contract; any throw is
+     *  swallowed to preserve the stream. */
+    onAttempt?: (attempt: LlmAttempt) => void;
+    /** Optional traceId threaded into the trace frame so the client can correlate
+     *  the streamed answer with the server-side llm.attempt events. */
+    traceId?: string;
+  },
 ): ReadableStream<Uint8Array> {
   const chain = modelChain();
   const encoder = new TextEncoder();
   // Derive the contact from the single source so the failure path can't go stale.
   const apologyTail = `\n\n[Sorry — something went wrong. Please email ${profile.email}.]`;
-  const traceFrame = (model: string, index: number) =>
-    encoder.encode(`${TRACE_DELIMITER}${JSON.stringify({ model, fellBack: index > 0 })}`);
+  // Trace frame extends the v1.6 {model, fellBack} shape with v1.8 fields. The
+  // shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and
+  // spreads into ChatMessage, so unknown keys are silently kept. Existing
+  // llm-trace.test.ts only pins the U+001E delimiter character, which is unchanged.
+  const traceFrame = (
+    model: string,
+    index: number,
+    extra: { usage?: LlmUsage; ttft_ms?: number; latency_ms?: number },
+  ) =>
+    encoder.encode(
+      `${TRACE_DELIMITER}${JSON.stringify({
+        model,
+        fellBack: index > 0,
+        ...(opts?.traceId ? { traceId: opts.traceId } : {}),
+        ...(extra.usage ? { usage: extra.usage } : {}),
+        ...(extra.ttft_ms != null ? { ttftMs: extra.ttft_ms } : {}),
+        ...(extra.latency_ms != null ? { latencyMs: extra.latency_ms } : {}),
+      })}`,
+    );
+
+  // Best-effort callback runner — onAttempt is observability, never let it
+  // affect the user-facing stream.
+  const safeOnAttempt = (attempt: LlmAttempt) => {
+    try {
+      opts?.onAttempt?.(attempt);
+    } catch {
+      /* swallow — telemetry must never break the chat */
+    }
+  };
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -189,6 +260,16 @@ export function streamWithFallback(
         client = makeClient();
       } catch (err) {
         opts?.onError?.(err, "client-init");
+        safeOnAttempt({
+          model: "client-init",
+          attempt_index: -1,
+          fell_back: false,
+          latency_ms: 0,
+          error: {
+            name: (err as Error)?.name ?? "Error",
+            message: (err as Error)?.message ?? String(err),
+          },
+        });
         controller.enqueue(encoder.encode(apologyTail.replace(/^\n\n/, "")));
         close();
         return;
@@ -196,21 +277,91 @@ export function streamWithFallback(
 
       for (let i = 0; i < chain.length; i++) {
         const model = chain[i];
+        const attemptStart = Date.now();
+        // Per-attempt usage accumulator. message_start carries input_tokens +
+        // cache_creation/read_input_tokens; message_delta carries output_tokens.
+        // Start undefined so the trace frame omits the key when the SDK doesn't
+        // emit a usage block (defensive against future event-shape changes).
+        let usage: LlmUsage | undefined;
+        let ttftMs: number | undefined;
+        let finishReason: string | undefined;
         const stream = client.messages.stream({ ...params, model });
         try {
           for await (const event of stream) {
+            // message_start carries the initial usage block: input_tokens (the
+            // non-cached prompt tokens charged at full rate) + cache_creation +
+            // cache_read input tokens. THIS is where prompt-cache verification
+            // lives — until v1.8 these were silently dropped.
+            if (event.type === "message_start") {
+              const u = (event.message as { usage?: LlmUsage } | undefined)?.usage;
+              if (u) {
+                usage = {
+                  ...(u.input_tokens != null ? { input_tokens: u.input_tokens } : {}),
+                  ...(u.cache_creation_input_tokens != null
+                    ? { cache_creation_input_tokens: u.cache_creation_input_tokens }
+                    : {}),
+                  ...(u.cache_read_input_tokens != null
+                    ? { cache_read_input_tokens: u.cache_read_input_tokens }
+                    : {}),
+                };
+              }
+              continue;
+            }
+            // message_delta carries output_tokens (incremented as the model
+            // emits) + the final stop_reason on the closing event.
+            if (event.type === "message_delta") {
+              const u = (event as { usage?: { output_tokens?: number } }).usage;
+              if (u?.output_tokens != null) {
+                usage = { ...(usage ?? {}), output_tokens: u.output_tokens };
+              }
+              const sr = (event as { delta?: { stop_reason?: string } }).delta?.stop_reason;
+              if (sr) finishReason = sr;
+              continue;
+            }
             if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+              if (ttftMs == null) ttftMs = Date.now() - attemptStart;
               controller.enqueue(encoder.encode(event.delta.text));
               emittedAny = true;
+              continue;
             }
+            // message_stop, content_block_start, content_block_stop — ignored;
+            // their payloads are already covered by message_delta + the byte stream.
           }
+          const latencyMs = Date.now() - attemptStart;
+          safeOnAttempt({
+            model,
+            attempt_index: i,
+            fell_back: i > 0,
+            ttft_ms: ttftMs,
+            latency_ms: latencyMs,
+            finish_reason: finishReason,
+            usage,
+          });
           // Clean finish — append the honest trace frame (which model served the bytes,
-          // and whether a fallback fired). Only on a real answer (emittedAny).
-          if (emittedAny) controller.enqueue(traceFrame(model, i));
+          // whether a fallback fired, and the v1.8 usage + ttft + latency telemetry).
+          // Only on a real answer (emittedAny) — preserves the v1.6 invariant that the
+          // trace frame can't materialize on a zero-byte attempt.
+          if (emittedAny)
+            controller.enqueue(traceFrame(model, i, { usage, ttft_ms: ttftMs, latency_ms: latencyMs }));
           close();
           return;
         } catch (err) {
+          const latencyMs = Date.now() - attemptStart;
           opts?.onError?.(err, model);
+          safeOnAttempt({
+            model,
+            attempt_index: i,
+            fell_back: i > 0,
+            ttft_ms: ttftMs,
+            latency_ms: latencyMs,
+            finish_reason: finishReason,
+            usage,
+            error: {
+              name: (err as Error)?.name ?? "Error",
+              message: (err as Error)?.message ?? String(err),
+              status: (err as { status?: number })?.status,
+            },
+          });
           const isLast = i === chain.length - 1;
           if (emittedAny || isLast || !isFallbackEligible(err)) {
             controller.enqueue(encoder.encode(apologyTail));

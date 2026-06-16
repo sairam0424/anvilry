@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { useVoiceSession } from "@/components/chat/use-voice-session";
 import { MarkdownMessage } from "@/components/chat/markdown-message";
-import { useVoiceLevel } from "@/components/chat/use-voice-level";
-import { VoiceOrb } from "@/components/chat/voice-orb";
 import {
   useCoreVoiceOpen,
   setCoreVoiceOpen,
@@ -36,7 +34,6 @@ export function AnvilCoreSurface() {
   const panelRef = useRef<HTMLDivElement>(null);
   const { supported, active, state, messages, isStreaming, start, stop } =
     useVoiceSession();
-  const level = useVoiceLevel(state);
 
   // Auto-start on open (the orb tap is the gesture).
   const autoStarted = useRef(false);
@@ -133,10 +130,10 @@ export function AnvilCoreSurface() {
         {listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : ""}
       </div>
 
-      {/* Compact reactive orb — just slightly larger than the header orb, directly
-          attached. State conveyed by animation alone. */}
+      {/* Compact orb — the SAME fluid CSS metaball as the header orb, just larger.
+          Visually identical/consistent. No WebGL needed for this compact popup. */}
       <div className="relative" aria-hidden="true">
-        <VoiceOrb level={level} state={state} size={80} />
+        <span className="anvil-orb-idle block h-16 w-16 rounded-full" />
       </div>
 
       {/* Mic-hot trust cue — a tiny pulsing dot when listening, muted when paused. */}

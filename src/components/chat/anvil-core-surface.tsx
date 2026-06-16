@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { motion } from "motion/react";
-import { useVoiceSession, toCaptionText } from "@/components/chat/use-voice-session";
+import { useVoiceSession } from "@/components/chat/use-voice-session";
+import { MarkdownMessage } from "@/components/chat/markdown-message";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
 import {
@@ -88,16 +89,15 @@ export function AnvilCoreSurface() {
     else orb.removeAttribute("aria-controls");
   }, [open]);
 
-  // Anchor to the orb's right edge (measured on open, updated on resize).
-  const rightRef = useRef(16);
+  // Anchor to the LEFT gutter (opposite the orb — where there's empty space on Classic).
+  const leftRef = useRef(16);
   useEffect(() => {
     if (!open) return;
-    const orb = getCoreVoiceOpener();
-    if (!orb) return;
     const update = () => {
-      const r = orb.getBoundingClientRect();
-      rightRef.current = Math.max(12, Math.round(window.innerWidth - r.right));
-      panelRef.current?.style.setProperty("right", `${rightRef.current}px`);
+      const vw = window.innerWidth;
+      const gutterLeft = vw > 1024 ? Math.round((vw - 1024) / 2 + 24) : 24;
+      leftRef.current = Math.max(16, gutterLeft);
+      panelRef.current?.style.setProperty("left", `${leftRef.current}px`);
     };
     update();
     window.addEventListener("resize", update);
@@ -106,10 +106,10 @@ export function AnvilCoreSurface() {
 
   if (!open) return null;
 
-  // The last assistant answer (answer-only, no "You said").
+  // The last assistant answer (raw content for markdown rendering, answer-only).
   const lastAnswer = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return toCaptionText(messages[i].content);
+      if (messages[i].role === "assistant") return messages[i].content;
     }
     return "";
   })();
@@ -127,7 +127,7 @@ export function AnvilCoreSurface() {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
-      style={{ transformOrigin: "top right", right: rightRef.current }}
+      style={{ transformOrigin: "top left", left: leftRef.current }}
       className="fixed top-16 z-50 flex flex-col items-center gap-3 p-4"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}
@@ -158,18 +158,18 @@ export function AnvilCoreSurface() {
 
       {/* Minimal frosted result card — answer only, no "You said", scrollable. */}
       {lastAnswer && (
-        <div className="w-[min(88vw,22rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
-          <p
-            className="max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed text-fg"
+        <div className="w-[min(88vw,20rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+          <div
+            className="prose-portfolio max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed"
             style={{ maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)" }}
           >
-            {lastAnswer}
-          </p>
+            <MarkdownMessage text={lastAnswer} />
+          </div>
         </div>
       )}
       {/* Streaming shimmer while waiting for the answer. */}
       {(thinking || isStreaming) && !lastAnswer && (
-        <div className="w-[min(88vw,22rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+        <div className="w-[min(88vw,20rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
           <div className="h-4 w-3/4 animate-pulse rounded bg-fg-subtle/20" />
         </div>
       )}

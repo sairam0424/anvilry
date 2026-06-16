@@ -37,18 +37,17 @@ const PANEL_ID = "anvil-inline-panel";
 export function AnvilInlinePanel() {
   const open = useInlineVoiceOpen();
   const panelRef = useRef<HTMLDivElement>(null);
-  // Anchor the panel's RIGHT edge to the orb's right edge (so it hangs directly below
-  // the orb), clamped to a 12px viewport margin. Measured from the real orb rect on
-  // open — robust where a Tailwind arbitrary calc(100vw…) would be fragile. Falls back
-  // to 16px (right-4) if the orb rect isn't available.
-  const [rightPx, setRightPx] = useState<number | null>(null);
+  // Anchor the panel to the LEFT gutter (where there's empty space on the Classic hero),
+  // smaller than before. Clamped to a 16px margin. The orb is on the right, but the panel
+  // opens on the opposite side to avoid overlapping the hero content.
+  const [leftPx, setLeftPx] = useState<number | null>(null);
   useEffect(() => {
     if (!open) return;
-    const orb = getInlineVoiceOpener();
-    if (!orb) return;
     const update = () => {
-      const r = orb.getBoundingClientRect();
-      setRightPx(Math.max(12, Math.round(window.innerWidth - r.right)));
+      // Left gutter = the max-w-5xl (64rem=1024px) container's left edge + px-6 padding.
+      const vw = window.innerWidth;
+      const gutterLeft = vw > 1024 ? Math.round((vw - 1024) / 2 + 24) : 24;
+      setLeftPx(Math.max(16, gutterLeft));
     };
     update();
     window.addEventListener("resize", update);
@@ -118,11 +117,10 @@ export function AnvilInlinePanel() {
       initial={{ opacity: 0, scale: 0.6, y: -8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 460, damping: 34, mass: 0.7 }}
-      // transform-origin top-right = "blooms from the orb"; right edge anchored to the
-      // orb's measured right edge (rightPx), so the panel hangs directly under it.
+      // Anchored LEFT (where there's empty space on Classic), smaller than before.
       // position:fixed floats over content WITHOUT an overlay (non-modal).
-      style={{ transformOrigin: "top right", right: rightPx ?? 16 }}
-      className="fixed top-16 z-50 w-[min(92vw,24rem)] overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
+      style={{ transformOrigin: "top left", left: leftPx ?? 16 }}
+      className="fixed top-16 z-50 w-[min(88vw,20rem)] overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
     >
       {/* autoStart: the orb click that opened this panel IS the user gesture, so the mic
           opens immediately (Siri "tap = talk"). Safe now that the P2 one-mic mutex

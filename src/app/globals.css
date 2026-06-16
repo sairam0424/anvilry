@@ -100,79 +100,81 @@ html {
   .terminal-boot { animation: none; }
 }
 
-/* Anvil header-orb idle — a "beast" Siri-style orb: a multi-hued fluid blob that slowly
-   shimmers + breathes. PURE CSS, ZERO JS/rAF/WebGL/main-thread work. The transform
-   keyframes (breathe + lobe drift) are compositor-only; the animated hue-rotate filter +
-   the blurred screen-blended lobes are a SMALL CONSTANT GPU raster cost (off the main
-   thread) — negligible for a 28px element and not on the LCP element, so it doesn't
-   threaten LCP/INP (the heavy 3D orb still only runs inside the open voice surface).
-   Reduced-motion → a static (but still rich, layered) orb. The blend + blur are confined
-   to this isolated wrapper to avoid the Safari backdrop-blur repaint glitch (the header
-   has backdrop-blur-md). */
+/* Anvil header-orb idle — a FLUID, swirling, color-shifting Siri-style orb. The "metaball
+   by blur+contrast" recipe: several conic-gradient color lobes painted on one pseudo, then
+   fused by `filter: blur() contrast()` so they bleed + merge into liquid blobs (the contrast
+   re-sharpens the blurred edges into rounded metaballs), with the conic `from` angle spun by
+   a registered @property for the swirl, and a slow hue-rotate for the color shift — all in
+   ONE filter chain (filter is a single property). PURE CSS, ZERO JS/rAF/WebGL/new-dep. COST:
+   animating a @property angle is a per-frame MAIN-THREAD style-recalc + paint of the small
+   ~38px pseudo (custom-property animation is NOT compositor-promoted) — negligible at this
+   size and never the LCP element, but do NOT scale this recipe up while animated. The heavy
+   3D orb only mounts inside the open voice surface. NOTE: NO mix-blend-mode — the conic
+   layers self-fuse via overlap+contrast, which also sidesteps the WebKit backdrop-filter +
+   descendant-blend glitch (bug 176830) under the header's backdrop-blur. isolation +
+   overflow:hidden + translateZ(0) keep it on its own layer. Reduced-motion → a STATIC but
+   still rich/fused orb (keeps blur+contrast — never `filter:none`, which would shatter the
+   metaballs into hard arcs). Pre-Baseline browsers (Safari <16.4) ignore @property → the
+   conic `from` is unset and the orb degrades to the solid `--accent-strong` disc + glow (a
+   fine fallback, not the fused metaball). blur is tuned for the real 28px host, not a preview. */
 
-/* @property lets the hue ANIMATE (a plain custom prop can't be tweened). Pre-Baseline
-   browsers ignore the at-rule and fall back to the static layered gradient — no JS branch. */
+@property --anvil-swirl {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 40deg;
+}
 @property --anvil-hue {
   syntax: "<angle>";
   inherits: false;
   initial-value: 0deg;
 }
 
+@keyframes anvil-swirl-spin { to { --anvil-swirl: 400deg; } }
 @keyframes anvil-hue-drift { to { --anvil-hue: 360deg; } }
 @keyframes anvil-breathe {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); }
 }
-/* Two lobes drift on de-synced paths for the fluid "two blobs orbiting" Siri feel. */
-@keyframes anvil-lobe-a {
-  0%, 100% { transform: translate(-12%, -8%) scale(1); }
-  50% { transform: translate(14%, 10%) scale(1.25); }
-}
-@keyframes anvil-lobe-b {
-  0%, 100% { transform: translate(12%, 10%) scale(1.1); }
-  50% { transform: translate(-10%, -12%) scale(0.85); }
-}
 
 .anvil-orb-idle {
   position: relative;
-  isolation: isolate;          /* confine the mix-blend + blur to this stacking context */
-  overflow: hidden;            /* clip the oversized drifting lobes to the orb circle */
-  /* The core: a hue-rotating radial wash (the @property angle feeds hue-rotate). */
-  background:
-    radial-gradient(circle at 38% 32%, color-mix(in oklab, var(--accent) 92%, white) 0%, var(--accent) 46%, var(--accent-strong) 100%);
-  filter: hue-rotate(var(--anvil-hue));
+  isolation: isolate;          /* own stacking context (keeps the fuse off the header backdrop) */
+  overflow: hidden;            /* clip the fused blobs to the orb circle */
+  border-radius: 9999px;
+  background: var(--accent-strong); /* base wash behind the metaballs */
   box-shadow: 0 0 12px -2px color-mix(in oklab, var(--accent) 65%, transparent);
-  animation:
-    anvil-breathe 3.6s ease-in-out infinite,
-    anvil-hue-drift 16s linear infinite;
+  animation: anvil-breathe 3.6s ease-in-out infinite;
 }
-/* Lobe A — violet, screen-blended so it glows where it overlaps the cyan core. */
-.anvil-orb-idle::before,
-.anvil-orb-idle::after {
+/* The fluid layer: 4 conic color lobes at distinct off-center origins + signed swirl
+   multipliers, fused by blur+contrast into liquid metaballs, hue-rotated for the shift. */
+.anvil-orb-idle::before {
   content: "";
   position: absolute;
-  inset: -30%;
-  border-radius: 50%;
-  mix-blend-mode: screen;
-  filter: blur(4px);
-  z-index: -1;
-}
-.anvil-orb-idle::before {
-  background: radial-gradient(circle, color-mix(in oklab, var(--violet, #a78bfa) 85%, transparent) 0%, transparent 60%);
-  animation: anvil-lobe-a 5.2s ease-in-out infinite;
-}
-.anvil-orb-idle::after {
-  background: radial-gradient(circle, color-mix(in oklab, var(--accent) 80%, white) 0%, transparent 58%);
-  animation: anvil-lobe-b 6.8s ease-in-out infinite;
+  inset: -25%;
+  border-radius: 9999px;
+  transform: translateZ(0);    /* promote to its own layer (Safari backdrop-root guard) */
+  background:
+    conic-gradient(from calc(var(--anvil-swirl) * 2)  at 32% 38%, var(--accent) 0deg, transparent 110deg),
+    conic-gradient(from calc(var(--anvil-swirl) * -3) at 68% 36%, var(--violet, #a78bfa) 0deg, transparent 120deg),
+    conic-gradient(from calc(var(--anvil-swirl) * 1)  at 40% 70%, color-mix(in oklab, var(--accent) 80%, white) 0deg, transparent 100deg),
+    conic-gradient(from calc(var(--anvil-swirl) * -2) at 64% 66%, var(--accent-strong) 0deg, transparent 130deg);
+  /* blur tuned for the REAL 28px host (~1.4px ≈ 5% of diameter) — fuses the lobes without
+     washing them into a uniform smear; contrast re-sharpens into rounded metaballs. */
+  filter: blur(1.4px) contrast(4.5) hue-rotate(var(--anvil-hue));
+  animation:
+    anvil-swirl-spin 18s linear infinite,
+    anvil-hue-drift 22s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .anvil-orb-idle,
-  .anvil-orb-idle::before,
-  .anvil-orb-idle::after {
+  .anvil-orb-idle::before {
     animation: none;
   }
-  /* Static but still layered/rich — never reverts to the flat dot. */
-  .anvil-orb-idle { filter: none; }
+  /* Keep the fused metaballs (static): freeze the swirl at its balanced initial angle and
+     KEEP blur+contrast (a one-time raster, free) + a fixed hue — never `filter: none`. */
+  .anvil-orb-idle::before {
+    filter: blur(1.4px) contrast(4.5) hue-rotate(0deg);
+  }
 }
 
 body {

@@ -8,6 +8,10 @@ import {
   __resetCacheForTest,
   type PollyTier,
 } from "./cache";
+import {
+  resolvePollyParams,
+  validateVoiceForEngine,
+} from "@/lib/voice-catalog";
 
 /**
  * The /api/tts cache is voice-keyed by design. The original v1.6 cache keyed only on
@@ -112,5 +116,48 @@ describe("ALLOWED_TIERS gate", () => {
   it("matches the PollyTier type at the type level", () => {
     const t: PollyTier = "neural";
     expect(ALLOWED_TIERS.has(t)).toBe(true);
+  });
+});
+
+describe("catalog-integrated cache flow (Phase 2.1)", () => {
+  it("end-to-end: validate -> resolve -> cache key for Joanna (default v1.6 path)", () => {
+    expect(validateVoiceForEngine("polly-neural-joanna", "polly")).toBe(true);
+    const r = resolvePollyParams("polly-neural-joanna");
+    expect(r).toEqual({ pollyVoiceId: "Joanna", tier: "neural" });
+    const k = cacheKey("Hello.", r!.pollyVoiceId, r!.tier);
+    cacheSet(k, Buffer.from("audio-joanna"));
+    expect(cacheGet(k)).toEqual(Buffer.from("audio-joanna"));
+  });
+
+  it("end-to-end: validate -> resolve -> cache key for Stephen (Generative)", () => {
+    expect(validateVoiceForEngine("polly-generative-stephen", "polly")).toBe(true);
+    const r = resolvePollyParams("polly-generative-stephen");
+    expect(r).toEqual({ pollyVoiceId: "Stephen", tier: "generative" });
+    const k = cacheKey("Hello.", r!.pollyVoiceId, r!.tier);
+    cacheSet(k, Buffer.from("audio-stephen"));
+    expect(cacheGet(k)).toEqual(Buffer.from("audio-stephen"));
+  });
+
+  it("Joanna and Stephen audio for the same text are cached under DISTINCT keys (no collision)", () => {
+    const text = "Same text, different voice.";
+    const joanna = resolvePollyParams("polly-neural-joanna")!;
+    const stephen = resolvePollyParams("polly-generative-stephen")!;
+    const kJ = cacheKey(text, joanna.pollyVoiceId, joanna.tier);
+    const kS = cacheKey(text, stephen.pollyVoiceId, stephen.tier);
+    expect(kJ).not.toBe(kS);
+    cacheSet(kJ, Buffer.from("J"));
+    cacheSet(kS, Buffer.from("S"));
+    expect(cacheGet(kJ)).toEqual(Buffer.from("J"));
+    expect(cacheGet(kS)).toEqual(Buffer.from("S"));
+  });
+
+  it("rejects a Google catalog id on the Polly engine (cross-engine attack)", () => {
+    expect(validateVoiceForEngine("google-chirp3-aoede", "polly")).toBe(false);
+    expect(resolvePollyParams("google-chirp3-aoede")).toBeUndefined();
+  });
+
+  it("rejects an unknown catalog id", () => {
+    expect(validateVoiceForEngine("does-not-exist", "polly")).toBe(false);
+    expect(resolvePollyParams("does-not-exist")).toBeUndefined();
   });
 });

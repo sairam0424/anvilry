@@ -2,12 +2,11 @@ import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/cli
 import { bedrockCreds } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
-  ALLOWED_TIERS,
-  cacheGet,
-  cacheKey,
-  cacheSet,
-  type PollyTier,
-} from "./cache";
+  getDefaultVoiceId,
+  resolvePollyParams,
+  validateVoiceForEngine,
+} from "@/lib/voice-catalog";
+import { cacheGet, cacheKey, cacheSet } from "./cache";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -29,9 +28,12 @@ export const maxDuration = 15;
  */
 
 const MAX_CHARS = 600;
-const DEFAULT_VOICE_ID = "Joanna"; // a clear US-English neural voice (the historical default)
-const DEFAULT_TIER: PollyTier = "neural";
 const REGION_FALLBACK = "us-east-1";
+
+// The catalog default ("polly-neural-joanna") is what an unspecified body resolves
+// to — preserves v1.6 behavior exactly. resolvePollyParams() unwraps this to the
+// AWS-native VoiceId + tier the SynthesizeSpeechCommand actually expects.
+const DEFAULT_CATALOG_ID = getDefaultVoiceId();
 
 function isConfigured(): boolean {
   const { accessKeyId, secretAccessKey } = bedrockCreds();
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Request too large." }, { status: 413 });
   }
 
-  let body: { text?: unknown; voiceId?: unknown; tier?: unknown };
+  let body: { text?: unknown; voiceId?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -83,19 +85,31 @@ export async function POST(req: Request) {
   const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
   if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
 
-  // Optional voiceId + tier with conservative defaults that preserve the v1.6 behavior
-  // (Joanna/Neural). Phase 2.1 adds catalog-allowlist validation; for now we only assert
-  // the tier is a known value so an unknown value can't slip through to Polly's API.
-  const voiceId =
+  // The body's voiceId is a catalog id (e.g. "polly-neural-joanna"). The catalog is
+  // the source of truth for which Polly voices we expose AND which tier each voice
+  // runs on — so we don't accept a separate `tier` field; mismatches (Joanna +
+  // generative would 5xx at AWS) are impossible by construction. An unknown id
+  // rejects with 400 instead of silently falling back, so a typo in client code
+  // surfaces immediately rather than masquerading as Joanna.
+  const requestedVoiceId =
     typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
       ? body.voiceId
-      : DEFAULT_VOICE_ID;
-  const tier: PollyTier =
-    typeof body.tier === "string" && ALLOWED_TIERS.has(body.tier as PollyTier)
-      ? (body.tier as PollyTier)
-      : DEFAULT_TIER;
+      : DEFAULT_CATALOG_ID;
 
-  const key = cacheKey(text, voiceId, tier);
+  if (!validateVoiceForEngine(requestedVoiceId, "polly")) {
+    return Response.json(
+      { error: "Unknown voice for this engine." },
+      { status: 400 },
+    );
+  }
+
+  const polly = resolvePollyParams(requestedVoiceId);
+  // validateVoiceForEngine already guarantees this — narrow for TS.
+  if (!polly) {
+    return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+  }
+
+  const key = cacheKey(text, polly.pollyVoiceId, polly.tier);
   const cached = cacheGet(key);
   if (cached) {
     return new Response(new Uint8Array(cached), {
@@ -108,11 +122,11 @@ export async function POST(req: Request) {
       new SynthesizeSpeechCommand({
         Text: text,
         OutputFormat: "mp3",
-        // Cast: voiceId is validated against the catalog allowlist in Phase 2.1; the
-        // AWS SDK types it as a string-literal union of every Polly voice and won't
-        // accept a plain string. The runtime is identical either way.
-        VoiceId: voiceId as VoiceId,
-        Engine: tier,
+        // Cast: polly.pollyVoiceId comes from the validated catalog entry (a known
+        // AWS VoiceId). The SDK types it as a string-literal union and won't accept
+        // a plain string, but the runtime semantics are identical.
+        VoiceId: polly.pollyVoiceId as VoiceId,
+        Engine: polly.tier,
       }),
     );
     if (!out.AudioStream) {

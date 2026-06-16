@@ -37,14 +37,23 @@ const PANEL_ID = "anvil-inline-panel";
 export function AnvilInlinePanel() {
   const open = useInlineVoiceOpen();
   const panelRef = useRef<HTMLDivElement>(null);
-  // Anchor the panel to the RIGHT edge (the empty margin area), flush with the viewport
-  // edge + a small 16px gutter. Like Siri — expands near the trigger without overlapping
-  // the main hero content on the left.
-  const [rightPx, setRightPx] = useState<number | null>(null);
+  // Anchor the panel DIRECTLY below the orb button (like Siri — attached, not floating
+  // separately). Measured from the orb's bounding rect so it hangs from the trigger.
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   useEffect(() => {
     if (!open) return;
-    const update = () => setRightPx(16);
+    const orb = getInlineVoiceOpener();
+    if (!orb) return;
+    const update = () => {
+      const r = orb.getBoundingClientRect();
+      setPos({
+        top: Math.round(r.bottom + 8), // 8px gap below the orb
+        right: Math.max(8, Math.round(window.innerWidth - r.right)),
+      });
+    };
     update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, [open]);
 
   // One idempotent close path: end the session UI (TalkMode's End handles stop()), drop
@@ -110,10 +119,13 @@ export function AnvilInlinePanel() {
       initial={{ opacity: 0, scale: 0.6, y: -8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 460, damping: 34, mass: 0.7 }}
-      // Anchored RIGHT edge (the empty viewport margin), like Siri — doesn't overlap
-      // the hero content. position:fixed floats over content WITHOUT an overlay (non-modal).
-      style={{ transformOrigin: "top right", right: rightPx ?? 16 }}
-      className="fixed top-16 z-50 w-[min(88vw,20rem)] overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
+      // Directly below the orb (like Siri — attached to the trigger, not floating apart).
+      style={{
+        transformOrigin: "top right",
+        top: pos?.top ?? 64,
+        right: pos?.right ?? 16,
+      }}
+      className="fixed z-50 w-[min(85vw,18rem)] overflow-hidden rounded-xl border border-border-strong bg-bg-surface shadow-xl"
     >
       {/* autoStart: the orb click that opened this panel IS the user gesture, so the mic
           opens immediately (Siri "tap = talk"). Safe now that the P2 one-mic mutex

@@ -89,9 +89,18 @@ export function AnvilCoreSurface() {
     else orb.removeAttribute("aria-controls");
   }, [open]);
 
-  // Anchor to the RIGHT edge (empty viewport margin), like Siri — doesn't disturb the
-  // hero content. Fixed 16px from the right viewport edge.
-  const rightRef = useRef(16);
+  // Anchor DIRECTLY below the orb button (Siri-style, attached to trigger).
+  const posRef = useRef({ top: 64, right: 16 });
+  useEffect(() => {
+    if (!open) return;
+    const orb = getCoreVoiceOpener();
+    if (!orb) return;
+    const r = orb.getBoundingClientRect();
+    posRef.current = {
+      top: Math.round(r.bottom + 8),
+      right: Math.max(8, Math.round(window.innerWidth - r.right)),
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -116,17 +125,18 @@ export function AnvilCoreSurface() {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
-      style={{ transformOrigin: "top right", right: rightRef.current }}
-      className="fixed top-16 z-50 flex flex-col items-center gap-3 p-4"
+      style={{ transformOrigin: "top right", top: posRef.current.top, right: posRef.current.right }}
+      className="fixed z-50 flex flex-col items-center gap-2 p-3"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : ""}
       </div>
 
-      {/* The enlarged reactive orb — state conveyed by animation alone. */}
+      {/* Compact reactive orb — just slightly larger than the header orb, directly
+          attached. State conveyed by animation alone. */}
       <div className="relative" aria-hidden="true">
-        <VoiceOrb level={level} state={state} size={200} />
+        <VoiceOrb level={level} state={state} size={80} />
       </div>
 
       {/* Mic-hot trust cue — a tiny pulsing dot when listening, muted when paused. */}
@@ -147,7 +157,7 @@ export function AnvilCoreSurface() {
 
       {/* Minimal frosted result card — answer only, no "You said", scrollable. */}
       {lastAnswer && (
-        <div className="w-[min(88vw,20rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+        <div className="w-[min(80vw,16rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
           <div
             className="prose-portfolio max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed"
             style={{ maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)" }}
@@ -158,7 +168,7 @@ export function AnvilCoreSurface() {
       )}
       {/* Streaming shimmer while waiting for the answer. */}
       {(thinking || isStreaming) && !lastAnswer && (
-        <div className="w-[min(88vw,20rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
+        <div className="w-[min(80vw,16rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
           <div className="h-4 w-3/4 animate-pulse rounded bg-fg-subtle/20" />
         </div>
       )}

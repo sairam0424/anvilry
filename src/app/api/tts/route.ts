@@ -1,6 +1,13 @@
-import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { bedrockCreds } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  ALLOWED_TIERS,
+  cacheGet,
+  cacheKey,
+  cacheSet,
+  type PollyTier,
+} from "./cache";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -22,29 +29,9 @@ export const maxDuration = 15;
  */
 
 const MAX_CHARS = 600;
-const VOICE_ID = "Joanna"; // a clear US-English neural voice
+const DEFAULT_VOICE_ID = "Joanna"; // a clear US-English neural voice (the historical default)
+const DEFAULT_TIER: PollyTier = "neural";
 const REGION_FALLBACK = "us-east-1";
-
-// Tiny in-process LRU: hash-free (the key IS the text, capped) Map with FIFO eviction.
-// Per-instance only — good enough to dedupe a re-read of the same answer; not a CDN.
-const CACHE_MAX = 100;
-const cache = new Map<string, Buffer>();
-
-function cacheGet(key: string): Buffer | undefined {
-  const v = cache.get(key);
-  if (v) {
-    cache.delete(key);
-    cache.set(key, v); // bump to most-recently-used
-  }
-  return v;
-}
-function cacheSet(key: string, val: Buffer): void {
-  cache.set(key, val);
-  if (cache.size > CACHE_MAX) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
-  }
-}
 
 function isConfigured(): boolean {
   const { accessKeyId, secretAccessKey } = bedrockCreds();
@@ -86,7 +73,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Request too large." }, { status: 413 });
   }
 
-  let body: { text?: unknown };
+  let body: { text?: unknown; voiceId?: unknown; tier?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -96,7 +83,20 @@ export async function POST(req: Request) {
   const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
   if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
 
-  const cached = cacheGet(text);
+  // Optional voiceId + tier with conservative defaults that preserve the v1.6 behavior
+  // (Joanna/Neural). Phase 2.1 adds catalog-allowlist validation; for now we only assert
+  // the tier is a known value so an unknown value can't slip through to Polly's API.
+  const voiceId =
+    typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
+      ? body.voiceId
+      : DEFAULT_VOICE_ID;
+  const tier: PollyTier =
+    typeof body.tier === "string" && ALLOWED_TIERS.has(body.tier as PollyTier)
+      ? (body.tier as PollyTier)
+      : DEFAULT_TIER;
+
+  const key = cacheKey(text, voiceId, tier);
+  const cached = cacheGet(key);
   if (cached) {
     return new Response(new Uint8Array(cached), {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "hit" },
@@ -108,8 +108,11 @@ export async function POST(req: Request) {
       new SynthesizeSpeechCommand({
         Text: text,
         OutputFormat: "mp3",
-        VoiceId: VOICE_ID,
-        Engine: "neural",
+        // Cast: voiceId is validated against the catalog allowlist in Phase 2.1; the
+        // AWS SDK types it as a string-literal union of every Polly voice and won't
+        // accept a plain string. The runtime is identical either way.
+        VoiceId: voiceId as VoiceId,
+        Engine: tier,
       }),
     );
     if (!out.AudioStream) {
@@ -126,7 +129,7 @@ export async function POST(req: Request) {
       ),
     ]);
     const buf = Buffer.from(bytes);
-    cacheSet(text, buf);
+    cacheSet(key, buf);
     return new Response(new Uint8Array(buf), {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "miss" },
     });

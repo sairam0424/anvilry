@@ -151,8 +151,8 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
    - Home, `/projects`, `/about`, `/resume`, a case study (`/work/pensieve`), a project
      detail (`/projects/mindforge`) all render.
    - **Chatbot:** open "Ask my portfolio", ask *"What did you build at Ascendion?"* → it should
-     stream a grounded answer. (Verified locally end-to-end: Opus 4.6 answered in ~8s; the
-     Opus→Sonnet fallback also fires cleanly when the primary is unavailable.)
+     stream a grounded answer. (Verified locally end-to-end: Sonnet 4.6 answers in ~4s; the
+     Sonnet→Opus→Haiku fallback chain fires cleanly when the primary is unavailable.)
    - `anvilry.vercel.app/sitemap.xml`, `/robots.txt`, and the OG image (`/opengraph-image`) resolve.
    - **Four views:** the Classic · Play · Chat · Developer switcher works; `/?view=gamified` and
      `/?view=chat` still serve the full Classic HTML to crawlers (view swaps client-side), and
@@ -172,10 +172,11 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
   with `Connection error` (status=undefined) → the apology tail. `AWS_REGION` is a Vercel/Lambda
   RESERVED var; the fix is `BEDROCK_REGION` (read first in `src/lib/llm.ts`). If chat returns the
   apology in prod, check the resolved region first.
-- **Region lock:** the Opus 4.6 `-v1` profile must be enabled in the configured region. A wrong region or
-  un-enabled model surfaces as a 400 "model identifier is invalid" → the chain treats it as an
-  availability error and falls through to Sonnet (so the chatbot stays up even if Opus is
-  misconfigured — but check logs).
+- **Region lock:** each model's inference-profile must be enabled in the configured region. A wrong
+  region or un-enabled model surfaces as a 400 "model identifier is invalid" → the chain treats it
+  as an availability error and falls through to the next model (so the chatbot stays up even if a
+  model is misconfigured — but check logs). Sonnet 4.6 (primary) resolves with its bare id;
+  Opus 4.6 requires the `-v1` suffix.
 - **Secrets:** `.env.local` is git-ignored and is **local-dev only**. Production reads from
   Vercel env vars. Never commit real credentials.
 - **Rate limiter is optional but cost-protective:** without the `UPSTASH_*` vars it fails open

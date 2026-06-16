@@ -28,9 +28,20 @@ a first-class part of the site, sharing one grounded engine with the existing mo
   blurred lobes — no WebGL/rAF/main-thread work in the header); ≥44px hit area; STT-gated;
   hand-rolled non-modal a11y (aria-expanded, focus in/out, Esc + outside-click fully end
   the session, panel-scoped Space).
-- **One-mic mutex** — the modal, the in-place panel, and the Voice view each own a session/
-  mic, so a small arbiter guarantees exactly one is open at a time; the gamified WebGL
-  canvas unmounts while either voice overlay is open (one live GL context).
+- **Fluid Siri idle orb** — the header orb is now a genuinely swirling, color-shifting
+  metaball (layered animated conic-gradients fused by `blur()+contrast()+hue-rotate()`,
+  driven by two `@property <angle>` swirl/hue drifts). Pure CSS, no JS/rAF/WebGL;
+  reduced-motion → a static but still rich fused orb. Pre-Baseline degrades to a solid
+  accent disc.
+- **"Core" minimal Siri voice mode** (flag-selectable, `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE
+  =core`; default **classic** = the full panel, unchanged) — on orb click, shows ONLY the
+  enlarged reactive orb + a tiny listening dot + a frosted answer-only result card; no
+  panel chrome / caption track / controls / chips. Auto-listens immediately. Close fully
+  ends the session (Esc / outside-click / tap-orb). The classic full panel is KEPT under
+  the flag.
+- **One-mic mutex** — the modal, the in-place panel, the core surface, and the Voice view
+  each own a session/mic, so a small arbiter guarantees exactly one is open at a time;
+  the gamified WebGL canvas unmounts while any voice overlay is open (one live GL context).
 - **"Beast while speaking"** — the 3D orb surges (more turbulence, HDR heat, rim glow,
   spin) while the answer is spoken, eased in/out. Desktop + WebGL + motion only;
   reduced-motion keeps the calm orb.

@@ -42,6 +42,8 @@ import {
   getVoiceById,
 } from "@/lib/voice-catalog";
 import { VoicePicker } from "@/components/chat/voice-picker";
+import { VoiceSettingsDialog } from "@/components/chat/voice-settings-dialog";
+import { Settings } from "lucide-react";
 
 type Action = {
   id: string;
@@ -84,11 +86,11 @@ export function CommandPalette() {
   const { setView } = useView();
   const { settings, toggle, set } = useVoiceSettings();
   const triggerRef = useRef<HTMLButtonElement>(null);
-  // Voice picker dialog opens on "Pick voice…" (or any of the quick-swap
-  // commands when invoked from a context where the dialog is more useful — but
-  // by default the quick-swap commands set settings.voiceId directly without
-  // opening the dialog, since they're already a one-action choice).
+  // Voice picker dialog opens on "Pick voice…" (quick-swap commands set the
+  // voiceId directly without opening, since they're a one-action choice).
   const [voicePickerOpen, setVoicePickerOpen] = useState(false);
+  // Voice settings dialog (canonical full-config surface) opens on "Voice settings…".
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
   const currentVoiceId = settings.voiceId ?? getDefaultVoiceId();
   const currentVoiceName = getVoiceById(currentVoiceId)?.displayName ?? "Default";
   const wasOpen = useRef(false);
@@ -239,6 +241,18 @@ export function CommandPalette() {
             },
             keywords: "voice pick choose select stephen joanna ruth matthew aoede charon catalog",
             value: "Pick voice choose select stephen joanna ruth matthew aoede charon catalog",
+          },
+          {
+            id: "voice-settings",
+            label: "Voice settings…",
+            hint: "engine, character, toggles",
+            icon: <Settings size={16} />,
+            run: () => {
+              setOpen(false);
+              setVoiceSettingsOpen(true);
+            },
+            keywords: "voice settings preferences engine character speed tone pause toggles all-in-one",
+            value: "Voice settings preferences engine character speed tone pause toggles all-in-one",
           },
         ]
       : []),
@@ -490,6 +504,13 @@ export function CommandPalette() {
         onOpenChange={setVoicePickerOpen}
         currentVoiceId={currentVoiceId}
         onPick={(id) => set({ voiceId: id })}
+        getOpener={() => triggerRef.current}
+      />
+
+      {/* Canonical voice settings dialog — engine, character, toggles in one place. */}
+      <VoiceSettingsDialog
+        open={voiceSettingsOpen}
+        onOpenChange={setVoiceSettingsOpen}
         getOpener={() => triggerRef.current}
       />
     </>

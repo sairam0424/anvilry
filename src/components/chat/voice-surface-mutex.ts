@@ -20,7 +20,7 @@
  * exclusive by routing. This mutex governs the two OVERLAY surfaces (modal + inline).
  */
 
-export type VoiceSurfaceId = "modal" | "inline";
+export type VoiceSurfaceId = "modal" | "inline" | "core";
 
 const closers = new Map<VoiceSurfaceId, () => void>();
 

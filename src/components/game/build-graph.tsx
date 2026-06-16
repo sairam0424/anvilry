@@ -10,6 +10,7 @@ import { DossierCard } from "@/components/game/dossier-card";
 import { WebGLBoundary } from "@/components/game/webgl-boundary";
 import { useTalkModeOpen } from "@/components/chat/talk-overlay-store";
 import { useInlineVoiceOpen } from "@/components/chat/anvil-inline-store";
+import { useCoreVoiceOpen } from "@/components/chat/anvil-core-store";
 
 // Client-only, lazily loaded — Three.js never enters the critical path / SSR.
 const BuildGraphScene = dynamic(() => import("./build-graph-scene"), { ssr: false });
@@ -31,7 +32,7 @@ export function BuildGraph() {
   // change the active view, so they can open over the gamified view — unmount this scene
   // meanwhile so there's only ONE live context (avoids two concurrent GL contexts on
   // lower-end GPUs / the per-page context cap). Read BOTH stores until P2 unifies them.
-  const talkOpen = useTalkModeOpen() || useInlineVoiceOpen();
+  const talkOpen = useTalkModeOpen() || useInlineVoiceOpen() || useCoreVoiceOpen();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [webglFailed, setWebglFailed] = useState(false);
 

@@ -32,6 +32,29 @@ describe("voice-surface-mutex", () => {
     unregI();
   });
 
+  it("core surface claims close modal + inline (4-surface arbitration)", () => {
+    const closeModal = vi.fn();
+    const closeInline = vi.fn();
+    const closeCore = vi.fn();
+    const unregM = registerVoiceSurface("modal", closeModal);
+    const unregI = registerVoiceSurface("inline", closeInline);
+    const unregC = registerVoiceSurface("core", closeCore);
+
+    // Core claims → modal + inline must close; core must NOT.
+    claimVoiceSurface("core");
+    expect(closeModal).toHaveBeenCalledTimes(1);
+    expect(closeInline).toHaveBeenCalledTimes(1);
+    expect(closeCore).not.toHaveBeenCalled();
+
+    // Modal reclaims → core + inline must close.
+    claimVoiceSurface("modal");
+    expect(closeCore).toHaveBeenCalledTimes(1);
+    expect(closeInline).toHaveBeenCalledTimes(2);
+    expect(closeModal).toHaveBeenCalledTimes(1); // unchanged
+
+    unregM(); unregI(); unregC();
+  });
+
   it("unregister removes a surface from arbitration", () => {
     const closeModal = vi.fn();
     const unreg = registerVoiceSurface("modal", closeModal);

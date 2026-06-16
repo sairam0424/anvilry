@@ -1,6 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import { motion } from "motion/react";
 import { TalkMode } from "@/components/chat/talk-mode";
 
 /**
@@ -48,14 +49,26 @@ export function TalkModeOverlay({
               opener.focus();
             }
           }}
-          className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border-strong bg-bg-surface shadow-2xl focus:outline-none"
+          className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,32rem)] -translate-x-1/2 -translate-y-1/2 focus:outline-none"
         >
-          <Dialog.Title className="sr-only">Voice conversation</Dialog.Title>
-          <Dialog.Description className="sr-only">
-            Talk with the portfolio assistant. Press Space to talk, Escape to close. A
-            live transcript is shown, and you can always type instead.
-          </Dialog.Description>
-          <TalkMode onClose={() => onOpenChange(false)} />
+          {/* "Bloom open" entrance — the panel scales + fades up, reading as the header
+              orb expanding (a single in-portal Motion element; NOT a cross-portal layout
+              morph, which would churn the WebGL context). MotionConfig reducedMotion="user"
+              auto-drops the scale/translate for reduced-motion users, leaving the opacity
+              fade — the documented safe fallback. No WebGL touched here. */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.82, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.7 }}
+            className="rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
+          >
+            <Dialog.Title className="sr-only">Voice conversation</Dialog.Title>
+            <Dialog.Description className="sr-only">
+              Talk with the portfolio assistant. Press Space to talk, Escape to close. A
+              live transcript is shown, and you can always type instead.
+            </Dialog.Description>
+            <TalkMode onClose={() => onOpenChange(false)} />
+          </motion.div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

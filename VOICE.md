@@ -264,7 +264,7 @@ This STT-engine toggle is the primary control and is **always shown** (even on F
 - **Highest-trust-cost feature:** off by default, always behind an explicit toggle + cloud-audio disclosure + visible banner.
 - **Persistent "Listening" banner:** while active, a non-dismissible **bottom-center** banner shows a pulsing dot + Ear icon + `Listening for "Hey portfolio"` text and a one-tap **Stop** button. Exact styling (`wake-word-controller.tsx`): `className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-accent/50 bg-bg-surface/95 px-4 py-2.5 shadow-2xl backdrop-blur"` (`left-1/2` + `-translate-x-1/2` = horizontally centered).
 - **One-tap kill:** Stop calls `disarm()`, releasing the mic and hiding the banner.
-- **View-scoped:** only listens on the Chat or Voice view (`ACTIVE_VIEWS = ["chat", "voice"]`); switching to Classic/Play/Developer disarms the mic.
+- **View-scoped:** only listens on the Chat view (`ACTIVE_VIEWS = ["chat"]`); switching to any other view disarms the mic. (The Anvil **Voice** view is already a live talk surface with its own session, so the wake word is scoped away from it — arming there would open a second concurrent mic.)
 - **No silent hot mic:** the banner + button guarantee the visitor always knows the mic is live.
 
 | Aspect | Detail |
@@ -276,6 +276,36 @@ This STT-engine toggle is the primary control and is **always shown** (even on F
 | **Disclosure** | Mandatory first-use modal per session; explains cloud streaming + visible-listening guarantee |
 | **Trust surface** | Persistent bottom-center "Listening" banner with one-tap Stop + view-scoped (Chat/Voice only) |
 | **Trigger** | Opens two-way talk mode via `openTalkMode()` |
+
+### 2.5 Anvil — The Voice Surface (View + Header Orb)
+
+**What it is:** "Anvil" is the name of the voice *surface* (not a separate character — the assistant still answers in the first person as Sairam, grounded in the corpus). It exposes the same two-way talk engine through two always-available doors that share ONE session/mic:
+
+**A. The Anvil view (always-on 5th view).** A first-class view beside Classic · Play · Chat · Dev, shown in the desktop ViewSwitcher and deep-linkable at `?view=voice`. It is a lean voice landing (`anvil-view.tsx`): a brand header ("Talk to Anvil — the voice of Sairam's work"), example-prompt chips, and an open-to-roles hook, wrapping the shared `TalkMode`.
+- **Prompt chips** ("What are you looking for in your next role?", "Walk me through your strongest project", …) call `useVoiceSession.ask(text)` — they ask **by voice** through the session's own `send()` (never a sibling `useChat`), so the answer streams + is spoken like a spoken turn, then the loop re-listens. Chips show only before the first turn; where STT is unsupported they're omitted and the "type instead" fallback covers it.
+- **SSR-safe:** the view store's server + first-client snapshot stays `classic`; the 5th switcher entry appears post-hydration (the `useMounted` idiom) — no mismatch. The compact (mobile) switcher omits the pill; the **header orb** is the mobile voice door.
+
+**B. The Anvil header orb — the in-place Siri orb.** A small "beast" Siri-style orb in the global site header — visible on **every route and every viewport, ON by default**. Tapping it does NOT open a centered modal: like macOS Siri, it **expands in place** into a NON-MODAL panel anchored under the orb (top-right) and **starts listening immediately**. The page stays visible + interactive behind it (no overlay/takeover).
+- **Build-time flag:** `NEXT_PUBLIC_ANVIL_ORB_MODE = inplace` (default) | `modal` | `off`. `inplace` = the in-place panel on desktop (mobile falls back to the centered modal — iOS Siri is itself a full-screen takeover on phones); `modal` = always the centered modal (the prior behavior — instant revert); `off` = ship dark. (The old boolean `NEXT_PUBLIC_ENABLE_ANVIL_ORB="false"` still maps to `off`.) STT-gated at runtime.
+- **Beast idle orb:** a layered, multi-hued CSS orb — a hue-rotating radial core (`@property --anvil-hue`), a gentle breathe, and two violet/cyan blurred lobes drifting + screen-blended for the fluid Siri bleed (`.anvil-orb-idle`). **No WebGL, no rAF, no main-thread work** in the header (the transforms are compositor-only; the hue-rotate/blur are a small constant GPU raster cost — negligible for 28px, off the LCP element). Reduced-motion → a static (still layered) orb. ≥44px hit area (WCAG 2.5.8).
+- **Non-modal a11y (hand-rolled — no Radix focus-trap):** the orb carries `aria-expanded`/`aria-controls`; the panel is a `role="region"`; focus moves into the panel on open and back to the orb on close (WCAG 2.4.3); Esc + outside-pointerdown (excluding the orb) close and **fully end the session** (stop mic + TTS); the Space turn-toggle is scoped to the panel so it never hijacks the page behind it.
+- **Genie entrance:** the panel scales/fades from the orb's measured rect (Motion spring, `transform-origin: top right`; reduced-motion → opacity-only), reading as the orb blooming in place.
+- **Tap = talk:** the orb tap auto-starts listening (best-effort on iOS first-grant; degrades to "paused — tap to talk", never a hot mic).
+- **On the Voice view the orb is disabled** (that view is itself the live talk surface).
+
+**The "beast" while speaking:** on desktop + WebGL + motion, a `uSpeaking` shader uniform surges the 3D orb inside the panel (more turbulence, HDR heat, rim glow, spin) while the answer is spoken. Reduced-motion / mobile / no-WebGL keep the calm 2D orb.
+
+**One mic, always (the mutex):** the modal, the in-place panel, and the `?view=voice` view each mount their own session/mic, so a tiny arbiter (`voice-surface-mutex`) guarantees only one is open at a time — opening one closes the others (the view is excluded by routing: the orb is disabled there). **One live WebGL context** likewise: the gamified BuildGraph canvas unmounts while EITHER voice overlay is open (it reads both stores).
+
+| Aspect | Detail |
+|---|---|
+| **View** | Always-on 5th switcher entry (desktop) + `?view=voice` deep link; `anvil-view.tsx` |
+| **Orb** | Header, all routes/viewports, `NEXT_PUBLIC_ANVIL_ORB_MODE=inplace` (default); expands IN PLACE (desktop) / modal (mobile); auto-starts |
+| **Engine** | The same `useVoiceSession` (browser Web Speech default) — one session, one mic, grounded via `/api/chat` |
+| **Chips** | Ask-by-voice via `session.ask()` (one transcript); hidden when STT unsupported |
+| **Idle orb** | Beast layered CSS (no WebGL/rAF in header); reduced-motion static |
+| **One-mic mutex** | `voice-surface-mutex` — modal ↔ inline mutually exclusive; orb disabled on the Voice view |
+| **Coexistence** | Existing modal (Chat "Talk" pill + ⌘K) is unchanged; both doors share one overlay |
 
 ### Accessibility & Browser Fallback Summary
 

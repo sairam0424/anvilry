@@ -16,7 +16,7 @@ All four render from **one content layer** — zero duplication, zero fabricatio
 ## ✨ Highlights
 
 - **4-view architecture** — a single client `ViewProvider` switches Classic / Play / Chat / Developer without a navigation, so the WebGL context and chat transcript survive a switch. `/` stays SSG; `?view=` deep-links collapse to one canonical URL (no duplicate-content SEO hit).
-- **AI concierge (AWS Bedrock)** — Claude **Opus 4.6 → Sonnet 4.6 → Haiku 4.5** availability fallback with a streaming byte-gate invariant, in-context RAG grounding, prompt-injection guardrails, and per-IP rate limiting (Upstash, fails open).
+- **AI concierge (AWS Bedrock)** — Claude **Sonnet 4.6 → Opus 4.6 → Haiku 4.5** availability fallback with a streaming byte-gate invariant, in-context RAG grounding, prompt-injection guardrails, and per-IP rate limiting (Upstash, fails open).
 - **Generative chat cards** — the model emits only a `[[card:work:slug]]` intent token; the client resolves it against a build-time slug allowlist and renders the *real* Velite card. Zero fabrication is structural, not prompt-based.
 - **Safe streaming markdown** — `react-markdown` + `rehype-sanitize` + `skipHtml` (no raw model HTML, `javascript:` links stripped), with a preprocessor that gracefully renders partial markdown mid-stream.
 - **Interactive 3D Build Graph** — R3F scene with clickable/keyboard-focusable nodes, gated behind a WebGL capability probe (graceful DOM fallback), with GL-context disposal on view exit.

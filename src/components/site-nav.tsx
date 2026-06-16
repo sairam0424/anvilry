@@ -4,6 +4,7 @@ import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes } from "@/lib/content";
 import { ViewSwitcher } from "@/components/view-switcher";
+import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
 
 // Notes link appears ONLY when posts exist (empty-safe — no dead "coming soon" link).
@@ -45,6 +46,10 @@ export function SiteNav() {
         <div className="sm:hidden">
           <ViewSwitcher compact />
         </div>
+
+        {/* Anvil voice orb — the click-to-talk door, visible on every viewport + route
+            (build-flagged; renders nothing when disabled or where STT is unsupported). */}
+        <HeaderOrbTrigger />
 
         {/* Desktop: social + résumé icons. Mobile: these move into the drawer. */}
         <div className="hidden items-center gap-3 sm:flex">

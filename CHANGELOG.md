@@ -7,6 +7,58 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.6.0] — 2026-06-16
+
+**Anvil** — the voice surface, brought up from underground. The two-way talk mode is now
+a first-class part of the site, sharing one grounded engine with the existing modal.
+
+### Added
+- **Anvil voice view** — a fifth view alongside Classic · Play · Chat · Dev (always shown
+  in the desktop switcher; `?view=voice` deep-links). A lean voice landing — "Talk to
+  Anvil — the voice of Sairam's work", example-prompt chips, an open-to-roles hook —
+  wrapping the shared talk mode. Chips ask **by voice** through the session's own seam
+  (one transcript, one mic); the answer streams and is spoken like a spoken turn.
+- **Anvil header orb — an in-place Siri orb.** A "beast" multi-hued animated orb in the
+  global header (every route, every viewport, **on by default**). Like macOS Siri, tapping
+  it doesn't open a centered modal — it **expands in place** into a non-modal panel
+  anchored under the orb (desktop) and **starts listening immediately** (the page stays
+  visible behind it). Mobile falls back to the centered modal (iOS Siri is a full-screen
+  takeover on phones). Build-time mode `NEXT_PUBLIC_ANVIL_ORB_MODE = inplace | modal | off`
+  (default `inplace`). The idle orb is pure CSS (layered hue-drifting gradient + drifting
+  blurred lobes — no WebGL/rAF/main-thread work in the header); ≥44px hit area; STT-gated;
+  hand-rolled non-modal a11y (aria-expanded, focus in/out, Esc + outside-click fully end
+  the session, panel-scoped Space).
+- **Fluid Siri idle orb** — the header orb is now a genuinely swirling, color-shifting
+  metaball (layered animated conic-gradients fused by `blur()+contrast()+hue-rotate()`,
+  driven by two `@property <angle>` swirl/hue drifts). Pure CSS, no JS/rAF/WebGL;
+  reduced-motion → a static but still rich fused orb. Pre-Baseline degrades to a solid
+  accent disc.
+- **"Core" minimal Siri voice mode** (flag-selectable, `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE
+  =core`; default **classic** = the full panel, unchanged) — on orb click, shows ONLY the
+  enlarged reactive orb + a tiny listening dot + a frosted answer-only result card; no
+  panel chrome / caption track / controls / chips. Auto-listens immediately. Close fully
+  ends the session (Esc / outside-click / tap-orb). The classic full panel is KEPT under
+  the flag.
+- **One-mic mutex** — the modal, the in-place panel, the core surface, and the Voice view
+  each own a session/mic, so a small arbiter guarantees exactly one is open at a time;
+  the gamified WebGL canvas unmounts while any voice overlay is open (one live GL context).
+- **"Beast while speaking"** — the 3D orb surges (more turbulence, HDR heat, rim glow,
+  spin) while the answer is spoken, eased in/out. Desktop + WebGL + motion only;
+  reduced-motion keeps the calm orb.
+
+### Changed
+- The command-palette voice-surface toggle is relabeled "Show / Hide voice modal
+  shortcuts" — it now governs only the modal doors (the Talk pill + ⌘K), since the Voice
+  view is always available. The existing modal talk mode is otherwise unchanged.
+- The wake word is scoped to the Chat view only (no longer the voice view), so it can't
+  open a second voice session over the always-live Anvil view.
+
+### Internal
+- A single live WebGL context is guaranteed: the gamified BuildGraph canvas unmounts
+  while the voice overlay is open (it can layer over `?view=gamified`).
+- The voice view is server-safe: the SSR/first-client snapshot stays `classic` (the
+  switcher upgrades to five entries post-hydration) — no hydration mismatch.
+
 ## [1.5.0] — 2026-06-15
 
 The streaming voice release — talk mode now speaks the answer **as it streams**, with a
@@ -138,6 +190,7 @@ strictly additive, and any unsupported browser or runtime error degrades to text
 - Initial public portfolio: four switchable views (Classic · Play · Chat · Developer)
   over one canonical content source, with the AWS Bedrock "Ask my portfolio" chat.
 
+[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0
 [1.5.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.5.0
 [1.4.1]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.1
 [1.4.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.4.0

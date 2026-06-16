@@ -108,6 +108,24 @@ export function useVoiceSession() {
     beginListening(true);
   }, [supported, beginListening]);
 
+  /**
+   * Ask a typed/preset question by VOICE without using the mic — opens the session and
+   * sends the text straight through the SAME grounded transport, so the answer streams
+   * and is spoken exactly like a spoken turn, then the loop re-listens. Used by the
+   * Anvil view's example-prompt chips (a user gesture: a chip click). Routes through the
+   * session's own send(), never a sibling useChat, so there is one transcript + one mic.
+   */
+  const ask = useCallback(
+    (text: string) => {
+      const q = text.trim();
+      if (!q) return;
+      setActive(true);
+      recognition.stop(); // mic off while we send + speak (no self-hearing)
+      send(q);
+    },
+    [recognition, send],
+  );
+
   /** Close the session entirely: stop mic, speech, and any in-flight stream. */
   const stop = useCallback(() => {
     setActive(false);
@@ -224,6 +242,7 @@ export function useVoiceSession() {
     isStreaming,
     error: recognition.error,
     start,
+    ask,
     stop,
     interrupt,
     pause,

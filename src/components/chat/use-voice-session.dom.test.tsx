@@ -76,6 +76,24 @@ describe("useVoiceSession", () => {
     expect(recog.start).toHaveBeenCalledTimes(1);
   });
 
+  it("ask() opens the session, stops the mic, and sends via the session's own send()", () => {
+    // The Anvil view's prompt chips call ask(text) — it must route through THIS
+    // session's send (one transcript, one mic), activating without a prior start().
+    const { result } = renderHook(() => useVoiceSession());
+    expect(result.current.active).toBe(false);
+    act(() => result.current.ask("What did you build at Ascendion?"));
+    expect(result.current.active).toBe(true); // session opened by the chip
+    expect(recog.stop).toHaveBeenCalled(); // mic off while we send + speak (no self-hearing)
+    expect(chat.send).toHaveBeenCalledWith("What did you build at Ascendion?");
+  });
+
+  it("ask() ignores an empty/whitespace prompt (no stray send)", () => {
+    const { result } = renderHook(() => useVoiceSession());
+    act(() => result.current.ask("   "));
+    expect(chat.send).not.toHaveBeenCalled();
+    expect(result.current.active).toBe(false);
+  });
+
   it("a final transcript sends to the chat (then the stream drives 'thinking')", () => {
     const { result, rerender } = renderHook(() => useVoiceSession());
     act(() => result.current.start());

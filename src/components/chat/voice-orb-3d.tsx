@@ -88,6 +88,7 @@ const SNOISE = /* glsl */ `
 const VERT = /* glsl */ `
   uniform float uTime;
   uniform float uLevel;
+  uniform float uSpeaking;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   varying float vNoise;
@@ -96,14 +97,17 @@ const VERT = /* glsl */ `
   ${SNOISE}
 
   void main() {
-    float t = uTime * 0.35;
+    // uSpeaking (0..1) surges turbulence WHILE SPEAKING — more domain warp + bigger
+    // displacement than uLevel alone, so the orb visibly "comes alive" mid-answer.
+    float t = uTime * (0.35 + uSpeaking * 0.5);
+    float warpGain = 0.6 + uSpeaking * 0.5;
     vec3 warp = vec3(
       fbm(position * 1.1 + t),
       fbm(position * 1.1 + vec3(5.2, 1.3, t)),
       fbm(position * 1.1 + vec3(-3.4, 2.7, -t))
     );
-    float amp = 0.10 + uLevel * 0.42;
-    float n = fbm(position * 1.7 + warp * 0.6 + t * 0.8);
+    float amp = 0.10 + uLevel * 0.42 + uSpeaking * 0.18;
+    float n = fbm(position * 1.7 + warp * warpGain + t * 0.8);
     float disp = n * amp;
     vDisp = disp;
     vNoise = n;
@@ -122,6 +126,7 @@ const FRAG = /* glsl */ `
   uniform vec3 uColorB;
   uniform vec3 uColorC;
   uniform float uLevel;
+  uniform float uSpeaking;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   varying float vNoise;
@@ -132,9 +137,10 @@ const FRAG = /* glsl */ `
     vec3 col = mix(uColorA, uColorB, smoothstep(0.0, 0.55, h));
     col = mix(col, uColorC, smoothstep(0.5, 1.0, h));
     float fres = pow(1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0), 2.5);
-    float heat = 0.85 + uLevel * 0.9;
+    // Extra HDR heat while speaking so the whole orb blooms hotter mid-answer.
+    float heat = 0.85 + uLevel * 0.9 + uSpeaking * 0.5;
     vec3 lit = col * (0.7 + h * 0.6) * heat;
-    lit += uColorC * fres * (1.4 + uLevel * 1.6); // glowing rim, hotter when loud
+    lit += uColorC * fres * (1.4 + uLevel * 1.6 + uSpeaking * 0.8); // glowing rim, hotter when loud / speaking
     gl_FragColor = vec4(lit, clamp(0.78 + fres * 0.5 + h * 0.2, 0.0, 1.0));
   }
 `;
@@ -157,12 +163,23 @@ const HALO_FRAG = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   void main() {
-    float f = pow(1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0), 3.0);
-    gl_FragColor = vec4(uHaloColor * f * (0.6 + uLevel * 1.2), f);
+    // Softer, wider bloom: a higher fresnel exponent pushes the glow to the rim and
+    // feathers the falloff, and squaring the alpha makes the OUTER edge fade to fully
+    // transparent (no hard disc). The body stays dim so it reads as light, not a sphere.
+    float rim = 1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0);
+    float f = pow(rim, 4.5);
+    float alpha = f * f; // square → gentler outer feather to 0
+    gl_FragColor = vec4(uHaloColor * f * (0.5 + uLevel * 1.1), alpha);
   }
 `;
 
-function OrbMesh({ level }: { level: React.RefObject<number> }) {
+function OrbMesh({
+  level,
+  speaking,
+}: {
+  level: React.RefObject<number>;
+  speaking: boolean;
+}) {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
   const haloRef = useRef<THREE.ShaderMaterial | null>(null);
   const meshRef = useRef<THREE.Mesh | null>(null);
@@ -171,6 +188,7 @@ function OrbMesh({ level }: { level: React.RefObject<number> }) {
     () => ({
       uTime: { value: 0 },
       uLevel: { value: 0 },
+      uSpeaking: { value: 0 },
       uColorA: { value: DEEP },
       uColorB: { value: ACCENT },
       uColorC: { value: RIM },
@@ -185,11 +203,15 @@ function OrbMesh({ level }: { level: React.RefObject<number> }) {
   useFrame((_, delta) => {
     const t = uniforms.uTime.value;
     const target = level.current ?? 0;
+    const speakTarget = speaking ? 1 : 0;
     if (matRef.current) {
       matRef.current.uniforms.uTime.value += delta;
       // Ease the shader level toward the latest amplitude for smoothness.
       matRef.current.uniforms.uLevel.value +=
         (target - matRef.current.uniforms.uLevel.value) * 0.2;
+      // Ease the speaking surge in/out so the "beast" ramps, never snaps.
+      matRef.current.uniforms.uSpeaking.value +=
+        (speakTarget - matRef.current.uniforms.uSpeaking.value) * 0.08;
     }
     if (haloRef.current) {
       haloRef.current.uniforms.uLevel.value +=
@@ -197,10 +219,12 @@ function OrbMesh({ level }: { level: React.RefObject<number> }) {
     }
     if (meshRef.current) {
       // Organic drift + whole-body breathing scale (manual — NOT drei <Float>, which
-      // would fight these direct transform assignments and jitter).
-      meshRef.current.rotation.y += delta * 0.08;
+      // would fight these direct transform assignments and jitter). Spin a touch faster
+      // while speaking for extra life.
+      const surge = matRef.current?.uniforms.uSpeaking.value ?? 0;
+      meshRef.current.rotation.y += delta * (0.08 + surge * 0.12);
       meshRef.current.rotation.x = Math.sin(t * 0.2) * 0.12;
-      const breathe = 1 + 0.04 * Math.sin(t * 0.9) + target * 0.1;
+      const breathe = 1 + 0.04 * Math.sin(t * 0.9) + target * 0.1 + surge * 0.04;
       meshRef.current.scale.setScalar(breathe);
     }
   });
@@ -208,8 +232,10 @@ function OrbMesh({ level }: { level: React.RefObject<number> }) {
   return (
     <group>
       {/* Additive halo, drawn first (renderOrder -1) so the orb composites over it; both
-          depthWrite:false + additive blending make the co-located sort deterministic. */}
-      <mesh scale={1.6} renderOrder={-1}>
+          depthWrite:false + additive blending make the co-located sort deterministic.
+          Scale 1.8 (still inside the ~1.9 visible half-height at z=4.6/fov45) gives the
+          softened, feathered glow room to fade out before the canvas edge. */}
+      <mesh scale={1.8} renderOrder={-1}>
         <sphereGeometry args={[1, 64, 64]} />
         <shaderMaterial
           ref={haloRef}
@@ -239,12 +265,14 @@ function OrbMesh({ level }: { level: React.RefObject<number> }) {
 
 export function VoiceOrb3D({
   level,
+  state,
   size = 160,
 }: {
   level: React.RefObject<number>;
   state: VoiceSessionState;
   size?: number;
 }) {
+  const speaking = state === "speaking";
   return (
     <div aria-hidden="true" style={{ width: size, height: size }}>
       {/* frameloop="always" because the orb is continuously audio-reactive while talk
@@ -269,7 +297,7 @@ export function VoiceOrb3D({
       >
         <ambientLight intensity={0.4} />
         <pointLight position={[2, 2, 3]} intensity={1.2} color="#bcd4ff" />
-        <OrbMesh level={level} />
+        <OrbMesh level={level} speaking={speaking} />
       </Canvas>
     </div>
   );

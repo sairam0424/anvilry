@@ -3,7 +3,6 @@
 import { motion } from "motion/react";
 import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare, AudioLines } from "lucide-react";
 import { useView, type View } from "@/components/view-context";
-import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { useMounted } from "@/lib/use-mounted";
 import { cn } from "@/lib/utils";
 
@@ -20,20 +19,20 @@ const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGr
   { view: "developer", label: "Dev", short: "Dev", icon: TerminalSquare },
 ];
 
-// The "Voice" entry is appended only when the visitor opts into the full-page talk
-// surface (talkSurface "view"); the default keeps the 4-way switcher and talk mode
-// opens as a modal instead.
+// "Voice" is a first-class entry (the Anvil voice surface). It is appended only after
+// mount — the View store's server + first-client snapshot is "classic" and the switcher
+// must render the 4-way control on the server, then upgrade to 5-way post-hydration, so
+// the SSR markup always matches (no mismatch). The `useMounted` gate is the hydration
+// contract; it is NOT a feature flag.
 const VOICE_OPTION = { view: "voice" as View, label: "Voice", short: "Voice", icon: AudioLines };
 
 export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   const { view, setView } = useView();
-  const { settings } = useVoiceSettings();
-  // Gate the optional 5th entry behind useMounted: the talkSurface pref reads from
-  // localStorage (client-only), so SSR renders the 4-way switcher and the client
-  // upgrades to 5-way after hydration — no markup mismatch.
+  // Compact (mobile) drops the 5th "Voice" pill to protect the tight h-14 header row —
+  // the Anvil header orb is the mobile voice door; the full view stays reachable on
+  // desktop + via the ?view=voice deep link.
   const mounted = useMounted();
-  const options =
-    mounted && settings.talkSurface === "view" ? [...OPTIONS, VOICE_OPTION] : OPTIONS;
+  const options = mounted && !compact ? [...OPTIONS, VOICE_OPTION] : OPTIONS;
   // Unique per instance: the switcher is rendered TWICE (desktop + compact mobile),
   // both in the DOM at once. A shared layoutId would make Motion animate ONE pill
   // between the two instances, breaking which button shows active. Scope it.

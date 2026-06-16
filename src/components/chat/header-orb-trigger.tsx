@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { openTalkMode } from "@/components/chat/talk-overlay-store";
 import { openInlineVoice } from "@/components/chat/anvil-inline-store";
+import { openCoreVoice } from "@/components/chat/anvil-core-store";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useView } from "@/components/view-context";
 
@@ -33,10 +34,15 @@ type OrbMode = "inplace" | "modal" | "off";
 const ORB_MODE: OrbMode = (() => {
   const raw = process.env.NEXT_PUBLIC_ANVIL_ORB_MODE;
   if (raw === "modal" || raw === "off") return raw;
-  // Back-compat: the old boolean kill-switch maps "false" → off.
   if (process.env.NEXT_PUBLIC_ENABLE_ANVIL_ORB === "false") return "off";
   return "inplace"; // default
 })();
+
+// The chrome-level inside the surface: "classic" = full panel (current), "core" = orb-only
+// minimal Siri mode. Orthogonal to ORB_MODE (which is placement/kill-switch).
+type OrbExperience = "classic" | "core";
+const ORB_EXPERIENCE: OrbExperience =
+  process.env.NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE === "core" ? "core" : "classic";
 
 // SSR-safe STT support flag (no setState-in-effect; the use-mounted idiom). The voice
 // loop needs recognition; gate on it so we never show a dead door.
@@ -62,8 +68,13 @@ export function HeaderOrbTrigger() {
 
   const open = (el: HTMLElement) => {
     if (onVoiceView) return; // don't stack a second session over the voice view
-    if (ORB_MODE === "inplace" && isDesktop) openInlineVoice(el);
-    else openTalkMode(el);
+    if (ORB_MODE === "inplace" && isDesktop) {
+      // Desktop in-place: "core" = orb-only minimal; "classic" = the full panel.
+      if (ORB_EXPERIENCE === "core") openCoreVoice(el);
+      else openInlineVoice(el);
+    } else {
+      openTalkMode(el); // mobile / "modal" mode → the centered modal
+    }
   };
 
   return (

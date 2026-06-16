@@ -4,6 +4,8 @@ The **Voice** feature is an opt-in, free-first progressive enhancement layered o
 
 Everything defaults **off** (or to the free browser engine). No backend change is required for the free path, no new vendor is introduced, and any feature-detect miss or runtime error degrades silently back to text. Optional AWS upgrades (Polly TTS, Transcribe STT) reuse the existing Bedrock credentials and fail closed to the browser path.
 
+> **v1.7 update — voice quality upgrade.** A curated voice picker (6 voices) with a "More voices…" overflow (12+) is now available in three surfaces (talk-mode header label, ⌘K palette, settings dialog). Two new TTS engines layer in: AWS Polly Generative (premium tier, gated to user-pick) and Google Cloud TTS Chirp 3 HD (permanent-free hedge against Polly's 12-month free-tier cliff). 16 platform pitfalls (iOS gesture lock, Linux eSpeak detection, Apple Premium download hint, screen-reader double-speak avoidance, etc.) are surfaced as contextual advisories in the picker + settings UI. See [§7. Voice picker (v1.7)](#7-voice-picker-v17) for the full mechanics.
+
 ---
 
 ## Table of Contents
@@ -830,3 +832,109 @@ vi.stubGlobal("navigator", { mediaDevices: undefined });
 ```
 
 To force the STT fallback path during debugging, temporarily `return browser;` in `useStt` (`src/components/chat/use-stt.ts`). The selector's fallback is silent by design; add a `console.log` in each branch if you need to trace engine selection.
+
+---
+
+## 7. Voice picker (v1.7)
+
+The voice picker is the visible upgrade in v1.7. One curated set of 6 voices (with a 12+ extended overflow), three TTS engines (browser / Polly / Google), and three surfaces (talk-mode header, ⌘K palette, settings dialog) — all sharing one source of truth.
+
+### Catalog
+
+Defined in `src/lib/voice-catalog.ts`. The catalog is the single source of truth for which voices Anvilry exposes and which engine each voice belongs to. **Curated** voices show in the default picker grid; **extended** voices live in the "More voices…" overflow dialog.
+
+| Tier | Voice | Gender | Engine | Native id |
+|---|---|---|---|---|
+| Curated | Joanna | F | Polly Neural | `Joanna` |
+| Curated | Matthew | M | Polly Neural | `Matthew` |
+| Curated | Stephen | M | Polly Generative | `Stephen` |
+| Curated | Ruth | F | Polly Generative | `Ruth` |
+| Curated | Aoede | F | Google Chirp 3 HD | `en-US-Chirp3-HD-Aoede` |
+| Curated | Charon | M | Google Chirp 3 HD | `en-US-Chirp3-HD-Charon` |
+| Extended | Danielle, Gregory | F/M | Polly Neural (US) | — |
+| Extended | Brian, Amy, Olivia | M/F/F | Polly Neural (UK/AU) | — |
+| Extended | Puck, Kore, Fenrir | M/F/M | Google Chirp 3 HD | — |
+| Extended | Aria, Guy (Edge) | F/M | Browser (Microsoft Online Natural) | voiceURI prefix |
+| Extended | Samantha, Tom (Apple) | F/M | Browser (Apple Premium) | voiceURI prefix |
+
+Default per gender preference: Joanna (female / unspecified) and Matthew (male) — `getDefaultVoiceId()`.
+
+### Engines
+
+Three engines, all server-proxied (CSP-safe):
+
+- **Browser** (`window.speechSynthesis`) — free, no network, default for visitors who never pick. Voice resolution uses `voiceURI` prefix matching (catalog's `findBrowserVoice`) so macOS-localized + Linux speech-dispatcher-modified URIs resolve correctly. Curated voices that aren't on the visitor's device silently fall back to the localService English heuristic (Apple Premium gets a "Download in System Settings" hint per card).
+
+- **Polly** (`/api/tts`) — two tiers picked from the catalog:
+  - Polly **Neural** — historical default (Joanna). Free 1M chars/mo for first 12 months, then $16/M. Cache-keyed isolation guarantees cross-voice safety (the v1.7 fix for the latent v1.6 cache bug).
+  - Polly **Generative** — premium tier (Stephen, Ruth, Danielle). $30/M with 100k chars/mo free for year 1. Reachable ONLY via user-pick on a Generative-supported voice; unknown voiceId or tier mismatches reject 400 (impossible to send Joanna+generative).
+  - SSML prosody (`<prosody rate>`, `<prosody pitch>`, `<break time>`) supported on Neural; rejected on Generative (the hook silently strips character knobs on Generative).
+
+- **Google Cloud TTS** (`/api/tts-google`) — Chirp 3 HD voices. **Permanent free tier 1M chars/mo** (vs Polly's 12-month limit). Set `GOOGLE_TTS_API_KEY` to enable; when unset, the engine option is hidden from settings and the route returns 503 (client falls back to Polly → browser). Uses the REST API directly (not `@google-cloud/text-to-speech` SDK) to keep the Vercel function bundle small.
+
+### Surfaces
+
+Same `<VoicePicker>` component, three mounting points:
+
+1. **Talk-mode header label** — compact "Voice: Stephen ▾" pill below the controls. The most discoverable surface for visitors who've already opened TalkMode. Click opens the picker as a Radix Dialog.
+
+2. **⌘K palette** — `Pick voice…` opens the dialog; six `Voice: <Name>` quick-swap commands set `voiceId` directly without opening the dialog (searchable on name + descriptor + accent + gender + tier — typing `stephen`, `warm`, `generative`, `polly` all surface Stephen). `Voice settings…` opens the canonical settings dialog.
+
+3. **Settings dialog** (`voice-settings-dialog.tsx`) — the only surface that exposes the full character knobs. Five sections: Voice (embeds the picker inline), Engine (radio with cost transparency hints + platform advisories), Character (segmented controls auto-disabled when the engine ignores them), Toggles (read-aloud / captions / mic / wake word), Reset.
+
+### Layout modes (`NEXT_PUBLIC_VOICE_PICKER_MODE`)
+
+The picker has two layouts, switchable via build-time env flag:
+
+- **`descriptor`** (DEFAULT) — modern named cards in a responsive grid. Each card: voice name, 2-word descriptor, accent + engine badge, tap-to-preview button. The ChatGPT/Siri pattern.
+- **`gender`** — explicit Male / Female columns with cards stacked under each gender. Same data, regrouped.
+
+Both modes share the catalog; only the rendered grouping differs.
+
+### Voice character (speed / tone / pause)
+
+Cross-engine character knobs in `VoiceSettings.voiceCharacter`:
+
+| Knob | Values | Browser map | Polly Neural map | Generative / Google |
+|---|---|---|---|---|
+| `speed` | slow / natural / fast | `rate` 0.85 / 1.0 / 1.15 | `<prosody rate>` | dropped |
+| `tone` | warm / neutral / crisp | `pitch` 0.95 / 1.0 / 1.10 | `<prosody pitch>` | dropped |
+| `pause` | spacious / normal / tight | sentence padding | `<break time>` | dropped |
+
+Defaults: `{ natural, neutral, normal }` — matches v1.6's hardcoded `rate=1, pitch=1, no padding`. Knobs are dropped (not 5xx-rejected) on Generative + Google because those engines reject most prosody tags.
+
+### Pitfall hardening (16 documented landmines)
+
+`src/components/chat/voice-pitfalls.ts` contains small isolated utilities for the documented platform pitfalls. The highest-impact ones surface in the picker / settings UI as contextual advisories rather than silent failures:
+
+| # | Pitfall | Workaround | Surfaced in |
+|---|---|---|---|
+| 1 | SR + read-aloud double-speak | `detectScreenReader` heuristic; DEFAULTS.ttsEnabled stays false; caption `aria-hidden` while speaking | settings (default-OFF invariant), TalkMode (caption) |
+| 2 | iOS Safari user-gesture lock | `isIOS` detection; first-run primer card surfaces the picker affordance | TalkMode primer |
+| 3 | Linux eSpeak-only | `isLinuxESpeak` voice-list pattern detection | settings (browser engine disabled with reason) |
+| 4 | `voice.gender` deprecated | `voiceURIToGender` curated allow-list (16 known prefixes) | catalog resolution |
+| 5 | Locale fallback chain | `localeFallbackChain` (en-IN → en-GB → en-AU → en-US) | hook voice resolution |
+| 6 | Apple Premium not on disk | `applePremiumIsMissing(prefix, voices)` | picker (per-card hint) |
+| 7 | `getVoices()` race | `getVoicesRaceHardened` (sync read + voiceschanged + 2s timeout) | picker, settings dialog |
+| 8 | Blob URL lifecycle leaks | `cancelRemote` token-invalidation + revokeObjectURL on `error` / `play().catch()` / `cancel()` paths | hook |
+| 9 | Chromium ~15s SpeechSynthesis cutoff | `startKeepAlive` pause/resume every 12s (desktop only — Android pause = cancel) | hook (existing v1.6) |
+| 10 | Bluetooth switch decode error | (deferred to v1.7.1) | — |
+| 11 | Tab background dump | `visibilitychange` cancels speech | hook (existing v1.6) |
+| 12 | Android Chrome quality cliff | `isAndroid` UA detection | settings (browser engine advisory) |
+| 13 | Firefox Linux + eSpeak | `isFirefox` + `isLinuxESpeak` composition | settings (specific reason text) |
+| 14 | macOS / Linux URI mangling | `normalizeVoiceURI` + voiceURI-prefix resolution | catalog `findBrowserVoice` |
+| 15 | Polly cold-start latency | (deferred — first-utterance warmup) | — |
+| 16 | Cross-engine fallback cascade | hook's `playRemoteFrom` → browser path on any remote failure | hook (`use-speech-synthesis.ts`) |
+
+### File map (v1.7 additions)
+
+| Concern | File |
+|---|---|
+| Voice catalog (source of truth) | `src/lib/voice-catalog.ts` |
+| Picker mode flag | `src/lib/voice-picker-mode.ts` |
+| Pitfall utilities | `src/components/chat/voice-pitfalls.ts` |
+| Picker UI | `src/components/chat/voice-picker.tsx` |
+| Settings dialog | `src/components/chat/voice-settings-dialog.tsx` |
+| Polly cache (lifted from route.ts) | `src/app/api/tts/cache.ts` |
+| Google Cloud TTS route | `src/app/api/tts-google/route.ts` |
+| Google Cloud TTS cache | `src/app/api/tts-google/cache.ts` |

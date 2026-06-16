@@ -7,6 +7,95 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.7.0] — 2026-06-16
+
+**Voice quality upgrade** — a curated voice picker, two new TTS engines (Polly Generative
+gated to user-pick, Google Cloud TTS Chirp 3 HD as a permanent-free hedge), and 16 platform
+pitfalls hardened. The default cost is unchanged ($0 — Polly Neural-Joanna), but the
+ceiling is much higher: visitors who pick Stephen-Generative get audiobook-grade audio
+without a vendor change, and visitors on year-2 traffic past the Polly free-tier cliff
+have Google Cloud TTS waiting (1M chars/mo permanent free).
+
+### Added
+
+- **Voice catalog** — a typed source of truth for every voice the picker exposes (6 curated
+  + 12 extended) across all three engines. Each entry stamps its native engine identifier
+  (`pollyVoiceId`, `googleVoiceName`, `browserVoiceURIPrefix`); browser entries match by
+  `voiceURI` prefix so macOS-localized + Linux speech-dispatcher-modified URIs resolve
+  correctly.
+- **`VoicePicker` component** — shared picker UI mounted in three surfaces (talk-mode header
+  label, Cmd+K palette, settings dialog). Two layout modes via the new
+  `NEXT_PUBLIC_VOICE_PICKER_MODE` flag: `descriptor` (default — modern named cards with
+  2-word descriptors, the ChatGPT/Siri pattern) or `gender` (explicit Male / Female columns).
+  Tap-to-preview with cancel-on-tap (one preview at a time); aria-live announces start/stop;
+  "More voices…" overflow exposes the extended catalog.
+- **`VoiceSettingsDialog`** — canonical full-config surface (Voice / Engine / Character /
+  Toggles / Reset). Opened from a new "Voice settings…" Cmd+K command. The character
+  section auto-disables with an "engine ignores these knobs" hint when Polly Generative or
+  Google Chirp 3 HD is active.
+- **Polly Generative tier** — user-pickable via the catalog (`Stephen-M-US`, `Ruth-F-US`).
+  Default stays Polly Neural-Joanna so cost is unchanged at $0; only the user-pick path
+  triggers the $30/M Generative tier (with a 100k chars/mo free allotment for year 1).
+- **Google Cloud TTS engine** — new `/api/tts-google` route (server-proxied, identical
+  pattern to `/api/tts`). Permanent free tier of 1M chars/mo Chirp 3 HD voices (Aoede,
+  Charon curated; Puck, Kore, Fenrir extended). `GOOGLE_TTS_API_KEY` env enables it; when
+  unset, the engine option is hidden from settings and the route returns 503 (client falls
+  back to Polly → browser).
+- **Voice character knobs** — `voiceCharacter: { speed, tone, pause }` settings field
+  mapped to safe-range browser `rate` / `pitch` (clamped 0.85–1.15 / 0.95–1.10) + Polly
+  Neural `<prosody>` SSML. Dropped on Generative + Google (engines reject most prosody
+  tags); the hook silently strips them rather than 5xx-ing.
+- **Cmd+K voice commands** — "Pick voice…" opens the dialog; six "Voice: <Name>" quick-swap
+  commands set `voiceId` directly. Searchable on name + descriptor + accent + gender + tier
+  ("stephen", "warm", "generative", "polly" all surface Stephen).
+- **Talk-mode header voice label** — compact "Voice: Stephen ▾" pill below the controls.
+  Click opens the picker dialog; mid-session voice swaps don't interrupt in-flight audio.
+- **First-run primer card** — a one-time, dismissible hint ("Anvil reads answers in
+  Joanna by default. Press ⌘K → 'Pick voice'…") that surfaces the picker affordance to
+  first-time visitors. Persisted via `localStorage["anvilry:voice:first-run-seen-v1"]`.
+- **Platform advisories** — Linux eSpeak detection disables the browser engine in settings
+  with a "pick Polly or Google" reason; Android Chrome shows a soft "voices vary" hint;
+  Apple Premium voices not on disk show a "Download in macOS Settings → Accessibility →
+  Spoken Content → Voices" hint per card.
+- **`voice-pitfalls.ts` module** — 16 small isolated utilities for the documented platform
+  landmines (SR detection, iOS gesture lock, Linux eSpeak, voiceURI-to-gender allow-list,
+  locale fallback chain, Apple Premium download check, race-hardened `getVoices`,
+  voiceURI normalization, Android/Firefox UA detection, first-run primer storage).
+
+### Fixed
+
+- **CRITICAL: voice-keyed `/api/tts` cache** — the v1.6 cache keyed only on raw text,
+  which was correct only because there was a single hardcoded VoiceId (Joanna). Without
+  this fix, two visitors picking different voices for the same text would collide on the
+  same key — the second visitor would hear the first's audio under a different voice.
+  Cache key is now `${voiceId}|${tier}|${text}`; `cache.ts` lifted to a sibling module so
+  it can be unit-tested directly (Next 16 App Router route files only permit HTTP method
+  exports + the fixed segment-config exports).
+- **`/api/tts` allowlist validation** — body's `voiceId` is now validated against the
+  catalog before forwarding to Polly. Unknown ids return 400 instead of silently falling
+  back to Joanna; cross-engine attacks (a Google catalog id sent to `/api/tts`) are
+  rejected. Tier mismatches (Joanna+generative would 5xx at AWS) are impossible by
+  construction — the catalog is the source of truth on which voices support which tier.
+- **Caption aria-hidden during speech** — the live caption track now sets `aria-hidden`
+  while speaking so screen readers don't double-announce text the page is currently
+  reading aloud (the SR + read-aloud double-speak regression).
+
+### Configuration
+
+- New `NEXT_PUBLIC_VOICE_PICKER_MODE` (build-time) — `descriptor` (default) or `gender`.
+  Switching requires a redeploy (NEXT_PUBLIC_ inlining), same constraint as every other
+  Anvilry env flag.
+- New `GOOGLE_TTS_API_KEY` (server-side, optional) — enables the Google Cloud TTS engine.
+  Get a key at https://console.cloud.google.com/apis/credentials with the Cloud
+  Text-to-Speech API enabled. When unset, Google voices are hidden from the picker.
+- New `VoiceSettings.voiceId` (localStorage, optional) — catalog id of the user-picked
+  voice. Undefined → catalog default (Joanna), preserving v1.6 behavior for legacy
+  payloads.
+- New `VoiceSettings.voiceCharacter` (localStorage) — `{ speed, tone, pause }` enums.
+  Defaults to `{ natural, neutral, normal }` which the TTS hook maps to v1.6's hardcoded
+  `rate=1, pitch=1, no padding`.
+- `VoiceSettings.ttsEngine` widened to include `"google"`.
+
 ## [1.6.0] — 2026-06-16
 
 **Anvil** — the voice surface, brought up from underground. The two-way talk mode is now

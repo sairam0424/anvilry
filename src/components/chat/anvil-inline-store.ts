@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { registerVoiceSurface, claimVoiceSurface } from "@/components/chat/voice-surface-mutex";
 
 /**
  * Module store for the IN-PLACE Anvil voice panel (the Siri-style "expand from the
@@ -28,6 +29,7 @@ const subscribe = (cb: () => void) => {
 
 /** Open the inline panel, remembering `triggerEl` (the orb) to restore focus to on close. */
 export function openInlineVoice(triggerEl?: HTMLElement | null): void {
+  claimVoiceSurface("inline"); // one-mic mutex: close any other open voice surface first
   opener = triggerEl ?? null;
   if (open) return;
   open = true;
@@ -39,6 +41,10 @@ export function setInlineVoiceOpen(next: boolean): void {
   open = next;
   emit();
 }
+
+// Register how to force this surface closed (the mutex calls this when another surface
+// claims the session).
+registerVoiceSurface("inline", () => setInlineVoiceOpen(false));
 
 /** The element to return focus to when the panel closes (the orb), or null. */
 export function getInlineVoiceOpener(): HTMLElement | null {

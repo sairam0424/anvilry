@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { registerVoiceSurface, claimVoiceSurface } from "@/components/chat/voice-surface-mutex";
 
 /**
  * Tiny module-level store for "is the talk-mode modal open?" — mirrors the view store
@@ -27,6 +28,7 @@ const subscribe = (cb: () => void) => {
 
 /** Open the modal, remembering `triggerEl` to restore focus to on close. */
 export function openTalkMode(triggerEl?: HTMLElement | null): void {
+  claimVoiceSurface("modal"); // one-mic mutex: close any other open voice surface first
   opener = triggerEl ?? null;
   if (open) return;
   open = true;
@@ -38,6 +40,10 @@ export function setTalkModeOpen(next: boolean): void {
   open = next;
   emit();
 }
+
+// Register how to force this surface closed (the mutex calls this when another surface
+// claims the session). Module-level: one registration for the app's lifetime.
+registerVoiceSurface("modal", () => setTalkModeOpen(false));
 
 /** The element to return focus to when the modal closes (or null). */
 export function getTalkOpener(): HTMLElement | null {

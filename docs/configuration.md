@@ -85,6 +85,13 @@ requires a **redeploy** — they are not runtime-toggleable.
 |---|---|---|---|
 | `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE` | `classic` \| `core` | `classic` | **classic** = the full in-place panel (orb + captions + chips + controls). **core** = the minimal Siri orb-only mode (enlarged orb + frosted result card, no panel chrome). Orthogonal to `ORB_MODE`. |
 
+### Voice Picker — UX Mode (v1.7)
+
+| Variable | Values | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_VOICE_PICKER_MODE` | `descriptor` \| `gender` | `descriptor` | **descriptor** = modern named cards with 2-word descriptors (ChatGPT/Siri pattern: "Stephen — warm & direct"). **gender** = explicit Male / Female / System default toggle, 2-column layout. Both modes share the same catalog; only the picker layout + labels differ. |
+| `GOOGLE_TTS_API_KEY` | API key | — | Optional. Adds Google Cloud TTS Chirp 3 HD as a third engine (alongside browser + Polly) with a permanent 1M chars/mo free tier — hedges Polly's 12-month free-tier cliff. When unset, Google voices are hidden from the picker. Get a key at [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) with the Cloud Text-to-Speech API enabled. |
+
 ### Flag Matrix (desktop behavior)
 
 | ORB_MODE | EXPERIENCE | Desktop behavior |
@@ -110,8 +117,12 @@ modal. Toggled via the command palette (⌘K → "Voice" group).
 | `wakeWord` | boolean | `false` | Always-listening wake word ("Hey Anvil"). Highest trust cost. |
 | `captions` | boolean | `true` | Show the live caption (spoken-text transcript) in talk mode. |
 | `sttEngine` | `"browser"` \| `"transcribe"` | `"browser"` | STT engine (browser Web Speech default; AWS Transcribe opt-in). |
-| `ttsEngine` | `"browser"` \| `"polly"` | `"browser"` | TTS engine (browser default; AWS Polly Neural opt-in). |
+| `ttsEngine` | `"browser"` \| `"polly"` \| `"google"` | `"browser"` | TTS engine (browser default; AWS Polly Neural opt-in; Google Cloud TTS Chirp 3 HD as a permanent-free hedge — `google` requires `GOOGLE_TTS_API_KEY`). |
 | `talkSurface` | `"modal"` \| `"view"` | `"modal"` | Whether the ⌘K "Start voice" command + Chat "Talk" pill show (modal) or hide (view). |
+| `voiceId` | string \| `undefined` | `undefined` | Catalog id of the user-picked voice (e.g. `polly-generative-stephen`). When unset, the runtime resolves to the catalog default at point of use (Joanna for Polly, the engine default for browser / Google). Picker writes this; nothing else does. |
+| `voiceCharacter.speed` | `"slow"` \| `"natural"` \| `"fast"` | `"natural"` | Speech rate. Maps to browser `u.rate` (clamped 0.85–1.15) + Polly Neural `<prosody rate>`. Dropped on Polly Generative + Google Chirp 3 HD (engines reject most prosody tags). |
+| `voiceCharacter.tone` | `"warm"` \| `"neutral"` \| `"crisp"` | `"neutral"` | Pitch bias. Maps to browser `u.pitch` (clamped 0.95–1.10) + Polly Neural `<prosody pitch>`. |
+| `voiceCharacter.pause` | `"spacious"` \| `"normal"` \| `"tight"` | `"normal"` | Inter-sentence pause. Maps to browser sentence padding + Polly Neural `<break time>`. |
 
 ---
 

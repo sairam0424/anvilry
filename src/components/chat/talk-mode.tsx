@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Mic, Square, X, Captions, CaptionsOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Mic, Square, X, Captions, CaptionsOff, ChevronDown } from "lucide-react";
 import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
+import { VoicePicker } from "@/components/chat/voice-picker";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
+import {
+  hasSeenFirstRunPrimer,
+  markFirstRunPrimerSeen,
+} from "@/components/chat/voice-pitfalls";
 
 /**
  * The two-way "talk mode" surface — an orb + live transcript + controls over the
@@ -65,7 +71,32 @@ export function TalkMode({
   const session = useVoiceSession();
   const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
     session;
-  const { settings, toggle } = useVoiceSettings();
+  const { settings, toggle, set } = useVoiceSettings();
+  // Voice picker mounted INSIDE TalkMode so it inherits the voice-settings store
+  // (one source of truth) and so opening the picker doesn't tear down the session.
+  // Resolves the current voice via the catalog default when settings.voiceId is unset
+  // (preserves v1.6 Joanna behavior for legacy localStorage payloads).
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const voiceLabelRef = useRef<HTMLButtonElement>(null);
+  const currentVoiceId = settings.voiceId ?? getDefaultVoiceId();
+  const currentVoiceName = getVoiceById(currentVoiceId)?.displayName ?? "Default";
+
+  // First-run primer: a one-time, dismissible card that surfaces the picker
+  // affordance to a visitor who's never opened TalkMode before. The catalog
+  // default voiceId resolves to Joanna by default, but most visitors won't
+  // know they CAN swap voices unless we tell them once. Not shown when the
+  // user has already picked a voice (settings.voiceId set) — that's already
+  // a clear signal they know about the picker.
+  const [showPrimer, setShowPrimer] = useState(false);
+  useEffect(() => {
+    if (settings.voiceId === undefined && !hasSeenFirstRunPrimer()) {
+      setShowPrimer(true);
+    }
+  }, [settings.voiceId]);
+  const dismissPrimer = () => {
+    markFirstRunPrimerSeen();
+    setShowPrimer(false);
+  };
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
@@ -193,9 +224,16 @@ export function TalkMode({
       {/* Live captions — both sides of the turn as text so voice is never the only
           channel (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't
           "live"). "You said" persists the user's words; the answer shows what is SPOKEN.
-          Toggleable via the cc control below; default on. */}
+          Toggleable via the cc control below; default on.
+          aria-hidden flips ON while speaking so a screen reader doesn't double-announce
+          the text the page is currently reading aloud (pitfall #1 — the SR + read-aloud
+          double-speak). The visible caption stays for sighted users; only the AT path
+          is suppressed during active speech. */}
       {settings.captions && (
-        <div className="flex min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 text-center">
+        <div
+          aria-hidden={speaking}
+          className="flex min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 text-center"
+        >
           {youSaid && (
             <>
               <p className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
@@ -279,11 +317,70 @@ export function TalkMode({
         </button>
       </div>
 
+      {/* Voice picker trigger — sits BELOW the controls so it doesn't compete with
+          the primary mic button for visual weight. Mirrors the captions toggle's
+          height + frosted-pill aesthetic. */}
+      <button
+        ref={voiceLabelRef}
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={pickerOpen}
+        aria-label={`Pick voice — current: ${currentVoiceName}`}
+        title="Pick voice"
+        className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-bg-surface/40 px-3 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <span className="font-mono uppercase tracking-widest">Voice:</span>
+        <span className="text-fg">{currentVoiceName}</span>
+        <ChevronDown size={12} aria-hidden="true" className="opacity-60" />
+      </button>
+
       <p className="text-center text-[11px] text-fg-subtle">
         {active
           ? "Tap the orb or press Space to take your turn · Esc to close"
           : "Tap the orb or press Space to start · grounded in real work"}
       </p>
+
+      {/* First-run primer — one-time hint surfacing the picker affordance. Dismissed
+          forever via markFirstRunPrimerSeen() so we don't nag returning visitors.
+          aria-live polite so AT users hear it without focus theft. Closes
+          automatically once the user picks a voice (settings.voiceId set). */}
+      {showPrimer && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-auto flex max-w-md items-start gap-3 rounded-lg border border-border-strong/40 bg-bg-base/80 px-3 py-2.5 text-xs text-fg-muted backdrop-blur-sm"
+        >
+          <span className="flex-1 leading-relaxed">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
+              Tip ·{" "}
+            </span>
+            Anvil reads answers in {currentVoiceName} by default. Press{" "}
+            <kbd className="rounded bg-bg-elevated px-1 py-0.5 text-[10px]">⌘K</kbd>{" "}
+            → "Pick voice" or use the Voice menu above to swap.
+          </span>
+          <button
+            type="button"
+            onClick={dismissPrimer}
+            aria-label="Dismiss tip"
+            className="-mr-1 -mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {/* Voice picker dialog. Picking a voice persists to the settings store; the
+          session's TTS hook (Phase 2.3) re-renders on the next utterance with the
+          new voiceId — no in-flight audio is interrupted by the swap. */}
+      <VoicePicker
+        mode="dialog"
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        currentVoiceId={currentVoiceId}
+        onPick={(id) => set({ voiceId: id })}
+        getOpener={() => voiceLabelRef.current}
+      />
     </div>
   );
 }

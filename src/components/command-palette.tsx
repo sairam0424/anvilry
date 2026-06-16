@@ -36,6 +36,14 @@ import { allProjects, allWork } from "@/lib/content";
 import { useView } from "@/components/view-context";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { openTalkMode } from "@/components/chat/talk-overlay-store";
+import {
+  CURATED_VOICES,
+  getDefaultVoiceId,
+  getVoiceById,
+} from "@/lib/voice-catalog";
+import { VoicePicker } from "@/components/chat/voice-picker";
+import { VoiceSettingsDialog } from "@/components/chat/voice-settings-dialog";
+import { Settings } from "lucide-react";
 
 type Action = {
   id: string;
@@ -78,6 +86,13 @@ export function CommandPalette() {
   const { setView } = useView();
   const { settings, toggle, set } = useVoiceSettings();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  // Voice picker dialog opens on "Pick voice…" (quick-swap commands set the
+  // voiceId directly without opening, since they're a one-action choice).
+  const [voicePickerOpen, setVoicePickerOpen] = useState(false);
+  // Voice settings dialog (canonical full-config surface) opens on "Voice settings…".
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
+  const currentVoiceId = settings.voiceId ?? getDefaultVoiceId();
+  const currentVoiceName = getVoiceById(currentVoiceId)?.displayName ?? "Default";
   const wasOpen = useRef(false);
 
   useEffect(() => {
@@ -207,6 +222,58 @@ export function CommandPalette() {
     typeof window !== "undefined" &&
     ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
   const voice: Action[] = [
+    // "Pick voice…" — the primary entry point to the curated 6-card picker.
+    // Always offered (browser TTS is near-universal) so a user without read-aloud
+    // toggled on can still preview voices and decide.
+    ...(ttsSupported
+      ? [
+          {
+            id: "voice-pick",
+            label: "Pick voice…",
+            hint: currentVoiceName,
+            icon: <AudioLines size={16} />,
+            run: () => {
+              setOpen(false);
+              // Open the picker dialog AFTER the palette closes so focus management
+              // doesn't fight (the picker's getOpener won't return triggerRef while
+              // the palette is still open).
+              setVoicePickerOpen(true);
+            },
+            keywords: "voice pick choose select stephen joanna ruth matthew aoede charon catalog",
+            value: "Pick voice choose select stephen joanna ruth matthew aoede charon catalog",
+          },
+          {
+            id: "voice-settings",
+            label: "Voice settings…",
+            hint: "engine, character, toggles",
+            icon: <Settings size={16} />,
+            run: () => {
+              setOpen(false);
+              setVoiceSettingsOpen(true);
+            },
+            keywords: "voice settings preferences engine character speed tone pause toggles all-in-one",
+            value: "Voice settings preferences engine character speed tone pause toggles all-in-one",
+          },
+        ]
+      : []),
+    // Quick-swap entries — one per curated voice. Searching "stephen" / "warm" /
+    // "generative" all surface Stephen. Setting voiceId directly (no dialog open)
+    // so the palette doubles as a power-user voice switcher.
+    ...(ttsSupported
+      ? CURATED_VOICES.map((v) => ({
+          id: `voice-pick-${v.id}`,
+          label: `Voice: ${v.displayName}`,
+          hint: v.descriptor,
+          icon: <Volume2 size={16} />,
+          run: () => {
+            set({ voiceId: v.id });
+            setOpen(false);
+          },
+          // Searchable: voice + name + descriptor + accent + engine tier.
+          keywords: `voice ${v.displayName.toLowerCase()} ${v.descriptor.toLowerCase()} ${v.gender} ${v.accent} ${v.engine}${v.pollyTier ? " " + v.pollyTier : ""}`,
+          value: `Voice ${v.displayName} ${v.descriptor} ${v.gender} ${v.accent} ${v.engine}${v.pollyTier ? " " + v.pollyTier : ""}`,
+        }))
+      : []),
     // Hands-free two-way talk mode — only on the modal surface (the 5th-view surface
     // is entered via the ViewSwitcher) and only where speech recognition exists.
     ...(sttSupported && settings.talkSurface === "modal"
@@ -426,6 +493,26 @@ export function CommandPalette() {
           </Command.List>
         </div>
       </Command.Dialog>
+
+      {/* Voice picker dialog. Mounted as a sibling to the palette so the palette's
+          own Dialog can close cleanly before this one opens (avoids two stacked
+          Radix focus-traps fighting). The trigger that opened it is the palette's
+          own kbd shortcut, so focus restores to the palette pill via triggerRef. */}
+      <VoicePicker
+        mode="dialog"
+        open={voicePickerOpen}
+        onOpenChange={setVoicePickerOpen}
+        currentVoiceId={currentVoiceId}
+        onPick={(id) => set({ voiceId: id })}
+        getOpener={() => triggerRef.current}
+      />
+
+      {/* Canonical voice settings dialog — engine, character, toggles in one place. */}
+      <VoiceSettingsDialog
+        open={voiceSettingsOpen}
+        onOpenChange={setVoiceSettingsOpen}
+        getOpener={() => triggerRef.current}
+      />
     </>
   );
 }

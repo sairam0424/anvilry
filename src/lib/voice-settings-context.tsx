@@ -23,10 +23,26 @@ import { useCallback, useSyncExternalStore } from "react";
 
 /** Which engine powers speech-to-text. `browser` = free Web Speech (default). */
 export type SttEngine = "browser" | "transcribe";
-/** Which engine powers text-to-speech. `browser` = free speechSynthesis (default). */
-export type TtsEngine = "browser" | "polly";
+/** Which engine powers text-to-speech. `browser` = free speechSynthesis (default).
+ *  `google` is the permanent-free hedge against Polly's 12-month free-tier cliff. */
+export type TtsEngine = "browser" | "polly" | "google";
 /** Where two-way talk mode mounts. `modal` overlay (default) or a 5th `view`. */
 export type TalkSurface = "modal" | "view";
+
+/** Cross-engine voice character knobs. Mapped to engine-native parameters by the
+ *  TTS hook: `speed`→ rate / Polly Neural <prosody rate>; `tone` → pitch / Polly
+ *  Neural <prosody pitch>; `pause` → sentence padding / Polly Neural <break time>.
+ *  Polly Generative + Google Chirp 3 HD reject most prosody tags, so the hook
+ *  drops these knobs on those engines (the catalog still resolves the voice). */
+export type VoiceCharacterSpeed = "slow" | "natural" | "fast";
+export type VoiceCharacterTone = "warm" | "neutral" | "crisp";
+export type VoiceCharacterPause = "spacious" | "normal" | "tight";
+
+export type VoiceCharacter = {
+  speed: VoiceCharacterSpeed;
+  tone: VoiceCharacterTone;
+  pause: VoiceCharacterPause;
+};
 
 export type VoiceSettings = {
   /** Show the push-to-talk mic button in the composer. */
@@ -40,6 +56,21 @@ export type VoiceSettings = {
   sttEngine: SttEngine;
   ttsEngine: TtsEngine;
   talkSurface: TalkSurface;
+  /** Catalog id of the user-picked voice (e.g. "polly-neural-joanna"). When undefined
+   *  the runtime resolves to getDefaultVoiceId() in the catalog — this lets a stored
+   *  payload from v1.6 (which lacked the field) upgrade cleanly without migration,
+   *  AND lets a never-picked visitor stay on the engine default forever. The picker
+   *  UI writes this field; nothing else does. */
+  voiceId?: string;
+  /** Cross-engine voice character. Defaults to {natural, neutral, normal} — the
+   *  baseline that matches v1.6 hardcoded rate=1, pitch=1, no padding. */
+  voiceCharacter: VoiceCharacter;
+};
+
+export const DEFAULT_VOICE_CHARACTER: VoiceCharacter = {
+  speed: "natural",
+  tone: "neutral",
+  pause: "normal",
 };
 
 const DEFAULTS: VoiceSettings = {
@@ -50,18 +81,49 @@ const DEFAULTS: VoiceSettings = {
   sttEngine: "browser",
   ttsEngine: "browser",
   talkSurface: "modal",
+  // voiceId intentionally omitted — undefined means "use catalog default at point
+  // of use", which preserves v1.6 behavior for legacy localStorage payloads.
+  voiceCharacter: DEFAULT_VOICE_CHARACTER,
 };
 
 const STORAGE_KEY = "anvilry:voice:settings";
 
 const isSttEngine = (v: unknown): v is SttEngine => v === "browser" || v === "transcribe";
-const isTtsEngine = (v: unknown): v is TtsEngine => v === "browser" || v === "polly";
+const isTtsEngine = (v: unknown): v is TtsEngine =>
+  v === "browser" || v === "polly" || v === "google";
 const isTalkSurface = (v: unknown): v is TalkSurface => v === "modal" || v === "view";
+const isSpeed = (v: unknown): v is VoiceCharacterSpeed =>
+  v === "slow" || v === "natural" || v === "fast";
+const isTone = (v: unknown): v is VoiceCharacterTone =>
+  v === "warm" || v === "neutral" || v === "crisp";
+const isPause = (v: unknown): v is VoiceCharacterPause =>
+  v === "spacious" || v === "normal" || v === "tight";
+
+function parseVoiceCharacter(o: unknown): VoiceCharacter {
+  if (!o || typeof o !== "object") return DEFAULT_VOICE_CHARACTER;
+  const c = o as Partial<Record<keyof VoiceCharacter, unknown>>;
+  return {
+    speed: isSpeed(c.speed) ? c.speed : DEFAULT_VOICE_CHARACTER.speed,
+    tone: isTone(c.tone) ? c.tone : DEFAULT_VOICE_CHARACTER.tone,
+    pause: isPause(c.pause) ? c.pause : DEFAULT_VOICE_CHARACTER.pause,
+  };
+}
+
+/** Reasonable safety bounds: catalog ids are kebab-case alphanumeric of the form
+ *  `{engine}-{tier}-{name}`, none longer than ~40 chars; bound at 64 to leave headroom
+ *  while rejecting any pathologically-long localStorage payload (defense-in-depth —
+ *  the picker writes catalog ids, never user-typed strings). */
+const isVoiceId = (v: unknown): v is string =>
+  typeof v === "string" && v.length > 0 && v.length < 64;
 
 /**
  * Parse the persisted blob into a fully-valid settings object. Unknown/missing keys
  * fall back to DEFAULTS field-by-field, so a partial or older payload (e.g. before a
  * new toggle existed) upgrades cleanly instead of throwing.
+ *
+ * v1.6 payloads (no voiceId, no voiceCharacter) upgrade to: voiceId stays undefined
+ * (point-of-use resolves to catalog default), voiceCharacter falls back to
+ * DEFAULT_VOICE_CHARACTER (matches v1.6 hardcoded rate=1, pitch=1, no padding).
  */
 function parse(raw: string | null): VoiceSettings {
   if (!raw) return DEFAULTS;
@@ -75,6 +137,10 @@ function parse(raw: string | null): VoiceSettings {
       sttEngine: isSttEngine(o.sttEngine) ? o.sttEngine : DEFAULTS.sttEngine,
       ttsEngine: isTtsEngine(o.ttsEngine) ? o.ttsEngine : DEFAULTS.ttsEngine,
       talkSurface: isTalkSurface(o.talkSurface) ? o.talkSurface : DEFAULTS.talkSurface,
+      // voiceId is optional. Invalid/missing → undefined (NOT a catalog default —
+      // that resolves at point of use, so a future picker pick takes over cleanly).
+      ...(isVoiceId(o.voiceId) ? { voiceId: o.voiceId } : {}),
+      voiceCharacter: parseVoiceCharacter(o.voiceCharacter),
     };
   } catch {
     return DEFAULTS;

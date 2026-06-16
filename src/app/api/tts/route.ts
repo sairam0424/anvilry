@@ -1,6 +1,12 @@
-import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
+import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { bedrockCreds } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  getDefaultVoiceId,
+  resolvePollyParams,
+  validateVoiceForEngine,
+} from "@/lib/voice-catalog";
+import { cacheGet, cacheKey, cacheSet } from "./cache";
 
 export const runtime = "nodejs";
 export const maxDuration = 15;
@@ -22,29 +28,12 @@ export const maxDuration = 15;
  */
 
 const MAX_CHARS = 600;
-const VOICE_ID = "Joanna"; // a clear US-English neural voice
 const REGION_FALLBACK = "us-east-1";
 
-// Tiny in-process LRU: hash-free (the key IS the text, capped) Map with FIFO eviction.
-// Per-instance only — good enough to dedupe a re-read of the same answer; not a CDN.
-const CACHE_MAX = 100;
-const cache = new Map<string, Buffer>();
-
-function cacheGet(key: string): Buffer | undefined {
-  const v = cache.get(key);
-  if (v) {
-    cache.delete(key);
-    cache.set(key, v); // bump to most-recently-used
-  }
-  return v;
-}
-function cacheSet(key: string, val: Buffer): void {
-  cache.set(key, val);
-  if (cache.size > CACHE_MAX) {
-    const oldest = cache.keys().next().value;
-    if (oldest !== undefined) cache.delete(oldest);
-  }
-}
+// The catalog default ("polly-neural-joanna") is what an unspecified body resolves
+// to — preserves v1.6 behavior exactly. resolvePollyParams() unwraps this to the
+// AWS-native VoiceId + tier the SynthesizeSpeechCommand actually expects.
+const DEFAULT_CATALOG_ID = getDefaultVoiceId();
 
 function isConfigured(): boolean {
   const { accessKeyId, secretAccessKey } = bedrockCreds();
@@ -86,7 +75,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Request too large." }, { status: 413 });
   }
 
-  let body: { text?: unknown };
+  let body: { text?: unknown; voiceId?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -96,7 +85,32 @@ export async function POST(req: Request) {
   const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
   if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
 
-  const cached = cacheGet(text);
+  // The body's voiceId is a catalog id (e.g. "polly-neural-joanna"). The catalog is
+  // the source of truth for which Polly voices we expose AND which tier each voice
+  // runs on — so we don't accept a separate `tier` field; mismatches (Joanna +
+  // generative would 5xx at AWS) are impossible by construction. An unknown id
+  // rejects with 400 instead of silently falling back, so a typo in client code
+  // surfaces immediately rather than masquerading as Joanna.
+  const requestedVoiceId =
+    typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
+      ? body.voiceId
+      : DEFAULT_CATALOG_ID;
+
+  if (!validateVoiceForEngine(requestedVoiceId, "polly")) {
+    return Response.json(
+      { error: "Unknown voice for this engine." },
+      { status: 400 },
+    );
+  }
+
+  const polly = resolvePollyParams(requestedVoiceId);
+  // validateVoiceForEngine already guarantees this — narrow for TS.
+  if (!polly) {
+    return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+  }
+
+  const key = cacheKey(text, polly.pollyVoiceId, polly.tier);
+  const cached = cacheGet(key);
   if (cached) {
     return new Response(new Uint8Array(cached), {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "hit" },
@@ -108,8 +122,11 @@ export async function POST(req: Request) {
       new SynthesizeSpeechCommand({
         Text: text,
         OutputFormat: "mp3",
-        VoiceId: VOICE_ID,
-        Engine: "neural",
+        // Cast: polly.pollyVoiceId comes from the validated catalog entry (a known
+        // AWS VoiceId). The SDK types it as a string-literal union and won't accept
+        // a plain string, but the runtime semantics are identical.
+        VoiceId: polly.pollyVoiceId as VoiceId,
+        Engine: polly.tier,
       }),
     );
     if (!out.AudioStream) {
@@ -126,7 +143,7 @@ export async function POST(req: Request) {
       ),
     ]);
     const buf = Buffer.from(bytes);
-    cacheSet(text, buf);
+    cacheSet(key, buf);
     return new Response(new Uint8Array(buf), {
       headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "miss" },
     });

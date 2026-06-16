@@ -189,3 +189,136 @@ describe("useSpeechSynthesis", () => {
     expect(spoken.map((u) => u.text)).toEqual(["Second answer streaming now."]);
   });
 });
+
+/**
+ * v1.7 options-object form. The string-form (legacy) is fully covered above and
+ * keeps its test behavior unchanged. These tests pin the new things:
+ *   - voiceCharacter maps to safe-range rate/pitch values
+ *   - voiceId of a known browser entry resolves via voiceURI prefix match
+ *   - mismatched voiceId silently falls back to the localService heuristic
+ *   - the engine="google" branch fetches /api/tts-google with the right body
+ */
+
+describe("useSpeechSynthesis — options form (v1.7)", () => {
+  it("maps character.speed=fast to rate=1.15 (clamped, no cartoonish 2x)", () => {
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({
+        engine: "browser",
+        character: { speed: "fast", tone: "neutral", pause: "normal" },
+      }),
+    );
+    act(() => result.current.speak("Hello."));
+    expect(spoken[0].rate).toBeCloseTo(1.15);
+    expect(spoken[0].pitch).toBeCloseTo(1.0);
+  });
+
+  it("maps character.tone=warm to pitch=0.95 (subtle, professional warmth)", () => {
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({
+        engine: "browser",
+        character: { speed: "natural", tone: "warm", pause: "normal" },
+      }),
+    );
+    act(() => result.current.speak("Hello."));
+    expect(spoken[0].pitch).toBeCloseTo(0.95);
+  });
+
+  it("default character (undefined) reproduces v1.6 hardcoded rate=1, pitch=1", () => {
+    const { result } = renderHook(() => useSpeechSynthesis({ engine: "browser" }));
+    act(() => result.current.speak("Hello."));
+    expect(spoken[0].rate).toBe(1);
+    expect(spoken[0].pitch).toBe(1);
+  });
+
+  it("voiceId of an unknown catalog entry falls back to the localService heuristic", () => {
+    // Our fakeSynth getVoices returns one en-US localService voice — the heuristic
+    // should pick it even when voiceId is provided but the catalog can't resolve it.
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "browser", voiceId: "unknown-id" }),
+    );
+    act(() => result.current.speak("Hello."));
+    expect(spoken[0].voice).toBeDefined();
+  });
+
+  it("legacy string form still works (back-compat)", () => {
+    const { result } = renderHook(() => useSpeechSynthesis("browser"));
+    act(() => result.current.speak("Hello."));
+    expect(spoken.length).toBe(1);
+  });
+});
+
+describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
+  it("speak() with engine=google + voiceId fetches /api/tts-google with the right body", async () => {
+    const fetchMock: typeof fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), { status: 200 }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "google", voiceId: "google-chirp3-aoede" }),
+    );
+    act(() => result.current.speak("Hello."));
+    // The hook calls fetch asynchronously inside playRemoteFrom; wait a microtask.
+    await new Promise((r) => setTimeout(r, 0));
+
+    const calls = vi.mocked(fetchMock).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const [url, init] = calls[0]!;
+    expect(url).toBe("/api/tts-google");
+    const body = JSON.parse(init!.body as string);
+    expect(body).toEqual({ text: "Hello.", voiceId: "google-chirp3-aoede" });
+  });
+
+  it("speak() with engine=google + NO voiceId falls back to browser path", async () => {
+    const fetchMock: typeof fetch = vi.fn(() =>
+      Promise.resolve(new Response(null, { status: 200 })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() => useSpeechSynthesis({ engine: "google" }));
+    act(() => result.current.speak("Hello."));
+    // Must NOT have hit the network — fell through to browser engine.
+    expect(vi.mocked(fetchMock)).not.toHaveBeenCalled();
+    expect(spoken.map((u) => u.text)).toEqual(["Hello."]);
+  });
+
+  it("speak() with engine=polly + custom voiceId fetches /api/tts with the right body", async () => {
+    const fetchMock: typeof fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), { status: 200 }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "polly", voiceId: "polly-generative-stephen" }),
+    );
+    act(() => result.current.speak("Hello."));
+    await new Promise((r) => setTimeout(r, 0));
+
+    const calls = vi.mocked(fetchMock).mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const [url, init] = calls[0]!;
+    expect(url).toBe("/api/tts");
+    const body = JSON.parse(init!.body as string);
+    expect(body).toEqual({ text: "Hello.", voiceId: "polly-generative-stephen" });
+  });
+
+  it("remote-engine fetch failure falls back to browser path (the cascade)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("err", { status: 502 }))),
+    );
+
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "polly", voiceId: "polly-neural-joanna" }),
+    );
+    act(() => result.current.speak("Hello world."));
+    // Wait for fetch + fallback effect.
+    await new Promise((r) => setTimeout(r, 0));
+    // The browser engine should have spoken the text.
+    expect(spoken.map((u) => u.text)).toContain("Hello world.");
+  });
+});

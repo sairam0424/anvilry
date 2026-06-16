@@ -69,7 +69,11 @@ export function useVoiceSession() {
   const { settings } = useVoiceSettings();
   const { messages, send, stop: stopStream, isStreaming } = useChat();
   const recognition = useStt(settings.sttEngine);
-  const tts = useSpeechSynthesis(settings.ttsEngine);
+  const tts = useSpeechSynthesis({
+    engine: settings.ttsEngine,
+    voiceId: settings.voiceId,
+    character: settings.voiceCharacter,
+  });
 
   // `active` (session open?) is the ONLY stored state — everything else (listening /
   // thinking / speaking / paused) is DERIVED from the child-hook signals below, so the

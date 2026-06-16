@@ -1,22 +1,46 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  findBrowserVoice,
+  getDefaultVoiceId,
+  getVoiceById,
+  type VoiceEntry,
+} from "@/lib/voice-catalog";
+import {
+  DEFAULT_VOICE_CHARACTER,
+  type TtsEngine,
+  type VoiceCharacter,
+} from "@/lib/voice-settings-context";
 
 /**
- * Text-to-speech over the browser-native window.speechSynthesis — free, client-side,
- * Baseline-widely-available, zero rate-limit pressure. Used by the per-answer "read
- * aloud" button (Phase 2) and later the two-way talk mode (Phase 3). It speaks text
- * the caller already has (the streamed assistant message) — no network, no provider.
+ * Text-to-speech across three engines, free-first by default:
+ *   - browser  → window.speechSynthesis (zero network, zero cost, Baseline-wide).
+ *   - polly    → AWS Polly Neural / Generative via /api/tts (server-proxied).
+ *   - google   → Google Cloud TTS Chirp 3 HD via /api/tts-google (server-proxied,
+ *                permanent-free hedge against Polly's 12-mo cliff).
  *
- * Incremental speech: speakChunk() can be called repeatedly as an answer streams; the
- * engine's internal FIFO queue means sentence 1 starts speaking while 2..N still
- * arrive, so audio begins ~one sentence after the first token rather than after the
- * whole answer. Per-sentence utterances are also short enough to dodge Chromium's
- * ~15s wall-clock utterance cutoff (a timer on the ACTIVE utterance, worst on remote
- * "Google" voices — so we also prefer localService voices).
+ * Used by the per-answer "read aloud" button + the two-way talk mode. It speaks
+ * text the caller already has (the streamed assistant message) — no LLM involved.
  *
- * cancel() is synchronous and clears the whole queue — the single kill wired to
- * barge-in, the chat Stop button, view/route changes, tab-hide, and unmount.
+ * Incremental speech: speakChunk() can be called repeatedly as an answer streams;
+ * the engine's internal FIFO queue means sentence 1 starts speaking while 2..N
+ * still arrive, so audio begins ~one sentence after the first token rather than
+ * after the whole answer. Per-sentence utterances are also short enough to dodge
+ * Chromium's ~15s wall-clock utterance cutoff (browser engine only — the cutoff
+ * is a SpeechSynthesis quirk; remote engines play <audio> blobs and don't apply).
+ *
+ * cancel() is synchronous and clears the whole queue across engines — the single
+ * kill wired to barge-in, the chat Stop button, view/route changes, tab-hide,
+ * and unmount. A monotonic token invalidates any in-flight remote fetch so a late
+ * response can't resurrect stopped speech.
+ *
+ * Failure cascade: any remote-engine error falls back through the chain. The two
+ * remote engines (polly, google) share the same blob-audio playback shape, so the
+ * remote-playback code is engine-parameterized — only the fetch URL + body shape
+ * differ. A google fetch failure speaks the rest of the answer via the browser
+ * engine; a polly fetch failure does the same. There is no google→polly hop in
+ * v1.7 (would require resolving cross-engine voice equivalents, deferred).
  */
 
 // SSR-safe support flag (no setState-in-effect; matches use-mounted.ts idiom).
@@ -56,8 +80,20 @@ export function splitSentences(text: string): string[] {
   return out;
 }
 
-/** Pick the best English voice: prefer an on-device (localService) "en" voice. */
-function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+/** Pick the best browser voice for this catalog entry — voiceURI prefix match
+ *  when the catalog has one, else the first English localService fallback. The
+ *  prefix path handles macOS localization + Linux speech-dispatcher modifiers
+ *  (pitfall #14: never trust voice.name). */
+function pickVoice(
+  voices: SpeechSynthesisVoice[],
+  catalogEntry: VoiceEntry | undefined,
+): SpeechSynthesisVoice | null {
+  if (catalogEntry && catalogEntry.engine === "browser") {
+    const matched = findBrowserVoice(catalogEntry.id, voices);
+    if (matched) return matched;
+    // Curated browser voice not present (Apple Premium not downloaded, etc.) —
+    // fall through to the localService heuristic rather than 500.
+  }
   const en = voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
   if (en.length === 0) return voices[0] ?? null;
   return en.find((v) => v.localService) ?? en[0];
@@ -66,11 +102,46 @@ function pickVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null 
 const isAndroid = () =>
   typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
 
-/** Which engine speaks: free browser speechSynthesis (default), AWS Polly via /api/tts,
- *  or Google Cloud TTS via /api/tts-google. Imported from the settings store so the
- *  hook + the store agree on the union — there is one source of truth for engine ids. */
-import type { TtsEngine } from "@/lib/voice-settings-context";
+/** Map the catalog's VoiceCharacter to safe-range browser SpeechSynthesisUtterance
+ *  values. Tight clamps (rate 0.85–1.15, pitch 0.95–1.10) avoid the cartoonish
+ *  extremes the API allows but no professional voice should sound like. */
+function rateForSpeed(speed: VoiceCharacter["speed"]): number {
+  switch (speed) {
+    case "slow":
+      return 0.85;
+    case "fast":
+      return 1.15;
+    default:
+      return 1.0;
+  }
+}
+function pitchForTone(tone: VoiceCharacter["tone"]): number {
+  switch (tone) {
+    case "warm":
+      return 0.95;
+    case "crisp":
+      return 1.1;
+    default:
+      return 1.0;
+  }
+}
+
+/** Re-export for convenience so the hook + the store agree on the union — there
+ *  is one source of truth for engine ids (the store). */
 export type { TtsEngine };
+
+/**
+ * The hook's options object. Backward-compatible: the legacy `string` form
+ * (a bare TtsEngine) still works for old callers, the new object form supports
+ * voice selection + character knobs.
+ */
+export type UseSpeechSynthesisOptions = {
+  engine?: TtsEngine;
+  /** Catalog id (e.g. "polly-generative-stephen"). undefined → default per-engine. */
+  voiceId?: string;
+  /** Cross-engine character knobs. Defaults to {natural, neutral, normal}. */
+  character?: VoiceCharacter;
+};
 
 export type UseSpeechSynthesis = {
   supported: boolean;
@@ -92,16 +163,39 @@ export type UseSpeechSynthesis = {
   resetTurn: () => void;
 };
 
-export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynthesis {
+/** Normalize the legacy string form to the options shape so the body has one path. */
+function normalizeOptions(arg?: TtsEngine | UseSpeechSynthesisOptions): {
+  engine: TtsEngine;
+  voiceId: string | undefined;
+  character: VoiceCharacter;
+} {
+  if (arg === undefined) {
+    return { engine: "browser", voiceId: undefined, character: DEFAULT_VOICE_CHARACTER };
+  }
+  if (typeof arg === "string") {
+    return { engine: arg, voiceId: undefined, character: DEFAULT_VOICE_CHARACTER };
+  }
+  return {
+    engine: arg.engine ?? "browser",
+    voiceId: arg.voiceId,
+    character: arg.character ?? DEFAULT_VOICE_CHARACTER,
+  };
+}
+
+export function useSpeechSynthesis(
+  arg?: TtsEngine | UseSpeechSynthesisOptions,
+): UseSpeechSynthesis {
+  const { engine, voiceId, character } = normalizeOptions(arg);
+
   const browserSupported = useSyncExternalStore(
     noopSubscribe,
     getSupportedClient,
     getSupportedServer,
   );
-  // Polly plays through an <audio> element, so "supported" only needs the browser to
-  // do audio playback (effectively always) — but we still report browser support so
-  // callers can gate a "read aloud" button even before an engine choice. With Polly
-  // selected, a fetch failure transparently falls back to the browser path below.
+  // Remote engines play through an <audio> element, so "supported" only needs the
+  // browser to do audio playback (effectively always) — but we still report browser
+  // support so callers can gate a "read aloud" button even before an engine choice.
+  // With a remote engine selected, a fetch failure transparently falls back below.
   const supported = browserSupported;
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -110,20 +204,23 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
   // enqueued, so a re-call only speaks the NEW sentences.
   const spokenCountRef = useRef(0);
 
-  // --- Polly playback (engine="polly") ------------------------------------------
+  // --- Remote playback (engine="polly" | "google") ----------------------------
   // <audio> plays one source at a time, so we run our own sentence queue: fetch
   // sentence N, play it, advance on `ended`. A monotonically-increasing token
   // invalidates an in-flight fetch when cancel() fires (so a late response can't
-  // resurrect stopped speech). Any fetch/play failure falls back to the browser path.
+  // resurrect stopped speech). Polly + Google share this state — only one can be
+  // active at a time (they're alternative engines, never concurrent).
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const pollyQueueRef = useRef<string[]>([]);
-  const pollyIdxRef = useRef(0);
-  const pollyTokenRef = useRef(0);
-  // Ref to the browser enqueue fn so the Polly fallback can call it without a forward
-  // dependency (enqueue is defined below). Assigned in an effect.
+  const remoteQueueRef = useRef<string[]>([]);
+  const remoteIdxRef = useRef(0);
+  const remoteTokenRef = useRef(0);
+  // Ref to the browser enqueue fn so the remote fallback can call it without a
+  // forward dependency (enqueue is defined below). Assigned in an effect.
   const enqueueBrowserRef = useRef<(chunks: string[], from: number) => void>(() => {});
-  // Desktop-only keep-alive against Chromium's ~15s cutoff (pause/resume). Skipped on
-  // Android, where pause() behaves like cancel() and would truncate speech.
+  // Desktop-only keep-alive against Chromium's ~15s SpeechSynthesis cutoff
+  // (pause/resume). Skipped on Android, where pause() behaves like cancel() and
+  // would truncate speech. Browser engine only — remote engines aren't subject
+  // to the cutoff (they're <audio> blobs).
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load voices (async on Chromium — getVoices() is [] until voiceschanged fires).
@@ -163,11 +260,11 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
     if (browserSupported) window.speechSynthesis.cancel();
   }, [browserSupported, stopKeepAlive]);
 
-  /** Stop the Polly <audio> playback + invalidate any in-flight fetch. */
-  const cancelPolly = useCallback(() => {
-    pollyTokenRef.current += 1; // invalidate pending fetches
-    pollyQueueRef.current = [];
-    pollyIdxRef.current = 0;
+  /** Stop the remote-engine <audio> playback + invalidate any in-flight fetch. */
+  const cancelRemote = useCallback(() => {
+    remoteTokenRef.current += 1; // invalidate pending fetches
+    remoteQueueRef.current = [];
+    remoteIdxRef.current = 0;
     const a = audioRef.current;
     if (a) {
       a.pause();
@@ -177,36 +274,62 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
 
   const cancel = useCallback(() => {
     cancelBrowser();
-    cancelPolly();
+    cancelRemote();
     spokenCountRef.current = 0;
     setIsSpeaking(false);
-  }, [cancelBrowser, cancelPolly]);
+  }, [cancelBrowser, cancelRemote]);
 
-  /** Play the Polly queue from pollyIdxRef; fetch each sentence then play it. On any
-   *  failure, fall back to speaking the WHOLE remaining text via the browser engine. */
-  const playPollyFrom = useCallback(
+  /** Build the request URL + body for the active remote engine. The catalog id
+   *  flows through verbatim — the route validates it server-side. */
+  const buildRemoteRequest = useCallback(
+    (sentence: string): { url: string; body: string } | null => {
+      if (engine === "polly") {
+        return {
+          url: "/api/tts",
+          body: JSON.stringify({ text: sentence, voiceId }),
+        };
+      }
+      if (engine === "google") {
+        // Google route requires an explicit voiceId (no historical default).
+        if (!voiceId) return null;
+        return {
+          url: "/api/tts-google",
+          body: JSON.stringify({ text: sentence, voiceId }),
+        };
+      }
+      return null;
+    },
+    [engine, voiceId],
+  );
+
+  /** Play the remote queue from remoteIdxRef; fetch each sentence then play it.
+   *  On any failure, fall back to speaking the WHOLE remaining text via the
+   *  browser engine. */
+  const playRemoteFrom = useCallback(
     async (token: number) => {
       const fallback = () => {
-        const rest = pollyQueueRef.current.slice(pollyIdxRef.current).join(" ");
-        cancelPolly();
+        const rest = remoteQueueRef.current.slice(remoteIdxRef.current).join(" ");
+        cancelRemote();
         if (rest && browserSupported) {
           spokenCountRef.current = 0;
           enqueueBrowserRef.current(splitSentences(rest), 0);
         }
       };
-      while (pollyIdxRef.current < pollyQueueRef.current.length) {
-        if (token !== pollyTokenRef.current) return; // cancelled
-        const sentence = pollyQueueRef.current[pollyIdxRef.current];
+      while (remoteIdxRef.current < remoteQueueRef.current.length) {
+        if (token !== remoteTokenRef.current) return; // cancelled
+        const sentence = remoteQueueRef.current[remoteIdxRef.current];
+        const req = buildRemoteRequest(sentence);
+        if (!req) return fallback();
         let url: string;
         try {
-          const res = await fetch("/api/tts", {
+          const res = await fetch(req.url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: sentence }),
+            body: req.body,
           });
           if (!res.ok) return fallback();
           const blob = await res.blob();
-          if (token !== pollyTokenRef.current) return;
+          if (token !== remoteTokenRef.current) return;
           url = URL.createObjectURL(blob);
         } catch {
           return fallback();
@@ -229,12 +352,12 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
           return fallback();
         }
         URL.revokeObjectURL(url);
-        if (token !== pollyTokenRef.current) return;
-        pollyIdxRef.current += 1;
+        if (token !== remoteTokenRef.current) return;
+        remoteIdxRef.current += 1;
       }
-      if (token === pollyTokenRef.current) setIsSpeaking(false);
+      if (token === remoteTokenRef.current) setIsSpeaking(false);
     },
-    [browserSupported, cancelPolly],
+    [browserSupported, buildRemoteRequest, cancelRemote],
   );
 
   /** Enqueue chunks[from..] as utterances; wire speaking state on first/last. */
@@ -249,13 +372,18 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
         cached = synth.getVoices();
         voicesRef.current = cached;
       }
-      const voice = pickVoice(cached);
+      // Resolve voice from the catalog when a voiceId is set; falls back to the
+      // localService English heuristic when undefined or not on this device.
+      const catalogEntry = voiceId ? getVoiceById(voiceId) : undefined;
+      const voice = pickVoice(cached, catalogEntry);
+      const rate = rateForSpeed(character.speed);
+      const pitch = pitchForTone(character.tone);
       for (let i = from; i < chunks.length; i++) {
         const u = new SpeechSynthesisUtterance(chunks[i]);
         if (voice) u.voice = voice;
         u.lang = voice?.lang ?? "en-US";
-        u.rate = 1;
-        u.pitch = 1;
+        u.rate = rate;
+        u.pitch = pitch;
         u.onstart = () => {
           setIsSpeaking(true);
           startKeepAlive();
@@ -276,7 +404,7 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
         synth.speak(u);
       }
     },
-    [browserSupported, startKeepAlive, stopKeepAlive],
+    [browserSupported, character, voiceId, startKeepAlive, stopKeepAlive],
   );
 
   // Keep the fallback ref pointing at the live enqueue fn (set in an effect, never
@@ -285,29 +413,51 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
     enqueueBrowserRef.current = enqueue;
   }, [enqueue]);
 
+  /** True iff the active engine is one of the remote (server-proxied) engines. */
+  const isRemoteEngine = engine === "polly" || engine === "google";
+
+  /** Resolve the effective voiceId for this engine, falling back to the catalog
+   *  default when undefined. The Polly route accepts a missing voiceId (defaults
+   *  to Joanna server-side); the Google route requires one explicitly. */
+  const effectiveVoiceId =
+    voiceId ?? (engine === "polly" ? getDefaultVoiceId() : undefined);
+
   const speak = useCallback(
     (text: string) => {
       if (!text.trim()) return;
       cancel(); // replace anything in flight (both engines)
       const chunks = splitSentences(text);
       spokenCountRef.current = chunks.length;
-      if (engine === "polly") {
-        pollyQueueRef.current = chunks;
-        pollyIdxRef.current = 0;
-        const token = (pollyTokenRef.current += 1);
-        void playPollyFrom(token);
+      if (isRemoteEngine) {
+        // Google requires an explicit voiceId; if missing, fall through to browser.
+        if (engine === "google" && !effectiveVoiceId) {
+          if (browserSupported) enqueue(chunks, 0);
+          return;
+        }
+        remoteQueueRef.current = chunks;
+        remoteIdxRef.current = 0;
+        const token = (remoteTokenRef.current += 1);
+        void playRemoteFrom(token);
       } else if (browserSupported) {
         enqueue(chunks, 0);
       }
     },
-    [engine, browserSupported, cancel, enqueue, playPollyFrom],
+    [
+      engine,
+      effectiveVoiceId,
+      isRemoteEngine,
+      browserSupported,
+      cancel,
+      enqueue,
+      playRemoteFrom,
+    ],
   );
 
   /**
    * Zero ONLY the browser dedup counter so the next speakChunk() of a NEW answer starts
-   * fresh. Deliberately does NOT touch the Polly queue/index/token: those self-manage
-   * (speakChunk's `wasEmpty` restart + pollyTokenRef invalidation), and clearing them
-   * mid-tail could truncate a still-playing Polly sentence or trip a false isSpeaking
+   * fresh. Deliberately does NOT touch the remote queue/index/token: those self-manage
+   * (speakChunk's `wasEmpty` restart + remoteTokenRef invalidation), and clearing them
+   * mid-tail could truncate a still-playing remote sentence or trip a false isSpeaking
    * flip that re-opens the mic while audio is audible (self-hearing).
    */
   const resetTurn = useCallback(() => {
@@ -323,22 +473,38 @@ export function useSpeechSynthesis(engine: TtsEngine = "browser"): UseSpeechSynt
       const ready = endsClean ? all : all.slice(0, -1);
       if (ready.length <= spokenCountRef.current) return;
 
-      if (engine === "polly") {
-        const wasEmpty = pollyIdxRef.current >= pollyQueueRef.current.length;
-        pollyQueueRef.current = ready;
+      if (isRemoteEngine) {
+        if (engine === "google" && !effectiveVoiceId) {
+          // No voice picked + Google selected → fall through to browser path so
+          // streaming TTS still works. Mirrors speak()'s no-voice fallthrough.
+          if (browserSupported) {
+            enqueue(ready, spokenCountRef.current);
+            spokenCountRef.current = ready.length;
+          }
+          return;
+        }
+        const wasEmpty = remoteIdxRef.current >= remoteQueueRef.current.length;
+        remoteQueueRef.current = ready;
         spokenCountRef.current = ready.length;
         // If the queue had drained, restart the player at the current index.
-        if (wasEmpty) void playPollyFrom(pollyTokenRef.current);
+        if (wasEmpty) void playRemoteFrom(remoteTokenRef.current);
       } else if (browserSupported) {
         enqueue(ready, spokenCountRef.current);
         spokenCountRef.current = ready.length;
       }
     },
-    [engine, browserSupported, enqueue, playPollyFrom],
+    [
+      engine,
+      effectiveVoiceId,
+      isRemoteEngine,
+      browserSupported,
+      enqueue,
+      playRemoteFrom,
+    ],
   );
 
   // Stop speech if the tab is hidden (visibilitychange) and always on unmount —
-  // covers both engines (cancel() stops the browser synth AND Polly <audio>).
+  // covers all engines (cancel() stops the browser synth AND the remote <audio>).
   useEffect(() => {
     const onHide = () => {
       if (document.hidden) cancel();

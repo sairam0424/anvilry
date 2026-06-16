@@ -123,7 +123,7 @@ export function AnvilCoreSurface() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
       style={{ transformOrigin: "top right", top: posRef.current.top, right: posRef.current.right }}
-      className="fixed z-50 flex flex-col items-center gap-2 p-3"
+      className="fixed z-50 flex w-[16rem] flex-col items-center gap-2 p-3"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">

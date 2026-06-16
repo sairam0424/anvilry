@@ -89,20 +89,9 @@ export function AnvilCoreSurface() {
     else orb.removeAttribute("aria-controls");
   }, [open]);
 
-  // Anchor to the LEFT gutter (opposite the orb — where there's empty space on Classic).
-  const leftRef = useRef(16);
-  useEffect(() => {
-    if (!open) return;
-    const update = () => {
-      const vw = window.innerWidth;
-      const gutterLeft = vw > 1024 ? Math.round((vw - 1024) / 2 + 24) : 24;
-      leftRef.current = Math.max(16, gutterLeft);
-      panelRef.current?.style.setProperty("left", `${leftRef.current}px`);
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [open]);
+  // Anchor to the RIGHT edge (empty viewport margin), like Siri — doesn't disturb the
+  // hero content. Fixed 16px from the right viewport edge.
+  const rightRef = useRef(16);
 
   if (!open) return null;
 
@@ -127,7 +116,7 @@ export function AnvilCoreSurface() {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
-      style={{ transformOrigin: "top left", left: leftRef.current }}
+      style={{ transformOrigin: "top right", right: rightRef.current }}
       className="fixed top-16 z-50 flex flex-col items-center gap-3 p-4"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}

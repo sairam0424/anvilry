@@ -12,7 +12,10 @@ import { TRACE_DELIMITER } from "@/lib/llm-trace";
  * AWS Bedrock <-> the direct Anthropic API is an env change (LLM_PROVIDER), not
  * a code change.
  *
- * Owner directive: Opus 4.6 primary -> Sonnet 4.6 secondary -> Haiku 4.5 fallback.
+ * Owner directive: Sonnet 4.6 primary -> Opus 4.6 secondary -> Haiku 4.5 fallback.
+ * (Updated 2026-06-17 to match the BEDROCK_CHAIN order below — earlier wording said
+ * "Opus primary" while the array shipped Sonnet-first since v1.6, leaving log
+ * analysis ambiguous about which model was the "expected primary" on a given turn.)
  * Ported from the production pattern in Too-Hot-To-Loose (career_copilot provider.py).
  */
 

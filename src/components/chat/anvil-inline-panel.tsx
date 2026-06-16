@@ -124,7 +124,10 @@ export function AnvilInlinePanel() {
       style={{ transformOrigin: "top right", right: rightPx ?? 16 }}
       className="fixed top-16 z-50 w-[min(92vw,24rem)] overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
     >
-      <TalkMode onClose={close} />
+      {/* autoStart: the orb click that opened this panel IS the user gesture, so the mic
+          opens immediately (Siri "tap = talk"). Safe now that the P2 one-mic mutex
+          guarantees no other surface is concurrently listening. */}
+      <TalkMode onClose={close} autoStart />
     </motion.div>
   );
 }

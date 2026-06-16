@@ -100,25 +100,79 @@ html {
   .terminal-boot { animation: none; }
 }
 
-/* Anvil header-orb idle — a small gradient blob that gently breathes. PURE CSS (no rAF,
-   no WebGL) so it costs nothing on the Classic/SSG path every visitor lands on; the live
-   3D orb only ever runs inside the open voice overlay. Reduced-motion → calm + static. */
-@keyframes anvil-orb-breathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 10px -2px color-mix(in oklab, var(--accent) 55%, transparent); }
-  50% { transform: scale(1.08); box-shadow: 0 0 16px -1px color-mix(in oklab, var(--accent) 75%, transparent); }
+/* Anvil header-orb idle — a "beast" Siri-style orb: a multi-hued fluid blob that slowly
+   shimmers + breathes. PURE CSS, ZERO JS/rAF/WebGL/main-thread work. The transform
+   keyframes (breathe + lobe drift) are compositor-only; the animated hue-rotate filter +
+   the blurred screen-blended lobes are a SMALL CONSTANT GPU raster cost (off the main
+   thread) — negligible for a 28px element and not on the LCP element, so it doesn't
+   threaten LCP/INP (the heavy 3D orb still only runs inside the open voice surface).
+   Reduced-motion → a static (but still rich, layered) orb. The blend + blur are confined
+   to this isolated wrapper to avoid the Safari backdrop-blur repaint glitch (the header
+   has backdrop-blur-md). */
+
+/* @property lets the hue ANIMATE (a plain custom prop can't be tweened). Pre-Baseline
+   browsers ignore the at-rule and fall back to the static layered gradient — no JS branch. */
+@property --anvil-hue {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
+
+@keyframes anvil-hue-drift { to { --anvil-hue: 360deg; } }
+@keyframes anvil-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+/* Two lobes drift on de-synced paths for the fluid "two blobs orbiting" Siri feel. */
+@keyframes anvil-lobe-a {
+  0%, 100% { transform: translate(-12%, -8%) scale(1); }
+  50% { transform: translate(14%, 10%) scale(1.25); }
+}
+@keyframes anvil-lobe-b {
+  0%, 100% { transform: translate(12%, 10%) scale(1.1); }
+  50% { transform: translate(-10%, -12%) scale(0.85); }
+}
+
 .anvil-orb-idle {
-  background: radial-gradient(circle at 35% 30%,
-    color-mix(in oklab, var(--accent) 90%, white) 0%,
-    var(--accent) 45%,
-    var(--accent-strong) 100%);
-  animation: anvil-orb-breathe 3.2s ease-in-out infinite;
+  position: relative;
+  isolation: isolate;          /* confine the mix-blend + blur to this stacking context */
+  overflow: hidden;            /* clip the oversized drifting lobes to the orb circle */
+  /* The core: a hue-rotating radial wash (the @property angle feeds hue-rotate). */
+  background:
+    radial-gradient(circle at 38% 32%, color-mix(in oklab, var(--accent) 92%, white) 0%, var(--accent) 46%, var(--accent-strong) 100%);
+  filter: hue-rotate(var(--anvil-hue));
+  box-shadow: 0 0 12px -2px color-mix(in oklab, var(--accent) 65%, transparent);
+  animation:
+    anvil-breathe 3.6s ease-in-out infinite,
+    anvil-hue-drift 16s linear infinite;
+}
+/* Lobe A — violet, screen-blended so it glows where it overlaps the cyan core. */
+.anvil-orb-idle::before,
+.anvil-orb-idle::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  filter: blur(4px);
+  z-index: -1;
+}
+.anvil-orb-idle::before {
+  background: radial-gradient(circle, color-mix(in oklab, var(--violet, #a78bfa) 85%, transparent) 0%, transparent 60%);
+  animation: anvil-lobe-a 5.2s ease-in-out infinite;
+}
+.anvil-orb-idle::after {
+  background: radial-gradient(circle, color-mix(in oklab, var(--accent) 80%, white) 0%, transparent 58%);
+  animation: anvil-lobe-b 6.8s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .anvil-orb-idle {
+  .anvil-orb-idle,
+  .anvil-orb-idle::before,
+  .anvil-orb-idle::after {
     animation: none;
-    box-shadow: 0 0 10px -2px color-mix(in oklab, var(--accent) 55%, transparent);
   }
+  /* Static but still layered/rich — never reverts to the flat dot. */
+  .anvil-orb-idle { filter: none; }
 }
 
 body {

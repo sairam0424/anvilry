@@ -48,11 +48,19 @@ function lastUserText(messages: { role: string; content: string }[]): string {
 export function TalkMode({
   onClose,
   prompts,
+  autoStart = false,
 }: {
   onClose: () => void;
   /** Optional example-prompt chips (Anvil view). Each is asked by voice via the
    *  session's own seam — one transcript, one mic. The modal passes none (unchanged). */
   prompts?: readonly string[];
+  /** Start listening immediately on mount (the Siri "tap = talk" feel) — used by the
+   *  desktop inline panel, which mounts from the orb click. Best-effort: the mic open
+   *  (getUserMedia) is async and runs a few ticks after the click, so on iOS Safari's
+   *  first permission grant the user-activation may have lapsed and a second tap on the
+   *  mic is needed; it degrades safely (the session falls to "paused — tap to talk", and
+   *  the primary control rescues it — never a hot mic or a hang). Chrome/Edge honor it. */
+  autoStart?: boolean;
 }) {
   const session = useVoiceSession();
   const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
@@ -64,6 +72,15 @@ export function TalkMode({
   // The persistent primary control (mic/orb). Focus rescues here when the prompt chips
   // unmount on the first turn (else focus would orphan to <body> — WCAG 2.4.3).
   const primaryRef = useRef<HTMLButtonElement>(null);
+  // Auto-start once on mount (Siri "tap = talk"). Guarded by a ref so it fires exactly
+  // once and never re-triggers across re-renders; only when supported + not already active.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (autoStart && supported && !active && !autoStarted.current) {
+      autoStarted.current = true;
+      start();
+    }
+  }, [autoStart, supported, active, start]);
   const hadMessages = useRef(false);
   useEffect(() => {
     const has = messages.length > 0;

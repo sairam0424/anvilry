@@ -53,11 +53,13 @@ export function GameView() {
           scripted traces (ships dark otherwise). Last child; escape hatch stays first. */}
       <GlassBoxDemo />
 
-      {/* SVG Skill Tree — interactive category filter, pure SVG + CSS, no WebGL. */}
-      <section className="mt-10 rounded-2xl border border-border bg-bg-surface/60 p-6">
-        <h2 className="mono-label mb-5">// skill tree</h2>
-        <SkillTree />
-      </section>
+      {/* SVG Skill Tree — opt-in via NEXT_PUBLIC_SKILL_TREE=true (hidden by default). */}
+      {process.env.NEXT_PUBLIC_SKILL_TREE === "true" && (
+        <section className="mt-10 rounded-2xl border border-border bg-bg-surface/60 p-6">
+          <h2 className="mono-label mb-5">// skill tree</h2>
+          <SkillTree />
+        </section>
+      )}
     </main>
   );
 }

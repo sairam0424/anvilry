@@ -8,25 +8,53 @@
  * Recruiters landing here via a stale link discover the gamified terminal instead of
  * hitting a dead end — the error becomes a portfolio discovery moment.
  *
+ * NEXT_PUBLIC_404_ORB=true upgrades the page with a distressed red/orange 3D orb above
+ * the terminal — the errorMode VoiceOrb3D with static level (no audio coupling), wrapped
+ * in WebGLBoundary so non-WebGL visitors still see the terminal cleanly.
+ *
  * Architecture notes:
- * - Renders inside root layout.tsx, so all Providers (voice, settings, orb store) are
- *   already mounted — no extra context wiring needed.
- * - Terminal receives `initialLines={bootBanner404()}` which seeds the scrollback with
- *   the panic sequence instead of the normal whoami boot banner.
- * - The `cd /` command (added in commands.ts) navigates home; all other commands work
- *   normally — ls, open, whoami, stack, help, etc.
- * - WebGLBoundary is NOT needed here (no WebGL scene). The import is intentionally
- *   omitted to keep the 404 bundle slim.
+ * - Renders inside root layout.tsx, so all Providers are already mounted.
+ * - Terminal receives `initialLines={bootBanner404()}` seeding the panic sequence.
+ * - The `cd /` command navigates home; all other commands work normally.
  */
 
+import { useRef } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Terminal } from "@/components/game/terminal/terminal";
 import { bootBanner404 } from "@/components/game/terminal/boot-banner";
+import { WebGLBoundary } from "@/components/game/webgl-boundary";
+import type { VoiceSessionState } from "@/components/chat/use-voice-session";
+
+const VoiceOrb3D = dynamic(
+  () => import("@/components/chat/voice-orb-3d").then((m) => m.VoiceOrb3D),
+  { ssr: false },
+);
+
+const showOrb = process.env.NEXT_PUBLIC_404_ORB === "true";
 
 export default function NotFound() {
+  const levelRef = useRef(0);
+
   return (
     <main className="flex min-h-screen flex-1 flex-col items-center justify-center bg-bg-base px-4 py-12">
       <div className="w-full max-w-2xl">
+        {/* Distressed 3D orb — only when NEXT_PUBLIC_404_ORB=true.
+            WebGLBoundary falls back silently if WebGL is unavailable.
+            aria-hidden: decorative; the sr-only heading below is the a11y anchor. */}
+        {showOrb && (
+          <div className="mb-6 flex justify-center" aria-hidden="true">
+            <WebGLBoundary>
+              <VoiceOrb3D
+                level={levelRef as React.RefObject<number>}
+                state={"idle" as VoiceSessionState}
+                size={140}
+                errorMode={true}
+              />
+            </WebGLBoundary>
+          </div>
+        )}
+
         {/* Glitch eyebrow — decorative, aria-hidden so screen readers skip the animation */}
         <p
           className="mono-label glitch-eyebrow mb-4 text-amber"

@@ -92,6 +92,21 @@ requires a **redeploy** — they are not runtime-toggleable.
 | `NEXT_PUBLIC_VOICE_PICKER_MODE` | `descriptor` \| `gender` | `descriptor` | **descriptor** = modern named cards with 2-word descriptors (ChatGPT/Siri pattern: "Stephen — warm & direct"). **gender** = explicit Male / Female / System default toggle, 2-column layout. Both modes share the same catalog; only the picker layout + labels differ. |
 | `GOOGLE_TTS_API_KEY` | API key | — | Optional. Adds Google Cloud TTS Chirp 3 HD as a third engine (alongside browser + Polly) with a permanent 1M chars/mo free tier — hedges Polly's 12-month free-tier cliff. When unset, Google voices are hidden from the picker. Get a key at [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) with the Cloud Text-to-Speech API enabled. |
 
+### Beast-Mode Feature Flags (v1.9 + v2.0) — all default OFF
+
+All six flags default to `false` / unset in production. Set to `"true"` to enable. Require a **redeploy** to take effect (build-time inlining).
+
+| Variable | Default | Added | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_ORB_POSTPROCESSING` | `false` | v1.9 | Enables Bloom + Vignette + Noise + ChromaticAberration + cursor-reactive Fluid on the 3D orb (`voice-orb-3d.tsx`). Only activates on high-tier devices (≥4 GB RAM + ≥4 CPU cores). Default is the clean inline-halo orb. |
+| `NEXT_PUBLIC_INK_TRANSITION` | `false` | v1.9 | Replaces the plain CSS crossfade with a raw WebGL2 ink-bleed shader on every view switch. Falls back to plain crossfade when `prefers-reduced-motion` is on or the browser lacks the View Transitions API. |
+| `NEXT_PUBLIC_SKILL_TREE` | `false` | v1.9 | Shows the SVG RPG Skill Tree section at the bottom of the Play (Gamified) view. 6 categories × 5+ skills, cubic bezier connections, animated energy-flow dashes. Hidden by default to keep the Play view clean. |
+| `NEXT_PUBLIC_404_ORB` | `false` | v2.0 | Renders the distressed 3D orb (red/orange `errorMode` palette, erratic breathing) above the terminal on the 404 page. Wrapped in `WebGLBoundary` — falls back to terminal-only when WebGL is unavailable. |
+| `NEXT_PUBLIC_VISITOR_COUNTER` | `false` | v2.0 | Shows an `"↑ N engineers visited"` badge in the site footer. Increments a Redis counter (`anvilry:visits:total`) on each page load, rate-limited to 1 increment per IP per 30 min via `@upstash/ratelimit`. Requires Upstash Redis. |
+| `NEXT_PUBLIC_DISCOVERY_BADGES` | `false` | v2.0 | Shows a `"★ N/5 discovered"` badge (bottom-right, z-30) as visitors explore the site. Backed by `localStorage` — persists across refreshes. 5 unlock triggers: view switch, AI chat question, terminal command, Konami code, dossier open. Cmd+K → "Unlock all discoveries" is the escape hatch. |
+
+**Dependency note:** `NEXT_PUBLIC_VISITOR_COUNTER` and `NEXT_PUBLIC_DISCOVERY_BADGES` have no hard Redis dependency (they degrade gracefully), but the counter needs `UPSTASH_REDIS_REST_URL` + `_TOKEN` to actually persist the count. `NEXT_PUBLIC_ORB_POSTPROCESSING` requires `@react-three/postprocessing` (already in `package.json`).
+
 ### Flag Matrix (desktop behavior)
 
 | ORB_MODE | EXPERIENCE | Desktop behavior |
@@ -222,3 +237,13 @@ The traceId appears in the `x-anvilry-trace-id` response header on every `/api/*
 | Admin auth helper | `src/lib/admin-auth.ts` |
 | Admin dashboard | `src/app/admin/telemetry/page.tsx` |
 | Replay CLI | `scripts/replay-trace.mjs` |
+| **v1.9+ beast flags** | |
+| 3D orb + post-processing | `src/components/chat/voice-orb-3d.tsx` |
+| Ink-bleed WebGL transition | `src/components/ui/ink-transition.tsx` |
+| SVG skill tree | `src/components/game/skill-tree.tsx` |
+| **v2.0 beast flags** | |
+| 404 orb hero | `src/app/not-found.tsx` |
+| Visitor counter API | `src/app/api/visit/route.ts` |
+| Visitor badge (footer) | `src/components/site-footer.tsx` |
+| Discovery store | `src/lib/discovery-store.ts` |
+| Discovery badge component | `src/components/game/discovery-badge.tsx` |

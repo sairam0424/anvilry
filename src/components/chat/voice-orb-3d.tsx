@@ -4,6 +4,7 @@ import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing"; // peer dep of @react-three/postprocessing
+import { Fluid } from "@whatisjery/react-fluid-distortion";
 import * as THREE from "three";
 import type { VoiceSessionState } from "@/components/chat/use-voice-session";
 
@@ -323,9 +324,14 @@ export function VoiceOrb3D({
         <OrbMesh level={level} speaking={speaking} errorMode={errorMode} />
 
         {/* Post-processing — only when NEXT_PUBLIC_ORB_POSTPROCESSING=true AND high-tier device.
-            Default is the original inline-halo orb (HALO_FRAG back-sphere) for the clean look. */}
+            Default is the original inline-halo orb (HALO_FRAG back-sphere) for the clean look.
+            Fluid runs FIRST so distorted pixels are then bloomed by the Bloom pass — order matters. */}
         {postFx && tier === "high" && (
           <EffectComposer>
+            <Fluid
+              force={errorMode ? 0.1 : 0.4}
+              velocityDissipation={0.95}
+            />
             <Bloom
               mipmapBlur
               luminanceThreshold={1.0}

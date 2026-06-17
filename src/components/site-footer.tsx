@@ -1,10 +1,40 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { useView } from "@/components/view-context";
+
+const showVisitorCounter = process.env.NEXT_PUBLIC_VISITOR_COUNTER === "true";
+
+/**
+ * Fire-and-forget visitor counter. POSTs to /api/visit on mount (once per page load),
+ * then shows the running total. Rate-limited server-side to 1 increment per IP / 30 min.
+ * Gate: NEXT_PUBLIC_VISITOR_COUNTER=true (default OFF).
+ */
+function VisitorBadge() {
+  const [total, setTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/visit", { method: "POST" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.total != null) setTotal(data.total as number); })
+      .catch(() => {}); // fail silently — decorative
+  }, []);
+
+  if (total === null) {
+    return (
+      <span className="inline-block h-3 w-28 animate-pulse rounded bg-fg-subtle/20" aria-hidden="true" />
+    );
+  }
+  return (
+    <span className="font-mono text-xs text-fg-subtle">
+      ↑ {total.toLocaleString()} engineers visited
+    </span>
+  );
+}
 
 // Machine-readable surfaces — the AI-crawler / agent-native artifacts. Grouped here so
 // they're discoverable (previously /llms.txt + /api/resume.json existed but weren't
@@ -37,6 +67,11 @@ export function SiteFooter() {
           <p className="mt-1 text-xs text-fg-subtle">
             {profile.role} · {profile.location}
           </p>
+          {showVisitorCounter && (
+            <p className="mt-2">
+              <VisitorBadge />
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col items-start gap-4 sm:items-end">

@@ -60,6 +60,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{project.name}</h1>
             <p className="mt-2 text-fg-muted">{project.tagline}</p>
 
+            {/* Reading-time depth indicator — derived from compiled MDX body length.
+                ~200 words/min; only shown when content is substantive (>100 words). */}
+            {(() => {
+              const words = project.body
+                .replace(/<[^>]+>/g, " ")
+                .replace(/\s+/g, " ")
+                .trim()
+                .split(" ")
+                .filter(Boolean).length;
+              if (words < 100) return null;
+              const mins = Math.max(1, Math.round(words / 200));
+              return (
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 font-mono text-[11px] text-fg-subtle">
+                  {mins} min read · {words.toLocaleString()} words
+                </p>
+              );
+            })()}
+
             <div className="mt-5 flex flex-wrap items-center gap-3">
               <a
                 href={project.repo}

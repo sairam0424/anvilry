@@ -299,3 +299,39 @@ body {
   .glitch-eyebrow { animation: none; }
 }
 
+/* ── CSS scroll-driven reveals ───────────────────────────────────────────────
+   Native animation-timeline: view() ties the animation progress to when the
+   element enters the viewport scroll-timeline. No JS, no rAF, runs on the
+   compositor thread. Supported: Chrome 115+, Firefox 110+, Safari 15.4+.
+   Pre-Baseline browsers: animation: none fallback (static opacity:1).
+   Kill-switch: prefers-reduced-motion → snap to final state immediately.    */
+
+@keyframes scroll-fade-up {
+  from { opacity: 0; translate: 0 20px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+/* Base utility: fades up as the element enters the viewport. */
+.scroll-reveal {
+  animation: scroll-fade-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 35%;
+}
+
+/* Staggered variants for grid cards (N = 1–6, delay = N × 60ms). */
+.scroll-reveal-stagger-1 { animation-delay: 60ms;  }
+.scroll-reveal-stagger-2 { animation-delay: 120ms; }
+.scroll-reveal-stagger-3 { animation-delay: 180ms; }
+.scroll-reveal-stagger-4 { animation-delay: 240ms; }
+.scroll-reveal-stagger-5 { animation-delay: 300ms; }
+.scroll-reveal-stagger-6 { animation-delay: 360ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal,
+  [class*="scroll-reveal-stagger"] {
+    animation: none;
+    opacity: 1;
+    translate: none;
+  }
+}
+

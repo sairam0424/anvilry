@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { X, Sparkles } from "lucide-react";
 import { profile } from "@/lib/profile";
 import { personal, hasPersonalContent } from "@/lib/personal";
+import { unlock } from "@/lib/discovery-store";
 
 /**
  * GLOBAL "subtle delight" easter eggs (mounted once in the root layout, so they work in
@@ -78,6 +79,7 @@ export function EasterEggs() {
           progress.current = 0;
           // Remember where focus was so close() can restore it (WCAG 2.4.3).
           prevFocus.current = document.activeElement as HTMLElement | null;
+          unlock("konami");
           setOpen(true);
         }
       } else {

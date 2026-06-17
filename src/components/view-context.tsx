@@ -11,6 +11,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { useSearchParams } from "next/navigation";
+import { unlock } from "@/lib/discovery-store";
 
 /**
  * The top-level experiences a visitor can switch between. CLASSIC is the SSG-indexed
@@ -118,6 +119,8 @@ function setViewInternal(
 ) {
   if (!isView(view) || view === current) return;
   current = view;
+  // Discovery badge: any deliberate view switch unlocks the first milestone.
+  if (typeof window !== "undefined") unlock("view-switch");
   if (updateUrl && typeof window !== "undefined") {
     const url = new URL(window.location.href);
     if (view === DEFAULT_VIEW) url.searchParams.delete("view");

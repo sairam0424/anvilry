@@ -25,7 +25,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={cn("mx-auto w-full max-w-5xl px-6 py-20 sm:py-24", className)}>
+    <section id={id} className={cn("mx-auto w-full max-w-5xl px-6 py-20 sm:py-24 scroll-reveal", className)}>
       {(label || title) && (
         <header className="mb-10">
           {label && <p className="mono-label">{label}</p>}

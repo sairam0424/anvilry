@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Github } from "@/components/icons";
 import { kindColor } from "@/lib/graph-data";
 import { dossierFor, type QuestNode } from "@/lib/game-model";
+import { unlock } from "@/lib/discovery-store";
 
 /**
  * A "dossier" card for one system in the gamified index. Every value is derived
@@ -65,6 +68,7 @@ export function DossierCard({ node }: { node: QuestNode }) {
 
       <Link
         href={d.href}
+        onClick={() => unlock("dossier-open")}
         className="mt-4 inline-flex items-center gap-1 self-start text-xs font-medium text-fg-muted transition-colors group-hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         Open dossier <ArrowUpRight size={13} />

@@ -13,6 +13,7 @@ import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 import { useView } from "@/components/view-context";
 import { highlightProject } from "@/lib/highlight-store";
+import { unlock } from "@/lib/discovery-store";
 
 /** Map a Bedrock/Anthropic model id to a readable name for the badge. */
 function friendlyModel(id: string): string {
@@ -58,7 +59,11 @@ export function ChatMessages({
   // dispatch doesn't trigger another render.
   const dispatchedRef = useRef<Set<number>>(new Set());
   useEffect(() => {
-    if (isStreaming) return; // Only dispatch from settled messages.
+    // Discovery: unlock "chat-question" when the user has sent at least 1 message.
+    if (messages.some((m) => m.role === "user" && m.content.trim())) {
+      unlock("chat-question");
+    }
+    if (isStreaming) return; // Only dispatch cmd tokens from settled messages.
     messages.forEach((m, i) => {
       if (m.role !== "assistant" || dispatchedRef.current.has(i)) return;
       const segments = parseCards(m.content);

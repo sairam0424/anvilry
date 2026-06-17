@@ -4,6 +4,10 @@ import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { isConfigured, streamWithFallback } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { withTrace } from "@/lib/telemetry/with-trace";
+import { emit } from "@/lib/telemetry/emit";
+import { redact } from "@/lib/telemetry/schema";
+import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -47,59 +51,104 @@ ${corpus}`;
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: Request) {
-  if (!isConfigured()) {
-    return Response.json({ error: "Chat is not configured." }, { status: 503 });
-  }
+  return withTrace(req, "chat", async (ctx) => {
+    if (!isConfigured()) {
+      return Response.json({ error: "Chat is not configured." }, { status: 503 });
+    }
 
-  // Per-IP rate limit BEFORE any Bedrock call, so a bot can't run up cost. Fails
-  // open when Upstash isn't configured (local dev) — see src/lib/rate-limit.ts.
-  const rl = await checkRateLimit(req);
-  if (!rl.ok) {
-    return Response.json(
-      { error: "Too many requests — please slow down a moment." },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+    // Per-IP rate limit BEFORE any Bedrock call, so a bot can't run up cost. Fails
+    // open when Upstash isn't configured (local dev) — see src/lib/rate-limit.ts.
+    const rl = await checkRateLimit(req);
+    if (!rl.ok) {
+      return Response.json(
+        { error: "Too many requests — please slow down a moment." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      );
+    }
+
+    // Reject an oversized payload by its declared length BEFORE reading the body — a
+    // cheap guard so a malicious client can't stream a huge JSON to exhaust memory. The
+    // real chat payload (<=12 msgs x <=600 chars + envelope) fits comfortably under 64KB.
+    const declaredLen = Number(req.headers.get("content-length") ?? 0);
+    if (declaredLen > 64 * 1024) {
+      return Response.json({ error: "Request too large." }, { status: 413 });
+    }
+
+    let body: { messages?: ChatMessage[] };
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "Invalid request." }, { status: 400 });
+    }
+
+    const incoming = Array.isArray(body.messages) ? body.messages : [];
+    // Sanitize + bound: cap history length and per-message length.
+    const messages: Anthropic.MessageParam[] = incoming
+      .slice(-MAX_MESSAGES)
+      .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+      .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
+
+    if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
+      return Response.json({ error: "Expected a user message." }, { status: 400 });
+    }
+
+    // Surface message-count + last-user-msg-length to the auto http.request span
+    // (free aggregate stats without logging actual prompts — those go via
+    // llm.attempt below, redacted).
+    ctx.attrs({ messageCount: messages.length, lastMessageLen: messages[messages.length - 1].content.length });
+
+    const stream = streamWithFallback(
+      {
+        max_tokens: 1024,
+        system: [{ type: "text", text: systemPrompt(buildCorpus()), cache_control: { type: "ephemeral" } }],
+        messages,
+      },
+      {
+        traceId: ctx.traceId,
+        // onError stays for back-compat — emits a brief console.warn so vercel
+        // logs --tail still shows attempt-failure breadcrumbs even if the
+        // structured sink is down. The structured emit happens via onAttempt.
+        onError: (err, model) =>
+          console.warn(`[chat] model ${model} failed: ${(err as Error)?.name ?? "error"}`),
+        onAttempt: (attempt) => {
+          // Per-attempt structured span. usage carries the prompt-cache signal
+          // we just unlocked in Phase 0.2 (cache_read_input_tokens).
+          // No PII in attrs — only token counts, model id, and (on error)
+          // err.name/message/status. err.message gets redacted defensively in
+          // case Bedrock ever surfaces an upstream prompt fragment in error text.
+          emit({
+            ts: Date.now(),
+            traceId: ctx.traceId,
+            spanId: randomUUID(),
+            parentSpanId: ctx.spanId,
+            kind: "llm.attempt",
+            route: "/api/chat",
+            level: attempt.error ? "error" : "info",
+            ...(attempt.error
+              ? { message: redact(attempt.error.message ?? attempt.error.name) }
+              : {}),
+            attrs: {
+              model: attempt.model,
+              attempt_index: attempt.attempt_index,
+              fell_back: attempt.fell_back,
+              ...(attempt.ttft_ms != null ? { ttft_ms: attempt.ttft_ms } : {}),
+              latency_ms: attempt.latency_ms,
+              ...(attempt.finish_reason ? { finish_reason: attempt.finish_reason } : {}),
+              ...(attempt.usage ? { usage: attempt.usage } : {}),
+              ...(attempt.error
+                ? {
+                    error_name: attempt.error.name,
+                    ...(attempt.error.status != null ? { status: attempt.error.status } : {}),
+                  }
+                : {}),
+            },
+          });
+        },
+      },
     );
-  }
 
-  // Reject an oversized payload by its declared length BEFORE reading the body — a
-  // cheap guard so a malicious client can't stream a huge JSON to exhaust memory. The
-  // real chat payload (<=12 msgs x <=600 chars + envelope) fits comfortably under 64KB.
-  const declaredLen = Number(req.headers.get("content-length") ?? 0);
-  if (declaredLen > 64 * 1024) {
-    return Response.json({ error: "Request too large." }, { status: 413 });
-  }
-
-  let body: { messages?: ChatMessage[] };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
-  }
-
-  const incoming = Array.isArray(body.messages) ? body.messages : [];
-  // Sanitize + bound: cap history length and per-message length.
-  const messages: Anthropic.MessageParam[] = incoming
-    .slice(-MAX_MESSAGES)
-    .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
-
-  if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
-    return Response.json({ error: "Expected a user message." }, { status: 400 });
-  }
-
-  const stream = streamWithFallback(
-    {
-      max_tokens: 1024,
-      system: [{ type: "text", text: systemPrompt(buildCorpus()), cache_control: { type: "ephemeral" } }],
-      messages,
-    },
-    {
-      onError: (err, model) =>
-        console.warn(`[chat] model ${model} failed: ${(err as Error)?.name ?? "error"}`),
-    },
-  );
-
-  return new Response(stream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    return new Response(stream, {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
   });
 }

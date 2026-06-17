@@ -20,9 +20,9 @@ import { useSearchParams } from "next/navigation";
  * optional full-page two-way talk surface (only offered when the visitor opts into the
  * "view" talk-surface — the default is a modal overlay, so VOICE is normally unused).
  */
-export type View = "classic" | "gamified" | "chat" | "developer" | "voice";
+export type View = "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice"] as const;
+const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice", "resume"] as const;
 const DEFAULT_VIEW: View = "classic";
 
 const isView = (v: string | null | undefined): v is View =>

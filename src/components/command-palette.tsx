@@ -169,6 +169,7 @@ export function CommandPalette() {
     { id: "v-play", label: "Play view", hint: "explorable build graph", icon: <Gamepad2 size={16} />, run: () => switchTo("gamified"), keywords: "game gamified graph explore" },
     { id: "v-dev", label: "Developer mode", hint: "full-page terminal — query my work", icon: <TerminalSquare size={16} />, run: () => { track("devmode_palette_open"); switchTo("developer"); }, keywords: "terminal cli console command shell whoami grep developer" },
     { id: "v-chat", label: "Chat view", hint: "ask my portfolio", icon: <MessagesSquare size={16} />, run: () => switchTo("chat"), keywords: "ai concierge conversation assistant" },
+    { id: "v-resume", label: "Recruiter view", hint: "scan-friendly CV + PDF downloads", icon: <User size={16} />, run: () => switchTo("resume"), keywords: "resume cv recruiter scan pdf download hiring" },
   ];
 
   const nav: Action[] = [

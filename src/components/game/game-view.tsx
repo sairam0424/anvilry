@@ -1,10 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Gamepad2 } from "lucide-react";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { GraphIndex } from "@/components/game/graph-index";
 import { BuildGraph } from "@/components/game/build-graph";
 import { GlassBoxDemo } from "@/components/game/glass-box-demo";
+
+const SkillTree = dynamic(
+  () => import("@/components/game/skill-tree").then((m) => m.SkillTree),
+  { ssr: false },
+);
 
 /**
  * GAMIFIED view — "The Build Graph". The accessible DOM-first index is the DEFAULT
@@ -46,6 +52,12 @@ export function GameView() {
       {/* Glass-box multi-agent demo — renders only once the owner has approved the
           scripted traces (ships dark otherwise). Last child; escape hatch stays first. */}
       <GlassBoxDemo />
+
+      {/* SVG Skill Tree — interactive category filter, pure SVG + CSS, no WebGL. */}
+      <section className="mt-10 rounded-2xl border border-border bg-bg-surface/60 p-6">
+        <h2 className="mono-label mb-5">// skill tree</h2>
+        <SkillTree />
+      </section>
     </main>
   );
 }

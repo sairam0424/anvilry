@@ -295,18 +295,22 @@ export function VoiceOrb3D({
   errorMode?: boolean;
 }) {
   const speaking = state === "speaking";
+  // Post-processing is opt-in: set NEXT_PUBLIC_ORB_POSTPROCESSING=true to enable Bloom +
+  // Vignette + Noise + ChromaticAberration. Default is the original inline-halo orb which
+  // already achieves a volumetric glow effect via the HALO_FRAG back-sphere shader.
+  const postFx = process.env.NEXT_PUBLIC_ORB_POSTPROCESSING === "true";
   const tier = getDeviceTier();
 
   return (
     <div aria-hidden="true" style={{ width: size, height: size }}>
       <Canvas
-        // errorMode uses frameloop="demand" — no audio drives updates, so we only render
-        // on demand to avoid burning GPU frames on a page the user is leaving.
         frameloop={errorMode ? "demand" : "always"}
-        dpr={tier === "high" ? [1, 1.75] : [0.5, 1]}
+        // Restore original dpr — the adaptive tier scaling is only needed when
+        // post-processing is on (where GPU cost is higher).
+        dpr={[1, 1.75]}
         camera={{ position: [0, 0, 4.6], fov: 45 }}
         gl={{
-          antialias: tier === "high",
+          antialias: true,
           alpha: true,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -318,10 +322,9 @@ export function VoiceOrb3D({
         <pointLight position={[2, 2, 3]} intensity={1.2} color="#bcd4ff" />
         <OrbMesh level={level} speaking={speaking} errorMode={errorMode} />
 
-        {/* Post-processing — high-tier devices only. All 4 effects merge into ONE EffectPass.
-            luminanceThreshold=1.0 means only HDR crests (output >1.0) bloom, never background.
-            Skipped on low-tier (≤2 GB RAM or ≤2 cores) to protect battery + frame rate.     */}
-        {tier === "high" && (
+        {/* Post-processing — only when NEXT_PUBLIC_ORB_POSTPROCESSING=true AND high-tier device.
+            Default is the original inline-halo orb (HALO_FRAG back-sphere) for the clean look. */}
+        {postFx && tier === "high" && (
           <EffectComposer>
             <Bloom
               mipmapBlur

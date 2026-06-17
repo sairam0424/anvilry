@@ -2,42 +2,13 @@ import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic"; // never cache — always fresh read
-
-/**
- * /admin/telemetry — owner-only dashboard for the v1.8 telemetry pipeline.
- *
- * Gated by HTTP Basic Auth (ADMIN_PASSWORD env, see src/lib/admin-auth.ts).
- * Access: curl -u :YOUR_PASSWORD https://anvilry.vercel.app/admin/telemetry
- *   or visit the URL in a browser — the browser will pop up a Basic Auth
- *   dialog before showing the page.
- *
- * All rendering is server-side with plain Tailwind — no client JS, no chart
- * library, no CDN assets. The page is CSP-clean by construction and fast to
- * load even on a Vercel cold start because it's a single server component
- * with a handful of ZRANGEBYSCORE queries.
- *
- * Six tiles + a recent-events table:
- *   1. Events today — total count of all spans in the last 24h
- *   2. LLM attempts — count of llm.attempt spans (the prompt-caching tile)
- *   3. Cache hit rate — cache_read_input_tokens / total_input_tokens last 24h
- *   4. Error rate — count of level="error" events / total events last 24h
- *   5. Fallback rate — % of llm.attempt spans with fell_back=true
- *   6. Top routes by call count — breakdown of http.request spans by route
- */
+export const dynamic = "force-dynamic";
 
 // ── Data layer ────────────────────────────────────────────────────────────────
 
 async function fetchKind(kind: string, since: number): Promise<TelemetryEvent[]> {
   if (!redis) return [];
   try {
-    // @upstash/redis v1.38 uses zrange(key, min, max, { byScore: true }) for
-    // ZRANGEBYSCORE semantics. IMPORTANT: the SDK's automaticDeserialization=true
-    // already JSON-parses each member before returning — passing <TelemetryEvent[]>
-    // as the type parameter tells the SDK to return parsed objects directly.
-    // A previous version used <string[]> + manual JSON.parse(r) which caused a
-    // double-parse: the object was coerced to "[object Object]", SyntaxError thrown,
-    // and every event silently dropped. The dashboard appeared permanently empty.
     const raw = await redis.zrange<TelemetryEvent[]>(`anvilry:trace:${kind}`, since, "+inf", {
       byScore: true,
     });
@@ -54,19 +25,42 @@ async function fetchAll(since: number): Promise<TelemetryEvent[]> {
 
 // ── Compute tiles ─────────────────────────────────────────────────────────────
 
-function cacheHitRate(llmAttempts: TelemetryEvent[]): number {
+function cacheHitRate(llmAttempts: TelemetryEvent[]) {
   let totalInput = 0;
   let cacheRead = 0;
+  let totalTokens = 0;
+  let totalOutputTokens = 0;
   for (const e of llmAttempts) {
-    const attrs = e.attrs as Record<string, unknown>;
-    const u = attrs.usage as Record<string, number> | undefined;
+    const u = (e.attrs as Record<string, unknown>).usage as Record<string, number> | undefined;
     if (u) {
-      totalInput += (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+      const inp = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+      totalInput += inp;
       cacheRead += u.cache_read_input_tokens ?? 0;
+      totalTokens += inp + (u.output_tokens ?? 0);
+      totalOutputTokens += u.output_tokens ?? 0;
     }
   }
-  if (totalInput === 0) return 0;
-  return Math.round((cacheRead / totalInput) * 100);
+  return {
+    pct: totalInput === 0 ? 0 : Math.round((cacheRead / totalInput) * 100),
+    cacheRead,
+    totalInput,
+    totalTokens,
+    totalOutputTokens,
+  };
+}
+
+function avgLatency(llmAttempts: TelemetryEvent[]): number {
+  const withLatency = llmAttempts.filter((e) => typeof (e.attrs as Record<string, unknown>).latency_ms === "number");
+  if (withLatency.length === 0) return 0;
+  const sum = withLatency.reduce((acc, e) => acc + ((e.attrs as Record<string, unknown>).latency_ms as number), 0);
+  return Math.round(sum / withLatency.length);
+}
+
+function avgTtft(llmAttempts: TelemetryEvent[]): number {
+  const withTtft = llmAttempts.filter((e) => typeof (e.attrs as Record<string, unknown>).ttft_ms === "number");
+  if (withTtft.length === 0) return 0;
+  const sum = withTtft.reduce((acc, e) => acc + ((e.attrs as Record<string, unknown>).ttft_ms as number), 0);
+  return Math.round(sum / withTtft.length);
 }
 
 function fallbackRate(llmAttempts: TelemetryEvent[]): number {
@@ -75,15 +69,18 @@ function fallbackRate(llmAttempts: TelemetryEvent[]): number {
   return Math.round((fallen / llmAttempts.length) * 100);
 }
 
-function routeCounts(httpRequests: TelemetryEvent[]): Array<{ route: string; count: number }> {
-  const counts: Record<string, number> = {};
+function routeCounts(httpRequests: TelemetryEvent[]): Array<{ route: string; count: number; avgMs: number }> {
+  const counts: Record<string, { count: number; totalMs: number }> = {};
   for (const e of httpRequests) {
     const route = e.route ?? "unknown";
-    counts[route] = (counts[route] ?? 0) + 1;
+    const latMs = (e.attrs as Record<string, unknown>).latency_ms as number ?? 0;
+    if (!counts[route]) counts[route] = { count: 0, totalMs: 0 };
+    counts[route].count += 1;
+    counts[route].totalMs += latMs;
   }
   return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([route, count]) => ({ route, count }));
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([route, { count, totalMs }]) => ({ route, count, avgMs: Math.round(totalMs / count) }));
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
@@ -92,35 +89,80 @@ function fmtTs(ts: number): string {
   return new Date(ts).toISOString().replace("T", " ").replace(/\.\d{3}Z/, " UTC");
 }
 
+function fmtMs(ms: number): string {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
 function truncate(s: unknown, n: number): string {
   const str = String(s ?? "");
   return str.length > n ? str.slice(0, n) + "…" : str;
 }
 
+// Extract the most useful attrs for each kind for the events table
+function fmtAttrs(e: TelemetryEvent): string {
+  const a = e.attrs as Record<string, unknown>;
+  switch (e.kind) {
+    case "llm.attempt": {
+      const u = a.usage as Record<string, number> | undefined;
+      const parts = [];
+      if (a.model) parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+      if (u?.input_tokens != null) parts.push(`in:${u.input_tokens}`);
+      if (u?.cache_read_input_tokens) parts.push(`cached:${u.cache_read_input_tokens}`);
+      if (u?.output_tokens != null) parts.push(`out:${u.output_tokens}`);
+      if (a.ttft_ms != null) parts.push(`ttft:${fmtMs(a.ttft_ms as number)}`);
+      if (a.latency_ms != null) parts.push(`lat:${fmtMs(a.latency_ms as number)}`);
+      if (a.fell_back) parts.push("⚡fallback");
+      if (a.finish_reason) parts.push(String(a.finish_reason));
+      return parts.join("  ·  ");
+    }
+    case "http.request": {
+      const parts = [];
+      if (a.status != null) parts.push(`${a.status}`);
+      if (a.latency_ms != null) parts.push(fmtMs(a.latency_ms as number));
+      if (a.messageCount != null) parts.push(`msgs:${a.messageCount}`);
+      if (a.cache_hit != null) parts.push(a.cache_hit ? "cache:hit" : "cache:miss");
+      if (a.char_count != null) parts.push(`chars:${a.char_count}`);
+      return parts.join("  ·  ");
+    }
+    case "client.error":
+    case "server.error":
+      return [a.error_name, a.error_message, a.aws_request_id ? `aws:${String(a.aws_request_id).slice(0, 8)}` : null]
+        .filter(Boolean)
+        .join("  ·  ") as string;
+    default:
+      return truncate(JSON.stringify(a), 100);
+  }
+}
+
+// ── Kind badge ────────────────────────────────────────────────────────────────
+
+function kindBadge(kind: string): string {
+  switch (kind) {
+    case "llm.attempt":    return "bg-violet-500/20 text-violet-300";
+    case "http.request":   return "bg-blue-500/20 text-blue-300";
+    case "client.error":   return "bg-red-500/20 text-red-300";
+    case "server.error":   return "bg-orange-500/20 text-orange-300";
+    case "tts.request":    return "bg-teal-500/20 text-teal-300";
+    case "budget.tick":    return "bg-yellow-500/20 text-yellow-300";
+    default:               return "bg-bg-elevated text-fg-muted";
+  }
+}
+
 // ── Tile component ────────────────────────────────────────────────────────────
 
-function Tile({
-  label,
-  value,
-  sub,
-  pct,
-  accent = false,
-}: {
-  label: string;
-  value: string;
-  sub?: string;
-  pct?: number;
-  accent?: boolean;
+function Tile({ label, value, sub, pct, accent = false, warn = false }: {
+  label: string; value: string; sub?: string; pct?: number; accent?: boolean; warn?: boolean;
 }) {
+  const color = warn ? "text-red-400" : accent ? "text-accent" : "text-fg";
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
       <span className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">{label}</span>
-      <span className={`text-2xl font-semibold ${accent ? "text-accent" : "text-fg"}`}>{value}</span>
+      <span className={`text-2xl font-semibold tabular-nums ${color}`}>{value}</span>
       {sub && <span className="text-[11px] text-fg-subtle">{sub}</span>}
       {pct != null && (
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
           <div
-            className={`h-full rounded-full transition-all ${accent ? "bg-accent" : "bg-fg-muted"}`}
+            className={`h-full rounded-full ${warn ? "bg-red-400" : accent ? "bg-accent" : "bg-fg-muted/50"}`}
             style={{ width: `${Math.min(100, pct)}%` }}
           />
         </div>
@@ -132,171 +174,200 @@ function Tile({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function TelemetryDashboard() {
-  // Auth is handled by src/proxy.ts (Next 16 Proxy / Middleware) which returns a
-  // real HTTP 401 with WWW-Authenticate before this server component ever renders.
-  // By the time this code runs, the request is authenticated — no secondary auth
-  // check needed here.
+  // Auth is handled upstream by src/proxy.ts — by the time this renders,
+  // the request is authenticated. No html/body shell here; the layout provides those.
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  // Fetch all 7 kinds in parallel (single pass) then derive sub-views.
-  // fetchAll already queries all 7 kinds — previously 4 redundant fetchKind calls
-  // doubled the queries to 11. Now we do 7 total and slice in memory.
   const allEvents = await fetchAll(since24h);
   const llmAttempts = allEvents.filter((e) => e.kind === "llm.attempt");
   const httpRequests = allEvents.filter((e) => e.kind === "http.request");
   const clientErrors = allEvents.filter((e) => e.kind === "client.error");
   const serverErrors = allEvents.filter((e) => e.kind === "server.error");
 
-  const errorCount = [...clientErrors, ...serverErrors].length;
+  const errorCount = clientErrors.length + serverErrors.length;
   const errorRate = allEvents.length > 0 ? Math.round((errorCount / allEvents.length) * 100) : 0;
   const routes = routeCounts(httpRequests);
-  const cacheHit = cacheHitRate(llmAttempts);
+  const cache = cacheHitRate(llmAttempts);
   const fallback = fallbackRate(llmAttempts);
-  const recentEvents = [...allEvents].reverse().slice(0, 50);
-
+  const latency = avgLatency(llmAttempts);
+  const ttft = avgTtft(llmAttempts);
+  const recentEvents = [...allEvents].reverse().slice(0, 100);
   const redisStatus = redis ? "connected" : "not configured (log-only mode)";
 
+  // Format total tokens as K
+  const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-bg-base p-6 font-sans text-fg">
-        <div className="mx-auto max-w-5xl">
-          <header className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-fg">Anvilry telemetry</h1>
-              <p className="mt-0.5 text-xs text-fg-muted">
-                Last 24 h · {allEvents.length} events · Redis: {redisStatus}
-              </p>
-            </div>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
-              {new Date().toISOString().slice(0, 16).replace("T", " ")} UTC
-            </span>
-          </header>
+    <div className="min-h-screen bg-bg-base p-4 font-sans text-fg md:p-6">
+      <div className="mx-auto max-w-6xl">
 
-          {/* Six tiles */}
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <Tile
-              label="Events today"
-              value={String(allEvents.length)}
-              sub={`${httpRequests.length} requests · ${llmAttempts.length} LLM attempts`}
-            />
-            <Tile
-              label="Cache hit rate"
-              value={`${cacheHit}%`}
-              sub="cache_read / total input tokens"
-              pct={cacheHit}
-              accent={cacheHit > 50}
-            />
-            <Tile
-              label="Fallback rate"
-              value={`${fallback}%`}
-              sub="llm.attempt spans with fell_back=true"
-              pct={fallback}
-              accent={fallback > 20}
-            />
-            <Tile
-              label="Error rate"
-              value={`${errorRate}%`}
-              sub={`${errorCount} errors (client + server)`}
-              pct={errorRate}
-              accent={errorRate > 5}
-            />
-            <Tile
-              label="Client errors"
-              value={String(clientErrors.length)}
-              sub="frontend boundary + window catches"
-            />
-            <Tile
-              label="Server errors"
-              value={String(serverErrors.length)}
-              sub="route-level caught exceptions"
-              accent={serverErrors.length > 0}
-            />
+        {/* Header */}
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-fg">Anvilry telemetry</h1>
+            <p className="mt-1 text-xs text-fg-muted">
+              Last 24 h &nbsp;·&nbsp; {allEvents.length} events &nbsp;·&nbsp; Redis: {redisStatus}
+            </p>
           </div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
+            {new Date(now).toISOString().slice(0, 16).replace("T", " ")} UTC
+          </span>
+        </header>
 
-          {/* Route breakdown */}
-          {routes.length > 0 && (
-            <div className="mb-6 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
-              <h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-fg-muted">
-                Top routes (http.request spans)
-              </h2>
-              <div className="flex flex-col gap-1.5">
-                {routes.map(({ route, count }) => {
-                  const pct = Math.round((count / Math.max(1, httpRequests.length)) * 100);
-                  return (
-                    <div key={route} className="flex items-center gap-3 text-sm">
-                      <span className="w-40 shrink-0 font-mono text-xs text-fg-muted">{route}</span>
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-bg-elevated">
-                        <div className="h-full rounded-full bg-accent/60" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="w-8 text-right text-xs text-fg-subtle">{count}</span>
+        {/* Tiles — row 1: volume + cache */}
+        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Tile
+            label="Events (24h)"
+            value={String(allEvents.length)}
+            sub={`${httpRequests.length} req · ${llmAttempts.length} LLM`}
+          />
+          <Tile
+            label="Cache hit rate"
+            value={`${cache.pct}%`}
+            sub={`${fmtTokens(cache.cacheRead)} / ${fmtTokens(cache.totalInput)} tokens`}
+            pct={cache.pct}
+            accent={cache.pct > 30}
+          />
+          <Tile
+            label="Total tokens"
+            value={fmtTokens(cache.totalTokens)}
+            sub={`↑${fmtTokens(cache.totalInput)} in · ↓${fmtTokens(cache.totalOutputTokens)} out`}
+          />
+          <Tile
+            label="Fallback rate"
+            value={`${fallback}%`}
+            sub="model fell back in chain"
+            pct={fallback}
+            warn={fallback > 20}
+          />
+        </div>
+
+        {/* Tiles — row 2: latency + errors */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Tile
+            label="Avg LLM latency"
+            value={latency > 0 ? fmtMs(latency) : "—"}
+            sub={ttft > 0 ? `TTFT: ${fmtMs(ttft)}` : "no data yet"}
+          />
+          <Tile
+            label="Error rate"
+            value={`${errorRate}%`}
+            sub={`${errorCount} errors total`}
+            pct={errorRate}
+            warn={errorRate > 5}
+          />
+          <Tile
+            label="Client errors"
+            value={String(clientErrors.length)}
+            sub="boundary + window catches"
+            warn={clientErrors.length > 0}
+          />
+          <Tile
+            label="Server errors"
+            value={String(serverErrors.length)}
+            sub="caught exceptions"
+            warn={serverErrors.length > 0}
+          />
+        </div>
+
+        {/* Route breakdown */}
+        {routes.length > 0 && (
+          <div className="mb-6 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
+            <h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-fg-muted">
+              Route breakdown
+            </h2>
+            <div className="flex flex-col gap-2">
+              {routes.map(({ route, count, avgMs }) => {
+                const pct = Math.round((count / Math.max(1, httpRequests.length)) * 100);
+                return (
+                  <div key={route} className="flex items-center gap-3 text-sm">
+                    <span className="w-36 shrink-0 font-mono text-xs text-fg-muted">{route}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-elevated">
+                      <div className="h-full rounded-full bg-accent/60" style={{ width: `${pct}%` }} />
                     </div>
-                  );
-                })}
-              </div>
+                    <span className="w-6 text-right text-xs text-fg-subtle">{count}</span>
+                    <span className="w-14 text-right font-mono text-[10px] text-fg-subtle/70">
+                      {avgMs > 0 ? fmtMs(avgMs) : ""}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Recent events table */}
+        <div className="rounded-xl border border-border-strong/60 bg-bg-surface">
+          <div className="border-b border-border-strong/40 px-4 py-3">
+            <h2 className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">
+              Recent events &nbsp;·&nbsp; last {recentEvents.length} of {allEvents.length}
+            </h2>
+          </div>
+          {recentEvents.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-fg-subtle">
+              {redis
+                ? "No events yet. Send a chat message to start populating."
+                : "Upstash Redis not configured — set UPSTASH_REDIS_REST_URL + _TOKEN."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border-strong/20 text-left font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
+                    <th className="px-4 py-2 whitespace-nowrap">Time (UTC)</th>
+                    <th className="px-4 py-2">Kind</th>
+                    <th className="px-4 py-2">Route</th>
+                    <th className="px-4 py-2">TraceId</th>
+                    <th className="px-4 py-2">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentEvents.map((e, i) => {
+                    const isError = e.level === "error";
+                    const attrs = e.attrs as Record<string, unknown>;
+                    return (
+                      <tr
+                        key={`${e.ts}-${i}`}
+                        className={`border-b border-border-strong/10 hover:bg-bg-elevated/40 ${
+                          isError ? "bg-red-500/5" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-2 font-mono text-fg-subtle whitespace-nowrap">
+                          {fmtTs(e.ts)}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] ${kindBadge(e.kind)}`}>
+                            {e.kind}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 font-mono text-fg-muted">
+                          {e.route ?? "—"}
+                          {attrs.status != null && (
+                            <span className={`ml-1.5 text-[10px] ${Number(attrs.status) >= 400 ? "text-red-400" : "text-fg-subtle/60"}`}>
+                              {String(attrs.status)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 font-mono text-[10px] text-fg-subtle/60 whitespace-nowrap">
+                          {e.traceId ? e.traceId.slice(0, 8) + "…" : "—"}
+                        </td>
+                        <td className="px-4 py-2 text-fg-subtle max-w-[480px]">
+                          {isError ? (
+                            <span className="text-red-300">{fmtAttrs(e)}</span>
+                          ) : (
+                            <span className="text-fg-subtle/80">{fmtAttrs(e)}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
-
-          {/* Recent events table */}
-          <div className="rounded-xl border border-border-strong/60 bg-bg-surface">
-            <div className="border-b border-border-strong/40 px-4 py-3">
-              <h2 className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">
-                Recent events (last {recentEvents.length} of {allEvents.length})
-              </h2>
-            </div>
-            {recentEvents.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-fg-subtle">
-                {redis
-                  ? "No events in the last 24 hours. Send a chat message to populate."
-                  : "Upstash Redis is not configured — events land in Vercel Logs only. Set UPSTASH_REDIS_REST_URL + _TOKEN to enable this view."}
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border-strong/20 text-left font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
-                      <th className="px-4 py-2">Time</th>
-                      <th className="px-4 py-2">Kind</th>
-                      <th className="px-4 py-2">Level</th>
-                      <th className="px-4 py-2">Route</th>
-                      <th className="px-4 py-2">Message / attrs</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentEvents.map((e, i) => {
-                      const isError = e.level === "error";
-                      return (
-                        <tr
-                          key={`${e.ts}-${i}`}
-                          className={`border-b border-border-strong/10 ${isError ? "bg-red-500/5" : ""}`}
-                        >
-                          <td className="px-4 py-2 font-mono text-fg-subtle">{fmtTs(e.ts)}</td>
-                          <td className="px-4 py-2 font-mono text-fg">{e.kind}</td>
-                          <td className={`px-4 py-2 font-mono ${isError ? "text-red-400" : "text-fg-muted"}`}>
-                            {e.level}
-                          </td>
-                          <td className="px-4 py-2 text-fg-muted">{e.route ?? "—"}</td>
-                          <td className="px-4 py-2 text-fg-subtle">
-                            {e.message ? (
-                              <span className={isError ? "text-red-300" : "text-fg-subtle"}>
-                                {truncate(e.message, 80)}
-                              </span>
-                            ) : (
-                              <span className="text-fg-subtle/60">
-                                {truncate(JSON.stringify(e.attrs), 80)}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
         </div>
-      </body>
-    </html>
+      </div>
+    </div>
   );
 }

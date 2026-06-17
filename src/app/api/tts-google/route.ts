@@ -5,6 +5,7 @@ import {
 } from "@/lib/voice-catalog";
 import { withTrace } from "@/lib/telemetry/with-trace";
 import { emit } from "@/lib/telemetry/emit";
+import { redact } from "@/lib/telemetry/schema";
 import { randomUUID } from "node:crypto";
 import { cacheGet, cacheKey, cacheSet } from "./cache";
 
@@ -143,9 +144,14 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10_000);
     try {
-      const res = await fetch(`${GOOGLE_TTS_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+      // Send the API key via x-goog-api-key header rather than a URL query
+      // parameter. A URL-embedded key can appear in fetch error messages,
+      // server access logs, and Referer headers — all of which feed into
+      // our own telemetry pipeline. The header approach prevents the key
+      // from appearing in any unredacted error_message field.
+      const res = await fetch(GOOGLE_TTS_ENDPOINT, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           input: { text },
           voice: { languageCode: languageCodeFor(googleVoiceName), name: googleVoiceName },
@@ -220,7 +226,7 @@ export async function POST(req: Request) {
         message: e?.name ?? "error",
         attrs: {
           error_name: e?.name ?? "Error",
-          error_message: e?.message,
+          error_message: e?.message ? redact(e.message) : undefined,
           voiceId: requestedVoiceId,
           google_voice_name: googleVoiceName,
           char_count: text.length,

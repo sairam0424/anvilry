@@ -1,5 +1,5 @@
 import { emit } from "@/lib/telemetry/emit";
-import { hashIp, type KindLiteral, type TelemetryEvent } from "@/lib/telemetry/schema";
+import { hashIp, redact, type KindLiteral, type TelemetryEvent } from "@/lib/telemetry/schema";
 
 /**
  * withTrace — the universal /api/* observability wrapper.
@@ -46,8 +46,14 @@ export type TraceCtx = {
  * couple two modules that should remain independently swappable.
  */
 function clientIp(req: Request): string {
+  // On Vercel, x-vercel-forwarded-for is set by the platform and cannot be
+  // spoofed. The first XFF segment is attacker-controlled; the last is the
+  // outermost hop set by Vercel infrastructure. Using the platform header first
+  // closes the rate-limit bypass vector (mirrors the fix in rate-limit.ts).
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0].trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) return xff.split(",").pop()!.trim();
   return req.headers.get("x-real-ip") ?? "anonymous";
 }
 
@@ -189,8 +195,8 @@ export async function withTrace<T extends Response>(
         latency_ms: latencyMs,
         err: {
           name: e?.name ?? "Error",
-          message: e?.message ?? String(err),
-          stack: e?.stack,
+          message: redact(e?.message ?? String(err)),
+          stack: e?.stack ? redact(e.stack) : undefined,
           ...(awsId ? { awsRequestId: awsId } : {}),
         },
         ...extraAttrs,

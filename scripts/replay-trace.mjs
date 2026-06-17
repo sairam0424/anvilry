@@ -62,13 +62,14 @@ for (const kind of KINDS) {
     // Fetch the last 7 days (the retention window). The score is the ts (epoch ms),
     // so we fetch the last week — more than enough for any incident investigation.
     const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    // @upstash/redis automaticDeserialization=true already parses each member
+    // before returning. Passing a typed generic tells the SDK to return objects
+    // directly — a previous JSON.parse(m) would coerce the object to
+    // "[object Object]" and throw SyntaxError, silently dropping every event.
     const members = await redis.zrange(key, since, "+inf", { byScore: true });
-    for (const m of members ?? []) {
-      try {
-        const event = JSON.parse(m);
-        if (event.traceId === traceId) allEvents.push(event);
-      } catch {
-        // corrupt member — skip
+    for (const event of members ?? []) {
+      if (event && typeof event === "object" && event.traceId === traceId) {
+        allEvents.push(event);
       }
     }
   } catch (err) {

@@ -28,16 +28,16 @@ vi.mock("@/lib/telemetry/emit", () => ({
 }));
 
 vi.mock("@/lib/telemetry/schema", () => ({
-  // Mirror the real hashIp contract from src/lib/telemetry/schema.ts:124-128 — salt
-  // unset/empty -> "anonymous" regardless of ip; ip empty/"anonymous" -> "anonymous";
-  // otherwise return a deterministic token so tests can assert. We don't reach into
-  // real SHA-256 here because the schema module's own tests already pin that path.
+  // Mirror the real hashIp contract — see src/lib/telemetry/schema.ts:124-128.
   hashIp: vi.fn((input: string, salt: string | undefined) => {
     hashCalls.push({ input, salt });
     if (!salt) return "anonymous";
     if (!input || input === "anonymous") return "anonymous";
     return `salted:${input.slice(0, 8)}`;
   }),
+  // redact is a passthrough in tests — schema.test.ts owns its behavior; here
+  // we just verify withTrace calls it (the real implementation is tested separately).
+  redact: vi.fn((s: string) => s),
 }));
 
 beforeEach(() => {
@@ -217,11 +217,16 @@ describe("withTrace — IP/UA hashing inputs", () => {
     expect(hashCalls[0]).toEqual({ input: "anonymous", salt: undefined });
   });
 
-  it("uses the FIRST segment of x-forwarded-for (Vercel proxy chain)", async () => {
+  it("uses the LAST segment of x-forwarded-for (set by Vercel infrastructure, not spoofable)", async () => {
+    // Security fix: the first XFF segment is attacker-controlled (any client can
+    // set X-Forwarded-For: spoof). The LAST segment is appended by Vercel's edge
+    // infrastructure and cannot be forged. Using it prevents rate-limit bypass
+    // via rotating spoofed header values. When x-vercel-forwarded-for is absent
+    // (local dev / non-Vercel deploy), we fall back to the last XFF segment.
     const { withTrace } = await import("./with-trace");
     const req = makeReq({ xff: "203.0.113.42, 10.0.0.1, 10.0.0.2" });
     await withTrace(req, "chat", async () => Response.json({ ok: true }));
-    expect(hashCalls[0]?.input).toBe("203.0.113.42");
+    expect(hashCalls[0]?.input).toBe("10.0.0.2");
   });
 
   it("falls back to x-real-ip when x-forwarded-for is absent", async () => {

@@ -7,6 +7,7 @@ import { bedrockCreds } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { withTrace } from "@/lib/telemetry/with-trace";
 import { emit } from "@/lib/telemetry/emit";
+import { redact } from "@/lib/telemetry/schema";
 import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
         message: e?.name ?? "error",
         attrs: {
           error_name: e?.name ?? "Error",
-          error_message: e?.message,
+          error_message: e?.message ? redact(e.message) : undefined,
           aws_request_id: e?.$metadata?.requestId,
           audio_bytes: pcm.length,
         },

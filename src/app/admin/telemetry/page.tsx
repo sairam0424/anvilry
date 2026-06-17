@@ -1,7 +1,5 @@
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
-import { requireAdmin } from "@/lib/admin-auth";
-import { headers } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic"; // never cache — always fresh read
@@ -34,19 +32,16 @@ async function fetchKind(kind: string, since: number): Promise<TelemetryEvent[]>
   if (!redis) return [];
   try {
     // @upstash/redis v1.38 uses zrange(key, min, max, { byScore: true }) for
-    // the Redis ZRANGEBYSCORE semantics. The raw members are stored as JSON strings.
-    const raw = await redis.zrange<string[]>(`anvilry:trace:${kind}`, since, "+inf", {
+    // ZRANGEBYSCORE semantics. IMPORTANT: the SDK's automaticDeserialization=true
+    // already JSON-parses each member before returning — passing <TelemetryEvent[]>
+    // as the type parameter tells the SDK to return parsed objects directly.
+    // A previous version used <string[]> + manual JSON.parse(r) which caused a
+    // double-parse: the object was coerced to "[object Object]", SyntaxError thrown,
+    // and every event silently dropped. The dashboard appeared permanently empty.
+    const raw = await redis.zrange<TelemetryEvent[]>(`anvilry:trace:${kind}`, since, "+inf", {
       byScore: true,
     });
-    return (raw ?? [])
-      .map((r: string) => {
-        try {
-          return JSON.parse(r) as TelemetryEvent;
-        } catch {
-          return null;
-        }
-      })
-      .filter((e: TelemetryEvent | null): e is TelemetryEvent => e !== null);
+    return (raw ?? []).filter((e): e is TelemetryEvent => e !== null && typeof e === "object");
   } catch {
     return [];
   }
@@ -137,47 +132,21 @@ function Tile({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function TelemetryDashboard() {
-  // Read the Authorization header via next/headers (the App Router way). Construct
-  // a synthetic Request so we can reuse the requireAdmin helper without duplicating
-  // the timing-safe compare logic here. The synthetic Request is created server-side
-  // and never sent over the network — it's just a carrier for the header.
-  const headersList = await headers();
-  const authHeader = headersList.get("Authorization") ?? "";
-  const syntheticReq = new Request("http://localhost/admin/telemetry", {
-    headers: { ...(authHeader ? { Authorization: authHeader } : {}) },
-  });
-  const authResult = requireAdmin(syntheticReq);
-  if ("status" in authResult) {
-    // In the App Router, server components must return React. Returning a plain
-    // 401 Response isn't supported. Instead render an "unauthorized" page with
-    // instructions. The ADMIN_PASSWORD env + a curl command is the intended access
-    // path anyway (not a browser login form).
-    return (
-      <html lang="en">
-        <body style={{ fontFamily: "monospace", padding: "2rem", background: "#0a0a0a", color: "#888" }}>
-          <h1 style={{ color: "#fff" }}>401 Unauthorized</h1>
-          <p>Set the Authorization header with your ADMIN_PASSWORD to view this page.</p>
-          <pre style={{ background: "#111", padding: "1rem", borderRadius: "6px", color: "#aaa" }}>
-            curl -u :YOUR_ADMIN_PASSWORD https://anvilry.vercel.app/admin/telemetry
-          </pre>
-          <p style={{ fontSize: "0.75rem" }}>
-            Set ADMIN_PASSWORD in Vercel Project Settings → Environment Variables.
-          </p>
-        </body>
-      </html>
-    );
-  }
-
+  // Auth is handled by src/proxy.ts (Next 16 Proxy / Middleware) which returns a
+  // real HTTP 401 with WWW-Authenticate before this server component ever renders.
+  // By the time this code runs, the request is authenticated — no secondary auth
+  // check needed here.
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  const [allEvents, llmAttempts, httpRequests, clientErrors, serverErrors] = await Promise.all([
-    fetchAll(since24h),
-    fetchKind("llm.attempt", since24h),
-    fetchKind("http.request", since24h),
-    fetchKind("client.error", since24h),
-    fetchKind("server.error", since24h),
-  ]);
+  // Fetch all 7 kinds in parallel (single pass) then derive sub-views.
+  // fetchAll already queries all 7 kinds — previously 4 redundant fetchKind calls
+  // doubled the queries to 11. Now we do 7 total and slice in memory.
+  const allEvents = await fetchAll(since24h);
+  const llmAttempts = allEvents.filter((e) => e.kind === "llm.attempt");
+  const httpRequests = allEvents.filter((e) => e.kind === "http.request");
+  const clientErrors = allEvents.filter((e) => e.kind === "client.error");
+  const serverErrors = allEvents.filter((e) => e.kind === "server.error");
 
   const errorCount = [...clientErrors, ...serverErrors].length;
   const errorRate = allEvents.length > 0 ? Math.round((errorCount / allEvents.length) * 100) : 0;

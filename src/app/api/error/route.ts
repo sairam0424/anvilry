@@ -124,6 +124,14 @@ export async function POST(req: Request) {
       return new Response(null, { status: 400 });
     }
 
+    // Content-Length bypass backstop: sendBeacon and the fetch fallback in
+    // beacon.ts do not always send a Content-Length header, so the header-only
+    // check at Stage 4 can be silently bypassed. A post-read size guard mirrors
+    // the defence-in-depth pattern used in /api/transcribe/route.ts.
+    if (JSON.stringify(raw).length > MAX_BODY_BYTES) {
+      return new Response(null, { status: 413 });
+    }
+
     // Stage 5b — Zod validate. Unknown source / oversized field / wrong type all
     // resolve to a 400 here; we never call emit() with a payload the schema didn't
     // bless. .safeParse keeps the failure path branch-free (no try/catch around

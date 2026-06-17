@@ -46,10 +46,15 @@ if (!isRateLimitEnabled && process.env.NODE_ENV === "production") {
   );
 }
 
-/** Derive a best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
+/** Derive the real client IP. On Vercel, x-vercel-forwarded-for is set by the
+ *  platform and cannot be spoofed. Falling back to the LAST segment of
+ *  x-forwarded-for (set by Vercel's infrastructure) rather than the first (which
+ *  is attacker-controlled) prevents rate-limit bypass via rotating spoofed headers. */
 function clientIp(req: Request): string {
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0].trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) return xff.split(",").pop()!.trim();
   return req.headers.get("x-real-ip") ?? "anonymous";
 }
 

@@ -8,6 +8,7 @@ import {
 } from "@/lib/voice-catalog";
 import { withTrace } from "@/lib/telemetry/with-trace";
 import { emit } from "@/lib/telemetry/emit";
+import { redact } from "@/lib/telemetry/schema";
 import { randomUUID } from "node:crypto";
 import { cacheGet, cacheKey, cacheSet } from "./cache";
 
@@ -194,7 +195,7 @@ export async function POST(req: Request) {
         message: e?.name ?? "error",
         attrs: {
           error_name: e?.name ?? "Error",
-          error_message: e?.message,
+          error_message: e?.message ? redact(e.message) : undefined,
           aws_request_id: e?.$metadata?.requestId,
           voiceId: requestedVoiceId,
           polly_voice_id: polly.pollyVoiceId,

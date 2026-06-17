@@ -20,9 +20,9 @@ import { useSearchParams } from "next/navigation";
  * optional full-page two-way talk surface (only offered when the visitor opts into the
  * "view" talk-surface — the default is a modal overlay, so VOICE is normally unused).
  */
-export type View = "classic" | "gamified" | "chat" | "developer" | "voice";
+export type View = "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice"] as const;
+const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice", "resume"] as const;
 const DEFAULT_VIEW: View = "classic";
 
 const isView = (v: string | null | undefined): v is View =>
@@ -72,10 +72,35 @@ function commitViewChange() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const doc = typeof document !== "undefined" ? document : undefined;
-  if (!doc || typeof doc.startViewTransition !== "function" || prefersReducedMotion) {
+  const noTransitionApi = !doc || typeof doc.startViewTransition !== "function";
+
+  // If reduced-motion or no View Transitions API, snap immediately.
+  if (prefersReducedMotion || noTransitionApi) {
     emit();
     return;
   }
+
+  // Default: plain CSS crossfade via the View Transitions API.
+  // The ink-bleed WebGL transition is preserved in src/components/ui/ink-transition.tsx
+  // and can be enabled by setting NEXT_PUBLIC_INK_TRANSITION=true — opt-in only.
+  if (
+    typeof window !== "undefined" &&
+    process.env.NEXT_PUBLIC_INK_TRANSITION === "true"
+  ) {
+    import("@/components/ui/ink-transition")
+      .then(({ inkTransitionRef }) => {
+        if (inkTransitionRef) {
+          inkTransitionRef.transitionIn(() => flushSync(emit));
+        } else {
+          doc!.startViewTransition(() => flushSync(emit));
+        }
+      })
+      .catch(() => {
+        doc!.startViewTransition(() => flushSync(emit));
+      });
+    return;
+  }
+
   doc.startViewTransition(() => flushSync(emit));
 }
 

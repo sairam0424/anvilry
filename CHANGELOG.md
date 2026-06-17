@@ -7,6 +7,63 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.9.0] — 2026-06-17
+
+**Beast Mode upgrade** — 6 commits closing 3 critical production gaps and shipping 11
+new features across every layer of the stack. Anchored in adversarial deep-research
+(35 agents, 12 URLs fetched, 11 ideas survived 3-skeptic review).
+
+### Critical gaps closed
+- **No 404 page** → Corrupted-Signal Terminal 404 page (`app/not-found.tsx`) — the
+  error IS the terminal; visitors get the full gamified shell on broken URLs.
+- **AI chat couldn't mutate the page** → `[[cmd:view:X]]` and `[[cmd:highlight:slug]]`
+  token protocol on top of the existing card-token infrastructure; the AI can now
+  switch views and glow-highlight project cards mid-response.
+- **3D orb had no post-processing** → Bloom + Vignette + Noise + ChromaticAberration
+  via `@react-three/postprocessing` in one merged EffectPass; gated behind device-tier
+  check (≥4 GB RAM + ≥4 cores).
+
+### Added
+- **Corrupted-Signal Terminal 404** — `app/not-found.tsx` (no new deps); `bootBanner404()`
+  fake kernel-panic boot sequence in `boot-banner.ts`; `initialLines` prop on `Terminal`;
+  `cd` command in the command registry; CSS `@keyframes glitch-text`.
+- **Orb post-processing pipeline** — Bloom (luminanceThreshold=1.0 so only HDR crests
+  bloom), Vignette, Noise, ChromaticAberration. Adaptive DPR + antialias on device tier.
+- **Orb error mode** — `uErrorMode` GLSL uniform shifts palette to red/orange + erratic
+  double-sin breathing. Used by `not-found.tsx` orb hero variant.
+- **Persona-aware AI responses** — VISITOR PERSONA DETECTION block in system prompt;
+  recruiter → crisp metrics, engineer → architectural depth, collaborator → enthusiasm.
+- **Agent cmd tokens** — `[[cmd:view:<view>]]` and `[[cmd:highlight:<slug>]]` parsed by
+  `parse-cards.ts` (fail-closed); dispatched as side-effects from `chat-messages.tsx`.
+  `highlight-store.ts` — module-level external store, auto-clears after 3s.
+- **Live GitHub stats** — `GET /api/github/stats` (ISR 1h) aggregates `getRepoFeed()`;
+  injected into chat system prompt as LIVE GITHUB STATS block (fail-open).
+- **`?view=resume`** — sixth view, always enabled, single-column print-optimized CV from
+  `profile.ts`; PDF download buttons for all 5 resume variants; `@media print` CSS.
+- **SVG RPG Skill Tree** — interactive SVG in the Gamified view; 6 category nodes with
+  bezier connections; click to filter; palette mirrors BuildGraph `kindColor`; zero new
+  deps; `useReducedMotion()` gate.
+- **WebSite JSON-LD SearchAction** — `WebSiteJsonLd()` component with `potentialAction`
+  SearchAction; mounted in `layout.tsx`; Google sitelinks search box eligibility.
+- **Telemetry: Costs breakdown table** — per-model cost from `cost_usd` fields already in
+  `llm.attempt` spans; no new schema changes.
+- **Telemetry: Voice P50/P95 tiles** — from `tts.request` + `transcribe.request` latency
+  sorted sets already in Redis.
+- **Telemetry: Eval tile + `/api/cron/eval`** — 5 golden pairs (factual × 3, RAG × 1,
+  injection resistance × 1); keyword-based pass/fail; writes to `anvilry:eval:latest`;
+  weekly Vercel cron target `0 9 * * 1`.
+- **web-vitals RUM** — `onLCP/onINP/onCLS → console.info("[vitals]", ...)` in
+  `instrumentation-client.ts`; greppable in Vercel Logs; no Redis or new route.
+- **`next/after()` telemetry** — `afterSafeEmit()` in `with-trace.ts` moves telemetry
+  emit AFTER the response finishes streaming; falls back to synchronous outside
+  request scope (test safety).
+- **`experimental.viewTransition: true`** in `next.config.ts` — enables React 19
+  ViewTransition component and directional slide on project card Links.
+
+### Dependencies added
+- `@react-three/postprocessing ^3.0.4` + `postprocessing ^6.39.1` (peer)
+- `web-vitals ^5.3.0` (devDep)
+
 ## [1.8.0] — 2026-06-17
 
 **Structured telemetry + AI request tracing + prompt-cache verification** — a dual-sink

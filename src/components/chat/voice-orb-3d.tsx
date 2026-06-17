@@ -2,6 +2,8 @@
 
 import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
+import { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing"; // peer dep of @react-three/postprocessing
 import * as THREE from "three";
 import type { VoiceSessionState } from "@/components/chat/use-voice-session";
 
@@ -9,17 +11,18 @@ import type { VoiceSessionState } from "@/components/chat/use-voice-session";
  * The premium desktop "Siri orb" — an R3F icosahedron whose vertices are displaced by
  * DOMAIN-WARPED fractal noise (fBm) scaled by the live `level` (0..1), shaded by a
  * 3-stop gradient + a fresnel rim, and wrapped in an additive halo back-sphere for a
- * volumetric bloom (no postprocessing dep — CSP-safe inline GLSL only). Reuses the
- * in-bundle three/@react-three/fiber deps. Mounted ONLY inside talk mode and ONLY on
- * desktop+WebGL+motion (gated by the selector), so it never touches the Classic path.
- * GPU geometry is disposed on unmount (R3F auto-disposes the renderer when it leaves).
+ * volumetric bloom. Post-processing via @react-three/postprocessing adds Bloom (HDR
+ * crests only via luminanceThreshold=1.0), Vignette, film Noise, and ChromaticAberration
+ * composited in ONE merged EffectPass — equivalent to a single extra render call.
+ * Gated behind a device-tier check (≥4 GB RAM + ≥4 cores) so low-end devices still get
+ * the raw orb with inline halo. Mounted ONLY inside talk mode and ONLY on desktop+WebGL+motion.
  *
- * level is a REF read inside useFrame — never React state — so 60fps reactivity never
- * re-renders the React tree.
+ * errorMode: when true (404 page), shifts palette to red/orange, boosts turbulence, and
+ * replaces the smooth breathing oscillation with an erratic double-sin pattern — making
+ * the orb look "distressed" with zero audio coupling.
  *
- * HDR note: R3F defaults to ACESFilmicToneMapping + sRGB output; we set it explicitly so
- * the intent is durable. The shaders deliberately output values >1.0 on crests/rim so
- * ACES BLOOMS the highlights (a value >1.0 rolls off softly, it does not hard-clip).
+ * HDR note: ACES + sRGB output; shaders output values >1.0 on crests/rim so the Bloom
+ * effect with luminanceThreshold=1.0 selectively blooms ONLY the bright parts.
  */
 
 // A richer palette than a flat 2-color mix: deep blue core -> cyan body -> violet rim.
@@ -27,6 +30,19 @@ const DEEP = new THREE.Color("#1b6cff"); // core
 const ACCENT = new THREE.Color("#38e1ff"); // mid (site accent)
 const RIM = new THREE.Color("#cbb6ff"); // hot rim glow
 const HALO = new THREE.Color("#5ea0ff"); // outer volumetric halo
+
+// Error-mode palette — burnt orange / red for the 404 distressed state.
+const ERR_A = new THREE.Color("#ff4e00"); // core burnt orange
+const ERR_B = new THREE.Color("#ff1a1a"); // rim red
+
+// Detect device capability for adaptive quality. Runs once at component mount
+// (not a React hook — called inside a client-only component, safe to call at top-level).
+function getDeviceTier(): "high" | "low" {
+  if (typeof navigator === "undefined") return "high"; // SSR fallback
+  const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
+  const cores = navigator.hardwareConcurrency ?? 4;
+  return mem >= 4 && cores >= 4 ? "high" : "low";
+}
 
 // Ashima 3D simplex noise (public domain) — shared by the orb + halo vertex stages.
 const SNOISE = /* glsl */ `
@@ -83,12 +99,13 @@ const SNOISE = /* glsl */ `
 `;
 
 // Orb vertex shader: domain-warp the sample point so the surface BOILS/SWIRLS instead of
-// rigidly scrolling, then displace along the normal. Passes world normal + view dir +
-// noise to the fragment stage for the gradient + fresnel.
+// rigidly scrolling, then displace along the normal. In errorMode the breathing oscillation
+// is replaced by an erratic double-sin for a "distressed" feel.
 const VERT = /* glsl */ `
   uniform float uTime;
   uniform float uLevel;
   uniform float uSpeaking;
+  uniform float uErrorMode;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   varying float vNoise;
@@ -97,8 +114,6 @@ const VERT = /* glsl */ `
   ${SNOISE}
 
   void main() {
-    // uSpeaking (0..1) surges turbulence WHILE SPEAKING — more domain warp + bigger
-    // displacement than uLevel alone, so the orb visibly "comes alive" mid-answer.
     float t = uTime * (0.35 + uSpeaking * 0.5);
     float warpGain = 0.6 + uSpeaking * 0.5;
     vec3 warp = vec3(
@@ -106,7 +121,9 @@ const VERT = /* glsl */ `
       fbm(position * 1.1 + vec3(5.2, 1.3, t)),
       fbm(position * 1.1 + vec3(-3.4, 2.7, -t))
     );
-    float amp = 0.10 + uLevel * 0.42 + uSpeaking * 0.18;
+    // errorMode boosts turbulence amplitude by 1.4×
+    float errBoost = 1.0 + uErrorMode * 0.4;
+    float amp = (0.10 + uLevel * 0.42 + uSpeaking * 0.18) * errBoost;
     float n = fbm(position * 1.7 + warp * warpGain + t * 0.8);
     float disp = n * amp;
     vDisp = disp;
@@ -119,14 +136,17 @@ const VERT = /* glsl */ `
   }
 `;
 
-// Orb fragment shader: 3-stop gradient by noise height + a fresnel rim, with HDR heat
-// (values >1.0) tied to level so the whole orb brightens/blooms on loud syllables.
+// Orb fragment shader: 3-stop gradient by noise height + fresnel rim. errorMode shifts
+// the palette toward red/orange for the 404 distressed look.
 const FRAG = /* glsl */ `
   uniform vec3 uColorA;
   uniform vec3 uColorB;
   uniform vec3 uColorC;
+  uniform vec3 uErrA;
+  uniform vec3 uErrB;
   uniform float uLevel;
   uniform float uSpeaking;
+  uniform float uErrorMode;
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   varying float vNoise;
@@ -134,19 +154,19 @@ const FRAG = /* glsl */ `
 
   void main() {
     float h = clamp(vNoise * 1.6 + 0.5, 0.0, 1.0);
-    vec3 col = mix(uColorA, uColorB, smoothstep(0.0, 0.55, h));
-    col = mix(col, uColorC, smoothstep(0.5, 1.0, h));
+    vec3 colA = mix(uColorA, uErrA, uErrorMode);
+    vec3 colC = mix(uColorC, uErrB, uErrorMode);
+    vec3 col = mix(colA, uColorB, smoothstep(0.0, 0.55, h));
+    col = mix(col, colC, smoothstep(0.5, 1.0, h));
     float fres = pow(1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0), 2.5);
-    // Extra HDR heat while speaking so the whole orb blooms hotter mid-answer.
     float heat = 0.85 + uLevel * 0.9 + uSpeaking * 0.5;
     vec3 lit = col * (0.7 + h * 0.6) * heat;
-    lit += uColorC * fres * (1.4 + uLevel * 1.6 + uSpeaking * 0.8); // glowing rim, hotter when loud / speaking
+    lit += colC * fres * (1.4 + uLevel * 1.6 + uSpeaking * 0.8);
     gl_FragColor = vec4(lit, clamp(0.78 + fres * 0.5 + h * 0.2, 0.0, 1.0));
   }
 `;
 
-// Halo back-sphere: an inverted-fresnel additive shell that bleeds soft light beyond the
-// orb silhouette — the CSP-safe stand-in for UnrealBloom (no postprocessing dep).
+// Halo back-sphere: inverted-fresnel additive shell for volumetric softness.
 const HALO_VERT = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDir;
@@ -163,12 +183,9 @@ const HALO_FRAG = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDir;
   void main() {
-    // Softer, wider bloom: a higher fresnel exponent pushes the glow to the rim and
-    // feathers the falloff, and squaring the alpha makes the OUTER edge fade to fully
-    // transparent (no hard disc). The body stays dim so it reads as light, not a sphere.
     float rim = 1.0 - max(dot(normalize(vViewDir), normalize(vNormalW)), 0.0);
     float f = pow(rim, 4.5);
-    float alpha = f * f; // square → gentler outer feather to 0
+    float alpha = f * f;
     gl_FragColor = vec4(uHaloColor * f * (0.5 + uLevel * 1.1), alpha);
   }
 `;
@@ -176,9 +193,11 @@ const HALO_FRAG = /* glsl */ `
 function OrbMesh({
   level,
   speaking,
+  errorMode,
 }: {
   level: React.RefObject<number>;
   speaking: boolean;
+  errorMode: boolean;
 }) {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
   const haloRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -189,10 +208,14 @@ function OrbMesh({
       uTime: { value: 0 },
       uLevel: { value: 0 },
       uSpeaking: { value: 0 },
+      uErrorMode: { value: errorMode ? 1.0 : 0.0 },
       uColorA: { value: DEEP },
       uColorB: { value: ACCENT },
       uColorC: { value: RIM },
+      uErrA: { value: ERR_A },
+      uErrB: { value: ERR_B },
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
   const haloUniforms = useMemo(
@@ -206,10 +229,8 @@ function OrbMesh({
     const speakTarget = speaking ? 1 : 0;
     if (matRef.current) {
       matRef.current.uniforms.uTime.value += delta;
-      // Ease the shader level toward the latest amplitude for smoothness.
       matRef.current.uniforms.uLevel.value +=
         (target - matRef.current.uniforms.uLevel.value) * 0.2;
-      // Ease the speaking surge in/out so the "beast" ramps, never snaps.
       matRef.current.uniforms.uSpeaking.value +=
         (speakTarget - matRef.current.uniforms.uSpeaking.value) * 0.08;
     }
@@ -218,23 +239,21 @@ function OrbMesh({
         (target - haloRef.current.uniforms.uLevel.value) * 0.2;
     }
     if (meshRef.current) {
-      // Organic drift + whole-body breathing scale (manual — NOT drei <Float>, which
-      // would fight these direct transform assignments and jitter). Spin a touch faster
-      // while speaking for extra life.
       const surge = matRef.current?.uniforms.uSpeaking.value ?? 0;
       meshRef.current.rotation.y += delta * (0.08 + surge * 0.12);
       meshRef.current.rotation.x = Math.sin(t * 0.2) * 0.12;
-      const breathe = 1 + 0.04 * Math.sin(t * 0.9) + target * 0.1 + surge * 0.04;
+
+      // errorMode: erratic double-sin breathing instead of smooth, for a distressed feel.
+      const breatheBase = errorMode
+        ? Math.sin(t * 0.3 + Math.sin(t * 1.7) * 0.5)
+        : Math.sin(t * 0.9);
+      const breathe = 1 + 0.04 * breatheBase + target * 0.1 + surge * 0.04;
       meshRef.current.scale.setScalar(breathe);
     }
   });
 
   return (
     <group>
-      {/* Additive halo, drawn first (renderOrder -1) so the orb composites over it; both
-          depthWrite:false + additive blending make the co-located sort deterministic.
-          Scale 1.8 (still inside the ~1.9 visible half-height at z=4.6/fov45) gives the
-          softened, feathered glow room to fade out before the canvas edge. */}
       <mesh scale={1.8} renderOrder={-1}>
         <sphereGeometry args={[1, 64, 64]} />
         <shaderMaterial
@@ -267,24 +286,28 @@ export function VoiceOrb3D({
   level,
   state,
   size = 160,
+  errorMode = false,
 }: {
   level: React.RefObject<number>;
   state: VoiceSessionState;
   size?: number;
+  /** When true, shifts palette to red/orange + erratic oscillation. Used by 404 page. */
+  errorMode?: boolean;
 }) {
   const speaking = state === "speaking";
+  // Post-processing is opt-in: set NEXT_PUBLIC_ORB_POSTPROCESSING=true to enable Bloom +
+  // Vignette + Noise + ChromaticAberration. Default is the original inline-halo orb which
+  // already achieves a volumetric glow effect via the HALO_FRAG back-sphere shader.
+  const postFx = process.env.NEXT_PUBLIC_ORB_POSTPROCESSING === "true";
+  const tier = getDeviceTier();
+
   return (
     <div aria-hidden="true" style={{ width: size, height: size }}>
-      {/* frameloop="always" because the orb is continuously audio-reactive while talk
-          mode is open; it unmounts (and disposes the GL context) when the modal closes,
-          so it never burns frames on the Classic view. Tone-mapping is set explicitly
-          (R3F's default is ACES, but pinning it makes the HDR-bloom intent durable). */}
       <Canvas
-        frameloop="always"
+        frameloop={errorMode ? "demand" : "always"}
+        // Restore original dpr — the adaptive tier scaling is only needed when
+        // post-processing is on (where GPU cost is higher).
         dpr={[1, 1.75]}
-        // Camera pulled BACK so the orb + its 1.6-radius halo fit with margin: visible
-        // half-height = dist*tan(fov/2) = 4.6*tan(22.5) ≈ 1.9 > the 1.6 halo, so the glow
-        // fades to transparent INSIDE the canvas instead of clipping to a hard square.
         camera={{ position: [0, 0, 4.6], fov: 45 }}
         gl={{
           antialias: true,
@@ -297,7 +320,28 @@ export function VoiceOrb3D({
       >
         <ambientLight intensity={0.4} />
         <pointLight position={[2, 2, 3]} intensity={1.2} color="#bcd4ff" />
-        <OrbMesh level={level} speaking={speaking} />
+        <OrbMesh level={level} speaking={speaking} errorMode={errorMode} />
+
+        {/* Post-processing — only when NEXT_PUBLIC_ORB_POSTPROCESSING=true AND high-tier device.
+            Default is the original inline-halo orb (HALO_FRAG back-sphere) for the clean look. */}
+        {postFx && tier === "high" && (
+          <EffectComposer>
+            <Bloom
+              mipmapBlur
+              luminanceThreshold={1.0}
+              luminanceSmoothing={0.025}
+              intensity={1.5}
+              radius={0.4}
+            />
+            <Vignette offset={0.15} darkness={0.9} />
+            <Noise opacity={0.025} premultiply={false} blendFunction={BlendFunction.ADD} />
+            <ChromaticAberration
+              offset={new THREE.Vector2(0.002, 0.002)}
+              radialModulation={false}
+              modulationOffset={0}
+            />
+          </EffectComposer>
+        )}
       </Canvas>
     </div>
   );

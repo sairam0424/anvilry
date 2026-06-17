@@ -44,10 +44,18 @@
 // re-points a bundler config at it from the server, the import simply no-ops instead of
 // crashing the build with "navigator is not defined".
 if (typeof window !== "undefined") {
-  // Dynamic import keeps the beacon module out of the SSR bundle entirely. A static
-  // import would tree-shake fine in practice, but a dynamic import is the load-bearing
-  // contract: this file MUST be importable from a Node-y context without dragging
-  // window-touching code into evaluation.
+  // web-vitals field data → Vercel Runtime Logs (grep "[vitals]"). No Redis, no new
+  // API route — just structured console output that closes the lab-vs-field gap.
+  // Lazy import: keeps the web-vitals bundle (~4KB) out of the critical path.
+  import("web-vitals").then(({ onLCP, onINP, onCLS }) => {
+    const report = ({ name, value, rating }: { name: string; value: number; rating: string }) =>
+      console.info("[vitals]", name, Math.round(value), rating);
+    onLCP(report);
+    onINP(report);
+    onCLS(report);
+  }).catch(() => { /* vitals are observability-only; never break the page */ });
+
+  // Dynamic import keeps the beacon module out of the SSR bundle entirely.
   import("@/lib/telemetry/beacon").then(({ sendErrorBeacon }) => {
     /**
      * Dedupe window — see the file-level docblock for rationale. 100ms suppresses the

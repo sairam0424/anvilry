@@ -424,6 +424,19 @@ const nowCmd: Command = {
   },
 };
 
+const cd: Command = {
+  name: "cd",
+  description: "navigate to a path (cd / returns home)",
+  usage: "cd [path]",
+  run: (args) => {
+    const path = args[0] ?? "";
+    if (!path || path === "/" || path === "~") {
+      return { lines: out("navigating to / …"), nav: { type: "route", href: "/" } };
+    }
+    return { lines: err(`cd: ${path}: no such route — try 'cd /'`) };
+  },
+};
+
 const neofetch: Command = { ...whoami, name: "neofetch", description: "system info (alias of whoami)" };
 
 const sudo: Command = {
@@ -448,7 +461,7 @@ const theme: Command = {
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
   help, whoami, neofetch, ls, cat, tree, grep, find, top, stats, stack, awards, summary, career,
-  about, resume, open, contact, email, social, chat, theme, classic, developer, clear, sudo,
+  about, resume, open, contact, email, social, chat, theme, classic, developer, cd, clear, sudo,
   // hidden (dispatchable + tracked, but absent from help + autocomplete) — the eggs:
   secret, personal: personalAlias, uses, now: nowCmd,
 };

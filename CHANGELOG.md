@@ -7,6 +7,63 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [1.8.0] — 2026-06-17
+
+**Structured telemetry + AI request tracing + prompt-cache verification** — a dual-sink
+observability pipeline (Vercel Logs + Upstash Redis) that, for the first time, actually
+reads the `cache_read_input_tokens` / `cache_creation_input_tokens` fields from the Bedrock
+streaming response. Prompt caching was wired in v1.6 but the streaming consumer silently
+dropped the usage events — nobody knew if caching was saving 90% of token cost or 0%. Now
+every Bedrock attempt emits a structured `llm.attempt` span with the full usage block,
+frontend errors send to a same-origin `/api/error` route, and an owner-only
+`/admin/telemetry` dashboard makes all of it queryable. Zero new vendors; zero CSP changes.
+
+### Added
+- **`src/lib/telemetry/` module** — Zod-validated event schema (7 span kinds), PII redactor,
+  SHA-256 ip-hasher, dual-sink emitter (`console.log` + Upstash ZADD), `withTrace` route
+  wrapper, browser `sendBeacon` helper. See `TELEMETRY.md` for the full reference.
+- **Prompt-cache verification** — `streamWithFallback` now consumes `message_start` +
+  `message_delta` events, extracting `input_tokens`, `output_tokens`,
+  `cache_creation_input_tokens`, and `cache_read_input_tokens` per Bedrock attempt.
+  These flow through the new `onAttempt` callback and land in the `llm.attempt` span.
+  The cache-hit rate tile on `/admin/telemetry` makes this visible.
+- **AI request tracing** — every `/api/chat` call emits one `http.request` span + one
+  `llm.attempt` span per Bedrock attempt in the fallback chain. Every `/api/tts`,
+  `/api/tts-google`, `/api/transcribe` call emits an `http.request` + a route-specific
+  span (with `cache_hit`, `voiceId`, `aws_request_id`, `char_count`, etc.).
+- **Extended trace frame** — the U+001E delimiter frame appended to `/api/chat` streaming
+  responses extends from `{model, fellBack}` to `{model, fellBack, traceId, usage,
+  ttftMs, latencyMs}` (additive; v1.7 clients unaffected).
+- **`x-anvilry-trace-id` response header** on every `/api/*` response — visitors can
+  hand you the header value from their browser's Network tab; `node scripts/replay-trace.mjs <id>`
+  prints the full event chain.
+- **Frontend error capture** — `app/error.tsx`, `app/global-error.tsx` (Next 16 framework
+  boundaries), and `src/instrumentation-client.ts` (window.error + unhandledrejection
+  listeners). All POST via `sendBeacon` to the new `/api/error` same-origin sink.
+- **`/api/error` route** — 5-stage gate (telemetry-on guard, rate-limit, 8KB cap, JSON
+  parse, Zod validate), redacts message + stack before emitting `client.error` event.
+- **`/admin/telemetry` dashboard** — password-gated (`ADMIN_PASSWORD` env) server component.
+  Six tiles (events today, cache hit rate, fallback rate, error rate, client errors, server
+  errors) + route breakdown bar chart + recent-events table.
+- **`scripts/replay-trace.mjs`** — CLI for incident investigation: reads all spans for a
+  traceId from Upstash and prints chronological output with delta timestamps.
+- **`NEXT_PUBLIC_LLM_SDK` flag** — `anthropic-bedrock` (default, current path) |
+  `aws-sdk-bedrock` (stub for v1.8.x OTel auto-instrumentation migration).
+- **`src/lib/redis.ts`** — shared Upstash Redis singleton (extracted from rate-limit.ts so
+  the emitter, budget counter, and dashboard reader can share one client).
+- **`TELEMETRY.md`** — canonical reference for the telemetry layer.
+
+### Fixed
+- `streamWithFallback` docblock claimed "Opus 4.6 primary" while the `BEDROCK_CHAIN` array
+  had shipped Sonnet-first since v1.6 — fixed the docblock so log/dashboard analysis isn't
+  ambiguous about the expected primary model.
+
+### Configuration (new env vars)
+- `TELEMETRY_ENABLED` — `"false"` disables event emission; default on.
+- `TELEMETRY_IP_SALT` — salt for SHA-256 IP hashing; without it, IPs are stored as `"anonymous"`.
+- `ADMIN_PASSWORD` — HTTP Basic Auth password for `/admin/telemetry`.
+- `NEXT_PUBLIC_LLM_SDK` — build-time SDK selector (see above).
+
 ## [1.7.0] — 2026-06-16
 
 **Voice quality upgrade** — a curated voice picker, two new TTS engines (Polly Generative

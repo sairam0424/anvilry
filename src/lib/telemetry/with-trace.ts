@@ -2,6 +2,20 @@ import { createHash } from "node:crypto";
 import { emit } from "@/lib/telemetry/emit";
 import { hashIp, redact, type KindLiteral, type TelemetryEvent } from "@/lib/telemetry/schema";
 
+// Lazy import `after` from next/server — it throws when called outside a request scope
+// (e.g. in unit tests). We guard by trying once and falling back to the synchronous path.
+function afterSafeEmit(event: TelemetryEvent): void {
+  try {
+    // Dynamic require so unit tests that stub modules don't need to stub next/server.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { after } = require("next/server") as { after: (fn: () => void) => void };
+    after(() => safeEmit(event));
+  } catch {
+    // after() threw (outside request scope, test environment, etc.) — emit synchronously.
+    safeEmit(event);
+  }
+}
+
 /**
  * withTrace — the universal /api/* observability wrapper.
  *
@@ -195,7 +209,9 @@ export async function withTrace<T extends Response>(
     // 5xx upgrades level to "error" automatically — saves every route from passing
     // a level explicitly when the only signal is the status code itself.
     const level: TelemetryEvent["level"] = res.status >= 500 ? "error" : "info";
-    safeEmit(
+    // afterSafeEmit runs AFTER the response has finished streaming (via next/after) —
+    // zero TTFB cost for telemetry. Falls back to synchronous emit outside request scope.
+    afterSafeEmit(
       buildEvent("http.request", level, {
         status: res.status,
         latency_ms: latencyMs,
@@ -212,7 +228,7 @@ export async function withTrace<T extends Response>(
     const latencyMs = Date.now() - startedAt;
     const e = err as Error & { $metadata?: { requestId?: unknown } };
     const awsId = awsRequestIdOf(err);
-    safeEmit(
+    afterSafeEmit(
       buildEvent("server.error", "error", {
         latency_ms: latencyMs,
         session_id: sessionId(ipHash, uaHash, salt),

@@ -3,6 +3,10 @@ import {
   resolveGoogleVoiceName,
   validateVoiceForEngine,
 } from "@/lib/voice-catalog";
+import { withTrace } from "@/lib/telemetry/with-trace";
+import { emit } from "@/lib/telemetry/emit";
+import { redact } from "@/lib/telemetry/schema";
+import { randomUUID } from "node:crypto";
 import { cacheGet, cacheKey, cacheSet } from "./cache";
 
 export const runtime = "nodejs";
@@ -53,124 +57,184 @@ function languageCodeFor(googleVoiceName: string): string {
 }
 
 export async function POST(req: Request) {
-  if (!isConfigured()) {
-    // No API key wired -> fail closed to the next engine in the client's fallback chain.
-    return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
-  }
+  return withTrace(req, "tts-google", async (ctx) => {
+    if (!isConfigured()) {
+      // No API key wired -> fail closed to the next engine in the client's fallback chain.
+      return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
+    }
 
-  // Same per-IP guard as /api/tts and /api/chat — Google free tier IS bounded
-  // (1M chars/mo) so a bot can still exhaust it without rate limiting.
-  const rl = await checkRateLimit(req);
-  if (!rl.ok) {
-    return Response.json(
-      { error: "Too many requests." },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
-  }
+    // Same per-IP guard as /api/tts and /api/chat — Google free tier IS bounded
+    // (1M chars/mo) so a bot can still exhaust it without rate limiting.
+    const rl = await checkRateLimit(req);
+    if (!rl.ok) {
+      return Response.json(
+        { error: "Too many requests." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      );
+    }
 
-  if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
-    return Response.json({ error: "Request too large." }, { status: 413 });
-  }
+    if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
+      return Response.json({ error: "Request too large." }, { status: 413 });
+    }
 
-  let body: { text?: unknown; voiceId?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
-  }
+    let body: { text?: unknown; voiceId?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "Invalid request." }, { status: 400 });
+    }
 
-  const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
-  if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
+    const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
+    if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
 
-  // voiceId is REQUIRED for the Google route — there's no historical hardcoded
-  // default to fall back on (this engine is new in v1.7), and the catalog requires
-  // an explicit pick to land here. An unknown id rejects with 400.
-  const requestedVoiceId =
-    typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
-      ? body.voiceId
-      : undefined;
+    // voiceId is REQUIRED for the Google route — there's no historical hardcoded
+    // default to fall back on (this engine is new in v1.7), and the catalog requires
+    // an explicit pick to land here. An unknown id rejects with 400.
+    const requestedVoiceId =
+      typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
+        ? body.voiceId
+        : undefined;
 
-  if (!requestedVoiceId) {
-    return Response.json({ error: "voiceId is required." }, { status: 400 });
-  }
+    if (!requestedVoiceId) {
+      return Response.json({ error: "voiceId is required." }, { status: 400 });
+    }
 
-  if (!validateVoiceForEngine(requestedVoiceId, "google")) {
-    return Response.json(
-      { error: "Unknown voice for this engine." },
-      { status: 400 },
-    );
-  }
+    if (!validateVoiceForEngine(requestedVoiceId, "google")) {
+      return Response.json(
+        { error: "Unknown voice for this engine." },
+        { status: 400 },
+      );
+    }
 
-  const googleVoiceName = resolveGoogleVoiceName(requestedVoiceId);
-  // validateVoiceForEngine already guarantees this — narrow for TS.
-  if (!googleVoiceName) {
-    return Response.json({ error: "Voice resolution failed." }, { status: 400 });
-  }
+    const googleVoiceName = resolveGoogleVoiceName(requestedVoiceId);
+    // validateVoiceForEngine already guarantees this — narrow for TS.
+    if (!googleVoiceName) {
+      return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+    }
 
-  const key = cacheKey(text, googleVoiceName);
-  const cached = cacheGet(key);
-  if (cached) {
-    return new Response(new Uint8Array(cached), {
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "private, max-age=3600",
-        "X-TTS-Cache": "hit",
-      },
-    });
-  }
+    const key = cacheKey(text, googleVoiceName);
+    const cached = cacheGet(key);
+    if (cached) {
+      ctx.attrs({
+        voiceId: requestedVoiceId,
+        google_voice_name: googleVoiceName,
+        char_count: text.length,
+        cache_hit: true,
+      });
+      return new Response(new Uint8Array(cached), {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "private, max-age=3600",
+          "X-TTS-Cache": "hit",
+        },
+      });
+    }
 
-  const apiKey = getApiKey();
-  // The isConfigured() check above already proved this; narrow for TS.
-  if (!apiKey) {
-    return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
-  }
+    const apiKey = getApiKey();
+    // The isConfigured() check above already proved this; narrow for TS.
+    if (!apiKey) {
+      return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
+    }
 
-  // Google REST POST. Body shape per v1 spec:
-  //   { input: { text }, voice: { languageCode, name }, audioConfig: { audioEncoding } }
-  // Response: { audioContent: <base64 string> }.
-  // We race against a 10s timeout for the same reason Polly does — a stalled fetch
-  // would burn the whole maxDuration window; failing fast lets the client cascade.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const res = await fetch(`${GOOGLE_TTS_ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        input: { text },
-        voice: { languageCode: languageCodeFor(googleVoiceName), name: googleVoiceName },
-        audioConfig: { audioEncoding: "MP3" },
-      }),
-      signal: controller.signal,
-    });
+    // Google REST POST. Body shape per v1 spec:
+    //   { input: { text }, voice: { languageCode, name }, audioConfig: { audioEncoding } }
+    // Response: { audioContent: <base64 string> }.
+    // We race against a 10s timeout for the same reason Polly does — a stalled fetch
+    // would burn the whole maxDuration window; failing fast lets the client cascade.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      // Send the API key via x-goog-api-key header rather than a URL query
+      // parameter. A URL-embedded key can appear in fetch error messages,
+      // server access logs, and Referer headers — all of which feed into
+      // our own telemetry pipeline. The header approach prevents the key
+      // from appearing in any unredacted error_message field.
+      const res = await fetch(GOOGLE_TTS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          input: { text },
+          voice: { languageCode: languageCodeFor(googleVoiceName), name: googleVoiceName },
+          audioConfig: { audioEncoding: "MP3" },
+        }),
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      // Surface the Google-side error class for log triage but never leak the body
-      // to the client (might contain quota details). Fail closed so the client
-      // falls back to Polly / browser.
-      console.warn(`[tts-google] HTTP ${res.status} ${res.statusText}`);
+      if (!res.ok) {
+        // Surface the Google-side error class for log triage but never leak the body
+        // to the client (might contain quota details). Fail closed so the client
+        // falls back to Polly / browser.
+        emit({
+          ts: Date.now(),
+          traceId: ctx.traceId,
+          spanId: randomUUID(),
+          parentSpanId: ctx.spanId,
+          kind: "server.error",
+          route: "/api/tts-google",
+          level: "error",
+          message: `HTTP ${res.status}`,
+          attrs: {
+            error_kind: "http",
+            status: res.status,
+            statusText: res.statusText,
+            voiceId: requestedVoiceId,
+            google_voice_name: googleVoiceName,
+            char_count: text.length,
+          },
+        });
+        return Response.json({ error: "TTS failed." }, { status: 502 });
+      }
+
+      const json = (await res.json()) as { audioContent?: unknown };
+      if (typeof json.audioContent !== "string" || json.audioContent.length === 0) {
+        ctx.attrs({
+          voiceId: requestedVoiceId,
+          google_voice_name: googleVoiceName,
+          char_count: text.length,
+          cache_hit: false,
+          error_kind: "no-audio-content",
+        });
+        return Response.json({ error: "No audio." }, { status: 502 });
+      }
+
+      const buf = Buffer.from(json.audioContent, "base64");
+      cacheSet(key, buf);
+      ctx.attrs({
+        voiceId: requestedVoiceId,
+        google_voice_name: googleVoiceName,
+        char_count: text.length,
+        cache_hit: false,
+        byte_count: buf.length,
+      });
+      return new Response(new Uint8Array(buf), {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "private, max-age=3600",
+          "X-TTS-Cache": "miss",
+        },
+      });
+    } catch (err) {
+      const e = err as { name?: string; message?: string };
+      emit({
+        ts: Date.now(),
+        traceId: ctx.traceId,
+        spanId: randomUUID(),
+        parentSpanId: ctx.spanId,
+        kind: "server.error",
+        route: "/api/tts-google",
+        level: "error",
+        message: e?.name ?? "error",
+        attrs: {
+          error_name: e?.name ?? "Error",
+          error_message: e?.message ? redact(e.message) : undefined,
+          voiceId: requestedVoiceId,
+          google_voice_name: googleVoiceName,
+          char_count: text.length,
+        },
+      });
       return Response.json({ error: "TTS failed." }, { status: 502 });
+    } finally {
+      clearTimeout(timer);
     }
-
-    const json = (await res.json()) as { audioContent?: unknown };
-    if (typeof json.audioContent !== "string" || json.audioContent.length === 0) {
-      return Response.json({ error: "No audio." }, { status: 502 });
-    }
-
-    const buf = Buffer.from(json.audioContent, "base64");
-    cacheSet(key, buf);
-    return new Response(new Uint8Array(buf), {
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "private, max-age=3600",
-        "X-TTS-Cache": "miss",
-      },
-    });
-  } catch (err) {
-    const name = (err as Error)?.name ?? "error";
-    console.warn(`[tts-google] failed: ${name}`);
-    return Response.json({ error: "TTS failed." }, { status: 502 });
-  } finally {
-    clearTimeout(timer);
-  }
+  });
 }

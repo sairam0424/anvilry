@@ -16,7 +16,9 @@ import type { View } from "@/components/view-context";
  * is needed to change which views are active.
  */
 
-const ALL_OPTIONAL: View[] = ["gamified", "chat", "developer", "voice"];
+// "resume" is always enabled — it's a static, no-cost view with no env prerequisite.
+const ALWAYS_OPTIONAL: View[] = ["resume"];
+const ALL_OPTIONAL: View[] = ["gamified", "chat", "developer", "voice", ...ALWAYS_OPTIONAL];
 
 const raw = process.env.NEXT_PUBLIC_ENABLED_VIEWS;
 
@@ -31,9 +33,9 @@ const enabledSet: Set<View> = (() => {
   return new Set(items.filter((v) => ALL_OPTIONAL.includes(v)));
 })();
 
-/** Whether a given optional view is enabled for this build. Classic is always true. */
+/** Whether a given optional view is enabled for this build. Classic + resume are always true. */
 export function isViewEnabled(view: View): boolean {
-  if (view === "classic") return true;
+  if (view === "classic" || ALWAYS_OPTIONAL.includes(view)) return true;
   return enabledSet.has(view);
 }
 

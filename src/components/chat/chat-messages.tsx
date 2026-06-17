@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
@@ -11,6 +11,8 @@ import { useSpeechSynthesis } from "@/components/chat/use-speech-synthesis";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
 import { JumpToLatest } from "@/components/scroll/jump-to-latest";
+import { useView } from "@/components/view-context";
+import { highlightProject } from "@/lib/highlight-store";
 
 /** Map a Bedrock/Anthropic model id to a readable name for the badge. */
 function friendlyModel(id: string): string {
@@ -48,6 +50,26 @@ export function ChatMessages({
   messages: ChatMessage[];
   isStreaming: boolean;
 }) {
+  const { setView } = useView();
+
+  // Dispatch cmd-view and cmd-highlight tokens from completed (non-streaming) assistant
+  // messages. We track which message indices have been dispatched so cmd tokens only
+  // fire once per message, not on every re-render. Kept in a ref (not state) so the
+  // dispatch doesn't trigger another render.
+  const dispatchedRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    if (isStreaming) return; // Only dispatch from settled messages.
+    messages.forEach((m, i) => {
+      if (m.role !== "assistant" || dispatchedRef.current.has(i)) return;
+      const segments = parseCards(m.content);
+      for (const seg of segments) {
+        if (seg.type === "cmd-view") setView(seg.view);
+        if (seg.type === "cmd-highlight") highlightProject(seg.slug);
+      }
+      dispatchedRef.current.add(i);
+    });
+  }, [messages, isStreaming, setView]);
+
   // Single TTS engine for the whole transcript (speechSynthesis is a singleton).
   // `speakingIdx` tracks WHICH message is being read aloud so only its button shows
   // the active state and the answer's live-region announcement is suppressed (no
@@ -178,11 +200,11 @@ export function ChatMessages({
                           <MarkdownMessage text={seg.text} />
                         </div>
                       ) : null
-                    ) : (
+                    ) : seg.type === "project" || seg.type === "work" ? (
                       <div key={j} className="w-full max-w-md">
                         <ChatCard segment={seg} />
                       </div>
-                    ),
+                    ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
                   )
                 )}
                 {/* Answer footer: the honest model badge + the optional read-aloud

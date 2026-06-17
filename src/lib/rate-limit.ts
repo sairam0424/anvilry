@@ -1,5 +1,5 @@
 import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { redis } from "./redis";
 
 /**
  * Per-IP rate limiter for the chat API, backed by Upstash Redis (distributed —
@@ -10,20 +10,21 @@ import { Redis } from "@upstash/redis";
  * the account is wired up), the limiter is a no-op so the chat still works. It
  * activates automatically once UPSTASH_REDIS_REST_URL + _TOKEN are set in the
  * deploy env — no code change needed to turn it on.
+ *
+ * v1.8 refactor: the Redis client itself now lives in ./redis (a shared singleton
+ * used by telemetry emit, budget counter, and the /admin/telemetry reader). This
+ * file just wraps it in a Ratelimit instance — the env-handling + null-on-missing
+ * semantics are owned by ./redis so every Redis-backed feature toggles in lockstep.
  */
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-const limiter =
-  url && token
-    ? new Ratelimit({
-        redis: new Redis({ url, token }),
-        // 8 messages per minute per IP — generous for a real visitor, hostile to a bot.
-        limiter: Ratelimit.slidingWindow(8, "60 s"),
-        prefix: "anvilry:chat",
-        analytics: false,
-      })
-    : null;
+const limiter = redis
+  ? new Ratelimit({
+      redis,
+      // 8 messages per minute per IP — generous for a real visitor, hostile to a bot.
+      limiter: Ratelimit.slidingWindow(8, "60 s"),
+      prefix: "anvilry:chat",
+      analytics: false,
+    })
+  : null;
 
 /** Whether a distributed limiter is configured (false -> fail-open no-op). */
 export const isRateLimitEnabled = limiter != null;
@@ -45,10 +46,15 @@ if (!isRateLimitEnabled && process.env.NODE_ENV === "production") {
   );
 }
 
-/** Derive a best-effort client IP from proxy headers (Vercel sets x-forwarded-for). */
+/** Derive the real client IP. On Vercel, x-vercel-forwarded-for is set by the
+ *  platform and cannot be spoofed. Falling back to the LAST segment of
+ *  x-forwarded-for (set by Vercel's infrastructure) rather than the first (which
+ *  is attacker-controlled) prevents rate-limit bypass via rotating spoofed headers. */
 function clientIp(req: Request): string {
+  const vercel = req.headers.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0].trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  if (xff) return xff.split(",").pop()!.trim();
   return req.headers.get("x-real-ip") ?? "anonymous";
 }
 

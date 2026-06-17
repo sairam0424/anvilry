@@ -67,7 +67,12 @@ const nextConfig: NextConfig = {
   // Inline critical CSS into <head> to cut a render-blocking stylesheet request —
   // Tailwind v4 is the exact use case this flag targets. Kept only if a before/after
   // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
-  experimental: { inlineCss: true },
+  experimental: {
+    inlineCss: true,
+    // View Transitions API — enables React 19's <ViewTransition> component and
+    // directional slide animations on project card links via transitionTypes.
+    viewTransition: true,
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

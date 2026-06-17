@@ -161,11 +161,11 @@ function AskPortfolioWidget() {
                           <MarkdownMessage text={seg.text} />
                         </div>
                       ) : null
-                    ) : (
+                    ) : seg.type === "project" || seg.type === "work" ? (
                       <div key={j} className="w-full">
                         <ChatCard segment={seg} />
                       </div>
-                    ),
+                    ) : null /* cmd-view and cmd-highlight are side-effect-only */,
                   )}
                 </div>
               );

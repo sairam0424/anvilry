@@ -15,6 +15,14 @@ vi.mock("@/lib/rate-limit", () => ({
   checkRateLimit: () => Promise.resolve({ ok: true, retryAfter: 0 }),
 }));
 
+// Mock the emit module so the Redis ZADD inside withTrace/emit() doesn't
+// hit the globally-stubbed fetch during happy-path tests that stub fetch
+// for the Google TTS API call. Without this, Upstash's REST client calls
+// the mocked fetch as a side effect, making the call count assertions fail.
+vi.mock("@/lib/telemetry/emit", () => ({
+  emit: vi.fn(),
+}));
+
 // A clearly-non-secret sentinel string — only its truthiness matters to the route's
 // `isConfigured()` gate; never sent to a real API in test.
 const FAKE_API_KEY_SENTINEL = "not-a-real-google-key-for-tests";

@@ -40,6 +40,10 @@ const DeveloperView = dynamic(
 const AnvilView = dynamic(() => import("@/components/chat/anvil-view").then((m) => m.AnvilView), {
   ssr: false,
 });
+const ResumeView = dynamic(
+  () => import("@/components/home/resume-view").then((m) => m.ResumeView),
+  { ssr: false },
+);
 
 export function ViewRouter({ children }: { children: ReactNode }) {
   const { view, setView } = useView();
@@ -57,6 +61,8 @@ export function ViewRouter({ children }: { children: ReactNode }) {
       {view === "gamified" && isViewEnabled("gamified") && <GameView />}
       {view === "developer" && isViewEnabled("developer") && <DeveloperView />}
       {view === "voice" && isViewEnabled("voice") && <AnvilView onClose={() => setView("classic")} />}
+      {/* Resume view — always enabled; no WebGL, no animations, print-optimized. */}
+      {view === "resume" && isViewEnabled("resume") && <ResumeView />}
     </div>
   );
 }

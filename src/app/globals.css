@@ -280,3 +280,22 @@ body {
     animation: none !important;
   }
 }
+
+/* ── 404 glitch eyebrow ───────────────────────────────────────────────────────
+   Organic text-glitch for the "// 404 :: route-not-found" label on not-found.tsx.
+   Respects prefers-reduced-motion by skipping the animation entirely.             */
+@keyframes glitch-text {
+  0%, 92%, 100% { transform: none; opacity: 1; }
+  93%           { transform: skewX(-6deg) translateX(3px); opacity: 0.85; }
+  95%           { transform: skewX(4deg) translateX(-2px); opacity: 0.9; }
+  97%           { transform: skewX(-2deg) translateX(1px); opacity: 0.95; }
+}
+
+.glitch-eyebrow {
+  animation: glitch-text 4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-eyebrow { animation: none; }
+}
+

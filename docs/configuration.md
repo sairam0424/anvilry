@@ -156,6 +156,49 @@ overlay is open (one live GL context).
 
 ---
 
+---
+
+## Telemetry & Observability (v1.8)
+
+End-to-end structured event stream: frontend errors → backend errors → AI request tracing.
+Zero new vendors — all sinks are same-origin (Vercel Logs) or already-provisioned infra (Upstash).
+See `TELEMETRY.md` at the repo root for the full reference.
+
+### Server-side env vars
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `TELEMETRY_ENABLED` | No | `"true"` | Set to `"false"` to disable event emission. `"false"` = off; anything else (including unset) = on. |
+| `TELEMETRY_IP_SALT` | No | — | Salt for SHA-256 IP hashing. Without this, IPs hash to `"anonymous"` (fully private, no analytics). Generate: `openssl rand -base64 16`. |
+| `ADMIN_PASSWORD` | No | — | Password for `/admin/telemetry` dashboard (HTTP Basic Auth). When unset the page renders an instructions screen. |
+
+### Build-time flag
+
+| Variable | Values | Default | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_LLM_SDK` | `anthropic-bedrock` \| `aws-sdk-bedrock` | `anthropic-bedrock` | SDK for `/api/chat` Bedrock calls. `anthropic-bedrock` = current shipping path (`@anthropic-ai/bedrock-sdk`). `aws-sdk-bedrock` = reserved for v1.8.x OTel auto-instrumentation migration (stub only in v1.8). |
+
+### Admin dashboard
+
+Visit `/admin/telemetry` (or `curl -u :YOUR_ADMIN_PASSWORD https://anvilry.vercel.app/admin/telemetry`).
+
+Six tiles: events today, cache hit rate, fallback rate, error rate, client errors, server errors.
+Route breakdown bar chart + recent-events table (last 50 spans, error rows highlighted).
+
+Requires Upstash Redis (`UPSTASH_REDIS_REST_URL` + `_TOKEN`) — without Redis, the dashboard renders
+an empty table with a note; Vercel Logs remain the primary sink.
+
+### Trace replay CLI
+
+```bash
+node scripts/replay-trace.mjs <traceId>
+```
+
+Reads all spans for a traceId from Upstash (7-day retention window) and prints chronological output.
+The traceId appears in the `x-anvilry-trace-id` response header on every `/api/*` response.
+
+---
+
 ## File Locations
 
 | Concern | File |
@@ -171,3 +214,11 @@ overlay is open (one live GL context).
 | Anvil view (5th view) | `src/components/chat/anvil-view.tsx` |
 | Security headers | `next.config.ts` (headers()) |
 | Rate limiting | `src/lib/rate-limit.ts` |
+| Shared Redis singleton | `src/lib/redis.ts` |
+| Telemetry schema + redactors | `src/lib/telemetry/schema.ts` |
+| Dual-sink emitter | `src/lib/telemetry/emit.ts` |
+| Route wrapper | `src/lib/telemetry/with-trace.ts` |
+| Browser error beacon | `src/lib/telemetry/beacon.ts` |
+| Admin auth helper | `src/lib/admin-auth.ts` |
+| Admin dashboard | `src/app/admin/telemetry/page.tsx` |
+| Replay CLI | `scripts/replay-trace.mjs` |

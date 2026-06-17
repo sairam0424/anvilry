@@ -6,6 +6,9 @@ import {
   resolvePollyParams,
   validateVoiceForEngine,
 } from "@/lib/voice-catalog";
+import { withTrace } from "@/lib/telemetry/with-trace";
+import { emit } from "@/lib/telemetry/emit";
+import { randomUUID } from "node:crypto";
 import { cacheGet, cacheKey, cacheSet } from "./cache";
 
 export const runtime = "nodejs";
@@ -56,100 +59,150 @@ function getClient(): PollyClient {
 }
 
 export async function POST(req: Request) {
-  if (!isConfigured()) {
-    // Not wired up -> client falls back to browser TTS.
-    return Response.json({ error: "TTS not configured." }, { status: 503 });
-  }
-
-  // Same per-IP guard as /api/chat — Polly is real spend, so bound it.
-  const rl = await checkRateLimit(req);
-  if (!rl.ok) {
-    return Response.json(
-      { error: "Too many requests." },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-    );
-  }
-
-  // A single sentence is tiny; reject an oversized body by declared length up front.
-  if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
-    return Response.json({ error: "Request too large." }, { status: 413 });
-  }
-
-  let body: { text?: unknown; voiceId?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
-  }
-
-  const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
-  if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
-
-  // The body's voiceId is a catalog id (e.g. "polly-neural-joanna"). The catalog is
-  // the source of truth for which Polly voices we expose AND which tier each voice
-  // runs on — so we don't accept a separate `tier` field; mismatches (Joanna +
-  // generative would 5xx at AWS) are impossible by construction. An unknown id
-  // rejects with 400 instead of silently falling back, so a typo in client code
-  // surfaces immediately rather than masquerading as Joanna.
-  const requestedVoiceId =
-    typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
-      ? body.voiceId
-      : DEFAULT_CATALOG_ID;
-
-  if (!validateVoiceForEngine(requestedVoiceId, "polly")) {
-    return Response.json(
-      { error: "Unknown voice for this engine." },
-      { status: 400 },
-    );
-  }
-
-  const polly = resolvePollyParams(requestedVoiceId);
-  // validateVoiceForEngine already guarantees this — narrow for TS.
-  if (!polly) {
-    return Response.json({ error: "Voice resolution failed." }, { status: 400 });
-  }
-
-  const key = cacheKey(text, polly.pollyVoiceId, polly.tier);
-  const cached = cacheGet(key);
-  if (cached) {
-    return new Response(new Uint8Array(cached), {
-      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "hit" },
-    });
-  }
-
-  try {
-    const out = await getClient().send(
-      new SynthesizeSpeechCommand({
-        Text: text,
-        OutputFormat: "mp3",
-        // Cast: polly.pollyVoiceId comes from the validated catalog entry (a known
-        // AWS VoiceId). The SDK types it as a string-literal union and won't accept
-        // a plain string, but the runtime semantics are identical.
-        VoiceId: polly.pollyVoiceId as VoiceId,
-        Engine: polly.tier,
-      }),
-    );
-    if (!out.AudioStream) {
-      return Response.json({ error: "No audio." }, { status: 502 });
+  return withTrace(req, "tts", async (ctx) => {
+    if (!isConfigured()) {
+      // Not wired up -> client falls back to browser TTS.
+      return Response.json({ error: "TTS not configured." }, { status: 503 });
     }
-    // The SDK stream -> bytes. transformToByteArray() can hang mid-stream on a stalled
-    // connection (no built-in timeout), which would burn the whole maxDuration window.
-    // Race it against a 10s cap so a hang fails FAST to 502 -> the client falls back to
-    // free browser TTS, instead of blocking the function for the full 15s.
-    const bytes = await Promise.race([
-      out.AudioStream.transformToByteArray(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("polly-timeout")), 10_000),
-      ),
-    ]);
-    const buf = Buffer.from(bytes);
-    cacheSet(key, buf);
-    return new Response(new Uint8Array(buf), {
-      headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "miss" },
-    });
-  } catch (err) {
-    console.warn(`[tts] Polly failed: ${(err as Error)?.name ?? "error"}`);
-    // Fail closed — client falls back to browser speechSynthesis.
-    return Response.json({ error: "TTS failed." }, { status: 502 });
-  }
+
+    // Same per-IP guard as /api/chat — Polly is real spend, so bound it.
+    const rl = await checkRateLimit(req);
+    if (!rl.ok) {
+      return Response.json(
+        { error: "Too many requests." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      );
+    }
+
+    // A single sentence is tiny; reject an oversized body by declared length up front.
+    if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
+      return Response.json({ error: "Request too large." }, { status: 413 });
+    }
+
+    let body: { text?: unknown; voiceId?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: "Invalid request." }, { status: 400 });
+    }
+
+    const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
+    if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
+
+    // The body's voiceId is a catalog id (e.g. "polly-neural-joanna"). The catalog is
+    // the source of truth for which Polly voices we expose AND which tier each voice
+    // runs on — so we don't accept a separate `tier` field; mismatches (Joanna +
+    // generative would 5xx at AWS) are impossible by construction. An unknown id
+    // rejects with 400 instead of silently falling back, so a typo in client code
+    // surfaces immediately rather than masquerading as Joanna.
+    const requestedVoiceId =
+      typeof body.voiceId === "string" && body.voiceId.length > 0 && body.voiceId.length < 64
+        ? body.voiceId
+        : DEFAULT_CATALOG_ID;
+
+    if (!validateVoiceForEngine(requestedVoiceId, "polly")) {
+      return Response.json(
+        { error: "Unknown voice for this engine." },
+        { status: 400 },
+      );
+    }
+
+    const polly = resolvePollyParams(requestedVoiceId);
+    // validateVoiceForEngine already guarantees this — narrow for TS.
+    if (!polly) {
+      return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+    }
+
+    const key = cacheKey(text, polly.pollyVoiceId, polly.tier);
+    const cached = cacheGet(key);
+    if (cached) {
+      ctx.attrs({
+        voiceId: requestedVoiceId,
+        polly_voice_id: polly.pollyVoiceId,
+        tier: polly.tier,
+        char_count: text.length,
+        cache_hit: true,
+      });
+      return new Response(new Uint8Array(cached), {
+        headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "hit" },
+      });
+    }
+
+    try {
+      const out = await getClient().send(
+        new SynthesizeSpeechCommand({
+          Text: text,
+          OutputFormat: "mp3",
+          // Cast: polly.pollyVoiceId comes from the validated catalog entry (a known
+          // AWS VoiceId). The SDK types it as a string-literal union and won't accept
+          // a plain string, but the runtime semantics are identical.
+          VoiceId: polly.pollyVoiceId as VoiceId,
+          Engine: polly.tier,
+        }),
+      );
+      if (!out.AudioStream) {
+        // Capture the AWS request id even on a no-audio response — useful for triage.
+        ctx.attrs({
+          voiceId: requestedVoiceId,
+          polly_voice_id: polly.pollyVoiceId,
+          tier: polly.tier,
+          char_count: text.length,
+          cache_hit: false,
+          aws_request_id: out.$metadata?.requestId,
+          error_kind: "no-audio-stream",
+        });
+        return Response.json({ error: "No audio." }, { status: 502 });
+      }
+      // The SDK stream -> bytes. transformToByteArray() can hang mid-stream on a stalled
+      // connection (no built-in timeout), which would burn the whole maxDuration window.
+      // Race it against a 10s cap so a hang fails FAST to 502 -> the client falls back to
+      // free browser TTS, instead of blocking the function for the full 15s.
+      const bytes = await Promise.race([
+        out.AudioStream.transformToByteArray(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("polly-timeout")), 10_000),
+        ),
+      ]);
+      const buf = Buffer.from(bytes);
+      cacheSet(key, buf);
+      ctx.attrs({
+        voiceId: requestedVoiceId,
+        polly_voice_id: polly.pollyVoiceId,
+        tier: polly.tier,
+        char_count: text.length,
+        cache_hit: false,
+        aws_request_id: out.$metadata?.requestId,
+        byte_count: buf.length,
+      });
+      return new Response(new Uint8Array(buf), {
+        headers: { "Content-Type": "audio/mpeg", "Cache-Control": "private, max-age=3600", "X-TTS-Cache": "miss" },
+      });
+    } catch (err) {
+      // Replaces the v1.7 console.warn with structured server.error — captures
+      // err.name/message AND the AWS request id from $metadata (Polly SDK exposes
+      // it on every error response; never read until v1.8). Then 502 keeps the
+      // existing fail-closed contract so the client falls back to browser TTS.
+      const e = err as { name?: string; message?: string; $metadata?: { requestId?: string } };
+      emit({
+        ts: Date.now(),
+        traceId: ctx.traceId,
+        spanId: randomUUID(),
+        parentSpanId: ctx.spanId,
+        kind: "server.error",
+        route: "/api/tts",
+        level: "error",
+        message: e?.name ?? "error",
+        attrs: {
+          error_name: e?.name ?? "Error",
+          error_message: e?.message,
+          aws_request_id: e?.$metadata?.requestId,
+          voiceId: requestedVoiceId,
+          polly_voice_id: polly.pollyVoiceId,
+          tier: polly.tier,
+          char_count: text.length,
+        },
+      });
+      return Response.json({ error: "TTS failed." }, { status: 502 });
+    }
+  });
 }

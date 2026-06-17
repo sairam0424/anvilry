@@ -95,6 +95,37 @@ export function SoftwareSourceCodeJsonLd({
   );
 }
 
+/**
+ * WebSite schema with potentialAction SearchAction — makes the site eligible for
+ * Google's sitelinks search box in SERPs (Cmd+K palette already handles the query;
+ * the SearchAction just tells Google where to send it). Static RSC, zero runtime cost.
+ *
+ * The ?q= target doesn't need a real server-side handler — the Cmd+K palette intercepts
+ * the param on mount via ViewQuerySync-style logic (future enhancement). Google's
+ * SearchAction only fires when the user interacts with the sitelinks box; the main page
+ * load is unaffected whether or not the ?q= is present.
+ */
+export function WebSiteJsonLd() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: `${profile.name} — Portfolio`,
+    url: "https://anvilry.vercel.app",
+    author: { "@type": "Person", name: profile.name },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://anvilry.vercel.app/?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+  );
+}
+
 /** CreativeWork for a production-work case study (NO aggregateRating — Google's
  *  self-serving-review policy; honest entity description only). */
 export function CreativeWorkJsonLd({

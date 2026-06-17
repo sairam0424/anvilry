@@ -1,6 +1,7 @@
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
 
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,54 @@ function uniqueSessions(httpRequests: TelemetryEvent[]): { count: number; allAno
     }
   }
   return { count: ids.size, allAnonymous: httpRequests.length === 0 || allAnonymous };
+}
+
+// Per-model cost breakdown for the Costs tab.
+type ModelCostRow = { model: string; calls: number; totalUsd: number; cacheRead: number; cacheWrite: number };
+
+function costByModel(llmAttempts: TelemetryEvent[]): ModelCostRow[] {
+  const map = new Map<string, ModelCostRow>();
+  for (const e of llmAttempts) {
+    const a = e.attrs as Record<string, unknown>;
+    const model = (a.model as string | undefined) ?? "unknown";
+    const existing = map.get(model) ?? { model, calls: 0, totalUsd: 0, cacheRead: 0, cacheWrite: 0 };
+    existing.calls += 1;
+    existing.totalUsd += typeof a.cost_usd === "number" ? a.cost_usd : 0;
+    const u = a.usage as Record<string, number> | undefined;
+    existing.cacheRead += u?.cache_read_input_tokens ?? 0;
+    existing.cacheWrite += u?.cache_creation_input_tokens ?? 0;
+    map.set(model, existing);
+  }
+  return [...map.values()].sort((a, b) => b.totalUsd - a.totalUsd);
+}
+
+// P50/P95 latency for a TelemetryEvent array (from latency_ms attr).
+type LatencyStats = { p50: number; p95: number; count: number };
+
+function latencyStats(events: TelemetryEvent[]): LatencyStats {
+  const vals = events
+    .map((e) => (e.attrs as Record<string, unknown>).latency_ms as number)
+    .filter((v) => typeof v === "number" && v > 0)
+    .sort((a, b) => a - b);
+  if (vals.length === 0) return { p50: 0, p95: 0, count: 0 };
+  return {
+    p50: vals[Math.floor(vals.length * 0.50)] ?? 0,
+    p95: vals[Math.floor(vals.length * 0.95)] ?? 0,
+    count: vals.length,
+  };
+}
+
+// Read the latest eval result from Redis (written by /api/cron/eval).
+async function fetchEvalResult(): Promise<{ pass_rate: number; run_at: number; total: number } | null> {
+  if (!redis) return null;
+  try {
+    const raw = await redis.get<string | object>("anvilry:eval:latest");
+    if (!raw) return null;
+    if (typeof raw === "object") return raw as { pass_rate: number; run_at: number; total: number };
+    return JSON.parse(raw as string) as { pass_rate: number; run_at: number; total: number };
+  } catch {
+    return null;
+  }
 }
 
 function routeCounts(httpRequests: TelemetryEvent[]): Array<{ route: string; count: number; avgMs: number }> {
@@ -215,7 +264,12 @@ export default async function TelemetryDashboard() {
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  const allEvents = await fetchAll(since24h);
+  const [allEvents, ttsEvents, transcribeEvents, evalResult] = await Promise.all([
+    fetchAll(since24h),
+    fetchKind("tts.request", since24h),
+    fetchKind("transcribe.request", since24h),
+    fetchEvalResult(),
+  ]);
   const llmAttempts = allEvents.filter((e) => e.kind === "llm.attempt");
   const httpRequests = allEvents.filter((e) => e.kind === "http.request");
   const clientErrors = allEvents.filter((e) => e.kind === "client.error");
@@ -233,6 +287,12 @@ export default async function TelemetryDashboard() {
   const cost = costSummary(llmAttempts);
   const sessions = uniqueSessions(httpRequests);
   const avgTurns = sessions.count > 0 ? (httpRequests.length / sessions.count).toFixed(1) : "—";
+
+  // New: Costs + Voice + Eval data
+  const modelCosts = costByModel(llmAttempts);
+  const ttsLatency = latencyStats(ttsEvents);
+  const transcribeLatency = latencyStats(transcribeEvents);
+  const evalPct = evalResult ? Math.round(evalResult.pass_rate * 100) : null;
 
   // Format total tokens as K
   const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -351,6 +411,75 @@ export default async function TelemetryDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── Costs breakdown ─────────────────────────────────────────── */}
+        <div className="mb-6 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
+          <h2 className="mb-3 font-mono text-[10px] uppercase tracking-widest text-fg-muted">
+            Model cost breakdown (24h)
+          </h2>
+          {modelCosts.length === 0 ? (
+            <p className="text-sm text-fg-subtle">No llm.attempt events yet.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border-strong/20 text-left font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
+                  <th className="px-2 py-2">Model</th>
+                  <th className="px-2 py-2 text-right">Calls</th>
+                  <th className="px-2 py-2 text-right">Total cost</th>
+                  <th className="px-2 py-2 text-right">Cache read tok</th>
+                  <th className="px-2 py-2 text-right">Cache write tok</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelCosts.map((row) => (
+                  <tr key={row.model} className="border-b border-border-strong/10 hover:bg-bg-elevated/40">
+                    <td className="px-2 py-2 font-mono text-fg-muted">
+                      {row.model.replace("us.anthropic.claude-", "")}
+                    </td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{row.calls}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-accent">${row.totalUsd.toFixed(4)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{fmtTokens(row.cacheRead)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{fmtTokens(row.cacheWrite)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* ── Voice + Eval tiles ──────────────────────────────────────── */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <Tile
+            label="TTS P50 latency"
+            value={ttsLatency.count > 0 ? fmtMs(ttsLatency.p50) : "—"}
+            sub={ttsLatency.count > 0 ? `${ttsLatency.count} requests` : "no TTS requests yet"}
+          />
+          <Tile
+            label="TTS P95 latency"
+            value={ttsLatency.count > 0 ? fmtMs(ttsLatency.p95) : "—"}
+            sub="high-percentile TTS"
+            warn={ttsLatency.p95 > 3000}
+          />
+          <Tile
+            label="Transcribe P50"
+            value={transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p50) : "—"}
+            sub={transcribeLatency.count > 0 ? `${transcribeLatency.count} requests` : "no transcribe yet"}
+          />
+          <Tile
+            label="Transcribe P95"
+            value={transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p95) : "—"}
+            sub="high-percentile STT"
+            warn={transcribeLatency.p95 > 5000}
+          />
+          <Tile
+            label="Eval pass rate"
+            value={evalPct != null ? `${evalPct}%` : "—"}
+            sub={evalResult ? `${evalResult.total} golden pairs · ${new Date(evalResult.run_at).toLocaleDateString()}` : "run /api/cron/eval to populate"}
+            accent={evalPct != null && evalPct >= 90}
+            warn={evalPct != null && evalPct < 80}
+            pct={evalPct ?? undefined}
+          />
+        </div>
 
         {/* Recent events table */}
         <div className="rounded-xl border border-border-strong/60 bg-bg-surface">

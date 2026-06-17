@@ -72,10 +72,38 @@ function commitViewChange() {
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const doc = typeof document !== "undefined" ? document : undefined;
-  if (!doc || typeof doc.startViewTransition !== "function" || prefersReducedMotion) {
+  const noTransitionApi = !doc || typeof doc.startViewTransition !== "function";
+
+  // If reduced-motion or no View Transitions API, snap immediately.
+  if (prefersReducedMotion || noTransitionApi) {
     emit();
     return;
   }
+
+  // Try the ink-bleed WebGL transition first (lazily imported to avoid server-side issues).
+  // Falls back to the CSS crossfade if the ref is unmounted or WebGL is unavailable.
+  if (typeof window !== "undefined") {
+    // Lazy import so this module stays free of the component dep at module-eval time.
+    import("@/components/ui/ink-transition")
+      .then(({ inkTransitionRef }) => {
+        if (inkTransitionRef) {
+          // Ink burns from 0→1 over 800ms. At 50% (the midpoint) the view store
+          // emits the new view so the incoming view becomes visible underneath the
+          // second half of the burn. The final 400ms burns away the remaining ink,
+          // fully revealing the new view. No startViewTransition wrapper — the ink
+          // IS the transition; the CSS crossfade would double-animate.
+          inkTransitionRef.transitionIn(() => flushSync(emit));
+        } else {
+          doc!.startViewTransition(() => flushSync(emit));
+        }
+      })
+      .catch(() => {
+        // Import failed — fall back to plain crossfade.
+        doc!.startViewTransition(() => flushSync(emit));
+      });
+    return;
+  }
+
   doc.startViewTransition(() => flushSync(emit));
 }
 

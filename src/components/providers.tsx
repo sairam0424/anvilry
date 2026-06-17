@@ -14,6 +14,15 @@ const InkTransition = dynamic(
   { ssr: false },
 );
 
+// DiscoveryBadge shows "★ N/5 discovered" once the visitor unlocks exploration moments.
+// Gate: NEXT_PUBLIC_DISCOVERY_BADGES=true. Client-only (reads localStorage).
+const DiscoveryBadge = process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true"
+  ? dynamic(
+      () => import("@/components/game/discovery-badge").then((m) => m.DiscoveryBadge),
+      { ssr: false },
+    )
+  : null;
+
 /**
  * App-wide providers. MotionConfig reducedMotion="user" makes every Motion
  * component auto-disable transform/layout animations (preserving opacity) when the
@@ -36,6 +45,8 @@ export function Providers({ children }: { children: ReactNode }) {
         <ScrollFlagsSync>{children}</ScrollFlagsSync>
         {/* Ink canvas — fixed overlay, hidden until a view switch fires */}
         <InkTransition />
+        {/* Discovery badge — shows "★ N/5 discovered" when exploration milestones are unlocked */}
+        {DiscoveryBadge && <DiscoveryBadge />}
       </ViewProvider>
     </MotionConfig>
   );

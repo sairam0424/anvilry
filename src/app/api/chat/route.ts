@@ -12,6 +12,53 @@ import { randomUUID } from "node:crypto";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+/* ----------------------------- Cost estimation ----------------------------- */
+
+type LlmUsageAttrs = {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_creation_input_tokens?: number;
+  cache_read_input_tokens?: number;
+};
+
+// Bedrock pricing per million tokens (as of 2026-06-17)
+const BEDROCK_PRICE: Record<
+  string,
+  { input: number; output: number; cacheWrite: number; cacheRead: number }
+> = {
+  "us.anthropic.claude-sonnet-4-6": {
+    input: 3.0,
+    output: 15.0,
+    cacheWrite: 3.75,
+    cacheRead: 0.3,
+  },
+  "us.anthropic.claude-opus-4-6-v1": {
+    input: 15.0,
+    output: 75.0,
+    cacheWrite: 18.75,
+    cacheRead: 1.5,
+  },
+  "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
+    input: 0.8,
+    output: 4.0,
+    cacheWrite: 1.0,
+    cacheRead: 0.08,
+  },
+};
+
+function costUsd(model: string, usage: LlmUsageAttrs): number {
+  const price =
+    BEDROCK_PRICE[model] ?? BEDROCK_PRICE["us.anthropic.claude-sonnet-4-6"];
+  const M = 1_000_000;
+  return (
+    ((usage.input_tokens ?? 0) * price.input +
+      (usage.output_tokens ?? 0) * price.output +
+      (usage.cache_creation_input_tokens ?? 0) * price.cacheWrite +
+      (usage.cache_read_input_tokens ?? 0) * price.cacheRead) /
+    M
+  );
+}
+
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 600;
 
@@ -135,6 +182,7 @@ export async function POST(req: Request) {
               latency_ms: attempt.latency_ms,
               ...(attempt.finish_reason ? { finish_reason: attempt.finish_reason } : {}),
               ...(attempt.usage ? { usage: attempt.usage } : {}),
+              ...(attempt.usage ? { cost_usd: costUsd(attempt.model, attempt.usage) } : {}),
               ...(attempt.error
                 ? {
                     error_name: attempt.error.name,

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { emit } from "@/lib/telemetry/emit";
 import { hashIp, redact, type KindLiteral, type TelemetryEvent } from "@/lib/telemetry/schema";
 
@@ -91,6 +92,26 @@ function safeEmit(event: TelemetryEvent): void {
 }
 
 /**
+ * Stable session identifier for grouping requests from the same visitor on the
+ * same calendar day. Derived as the first 12 hex chars of:
+ *   SHA-256(ipHash + ":" + uaHash + ":" + "YYYY-MM-DD")
+ * Returns "anonymous" when no salt is configured so we don't fingerprint in
+ * dev or environments that haven't opted into telemetry.
+ */
+function sessionId(
+  ipHash: string,
+  uaHash: string,
+  salt: string | undefined,
+): string {
+  if (!salt) return "anonymous";
+  const date = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  return createHash("sha256")
+    .update(`${ipHash}:${uaHash}:${date}`)
+    .digest("hex")
+    .slice(0, 12);
+}
+
+/**
  * Wrap a route handler. Usage:
  *
  *   export async function POST(req: Request) {
@@ -178,6 +199,7 @@ export async function withTrace<T extends Response>(
       buildEvent("http.request", level, {
         status: res.status,
         latency_ms: latencyMs,
+        session_id: sessionId(ipHash, uaHash, salt),
         ...extraAttrs,
       }),
     );
@@ -193,6 +215,7 @@ export async function withTrace<T extends Response>(
     safeEmit(
       buildEvent("server.error", "error", {
         latency_ms: latencyMs,
+        session_id: sessionId(ipHash, uaHash, salt),
         err: {
           name: e?.name ?? "Error",
           message: redact(e?.message ?? String(err)),

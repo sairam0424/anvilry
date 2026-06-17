@@ -69,6 +69,38 @@ function fallbackRate(llmAttempts: TelemetryEvent[]): number {
   return Math.round((fallen / llmAttempts.length) * 100);
 }
 
+// Cost per cache-read token in USD per million tokens
+const CACHE_READ_PRICE_PER_MTOK = 0.30;
+
+function costSummary(llmAttempts: TelemetryEvent[]): { totalUsd: number; savedUsd: number } {
+  let totalUsd = 0;
+  let savedUsd = 0;
+  for (const e of llmAttempts) {
+    const a = e.attrs as Record<string, unknown>;
+    if (typeof a.cost_usd === "number") {
+      totalUsd += a.cost_usd;
+    }
+    const u = a.usage as Record<string, number> | undefined;
+    if (u?.cache_read_input_tokens) {
+      savedUsd += (u.cache_read_input_tokens / 1_000_000) * CACHE_READ_PRICE_PER_MTOK;
+    }
+  }
+  return { totalUsd, savedUsd };
+}
+
+function uniqueSessions(httpRequests: TelemetryEvent[]): { count: number; allAnonymous: boolean } {
+  const ids = new Set<string>();
+  let allAnonymous = true;
+  for (const e of httpRequests) {
+    const sessionId = (e.attrs as Record<string, unknown>).session_id;
+    if (typeof sessionId === "string" && sessionId !== "anonymous") {
+      ids.add(sessionId);
+      allAnonymous = false;
+    }
+  }
+  return { count: ids.size, allAnonymous: httpRequests.length === 0 || allAnonymous };
+}
+
 function routeCounts(httpRequests: TelemetryEvent[]): Array<{ route: string; count: number; avgMs: number }> {
   const counts: Record<string, { count: number; totalMs: number }> = {};
   for (const e of httpRequests) {
@@ -113,6 +145,7 @@ function fmtAttrs(e: TelemetryEvent): string {
       if (a.latency_ms != null) parts.push(`lat:${fmtMs(a.latency_ms as number)}`);
       if (a.fell_back) parts.push("⚡fallback");
       if (a.finish_reason) parts.push(String(a.finish_reason));
+      if (typeof a.cost_usd === "number") parts.push(`$${a.cost_usd.toFixed(4)}`);
       return parts.join("  ·  ");
     }
     case "http.request": {
@@ -122,6 +155,9 @@ function fmtAttrs(e: TelemetryEvent): string {
       if (a.messageCount != null) parts.push(`msgs:${a.messageCount}`);
       if (a.cache_hit != null) parts.push(a.cache_hit ? "cache:hit" : "cache:miss");
       if (a.char_count != null) parts.push(`chars:${a.char_count}`);
+      if (typeof a.session_id === "string" && a.session_id !== "anonymous") {
+        parts.push(`sess:${a.session_id.slice(0, 6)}`);
+      }
       return parts.join("  ·  ");
     }
     case "client.error":
@@ -194,6 +230,9 @@ export default async function TelemetryDashboard() {
   const ttft = avgTtft(llmAttempts);
   const recentEvents = [...allEvents].reverse().slice(0, 100);
   const redisStatus = redis ? "connected" : "not configured (log-only mode)";
+  const cost = costSummary(llmAttempts);
+  const sessions = uniqueSessions(httpRequests);
+  const avgTurns = sessions.count > 0 ? (httpRequests.length / sessions.count).toFixed(1) : "—";
 
   // Format total tokens as K
   const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -215,8 +254,8 @@ export default async function TelemetryDashboard() {
           </span>
         </header>
 
-        {/* Tiles — row 1: volume + cache */}
-        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Tiles — row 1: volume + cache + cost */}
+        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Tile
             label="Events (24h)"
             value={String(allEvents.length)}
@@ -241,10 +280,16 @@ export default async function TelemetryDashboard() {
             pct={fallback}
             warn={fallback > 20}
           />
+          <Tile
+            label="Est. cost (24h)"
+            value={`$${cost.totalUsd.toFixed(4)}`}
+            sub={`saved $${cost.savedUsd.toFixed(4)} by caching`}
+            accent={cost.savedUsd > 0}
+          />
         </div>
 
-        {/* Tiles — row 2: latency + errors */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Tiles — row 2: latency + errors + visitors */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Tile
             label="Avg LLM latency"
             value={latency > 0 ? fmtMs(latency) : "—"}
@@ -268,6 +313,16 @@ export default async function TelemetryDashboard() {
             value={String(serverErrors.length)}
             sub="caught exceptions"
             warn={serverErrors.length > 0}
+          />
+          <Tile
+            label="Visitors (24h)"
+            value={sessions.allAnonymous ? "—" : String(sessions.count)}
+            sub={
+              sessions.allAnonymous
+                ? "set TELEMETRY_IP_SALT to enable"
+                : `avg ${avgTurns} req/session`
+            }
+            accent={!sessions.allAnonymous && sessions.count > 0}
           />
         </div>
 

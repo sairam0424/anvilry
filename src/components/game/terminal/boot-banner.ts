@@ -3,6 +3,24 @@ import { hasPersonalContent } from "@/lib/personal";
 import type { Line } from "./types";
 
 /**
+ * Boot sequence for the 404 page. Simulates a kernel panic — 3 fake module-load
+ * lines, then a KERNEL PANIC halt. The shell survives, which is the point: a recruiter
+ * landing on a 404 still gets the real terminal with all its commands intact.
+ */
+export function bootBanner404(): Line[] {
+  return [
+    { kind: "art", text: "  [    0.000000] anvilry kernel 6.9.0-anvilry-ai+" },
+    { kind: "art", text: "  [    0.042000] loading genai-router.................. OK" },
+    { kind: "art", text: "  [    0.087000] loading agent-mesh................... OK" },
+    { kind: "art", text: "  [    0.113000] loading route-resolver..............." },
+    { kind: "out", text: "" },
+    { kind: "err", text: "KERNEL PANIC: route not found (0x404)" },
+    { kind: "err", text: "shell survived — try: ls, help, cd /" },
+    { kind: "out", text: "" },
+  ];
+}
+
+/**
  * ASCII boot banner for `whoami` / `neofetch`. Every value comes from profile.ts
  * (zero fabrication). The figlet rows are `kind: "art"` so they render visually but
  * are aria-hidden — a screen reader would otherwise announce them as a stream of

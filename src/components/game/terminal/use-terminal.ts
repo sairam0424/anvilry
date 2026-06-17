@@ -17,11 +17,15 @@ const greeting: Line[] = bootBanner();
  * Terminal session state: scrollback, input, command history (↑/↓), prefix
  * autocomplete, and the run() dispatcher that executes a command's NavAction
  * (view switch / route push / external open / clear) — keeping commands pure.
+ *
+ * @param initialLines Optional seed lines that replace the default boot banner.
+ *   Used by the 404 page to inject the kernel-panic sequence. Consumed once on
+ *   mount; subsequent renders use accumulated state, not the seed.
  */
-export function useTerminal() {
+export function useTerminal(initialLines?: Line[]) {
   const router = useRouter();
   const { setView } = useView();
-  const [lines, setLines] = useState<Line[]>(greeting);
+  const [lines, setLines] = useState<Line[]>(initialLines ?? greeting);
   const [input, setInput] = useState("");
   const [theme, setTheme] = useState<Theme>("cyan");
   const history = useRef<string[]>([]); // past commands (newest last)

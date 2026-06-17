@@ -28,6 +28,7 @@ export function Terminal({
   fill = false,
   onMaximize,
   maximizeRef,
+  initialLines,
 }: {
   maxHeightClass?: string;
   /**
@@ -42,8 +43,10 @@ export function Terminal({
   onMaximize?: () => void;
   /** Ref to the maximize button so the overlay can restore focus on close (WCAG 2.4.3). */
   maximizeRef?: React.Ref<HTMLButtonElement>;
+  /** Optional seed lines replacing the default boot banner (used by the 404 page). */
+  initialLines?: import("./types").Line[];
 }) {
-  const { lines, input, setInput, run, recall, complete, theme } = useTerminal();
+  const { lines, input, setInput, run, recall, complete, theme } = useTerminal(initialLines);
   const promptColor = THEME_TEXT[theme] ?? "text-accent";
 
   // Autoscroll via the shared engine. Terminal semantics: a small re-pin threshold

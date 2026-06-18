@@ -107,6 +107,13 @@ All six flags default to `false` / unset in production. Set to `"true"` to enabl
 
 **Dependency note:** `NEXT_PUBLIC_VISITOR_COUNTER` and `NEXT_PUBLIC_DISCOVERY_BADGES` have no hard Redis dependency (they degrade gracefully), but the counter needs `UPSTASH_REDIS_REST_URL` + `_TOKEN` to actually persist the count. `NEXT_PUBLIC_ORB_POSTPROCESSING` requires `@react-three/postprocessing` (already in `package.json`).
 
+### Flag Driver — switching between build-time and runtime evaluation
+
+| Variable | Values | Default | Description |
+|---|---|---|---|
+| `FLAG_DRIVER` | `local` \| `vercel` | `local` | **local** = `NEXT_PUBLIC_DISCOVERY_BADGES` env var evaluated at build time (requires redeploy to toggle). **vercel** = Vercel Flags SDK evaluates at request time (instant toggle from the Vercel dashboard, no redeploy needed). |
+| `FLAGS_SECRET` | 32-byte base64url | — | Required when `FLAG_DRIVER=vercel`. Signs the override cookies used by the Vercel Flags dashboard. Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`. Never commit. |
+
 ### Flag Matrix (desktop behavior)
 
 | ORB_MODE | EXPERIENCE | Desktop behavior |
@@ -247,3 +254,5 @@ The traceId appears in the `x-anvilry-trace-id` response header on every `/api/*
 | Visitor badge (footer) | `src/components/site-footer.tsx` |
 | Discovery store | `src/lib/discovery-store.ts` |
 | Discovery badge component | `src/components/game/discovery-badge.tsx` |
+| Flags module | `src/lib/flags.ts` |
+| Flags manifest route | `src/app/.well-known/vercel/flags/route.ts` |

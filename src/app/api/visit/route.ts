@@ -21,7 +21,7 @@ function clientIp(req: Request): string {
   const vercel = req.headers.get("x-vercel-forwarded-for");
   if (vercel) return vercel.split(",")[0].trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",").pop()!.trim();
+  if (xff) return xff.split(",")[0].trim();   // leftmost = client IP
   return req.headers.get("x-real-ip") ?? "anonymous";
 }
 

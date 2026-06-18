@@ -16,6 +16,11 @@ if (isDev && !process.env.VELITE_STARTED) {
  *  - connect-src: 'self' covers every /api/* route (chat, tts, transcribe — Bedrock/
  *    Polly/Transcribe are called SERVER-side, so the browser never connects to AWS).
  *    Vercel analytics/insights endpoints added for the injected beacons.
+ *    wss://speech.googleapis.com + wss://speech.platform.bing.com: browser Web Speech
+ *    API (SpeechRecognition) opens a cross-origin WebSocket on Chrome/Edge respectively;
+ *    subject to connect-src since Chrome 63 — without these two, the STT loop fails with
+ *    network error on every attempt and voice is permanently broken in production.
+ *    https://www.gstatic.com: Chrome's online SpeechSynthesis voices stream from here.
  *  - script/style 'unsafe-inline': Next inline bootstrap + the inlineCss experiment +
  *    R3F/Vercel inline. (No auth/secrets on this site, so the residual XSS surface is
  *    low; rehype-sanitize + skipHtml already neutralize chat markdown.)
@@ -34,7 +39,18 @@ const csp = [
   "img-src 'self' data: blob: https://img.shields.io",
   "media-src 'self' blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
+  // wss://speech.googleapis.com — Chrome/Chromium-based Edge Web Speech API (SpeechRecognition
+  // opens a WebSocket to Google's cloud; subject to connect-src in Chrome 63+). Without this,
+  // every recognition attempt fails with onerror.error="network", sending the voice loop to
+  // "paused" immediately. Safari uses on-device processing (no external connect); Firefox
+  // disables the API by default. The Playwright zero-violation audit never exercised live mic
+  // input, so this was invisible until the CSP was enforced in production.
+  // wss://speech.platform.bing.com — Edge on Windows uses Microsoft's speech service instead
+  // of Google's; same WebSocket model, different host.
+  // https://www.gstatic.com — Chrome's browser SpeechSynthesis online voices (e.g. "Google US
+  // English") stream from gstatic. Without this they fall back to local voices (lower quality
+  // but non-breaking); included here so neural voices work in talk mode.
+  "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://va.vercel-scripts.com wss://speech.googleapis.com wss://speech.platform.bing.com https://www.gstatic.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "upgrade-insecure-requests",

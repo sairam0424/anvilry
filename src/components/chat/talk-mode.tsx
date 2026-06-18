@@ -29,6 +29,61 @@ import {
  * remains the always-available fallback — talk mode is purely additive.
  */
 
+/** DEV-only TTS smoke test — shows result on the button. No retries: Chrome's
+ *  user-activation window expires in seconds; any speak() from setTimeout gets
+ *  "canceled". One synchronous attempt with resume() is the only viable approach. */
+function TtsTestButton() {
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [detail, setDetail] = useState("");
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const synth = window.speechSynthesis;
+        // resume() clears Chrome's paused_ guard (Chromium tts_controller_impl.cc).
+        synth.resume();
+        const voices = synth.getVoices();
+        const en = voices.find((v) => v.lang?.startsWith("en") && v.localService);
+        const voiceName = en?.name ?? "default";
+        const u = new SpeechSynthesisUtterance("Audio test. One two three.");
+        if (en) u.voice = en;
+        u.onstart = () => { setStatus("ok"); setDetail(voiceName); };
+        u.onend = () => setDetail((d) => d + " ✓");
+        u.onerror = (e) => {
+          setStatus("error");
+          setDetail((e as SpeechSynthesisErrorEvent).error);
+        };
+        synth.speak(u);
+      }}
+      className={`rounded-full border px-3 py-1.5 text-[11px] transition-colors ${
+        status === "ok" ? "border-green-500/60 bg-green-500/10 text-green-400" :
+        status === "error" ? "border-red-500/60 bg-red-500/10 text-red-400" :
+        "border-yellow-500/60 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
+      }`}
+    >
+      {status === "ok" ? `✅ ${detail}` : status === "error" ? `❌ ${detail}` : "🔊 Test audio"}
+    </button>
+  );
+}
+
+/**
+ * True when running in Chrome (not Brave, not Edge, not Safari).
+ * Chrome has a known TTS daemon initialization bug where speak() shows
+ * synth.speaking=true but onstart never fires — the paused_ guard in
+ * Chromium's tts_controller_impl.cc blocks all utterances silently.
+ * Brave and Safari use different TTS backends and are unaffected.
+ * SSR-safe: returns false on the server.
+ */
+function isChromeTtsBuggy(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isChromium = /Chrome\//.test(ua);
+  const isBrave = (navigator as { brave?: { isBrave?: () => unknown } }).brave !== undefined;
+  const isEdge = /Edg\//.test(ua);
+  return isChromium && !isBrave && !isEdge;
+}
+
 const STATUS_LABEL: Record<VoiceSessionState, string> = {
   idle: "Tap to start",
   listening: "Listening…",
@@ -221,6 +276,22 @@ export function TalkMode({
         {active ? STATUS_LABEL[state] : "Tap the mic to talk"}
       </p>
 
+      {/* Chrome TTS compatibility notice. Chrome has a known bug (Chromium issue:
+          tts_controller_impl.cc paused_ guard) where the TTS daemon initializes in
+          a paused state and speak() silently does nothing. Brave and Safari use
+          different TTS backends and are unaffected. Show a dismissible inline notice
+          so the user knows to use Brave/Edge/Safari for spoken responses. */}
+      {isChromeTtsBuggy() && settings.ttsEngine === "browser" && (
+        <div className="flex max-w-sm items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-[11px] text-yellow-400/80">
+          <span className="mt-0.5 shrink-0">⚠</span>
+          <span>
+            Chrome&apos;s built-in TTS has a known initialization bug — spoken responses
+            may not play. Try <strong>Brave</strong> or <strong>Edge</strong> for full
+            voice support, or switch to a Polly/Google voice above.
+          </span>
+        </div>
+      )}
+
       {/* Live captions — both sides of the turn as text so voice is never the only
           channel (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't
           "live"). "You said" persists the user's words; the answer shows what is SPOKEN.
@@ -317,6 +388,13 @@ export function TalkMode({
         </button>
       </div>
 
+      {/* TTS smoke test — gated by NEXT_PUBLIC_VOICE_TEST_AUDIO=true (default off).
+          Shows ✅/❌ directly on the button; no DevTools needed. Set the env var
+          in .env.local to enable during QA. Never shown in production by default. */}
+      {process.env.NEXT_PUBLIC_VOICE_TEST_AUDIO === "true" && (
+        <TtsTestButton />
+      )}
+
       {/* Voice picker trigger — sits BELOW the controls so it doesn't compete with
           the primary mic button for visual weight. Mirrors the captions toggle's
           height + frosted-pill aesthetic. */}
@@ -378,7 +456,13 @@ export function TalkMode({
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         currentVoiceId={currentVoiceId}
-        onPick={(id) => set({ voiceId: id })}
+        onPick={(id) => {
+          // Sync ttsEngine to the picked voice's engine so a user who had "polly"
+          // saved in localStorage doesn't stay on the broken remote path when they
+          // pick a browser voice (Aria, Guy, etc.).
+          const entry = getVoiceById(id);
+          set({ voiceId: id, ...(entry ? { ttsEngine: entry.engine } : {}) });
+        }}
         getOpener={() => voiceLabelRef.current}
       />
     </div>

@@ -1,5 +1,5 @@
-import { verifyAccess } from "@vercel/flags";
-import { getProviderData } from "@vercel/flags/next";
+import { verifyAccess } from "flags";
+import { getProviderData } from "flags/next";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

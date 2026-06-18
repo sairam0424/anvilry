@@ -7,7 +7,7 @@
  * Only discoveryBadges is migrated here. All other beast-mode flags remain
  * NEXT_PUBLIC_ build-time reads in their respective files.
  */
-import { flag } from "@vercel/flags/next";
+import { flag } from "flags/next";
 
 // Evaluated once at process start — changing FLAG_DRIVER at runtime without a restart has no effect. This is correct for Next.js env semantics.
 const useVercelDriver = process.env.FLAG_DRIVER === "vercel";
@@ -22,11 +22,10 @@ const discoveryBadgesFlag = flag<boolean>({
     { label: "Off", value: false },
     { label: "On", value: true },
   ],
-  decide() {
-    // `this` is not bound when the SDK calls `decide()` — use a literal instead.
-    // (No custom logic needed; SDK falls back to defaultValue anyway on undefined.)
-    return false;
-  },
+  // `decide` falls through to defaultValue. The SDK checks the override cookie
+  // BEFORE calling decide(), so dashboard overrides are respected correctly.
+  // A literal return here only applies when no override cookie is present.
+  decide: () => false,
 });
 
 /**

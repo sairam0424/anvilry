@@ -80,7 +80,7 @@ function loadRecent(): string[] {
 }
 
 type CommandPaletteProps = {
-  discoveryBadgesEnabled?: boolean;
+  discoveryBadgesEnabled: boolean;
 };
 
 export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) {

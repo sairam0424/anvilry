@@ -9,6 +9,7 @@
  */
 import { flag } from "@vercel/flags/next";
 
+// Evaluated once at process start — changing FLAG_DRIVER at runtime without a restart has no effect. This is correct for Next.js env semantics.
 const useVercelDriver = process.env.FLAG_DRIVER === "vercel";
 
 // The typed flag declaration — used only when FLAG_DRIVER=vercel.
@@ -22,7 +23,8 @@ const discoveryBadgesFlag = flag<boolean>({
     { label: "On", value: true },
   ],
   decide() {
-    // No custom logic — return the defaultValue (SDK falls back to it anyway on undefined).
+    // `this` is not bound when the SDK calls `decide()` — use a literal instead.
+    // (No custom logic needed; SDK falls back to defaultValue anyway on undefined.)
     return false;
   },
 });

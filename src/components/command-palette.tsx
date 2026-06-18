@@ -79,7 +79,11 @@ function loadRecent(): string[] {
   }
 }
 
-export function CommandPalette() {
+type CommandPaletteProps = {
+  discoveryBadgesEnabled?: boolean;
+};
+
+export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
@@ -172,7 +176,7 @@ export function CommandPalette() {
     { id: "v-dev", label: "Developer mode", hint: "full-page terminal — query my work", icon: <TerminalSquare size={16} />, run: () => { track("devmode_palette_open"); switchTo("developer"); }, keywords: "terminal cli console command shell whoami grep developer" },
     { id: "v-chat", label: "Chat view", hint: "ask my portfolio", icon: <MessagesSquare size={16} />, run: () => switchTo("chat"), keywords: "ai concierge conversation assistant" },
     { id: "v-resume", label: "Recruiter view", hint: "scan-friendly CV + PDF downloads", icon: <User size={16} />, run: () => switchTo("resume"), keywords: "resume cv recruiter scan pdf download hiring" },
-    ...(process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true" ? [
+    ...(discoveryBadgesEnabled ? [
       { id: "unlock-discoveries", label: "Unlock all discoveries", hint: "★ reveal all 5 exploration badges", icon: <Sparkles size={16} />, run: () => { unlockAll(); setOpen(false); }, keywords: "discovery badge explore unlock all" },
     ] : []),
   ];

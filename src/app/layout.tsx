@@ -96,7 +96,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {children}
           </div>
           <SiteFooter />
-          <CommandPalette />
+          <CommandPalette discoveryBadgesEnabled={discoveryBadgesEnabled} />
           <AskPortfolio />
           {/* Single global mount for the two-way talk-mode modal — opened from the
               Chat-view "Talk" button or the ⌘K command via a shared module store. */}

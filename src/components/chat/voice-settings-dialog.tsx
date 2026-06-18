@@ -262,7 +262,10 @@ export function VoiceSettingsDialog({
               <VoicePicker
                 mode="inline"
                 currentVoiceId={currentVoiceId}
-                onPick={(id) => set({ voiceId: id })}
+                onPick={(id) => {
+                  const entry = getVoiceById(id);
+                  set({ voiceId: id, ...(entry ? { ttsEngine: entry.engine } : {}) });
+                }}
               />
             </section>
 

@@ -31,11 +31,41 @@ const discoveryBadgesFlag = flag<boolean>({
 /**
  * Resolve whether the discovery badges feature is enabled.
  * Call from a Server Component or a Route Handler (never from client components).
+ *
+ * Logs a single [flags] line on every resolution so Vercel Logs shows:
+ *   - Which evaluation path ran (vercel SDK vs local build-time)
+ *   - The resolved value
+ *   - The source (dashboard override vs defaultValue vs NEXT_PUBLIC_ env)
+ * Grep handle: `vercel logs | grep '\[flags\]'`
  */
 export async function getDiscoveryBadgesEnabled(): Promise<boolean> {
   if (useVercelDriver) {
-    return discoveryBadgesFlag();
+    const value = await discoveryBadgesFlag();
+    console.log(
+      "[flags]",
+      JSON.stringify({
+        flag: "NEXT_PUBLIC_DISCOVERY_BADGES",
+        driver: "vercel",
+        value,
+        // FLAGS_SECRET presence tells us whether the manifest endpoint will work
+        flags_secret_present: typeof process.env.FLAGS_SECRET === "string" && process.env.FLAGS_SECRET.length > 0,
+      }),
+    );
+    return value;
   }
-  // Build-time path — same semantics as the original NEXT_PUBLIC_ read.
-  return process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true";
+
+  // Build-time path — NEXT_PUBLIC_ is inlined at build time by Next.js.
+  const value = process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true";
+  console.log(
+    "[flags]",
+    JSON.stringify({
+      flag: "NEXT_PUBLIC_DISCOVERY_BADGES",
+      driver: "local",
+      value,
+      source: typeof process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "string"
+        ? "env_var"
+        : "default_false",
+    }),
+  );
+  return value;
 }

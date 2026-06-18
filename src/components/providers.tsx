@@ -15,13 +15,12 @@ const InkTransition = dynamic(
 );
 
 // DiscoveryBadge shows "★ N/5 discovered" once the visitor unlocks exploration moments.
-// Gate: NEXT_PUBLIC_DISCOVERY_BADGES=true. Client-only (reads localStorage).
-const DiscoveryBadge = process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true"
-  ? dynamic(
-      () => import("@/components/game/discovery-badge").then((m) => m.DiscoveryBadge),
-      { ssr: false },
-    )
-  : null;
+// Always imported lazily; conditionally mounted based on the `discoveryBadgesEnabled` prop
+// resolved server-side in layout.tsx via getDiscoveryBadgesEnabled().
+const DiscoveryBadgeComponent = dynamic(
+  () => import("@/components/game/discovery-badge").then((m) => m.DiscoveryBadge),
+  { ssr: false },
+);
 
 /**
  * App-wide providers. MotionConfig reducedMotion="user" makes every Motion
@@ -37,8 +36,17 @@ const DiscoveryBadge = process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true"
  * InkTransition mounts a fixed <canvas> (pointer-events:none, display:none until
  * firing) for the ink-bleed WebGL nav transition. Exposes itself via the global
  * `inkTransitionRef` for commitViewChange() in view-context.tsx.
+ *
+ * discoveryBadgesEnabled is resolved server-side in layout.tsx and threaded in as a
+ * prop — this component is "use client" and cannot await server functions directly.
  */
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({
+  children,
+  discoveryBadgesEnabled,
+}: {
+  children: ReactNode;
+  discoveryBadgesEnabled: boolean;
+}) {
   return (
     <MotionConfig reducedMotion="user">
       <ViewProvider>
@@ -46,7 +54,7 @@ export function Providers({ children }: { children: ReactNode }) {
         {/* Ink canvas — fixed overlay, hidden until a view switch fires */}
         <InkTransition />
         {/* Discovery badge — shows "★ N/5 discovered" when exploration milestones are unlocked */}
-        {DiscoveryBadge && <DiscoveryBadge />}
+        {discoveryBadgesEnabled && <DiscoveryBadgeComponent />}
       </ViewProvider>
     </MotionConfig>
   );

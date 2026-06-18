@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { getVoiceById } from "@/lib/voice-catalog";
 
 /**
  * Persisted voice preferences for the optional voice layer (mic input, read-aloud
@@ -135,7 +136,16 @@ function parse(raw: string | null): VoiceSettings {
       wakeWord: typeof o.wakeWord === "boolean" ? o.wakeWord : DEFAULTS.wakeWord,
       captions: typeof o.captions === "boolean" ? o.captions : DEFAULTS.captions,
       sttEngine: isSttEngine(o.sttEngine) ? o.sttEngine : DEFAULTS.sttEngine,
-      ttsEngine: isTtsEngine(o.ttsEngine) ? o.ttsEngine : DEFAULTS.ttsEngine,
+      // If a voiceId is stored, reconcile ttsEngine with it: a mismatch means the
+      // user previously selected a voice via the picker before the picker synced
+      // the engine (the bug existed in talk-mode.tsx v1.7). Reconcile silently so
+      // returning visitors get a working engine without having to re-pick.
+      ttsEngine: (() => {
+        const rawEngine = isTtsEngine(o.ttsEngine) ? o.ttsEngine : DEFAULTS.ttsEngine;
+        if (!isVoiceId(o.voiceId)) return rawEngine;
+        const entry = getVoiceById(o.voiceId as string);
+        return entry ? entry.engine : rawEngine;
+      })(),
       talkSurface: isTalkSurface(o.talkSurface) ? o.talkSurface : DEFAULTS.talkSurface,
       // voiceId is optional. Invalid/missing → undefined (NOT a catalog default —
       // that resolves at point of use, so a future picker pick takes over cleanly).

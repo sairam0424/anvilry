@@ -185,6 +185,14 @@ export function useVoiceSession() {
   // that speakChunk held back. MUST be speakChunk(), NOT speak() — speak() calls
   // cancel() and resets the spoken counter, which would RE-SPEAK the whole answer
   // (double-speak). If nothing was streamed (e.g. aborted -> empty), re-listen.
+  //
+  // ALREADY-SPOKEN RECOVERY: for short answers, the browser TTS engine finishes
+  // playing all sentences BEFORE streaming ends (~1s speech vs ~2-3s stream). When
+  // streaming then ends, speakChunk() is a no-op (all sentences already enqueued),
+  // isSpeaking is already false, and the SPEAKING→LISTENING effect never fires again
+  // because wasSpeaking was already false by the time this runs. The loop is stuck at
+  // "paused". Fix: if speakChunk() left isSpeaking=false (nothing newly enqueued and
+  // the engine isn't playing), call beginListening() here — same as the empty branch.
   useEffect(() => {
     if (!active) return;
     const wasStreaming = prevStreaming.current;
@@ -192,8 +200,15 @@ export function useVoiceSession() {
     if (wasStreaming && !isStreaming) {
       const last = messages[messages.length - 1];
       const text = last?.role === "assistant" ? stripForSpeech(last.content) : "";
-      if (text) tts.speakChunk(text); // finalizer: flush the trailing sentence
-      else beginListening(); // nothing to say — listen again
+      if (text) {
+        tts.speakChunk(text); // finalizer: flush the trailing sentence
+        // If the engine is still not speaking after the flush (the trailing partial
+        // was a no-op because everything was already spoken mid-stream), listen now
+        // instead of waiting for a SPEAKING→LISTENING transition that will never fire.
+        if (!tts.isSpeaking) beginListening();
+      } else {
+        beginListening(); // nothing to say — listen again
+      }
       // Re-arm: the NEXT turn's streaming effect must reset the dedup counter again.
       turnStartedRef.current = false;
     }

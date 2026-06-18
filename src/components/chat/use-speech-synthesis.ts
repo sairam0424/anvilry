@@ -95,8 +95,11 @@ function pickVoice(
     // fall through to the localService heuristic rather than 500.
   }
   const en = voices.filter((v) => v.lang?.toLowerCase().startsWith("en"));
-  if (en.length === 0) return voices[0] ?? null;
-  return en.find((v) => v.localService) ?? en[0];
+  if (en.length === 0) return null; // let Chrome use its default rather than a non-English online voice
+  // Prefer localService (on-device) — online voices (Google/Microsoft streamed) are
+  // subject to network round-trips and Chrome cancels them when the service is slow.
+  // Fall back to null (Chrome default) rather than an online voice to avoid "canceled".
+  return en.find((v) => v.localService) ?? null;
 }
 
 const isAndroid = () =>
@@ -200,6 +203,12 @@ export function useSpeechSynthesis(
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  // True once the voiceschanged event has fired at least once (or getVoices()
+  // returned a non-empty list synchronously). Chrome fires voiceschanged async and
+  // also re-fires it periodically — each fire cancels any queued utterances.
+  // Utterances enqueued before voices load are silently dropped or cancelled when
+  // the event fires. Gate the first enqueue until voices are confirmed loaded.
+  const voicesReadyRef = useRef(false);
   // For speakChunk streaming: how many chunks of the current answer we've already
   // enqueued, so a re-call only speaks the NEW sentences.
   const spokenCountRef = useRef(0);
@@ -214,6 +223,13 @@ export function useSpeechSynthesis(
   const remoteQueueRef = useRef<string[]>([]);
   const remoteIdxRef = useRef(0);
   const remoteTokenRef = useRef(0);
+  // Set to true the first time playRemoteFrom's fallback() fires for this turn.
+  // Prevents speakChunk from re-entering the remote path on every subsequent
+  // streaming update after a 4xx/5xx — which would re-fetch, fail again, call
+  // fallback() again, reset spokenCountRef to 0, and re-enqueue the same
+  // browser sentences, causing a 429 storm + duplicate/stuttering speech.
+  // Reset to false in cancel() (new session) and resetTurn() (new turn).
+  const felledBackRef = useRef(false);
   // Ref to the browser enqueue fn so the remote fallback can call it without a
   // forward dependency (enqueue is defined below). Assigned in an effect.
   const enqueueBrowserRef = useRef<(chunks: string[], from: number) => void>(() => {});
@@ -224,11 +240,16 @@ export function useSpeechSynthesis(
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load voices (async on Chromium — getVoices() is [] until voiceschanged fires).
+  // IMPORTANT: Chrome fires voiceschanged asynchronously and also cancels any
+  // utterances queued before the event fires. Mark voicesReadyRef only after the
+  // list is non-empty so enqueue() can gate its first call safely.
   useEffect(() => {
     if (!supported) return;
     const synth = window.speechSynthesis;
     const load = () => {
-      voicesRef.current = synth.getVoices();
+      const list = synth.getVoices();
+      voicesRef.current = list;
+      if (list.length > 0) voicesReadyRef.current = true;
     };
     load();
     synth.addEventListener?.("voiceschanged", load);
@@ -265,6 +286,7 @@ export function useSpeechSynthesis(
     remoteTokenRef.current += 1; // invalidate pending fetches
     remoteQueueRef.current = [];
     remoteIdxRef.current = 0;
+    felledBackRef.current = false; // new session: allow remote on next turn
     const a = audioRef.current;
     if (a) {
       a.pause();
@@ -310,6 +332,7 @@ export function useSpeechSynthesis(
       const fallback = () => {
         const rest = remoteQueueRef.current.slice(remoteIdxRef.current).join(" ");
         cancelRemote();
+        felledBackRef.current = true; // block speakChunk from re-entering remote this turn
         if (rest && browserSupported) {
           spokenCountRef.current = 0;
           enqueueBrowserRef.current(splitSentences(rest), 0);
@@ -372,12 +395,28 @@ export function useSpeechSynthesis(
         cached = synth.getVoices();
         voicesRef.current = cached;
       }
+      // Chrome cancels queued utterances when voiceschanged fires. If voices still
+      // aren't loaded, wait for the event then retry — voices will be populated by then.
+      if (!voicesReadyRef.current && cached.length === 0) {
+        synth.addEventListener?.(
+          "voiceschanged",
+          () => enqueue(chunks, from),
+          { once: true },
+        );
+        return;
+      }
       // Resolve voice from the catalog when a voiceId is set; falls back to the
       // localService English heuristic when undefined or not on this device.
       const catalogEntry = voiceId ? getVoiceById(voiceId) : undefined;
       const voice = pickVoice(cached, catalogEntry);
       const rate = rateForSpeed(character.speed);
       const pitch = pitchForTone(character.tone);
+
+      // Chrome silently enters a paused state between utterances or after tab
+      // visibility changes. resume() before enqueuing clears that state so onstart
+      // fires reliably. Safe to call even when not paused (it's a no-op then).
+      if (!isAndroid()) synth.resume();
+
       for (let i = from; i < chunks.length; i++) {
         const u = new SpeechSynthesisUtterance(chunks[i]);
         if (voice) u.voice = voice;
@@ -389,7 +428,6 @@ export function useSpeechSynthesis(
           startKeepAlive();
         };
         u.onend = () => {
-          // Speaking ends only when the engine has nothing left queued.
           if (!synth.speaking && !synth.pending) {
             setIsSpeaking(false);
             stopKeepAlive();
@@ -403,6 +441,11 @@ export function useSpeechSynthesis(
         };
         synth.speak(u);
       }
+      // No watchdog retry: Chrome's user-activation window expires in ~seconds.
+      // Any speak() called from setTimeout is outside the window and gets "canceled".
+      // The resume() call above is the only reliable fix for the paused_ guard.
+      // Unresolvable cases (Chrome TTS daemon not initialized) are handled via the
+      // browser-compatibility banner in talk-mode.tsx.
     },
     [browserSupported, character, voiceId, startKeepAlive, stopKeepAlive],
   );
@@ -459,9 +502,12 @@ export function useSpeechSynthesis(
    * (speakChunk's `wasEmpty` restart + remoteTokenRef invalidation), and clearing them
    * mid-tail could truncate a still-playing remote sentence or trip a false isSpeaking
    * flip that re-opens the mic while audio is audible (self-hearing).
+   * Also resets felledBackRef so the next turn gets a fresh attempt at the remote engine
+   * (the prior turn's 502 may be transient; a permanent failure will fallback again).
    */
   const resetTurn = useCallback(() => {
     spokenCountRef.current = 0;
+    felledBackRef.current = false;
   }, []);
 
   const speakChunk = useCallback(
@@ -473,7 +519,7 @@ export function useSpeechSynthesis(
       const ready = endsClean ? all : all.slice(0, -1);
       if (ready.length <= spokenCountRef.current) return;
 
-      if (isRemoteEngine) {
+      if (isRemoteEngine && !felledBackRef.current) {
         if (engine === "google" && !effectiveVoiceId) {
           // No voice picked + Google selected → fall through to browser path so
           // streaming TTS still works. Mirrors speak()'s no-voice fallthrough.
@@ -503,18 +549,30 @@ export function useSpeechSynthesis(
     ],
   );
 
-  // Stop speech if the tab is hidden (visibilitychange) and always on unmount —
-  // covers all engines (cancel() stops the browser synth AND the remote <audio>).
+  // Stop speech if the tab is hidden (visibilitychange) and always on unmount.
+  // CRITICAL: `cancel` must NOT be listed as a dep here. cancel depends on
+  // cancelBrowser → stopKeepAlive → (useCallback identity), which changes every
+  // time enqueue re-creates (its deps include voiceId, character, etc.). Listing
+  // [cancel] re-runs this effect — and its cleanup calls cancel() — on every
+  // render during streaming. That wipes spokenCountRef=0 and clears the speech
+  // queue on every chunk update: utterances are enqueued by speakChunk, then
+  // immediately cancelled by this cleanup, producing permanent silence.
+  // Fix: hold the latest cancel in a ref (same pattern as teardownRef in
+  // use-voice-session.ts) and keep deps []. The ref is updated separately.
+  const cancelRef = useRef(cancel);
+  useEffect(() => {
+    cancelRef.current = cancel;
+  }, [cancel]);
   useEffect(() => {
     const onHide = () => {
-      if (document.hidden) cancel();
+      if (document.hidden) cancelRef.current();
     };
     document.addEventListener("visibilitychange", onHide);
     return () => {
       document.removeEventListener("visibilitychange", onHide);
-      cancel();
+      cancelRef.current();
     };
-  }, [cancel]);
+  }, []); // empty deps — intentional, see comment above
 
   return { supported, isSpeaking, speak, speakChunk, cancel, resetTurn };
 }

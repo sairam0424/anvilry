@@ -16,6 +16,7 @@ import { PersonJsonLd, WebSiteJsonLd } from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
+import { getDiscoveryBadgesEnabled } from "@/lib/flags";
 
 const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
@@ -58,7 +59,8 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const discoveryBadgesEnabled = await getDiscoveryBadgesEnabled();
   // data-scroll-behavior="smooth": Next 16 no longer overrides scroll-behavior on navigation
   // by default. We set `scroll-behavior: smooth` in globals.css and rely on it for in-page
   // anchor nav (/#work, /#contact), so opt back in explicitly. This also silences the Next 16
@@ -88,7 +90,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-        <Providers>
+        <Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>
           <SiteNav />
           <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
             {children}

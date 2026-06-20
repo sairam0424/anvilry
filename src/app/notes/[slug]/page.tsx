@@ -22,6 +22,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
+  // Guard matches the page component — prevents partial metadata then 500
+  if (!NOTES_ENABLED) return {};
   const { slug } = await params;
   const note = getNote(slug);
   if (!note) return {};

@@ -6,7 +6,7 @@ import { Clock, ArrowUpRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { allArticles, inkforgeArticles } from "@/lib/content";
-import { INKFORGE_ARTICLES_ENABLED } from "@/lib/writing-flags";
+import { INKFORGE_ARTICLES_ENABLED, NOTES_ENABLED } from "@/lib/writing-flags";
 import { groupArticles, getGroupSources, filterGroupsBySource } from "@/lib/article-grouping";
 import { ArticleGroupCard } from "@/components/article-group-card";
 import { NoteCard } from "@/components/note-card";
@@ -148,7 +148,13 @@ export default function ArticlesPage() {
                 >
                   {/* Hero card uses the canonical href */}
                   <Link
-                    href={featuredGroup.canonical.linkedNote ? `/notes/${featuredGroup.canonical.linkedNote}` : (featuredGroup.canonical.externalUrl ?? featuredGroup.canonical.url)}
+                    href={
+                      featuredGroup.canonical.linkedNote && NOTES_ENABLED
+                        ? `/notes/${featuredGroup.canonical.linkedNote}`
+                        : (featuredGroup.canonical.externalUrl
+                            ?? featuredGroup.externalPlatforms.find((p) => p.externalUrl)?.externalUrl
+                            ?? featuredGroup.canonical.url)
+                    }
                     {...(featuredGroup.canonical.source !== "native" && featuredGroup.canonical.externalUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="flex flex-col gap-4 p-7 sm:p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset rounded-[inherit]"
                   >
@@ -198,7 +204,7 @@ export default function ArticlesPage() {
                         ))}
                       </div>
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors group-hover:text-accent">
-                        {featuredGroup.canonical.linkedNote ? "Read note" : "Read article"}
+                        {featuredGroup.canonical.linkedNote && NOTES_ENABLED ? "Read note" : "Read article"}
                         <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </span>
                     </div>

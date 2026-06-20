@@ -77,6 +77,7 @@ const notes = defineCollection({
       wordCount: s.number().optional(),
       readingTime: s.number().optional(),
       generatedBy: s.string().optional(),
+      category: s.string().optional(),
       platforms: s.array(s.string()).default([]),
       body: s.mdx(),
     })

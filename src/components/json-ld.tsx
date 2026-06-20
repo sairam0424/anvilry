@@ -221,26 +221,12 @@ export function ProfilePageJsonLd() {
     "@type": "ProfilePage",
     mainEntity: {
       "@type": "Person",
-      name: "Sairam Ugge",
-      jobTitle: "GenAI & Backend Engineer",
-      worksFor: { "@type": "Organization", name: "Ascendion" },
+      name: profile.name,
+      jobTitle: profile.role,
+      worksFor: { "@type": "Organization", name: profile.company },
       url: BASE_URL,
-      sameAs: [
-        "https://github.com/sairam0424",
-        "https://linkedin.com/in/sairam0424",
-      ],
-      knowsAbout: [
-        "LLM Agent Orchestration",
-        "Multi-Agent Systems",
-        "RAG",
-        "ReAct",
-        "Backend Architecture",
-        "Python",
-        "Go",
-        "TypeScript",
-        "AWS Bedrock",
-        "Event-Driven Architecture",
-      ],
+      sameAs: [profile.links.github, profile.links.linkedin],
+      knowsAbout: skills.flatMap((s) => s.items),
     },
   };
 

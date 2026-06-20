@@ -23,7 +23,7 @@ export default function StatsPage() {
         </p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((s, i) => (
-            <Reveal key={s.label} delay={(i % 3) * 0.06}>
+            <Reveal key={`${s.label}-${s.sub}`} delay={(i % 3) * 0.06}>
               <div className="card-surface flex flex-col gap-1 p-6">
                 <span className="font-mono text-3xl font-bold text-accent">{s.value}</span>
                 <span className="font-medium text-fg">{s.label}</span>

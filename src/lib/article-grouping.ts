@@ -4,7 +4,7 @@ import type { DedupPrimaryKey } from "@/lib/writing-flags";
 import { ARTICLE_DEDUP_KEY } from "@/lib/writing-flags";
 
 /** Stable display order for filter bar — new platforms added here appear automatically. */
-const SOURCE_ORDER: ArticleSource[] = ["medium", "substack", "linkedin", "native"];
+const SOURCE_ORDER: ArticleSource[] = ["medium", "substack", "linkedin", "devto", "hashnode", "native"];
 
 /** Safe date-to-ms — guards against malformed ISO dates producing NaN in sort. */
 const safeMs = (d: string): number => {

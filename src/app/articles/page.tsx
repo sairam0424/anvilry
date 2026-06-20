@@ -23,10 +23,12 @@ function fmt(iso: string): string {
 }
 
 const SOURCE_LABELS: Record<ArticleSource, string> = {
-  medium: "Medium",
+  medium:   "Medium",
   substack: "Substack",
   linkedin: "LinkedIn",
-  native: "Essay",
+  devto:    "Dev.to",
+  hashnode: "Hashnode",
+  native:   "Essay",
 };
 
 // When flag off, generated section is hidden.

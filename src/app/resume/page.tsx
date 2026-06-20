@@ -1,22 +1,15 @@
-import type { Metadata } from "next";
-import { Download, FileText } from "lucide-react";
-import { profile, resumeVariants } from "@/lib/profile";
+"use client";
+
+import { useState } from "react";
+import { Download, FileText, Eye, EyeOff } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { resumeVariants } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
-const description = `Download ${profile.name}'s résumé — role-targeted variants for Backend, GenAI, and Full-Stack.`;
-export const metadata: Metadata = {
-  title: "Résumé",
-  description,
-  alternates: { canonical: "/resume" },
-  // Page-specific OG (Next replaces the nested openGraph wholesale per segment) so a
-  // share of /resume shows this page, not the homepage identity.
-  openGraph: { type: "website", url: "/resume", title: `Résumé — ${profile.name}`, description },
-};
-
-const master = resumeVariants[0];
-
 export default function ResumePage() {
+  const [selected, setSelected] = useState(resumeVariants[0]);
+
   return (
     <main className="flex-1">
       <Section label="// résumé" title="Role-targeted résumés" titleAs="h1">
@@ -27,41 +20,101 @@ export default function ResumePage() {
           </p>
         </Reveal>
 
+        {/* ── Variant selector grid ──────────────────────────────────── */}
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {resumeVariants.map((v, i) => (
-            <Reveal key={v.file} delay={(i % 3) * 0.05}>
-              <a
-                href={v.file}
-                download
-                className="card-surface group flex items-center justify-between p-4 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText size={20} className="text-accent" />
-                  <div>
-                    <p className="text-sm font-medium">{v.label}</p>
-                    <p className="text-xs text-fg-subtle">{v.tag}</p>
+          {resumeVariants.map((v, i) => {
+            const active = selected.file === v.file;
+            return (
+              <Reveal key={v.file} delay={(i % 3) * 0.05}>
+                <motion.div
+                  animate={active ? { boxShadow: "var(--glow-accent)" } : { boxShadow: "none" }}
+                  transition={{ duration: 0.2 }}
+                  className={[
+                    "card-surface group flex items-center justify-between p-4 transition-colors",
+                    active ? "border-accent/60" : "",
+                  ].join(" ")}
+                >
+                  {/* Left: icon + label — clicking previews in iframe */}
+                  <button
+                    type="button"
+                    onClick={() => setSelected(v)}
+                    className="flex flex-1 items-center gap-3 text-left focus-visible:outline-none"
+                    aria-pressed={active}
+                    aria-label={`Preview ${v.label} résumé`}
+                  >
+                    <FileText size={20} className={active ? "text-accent" : "text-fg-subtle transition-colors group-hover:text-accent"} />
+                    <div>
+                      <p className={`text-sm font-medium ${active ? "text-accent" : "text-fg"}`}>{v.label}</p>
+                      <p className="text-xs text-fg-subtle">{v.tag}</p>
+                    </div>
+                  </button>
+
+                  {/* Right: eye (preview) + download */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelected(v)}
+                      aria-pressed={active}
+                      aria-label={`Preview ${v.label}`}
+                      className="rounded p-1 text-fg-subtle transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      {active ? (
+                        <Eye size={16} className="text-accent" />
+                      ) : (
+                        <EyeOff size={16} />
+                      )}
+                    </button>
+                    <a
+                      href={v.file}
+                      download
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Download ${v.label}`}
+                      className="rounded p-1 text-fg-subtle transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      <Download size={16} />
+                    </a>
                   </div>
-                </div>
-                <Download size={16} className="text-fg-subtle transition-colors group-hover:text-accent" />
-              </a>
-            </Reveal>
-          ))}
+                </motion.div>
+              </Reveal>
+            );
+          })}
         </div>
       </Section>
 
-      <Section label="// preview" title="Master résumé">
-        <Reveal>
-          <div className="overflow-hidden rounded-xl border border-border">
-            <object data={master.file} type="application/pdf" className="h-[80vh] w-full" aria-label="Résumé preview">
-              <div className="p-8 text-center text-fg-muted">
-                <p>Your browser can&apos;t display the PDF inline.</p>
-                <a href={master.file} download className="mt-3 inline-flex items-center gap-2 text-accent hover:underline">
-                  <Download size={16} /> Download instead
-                </a>
-              </div>
-            </object>
-          </div>
-        </Reveal>
+      {/* ── Inline preview panel ───────────────────────────────────────── */}
+      <Section label="// preview" title="">
+        {/* Active variant label */}
+        <div className="mb-4 flex items-center justify-between">
+          <p className="font-mono text-xs text-fg-subtle">
+            Now previewing:{" "}
+            <span className="text-accent">{selected.label}</span>
+          </p>
+          <a
+            href={selected.file}
+            download
+            className="inline-flex items-center gap-1.5 text-xs text-fg-muted transition-colors hover:text-accent"
+          >
+            <Download size={13} /> Download this variant
+          </a>
+        </div>
+
+        {/* iframe — AnimatePresence fades on variant switch */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={selected.file}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
+            className="overflow-hidden rounded-xl border border-border"
+          >
+            <iframe
+              src={selected.file}
+              className="h-[80vh] w-full"
+              title={`${selected.label} résumé preview`}
+            />
+          </motion.div>
+        </AnimatePresence>
       </Section>
     </main>
   );

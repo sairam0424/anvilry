@@ -3,14 +3,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { allNotes, getNote } from "@/lib/content";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
+import { ReadingProgress } from "@/components/reading-progress";
 import { profile } from "@/lib/profile";
 
 const BASE = "https://anvilry.vercel.app";
 
 export function generateStaticParams() {
+  if (!NOTES_ENABLED) return [];
   return allNotes.map((n) => ({ slug: n.slug }));
 }
 
@@ -27,6 +30,7 @@ export async function generateMetadata({
 
 export default async function NotePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (!NOTES_ENABLED) notFound();
   const note = getNote(slug);
   if (!note) notFound();
 
@@ -43,6 +47,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
 
   return (
     <main className="flex-1">
+      <ReadingProgress />
       <article className="mx-auto w-full max-w-3xl px-6 py-16">
         <Link href="/notes" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent">
           <ArrowLeft size={15} /> Notes

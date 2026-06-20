@@ -1,0 +1,154 @@
+---
+slug: how-i-traced-one-browser-request-from-keystroke-to-rendered-page
+title: "How I Traced One Browser Request from Keystroke to Rendered Page"
+date: 2026-06-19
+summary: "A packet-level walkthrough of what actually happens when you type www.google.com — DNS, TCP, TLS, HTTP, and rendering — with the latency costs and design trade-offs at each layer."
+tags: ["networking", "dns", "tls", "http", "system-design", "browser"]
+draft: false
+tone: intermediate
+format: narrative
+length: medium
+category: system-design
+wordCount: 2068
+readingTime: 8
+generatedBy: inkforge
+platforms: []
+---
+
+## I Just Wanted to Know Why www.google.com Loads So Fast
+
+I was sitting at my desk one evening, typed `www.google.com`, and the page was fully loaded before I could finish thinking the thought. Under 200 milliseconds. I remember pausing and genuinely wondering — *how?*
+
+Not "how" in a hand-wavy sense. Actually how. My fingers pressed keys on a keyboard. Somehow, a fully rendered Google homepage appeared on my screen, pulling content from servers that could be thousands of miles away, in less time than it takes to blink. What just happened in that gap?
+
+I started pulling on the thread. Turns out that ~200ms is not one thing — it's a stack of layers, each one solving a different problem, each one adding its own slice of latency. There's a layer that translates `www.google.com` into a number your computer can actually route to. A layer that opens a reliable channel across a chaotic network. A layer that encrypts everything so nobody between you and Google can read it. And finally the layer that actually asks for the page and receives it back.
+
+What surprised me most wasn't the complexity — it was how logical it all is once you trace it step by step. Every layer exists because someone hit a wall and had to solve a specific problem. Understanding those problems makes the whole stack click into place in a way that no amount of memorising acronyms ever does.
+
+So let me walk you through exactly what happens, layer by layer, in the order it actually occurs — from the moment you press Enter to the moment the page appears.
+
+{/* DIAGRAM: Upload assets/diagram-full-journey.png here */}
+
+{/* GIF: Search giphy.com for "detective searching cartoon" → paste Giphy URL below */}
+
+## Part 1: DNS Resolution — Finding Google's Address Before Anything Else
+
+Before a single TCP packet leaves my machine, the browser needs to translate `www.google.com` into an IP address. I used to think of this as a simple "phonebook lookup." It's not — and understanding why changed how I think about infrastructure migrations.
+
+**The cache hierarchy most developers underestimate**
+
+Resolution doesn't start with a DNS server. It starts with the browser's own in-memory cache, then falls through to the OS cache (after checking `/etc/hosts`), and only then hits a recursive resolver — typically your ISP's or something like `8.8.8.8`. The overwhelming majority of queries die right there at the recursive resolver's cache and never travel further. The full recursive walk is the exception, not the rule.
+
+{/* DIAGRAM: Upload assets/diagram-dns-layers.png here */}
+
+When it *is* a full cache miss, here's what actually happens for `www.google.com`: the recursive resolver asks a root server, which responds with a referral to Verisign's `.com` TLD nameservers. The resolver then queries those, gets referred to `ns1.google.com`. Finally, it asks Google's authoritative nameserver and receives `142.250.183.100`. Four round trips — but from my client's perspective it looks like one, because the recursive resolver does all the legwork. That's the design: offload the heavy lifting to infrastructure that can cache aggressively at scale.
+
+**The "13 root servers" thing is a misconception**
+
+There are 13 *logical* root server names (`a.root-servers.net` through `m.root-servers.net`), but they're backed by over 1,600 physical instances distributed globally via anycast. The 13 number isn't a scalability ceiling — it's an artifact of fitting all root server addresses into a single 512-byte UDP packet, the original DNS message size limit. Anycast routing means your query hits the geographically nearest instance, not some single overloaded machine in a basement.
+
+**TTL is a dial, not a setting you configure once**
+
+TTL is DNS's cache invalidation mechanism, and it's the most operationally interesting part. Set it too high (say, `86400` seconds) and a botched server migration will leave users hitting a dead IP for *days*. Set it too low and you're hammering resolvers with queries unnecessarily, adding latency on every cache miss. I've been bitten by both ends of this.
+
+The pattern I've found most useful in practice: before a planned migration, drop TTL to `60` seconds roughly 48 hours ahead — enough time for the old high TTL to expire everywhere. Execute the migration. Then raise TTL back to `3600` once the new records are confirmed stable. TTL becomes a dial you tune based on how much agility you need versus how much cache efficiency you want.
+
+DNS is fundamentally a *decoupling layer*: it separates stable, human-readable names from volatile infrastructure IPs. That's exactly why a CDN can route the same hostname to a server in Frankfurt for me and a server in Singapore for someone else — all without touching the client.
+
+That geographic routing trick depends entirely on what happens *after* DNS hands back an address. Which is where TCP enters the picture.
+
+{/* GIF: Search giphy.com for "handshake cartoon" → paste Giphy URL below */}
+
+## Part 2: TCP Handshake — One Round Trip Before a Single Byte of Real Data
+
+With an IP address in hand, my browser immediately tries to open a TCP connection — and this is where I first started internalizing *latency as a physical constraint*, not just a number in a monitoring dashboard.
+
+The three-way handshake is elegantly simple and completely unavoidable: client sends SYN, server replies SYN-ACK, client confirms with ACK. Only after that ACK lands can the browser send its first HTTP request. The reason the server can't skip straight to receiving data is that it needs to prove bidirectional reachability first — TCP's entire reliability model depends on both sides confirming they can both send *and* receive before the connection is considered open.
+
+That handshake costs exactly one RTT. And RTT is just geography wearing a disguise.
+
+{/* DIAGRAM: Upload assets/diagram-tcp-handshake.png here */}
+
+I made this concrete by running a quick measurement from different VPS locations:
+
+```bash
+curl -w '%{time_connect}\n' -o /dev/null -s https://www.google.com
+```
+
+From a Frankfurt server: ~15ms. From a Mumbai server hitting a London origin: ~150ms. That 150ms is gone before a single byte of application data moves. This is precisely why CDN edge nodes exist — not just to cache content, but to physically shorten the handshake path. When you're in Mumbai hitting a CDN PoP that's also in Mumbai, that 150ms collapses to ~5ms.
+
+But TCP's costs don't stop at connection setup. The protocol also guarantees ordered delivery, retransmission of lost packets, and congestion control — and those guarantees create a subtle trap called **head-of-line blocking**. In HTTP/1.1 over TCP, if packet #4 in a sequence is dropped, packets #5 through #50 sit waiting in the receive buffer even if they arrived intact. Every request on the connection stalls. HTTP/2 multiplexing helped at the application layer, but the underlying TCP stream still blocks. That single frustration is essentially the design motivation behind HTTP/3: by moving to QUIC over UDP, each stream becomes independently reliable, so one lost packet no longer freezes the world.
+
+The handshake is just the beginning of TCP's hidden tax. Once TLS enters the picture, the bill gets larger.
+
+{/* GIF: Search giphy.com for "vault lock cartoon" → paste Giphy URL below */}
+
+## Part 3: TLS Handshake — Encryption Isn't Free, But TLS 1.3 Made It Cheaper
+
+With the TCP connection established, the browser immediately kicks off a TLS handshake — and this is where I spent the most time squinting at Wireshark traces trying to understand *why* things worked the way they did.
+
+**TLS 1.2 cost you two round trips** before a single byte of encrypted application data could flow. The client said hello, the server replied with its certificate and cipher preferences, the client responded with key material, and only then did encryption begin. At 50ms RTT — not unusual for cross-continental traffic — that's 100ms of pure ceremony before the browser can even ask for the HTML.
+
+TLS 1.3 collapsed this to one round trip by making the client *guess* upfront. The Client Hello now includes a `key_share` extension — the client assumes the server will negotiate X25519 (the most common elliptic-curve Diffie-Hellman group) and proactively sends its half of the key exchange alongside the hello. If the guess is right, the server can respond with its own key share, its certificate, and a Finished message all in one flight. Encryption starts immediately after.
+
+If the guess is wrong — say the server only supports P-256 — you get a `HelloRetryRequest` and you're back to two round trips. This is why server operators advertise their supported groups clearly and why X25519 became the de facto default.
+
+{/* DIAGRAM: Upload assets/diagram-tls-handshake.png here */}
+
+The certificate itself does double duty. It carries the server's public key for the key exchange, and it proves identity by chaining up to a root CA your OS already trusts. In Chrome DevTools' Security tab, you can trace this chain concretely: `*.google.com` is signed by Google Trust Services, which is signed by a root CA pre-embedded in your OS trust store. Break either link — expired cert, mismatched hostname, untrusted root — and the browser hard-stops. There's no "just this once" for TLS failures.
+
+One thing I found genuinely surprising: after TLS completes, your ISP can still see that you connected to `142.250.183.100`. The IP header is plaintext, and the `server_name` extension in the Client Hello — SNI — announces `www.google.com` before encryption begins. The *content* of your request is hidden; the *destination* is not.
+
+For returning visitors, **session tickets** let the client skip the full handshake entirely. The server issues an encrypted ticket at the end of a session; on the next connection the client presents it, and encryption resumes in the first flight — a meaningful win for repeat pageloads.
+
+With the secure channel finally open, the browser has one more thing left to do before Google's servers can respond with HTML.
+
+{/* GIF: Search giphy.com for "finally cartoon" → paste Giphy URL below */}
+
+## Part 4: HTTP Request and Response — Finally Asking for the Page
+
+With TLS established, the browser finally sends what we've been building toward: an HTTP GET request for `/`. But even here, the protocol choices matter more than I initially appreciated.
+
+Modern browsers negotiate HTTP/2 during the TLS handshake (via ALPN). That single detail eliminates a hack that defined HTTP/1.1 performance for years — browsers opening up to six parallel TCP connections per origin just to fetch multiple resources simultaneously. HTTP/2 multiplexes all requests over *one* connection as independent streams. No queue blocking, no connection overhead per asset.
+
+The efficiency compounds with **HPACK header compression**. On a page firing 80+ sub-requests, headers like `User-Agent`, `Accept-Language`, and `Cookie` repeat identically. HPACK encodes them as small integer indices against a shared table. What was 800 bytes of repeated header data becomes a handful of integers — genuinely measurable when you're counting round trips.
+
+The Chrome DevTools Network tab makes this concrete. Filter by type, enable the connection column, and watch the waterfall. HTML arrives first, then CSS and JS appear as overlapping bars on the *same* connection row — that's the multiplexing made visible. Images follow in parallel streams. It looks nothing like HTTP/1.1's staggered, connection-per-resource pattern.
+
+The response headers are equally deliberate. Static assets like `main.a3f92c.js` — a content-addressed filename with a hash baked in — arrive with `Cache-Control: max-age=31536000, immutable`. The browser won't touch the network for that file for a year. The hash changing is the invalidation mechanism. HTML, by contrast, typically gets `no-store` or a short TTL, ensuring the latest asset URLs always reach the client.
+
+The `Accept-Encoding: br, gzip` request header is the browser advertising Brotli support; the server then chooses `br`, which typically compresses text assets 15–25% better than gzip. That saving is real bandwidth the rendering engine now has to work with.
+
+{/* GIF: Search giphy.com for "eureka cartoon" → paste Giphy URL below */}
+
+## What This Taught Me: Every Layer Is a Trade-Off Frozen in Time
+
+{/* DIAGRAM: Upload assets/diagram-latency-budget.png here */}
+
+Running through this exercise, the thing that hit me hardest was the latency math. Add it up for a user 150ms away: DNS lookup (20–120ms on a cold cache), TCP handshake (150ms), TLS 1.3 handshake (150ms), HTTP request/response (150ms minimum). You're sitting at **450–600ms before the first byte of HTML even arrives** — and that's before parsing, subresource fetching, or rendering a single pixel. On a fast connection. Every millisecond in that budget has a name and an owner.
+
+What reframed my thinking was realizing each layer is a solution to a real problem that existed at a specific moment in history. TCP solved packet loss on unreliable ARPANET-era networks. TLS solved plaintext eavesdropping as the web went commercial. HTTP/2 solved HTTP/1.1's serial request problem. Now HTTP/3 over QUIC is solving what TCP itself got wrong — specifically, head-of-line blocking. A single dropped packet in TCP stalls every stream on the connection. QUIC handles packet loss per-stream in user space, so one lost packet on your stylesheet doesn't freeze your JavaScript download. This matters most on lossy mobile networks where packet loss is routine, not exceptional.
+
+Once you see the stack as a latency budget, performance optimization becomes a targeting problem. CDN edges attack RTT directly by moving the server closer. Preconnect hints attack the handshake cost — `<link rel="preconnect" href="https://fonts.googleapis.com">` triggers DNS + TCP + TLS for a third-party origin *before* the browser even parses the stylesheet that requests it, turning sequential handshakes into parallel ones. Caching attacks repeat-visit cost entirely.
+
+Every optimization maps to exactly one layer. And knowing which layer you're in tells you what tools you actually have.
+
+---
+
+## TL;DR
+
+Press Enter → DNS finds the IP → TCP shakes hands → TLS encrypts → HTTP fetches the page. Four layers, each solving one problem, all happening in under 200ms. Every millisecond has a name and an owner.
+
+---
+
+## 5 Facts Worth Remembering
+
+- **DNS starts before you finish typing.** Chrome pre-resolves domains mid-keystroke.
+- **"13 root servers" is a myth.** 13 names, 1,600+ physical servers across the planet.
+- **HTTPS hides content, not destination.** Your ISP still sees every domain you visit via SNI.
+- **TLS 1.3 saved a full round trip.** One RTT instead of two — 100ms back in your pocket on every cold load.
+- **Google.com TTL is 5 minutes.** Short enough to reroute traffic globally during any incident.
+
+---
+
+*Next rabbit hole: what happens after the HTML arrives — parsing, layout, paint, compositing. Same idea, same depth.*

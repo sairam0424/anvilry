@@ -6,6 +6,7 @@ import { Clock, ArrowUpRight, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { allArticles, inkforgeArticles } from "@/lib/content";
+import { INKFORGE_ARTICLES_ENABLED } from "@/lib/writing-flags";
 import { ArticleCard } from "@/components/article-card";
 import { NoteCard } from "@/components/note-card";
 import { PlatformBadge, type ArticleSource } from "@/components/platform-badge";
@@ -35,10 +36,12 @@ const SOURCE_LABELS: Record<ArticleSource, string> = {
   native: "Essay",
 };
 
-const totalCount = allArticles.length + inkforgeArticles.length;
+// When flag off, generated section is hidden — show only published count in label.
+const visibleInkforge = INKFORGE_ARTICLES_ENABLED ? inkforgeArticles : [];
+const totalCount = allArticles.length + visibleInkforge.length;
 
 export default function ArticlesPage() {
-  if (totalCount === 0) notFound();
+  if (allArticles.length === 0) notFound();
 
   // Derive available sources from actual articles (only show tabs that have content)
   const presentSources = ALL_SOURCES.filter((s) => allArticles.some((a) => a.source === s));
@@ -60,8 +63,8 @@ export default function ArticlesPage() {
         title="Articles"
         titleAs="h1"
       >
-        {/* ── Inkforge generated articles ─────────────────────────────── */}
-        {inkforgeArticles.length > 0 && (
+        {/* ── Inkforge generated notes — hidden by default (flag off) ─── */}
+        {visibleInkforge.length > 0 && (
           <Reveal className="mb-12">
             <div className="mb-6 flex items-center gap-2">
               <Sparkles size={14} className="text-accent" aria-hidden="true" />
@@ -69,11 +72,11 @@ export default function ArticlesPage() {
                 Generated
               </span>
               <span className="font-mono text-xs text-fg-subtle">
-                — {inkforgeArticles.length} article{inkforgeArticles.length !== 1 ? "s" : ""} via inkforge
+                — {visibleInkforge.length} article{visibleInkforge.length !== 1 ? "s" : ""} via inkforge
               </span>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              {inkforgeArticles.map((note, i) => (
+              {visibleInkforge.map((note, i) => (
                 <Reveal key={note.slug} delay={(i % 2) * 0.06}>
                   <NoteCard note={note} />
                 </Reveal>
@@ -85,7 +88,7 @@ export default function ArticlesPage() {
         {/* ── Syndicated articles (curator model) ─────────────────────── */}
         {allArticles.length > 0 && (
           <>
-            {inkforgeArticles.length > 0 && (
+            {visibleInkforge.length > 0 && (
               <Reveal className="mb-6">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs uppercase tracking-widest text-fg-muted">

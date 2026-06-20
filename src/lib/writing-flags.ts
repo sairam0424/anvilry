@@ -37,3 +37,8 @@ export const SEARCH_ENABLED =
  *  Default: false — hide until real LinkedIn recommendations are added. */
 export const TESTIMONIALS_ENABLED =
   process.env.NEXT_PUBLIC_TESTIMONIALS_ENABLED === "true";
+
+/** Show inkforge-generated notes in the Articles page "Generated" section.
+ *  Default: false — only manually published articles show by default. */
+export const INKFORGE_ARTICLES_ENABLED =
+  process.env.NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED === "true";

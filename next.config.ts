@@ -34,7 +34,11 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vercel.live",
+  // 'unsafe-eval' is required in dev ONLY: MDXContent uses `new Function(code)` to
+  // compile Velite-generated MDX function-body strings at runtime. In production,
+  // Next.js + Velite pre-compile MDX at build time so this path is never hit in a
+  // browser. Production CSP intentionally omits 'unsafe-eval'.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.shields.io",
   "media-src 'self' blob:",

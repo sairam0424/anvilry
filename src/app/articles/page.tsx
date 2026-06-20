@@ -148,7 +148,13 @@ export default function ArticlesPage() {
                 >
                   {/* Hero card uses the canonical href */}
                   <Link
-                    href={featuredGroup.canonical.linkedNote && NOTES_ENABLED ? `/notes/${featuredGroup.canonical.linkedNote}` : (featuredGroup.canonical.externalUrl ?? featuredGroup.canonical.url)}
+                    href={
+                      featuredGroup.canonical.linkedNote && NOTES_ENABLED
+                        ? `/notes/${featuredGroup.canonical.linkedNote}`
+                        : (featuredGroup.canonical.externalUrl
+                            ?? featuredGroup.externalPlatforms.find((p) => p.externalUrl)?.externalUrl
+                            ?? featuredGroup.canonical.url)
+                    }
                     {...(featuredGroup.canonical.source !== "native" && featuredGroup.canonical.externalUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="flex flex-col gap-4 p-7 sm:p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset rounded-[inherit]"
                   >

@@ -16,12 +16,16 @@ function fmt(iso: string): string {
 }
 
 function resolveCanonicalHref(group: ArticleGroup): { href: string; external: boolean } {
-  const { canonical } = group;
-  // Only route to /notes when the notes section is enabled — otherwise fall
-  // through to externalUrl so the article opens on its original platform.
+  const { canonical, externalPlatforms } = group;
+  // Route to /notes only when the notes section is enabled.
   if (canonical.linkedNote && NOTES_ENABLED)
     return { href: `/notes/${canonical.linkedNote}`, external: false };
+  // Use canonical's own externalUrl if present.
   if (canonical.externalUrl) return { href: canonical.externalUrl, external: true };
+  // Fallback: use first available externalPlatform URL (e.g. DNS Essay has
+  // no externalUrl itself but Dev.to/Hashnode are in externalPlatforms).
+  const firstExternal = externalPlatforms.find((p) => p.externalUrl);
+  if (firstExternal?.externalUrl) return { href: firstExternal.externalUrl, external: true };
   return { href: canonical.url, external: false };
 }
 

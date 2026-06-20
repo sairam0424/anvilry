@@ -52,14 +52,20 @@ export default function ResumePage() {
       <Section label="// preview" title="Master résumé">
         <Reveal>
           <div className="overflow-hidden rounded-xl border border-border">
-            <object data={master.file} type="application/pdf" className="h-[80vh] w-full" aria-label="Résumé preview">
+            {/* <object> was deprecated for PDF in Chrome 120+ (Plugin API removal).
+                <iframe> uses Chrome's native PDF renderer and works cross-browser. */}
+            <iframe
+              src={master.file}
+              className="h-[80vh] w-full"
+              title="Résumé preview"
+            >
               <div className="p-8 text-center text-fg-muted">
                 <p>Your browser can&apos;t display the PDF inline.</p>
                 <a href={master.file} download className="mt-3 inline-flex items-center gap-2 text-accent hover:underline">
                   <Download size={16} /> Download instead
                 </a>
               </div>
-            </object>
+            </iframe>
           </div>
         </Reveal>
       </Section>

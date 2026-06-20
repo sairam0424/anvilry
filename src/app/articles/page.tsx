@@ -1,16 +1,15 @@
-import type { Metadata } from "next";
+"use client";
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { Clock, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState } from "react";
 import { allArticles } from "@/lib/content";
-import { Section } from "@/components/ui/section";
+import { ArticleCard } from "@/components/article-card";
+import { PlatformBadge, type ArticleSource } from "@/components/platform-badge";
 import { Reveal } from "@/components/ui/reveal";
-
-export const metadata: Metadata = {
-  title: "Articles",
-  description: "Articles and long-form writing published on Medium, Substack, and LinkedIn.",
-  alternates: { canonical: "/articles" },
-};
+import { Section } from "@/components/ui/section";
 
 /** Absolute, human-readable date (UTC; no relative drift). */
 function fmt(iso: string): string {
@@ -20,74 +19,163 @@ function fmt(iso: string): string {
     : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-const SOURCE_META: Record<
-  string,
-  { label: string; color: string; dot: string }
-> = {
-  medium:    { label: "Medium",    color: "text-[#00ab6c]",  dot: "bg-[#00ab6c]"  },
-  substack:  { label: "Substack",  color: "text-[#ff6719]",  dot: "bg-[#ff6719]"  },
-  linkedin:  { label: "LinkedIn",  color: "text-[#0a66c2]",  dot: "bg-[#0a66c2]"  },
-  native:    { label: "Essay",     color: "text-accent",      dot: "bg-accent"     },
+function resolveHref(a: (typeof allArticles)[number]): { href: string; external: boolean } {
+  if (a.linkedNote) return { href: `/notes/${a.linkedNote}`, external: false };
+  if (a.source !== "native" && a.externalUrl) return { href: a.externalUrl, external: true };
+  return { href: a.url, external: false };
+}
+
+const ALL_SOURCES = ["medium", "substack", "linkedin", "native"] as const;
+
+const SOURCE_LABELS: Record<ArticleSource, string> = {
+  medium: "Medium",
+  substack: "Substack",
+  linkedin: "LinkedIn",
+  native: "Essay",
 };
 
 export default function ArticlesPage() {
-  // Empty-safe: ships dark until the first article is added. Nav link also gates
-  // on hasArticles, so this 404 keeps the route consistent with the nav state.
   if (allArticles.length === 0) notFound();
+
+  // Derive available sources from actual articles (only show tabs that have content)
+  const presentSources = ALL_SOURCES.filter((s) => allArticles.some((a) => a.source === s));
+  const filterOptions: ("all" | ArticleSource)[] = ["all", ...presentSources];
+
+  const [activeFilter, setActiveFilter] = useState<"all" | ArticleSource>("all");
+
+  const [featured, ...rest] = allArticles;
+  const featuredHref = resolveHref(featured);
+
+  const filteredRest = rest.filter(
+    (a) => activeFilter === "all" || a.source === activeFilter,
+  );
 
   return (
     <main className="flex-1">
-      <Section label="// writing" title="Articles">
-        <ul className="max-w-2xl space-y-1">
-          {allArticles.map((a, i) => {
-            const meta = SOURCE_META[a.source] ?? SOURCE_META.native;
-            // linkedNote → point to the existing /notes/<slug> page (no duplicate content)
-            // external source → open original publication in new tab
-            // native with no linkedNote → internal /articles/<slug> detail page
-            const isExternal = a.source !== "native" && !!a.externalUrl;
-            const href = a.linkedNote
-              ? `/notes/${a.linkedNote}`
-              : isExternal
-              ? a.externalUrl!
-              : a.url;
+      <Section label={`// writing — ${allArticles.length} article${allArticles.length !== 1 ? "s" : ""}`} title="Articles" titleAs="h1">
 
-            return (
-              <li key={a.slug}>
-                <Reveal delay={(i % 4) * 0.04}>
-                  <Link
-                    href={href}
-                    {...(isExternal
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                    className="group flex flex-col gap-1 rounded-xl border border-transparent px-4 py-4 transition-colors hover:border-border hover:bg-bg-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        {/* ── Filter bar ─────────────────────────────────────────────── */}
+        {filterOptions.length > 2 && (
+          <Reveal className="mb-10">
+            <div
+              role="group"
+              aria-label="Filter articles by platform"
+              className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+            >
+              {filterOptions.map((opt) => {
+                const active = activeFilter === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setActiveFilter(opt)}
+                    aria-pressed={active}
+                    className={[
+                      "relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
+                      active ? "text-bg-base" : "text-fg-muted hover:text-fg",
+                    ].join(" ")}
                   >
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="flex items-center gap-2 font-medium text-fg group-hover:text-accent">
-                        {a.title}
-                        {isExternal && (
-                          <ExternalLink
-                            size={13}
-                            className="shrink-0 text-fg-subtle opacity-0 transition-opacity group-hover:opacity-100"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </span>
-                      <span className="shrink-0 font-mono text-xs text-fg-subtle">{fmt(a.date)}</span>
+                    {active && (
+                      <motion.span
+                        layoutId="article-filter-pill"
+                        aria-hidden="true"
+                        className="absolute inset-0 z-0 rounded-full bg-accent"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
+                    )}
+                    <span className="relative z-10">
+                      {opt === "all" ? "All" : SOURCE_LABELS[opt]}
                     </span>
-                    <span className="text-sm text-fg-muted">{a.summary}</span>
-                    <span className="mt-1 flex items-center gap-1.5">
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden="true" />
-                      <span className={`font-mono text-[11px] ${meta.color}`}>{meta.label}</span>
-                      {a.readingTime && (
-                        <span className="font-mono text-[11px] text-fg-subtle">· {a.readingTime} min read</span>
-                      )}
+                  </button>
+                );
+              })}
+            </div>
+          </Reveal>
+        )}
+
+        {/* ── Featured hero card ──────────────────────────────────────── */}
+        <Reveal>
+          <motion.div
+            whileHover={{ scale: 1.008, boxShadow: "var(--glow-accent)" }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="card-surface group mb-8"
+          >
+            <Link
+              href={featuredHref.href}
+              {...(featuredHref.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="flex flex-col gap-4 p-7 sm:p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset rounded-[inherit]"
+            >
+              {/* hero meta row */}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="font-mono text-[11px] uppercase tracking-widest text-accent">Featured</span>
+                <PlatformBadge source={featured.source} />
+                {featured.readingTime && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[11px] text-fg-subtle">
+                    <Clock size={11} aria-hidden="true" />
+                    {featured.readingTime} min read
+                  </span>
+                )}
+                <span className="ml-auto font-mono text-[11px] text-fg-subtle">{fmt(featured.date)}</span>
+              </div>
+
+              {/* title */}
+              <h2 className="text-2xl font-semibold leading-snug tracking-tight text-fg transition-colors group-hover:text-accent sm:text-3xl">
+                {featured.title}
+              </h2>
+
+              {/* summary */}
+              <p className="text-base text-fg-muted">{featured.summary}</p>
+
+              {/* footer: tags + CTA */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {featured.tags.slice(0, 4).map((t) => (
+                    <span key={t} className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted">
+                      {t}
                     </span>
-                  </Link>
+                  ))}
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors group-hover:text-accent">
+                  {featuredHref.external ? "Read article" : "Read note"}
+                  <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </span>
+              </div>
+            </Link>
+          </motion.div>
+        </Reveal>
+
+        {/* ── 2-col grid ──────────────────────────────────────────────── */}
+        <AnimatePresence mode="popLayout">
+          {filteredRest.length > 0 && (
+            <motion.div
+              layout
+              className="grid gap-5 sm:grid-cols-2"
+            >
+              {filteredRest.map((a, i) => (
+                <Reveal key={a.slug} delay={(i % 2) * 0.06}>
+                  <ArticleCard article={a} />
                 </Reveal>
-              </li>
-            );
-          })}
-        </ul>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* empty state when filter yields nothing */}
+        <AnimatePresence>
+          {filteredRest.length === 0 && activeFilter !== "all" && (
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.3 }}
+              className="mt-2 font-mono text-sm text-fg-subtle"
+            >
+              No {SOURCE_LABELS[activeFilter as ArticleSource]} articles yet.
+            </motion.p>
+          )}
+        </AnimatePresence>
+
       </Section>
     </main>
   );

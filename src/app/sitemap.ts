@@ -5,7 +5,7 @@ import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "
 const base = "https://anvilry.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/projects", "/about", "/resume", "/mcp"].map((path) => ({
+  const staticRoutes = ["", "/work", "/projects", "/about", "/resume", "/mcp"].map((path) => ({
     url: `${base}${path}`,
     changeFrequency: "monthly" as const,
     priority: path === "" ? 1 : 0.8,

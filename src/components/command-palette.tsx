@@ -184,7 +184,7 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
 
   const nav: Action[] = [
     { id: "home", label: "Home", icon: <Home size={16} />, run: () => go("/") },
-    { id: "work", label: "Work", hint: "flagship systems", icon: <Briefcase size={16} />, run: () => go("/#work") },
+    { id: "work", label: "Work", hint: "flagship systems", icon: <Briefcase size={16} />, run: () => go("/work") },
     { id: "projects", label: "Projects", hint: `${allProjects.length} repos`, icon: <FolderGit2 size={16} />, run: () => go("/projects") },
     { id: "about", label: "About", icon: <User size={16} />, run: () => go("/about") },
     { id: "resume", label: "Résumé", icon: <FileText size={16} />, run: () => go("/resume") },

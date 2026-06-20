@@ -13,7 +13,7 @@ import { MobileNav } from "@/components/mobile-nav";
 
 // Content section links appear ONLY when both the feature flag AND content exist.
 const navLinks = [
-  { href: "/#work", label: "Work" },
+  { href: "/work", label: "Work" },
   { href: "/projects", label: "Projects" },
   ...(ARTICLES_ENABLED && hasArticles ? [{ href: "/articles", label: "Articles" }] : []),
   ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Notes" }] : []),

@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import { allArticles, inkforgeArticles } from "@/lib/content";
 import { INKFORGE_ARTICLES_ENABLED } from "@/lib/writing-flags";
-import { ArticleCard } from "@/components/article-card";
+import { groupArticles, getGroupSources, filterGroupsBySource } from "@/lib/article-grouping";
+import { ArticleGroupCard } from "@/components/article-group-card";
 import { NoteCard } from "@/components/note-card";
 import { PlatformBadge, type ArticleSource } from "@/components/platform-badge";
 import { Reveal } from "@/components/ui/reveal";
@@ -21,14 +22,6 @@ function fmt(iso: string): string {
     : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-function resolveHref(a: (typeof allArticles)[number]): { href: string; external: boolean } {
-  if (a.linkedNote) return { href: `/notes/${a.linkedNote}`, external: false };
-  if (a.source !== "native" && a.externalUrl) return { href: a.externalUrl, external: true };
-  return { href: a.url, external: false };
-}
-
-const ALL_SOURCES = ["medium", "substack", "linkedin", "native"] as const;
-
 const SOURCE_LABELS: Record<ArticleSource, string> = {
   medium: "Medium",
   substack: "Substack",
@@ -36,25 +29,27 @@ const SOURCE_LABELS: Record<ArticleSource, string> = {
   native: "Essay",
 };
 
-// When flag off, generated section is hidden — show only published count in label.
+// When flag off, generated section is hidden.
 const visibleInkforge = INKFORGE_ARTICLES_ENABLED ? inkforgeArticles : [];
-const totalCount = allArticles.length + visibleInkforge.length;
+
+// Deduplicate: group same-content articles published on multiple platforms.
+const grouped = groupArticles(allArticles);
 
 export default function ArticlesPage() {
   if (allArticles.length === 0) notFound();
 
-  // Derive available sources from actual articles (only show tabs that have content)
-  const presentSources = ALL_SOURCES.filter((s) => allArticles.some((a) => a.source === s));
+  // Filter bar only shows sources that actually have content in groups.
+  const presentSources = getGroupSources(grouped);
   const filterOptions: ("all" | ArticleSource)[] = ["all", ...presentSources];
 
   const [activeFilter, setActiveFilter] = useState<"all" | ArticleSource>("all");
 
-  const [featured, ...rest] = allArticles;
-  const featuredHref = featured ? resolveHref(featured) : null;
+  const filteredGroups = filterGroupsBySource(grouped, activeFilter);
+  const [featuredGroup, ...restGroups] = filteredGroups;
+  const featured = featuredGroup?.canonical;
 
-  const filteredRest = rest.filter(
-    (a) => activeFilter === "all" || a.source === activeFilter,
-  );
+  // Total count = unique article groups + visible inkforge notes
+  const totalCount = grouped.length + visibleInkforge.length;
 
   return (
     <main className="flex-1">
@@ -85,8 +80,8 @@ export default function ArticlesPage() {
           </Reveal>
         )}
 
-        {/* ── Syndicated articles (curator model) ─────────────────────── */}
-        {allArticles.length > 0 && (
+        {/* ── Published articles (deduplicated) ───────────────────────── */}
+        {grouped.length > 0 && (
           <>
             {visibleInkforge.length > 0 && (
               <Reveal className="mb-6">
@@ -95,7 +90,7 @@ export default function ArticlesPage() {
                     Published
                   </span>
                   <span className="font-mono text-xs text-fg-subtle">
-                    — {allArticles.length} article{allArticles.length !== 1 ? "s" : ""} on Medium, Substack &amp; more
+                    — {grouped.length} article{grouped.length !== 1 ? "s" : ""} on Medium, Substack &amp; more
                   </span>
                 </div>
               </Reveal>
@@ -142,22 +137,36 @@ export default function ArticlesPage() {
             )}
 
             {/* ── Featured hero card ──────────────────────────────────────── */}
-            {featured && featuredHref && (activeFilter === "all" || featured.source === activeFilter) && (
+            {featuredGroup && featured && (activeFilter === "all" || featuredGroup.platforms.some((p) => p.source === activeFilter)) && (
               <Reveal>
                 <motion.div
                   whileHover={{ scale: 1.008, boxShadow: "var(--glow-accent)" }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   className="card-surface group mb-8"
                 >
+                  {/* Hero card uses the canonical href */}
                   <Link
-                    href={featuredHref.href}
-                    {...(featuredHref.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    href={featuredGroup.canonical.linkedNote ? `/notes/${featuredGroup.canonical.linkedNote}` : (featuredGroup.canonical.externalUrl ?? featuredGroup.canonical.url)}
+                    {...(featuredGroup.canonical.source !== "native" && featuredGroup.canonical.externalUrl ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="flex flex-col gap-4 p-7 sm:p-8 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset rounded-[inherit]"
                   >
-                    {/* hero meta row */}
+                    {/* hero meta row — all platform badges */}
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="font-mono text-[11px] uppercase tracking-widest text-accent">Featured</span>
                       <PlatformBadge source={featured.source} />
+                      {featuredGroup.externalPlatforms.map((p) => (
+                        <a
+                          key={p.slug}
+                          href={p.externalUrl ?? p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Read on ${p.source}`}
+                          className="transition-opacity hover:opacity-80"
+                        >
+                          <PlatformBadge source={p.source} />
+                        </a>
+                      ))}
                       {featured.readingTime && (
                         <span className="inline-flex items-center gap-1 font-mono text-[11px] text-fg-subtle">
                           <Clock size={11} aria-hidden="true" />
@@ -185,7 +194,7 @@ export default function ArticlesPage() {
                         ))}
                       </div>
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors group-hover:text-accent">
-                        {featuredHref.external ? "Read article" : "Read note"}
+                        {featuredGroup.canonical.source !== "native" ? "Read article" : "Read note"}
                         <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </span>
                     </div>
@@ -194,25 +203,22 @@ export default function ArticlesPage() {
               </Reveal>
             )}
 
-            {/* ── 2-col grid ──────────────────────────────────────────────── */}
+            {/* ── 2-col grid of deduplicated group cards ───────────────── */}
             <AnimatePresence mode="popLayout">
-              {filteredRest.length > 0 && (
-                <motion.div
-                  layout
-                  className="grid gap-5 sm:grid-cols-2"
-                >
-                  {filteredRest.map((a, i) => (
-                    <Reveal key={a.slug} delay={(i % 2) * 0.06}>
-                      <ArticleCard article={a} />
+              {restGroups.length > 0 && (
+                <motion.div layout className="grid gap-5 sm:grid-cols-2">
+                  {restGroups.map((group, i) => (
+                    <Reveal key={group.canonical.slug} delay={(i % 2) * 0.06}>
+                      <ArticleGroupCard group={group} />
                     </Reveal>
                   ))}
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* empty state when filter yields nothing */}
+            {/* empty state when filter yields no groups */}
             <AnimatePresence>
-              {filteredRest.length === 0 && activeFilter !== "all" && (
+              {filteredGroups.length === 0 && activeFilter !== "all" && (
                 <motion.p
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -226,12 +232,6 @@ export default function ArticlesPage() {
             </AnimatePresence>
           </>
         )}
-
-        {/* empty state when both collections are empty (should not reach here due to notFound above) */}
-        {totalCount === 0 && (
-          <p className="font-mono text-sm text-fg-subtle">No articles yet — come back soon.</p>
-        )}
-
       </Section>
     </main>
   );

@@ -2,20 +2,24 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { allArticles } from "@/lib/content";
 import { ARTICLES_ENABLED } from "@/lib/writing-flags";
-import { ArticleCard } from "@/components/article-card";
+import { groupArticles } from "@/lib/article-grouping";
+import { ArticleGroupCard } from "@/components/article-group-card";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
 export function WritingPreview() {
   if (!ARTICLES_ENABLED || allArticles.length === 0) return null;
-  const preview = allArticles.slice(0, 2);
+
+  // Deduplicate before slicing — show 2 unique articles, not 2 platform variants
+  const grouped = groupArticles(allArticles);
+  const preview = grouped.slice(0, 2);
 
   return (
     <Section label="// writing" title="Latest articles">
       <div className="grid gap-5 sm:grid-cols-2">
-        {preview.map((a, i) => (
-          <Reveal key={a.slug} delay={i * 0.06}>
-            <ArticleCard article={a} />
+        {preview.map((group, i) => (
+          <Reveal key={group.canonical.slug} delay={i * 0.06}>
+            <ArticleGroupCard group={group} />
           </Reveal>
         ))}
       </div>

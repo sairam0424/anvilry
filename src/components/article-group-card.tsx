@@ -45,22 +45,24 @@ export function ArticleGroupCard({ group }: { group: ArticleGroup }) {
             {/* Primary platform badge — always shown */}
             <PlatformBadge source={canonical.source} />
 
-            {/* Secondary platform badges — each independently links to that platform */}
+            {/* Secondary platform badges — buttons (not <a>) to avoid nested anchor invalid HTML */}
             {isMultiPlatform && (
               <>
                 <span className="font-mono text-[10px] text-fg-subtle">also on</span>
                 {externalPlatforms.map((p) => (
-                  <a
+                  <button
                     key={p.slug}
-                    href={p.externalUrl ?? p.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      window.open(p.externalUrl ?? p.url, "_blank", "noopener,noreferrer");
+                    }}
                     aria-label={`Read on ${p.source}`}
-                    className="transition-opacity hover:opacity-80"
+                    className="cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-full"
                   >
                     <PlatformBadge source={p.source} />
-                  </a>
+                  </button>
                 ))}
               </>
             )}

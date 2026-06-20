@@ -155,17 +155,19 @@ export default function ArticlesPage() {
                       <span className="font-mono text-[11px] uppercase tracking-widest text-accent">Featured</span>
                       <PlatformBadge source={featured.source} />
                       {featuredGroup.externalPlatforms.map((p) => (
-                        <a
+                        <button
                           key={p.slug}
-                          href={p.externalUrl ?? p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            window.open(p.externalUrl ?? p.url, "_blank", "noopener,noreferrer");
+                          }}
                           aria-label={`Read on ${p.source}`}
-                          className="transition-opacity hover:opacity-80"
+                          className="cursor-pointer transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded-full"
                         >
                           <PlatformBadge source={p.source} />
-                        </a>
+                        </button>
                       ))}
                       {featured.readingTime && (
                         <span className="inline-flex items-center gap-1 font-mono text-[11px] text-fg-subtle">

@@ -32,3 +32,8 @@ export const STATS_ENABLED =
 
 export const SEARCH_ENABLED =
   process.env.NEXT_PUBLIC_SEARCH_ENABLED === "true";
+
+/** Recommendations / testimonials section on homepage.
+ *  Default: false — hide until real LinkedIn recommendations are added. */
+export const TESTIMONIALS_ENABLED =
+  process.env.NEXT_PUBLIC_TESTIMONIALS_ENABLED === "true";

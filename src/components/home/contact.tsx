@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, ArrowUpRight, CalendarDays, CheckCircle, Copy } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CheckCircle, Copy } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
@@ -42,15 +42,6 @@ export function Contact() {
                 <><Copy size={16} /> Copy email</>
               )}
             </button>
-
-            {/* Mailto fallback */}
-            <a
-              href={`mailto:${profile.email}`}
-              className="inline-flex items-center gap-1.5 font-mono text-xs text-fg-subtle transition-colors hover:text-accent"
-              aria-label="Open email client"
-            >
-              <Mail size={13} /> {profile.email}
-            </a>
 
             <a
               href={profile.calendlyUrl}

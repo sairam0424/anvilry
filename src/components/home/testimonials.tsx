@@ -1,16 +1,17 @@
 import { Quote, ArrowUpRight } from "lucide-react";
 import { testimonials } from "@/lib/testimonials";
+import { TESTIMONIALS_ENABLED } from "@/lib/writing-flags";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
 /**
- * Social-proof strip — third-party recommendations the self-authored résumé can't
- * provide (especially potent for the honest "co-built" register, where a manager
- * confirming the contribution removes any doubt). EMPTY-SAFE: renders nothing until
- * real, source-linked testimonials exist (see lib/testimonials.ts). Every card carries
- * a "verify on LinkedIn" link — the permalink IS the anti-fabrication guarantee.
+ * Social-proof strip — hidden by default (NEXT_PUBLIC_TESTIMONIALS_ENABLED=false)
+ * until real LinkedIn recommendations are collected and added to lib/testimonials.ts.
  */
 export function Testimonials() {
+  // Flag off → hide entirely (no placeholder either — clean homepage)
+  if (!TESTIMONIALS_ENABLED) return null;
+
   if (!testimonials || testimonials.length === 0) {
     return (
       <Section label="// what people say" title="Recommendations">

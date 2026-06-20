@@ -1,5 +1,7 @@
 import type { Article } from "@/lib/content";
 import type { ArticleSource } from "@/components/platform-badge";
+import type { DedupPrimaryKey } from "@/lib/writing-flags";
+import { ARTICLE_DEDUP_KEY } from "@/lib/writing-flags";
 
 /** Stable display order for filter bar — new platforms added here appear automatically. */
 const SOURCE_ORDER: ArticleSource[] = ["medium", "substack", "linkedin", "native"];
@@ -9,6 +11,23 @@ const safeMs = (d: string): number => {
   const ms = new Date(d).getTime();
   return Number.isNaN(ms) ? 0 : ms;
 };
+
+/**
+ * Configuration for the article grouping algorithm.
+ * Passed as an optional second argument to groupArticles().
+ * The application default is driven by the ARTICLE_DEDUP_KEY flag.
+ */
+export interface GroupingConfig {
+  /**
+   * Which frontmatter field to check first when building the dedup key.
+   * - "linkedNote"   → prefer internal note slug (stable, survives URL changes)
+   * - "canonicalUrl" → prefer canonical URL (useful for external-only pipelines)
+   * Both strategies always fall back to the other field.
+   */
+  primaryKey: DedupPrimaryKey;
+}
+
+const DEFAULT_CONFIG: GroupingConfig = { primaryKey: ARTICLE_DEDUP_KEY };
 
 export interface ArticleGroup {
   /** Primary article — native > linkedNote > external, then newest first. */
@@ -22,27 +41,38 @@ export interface ArticleGroup {
 /**
  * Group articles by canonical URL or linkedNote reference.
  *
- * Dedup key strategy (in order of preference):
- *   1. canonicalUrl — the "source of truth" URL all syndications point to
- *   2. linkedNote   — fallback when canonicalUrl absent but all versions reference same note
- *   3. ungrouped    — no match key; treated as a standalone single-item group
+ * Dedup key strategy — controlled by config.primaryKey (default: ARTICLE_DEDUP_KEY flag):
+ *   "linkedNote"   → tries linkedNote first, falls back to canonicalUrl
+ *   "canonicalUrl" → tries canonicalUrl first, falls back to linkedNote
+ *   Ungrouped if neither field is present.
  *
  * O(n log n) — two linear passes + per-group sort (groups are tiny: 1–5 items).
  */
-export function groupArticles(articles: Article[]): ArticleGroup[] {
+export function groupArticles(
+  articles: Article[],
+  config: GroupingConfig = DEFAULT_CONFIG,
+): ArticleGroup[] {
   const groups = new Map<string, Article[]>();
   const ungrouped: Article[] = [];
 
   // Pass 1 — categorise each article into a keyed group or ungrouped
   for (const article of articles) {
     let key: string | null = null;
-    // linkedNote (internal slug) is the preferred key — more stable than canonicalUrl
-    // which is a full URL that can change if a note is renamed. canonicalUrl is the
-    // fallback for externally-published articles that don't reference a local note.
-    if (article.linkedNote) {
-      key = `note:${article.linkedNote}`;
-    } else if (article.canonicalUrl) {
-      key = `canonical:${article.canonicalUrl}`;
+
+    if (config.primaryKey === "canonicalUrl") {
+      // canonicalUrl-first: best for external-only pipelines
+      if (article.canonicalUrl) {
+        key = `canonical:${article.canonicalUrl}`;
+      } else if (article.linkedNote) {
+        key = `note:${article.linkedNote}`;
+      }
+    } else {
+      // linkedNote-first (default): stable internal slug survives URL changes
+      if (article.linkedNote) {
+        key = `note:${article.linkedNote}`;
+      } else if (article.canonicalUrl) {
+        key = `canonical:${article.canonicalUrl}`;
+      }
     }
 
     if (key) {

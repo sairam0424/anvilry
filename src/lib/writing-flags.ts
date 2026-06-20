@@ -47,3 +47,28 @@ export const INKFORGE_ARTICLES_ENABLED =
  *  Default: false — enable when stats are worth showing (more stars/followers). */
 export const GITHUB_STATS_ENABLED =
   process.env.NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true";
+
+/**
+ * Article dedup primary key strategy.
+ *
+ * Controls which frontmatter field is checked first when grouping same-content
+ * articles published on multiple platforms:
+ *
+ *   "linkedNote"   (DEFAULT) — prefer the internal note slug as the group key.
+ *                              Best when your content pipeline always sets linkedNote.
+ *                              Stable: survives URL changes / note renames.
+ *
+ *   "canonicalUrl" — prefer the canonical URL as the group key.
+ *                    Best when syndicating to platforms that don't reference local notes.
+ *                    Falls back to linkedNote if canonicalUrl is absent.
+ *
+ * Both strategies always fall back to the other field, so switching only affects
+ * which key wins when an article has BOTH fields set.
+ *
+ * Set NEXT_PUBLIC_ARTICLE_DEDUP_KEY=canonicalUrl to switch. Requires redeploy.
+ */
+export type DedupPrimaryKey = "linkedNote" | "canonicalUrl";
+
+const raw = process.env.NEXT_PUBLIC_ARTICLE_DEDUP_KEY;
+export const ARTICLE_DEDUP_KEY: DedupPrimaryKey =
+  raw === "canonicalUrl" ? "canonicalUrl" : "linkedNote";

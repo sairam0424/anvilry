@@ -101,7 +101,7 @@ export function SiteFooter() {
 
       {/* Copyright + RSS + newsletter — full-width bottom strip */}
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-border/40 px-6 pb-6 pt-4 font-mono text-[11px] text-fg-subtle">
-        <span>© {new Date().getFullYear()} Sairam Ugge. Built with Next.js, Tailwind &amp; Velite.</span>
+        <span>© {new Date().getFullYear()} Sairam Ugge</span>
         <div className="flex items-center gap-4">
           <a href={profile.substackUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
             Subscribe

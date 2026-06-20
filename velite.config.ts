@@ -55,11 +55,13 @@ const work = defineCollection({
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),
 });
 
-/** Engineering notes / writing — EMPTY-SAFE: no .mdx files exist yet, so the collection
- *  is [] and the /notes nav link stays dark until the owner publishes real posts. */
+/** Engineering notes / writing — accepts both .md (Inkforge-generated) and .mdx (hand-written).
+ *
+ *  Inkforge extended fields: tone/format/length/wordCount/readingTime/generatedBy/platforms
+ *  are all optional so hand-written notes (without these fields) continue to compile. */
 const notes = defineCollection({
   name: "Note",
-  pattern: "notes/**/*.mdx",
+  pattern: "notes/**/*.{md,mdx}",
   schema: s
     .object({
       slug: s.slug("note"),
@@ -68,6 +70,14 @@ const notes = defineCollection({
       summary: s.string(),
       tags: s.array(s.string()).default([]),
       draft: s.boolean().default(false),
+      // Inkforge generation metadata (optional — hand-written notes omit these)
+      tone: s.enum(["beginner", "intermediate", "senior"]).optional(),
+      format: s.enum(["tutorial", "narrative", "explainer", "opinion", "showcase"]).optional(),
+      length: s.enum(["thread", "short", "medium", "comprehensive"]).optional(),
+      wordCount: s.number().optional(),
+      readingTime: s.number().optional(),
+      generatedBy: s.string().optional(),
+      platforms: s.array(s.string()).default([]),
       body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),

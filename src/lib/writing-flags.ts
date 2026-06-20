@@ -42,3 +42,8 @@ export const TESTIMONIALS_ENABLED =
  *  Default: false — only manually published articles show by default. */
 export const INKFORGE_ARTICLES_ENABLED =
   process.env.NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED === "true";
+
+/** GitHub stats strip on homepage (followers, repos, stars, forks).
+ *  Default: false — enable when stats are worth showing (more stars/followers). */
+export const GITHUB_STATS_ENABLED =
+  process.env.NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true";

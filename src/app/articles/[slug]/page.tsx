@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { allArticles, getArticle } from "@/lib/content";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
@@ -18,7 +19,11 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 export function generateStaticParams() {
-  return allArticles.map((a) => ({ slug: a.slug }));
+  return allArticles
+    // Skip articles that are notes-only (linkedNote + no externalUrl) when notes are disabled.
+    // At runtime these will notFound() — no point prerendering a guaranteed 404.
+    .filter((a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED))
+    .map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({
@@ -43,14 +48,20 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const article = getArticle(slug);
   if (!article) notFound();
 
-  // linkedNote: redirect to the existing /notes page — no duplicate content.
-  if (article.linkedNote) {
+  // linkedNote: redirect to /notes when the notes section is enabled.
+  // When NOTES_ENABLED=false the notes routes don't exist — fall through to externalUrl.
+  if (article.linkedNote && NOTES_ENABLED) {
     redirect(`/notes/${article.linkedNote}`);
   }
 
   // External articles: redirect to the original publication.
   if (article.source !== "native" && article.externalUrl) {
     redirect(article.externalUrl);
+  }
+
+  // Notes-only article (linkedNote + no externalUrl) with notes disabled — nothing to show.
+  if (article.linkedNote && !article.externalUrl && !NOTES_ENABLED) {
+    notFound();
   }
 
   const jsonLd = {

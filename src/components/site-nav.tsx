@@ -1,24 +1,39 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes, hasArticles } from "@/lib/content";
-import { ARTICLES_ENABLED, NOTES_ENABLED } from "@/lib/writing-flags";
+import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "@/lib/writing-flags";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
 
 // Content section links appear ONLY when both the feature flag AND content exist.
 const navLinks = [
-  { href: "/#work", label: "Work" },
+  { href: "/work", label: "Work" },
   { href: "/projects", label: "Projects" },
   ...(ARTICLES_ENABLED && hasArticles ? [{ href: "/articles", label: "Articles" }] : []),
   ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
+  ...(STATS_ENABLED ? [{ href: "/stats", label: "Stats" }] : []),
+  ...(SEARCH_ENABLED ? [{ href: "/search", label: "Search" }] : []),
 ];
 
+/** Returns true when the nav link should be considered "active" for the current path. */
+function isActive(href: string, pathname: string): boolean {
+  if (href === "/") return pathname === "/";
+  // Section anchors (/#work, /#contact) — active on the homepage
+  if (href.startsWith("/#")) return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteNav() {
+  const pathname = usePathname();
+
   return (
     <header
       className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
@@ -34,7 +49,13 @@ export function SiteNav() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm text-fg-muted transition-colors hover:text-fg"
+              className={[
+                "text-sm transition-colors",
+                isActive(l.href, pathname)
+                  ? "text-accent"
+                  : "text-fg-muted hover:text-fg",
+              ].join(" ")}
+              aria-current={isActive(l.href, pathname) ? "page" : undefined}
             >
               {l.label}
             </Link>

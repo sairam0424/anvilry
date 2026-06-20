@@ -19,6 +19,8 @@ export const profile = {
   subhead:
     "I co-built Pensieve and architected the AAVA Code backend at Ascendion, and build open-source AI infrastructure in the open.",
   email: "uggesairam0000@gmail.com",
+  calendlyUrl: "https://calendly.com/sairamugge/30min",
+  substackUrl: "https://sairam0000.substack.com",
   links: {
     github: "https://github.com/sairam0424",
     linkedin: "https://linkedin.com/in/sairam0424",

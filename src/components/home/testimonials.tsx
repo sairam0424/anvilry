@@ -1,17 +1,41 @@
 import { Quote, ArrowUpRight } from "lucide-react";
-import { testimonials, hasTestimonials } from "@/lib/testimonials";
+import { testimonials } from "@/lib/testimonials";
+import { TESTIMONIALS_ENABLED } from "@/lib/writing-flags";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
 /**
- * Social-proof strip — third-party recommendations the self-authored résumé can't
- * provide (especially potent for the honest "co-built" register, where a manager
- * confirming the contribution removes any doubt). EMPTY-SAFE: renders nothing until
- * real, source-linked testimonials exist (see lib/testimonials.ts). Every card carries
- * a "verify on LinkedIn" link — the permalink IS the anti-fabrication guarantee.
+ * Social-proof strip — hidden by default (NEXT_PUBLIC_TESTIMONIALS_ENABLED=false)
+ * until real LinkedIn recommendations are collected and added to lib/testimonials.ts.
  */
 export function Testimonials() {
-  if (!hasTestimonials) return null;
+  // Flag off → hide entirely (no placeholder either — clean homepage)
+  if (!TESTIMONIALS_ENABLED) return null;
+
+  if (!testimonials || testimonials.length === 0) {
+    return (
+      <Section label="// what people say" title="Recommendations">
+        <Reveal>
+          <div className="card-surface flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium text-fg">LinkedIn recommendations coming soon</p>
+              <p className="mt-1 text-sm text-fg-muted">
+                In the meantime, view my recommendations directly on LinkedIn.
+              </p>
+            </div>
+            <a
+              href="https://linkedin.com/in/sairam0424"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
+            >
+              View on LinkedIn <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </Reveal>
+      </Section>
+    );
+  }
 
   return (
     <Section label="// what people say" title="Recommendations">

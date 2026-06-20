@@ -33,7 +33,7 @@ export function Hero() {
 
         <div className="hero-rise mt-8 flex flex-wrap items-center gap-3" style={{ animationDelay: "0.15s" }}>
           <Link
-            href="/#work"
+            href="/work"
             className="group inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-bg-base transition-colors hover:bg-accent-strong"
           >
             See my work

@@ -2,16 +2,24 @@
 
 /** Tinted platform pill — used by ArticleCard and the articles filter bar.
  *  source "native" = first-party essay (no external platform). */
-export type ArticleSource = "medium" | "substack" | "linkedin" | "native";
+export type ArticleSource =
+  | "medium"
+  | "substack"
+  | "linkedin"
+  | "devto"
+  | "hashnode"
+  | "native";
 
 const SOURCE_CONFIG: Record<
   ArticleSource,
   { label: string; color: string; bg: string; border: string }
 > = {
-  medium:   { label: "Medium",   color: "#00ab6c", bg: "rgba(0,171,108,0.08)",   border: "rgba(0,171,108,0.2)"   },
-  substack: { label: "Substack", color: "#ff6719", bg: "rgba(255,103,25,0.08)",  border: "rgba(255,103,25,0.2)"  },
-  linkedin: { label: "LinkedIn", color: "#0a66c2", bg: "rgba(10,102,194,0.08)",  border: "rgba(10,102,194,0.2)"  },
-  native:   { label: "Essay",    color: "#38e1ff", bg: "rgba(56,225,255,0.08)",  border: "rgba(56,225,255,0.2)"  },
+  medium:   { label: "Medium",   color: "#00ab6c", bg: "rgba(0,171,108,0.08)",    border: "rgba(0,171,108,0.2)"    },
+  substack: { label: "Substack", color: "#ff6719", bg: "rgba(255,103,25,0.08)",   border: "rgba(255,103,25,0.2)"   },
+  linkedin: { label: "LinkedIn", color: "#0a66c2", bg: "rgba(10,102,194,0.08)",   border: "rgba(10,102,194,0.2)"   },
+  devto:    { label: "Dev.to",   color: "#a855f7", bg: "rgba(168,85,247,0.08)",   border: "rgba(168,85,247,0.2)"   },
+  hashnode: { label: "Hashnode", color: "#2563eb", bg: "rgba(37,99,235,0.08)",    border: "rgba(37,99,235,0.2)"    },
+  native:   { label: "Essay",    color: "#38e1ff", bg: "rgba(56,225,255,0.08)",   border: "rgba(56,225,255,0.2)"   },
 };
 
 export function PlatformBadge({ source }: { source: ArticleSource }) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Mail, Rss } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { useView } from "@/components/view-context";
@@ -96,6 +96,19 @@ export function SiteFooter() {
               <Mail size={18} />
             </a>
           </div>
+        </div>
+      </div>
+
+      {/* Copyright + RSS + newsletter — full-width bottom strip */}
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-border/40 px-6 pb-6 pt-4 font-mono text-[11px] text-fg-subtle">
+        <span>© {new Date().getFullYear()} Sairam Ugge</span>
+        <div className="flex items-center gap-4">
+          <a href={profile.substackUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
+            Subscribe
+          </a>
+          <a href="/feed.xml" className="inline-flex items-center gap-1 transition-colors hover:text-accent">
+            <Rss size={11} aria-hidden="true" /> RSS
+          </a>
         </div>
       </div>
     </footer>

@@ -10,6 +10,8 @@ metrics:
   - { value: "150+", label: "skills · 40+ tools · ~60 commands" }
 tech: [Python, crewAI, "Multi-Agent", "VS Code", "Backend Architecture"]
 order: 2
+constraints: "The single-agent prototype already had clients in 5+ environments — the re-architecture had to be backward-compatible with existing VS Code extension contracts while expanding to 150+ skills without a flag day migration."
+tradeoffs: "Used crewAI flows for the Main-Agent → sub-agent topology instead of a custom orchestrator: faster to ship and battle-tested for tool-calling, but constrained by crewAI's execution model. Traded orchestration flexibility for delivery speed — the right call under the timeline."
 ---
 
 ## Problem

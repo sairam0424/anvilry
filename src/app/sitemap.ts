@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { allProjects, allWork, allNotes, allArticles } from "@/lib/content";
-import { ARTICLES_ENABLED, NOTES_ENABLED } from "@/lib/writing-flags";
+import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "@/lib/writing-flags";
 
 const base = "https://anvilry.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/projects", "/about", "/resume", "/mcp"].map((path) => ({
+  const staticRoutes = ["", "/work", "/projects", "/about", "/resume", "/mcp"].map((path) => ({
     url: `${base}${path}`,
     changeFrequency: "monthly" as const,
     priority: path === "" ? 1 : 0.8,
@@ -47,5 +47,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ]
     : [];
 
-  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes, ...articleRoutes];
+  const statsRoute = STATS_ENABLED
+    ? [{ url: `${base}/stats`, changeFrequency: "monthly" as const, priority: 0.6 }]
+    : [];
+
+  const searchRoute = SEARCH_ENABLED
+    ? [{ url: `${base}/search`, changeFrequency: "monthly" as const, priority: 0.5 }]
+    : [];
+
+  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes, ...articleRoutes, ...statsRoute, ...searchRoute];
 }

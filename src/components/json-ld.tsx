@@ -152,3 +152,88 @@ export function CreativeWorkJsonLd({
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
   );
 }
+
+const BASE_URL = "https://anvilry.vercel.app";
+
+/** FAQ schema for the homepage "Ask my portfolio" feature.
+ *  Enables Google FAQ rich results — questions drawn from common recruiter queries. */
+export function FaqJsonLd() {
+  const faq = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What stack does Sairam work with?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Python, Go, TypeScript, AWS (Bedrock, Polly, Transcribe), LLM orchestration (crewAI, multi-agent), RAG, ReAct pipelines, Redis, SSE, and React/Next.js on the frontend.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Is Sairam open to new roles?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes — actively looking for Backend, GenAI, and Full-Stack engineering roles. Remote or Hyderabad, India.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What has Sairam built in production?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Pensieve (multi-agent LLM orchestration engine, 2K+ daily users), AAVA Code (AI coding plugin for VS Code, 3K+ daily users), Execution Engine (prompt-driven artifact generation, 65%→85% first-pass acceptance), Wireframe Generator (GenAI UI prototyping, 500+ daily users), and Prompt-to-React (code generation, 2K+ developers).",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Where can I schedule a call with Sairam?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Book a 30-minute intro call at https://calendly.com/sairamugge/30min",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What open-source projects has Sairam built?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "MindForge (agentic Claude Code framework, 1193+ commits), Agent-Forge (self-improving agent infrastructure), ContextOS (AI agent intelligence layer), Graph-Forge (code intelligence platform), and others. See https://anvilry.vercel.app/projects.",
+        },
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }}
+    />
+  );
+}
+
+/** ProfilePage schema for /about — enables Google Discussions/Forums eligibility.
+ *  mainEntity must be typed Person with name as required field. */
+export function ProfilePageJsonLd() {
+  const profilePage = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: profile.name,
+      jobTitle: profile.role,
+      worksFor: { "@type": "Organization", name: profile.company },
+      url: BASE_URL,
+      sameAs: [profile.links.github, profile.links.linkedin],
+      knowsAbout: skills.flatMap((s) => s.items),
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePage) }}
+    />
+  );
+}

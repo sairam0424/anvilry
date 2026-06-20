@@ -14,6 +14,23 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icon", sizes: "32x32", type: "image/png" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },
+      { src: "/icon", sizes: "any", type: "image/png", purpose: "maskable" },
+    ],
+    screenshots: [
+      {
+        src: "/static/screenshot-desktop.png",
+        sizes: "1280x800",
+        type: "image/png",
+        form_factor: "wide",
+        label: "Anvilry Portfolio — Desktop",
+      },
+      {
+        src: "/static/screenshot-mobile.png",
+        sizes: "390x844",
+        type: "image/png",
+        form_factor: "narrow",
+        label: "Anvilry Portfolio — Mobile",
+      },
     ],
   };
 }

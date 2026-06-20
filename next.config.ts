@@ -88,9 +88,10 @@ const nextConfig: NextConfig = {
     // View Transitions API — enables React 19's <ViewTransition> component and
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
-    // Partial Prerendering (PPR) — cacheComponents:true is the Next.js 16 stable API
-    // for PPR. Disabled for now: requires removing all `export const runtime = "nodejs"`
-    // from API routes — a non-trivial migration. Enable incrementally in v2.1.
+    // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
+    // `export const dynamic` / `export const runtime` segment configs (17 files use them).
+    // Migration path: remove segment configs site-wide and rely on per-route caching
+    // defaults instead. Deferred to v2.1 — not worth the blast radius now.
     // cacheComponents: true,
   },
   images: {

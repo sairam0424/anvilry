@@ -4,6 +4,7 @@ import { personal, now, hasNow, hasPersonalContent } from "@/lib/personal";
 import { allProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
+import { ProfilePageJsonLd } from "@/components/json-ld";
 
 /** Format an ISO date as an absolute, human-readable string (no relative drift). */
 function formatUpdated(iso: string): string {
@@ -115,6 +116,7 @@ export default function AboutPage() {
           ))}
         </div>
       </Section>
+      <ProfilePageJsonLd />
     </main>
   );
 }

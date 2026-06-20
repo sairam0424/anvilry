@@ -77,7 +77,6 @@ const notes = defineCollection({
       wordCount: s.number().optional(),
       readingTime: s.number().optional(),
       generatedBy: s.string().optional(),
-      category: s.string().optional(),
       platforms: s.array(s.string()).default([]),
       body: s.mdx(),
     })
@@ -99,7 +98,7 @@ const articles = defineCollection({
       title: s.string(),
       date: s.isodate(),
       summary: s.string(),
-      source: s.enum(["medium", "substack", "linkedin", "devto", "hashnode", "native"]),
+      source: s.enum(["medium", "substack", "linkedin", "native"]),
       externalUrl: s.string().url().optional(), // required for non-native; omit for native
       canonicalUrl: s.string().url().optional(), // SEO: where the canonical version lives
       linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, no duplicate content

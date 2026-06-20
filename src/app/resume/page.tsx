@@ -6,18 +6,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { resumeVariants } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
-import { SkeletonIframe } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 export default function ResumePage() {
   const [selected, setSelected] = useState(resumeVariants[0]);
-  const [pdfLoading, setPdfLoading] = useState(true);
-
-  // Reset loading state whenever the selected variant changes
-  function selectVariant(v: (typeof resumeVariants)[number]) {
-    setSelected(v);
-    setPdfLoading(true);
-  }
 
   return (
     <main className="flex-1">
@@ -43,9 +34,10 @@ export default function ResumePage() {
                     active ? "border-accent/60" : "",
                   ].join(" ")}
                 >
+                  {/* Left: icon + label — clicking previews in iframe */}
                   <button
                     type="button"
-                    onClick={() => selectVariant(v)}
+                    onClick={() => setSelected(v)}
                     className="flex flex-1 items-center gap-3 text-left focus-visible:outline-none"
                     aria-pressed={active}
                     aria-label={`Preview ${v.label} résumé`}
@@ -57,15 +49,20 @@ export default function ResumePage() {
                     </div>
                   </button>
 
+                  {/* Right: eye (preview) + download */}
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => selectVariant(v)}
+                      onClick={() => setSelected(v)}
                       aria-pressed={active}
                       aria-label={`Preview ${v.label}`}
                       className="rounded p-1 text-fg-subtle transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
-                      {active ? <Eye size={16} className="text-accent" /> : <EyeOff size={16} />}
+                      {active ? (
+                        <Eye size={16} className="text-accent" />
+                      ) : (
+                        <EyeOff size={16} />
+                      )}
                     </button>
                     <a
                       href={v.file}
@@ -86,9 +83,11 @@ export default function ResumePage() {
 
       {/* ── Inline preview panel ───────────────────────────────────────── */}
       <Section label="// preview" title="">
+        {/* Active variant label */}
         <div className="mb-4 flex items-center justify-between">
           <p className="font-mono text-xs text-fg-subtle">
-            Now previewing: <span className="text-accent">{selected.label}</span>
+            Now previewing:{" "}
+            <span className="text-accent">{selected.label}</span>
           </p>
           <a
             href={selected.file}
@@ -99,7 +98,7 @@ export default function ResumePage() {
           </a>
         </div>
 
-        {/* Skeleton overlay + iframe — crossfade on load and on variant switch */}
+        {/* iframe — AnimatePresence fades on variant switch */}
         <AnimatePresence mode="wait">
           <motion.div
             key={selected.file}
@@ -107,30 +106,11 @@ export default function ResumePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
-            className="relative overflow-hidden rounded-xl border border-border"
+            className="overflow-hidden rounded-xl border border-border"
           >
-            {/* Shimmer skeleton — visible while PDF is loading */}
-            <AnimatePresence>
-              {pdfLoading && (
-                <motion.div
-                  key="pdf-skeleton"
-                  className="absolute inset-0 z-10"
-                  initial={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <SkeletonIframe />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <iframe
               src={selected.file}
-              onLoad={() => setPdfLoading(false)}
-              className={cn(
-                "h-[80vh] w-full transition-opacity duration-300",
-                pdfLoading ? "opacity-0" : "opacity-100",
-              )}
+              className="h-[80vh] w-full"
               title={`${selected.label} résumé preview`}
             />
           </motion.div>

@@ -124,7 +124,7 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: `${BASE}/` },
-          { name: "Work", url: `${BASE}/#work` },
+          { name: "Work", url: `${BASE}/work` },
           { name: work.name, url: `${BASE}${work.url}` },
         ]}
       />

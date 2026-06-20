@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { allNotes } from "@/lib/content";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { NoteCard } from "@/components/note-card";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
@@ -12,8 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default function NotesPage() {
-  // Empty-safe: the notes feature ships DARK until a post exists. The nav link
-  // (site-nav gates on hasNotes) and the sitemap both omit /notes while empty.
+  // Gate: flag off → 404 (nav link also hidden — no dead routes).
+  if (!NOTES_ENABLED) notFound();
+  // Empty-safe: 404 when no published notes exist.
   if (allNotes.length === 0) notFound();
 
   return (

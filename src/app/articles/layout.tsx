@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { ARTICLES_ENABLED } from "@/lib/writing-flags";
 
 export const metadata: Metadata = {
   title: "Articles",
@@ -7,5 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default function ArticlesLayout({ children }: { children: React.ReactNode }) {
+  if (!ARTICLES_ENABLED) notFound();
   return children;
 }

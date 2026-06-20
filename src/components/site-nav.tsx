@@ -3,16 +3,17 @@ import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes, hasArticles } from "@/lib/content";
+import { ARTICLES_ENABLED, NOTES_ENABLED } from "@/lib/writing-flags";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
 
-// Content section links appear ONLY when entries exist (empty-safe — no dead links).
+// Content section links appear ONLY when both the feature flag AND content exist.
 const navLinks = [
   { href: "/#work", label: "Work" },
   { href: "/projects", label: "Projects" },
-  ...(hasArticles ? [{ href: "/articles", label: "Articles" }] : []),
-  ...(hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
+  ...(ARTICLES_ENABLED && hasArticles ? [{ href: "/articles", label: "Articles" }] : []),
+  ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
 ];

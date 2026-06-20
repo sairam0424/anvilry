@@ -5,6 +5,7 @@ import { ExternalLink, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import type { ArticleGroup } from "@/lib/article-grouping";
 import { PlatformBadge } from "@/components/platform-badge";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 
 /** Absolute, human-readable date (UTC). */
 function fmt(iso: string): string {
@@ -15,10 +16,16 @@ function fmt(iso: string): string {
 }
 
 function resolveCanonicalHref(group: ArticleGroup): { href: string; external: boolean } {
-  const { canonical } = group;
-  if (canonical.linkedNote) return { href: `/notes/${canonical.linkedNote}`, external: false };
-  if (canonical.source !== "native" && canonical.externalUrl)
-    return { href: canonical.externalUrl, external: true };
+  const { canonical, externalPlatforms } = group;
+  // Route to /notes only when the notes section is enabled.
+  if (canonical.linkedNote && NOTES_ENABLED)
+    return { href: `/notes/${canonical.linkedNote}`, external: false };
+  // Use canonical's own externalUrl if present.
+  if (canonical.externalUrl) return { href: canonical.externalUrl, external: true };
+  // Fallback: use first available externalPlatform URL (e.g. DNS Essay has
+  // no externalUrl itself but Dev.to/Hashnode are in externalPlatforms).
+  const firstExternal = externalPlatforms.find((p) => p.externalUrl);
+  if (firstExternal?.externalUrl) return { href: firstExternal.externalUrl, external: true };
   return { href: canonical.url, external: false };
 }
 

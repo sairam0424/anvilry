@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { allProjects, allWork, allNotes } from "@/lib/content";
+import { allProjects, allWork, allNotes, allArticles } from "@/lib/content";
+import { ARTICLES_ENABLED, NOTES_ENABLED } from "@/lib/writing-flags";
 
 const base = "https://anvilry.vercel.app";
 
@@ -22,9 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  // Notes — empty-safe: emits nothing while the collection is empty (the /notes index
-  // 404s and the nav link is dark until a post exists), so the sitemap matches reality.
-  const noteRoutes = allNotes.length
+  // Notes — only when both flag AND content exist.
+  const noteRoutes = NOTES_ENABLED && allNotes.length
     ? [
         { url: `${base}/notes`, changeFrequency: "weekly" as const, priority: 0.6 },
         ...allNotes.map((n) => ({
@@ -35,5 +35,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ]
     : [];
 
-  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes];
+  // Articles — only when both flag AND content exist.
+  const articleRoutes = ARTICLES_ENABLED && allArticles.length
+    ? [
+        { url: `${base}/articles`, changeFrequency: "weekly" as const, priority: 0.6 },
+        ...allArticles.map((a) => ({
+          url: `${base}${a.url}`,
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        })),
+      ]
+    : [];
+
+  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes, ...articleRoutes];
 }

@@ -55,11 +55,13 @@ const work = defineCollection({
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),
 });
 
-/** Engineering notes / writing — EMPTY-SAFE: no .mdx files exist yet, so the collection
- *  is [] and the /notes nav link stays dark until the owner publishes real posts. */
+/** Engineering notes / writing — accepts both .md (Inkforge-generated) and .mdx (hand-written).
+ *
+ *  Inkforge extended fields: tone/format/length/wordCount/readingTime/generatedBy/platforms
+ *  are all optional so hand-written notes (without these fields) continue to compile. */
 const notes = defineCollection({
   name: "Note",
-  pattern: "notes/**/*.mdx",
+  pattern: "notes/**/*.{md,mdx}",
   schema: s
     .object({
       slug: s.slug("note"),
@@ -68,9 +70,44 @@ const notes = defineCollection({
       summary: s.string(),
       tags: s.array(s.string()).default([]),
       draft: s.boolean().default(false),
+      // Inkforge generation metadata (optional — hand-written notes omit these)
+      tone: s.enum(["beginner", "intermediate", "senior"]).optional(),
+      format: s.enum(["tutorial", "narrative", "explainer", "opinion", "showcase"]).optional(),
+      length: s.enum(["thread", "short", "medium", "comprehensive"]).optional(),
+      wordCount: s.number().optional(),
+      readingTime: s.number().optional(),
+      generatedBy: s.string().optional(),
+      platforms: s.array(s.string()).default([]),
       body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),
+});
+
+/** External / syndicated articles — Medium, Substack, LinkedIn, or native drafts.
+ *
+ *  Each entry is a small MDX file with frontmatter metadata. Clicking the card
+ *  on the /articles page opens `externalUrl` directly (curator model — no RSS sync
+ *  dependency, no API keys, works indefinitely). Native articles (source: "native")
+ *  render their body inline like notes. */
+const articles = defineCollection({
+  name: "Article",
+  pattern: "articles/**/*.{md,mdx}",
+  schema: s
+    .object({
+      slug: s.slug("article"),
+      title: s.string(),
+      date: s.isodate(),
+      summary: s.string(),
+      source: s.enum(["medium", "substack", "linkedin", "native"]),
+      externalUrl: s.string().url().optional(), // required for non-native; omit for native
+      canonicalUrl: s.string().url().optional(), // SEO: where the canonical version lives
+      linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, no duplicate content
+      tags: s.array(s.string()).default([]),
+      draft: s.boolean().default(false),
+      readingTime: s.number().optional(), // estimated minutes
+      body: s.mdx(),
+    })
+    .transform((data) => ({ ...data, url: `/articles/${data.slug}` })),
 });
 
 export default defineConfig({
@@ -86,6 +123,6 @@ export default defineConfig({
     // pass --clean explicitly for a pristine production build.
     clean: false,
   },
-  collections: { projects, work, notes },
+  collections: { projects, work, notes, articles },
   mdx: { gfm: true },
 });

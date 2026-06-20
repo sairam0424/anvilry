@@ -6,6 +6,7 @@ import { allNotes, getNote } from "@/lib/content";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
+import { ReadingProgress } from "@/components/reading-progress";
 import { profile } from "@/lib/profile";
 
 const BASE = "https://anvilry.vercel.app";
@@ -43,6 +44,7 @@ export default async function NotePage({ params }: { params: Promise<{ slug: str
 
   return (
     <main className="flex-1">
+      <ReadingProgress />
       <article className="mx-auto w-full max-w-3xl px-6 py-16">
         <Link href="/notes" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent">
           <ArrowLeft size={15} /> Notes

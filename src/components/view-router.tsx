@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { useView } from "@/components/view-context";
 import { isViewEnabled } from "@/lib/enabled-views";
+import { SkeletonViewTransition } from "@/components/ui/skeleton";
 
 /**
  * Swaps the top-level experience based on the active view.
@@ -18,31 +19,34 @@ import { isViewEnabled } from "@/lib/enabled-views";
  * view is what lets its R3F canvas dispose the WebGL GL context — a hidden-but-live
  * context leaks GPU memory on low-end mobile.
  *
- * The cross-fade between views is owned by the View Transitions API (driven from
- * setViewInternal in view-context). The swapped subtree carries
- * `view-transition-name: view-body` so the API animates ONLY the body content;
- * the sticky header is pinned to its own `site-header` group (see site-nav) and
- * stays put. We deliberately do NOT wrap these in motion.div fades anymore — two
- * competing crossfades double-animated opacity and could snapshot-tear the R3F
- * canvas mid-transition. Reduced-motion users get an instant swap (the API call
- * is skipped in commitViewChange).
+ * Each dynamic import now has a SkeletonViewTransition fallback — the orb-aesthetic
+ * loading state shows while the JS bundle downloads on first activation.
  */
 const ChatView = dynamic(() => import("@/components/chat/chat-view").then((m) => m.ChatView), {
   ssr: false,
+  loading: () => <SkeletonViewTransition label="Loading Chat..." />,
 });
 const GameView = dynamic(() => import("@/components/game/game-view").then((m) => m.GameView), {
   ssr: false,
+  loading: () => <SkeletonViewTransition label="Loading Play..." />,
 });
 const DeveloperView = dynamic(
   () => import("@/components/game/developer-view").then((m) => m.DeveloperView),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => <SkeletonViewTransition label="Loading Dev..." />,
+  },
 );
 const AnvilView = dynamic(() => import("@/components/chat/anvil-view").then((m) => m.AnvilView), {
   ssr: false,
+  loading: () => <SkeletonViewTransition label="Loading Voice..." />,
 });
 const ResumeView = dynamic(
   () => import("@/components/home/resume-view").then((m) => m.ResumeView),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => <SkeletonViewTransition label="Loading Résumé..." />,
+  },
 );
 
 export function ViewRouter({ children }: { children: ReactNode }) {

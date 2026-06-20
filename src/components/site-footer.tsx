@@ -97,17 +97,18 @@ export function SiteFooter() {
             </a>
           </div>
         </div>
-        {/* Copyright + RSS + newsletter */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4 font-mono text-[11px] text-fg-subtle">
-          <span>© {new Date().getFullYear()} Sairam Ugge. Built with Next.js, Tailwind &amp; Velite.</span>
-          <div className="flex items-center gap-4">
-            <a href={profile.substackUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
-              Subscribe
-            </a>
-            <a href="/feed.xml" className="inline-flex items-center gap-1 transition-colors hover:text-accent">
-              <Rss size={11} aria-hidden="true" /> RSS
-            </a>
-          </div>
+      </div>
+
+      {/* Copyright + RSS + newsletter — full-width bottom strip */}
+      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-border/40 px-6 pb-6 pt-4 font-mono text-[11px] text-fg-subtle">
+        <span>© {new Date().getFullYear()} Sairam Ugge. Built with Next.js, Tailwind &amp; Velite.</span>
+        <div className="flex items-center gap-4">
+          <a href={profile.substackUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
+            Subscribe
+          </a>
+          <a href="/feed.xml" className="inline-flex items-center gap-1 transition-colors hover:text-accent">
+            <Rss size={11} aria-hidden="true" /> RSS
+          </a>
         </div>
       </div>
     </footer>

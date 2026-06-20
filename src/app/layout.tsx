@@ -29,6 +29,7 @@ const siteUrl = "https://anvilry.vercel.app";
 export const viewport: Viewport = {
   themeColor: "#07080d",
   colorScheme: "dark",
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -57,7 +58,7 @@ export const metadata: Metadata = {
     description: profile.headline,
     siteName: profile.name,
   },
-  twitter: { card: "summary_large_image", title: `${profile.name} — ${profile.role}`, description: profile.headline },
+  twitter: { card: "summary_large_image", title: `${profile.name} — ${profile.role}`, description: profile.headline, images: [siteUrl + "/opengraph-image"] },
   robots: { index: true, follow: true },
 };
 

@@ -6,7 +6,7 @@ import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes, hasArticles } from "@/lib/content";
-import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED } from "@/lib/writing-flags";
+import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "@/lib/writing-flags";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
@@ -20,6 +20,7 @@ const navLinks = [
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
   ...(STATS_ENABLED ? [{ href: "/stats", label: "Stats" }] : []),
+  ...(SEARCH_ENABLED ? [{ href: "/search", label: "Search" }] : []),
 ];
 
 /** Returns true when the nav link should be considered "active" for the current path. */

@@ -29,3 +29,6 @@ export const OPEN_TO_WORK =
  *  Default: false — enable when the page content is populated. */
 export const STATS_ENABLED =
   process.env.NEXT_PUBLIC_STATS_ENABLED === "true";
+
+export const SEARCH_ENABLED =
+  process.env.NEXT_PUBLIC_SEARCH_ENABLED === "true";

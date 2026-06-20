@@ -61,6 +61,10 @@ lint: ## ESLint across entire project
 build: ## Full production build: velite --clean + vitest + next build
 	pnpm build
 
+.PHONY: search-index
+search-index: ## Generate Pagefind search index from production build (run after make build)
+	pnpm pagefind --site .next/server/app --output-path public/pagefind
+
 .PHONY: start
 start: ## Serve the production build locally (run `make build` first)
 	pnpm start

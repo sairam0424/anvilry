@@ -89,9 +89,10 @@ const nextConfig: NextConfig = {
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
     // Partial Prerendering (PPR) — cacheComponents:true is the Next.js 16 stable API
-    // for PPR. Disabled for now: requires removing all `export const runtime = "nodejs"`
-    // from API routes — a non-trivial migration. Enable incrementally in v2.1.
-    // cacheComponents: true,
+    // for PPR. API routes legitimately keep `export const runtime = "nodejs"` (AWS SDK,
+    // Google Cloud SDK, Redis, MCP server) — PPR operates at the page/component level,
+    // not the API route level, so runtime declarations on API routes do not block it.
+    cacheComponents: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],

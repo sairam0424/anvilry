@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { Mail, Rss } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { useView } from "@/components/view-context";
@@ -94,6 +94,18 @@ export function SiteFooter() {
             </a>
             <a href={`mailto:${profile.email}`} className="hover:text-accent" aria-label="Email">
               <Mail size={18} />
+            </a>
+          </div>
+        </div>
+        {/* Copyright + RSS + newsletter */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4 font-mono text-[11px] text-fg-subtle">
+          <span>© {new Date().getFullYear()} Sairam Ugge. Built with Next.js, Tailwind &amp; Velite.</span>
+          <div className="flex items-center gap-4">
+            <a href="https://sairam0000.substack.com" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
+              Subscribe
+            </a>
+            <a href="/feed.xml" className="inline-flex items-center gap-1 transition-colors hover:text-accent">
+              <Rss size={11} aria-hidden="true" /> RSS
             </a>
           </div>
         </div>

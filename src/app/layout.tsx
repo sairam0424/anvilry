@@ -12,7 +12,7 @@ import { AnvilCoreSurface } from "@/components/chat/anvil-core-surface";
 import { WakeWordController } from "@/components/chat/wake-word-controller";
 import { ViewHint } from "@/components/view-hint";
 import { EasterEggs } from "@/components/game/easter-eggs";
-import { PersonJsonLd, WebSiteJsonLd } from "@/components/json-ld";
+import { PersonJsonLd, WebSiteJsonLd, FaqJsonLd } from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
@@ -86,6 +86,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <head suppressHydrationWarning>
         <PersonJsonLd />
         <WebSiteJsonLd />
+        <FaqJsonLd />
       </head>
       <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}

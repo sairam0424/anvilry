@@ -48,7 +48,7 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
   return (
     <main className="flex-1">
       <article className="mx-auto w-full max-w-3xl px-6 py-16">
-        <Link href="/#work" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent">
+        <Link href="/work" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent">
           <ArrowLeft size={15} /> Work
         </Link>
 

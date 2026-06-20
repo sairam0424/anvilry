@@ -24,3 +24,8 @@ export const NOTES_ENABLED =
 
 export const OPEN_TO_WORK =
   process.env.NEXT_PUBLIC_OPEN_TO_WORK === "true";
+
+/** /stats page — aggregate open-source impact numbers.
+ *  Default: false — enable when the page content is populated. */
+export const STATS_ENABLED =
+  process.env.NEXT_PUBLIC_STATS_ENABLED === "true";

@@ -155,6 +155,8 @@ export function ChatMessages({
         ref={setScroll}
         // [overflow-anchor:none] stops the browser's scroll-anchoring from fighting
         // the JS pin (defensive; Safari 27).
+        aria-live="polite"
+        aria-atomic="false"
         className="min-h-0 flex-1 space-y-4 overflow-y-auto outline-none [overflow-anchor:none]"
         tabIndex={-1}
       >

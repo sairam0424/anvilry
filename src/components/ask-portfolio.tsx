@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
+import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 import { useView } from "@/components/view-context";
 import { useChat } from "@/components/chat/use-chat";
 import { MicButton } from "@/components/chat/mic-button";
@@ -15,7 +16,7 @@ import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 // initial bundle (the widget is interaction-gated).
 const MarkdownMessage = dynamic(
   () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <SkeletonMarkdownLine /> },
 );
 
 const SUGGESTED = [

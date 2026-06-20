@@ -302,6 +302,8 @@ export function TalkMode({
           is suppressed during active speech. */}
       {settings.captions && (
         <div
+          aria-live="polite"
+          aria-atomic="false"
           aria-hidden={speaking}
           className="flex min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 text-center"
         >

@@ -14,6 +14,7 @@ import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 import { useView } from "@/components/view-context";
 import { highlightProject } from "@/lib/highlight-store";
 import { unlock } from "@/lib/discovery-store";
+import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 
 /** Map a Bedrock/Anthropic model id to a readable name for the badge. */
 function friendlyModel(id: string): string {
@@ -28,7 +29,7 @@ function friendlyModel(id: string): string {
 // bundle — the chat is interaction-gated, so it only loads when a view/widget opens.
 const MarkdownMessage = dynamic(
   () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <SkeletonMarkdownLine /> },
 );
 
 /**
@@ -155,6 +156,8 @@ export function ChatMessages({
         ref={setScroll}
         // [overflow-anchor:none] stops the browser's scroll-anchoring from fighting
         // the JS pin (defensive; Safari 27).
+        aria-live="polite"
+        aria-atomic="false"
         className="min-h-0 flex-1 space-y-4 overflow-y-auto outline-none [overflow-anchor:none]"
         tabIndex={-1}
       >

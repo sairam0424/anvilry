@@ -11,6 +11,8 @@ metrics:
   - { value: "50+", label: "teams" }
 tech: [React, "Code Generation", "Modular Components", "Routing Logic", "Wireframe Input"]
 order: 4
+constraints: "Generated components had to be production-ready — not prototypes. They needed to follow the team's existing component conventions and integrate cleanly with their routing layer without manual cleanup by engineers."
+tradeoffs: "Generated modular components with explicit routing logic rather than monolithic page outputs: more complex generation pipeline, but produced code developers could actually ship without refactoring. The tradeoff was a harder prompt engineering problem — worth it given the 55% reduction in manual coding effort."
 ---
 
 ## Problem

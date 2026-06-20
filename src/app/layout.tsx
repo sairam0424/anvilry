@@ -12,11 +12,13 @@ import { AnvilCoreSurface } from "@/components/chat/anvil-core-surface";
 import { WakeWordController } from "@/components/chat/wake-word-controller";
 import { ViewHint } from "@/components/view-hint";
 import { EasterEggs } from "@/components/game/easter-eggs";
-import { PersonJsonLd, WebSiteJsonLd } from "@/components/json-ld";
+import { PersonJsonLd, WebSiteJsonLd, FaqJsonLd } from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
 import { getDiscoveryBadgesEnabled } from "@/lib/flags";
+import { OpenToWorkBanner } from "@/components/open-to-work-banner";
+import { OPEN_TO_WORK } from "@/lib/writing-flags";
 
 const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
@@ -27,6 +29,7 @@ const siteUrl = "https://anvilry.vercel.app";
 export const viewport: Viewport = {
   themeColor: "#07080d",
   colorScheme: "dark",
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -55,7 +58,7 @@ export const metadata: Metadata = {
     description: profile.headline,
     siteName: profile.name,
   },
-  twitter: { card: "summary_large_image", title: `${profile.name} — ${profile.role}`, description: profile.headline },
+  twitter: { card: "summary_large_image", title: `${profile.name} — ${profile.role}`, description: profile.headline, images: [siteUrl + "/opengraph-image"] },
   robots: { index: true, follow: true },
 };
 
@@ -84,6 +87,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <head suppressHydrationWarning>
         <PersonJsonLd />
         <WebSiteJsonLd />
+        <FaqJsonLd />
       </head>
       <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
         {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}
@@ -92,6 +96,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>
           <SiteNav />
+          {OPEN_TO_WORK && <OpenToWorkBanner />}
           <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
             {children}
           </div>

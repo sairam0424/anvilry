@@ -10,6 +10,8 @@ metrics:
   - { value: "1.5K+", label: "users" }
 tech: ["LLM Agent Orchestration", RAG, ReAct, "Prompt-Driven"]
 order: 5
+constraints: "Outputs had to be deterministically structured — free-form LLM responses weren't acceptable as product artifacts. The engine needed to enforce schema on outputs while remaining flexible enough to handle diverse prompt inputs across teams."
+tradeoffs: "Paired RAG for context grounding with a ReAct reasoning loop for step-by-step artifact construction: more complex than a single-pass generation approach, but the only way to achieve the 85% first-pass acceptance rate. The added latency per request was acceptable given the 6× planning time reduction."
 ---
 
 ## Problem

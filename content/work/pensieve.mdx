@@ -10,6 +10,8 @@ metrics:
   - { value: "Multi-cloud", label: "governed LLM routing" }
 tech: [Python, "LLM Orchestration", "Multi-Agent", SSE, "Redis Streams", "Cloud Routing"]
 order: 1
+constraints: "Production LLM workflows at 2K+ DAU required sub-second orchestration latency with zero data loss across concurrent agent sessions — while maintaining a full audit trail for every approval gate decision."
+tradeoffs: "Chose Redis Streams over a traditional message queue for the orchestration backbone: streams give persistent, replayable event history (critical for audit) at the cost of more complex consumer-group management. Kept the gate logic synchronous rather than async to guarantee ordering — simpler to reason about under concurrent load, at the cost of some throughput ceiling."
 ---
 
 ## Problem

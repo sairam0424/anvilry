@@ -6,6 +6,9 @@ import { Achievements } from "@/components/home/achievements";
 import { Testimonials } from "@/components/home/testimonials";
 import { Contact } from "@/components/home/contact";
 import { ViewRouter } from "@/components/view-router";
+import { GithubStatsStrip } from "@/components/github-stats-strip";
+import { WritingPreview } from "@/components/home/writing-preview";
+import { GITHUB_STATS_ENABLED } from "@/lib/writing-flags";
 
 // Explicit query-stripped canonical (resolved absolute via layout's metadataBase).
 // `/` is the only route that carries ?view=, and a literal self-canonical would
@@ -25,7 +28,9 @@ export default function Home() {
         <Hero />
         <FeaturedWork />
         <FeaturedProjects />
+        {GITHUB_STATS_ENABLED && <GithubStatsStrip />}
         <Achievements />
+        <WritingPreview />
         <Testimonials />
         <Contact />
       </main>

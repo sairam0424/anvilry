@@ -30,6 +30,7 @@ import {
   Mic,
   Ear,
   Sparkles,
+  CalendarDays,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
@@ -194,6 +195,7 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
     { id: "gh", label: "GitHub", hint: `github.com/${profile.githubUser}`, icon: <Github size={16} />, run: () => go(profile.links.github, true) },
     { id: "li", label: "LinkedIn", icon: <Linkedin size={16} />, run: () => go(profile.links.linkedin, true) },
     { id: "email", label: "Email me", hint: profile.email, icon: <Mail size={16} />, run: () => go(`mailto:${profile.email}`, true) },
+    { id: "calendly", label: "Schedule a call", hint: "30-min intro call on Calendly", icon: <CalendarDays size={16} />, run: () => go(profile.calendlyUrl, true), keywords: "calendly meeting call schedule book chat" },
   ];
 
   // In-palette actions — things you DO, not pages you go to. Copy-email confirms

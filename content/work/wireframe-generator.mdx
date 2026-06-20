@@ -10,6 +10,8 @@ metrics:
   - { value: "500+", label: "users daily" }
 tech: [GenAI, Angular, SSE, "Real-Time Rendering", "Backend Stream Handling"]
 order: 3
+constraints: "The entire vertical slice — UI design, Angular frontend, backend stream handling, and real-time rendering — had to ship in roughly one week without compromising stability. Existing Experience Studio clients couldn't be disrupted."
+tradeoffs: "Chose SSE over WebSockets for the real-time rendering pipeline: lower infrastructure overhead, works through existing HTTP proxies, and sufficient for the unidirectional wireframe stream. The tradeoff is no bidirectional channel — acceptable since the generation flow is inherently one-way."
 ---
 
 ## Problem

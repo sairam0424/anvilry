@@ -17,6 +17,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
 import { getDiscoveryBadgesEnabled } from "@/lib/flags";
+import { OpenToWorkBanner } from "@/components/open-to-work-banner";
+import { OPEN_TO_WORK } from "@/lib/writing-flags";
 
 const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
 const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
@@ -92,6 +94,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         </a>
         <Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>
           <SiteNav />
+          {OPEN_TO_WORK && <OpenToWorkBanner />}
           <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
             {children}
           </div>

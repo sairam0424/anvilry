@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
@@ -18,7 +21,17 @@ const navLinks = [
   { href: "/resume", label: "Résumé" },
 ];
 
+/** Returns true when the nav link should be considered "active" for the current path. */
+function isActive(href: string, pathname: string): boolean {
+  if (href === "/") return pathname === "/";
+  // Section anchors (/#work, /#contact) — active on the homepage
+  if (href.startsWith("/#")) return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function SiteNav() {
+  const pathname = usePathname();
+
   return (
     <header
       className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
@@ -34,7 +47,13 @@ export function SiteNav() {
             <Link
               key={l.href}
               href={l.href}
-              className="text-sm text-fg-muted transition-colors hover:text-fg"
+              className={[
+                "text-sm transition-colors",
+                isActive(l.href, pathname)
+                  ? "text-accent"
+                  : "text-fg-muted hover:text-fg",
+              ].join(" ")}
+              aria-current={isActive(l.href, pathname) ? "page" : undefined}
             >
               {l.label}
             </Link>

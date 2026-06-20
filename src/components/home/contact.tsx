@@ -1,4 +1,4 @@
-import { Mail, ArrowUpRight } from "lucide-react";
+import { Mail, ArrowUpRight, CalendarDays } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
@@ -18,6 +18,14 @@ export function Contact() {
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-bg-base transition-colors hover:bg-accent-strong"
             >
               <Mail size={16} /> Email me
+            </a>
+            <a
+              href={profile.calendlyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-accent/40 px-4 py-2.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/10"
+            >
+              <CalendarDays size={16} /> Schedule a call <ArrowUpRight size={13} className="text-accent/70" />
             </a>
             <a href={profile.links.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg hover:bg-bg-elevated">
               <Linkedin size={16} /> LinkedIn <ArrowUpRight size={13} className="text-fg-subtle" />

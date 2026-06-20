@@ -1,6 +1,15 @@
 import type { Article } from "@/lib/content";
 import type { ArticleSource } from "@/components/platform-badge";
 
+/** Stable display order for filter bar — new platforms added here appear automatically. */
+const SOURCE_ORDER: ArticleSource[] = ["medium", "substack", "linkedin", "native"];
+
+/** Safe date-to-ms — guards against malformed ISO dates producing NaN in sort. */
+const safeMs = (d: string): number => {
+  const ms = new Date(d).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+};
+
 export interface ArticleGroup {
   /** Primary article — native > linkedNote > external, then newest first. */
   canonical: Article;
@@ -27,10 +36,13 @@ export function groupArticles(articles: Article[]): ArticleGroup[] {
   // Pass 1 — categorise each article into a keyed group or ungrouped
   for (const article of articles) {
     let key: string | null = null;
-    if (article.canonicalUrl) {
-      key = `canonical:${article.canonicalUrl}`;
-    } else if (article.linkedNote) {
+    // linkedNote (internal slug) is the preferred key — more stable than canonicalUrl
+    // which is a full URL that can change if a note is renamed. canonicalUrl is the
+    // fallback for externally-published articles that don't reference a local note.
+    if (article.linkedNote) {
       key = `note:${article.linkedNote}`;
+    } else if (article.canonicalUrl) {
+      key = `canonical:${article.canonicalUrl}`;
     }
 
     if (key) {
@@ -52,7 +64,7 @@ export function groupArticles(articles: Article[]): ArticleGroup[] {
         x.source === "native" ? 0 : x.linkedNote ? 1 : 2;
       const dr = rank(a) - rank(b);
       if (dr !== 0) return dr;
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return safeMs(b.date) - safeMs(a.date);
     });
 
     const [canonical, ...rest] = sorted;
@@ -68,12 +80,11 @@ export function groupArticles(articles: Article[]): ArticleGroup[] {
     });
   }
 
-  // Final sort: newest canonical article first
-  return result.sort(
-    (a, b) =>
-      new Date(b.canonical.date).getTime() -
-      new Date(a.canonical.date).getTime(),
-  );
+  // Final sort: newest canonical first; slug as deterministic tiebreaker for same-date groups.
+  return result.sort((a, b) => {
+    const dt = safeMs(b.canonical.date) - safeMs(a.canonical.date);
+    return dt !== 0 ? dt : a.canonical.slug.localeCompare(b.canonical.slug);
+  });
 }
 
 /** Derives which source platforms actually appear across all groups.
@@ -85,9 +96,7 @@ export function getGroupSources(groups: ArticleGroup[]): ArticleSource[] {
       seen.add(art.source as ArticleSource);
     }
   }
-  // Stable display order
-  const ORDER: ArticleSource[] = ["medium", "substack", "linkedin", "native"];
-  return ORDER.filter((s) => seen.has(s));
+  return SOURCE_ORDER.filter((s) => seen.has(s));
 }
 
 /** Filter groups to only those containing at least one article with the given source. */

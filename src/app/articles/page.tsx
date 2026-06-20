@@ -196,7 +196,7 @@ export default function ArticlesPage() {
                         ))}
                       </div>
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted transition-colors group-hover:text-accent">
-                        {featuredGroup.canonical.source !== "native" ? "Read article" : "Read note"}
+                        {featuredGroup.canonical.linkedNote ? "Read note" : "Read article"}
                         <ArrowUpRight size={15} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </span>
                     </div>

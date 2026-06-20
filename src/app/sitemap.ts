@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { allProjects, allWork, allNotes } from "@/lib/content";
+import { allProjects, allWork, allNotes, allArticles } from "@/lib/content";
 
 const base = "https://anvilry.vercel.app";
 
@@ -35,5 +35,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ]
     : [];
 
-  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes];
+  // Articles — same empty-safe pattern; external articles point to /articles/<slug>
+  // which server-redirects to the original publication, so they still get indexed.
+  const articleRoutes = allArticles.length
+    ? [
+        { url: `${base}/articles`, changeFrequency: "weekly" as const, priority: 0.6 },
+        ...allArticles.map((a) => ({
+          url: `${base}${a.url}`,
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        })),
+      ]
+    : [];
+
+  return [...staticRoutes, ...workRoutes, ...projectRoutes, ...noteRoutes, ...articleRoutes];
 }

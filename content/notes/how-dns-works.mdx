@@ -1,0 +1,165 @@
+---
+slug: how-dns-works
+title: "How DNS Actually Works: Resolution Hierarchy, Caching, and Production Failure Modes"
+date: 2026-06-19
+summary: "A systems-level walkthrough of DNS resolution — from browser cache to authoritative nameserver — covering record types, anycast infrastructure, GeoDNS, and the operational edge cases that bite engineers in production."
+tags: ["dns", "distributed-systems", "networking", "system-design", "infrastructure"]
+draft: false
+tone: senior
+format: explainer
+length: comprehensive
+wordCount: 3784
+readingTime: 14
+generatedBy: inkforge
+platforms: []
+---
+
+## DNS Is an Indirection Layer, Not a Lookup Table
+
+The "phonebook" metaphor everyone reaches for is actively misleading — and worse, it frames DNS as solved infrastructure when it's anything but. A phonebook is a static mapping. You look up a name, you get a number, done. DNS is something fundamentally different: a decoupling mechanism that separates stable human-readable identifiers from the volatile, ephemeral IP addresses underneath them. That distinction has enormous architectural consequences.
+
+When Google migrates a backend cluster from one datacenter to another, no client breaks. No user re-bookmarks anything. No API integration requires a config change. The domain `google.com` stays fixed while the IP reality beneath it shifts completely — DNS absorbs the entire change. The name is the contract; the address is an implementation detail. Every major piece of internet infrastructure is built on top of this indirection, and understanding it shapes how you architect for resilience.
+
+CDN edge nodes, anycast load balancers, blue-green deployment targets, multi-cloud failover — none of these work without DNS as a transparent redirection primitive. When Cloudflare routes you to their nearest PoP, or AWS Route 53 returns a different A record based on your source region, they're exploiting this indirection to shape traffic without touching the client. The client never knows, and by design, never needs to.
+
+Here's the counterintuitive part: DNS isn't slow because it's distributed across thousands of servers worldwide. It's *fast* because of that distribution — aggressive resolver caching at every layer combined with anycast routing means most queries never travel far. The latency you occasionally see in DNS is almost always a cache miss penalty, not a property of the system at rest.
+
+This reframes what TTL tuning actually is. It's not an ops detail — it's you setting the durability of the indirection contract. I've seen teams cut over cloud providers and get burned because they lowered TTLs *during* the migration window rather than 24–48 hours before. By then, stale records are already distributed across resolvers worldwide and there's nothing you can do but wait out the original TTL. Drop it to 60 seconds two days before the cutover; let propagation happen before you flip the switch, not after.
+
+Negative caching — how long a resolver holds onto NXDOMAIN responses — operates by the same logic and bites engineers just as hard when a new record isn't resolving as expected. The mechanics of how resolvers navigate this hierarchy, from your OS cache outward to the root, reveal why those timing concerns aren't theoretical.
+
+## The Resolution Hierarchy: 7 Steps from Keystroke to IP
+
+Here's something that surprises engineers the first time they think through it carefully: the overwhelming majority of DNS queries never leave the recursive resolver's cache. The root servers — the 13 logical anchors of the entire DNS hierarchy — handle a vanishingly small fraction of total query volume. Cloudflare's 1.1.1.1 resolver fields billions of queries daily, and nearly all of them are served from memory. The elaborate recursive machinery exists for cache misses, which in practice means cold starts and TTL expirations.
+
+Understanding why requires tracing the full resolution waterfall.
+
+**The cache-first hierarchy**
+
+Resolution is a layered fallback chain, and each layer is a cache hit opportunity that short-circuits everything below it:
+
+```
+Keystroke → Browser cache (0ms)
+          → OS stub resolver + /etc/hosts (~1ms)
+          → Recursive resolver cache (~5ms)
+          → Root nameserver (authoritative miss, ~20–100ms full round-trip)
+          → TLD nameserver
+          → Authoritative nameserver
+          → Response propagates back up the chain
+```
+
+The browser maintains its own DNS cache with independent TTL tracking — Chrome exposes this at `chrome://net-internals/#dns`. A cache hit here costs nothing measurable. Miss, and the query drops to the OS stub resolver, which checks `/etc/hosts` before consulting the configured recursive resolver. The stub resolver is deliberately thin: it doesn't perform recursion itself, it delegates. All the computational work — iterative queries, referral chasing, DNSSEC validation — happens inside the recursive resolver. The three most common public resolvers are Cloudflare (`1.1.1.1`), Google Public DNS (`8.8.8.8`), and OpenDNS (`208.67.222.222`) — each running globally distributed anycast infrastructure.
+
+**/etc/hosts and why it still matters**
+
+The `/etc/hosts` file is evaluated before any network query, which makes it a blunt but effective override mechanism. Local dev environments exploit this constantly — mapping `api.myapp.local` to `127.0.0.1` without touching DNS infrastructure. Container orchestration leans on the same principle: Kubernetes injects CoreDNS as the cluster's recursive resolver and configures each pod's `/etc/resolv.conf` to point at it, enabling service discovery via names like `my-service.default.svc.cluster.local` without external DNS round-trips. CoreDNS resolves these against its own in-memory service registry, never exiting the cluster. I've seen engineers chase mysterious resolution failures in k8s for an hour before realizing a manually edited `/etc/hosts` on the node was intercepting queries before CoreDNS ever saw them.
+
+**Where cache misses actually go**
+
+On a full recursive resolution, the resolver starts at a root server — not to get the final answer, but to get a referral. The root knows which nameservers are authoritative for `.com`, `.io`, `.dev`, and so on. The resolver follows the referral to the TLD nameserver, which returns a referral to the domain's authoritative nameservers. A third query to the authoritative server finally yields the record. Each layer's response is cached with the TTL specified in that response, not a TTL the resolver invents.
+
+This is where each layer's distinct failure surface becomes operationally significant. A recursive resolver with a poisoned cache corrupts every downstream client. A TLD server with elevated latency inflates resolution time for every cold-start query to that TLD. An authoritative server that returns inconsistent TTLs across its nameserver fleet creates a thundering herd when the shortest-TTL version expires and triggers simultaneous re-resolution from thousands of resolvers.
+
+The TTL semantics at the authoritative layer have the most direct production impact — and that's what makes record types and their individual TTL behavior worth examining in detail.
+
+## Root Servers and TLD Servers: The Authoritative Spine
+
+Here's a misconception worth correcting early: there are not 13 root servers. There are 13 root server *names* — `a.root-servers.net` through `m.root-servers.net` — backed by over 1,600 physical instances distributed globally via anycast routing. The "13" number is a direct artifact of original DNS design constraints: a UDP packet carrying root server data couldn't exceed 512 bytes, which capped the A record count at 13. Anycast sidesteps this entirely — your resolver queries `198.41.0.4` (the `a` root), and BGP routes that packet to whichever physical instance is topologically nearest, often within single-digit milliseconds.
+
+What root servers actually do is narrower than most engineers assume. They don't return final IPs. They don't know where `google.com` lives. They inspect the rightmost label of a query — the TLD — and respond with NS records pointing to the authoritative TLD servers for that zone. A query for `api.stripe.com` gets back a referral to Verisign's `.com` nameservers, nothing more. Root servers are directory pointers, not answer sources.
+
+The TLD layer is where scale becomes genuinely impressive. Verisign operates the `.com` and `.net` TLDs — `.com` alone carries approximately 170 million registered domains and fields billions of queries per day across a globally distributed infrastructure. The TLD nameservers hold NS records for every registered domain under that zone: Verisign doesn't know Stripe's IPs, but it knows which nameservers are authoritative for `stripe.com`. That delegation — root to TLD to authoritative — is what makes DNS a distributed system rather than a centralized database. No single server holds the full namespace; authority is partitioned recursively by zone boundary.
+
+This delegation chain also explains something that frustrates engineers during deployments: new domain registrations can take up to 48 hours to resolve correctly. TLD zone files aren't updated in real time. Registrars batch-submit zone file updates to the TLD registry, and those updates propagate according to scheduled cycles rather than immediately. I've seen engineers provision infrastructure, register a fresh domain, and then spend an afternoon confused about why their resolver returns NXDOMAIN — the TLD hasn't published the NS delegation yet. The domain exists in the registrar's database, but that's a separate system from the live zone file Verisign is serving.
+
+The authoritative nameserver sitting at the bottom of this chain is where actual resource records live — A, AAAA, CNAME, MX, and the rest — and its behavior under load has its own set of sharp edges worth understanding.
+
+## Authoritative Nameservers and DNS Record Types
+
+Here's something the resolution hierarchy glosses over: every recursive resolver, no matter how sophisticated its caching strategy, is ultimately fetching data from a nameserver that has no idea about any other zone. The authoritative nameserver owns exactly one zone, holds the canonical records for it, and signals that ownership by setting the AA (Authoritative Answer) bit in its responses. When you see AA=1, you're at the end of the delegation chain — that answer didn't come from cache.
+
+### The Record Taxonomy That Actually Matters in Production
+
+**A and AAAA** are the terminal answers — IPv4 and IPv6 addresses respectively. Everything else in DNS either routes you toward them or carries out-of-band metadata. A **CNAME** introduces an alias: `www.example.com CNAME example-prod.cdn.net` tells resolvers to restart the lookup with the new name. The constraint that bites people constantly is that a CNAME cannot coexist with other records at the same node. At the zone apex — `example.com` itself, not `www` — you're required to have NS and SOA records. A CNAME there is illegal per RFC 1912, which creates a real problem when you want to point your root domain directly at a CDN hostname.
+
+The canonical workaround is vendor-specific. Cloudflare's **CNAME Flattening** resolves the CNAME chain internally and returns the final A record as if it were authoritative for the apex. AWS Route 53's **ALIAS record** does the same — it's a Route 53 abstraction, not a real DNS record type, that lets you map `example.com` directly to an ALB or CloudFront distribution. Both approaches solve the RFC violation by doing the indirection server-side before the response leaves the nameserver. I've seen this misconfiguration burn teams who migrate to a CDN, correctly update `www`, then wonder why the naked domain returns SERVFAIL.
+
+**MX records** encode mail routing priority — lower number means higher preference. **NS records** delegate zone authority to specific nameservers. **SOA** (Start of Authority) is the zone's metadata header: primary nameserver, admin contact (encoded as an email with the `@` replaced by `.`), serial number, and the refresh/retry/expire/minimum TTL intervals that govern secondary nameserver behavior. The serial number is the synchronization primitive — secondaries compare their local serial against the primary's SOA serial, and a higher primary serial triggers a zone transfer (AXFR or IXFR). Forget to increment the serial after edits on a primary, and secondaries will silently serve stale data.
+
+**TXT records** carry arbitrary text, but in practice they're load-bearing infrastructure. SPF records (`v=spf1 include:...`) tell receiving MTAs which IPs are authorized to send mail for your domain. DKIM records publish the public key that verifies message signatures. When your mail infrastructure changes — new ESP, additional sending IP range, rotated DKIM keys — and the DNS records don't follow, deliverability degrades silently. Messages don't bounce; they land in spam or get dropped, and the feedback loop is slow enough that the DNS drift often goes unnoticed for days.
+
+**Multiple A records** for the same name give you round-robin DNS: resolvers distribute queries across the address set in rotation. Twitter/X has historically published several A records for its primary hostnames with short TTLs as a first-layer distribution mechanism before traffic even reaches a load balancer. The critical caveat: clients cache and pin to one address for the TTL duration, so the balancing is statistical at best. With a 60-second TTL you get reasonable spread at scale; with a 300-second TTL and sticky clients, one host can absorb a disproportionate share.
+
+Understanding what lives inside a zone — and how authoritative servers signal ownership of that data — sets up the more operationally interesting question of how that data propagates, ages, and goes wrong across the caching layer between you and the authoritative source.
+
+## Caching, TTLs, and the Propagation Delay Trap
+
+Here's the counterintuitive part: you don't control when the internet "sees" your DNS change. You only control how long resolvers are *allowed* to cache the previous answer.
+
+**TTL is a lease duration, not a cache expiry signal.** Every DNS record carries a TTL value — set by the zone owner — that tells resolvers how many seconds they may serve that answer from cache before re-querying. A `3600` on an A record means any resolver that fetched it can serve the cached IP for up to an hour without touching your authoritative nameserver again. Once that window closes, the resolver queries upstream and gets whatever answer exists at that moment.
+
+This is the mechanism behind what the industry misleadingly calls "DNS propagation." There is no central push. No broadcast. No synchronization event. "Propagation" is just the gradual expiration of cached copies scattered across tens of thousands of recursive resolvers worldwide, each on its own independent TTL countdown. When engineers say "waiting for DNS to propagate," they mean waiting for the old TTL to drain everywhere.
+
+**The migration trap.** I've watched this burn engineers repeatedly during blue-green cutovers: the zone record sits at `TTL 3600`. Migration window opens, engineer drops TTL to `60` and updates the A record simultaneously. Half the internet is already caching the old IP — with a full hour left on their local TTL clock. That TTL change is invisible to them; they already have the answer. The new 60-second TTL only applies to resolvers fetching *after* the change. The fix is straightforward but requires discipline: lower your TTL to 60–300 seconds **24–48 hours before** the cutover. Let the short TTL propagate at the original TTL's pace. Then do the cutover. Then restore the long TTL post-migration.
+
+**Negative caching compounds this.** NXDOMAIN responses are also cached, with TTL governed by the `minimum` field in your zone's SOA record. Delete a record, then immediately recreate it? Resolvers that caught the deletion can serve `NXDOMAIN` for the full negative cache duration — often 30 minutes to an hour — regardless of the new record's existence. I've seen a developer delete and recreate a CNAME during debugging and spend 30 minutes convinced their zone was broken, when resolvers were simply serving a stale negative cache entry.
+
+**The harder problem: resolver-side TTL clamping.** Even a perfectly timed cutover with correctly lowered TTLs can behave unexpectedly because some ISP resolvers impose a minimum cache floor — ignoring TTLs below 60–300 seconds and caching longer than specified. AWS Route 53 health-check failover nominally fires within one TTL interval at `60s`, but in practice ISP clamping can extend client impact by several minutes. Fast-failover designs that depend on sub-minute TTLs need to account for this ceiling you don't control.
+
+Understanding the caching layer is prerequisite to reasoning about the infrastructure sitting on top of it — particularly the anycast and GeoDNS architectures that use TTLs as a traffic-steering lever.
+
+## Anycast, GeoDNS, and the Infrastructure That Makes DNS Fast
+
+Here's something worth internalizing: when you query `1.1.1.1`, you're not talking to a single server. You're talking to whichever of Cloudflare's 300+ points of presence BGP has decided is topologically closest to you at that moment. The IP is the same everywhere. The server handling your query is not.
+
+**Anycast routing** works by announcing the same IP prefix from multiple autonomous systems simultaneously. BGP's path selection — preferring shorter AS paths and lower IGP cost — naturally routes each query to the nearest PoP. No client-side configuration, no explicit load balancing tier, no DNS round-robin. The network fabric itself is the load balancer. Cloudflare's anycast deployment achieves a median global query latency under 14ms precisely because most queries never travel more than a few hundred miles. Failover is implicit: if a PoP goes dark, BGP withdraws its prefix announcement and traffic reroutes automatically within seconds.
+
+**GeoDNS** operates at a higher layer. Rather than routing packets to the nearest infrastructure, it returns different *answers* based on where the query originates. Same domain name, different IP pools depending on region. Netflix does this at scale: `open.netflix.com` resolves to US edge clusters for US users and EU edge clusters for European users — not because the domain is different, but because the authoritative nameserver inspects the source and tailors the response. This enables both latency optimization and regulatory compliance (data residency requirements often mandate that European user traffic stays within EU-hosted infrastructure).
+
+CDNs have made GeoDNS central to their architecture. When you configure a CDN in front of your origin, the CDN's authoritative nameserver becomes responsible for resolving users to the nearest edge node. The CDN isn't just a cache — DNS is literally the first routing decision in the request path. Getting that decision wrong adds latency that no amount of edge caching can recover.
+
+The sharp edge here is the **resolver IP vs. client IP problem**. An authoritative GeoDNS server doesn't see the end user's IP — it sees the recursive resolver's IP. A user in São Paulo hitting Google Public DNS (`8.8.8.8`) might get routed to a US east coast cluster because Google's resolver appears to originate from a US data center. **EDNS Client Subnet (ECS)** addresses this by embedding a truncated client subnet prefix (typically `/24` for IPv4) in the query, giving the authoritative server enough geographic signal to route accurately. The trade-off is cache fragmentation: Google Public DNS now caches responses keyed on subnet, not just on query name, which meaningfully reduces resolver-side hit rates for popular CDN-backed domains.
+
+I've found ECS is often invisible until a GeoDNS misconfiguration produces inexplicably wrong-region responses — at which point understanding the resolver/client IP distinction becomes urgent.
+
+The caching and geographic routing decisions discussed here ripple directly into how DNS failures manifest in production.
+
+## Production Failure Modes and Operational Edge Cases
+
+Here's the uncomfortable truth: DNS failure modes are disproportionately severe relative to their apparent complexity. A single misconfigured record, an expired signature, or a lapsed domain registration can silently erase your entire service from the internet. Engineers who treat DNS as "solved infrastructure" get surprised by this repeatedly.
+
+**DNS-based failover has a TTL floor.** If your A record has a 300-second TTL and your primary datacenter goes down at T+0, resolvers with cached responses will keep sending traffic there until T+300 — minimum. In practice, with resolver implementations that don't strictly honor TTL expiry, it's longer. Design your failover SLAs around this reality: a 5-minute TTL means a 5-minute minimum failover latency. I've seen teams set TTLs to 30 seconds pre-migration, then forget to restore them — suddenly they're hammering authoritative servers with 10x normal query volume under load.
+
+**Split-horizon DNS is operationally treacherous.** Serving different answers to internal vs. external clients — typically via separate views in BIND or Route 53 private zones — breaks silently when misconfigured. A service that resolves correctly from the corporate VPN might NXDOMAIN from a CI runner with a different resolver path. The failure doesn't announce itself; requests just route somewhere unexpected or fail entirely. I've found this most often surfaces when engineers rotate VPN infrastructure or add new subnets without updating the view ACLs.
+
+**DNSSEC failures are catastrophic, not graceful.** When DNSSEC is configured correctly, it's invisible. When it breaks — expired RRSIG records, failed key rollovers, broken DS record chains — validating resolvers return hard SERVFAIL for the entire zone. The domain appears to vanish. A classic failure: a zone administrator activates a new Key Signing Key (KSK) but forgets to publish the updated DS record at the parent zone first. Validating resolvers immediately start failing the delegation chain. The fix requires parent zone cooperation and propagation time you don't have during an incident.
+
+**DNS amplification is a protocol-level attack surface.** Attackers spoof a victim's IP, send small queries (typically ANY or DNSKEY requests) to open resolvers, and those resolvers send large responses — up to 50x amplification factor — to the spoofed address. Mitigation requires BCP38 egress filtering upstream and disabling open recursion on your authoritative infrastructure.
+
+**Registrar-level failures sit above everything else in the stack.** The GoDaddy DNS outage in 2012 took down authoritative nameservers for millions of domains via a botched internal router update — nameserver reliability irrelevant when the NS delegation itself is unreachable. Worse, if your domain registration lapses, no amount of authoritative server redundancy helps. The June 2021 Fastly outage is instructive from the other direction: DNS itself worked fine, but CDN infrastructure dependent on it collapsed — a reminder that DNS sits at the base of every reliability assumption above it.
+
+Understanding these failure modes changes how you architect around DNS, particularly when it comes to how authoritative infrastructure handles load at scale.
+
+## DNS in Modern Infrastructure: Service Discovery and Kubernetes
+
+Here's what makes DNS elegant as a service discovery mechanism: every language runtime already knows how to use it, no sidecar required.
+
+Kubernetes CoreDNS resolves names like `my-service.my-namespace.svc.cluster.local` to the cluster-internal virtual IP of a Service. For headless services (`ClusterIP: None`), that behavior inverts — DNS returns *all* backing pod IPs directly, which is exactly what StatefulSets need so clients can address `postgres-0.postgres.default.svc.cluster.local` as a stable identity across rescheduling.
+
+The operational trap is TTL interaction with connection pooling. CoreDNS typically returns TTLs of 5–30 seconds, but HTTP/2 and gRPC clients hold persistent connections. When a pod restarts and gets a new IP, pooled connections targeting the stale IP continue routing to a dead endpoint until the connection errors out — the DNS TTL becomes irrelevant because the client never re-resolved.
+
+Consul compounds this in a different direction: services register with health checks running every 10s, and DNS responses reflect current health state — but a 30s TTL means an unhealthy endpoint stays cached across clients for up to 30s after its first failed check. I've seen this gap silently inflate error rates during deployments when engineers assume health-check-integrated DNS provides instant failover.
+
+The fundamental trade-off DNS-based discovery makes is freshness for ubiquity — understanding that trade-off is what separates its correct use from its misuse in latency-sensitive or high-churn environments.
+
+## Key Takeaways for Engineers Designing with DNS
+
+Pre-lower TTLs 24–48 hours before any migration. Once you flip the record, you've surrendered control to cached copies at the original TTL — there's no mechanism to invalidate them.
+
+DNS failover speed is bounded by TTL, full stop. If you need sub-minute recovery, layer in application-level health checks and connection retries. Shorter TTLs alone increase resolver load without closing the gap meaningfully.
+
+CNAME-at-apex is an RFC violation. Use ALIAS records (Route 53) or CNAME Flattening (Cloudflare) when pointing a root domain to a CDN or load balancer hostname.
+
+GeoDNS accuracy isn't guaranteed — ECS support varies across resolvers. Test from diverse vantage points before trusting your latency models.
+
+Treat DNS as infrastructure. Version-control zone files, manage records via Terraform or provider APIs, and audit regularly for dangling CNAMEs. A CNAME pointing to a deprovisioned S3 bucket or Heroku app is a live subdomain takeover vector — tools like `aquatone` and `dnsrecon` make automated auditing straightforward. Zone changes belong in PRs, not console sessions.

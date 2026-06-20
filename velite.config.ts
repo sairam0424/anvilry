@@ -83,6 +83,33 @@ const notes = defineCollection({
     .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),
 });
 
+/** External / syndicated articles — Medium, Substack, LinkedIn, or native drafts.
+ *
+ *  Each entry is a small MDX file with frontmatter metadata. Clicking the card
+ *  on the /articles page opens `externalUrl` directly (curator model — no RSS sync
+ *  dependency, no API keys, works indefinitely). Native articles (source: "native")
+ *  render their body inline like notes. */
+const articles = defineCollection({
+  name: "Article",
+  pattern: "articles/**/*.{md,mdx}",
+  schema: s
+    .object({
+      slug: s.slug("article"),
+      title: s.string(),
+      date: s.isodate(),
+      summary: s.string(),
+      source: s.enum(["medium", "substack", "linkedin", "native"]),
+      externalUrl: s.string().url().optional(), // required for non-native; omit for native
+      canonicalUrl: s.string().url().optional(), // SEO: where the canonical version lives
+      linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, no duplicate content
+      tags: s.array(s.string()).default([]),
+      draft: s.boolean().default(false),
+      readingTime: s.number().optional(), // estimated minutes
+      body: s.mdx(),
+    })
+    .transform((data) => ({ ...data, url: `/articles/${data.slug}` })),
+});
+
 export default defineConfig({
   root: "content",
   output: {
@@ -96,6 +123,6 @@ export default defineConfig({
     // pass --clean explicitly for a pristine production build.
     clean: false,
   },
-  collections: { projects, work, notes },
+  collections: { projects, work, notes, articles },
   mdx: { gfm: true },
 });

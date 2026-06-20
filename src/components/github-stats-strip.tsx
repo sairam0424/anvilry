@@ -33,7 +33,9 @@ export function GithubStatsStrip() {
       .catch(() => {});
   }, []);
 
-  if (!stats) return null;
+  // Hide entirely when GitHub API returned zeros (no token, rate-limited in dev).
+  // A strip showing 0/0/— is worse than no strip.
+  if (!stats || (stats.followers === 0 && stats.publicRepos === 0)) return null;
 
   return (
     <Reveal>

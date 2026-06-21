@@ -1,0 +1,86 @@
+name: Bug Report
+description: Something is broken on the live site or in local dev
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please fill this out as completely as you can — vague reports are hard to action.
+
+        > **Security vulnerability?** Don't use this form. See [SECURITY.md](../SECURITY.md) for private disclosure.
+
+  - type: input
+    id: url
+    attributes:
+      label: URL where the bug occurs
+      description: Full URL including any `?view=` query param
+      placeholder: "https://anvilry.vercel.app/?view=chat"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: view
+    attributes:
+      label: Which view is affected?
+      multiple: true
+      options:
+        - Classic (default)
+        - Play (3D graph)
+        - Chat (AI chatbot)
+        - Developer (terminal)
+        - Voice
+        - All views / not view-specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do to trigger the bug?
+      placeholder: |
+        1. Open the Chat view
+        2. Type "show me your work"
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: The chat should stream a response with a project card
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      placeholder: The widget shows "Something went wrong" and the console shows a 503
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser + version
+      placeholder: "Chrome 126, Safari 17.5, Firefox 127"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS + device
+      placeholder: "macOS 15, iOS 18 (iPhone 16), Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Screenshots / console errors (optional)
+      description: Paste any relevant console output or attach screenshots
+    validations:
+      required: false

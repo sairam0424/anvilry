@@ -1,5 +1,6 @@
 import { profile, impactMetrics } from "@/lib/profile";
 import { hasPersonalContent } from "@/lib/personal";
+import * as fmt from "./fmt";
 import type { Line } from "./types";
 
 /**
@@ -23,34 +24,43 @@ export function bootBanner404(): Line[] {
 /**
  * ASCII boot banner for `whoami` / `neofetch`.
  *
- * Block-character ASCII art header (uses full-block ▓ and half-block characters
- * for visual weight, inspired by MindForge's terminal design). Kind "art" means
- * aria-hidden — screen readers skip the decorative art and only announce the real
- * identity lines below (WCAG 1.1.1 compliance).
+ * Uses the original thin figlet-style ASCII art (safe browser rendering — no
+ * double-width Unicode box chars that cause layout explosions in monospace fonts).
+ * The identity card below uses fmt.box() for visual structure.
+ *
+ * Kind "art" = aria-hidden so screen readers skip decorative lines (WCAG 1.1.1).
+ * The real identity content uses kind "out" and stays fully readable.
  */
 export function bootBanner(): Line[] {
   const metrics = impactMetrics.map((m) => `${m.value} ${m.label} (${m.sub})`).join("  ·  ");
 
-  // Block-character ASCII art — heavier visual weight than thin figlet lines.
-  // Uses ▓ (dark shade block) + space for contrast. Each line is "art" (aria-hidden).
+  // Original thin-line figlet art — renders correctly in all browser monospace fonts.
+  // Double-width Unicode block chars (██╗) break layout in browser environments.
   const art: Line[] = [
-    " █████╗ ███╗  ██╗██╗   ██╗██╗██╗     ██████╗ ██╗   ██╗",
-    "██╔══██╗████╗ ██║██║   ██║██║██║     ██╔══██╗╚██╗ ██╔╝",
-    "███████║██╔██╗██║╚██╗ ██╔╝██║██║     ██████╔╝ ╚████╔╝ ",
-    "██╔══██║██║╚████║ ╚████╔╝ ██║██║     ██╔══██╗  ╚██╔╝  ",
-    "██║  ██║██║ ╚███║  ╚██╔╝  ██║███████╗██║  ██║   ██║   ",
-    "╚═╝  ╚═╝╚═╝  ╚══╝   ╚═╝   ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ",
+    "   _              _ _            ",
+    "  /_\\  _ ___ _ __(_) |_ _ _ _  _ ",
+    " / _ \\| ' \\ V / | | |  _| '_| || |",
+    "/_/ \\_\\_||_\\_/  |_|_|\\__|_|  \\_, |",
+    "                            |__/ ",
   ].map((text) => ({ kind: "art" as const, text }));
+
+  // Identity card — boxed for visual structure. Metrics stay OUTSIDE the box
+  // so they render at full width (the box clips at W=56; metrics string is longer).
+  const identityBox = fmt.box("// IDENTITY", [
+    fmt.row("●", "name",     `${profile.name}`),
+    fmt.row("●", "role",     `${profile.role} @ ${profile.company}`),
+    fmt.row("●", "location", `${profile.locationCity}, ${profile.locationCountry}`),
+    fmt.row("●", "github",   `github.com/${profile.githubUser}`),
+  ]);
 
   const lines: Line[] = [
     ...art,
-    { kind: "out", text: "" },
-    { kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company}` },
-    { kind: "out", text: profile.headline },
-    { kind: "out", text: "" },
-    { kind: "out", text: metrics },
-    { kind: "out", text: `${profile.locationCity}, ${profile.locationCountry}  ·  github.com/${profile.githubUser}` },
-    { kind: "out", text: "" },
+    fmt.blank(),
+    ...identityBox,
+    fmt.blank(),
+    // Metrics full-width (not truncated inside a box)
+    { kind: "out", text: `  ${metrics}` },
+    fmt.blank(),
     { kind: "out", text: "  → type 'help' to explore  ·  tap a chip below" },
   ];
 

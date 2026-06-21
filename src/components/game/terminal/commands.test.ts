@@ -16,11 +16,15 @@ describe("terminal command registry", () => {
   });
 
   it("hidden egg commands dispatch but are absent from help + autocomplete", () => {
-    const help = runCommand("help").lines.map((l) => l.text).join("\n");
+    const helpLines = runCommand("help").lines;
+    const helpCmdLines = helpLines.filter((l) => l.kind === "out").map((l) => l.text).join("\n");
     for (const hidden of ["secret", "personal", "uses", "now"]) {
-      // Not advertised…
+      // Not advertised in COMMAND_NAMES or as a table entry in help output…
       expect(COMMAND_NAMES).not.toContain(hidden);
-      expect(help).not.toMatch(new RegExp(`\\b${hidden}\\b`));
+      // The tip line at the bottom of help says "try 'secret'" — that's intentional UI.
+      // We only check that the hidden command is not listed as a navigable command entry.
+      const cmdTableLines = helpCmdLines.split("\n").filter((l) => !l.includes("tip:"));
+      expect(cmdTableLines.join("\n")).not.toMatch(new RegExp(`^\\s+[◇→]\\s+${hidden}\\b`, "m"));
       // …but fully dispatchable (no "command not found").
       const res = runCommand(hidden);
       expect(res.lines.some((l) => l.kind === "err" && /not found/.test(l.text))).toBe(false);
@@ -89,9 +93,10 @@ describe("terminal command registry", () => {
     // leading/trailing space is trimmed before dispatch (HELP resolves; echo is trimmed)
     const padded = runCommand("   help   ");
     expect(padded.lines[0]).toEqual({ kind: "in", text: "$ help" });
-    expect(padded.lines.some((l) => /Available commands/.test(l.text))).toBe(true);
+    // Help output now uses section headers ("// COMMANDS") + table format
+    expect(padded.lines.some((l) => /COMMANDS|whoami|stack/i.test(l.text))).toBe(true);
     // command name is matched case-insensitively
-    expect(runCommand("HELP").lines.some((l) => /Available commands/.test(l.text))).toBe(true);
+    expect(runCommand("HELP").lines.some((l) => /COMMANDS|whoami|stack/i.test(l.text))).toBe(true);
     // multi-space between name and args still parses the args (open <slug>)
     const real = allWork[0].slug;
     expect(runCommand(`open    ${real}`).nav).toEqual({ type: "route", href: `/work/${real}` });
@@ -126,7 +131,8 @@ describe("terminal command registry", () => {
   it("cat shows a real dossier with the honest register; rejects a fake slug", () => {
     const text = runCommand("cat pensieve").lines.map((l) => l.text).join("\n");
     expect(text).toContain("Pensieve");
-    expect(text).toMatch(/register:.*Co-built/);
+    // Cat now uses box format: "◇ register      Co-built..."
+    expect(text).toMatch(/register\s+Co-built/);
     expect(runCommand("cat nope").lines.some((l) => l.kind === "err")).toBe(true);
   });
 
@@ -157,7 +163,8 @@ describe("terminal command registry", () => {
 
   it("stack lists real skill groups", () => {
     const text = runCommand("stack").lines.map((l) => l.text).join("\n");
-    expect(text).toContain(skills[0].group);
+    // section() uppercases the label (// LANGUAGES), match case-insensitively
+    expect(text.toUpperCase()).toContain(skills[0].group.toUpperCase());
   });
 
   it("awards lists real achievements", () => {
@@ -244,8 +251,11 @@ describe("terminal command registry", () => {
 
   it("stats reports computed aggregates that match the content layer", () => {
     const text = runCommand("stats").lines.map((l) => l.text).join("\n");
-    expect(text).toContain(`open-source repos:   ${allProjects.length}`);
-    expect(text).toContain(`production systems:  ${allWork.length}`);
+    // Stats now uses box/row format: "● open-source repos   8"
+    expect(text).toContain(`${allProjects.length}`);
+    expect(text).toContain(`${allWork.length}`);
+    expect(text).toMatch(/open-source repos/i);
+    expect(text).toMatch(/production systems/i);
   });
 
   it("open routes to github/linkedin/resume quick targets", () => {

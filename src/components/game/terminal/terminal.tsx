@@ -1,21 +1,27 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { track } from "@vercel/analytics";
 import { TerminalSquare, Maximize2 } from "lucide-react";
 import { useTerminal } from "./use-terminal";
 import { useAutoScroll } from "@/lib/scroll/use-auto-scroll";
+import { getSuggestions } from "./completion";
+import { COMMANDS } from "./commands";
 import { cn } from "@/lib/utils";
 
 /** Quick-run chips so non-typers (and touch users) get the full experience. Each
  *  runs through the same registry path as typing the command. */
 const CHIPS = ["whoami", "ls work", "stack", "tree", "resume"];
 
+/** All visible commands as Suggestion objects for fuzzy dropdown. */
+const COMMAND_SUGGESTIONS = Object.values(COMMANDS)
+  .filter((c) => !c.hidden)
+  .map((c) => ({ name: c.name, description: c.description }));
+
 /**
  * Presentational terminal shell. Output is a polite role="log" live region (only new
- * lines announce). Keyboard-native: ↑/↓ history, Tab autocomplete, Enter to run. The
- * input opts out of the harsh global focus box (no-focus-ring); its row instead shows
- * an inset accent ring on focus-within — a visible, less jarring focus indicator
- * (WCAG 2.4.7). Pin-aware autoscroll. Logic lives in useTerminal.
+ * lines announce). Keyboard-native: ↑/↓ history, Tab autocomplete, Enter to run.
+ * Fuzzy autocomplete dropdown + ghost completion hint while typing.
  */
 const THEME_TEXT: Record<string, string> = {
   cyan: "text-accent",
@@ -31,92 +37,111 @@ export function Terminal({
   initialLines,
 }: {
   maxHeightClass?: string;
-  /**
-   * Fill the parent's height instead of capping the scroll region. The outer card
-   * becomes `flex h-full flex-col` and the scrollback becomes `flex-1 min-h-0` (the
-   * min-h-0 is mandatory — without it the flex child refuses to shrink and the chips +
-   * input get pushed off-screen). Used by the full-page Developer view; the overlay and
-   * inline contexts keep the default capped (maxHeightClass) behavior.
-   */
   fill?: boolean;
-  /** When provided, a maximize control appears in the title bar (opens the overlay). */
   onMaximize?: () => void;
-  /** Ref to the maximize button so the overlay can restore focus on close (WCAG 2.4.3). */
   maximizeRef?: React.Ref<HTMLButtonElement>;
-  /** Optional seed lines replacing the default boot banner (used by the 404 page). */
   initialLines?: import("./types").Line[];
 }) {
   const { lines, input, setInput, run, recall, complete, theme } = useTerminal(initialLines);
   const promptColor = THEME_TEXT[theme] ?? "text-accent";
 
-  // Autoscroll via the shared engine. Terminal semantics: a small re-pin threshold
-  // (log-tailing) and always bottom-pin. The ResizeObserver on the inner content
-  // wrapper follows new output to the true bottom only while pinned.
+  // Fuzzy autocomplete dropdown state
+  const [suggestions, setSuggestions] = useState<{ name: string; description: string }[]>([]);
+  const [suggIdx, setSuggIdx] = useState(-1);
+  const [showSugg, setShowSugg] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const { scrollRef, contentRef, scrollToBottom } = useAutoScroll({
     threshold: 32,
     surface: "terminal",
     mode: "bottom-pin",
   });
 
-  /** Run a command and re-pin to the bottom (a chip/Enter is intent to see the result,
-   *  even if the user had scrolled up to read history). */
+  // Update suggestions whenever input changes
+  useEffect(() => {
+    const sugg = getSuggestions(input, COMMAND_SUGGESTIONS);
+    setSuggestions(sugg);
+    setSuggIdx(-1);
+    setShowSugg(sugg.length > 0 && input.trim().length > 0);
+  }, [input]);
+
+  // Ghost hint: the suffix of the top suggestion after what's already typed
+  const ghostHint = (() => {
+    if (!showSugg || suggestions.length === 0 || input.includes(" ")) return "";
+    const top = suggestions[0].name;
+    return top.startsWith(input.toLowerCase()) ? top.slice(input.length) : "";
+  })();
+
   const runAndPin = (cmd: string) => {
     run(cmd);
     scrollToBottom();
+    setShowSugg(false);
+    setSuggestions([]);
+  };
+
+  const acceptSuggestion = (name: string) => {
+    setInput(name + " ");
+    setShowSugg(false);
+    inputRef.current?.focus();
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Typing a character re-pins to the bottom (xterm parity): a user who scrolled up
-    // to read history and then starts typing expects to be back at the prompt. (Enter
-    // is handled by the form submit's runAndPin; ↑/↓/Tab below must NOT re-pin.)
     if (e.key.length === 1) scrollToBottom();
-    if (e.key === "ArrowUp") {
-      const v = recall("up");
-      if (v !== null) {
+
+    if (e.key === "ArrowDown") {
+      if (showSugg) {
         e.preventDefault();
-        setInput(v);
+        setSuggIdx((i) => Math.min(i + 1, suggestions.length - 1));
+      } else {
+        const v = recall("down");
+        if (v !== null) { e.preventDefault(); setInput(v); }
       }
-    } else if (e.key === "ArrowDown") {
-      const v = recall("down");
-      if (v !== null) {
+    } else if (e.key === "ArrowUp") {
+      if (showSugg) {
         e.preventDefault();
-        setInput(v);
+        setSuggIdx((i) => Math.max(i - 1, 0));
+      } else {
+        const v = recall("up");
+        if (v !== null) { e.preventDefault(); setInput(v); }
       }
     } else if (e.key === "Tab") {
-      const c = complete(input);
-      if (c) {
-        e.preventDefault();
-        setInput(c);
+      e.preventDefault();
+      if (showSugg && suggestions.length > 0) {
+        // Accept highlighted suggestion or top suggestion
+        acceptSuggestion(suggIdx >= 0 ? suggestions[suggIdx].name : suggestions[0].name);
+      } else {
+        const c = complete(input);
+        if (c) setInput(c);
       }
+    } else if (e.key === "ArrowRight" && ghostHint && input === inputRef.current?.value) {
+      // Accept ghost hint with →
+      e.preventDefault();
+      setInput(input + ghostHint);
+    } else if (e.key === "Escape") {
+      setShowSugg(false);
+    } else if (e.key === "Enter" && showSugg && suggIdx >= 0) {
+      e.preventDefault();
+      acceptSuggestion(suggestions[suggIdx].name);
     }
   };
 
   return (
-    // Plain <div>, not a labelled <section>: the parent (the game-view "developer
-    // mode" section, or the overlay's Dialog) already provides the region/dialog
-    // landmark + accessible name — a second named landmark here would duplicate it.
     <div
       className={cn(
         "overflow-hidden rounded-2xl border border-border bg-bg-base/80 font-mono text-xs",
-        // fill: become a full-height flex column so the scrollback can grow to fill the
-        // parent (the Developer view). Otherwise stay auto-height (overlay / inline).
         fill && "flex h-full flex-col",
       )}
     >
+      {/* Title bar */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-fg-subtle">
         <TerminalSquare size={13} className="shrink-0 text-accent" />
         <span className="truncate">sairam@anvilry</span>
-        {/* Hidden on narrow screens so the row can't overflow and clip the maximize
-            button (the bar is overflow-hidden); reappears at sm+. */}
         <span className="ml-auto hidden text-[10px] sm:inline">keyboard-native · type &apos;help&apos;</span>
         {onMaximize && (
           <button
             ref={maximizeRef}
             type="button"
-            onClick={() => {
-              track("terminal_maximize");
-              onMaximize();
-            }}
+            onClick={() => { track("terminal_maximize"); onMaximize(); }}
             aria-label="Maximize terminal to fullscreen"
             className="-mr-1 ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:ml-0"
           >
@@ -125,36 +150,29 @@ export function Terminal({
         )}
       </div>
 
+      {/* Scrollback */}
       <div
         ref={scrollRef}
         className={cn(
           "terminal-boot overflow-y-auto px-4 py-3 [overflow-anchor:none]",
-          // fill: grow to take the leftover column height (min-h-0 lets it shrink so the
-          // chips + input row stay on-screen). Otherwise: the capped max-height.
           fill ? "min-h-0 flex-1" : maxHeightClass,
         )}
         role="log"
         aria-live="polite"
         aria-atomic="false"
       >
-        {/* contentRef wrapper = the ResizeObserver target that grows as output appends,
-            so the follow snap tracks new lines to the true bottom while pinned. */}
-        <div ref={contentRef} className="space-y-1">
+        <div ref={contentRef} className="space-y-0.5">
           {lines.map((l, i) => (
             <pre
               key={i}
-              // Decorative figlet rows are hidden from assistive tech (they'd announce
-              // as meaningless punctuation); the real identity lines stay readable.
               aria-hidden={l.kind === "art" || undefined}
-              className={
-                l.kind === "in"
-                  ? "whitespace-pre-wrap text-accent"
-                  : l.kind === "err"
-                    ? "whitespace-pre-wrap text-amber"
-                    : l.kind === "art"
-                      ? "whitespace-pre text-fg-subtle"
-                      : "whitespace-pre-wrap text-fg-muted"
-              }
+              className={cn(
+                "whitespace-pre-wrap",
+                l.kind === "in"  ? "text-accent" :
+                l.kind === "err" ? "text-amber" :
+                l.kind === "art" ? "whitespace-pre text-fg-subtle/60" :
+                                   "text-fg-muted",
+              )}
             >
               {l.text}
             </pre>
@@ -162,6 +180,7 @@ export function Terminal({
         </div>
       </div>
 
+      {/* Quick-run chips */}
       <div
         className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2"
         role="group"
@@ -171,11 +190,7 @@ export function Terminal({
           <button
             key={c}
             type="button"
-            onClick={() => {
-              // `c` is from the hardcoded CHIPS allowlist — PII-free by construction.
-              track("terminal_chip", { name: c });
-              runAndPin(c);
-            }}
+            onClick={() => { track("terminal_chip", { name: c }); runAndPin(c); }}
             className="rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {c}
@@ -183,40 +198,86 @@ export function Terminal({
         ))}
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          runAndPin(input);
-          setInput("");
-        }}
-        // A ring (box-shadow), NOT border-color, is the focus affordance: the global
-        // `* { border-color: var(--border) }` rule is UNLAYERED and beats any layered
-        // `focus-within:border-*` utility, so a border-color swap is silently a no-op.
-        // A ring has no such universal override and reliably shows keyboard focus (2.4.7).
-        className="flex items-center gap-2 border-t border-border px-4 py-2 transition-shadow focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent"
-      >
-        <span className={promptColor} aria-hidden="true">
-          {">"}
-        </span>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder="type a command — e.g. ls, open mindforge, whoami"
-          aria-label="Terminal command input"
-          spellCheck={false}
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          className="no-focus-ring min-w-0 flex-1 bg-transparent py-1 text-fg outline-none placeholder:text-fg-subtle"
-        />
-        {/* Cosmetic blinking cursor when the input is empty (decorative only). */}
-        {input === "" && (
-          <span className={cn("terminal-cursor select-none", promptColor)} aria-hidden="true">
-            ▍
-          </span>
+      {/* Input row + autocomplete dropdown */}
+      <div className="relative border-t border-border">
+        {/* Autocomplete dropdown — floats above the input */}
+        {showSugg && suggestions.length > 0 && (
+          <ul
+            className="absolute bottom-full left-0 right-0 z-10 overflow-hidden rounded-t-xl border border-accent/20 bg-bg-surface shadow-lg"
+            role="listbox"
+            aria-label="Command suggestions"
+          >
+            {suggestions.map((s, i) => (
+              <li
+                key={s.name}
+                role="option"
+                aria-selected={i === suggIdx}
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 px-4 py-1.5 text-[11px] transition-colors",
+                  i === suggIdx
+                    ? "bg-accent/10 text-fg"
+                    : "text-fg-muted hover:bg-bg-elevated hover:text-fg",
+                )}
+                onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(s.name); }}
+              >
+                <span className={cn("font-semibold", i === suggIdx ? "text-accent" : "text-fg-muted")}>
+                  {i === 0 ? "▸" : " "} {s.name}
+                </span>
+                <span className="truncate text-fg-subtle">{s.description}</span>
+              </li>
+            ))}
+          </ul>
         )}
-      </form>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const cmd = suggIdx >= 0 && showSugg ? suggestions[suggIdx].name : input;
+            runAndPin(cmd);
+            setInput("");
+          }}
+          className="flex items-center gap-2 px-4 py-2 transition-shadow focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent"
+        >
+          <span className={promptColor} aria-hidden="true">{">"}</span>
+
+          {/* Input + ghost hint overlay */}
+          <div className="relative min-w-0 flex-1">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onBlur={() => setTimeout(() => setShowSugg(false), 150)}
+              placeholder="type a command — e.g. ls, open mindforge, whoami"
+              aria-label="Terminal command input"
+              aria-autocomplete="list"
+              aria-expanded={showSugg}
+              spellCheck={false}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              className="no-focus-ring w-full bg-transparent py-1 text-fg outline-none placeholder:text-fg-subtle"
+            />
+            {/* Ghost hint — greyed suffix of top suggestion */}
+            {ghostHint && (
+              <span
+                className="pointer-events-none absolute left-0 top-0 py-1 text-fg-subtle/40 select-none"
+                aria-hidden="true"
+              >
+                {/* Invisible text to position the ghost correctly */}
+                <span className="invisible">{input}</span>
+                {ghostHint}
+              </span>
+            )}
+          </div>
+
+          {input === "" && (
+            <span className={cn("terminal-cursor select-none", promptColor)} aria-hidden="true">
+              ▍
+            </span>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

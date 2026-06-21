@@ -4,6 +4,7 @@ import { buildCorpus } from "@/lib/corpus";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
 import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
 import { bootBanner } from "./boot-banner";
+import * as fmt from "./fmt";
 import type { Command, CommandResult, Line } from "./types";
 
 const out = (...text: string[]): Line[] => text.map((t) => ({ kind: "out" as const, text: t }));
@@ -12,15 +13,24 @@ const err = (text: string): Line[] => [{ kind: "err", text }];
 const help: Command = {
   name: "help",
   description: "list available commands",
-  run: (_args, ctx) => ({
-    lines: out(
-      "Available commands:",
-      // Hidden commands (the personal-reveal eggs) are dispatchable but never listed.
-      ...Object.values(ctx.registry)
-        .filter((c) => !c.hidden)
-        .map((c) => `  ${(c.usage ?? c.name).padEnd(16)} ${c.description}`),
-    ),
-  }),
+  run: (_args, ctx) => {
+    const visible = Object.values(ctx.registry).filter((c) => !c.hidden);
+    // Group by rough category
+    const nav = ["classic", "developer", "chat", "cd", "clear"];
+    const core = visible.filter((c) => !nav.includes(c.name));
+    const navCmds = visible.filter((c) => nav.includes(c.name));
+    return {
+      lines: [
+        fmt.section("commands"),
+        ...fmt.table(core.map((c) => ["◇", (c.usage ?? c.name), c.description])),
+        fmt.blank(),
+        fmt.section("navigation"),
+        ...fmt.table(navCmds.map((c) => ["→", (c.usage ?? c.name), c.description])),
+        fmt.blank(),
+        { kind: "out", text: "  tip: there's more than what's listed — try 'secret'." },
+      ],
+    };
+  },
 };
 
 const whoami: Command = {
@@ -36,18 +46,29 @@ const ls: Command = {
   run: (args) => {
     const which = (args[0] ?? "").toLowerCase();
     if (which === "work") {
-      return { lines: out(...allWork.map((w) => `  ${w.slug.padEnd(22)} ${w.name}`)) };
+      return {
+        lines: [
+          fmt.section("production work"),
+          ...fmt.table(allWork.map((w) => ["●", w.slug, w.name])),
+        ],
+      };
     }
     if (which === "projects") {
-      return { lines: out(...allProjects.map((p) => `  ${p.slug.padEnd(22)} ${p.name}`)) };
+      return {
+        lines: [
+          fmt.section("open-source projects"),
+          ...fmt.table(allProjects.map((p) => ["▸", p.slug, p.name])),
+        ],
+      };
     }
     return {
-      lines: out(
-        "work/",
-        ...allWork.map((w) => `  ${w.slug.padEnd(22)} ${w.name}`),
-        "projects/",
-        ...allProjects.map((p) => `  ${p.slug.padEnd(22)} ${p.name}`),
-      ),
+      lines: [
+        fmt.section("production work"),
+        ...fmt.table(allWork.map((w) => ["●", w.slug, w.name])),
+        fmt.blank(),
+        fmt.section("open-source projects"),
+        ...fmt.table(allProjects.map((p) => ["▸", p.slug, p.name])),
+      ],
     };
   },
 };
@@ -80,15 +101,17 @@ const cat: Command = {
     const node = questNodes.find((n) => n.resolved.item.slug === slug);
     if (!node) return { lines: err(`not found: ${slug}  (try 'ls')`) };
     const d = dossierFor(node);
-    const lines: Line[] = [
-      { kind: "out", text: d.name },
-      { kind: "out", text: d.subtitle },
+    const inner: Line[] = [
+      fmt.row("●", "name", d.name),
+      fmt.row("◇", "role", d.subtitle),
+      ...(d.register ? [fmt.row("◇", "register", d.register)] : []),
+      fmt.divider(),
+      { kind: "out", text: `  ${d.blurb}` },
+      fmt.divider(),
+      ...d.facts.map((f) => fmt.row("▸", f.label, f.value)),
+      fmt.row("▸", "tech", d.tech.join(", ")),
     ];
-    if (d.register) lines.push({ kind: "out", text: `register: ${d.register}` });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: d.blurb }, { kind: "out", text: "" });
-    for (const f of d.facts) lines.push({ kind: "out", text: `  ${f.value}  ${f.label}` });
-    lines.push({ kind: "out", text: `  tech: ${d.tech.join(", ")}` });
-    return { lines };
+    return { lines: fmt.box(`// ${d.name.toUpperCase()}`, inner) };
   },
 };
 
@@ -158,14 +181,19 @@ const stack: Command = {
   name: "stack",
   description: "my skills by area",
   run: () => ({
-    lines: skills.map((s) => ({ kind: "out", text: `  ${s.group}: ${s.items.join(", ")}` })),
+    lines: skills.flatMap((s) => fmt.grouped(s.group, s.items)),
   }),
 };
 
 const awards: Command = {
   name: "awards",
   description: "achievements & recognition",
-  run: () => ({ lines: achievements.map((a) => ({ kind: "out", text: `  ${a.title} — ${a.detail}` })) }),
+  run: () => ({
+    lines: [
+      fmt.section("recognition"),
+      ...achievements.map((a) => fmt.row("✓", a.title, a.detail)),
+    ],
+  }),
 };
 
 const resume: Command = {
@@ -200,15 +228,16 @@ const contact: Command = {
   name: "contact",
   description: "how to reach me",
   run: () => ({
-    lines: out(
-      `${profile.name} — ${profile.role} @ ${profile.company}`,
-      `location: ${profile.location}`,
-      "",
-      `email:    ${profile.email}`,
-      `github:   ${profile.links.github}`,
-      `linkedin: ${profile.links.linkedin}`,
-      `résumé:   run 'resume' to download a variant`,
-    ),
+    lines: fmt.box("// CONTACT", [
+      fmt.row("●", "name", profile.name),
+      fmt.row("●", "role", `${profile.role} @ ${profile.company}`),
+      fmt.row("●", "location", profile.location),
+      fmt.divider(),
+      fmt.row("✉", "email", profile.email),
+      fmt.row("◈", "github", profile.links.github),
+      fmt.row("◈", "linkedin", profile.links.linkedin),
+      fmt.row("→", "résumé", "run 'resume' to download a variant"),
+    ]),
   }),
 };
 
@@ -234,21 +263,27 @@ const social: Command = {
 const summary: Command = {
   name: "summary",
   description: "everything in one hit (identity, work, projects, skills, awards)",
-  run: () => {
-    const lines: Line[] = [];
-    lines.push({ kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})` });
-    lines.push({ kind: "out", text: profile.headline });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: "PRODUCTION WORK" });
-    for (const w of allWork) lines.push({ kind: "out", text: `  ${w.name} — ${w.register} · ${w.role}` });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: "OPEN-SOURCE PROJECTS" });
-    for (const p of allProjects) lines.push({ kind: "out", text: `  ${p.name} — ${p.tagline}` });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: "SKILLS" });
-    for (const s of skills) lines.push({ kind: "out", text: `  ${s.group}: ${s.items.join(", ")}` });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: "RECOGNITION" });
-    for (const a of achievements) lines.push({ kind: "out", text: `  ${a.title} — ${a.detail}` });
-    lines.push({ kind: "out", text: "" }, { kind: "out", text: "→ run 'resume' to download · 'contact' to reach me" });
-    return { lines };
-  },
+  run: () => ({
+    lines: [
+      fmt.row("●", "name", `${profile.name} — ${profile.role} @ ${profile.company}`),
+      fmt.row("◇", "bio", profile.headline),
+      fmt.blank(),
+      fmt.section("production work"),
+      ...fmt.table(allWork.map((w) => ["●", w.name, `${w.register} · ${w.role}`])),
+      fmt.blank(),
+      fmt.section("open-source projects"),
+      ...fmt.table(allProjects.map((p) => ["▸", p.name, p.tagline])),
+      fmt.blank(),
+      fmt.section("skills"),
+      ...skills.map((s) => fmt.row("◇", s.group, s.items.join(", "))),
+      fmt.blank(),
+      fmt.section("recognition"),
+      ...achievements.map((a) => fmt.row("✓", a.title, a.detail)),
+      fmt.blank(),
+      fmt.divider(),
+      { kind: "out", text: "  → run 'resume' to download · 'contact' to reach me" },
+    ],
+  }),
 };
 
 const career: Command = {
@@ -257,17 +292,21 @@ const career: Command = {
   // Group under the single Ascendion tenure. The content has NO per-item dates, so we
   // deliberately print NO per-item years — implying a chronology would be fabrication.
   run: () => {
-    const lines: Line[] = [
-      { kind: "out", text: `${profile.company} · ${profile.tenure}` },
-      { kind: "out", text: `  ${profile.role}` },
-      { kind: "out", text: "" },
-    ];
-    for (const w of allWork) {
-      lines.push({ kind: "out", text: `  ${w.name}` });
-      lines.push({ kind: "out", text: `    ${w.register} · ${w.role}` });
-      if (w.metrics[0]) lines.push({ kind: "out", text: `    ${w.metrics[0].value} ${w.metrics[0].label}` });
-    }
-    return { lines };
+    const workLines: Line[] = allWork.flatMap((w) => [
+      fmt.row("●", w.name, w.register),
+      fmt.row("◇", "", w.role),
+      ...(w.metrics[0] ? [fmt.row("▸", "", `${w.metrics[0].value} ${w.metrics[0].label}`)] : []),
+      fmt.blank(),
+    ]);
+    return {
+      lines: [
+        fmt.row("●", "company", `${profile.company} · ${profile.tenure}`),
+        fmt.row("◇", "role", profile.role),
+        fmt.blank(),
+        fmt.section("systems"),
+        ...workLines,
+      ],
+    };
   },
 };
 
@@ -326,20 +365,19 @@ const top: Command = {
 const stats: Command = {
   name: "stats",
   description: "portfolio rollup (computed)",
-  // Aggregates the boot banner does NOT already show (skip the 2K/3K user metrics).
   run: () => {
     const commits = allProjects.reduce((sum, p) => sum + (p.commits ?? 0), 0);
     const distinctTech = techFrequency().length;
     return {
-      lines: out(
-        `production systems:  ${allWork.length}`,
-        `open-source repos:   ${allProjects.length}`,
-        `OSS commits:         ${commits} (snapshot)`,
-        `distinct tech:       ${distinctTech}`,
-        `skill groups:        ${skills.length}`,
-        `recognitions:        ${achievements.length}`,
-        `résumé variants:     ${resumeVariants.length}`,
-      ),
+      lines: fmt.statsBox("// PORTFOLIO STATS", [
+        { label: "production systems", value: allWork.length },
+        { label: "open-source repos",  value: allProjects.length },
+        { label: "OSS commits",        value: `${commits} (snapshot)` },
+        { label: "distinct tech",      value: distinctTech },
+        { label: "skill groups",       value: skills.length },
+        { label: "recognitions",       value: achievements.length },
+        { label: "résumé variants",    value: resumeVariants.length },
+      ]),
     };
   },
 };

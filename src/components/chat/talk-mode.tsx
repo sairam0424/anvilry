@@ -8,6 +8,7 @@ import { VoiceOrb } from "@/components/chat/voice-orb";
 import { VoicePicker } from "@/components/chat/voice-picker";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
+import { CHROME_TTS_BANNER_ENABLED } from "@/lib/writing-flags";
 import {
   hasSeenFirstRunPrimer,
   markFirstRunPrimerSeen,
@@ -281,7 +282,7 @@ export function TalkMode({
           a paused state and speak() silently does nothing. Brave and Safari use
           different TTS backends and are unaffected. Show a dismissible inline notice
           so the user knows to use Brave/Edge/Safari for spoken responses. */}
-      {isChromeTtsBuggy() && settings.ttsEngine === "browser" && (
+      {CHROME_TTS_BANNER_ENABLED && isChromeTtsBuggy() && settings.ttsEngine === "browser" && (
         <div className="flex max-w-sm items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-[11px] text-yellow-400/80">
           <span className="mt-0.5 shrink-0">⚠</span>
           <span>

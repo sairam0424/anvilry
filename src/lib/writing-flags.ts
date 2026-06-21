@@ -72,3 +72,16 @@ export type DedupPrimaryKey = "linkedNote" | "canonicalUrl";
 const raw = process.env.NEXT_PUBLIC_ARTICLE_DEDUP_KEY;
 export const ARTICLE_DEDUP_KEY: DedupPrimaryKey =
   raw === "canonicalUrl" ? "canonicalUrl" : "linkedNote";
+
+/**
+ * Chrome TTS compatibility banner in talk-mode.
+ *
+ * Chrome had a known TTS daemon bug (tts_controller_impl.cc paused_ guard) where
+ * speak() would silently no-op on first call. Recent Chrome versions have fixed
+ * this — the banner is OFF by default.
+ *
+ * Set NEXT_PUBLIC_CHROME_TTS_BANNER=true to re-enable if the bug resurfaces.
+ * Requires redeploy (NEXT_PUBLIC_ is inlined at build time).
+ */
+export const CHROME_TTS_BANNER_ENABLED =
+  process.env.NEXT_PUBLIC_CHROME_TTS_BANNER === "true";

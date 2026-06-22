@@ -50,10 +50,13 @@ jobs:
       - name: Generate Velite content types
         run: pnpm content
 
+      # --no-turbopack forces the webpack build path so withBundleAnalyzer
+      # can hook in and write .next/analyze/__bundle_analysis.json.
+      # Turbopack does not support the webpack bundle analyzer plugin.
       - name: Build with bundle analysis
         env:
           ANALYZE: "true"
-        run: pnpm build
+        run: npx next build --no-turbopack
 
       - name: Upload bundle stats artifact
         uses: actions/upload-artifact@v4
@@ -62,9 +65,10 @@ jobs:
           path: .next/analyze/
           if-no-files-found: warn
 
-      # Download base-branch stats and post a size-diff comment on PRs only
+      # Download base-branch stats and post a size-diff comment on PRs only.
+      # continue-on-error: the first run on a fresh repo has no base artifact yet.
       - name: Download base branch bundle stats
-        if: success() && github.event.number != ''
+        if: github.event.number != ''
         uses: dawidd6/action-download-artifact@v8
         continue-on-error: true
         with:
@@ -74,7 +78,8 @@ jobs:
           path: .next/analyze/base/
 
       - name: Compare bundle sizes
-        if: success() && github.event.number != ''
+        if: github.event.number != ''
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}

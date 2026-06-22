@@ -55,8 +55,12 @@ const { STATE, fakeStream } = vi.hoisted(() => {
 vi.mock("@anthropic-ai/bedrock-sdk", () => {
   class FakeAnthropicBedrock {
     messages: { stream: () => unknown };
+    beta: { messages: { stream: () => unknown } };
     constructor() {
       this.messages = { stream: () => fakeStream() };
+      // beta.messages.stream routes through the same fake stream so extended
+      // thinking tests use the same STATE.events fixture pattern.
+      this.beta = { messages: { stream: () => fakeStream() } };
     }
   }
   return { AnthropicBedrock: FakeAnthropicBedrock };
@@ -69,8 +73,10 @@ vi.mock("@anthropic-ai/sdk", () => {
   class FakeAPIConnectionError extends Error {}
   class FakeAnthropic {
     messages: { stream: () => unknown };
+    beta: { messages: { stream: () => unknown } };
     constructor() {
       this.messages = { stream: () => fakeStream() };
+      this.beta = { messages: { stream: () => fakeStream() } };
     }
     static APIConnectionError = FakeAPIConnectionError;
   }

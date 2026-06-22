@@ -300,22 +300,33 @@ export function streamWithFallback(
         // IMPORTANT: Anthropic requires max_tokens > budget_tokens. The route
         // passes max_tokens: 1024 which equals budget_tokens — bump it to 2048
         // so the model has room to both think (1024) and answer (1024).
-        const attemptParams = useThinking
-          ? {
-              ...params,
-              max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),
-              thinking: { type: "enabled" as const, budget_tokens: 1024 },
-              betas: ["interleaved-thinking-2025-05-14"] as string[],
-            }
-          : params;
+        //
+        // CRITICAL: When using extended thinking, we MUST use client.beta.messages.stream()
+        // instead of client.messages.stream(). The beta stream method correctly extracts
+        // the `betas` array from params and sets it as the `anthropic-beta` HTTP header,
+        // which the Bedrock adapter reads and includes as `anthropic_beta` in the Bedrock
+        // request body. Using client.messages.stream() with a `betas` body param causes a
+        // 400 — Bedrock rejects unknown body keys and never sees the beta header.
+        let stream: ReturnType<typeof client.messages.stream>;
+        if (useThinking) {
+          const thinkingParams = {
+            ...params,
+            model,
+            max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),
+            thinking: { type: "enabled" as const, budget_tokens: 1024 },
+            betas: ["interleaved-thinking-2025-05-14"] as string[],
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          stream = (client as any).beta.messages.stream(thinkingParams);
+        } else {
+          stream = client.messages.stream({ ...params, model } as Anthropic.MessageStreamParams & { model: string });
+        }
 
         // Emit THINKING_SENTINEL immediately so client shows animation without
         // waiting for the first thinking_delta (which may take several hundred ms).
         if (useThinking && !emittedAny) {
           controller.enqueue(encoder.encode(THINKING_SENTINEL));
         }
-
-        const stream = client.messages.stream({ ...attemptParams, model } as Anthropic.MessageStreamParams & { model: string });
         try {
           for await (const event of stream) {
             // message_start carries the initial usage block: input_tokens (the

@@ -50,13 +50,13 @@ jobs:
       - name: Generate Velite content types
         run: pnpm content
 
-      # --no-turbopack forces the webpack build path so withBundleAnalyzer
-      # can hook in and write .next/analyze/__bundle_analysis.json.
-      # Turbopack does not support the webpack bundle analyzer plugin.
+      # `next build` uses webpack by default in Next.js 16 (Turbopack is
+      # opt-in via --turbopack flag, dev-only). withBundleAnalyzer hooks
+      # into webpack and writes .next/analyze/__bundle_analysis.json.
       - name: Build with bundle analysis
         env:
           ANALYZE: "true"
-        run: npx next build --no-turbopack
+        run: npx next build
 
       - name: Upload bundle stats artifact
         uses: actions/upload-artifact@v4

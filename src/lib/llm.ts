@@ -297,9 +297,13 @@ export function streamWithFallback(
         const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
 
         // Build the params for this attempt — add thinking config if enabled.
+        // IMPORTANT: Anthropic requires max_tokens > budget_tokens. The route
+        // passes max_tokens: 1024 which equals budget_tokens — bump it to 2048
+        // so the model has room to both think (1024) and answer (1024).
         const attemptParams = useThinking
           ? {
               ...params,
+              max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),
               thinking: { type: "enabled" as const, budget_tokens: 1024 },
               betas: ["interleaved-thinking-2025-05-14"] as string[],
             }

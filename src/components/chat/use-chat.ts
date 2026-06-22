@@ -1,12 +1,19 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { TRACE_DELIMITER } from "@/lib/llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL } from "@/lib/llm-trace";
 
 export type ChatRole = "user" | "assistant";
 /** `model`/`fellBack` come from the server's honest trailing trace frame (which model
  *  served the bytes), parsed out of the stream — never shown as message text. */
-export type ChatMessage = { role: ChatRole; content: string; model?: string; fellBack?: boolean };
+export type ChatMessage = {
+  role: ChatRole;
+  content: string;
+  model?: string;
+  fellBack?: boolean;
+  reasoning?: string;    // buffered extended thinking text, present when extended thinking ran
+  isThinking?: boolean;  // true while THINKING_SENTINEL seen but no answer text yet
+};
 
 /** Split a streamed assistant chunk into visible text + an optional parsed trace frame.
  *  The frame (if present) is the LAST record after TRACE_DELIMITER. */
@@ -84,12 +91,28 @@ export function useChat() {
           const { value, done } = await reader.read();
           if (done) break;
           acc += decoder.decode(value, { stream: true });
+
+          // Detect THINKING_SENTINEL: if the stream starts with it, signal isThinking.
+          const hasSentinel = acc.startsWith(THINKING_SENTINEL);
+          const stripped = hasSentinel ? acc.slice(THINKING_SENTINEL.length) : acc;
+
+          // isThinking: sentinel seen AND no visible text yet (thinking phase).
+          // Once text starts arriving, isThinking goes false.
+          const isThinking = hasSentinel && stripped.trim().length === 0;
+
           // Strip the trailing trace frame from the DISPLAYED text; capture the model
           // (honest, server-sourced — which model served the bytes / did it fall back).
-          const { text, trace } = splitTrace(acc);
+          const { text, trace } = splitTrace(stripped);
           setMessages((m) => [
             ...m.slice(0, -1),
-            { role: "assistant", content: text, model: trace?.model, fellBack: trace?.fellBack },
+            {
+              role: "assistant",
+              content: text,
+              model: trace?.model,
+              fellBack: trace?.fellBack,
+              reasoning: (trace as { reasoning?: string } | undefined)?.reasoning,
+              isThinking,
+            },
           ]);
         }
         setStatus("idle");

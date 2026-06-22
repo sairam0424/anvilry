@@ -60,9 +60,9 @@ export function Terminal({
   // Update suggestions whenever input changes
   useEffect(() => {
     const sugg = getSuggestions(input, COMMAND_SUGGESTIONS);
-    setSuggestions(sugg); // eslint-disable-line react-hooks/set-state-in-effect
-    setSuggIdx(-1); // eslint-disable-line react-hooks/set-state-in-effect
-    setShowSugg(sugg.length > 0 && input.trim().length > 0); // eslint-disable-line react-hooks/set-state-in-effect
+    setSuggestions(sugg);
+    setSuggIdx(-1);
+    setShowSugg(sugg.length > 0 && input.trim().length > 0);
   }, [input]);
 
   // Ghost hint: the suffix of the top suggestion after what's already typed

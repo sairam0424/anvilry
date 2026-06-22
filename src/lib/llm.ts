@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import { profile } from "@/lib/profile";
-import { TRACE_DELIMITER } from "@/lib/llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL } from "@/lib/llm-trace";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -157,7 +157,7 @@ export function isFallbackEligible(err: unknown): boolean {
  */
 // TRACE_DELIMITER lives in the client-safe llm-trace module (so the chat client can
 // import it without the Bedrock SDK); re-exported here for existing server callers.
-export { TRACE_DELIMITER };
+export { TRACE_DELIMITER, THINKING_SENTINEL };
 
 /**
  * Per-attempt usage block captured from the streamed events. Snake-case fields
@@ -205,6 +205,11 @@ export function streamWithFallback(
     /** Optional traceId threaded into the trace frame so the client can correlate
      *  the streamed answer with the server-side llm.attempt events. */
     traceId?: string;
+    /** When true, enables Anthropic extended thinking (budget_tokens: 1024).
+     *  Haiku models are silently excluded — they do not support extended thinking.
+     *  The stream will be prefixed with THINKING_SENTINEL and the trace frame will
+     *  include a `reasoning` field with the buffered thinking text. */
+    extendedThinking?: boolean;
   },
 ): ReadableStream<Uint8Array> {
   const chain = modelChain();
@@ -218,7 +223,7 @@ export function streamWithFallback(
   const traceFrame = (
     model: string,
     index: number,
-    extra: { usage?: LlmUsage; ttft_ms?: number; latency_ms?: number },
+    extra: { usage?: LlmUsage; ttft_ms?: number; latency_ms?: number; reasoning?: string },
   ) =>
     encoder.encode(
       `${TRACE_DELIMITER}${JSON.stringify({
@@ -228,6 +233,7 @@ export function streamWithFallback(
         ...(extra.usage ? { usage: extra.usage } : {}),
         ...(extra.ttft_ms != null ? { ttftMs: extra.ttft_ms } : {}),
         ...(extra.latency_ms != null ? { latencyMs: extra.latency_ms } : {}),
+        ...(extra.reasoning ? { reasoning: extra.reasoning } : {}),
       })}`,
     );
 
@@ -285,7 +291,27 @@ export function streamWithFallback(
         let usage: LlmUsage | undefined;
         let ttftMs: number | undefined;
         let finishReason: string | undefined;
-        const stream = client.messages.stream({ ...params, model });
+        let reasoningBuffer = "";
+
+        // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
+        const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
+
+        // Build the params for this attempt — add thinking config if enabled.
+        const attemptParams = useThinking
+          ? {
+              ...params,
+              thinking: { type: "enabled" as const, budget_tokens: 1024 },
+              betas: ["interleaved-thinking-2025-05-14"] as string[],
+            }
+          : params;
+
+        // Emit THINKING_SENTINEL immediately so client shows animation without
+        // waiting for the first thinking_delta (which may take several hundred ms).
+        if (useThinking && !emittedAny) {
+          controller.enqueue(encoder.encode(THINKING_SENTINEL));
+        }
+
+        const stream = client.messages.stream({ ...attemptParams, model } as Anthropic.MessageStreamParams & { model: string });
         try {
           for await (const event of stream) {
             // message_start carries the initial usage block: input_tokens (the
@@ -318,6 +344,15 @@ export function streamWithFallback(
               if (sr) finishReason = sr;
               continue;
             }
+            // Extended thinking: buffer thinking_delta events server-side.
+            // They arrive BEFORE text_delta events. Never emit to client stream.
+            if (
+              event.type === "content_block_delta" &&
+              (event.delta as { type: string; thinking?: string }).type === "thinking_delta"
+            ) {
+              reasoningBuffer += (event.delta as { type: string; thinking?: string }).thinking ?? "";
+              continue;
+            }
             if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
               if (ttftMs == null) ttftMs = Date.now() - attemptStart;
               controller.enqueue(encoder.encode(event.delta.text));
@@ -342,7 +377,14 @@ export function streamWithFallback(
           // Only on a real answer (emittedAny) — preserves the v1.6 invariant that the
           // trace frame can't materialize on a zero-byte attempt.
           if (emittedAny)
-            controller.enqueue(traceFrame(model, i, { usage, ttft_ms: ttftMs, latency_ms: latencyMs }));
+            controller.enqueue(
+              traceFrame(model, i, {
+                usage,
+                ttft_ms: ttftMs,
+                latency_ms: latencyMs,
+                reasoning: reasoningBuffer || undefined,
+              }),
+            );
           close();
           return;
         } catch (err) {

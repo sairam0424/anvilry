@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 import { createRequire } from "module";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const require = createRequire(import.meta.url);
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });

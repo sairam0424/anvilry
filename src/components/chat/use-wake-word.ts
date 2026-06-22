@@ -101,7 +101,6 @@ export function useWakeWord(): UseWakeWord {
     setListening(false);
   }, [releaseMic]);
 
-  // eslint-disable-next-line react-hooks/immutability -- useCallback; setTimeout(startEngine) is intentional re-arm after recognition ends
   const startEngine = useCallback(() => {
     const Ctor = getCtor();
     if (!Ctor || !enabledRef.current) return;

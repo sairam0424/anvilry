@@ -117,8 +117,8 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
   // greets you with your most-used actions, never a stale search string).
   useEffect(() => {
     if (open) {
-      setRecent(loadRecent()); // eslint-disable-line react-hooks/set-state-in-effect -- intentional state reset on palette open
-      setSearch(""); // eslint-disable-line react-hooks/set-state-in-effect -- intentional state reset on palette open
+      setRecent(loadRecent()); // eslint-disable-line react-hooks/set-state-in-effect
+      setSearch(""); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [open]);
 

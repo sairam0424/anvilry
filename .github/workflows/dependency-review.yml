@@ -1,0 +1,31 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          # Block high and critical CVEs in runtime dependencies.
+          # Low/moderate vulnerabilities surface as warnings only.
+          fail-on-severity: high
+          # Only fail on runtime-scoped vulnerabilities.
+          # Dev-only packages (vitest, eslint, etc.) don't affect production.
+          fail-on-scopes: runtime
+          # Post a summary comment on the PR for visibility
+          comment-summary-in-pr: always

@@ -37,7 +37,7 @@ export function AnvilView({ onClose }: { onClose: () => void }) {
 
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <header className="max-w-xl text-center">
-          <p className="font-mono text-xs uppercase tracking-widest text-accent">// anvil</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-accent">{"// anvil"}</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
             Talk to Anvil — the voice of {firstName}&apos;s work
           </h1>

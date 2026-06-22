@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
@@ -15,6 +15,58 @@ import { useView } from "@/components/view-context";
 import { highlightProject } from "@/lib/highlight-store";
 import { unlock } from "@/lib/discovery-store";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
+
+/** Renders Claude's extended thinking — animated while streaming, expandable toggle once done. */
+function ThinkingBlock({
+  isThinking,
+  reasoning,
+  isStreaming,
+}: {
+  isThinking?: boolean;
+  reasoning?: string;
+  isStreaming: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== "false";
+  if (!enabled) return null;
+
+  // Animate while model is thinking (sentinel seen, no text yet)
+  if (isThinking && isStreaming) {
+    return (
+      <div className="mb-2 flex max-w-[88%] items-center gap-2 rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
+        <span className="inline-flex gap-1" aria-label="Thinking">
+          <span className="animate-pulse">·</span>
+          <span className="animate-pulse [animation-delay:150ms]">·</span>
+          <span className="animate-pulse [animation-delay:300ms]">·</span>
+        </span>
+        <span>Thinking…</span>
+      </div>
+    );
+  }
+
+  // Show expandable toggle once reasoning is available
+  if (!reasoning) return null;
+  const wordCount = reasoning.trim().split(/\s+/).length;
+
+  return (
+    <div className="mb-2 max-w-[88%]">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 text-[11px] text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-expanded={open}
+      >
+        <span>{open ? "▾" : "▶"}</span>
+        <span>Show reasoning ({wordCount} words)</span>
+      </button>
+      {open && (
+        <pre className="mt-1.5 max-h-48 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle">
+          {reasoning}
+        </pre>
+      )}
+    </div>
+  );
+}
 
 /** Map a Bedrock/Anthropic model id to a readable name for the badge. */
 function friendlyModel(id: string): string {
@@ -194,9 +246,7 @@ export function ChatMessages({
             return (
               <div key={i} className="flex flex-col items-start gap-2">
                 {segments.length === 0 && isStreaming && isLast ? (
-                  <div className="max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg">
-                    Thinking…
-                  </div>
+                  <ThinkingBlock isThinking={m.isThinking} reasoning={m.reasoning} isStreaming={true} />
                 ) : (
                   segments.map((seg, j) =>
                     seg.type === "text" ? (
@@ -214,6 +264,10 @@ export function ChatMessages({
                       </div>
                     ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
                   )
+                )}
+                {/* Collapsed reasoning toggle — shown after streaming completes if extended thinking ran */}
+                {!isStreaming && m.reasoning && (
+                  <ThinkingBlock isThinking={false} reasoning={m.reasoning} isStreaming={false} />
                 )}
                 {/* Answer footer: the honest model badge + the optional read-aloud
                     toggle. The badge shows which model served the bytes (and if the

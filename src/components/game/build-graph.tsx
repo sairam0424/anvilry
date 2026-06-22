@@ -32,7 +32,10 @@ export function BuildGraph() {
   // change the active view, so they can open over the gamified view — unmount this scene
   // meanwhile so there's only ONE live context (avoids two concurrent GL contexts on
   // lower-end GPUs / the per-page context cap). Read BOTH stores until P2 unifies them.
-  const talkOpen = useTalkModeOpen() || useInlineVoiceOpen() || useCoreVoiceOpen();
+  const talkModeOpen = useTalkModeOpen();
+  const inlineVoiceOpen = useInlineVoiceOpen();
+  const coreVoiceOpen = useCoreVoiceOpen();
+  const talkOpen = talkModeOpen || inlineVoiceOpen || coreVoiceOpen;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [webglFailed, setWebglFailed] = useState(false);
 
@@ -52,10 +55,7 @@ export function BuildGraph() {
         Drag to rotate · click a node to open its dossier · or browse the full index below.
       </p>
       <div className="relative mt-3 h-[26rem] overflow-hidden rounded-2xl border border-border bg-bg-surface/40">
-        {/* Absolute-fill wrapper gives the R3F Canvas a definite-size parent, so its
-            ResizeObserver measures the real box (not the 300x150 canvas default).
-            WebGLBoundary catches a failed GL context so the DOM index below stays the
-            full experience even if the GPU refuses a context. */}
+        {/* Absolute-fill wrapper gives the R3F Canvas a definite-size parent, so its ResizeObserver measures the real box. WebGLBoundary catches a failed GL context. */}
         <div className="absolute inset-0">
           <WebGLBoundary onFail={onFail}>
             <BuildGraphScene onSelect={onSelect} />

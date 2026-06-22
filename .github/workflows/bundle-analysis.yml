@@ -1,0 +1,86 @@
+name: Bundle Analysis
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  analyze:
+    name: Bundle size
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+        with:
+          version: 10
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # .velite/ is gitignored — must run before next build
+      - name: Generate Velite content types
+        run: pnpm content
+
+      # `next build` uses webpack by default in Next.js 16 (Turbopack is
+      # opt-in via --turbopack flag, dev-only). withBundleAnalyzer hooks
+      # into webpack and writes .next/analyze/__bundle_analysis.json.
+      - name: Build with bundle analysis
+        env:
+          ANALYZE: "true"
+        run: npx next build
+
+      - name: Upload bundle stats artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ github.sha }}
+          path: .next/analyze/
+          if-no-files-found: warn
+
+      # Download base-branch stats and post a size-diff comment on PRs only.
+      # continue-on-error: the first run on a fresh repo has no base artifact yet.
+      - name: Download base branch bundle stats
+        if: github.event.number != ''
+        uses: dawidd6/action-download-artifact@v8
+        continue-on-error: true
+        with:
+          workflow: bundle-analysis.yml
+          branch: ${{ github.event.pull_request.base.ref }}
+          name: bundle-${{ github.event.pull_request.base.sha }}
+          path: .next/analyze/base/
+
+      - name: Compare bundle sizes
+        if: github.event.number != ''
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: npx -p nextjs-bundle-analysis compare

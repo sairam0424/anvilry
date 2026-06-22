@@ -1,0 +1,71 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Chicago
+    target-branch: develop
+    reviewers:
+      - sairam0424
+    # Groups batch related updates into single PRs — first-match-wins ordering.
+    # More specific groups are listed first so packages aren't swallowed by
+    # the broader dev-tooling catch-all below.
+    groups:
+      # Next.js + React core — version bumps here can have breaking changes;
+      # keep them together so they're reviewed as a unit.
+      next-react-core:
+        applies-to: version-updates
+        patterns:
+          - next
+          - react
+          - react-dom
+          - "@next/*"
+
+      # AWS SDK + Anthropic SDKs — governs LLM and voice API surface.
+      aws-bedrock:
+        applies-to: version-updates
+        patterns:
+          - "@aws-sdk/*"
+          - "@anthropic-ai/*"
+
+      # Three.js + React Three Fiber — 3D graph view (Play view).
+      three-webgl:
+        applies-to: version-updates
+        patterns:
+          - three
+          - "@react-three/*"
+          - "@types/three"
+          - postprocessing
+
+      # Test tooling — vitest, testing-library, happy-dom.
+      testing:
+        applies-to: version-updates
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@testing-library/*"
+          - happy-dom
+
+      # Dev tooling — linting, types, styling, build pipeline.
+      dev-tooling:
+        applies-to: version-updates
+        patterns:
+          - eslint
+          - "eslint-*"
+          - typescript
+          - tailwindcss
+          - "@tailwindcss/*"
+          - velite
+          - "postcss*"
+          - "@types/*"
+
+      # Security patches — any CVE-driven update across all packages,
+      # regardless of which version-update group it would otherwise fall into.
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"

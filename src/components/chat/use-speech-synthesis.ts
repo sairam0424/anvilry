@@ -400,7 +400,7 @@ export function useSpeechSynthesis(
       if (!voicesReadyRef.current && cached.length === 0) {
         synth.addEventListener?.(
           "voiceschanged",
-          () => enqueue(chunks, from),
+          () => enqueue(chunks, from), // eslint-disable-line react-hooks/immutability -- intentional self-reference; retry after voiceschanged
           { once: true },
         );
         return;

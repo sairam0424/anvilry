@@ -117,8 +117,8 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
   // greets you with your most-used actions, never a stale search string).
   useEffect(() => {
     if (open) {
-      setRecent(loadRecent());
-      setSearch("");
+      setRecent(loadRecent()); // eslint-disable-line react-hooks/set-state-in-effect
+      setSearch(""); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [open]);
 
@@ -433,7 +433,7 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
   // e.g. a removed project slug). Shown ONLY on an empty query, so a recent item
   // is never on-screen alongside its canonical copy during filtering.
   const allActions = [...views, ...nav, ...actions, ...voice, ...workItems, ...projItems, ...links];
-  const byId = new Map(allActions.map((a) => [a.id, a]));
+  const byId = new Map(allActions.map((a) => [a.id, a])); // eslint-disable-line react-hooks/refs -- false positive; byId is a plain Map, not a ref
   const recentItems: Action[] = recent.map((id) => byId.get(id)).filter((a): a is Action => Boolean(a));
   const showRecent = search.trim() === "" && recentItems.length > 0;
 
@@ -498,6 +498,7 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
             <Group heading="Switch view" actions={views} onRun={record} />
             <Group heading="Navigate" actions={nav} onRun={record} />
             <Group heading="Actions" actions={actions} onRun={record} />
+            {/* eslint-disable-next-line react-hooks/refs -- false positive; voice is a plain Action[], not a ref */}
             {voice.length > 0 && <Group heading="Voice" actions={voice} onRun={record} />}
             <Group heading="Work" actions={workItems} onRun={record} />
             <Group heading="Projects" actions={projItems} onRun={record} />

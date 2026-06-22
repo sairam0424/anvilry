@@ -127,7 +127,7 @@ export function useWakeWord(): UseWakeWord {
       // rapid stop/start can't trip Chrome's restart rate-limit).
       recRef.current = null;
       if (!enabledRef.current) return;
-      rearmRef.current = setTimeout(startEngine, REARM_DELAY_MS);
+      rearmRef.current = setTimeout(startEngine, REARM_DELAY_MS); // eslint-disable-line react-hooks/immutability -- intentional self-reference; re-arm after recognition ends
     };
     recRef.current = rec;
     try {

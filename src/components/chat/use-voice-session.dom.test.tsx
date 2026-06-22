@@ -98,7 +98,7 @@ describe("useVoiceSession", () => {
     const { result, rerender } = renderHook(() => useVoiceSession());
     act(() => result.current.start());
     // Invoke the onFinal callback recognition.start was given.
-    const onFinal = recog.start.mock.calls[0][0] as (t: string) => void;
+    const onFinal = (recog.start.mock.calls[0] as unknown as [(t: string) => void])[0];
     act(() => {
       onFinal("what is your strongest project");
       // The real transport flips isStreaming true on send; mirror that.

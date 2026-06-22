@@ -1,11 +1,71 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
+
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Chicago
+    target-branch: develop
+    reviewers:
+      - sairam0424
+    # Groups batch related updates into single PRs — first-match-wins ordering.
+    # More specific groups are listed first so packages aren't swallowed by
+    # the broader dev-tooling catch-all below.
+    groups:
+      # Next.js + React core — version bumps here can have breaking changes;
+      # keep them together so they're reviewed as a unit.
+      next-react-core:
+        applies-to: version-updates
+        patterns:
+          - next
+          - react
+          - react-dom
+          - "@next/*"
+
+      # AWS SDK + Anthropic SDKs — governs LLM and voice API surface.
+      aws-bedrock:
+        applies-to: version-updates
+        patterns:
+          - "@aws-sdk/*"
+          - "@anthropic-ai/*"
+
+      # Three.js + React Three Fiber — 3D graph view (Play view).
+      three-webgl:
+        applies-to: version-updates
+        patterns:
+          - three
+          - "@react-three/*"
+          - "@types/three"
+          - postprocessing
+
+      # Test tooling — vitest, testing-library, happy-dom.
+      testing:
+        applies-to: version-updates
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - "@testing-library/*"
+          - happy-dom
+
+      # Dev tooling — linting, types, styling, build pipeline.
+      dev-tooling:
+        applies-to: version-updates
+        patterns:
+          - eslint
+          - "eslint-*"
+          - typescript
+          - tailwindcss
+          - "@tailwindcss/*"
+          - velite
+          - "postcss*"
+          - "@types/*"
+
+      # Security patches — any CVE-driven update across all packages,
+      # regardless of which version-update group it would otherwise fall into.
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"

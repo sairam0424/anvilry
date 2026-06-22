@@ -8,8 +8,8 @@ import { renderHook } from "@testing-library/react";
  * the browser path). Both underlying hooks are always called (Rules of Hooks).
  */
 
-const browser = { supported: true, isListening: false, interim: "b", error: null, start: vi.fn(), stop: vi.fn() };
-const transcribe = { supported: true, isListening: false, interim: "t", error: null, start: vi.fn(), stop: vi.fn() };
+const browser = { supported: true, isListening: false, interim: "b", error: null as null | string, start: vi.fn(), stop: vi.fn() };
+const transcribe = { supported: true, isListening: false, interim: "t", error: null as null | string, start: vi.fn(), stop: vi.fn() };
 
 vi.mock("@/components/chat/use-speech-recognition", () => ({ useSpeechRecognition: () => browser }));
 vi.mock("@/components/chat/use-transcribe-recognition", () => ({ useTranscribeRecognition: () => transcribe }));

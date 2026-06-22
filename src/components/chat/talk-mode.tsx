@@ -146,7 +146,7 @@ export function TalkMode({
   const [showPrimer, setShowPrimer] = useState(false);
   useEffect(() => {
     if (settings.voiceId === undefined && !hasSeenFirstRunPrimer()) {
-      setShowPrimer(true);
+      setShowPrimer(true); // eslint-disable-line react-hooks/set-state-in-effect -- intentional one-time init on mount
     }
   }, [settings.voiceId]);
   const dismissPrimer = () => {
@@ -438,7 +438,7 @@ export function TalkMode({
             </span>
             Anvil reads answers in {currentVoiceName} by default. Press{" "}
             <kbd className="rounded bg-bg-elevated px-1 py-0.5 text-[10px]">⌘K</kbd>{" "}
-            → "Pick voice" or use the Voice menu above to swap.
+            → &quot;Pick voice&quot; or use the Voice menu above to swap.
           </span>
           <button
             type="button"

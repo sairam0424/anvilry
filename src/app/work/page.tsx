@@ -26,7 +26,7 @@ export default function WorkPage() {
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
             Production systems shipping to thousands of users daily. Every metric is real and defensible;
-            the register is honest — "co-built" means exactly that.
+            the register is honest — &quot;co-built&quot; means exactly that.
           </p>
         </Reveal>
 

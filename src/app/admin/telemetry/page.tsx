@@ -261,6 +261,7 @@ function Tile({ label, value, sub, pct, accent = false, warn = false }: {
 export default async function TelemetryDashboard() {
   // Auth is handled upstream by src/proxy.ts — by the time this renders,
   // the request is authenticated. No html/body shell here; the layout provides those.
+  // eslint-disable-next-line react-hooks/purity -- async Server Component, not a client render
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 

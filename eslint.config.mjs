@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated / build artifacts — should never be linted
+    ".vercel/**",
+    ".velite/**",
+    "scratch-pad/**",
+    "public/static/**",
+    "scripts/**",
   ]),
 ]);
 

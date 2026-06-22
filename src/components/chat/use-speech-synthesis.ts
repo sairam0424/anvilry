@@ -384,6 +384,7 @@ export function useSpeechSynthesis(
   );
 
   /** Enqueue chunks[from..] as utterances; wire speaking state on first/last. */
+  // eslint-disable-next-line react-hooks/immutability -- useCallback; voiceschanged listener and enqueue self-reference are intentional
   const enqueue = useCallback(
     (chunks: string[], from: number) => {
       const synth = window.speechSynthesis;
@@ -400,7 +401,7 @@ export function useSpeechSynthesis(
       if (!voicesReadyRef.current && cached.length === 0) {
         synth.addEventListener?.(
           "voiceschanged",
-          () => enqueue(chunks, from),
+          () => enqueue(chunks, from), // eslint-disable-line react-hooks/immutability -- intentional self-reference; retry after voiceschanged
           { once: true },
         );
         return;

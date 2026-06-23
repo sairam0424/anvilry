@@ -200,34 +200,35 @@ export function Terminal({
 
       {/* Input row + autocomplete dropdown */}
       <div className="relative border-t border-border">
-        {/* Autocomplete dropdown — floats above the input */}
-        {showSugg && suggestions.length > 0 && (
-          <ul
-            className="absolute bottom-full left-0 right-0 z-10 overflow-hidden rounded-t-xl border border-accent/20 bg-bg-surface shadow-lg"
-            role="listbox"
-            aria-label="Command suggestions"
-          >
-            {suggestions.map((s, i) => (
-              <li
-                key={s.name}
-                role="option"
-                aria-selected={i === suggIdx}
-                className={cn(
-                  "flex cursor-pointer items-center gap-3 px-4 py-1.5 text-[11px] transition-colors",
-                  i === suggIdx
-                    ? "bg-accent/10 text-fg"
-                    : "text-fg-muted hover:bg-bg-elevated hover:text-fg",
-                )}
-                onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(s.name); }}
-              >
-                <span className={cn("font-semibold", i === suggIdx ? "text-accent" : "text-fg-muted")}>
-                  {i === 0 ? "▸" : " "} {s.name}
-                </span>
-                <span className="truncate text-fg-subtle">{s.description}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Autocomplete dropdown — always in DOM so aria-controls is never a dangling
+            reference (WCAG 4.1.2). Visibility controlled by the hidden attribute. */}
+        <ul
+          id="terminal-cmd-listbox"
+          className="absolute bottom-full left-0 right-0 z-10 overflow-hidden rounded-t-xl border border-accent/20 bg-bg-surface shadow-lg"
+          role="listbox"
+          aria-label="Command suggestions"
+          hidden={!showSugg || suggestions.length === 0}
+        >
+          {suggestions.map((s, i) => (
+            <li
+              key={s.name}
+              role="option"
+              aria-selected={i === suggIdx}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 px-4 py-1.5 text-[11px] transition-colors",
+                i === suggIdx
+                  ? "bg-accent/10 text-fg"
+                  : "text-fg-muted hover:bg-bg-elevated hover:text-fg",
+              )}
+              onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(s.name); }}
+            >
+              <span className={cn("font-semibold", i === suggIdx ? "text-accent" : "text-fg-muted")}>
+                {i === 0 ? "▸" : " "} {s.name}
+              </span>
+              <span className="truncate text-fg-subtle">{s.description}</span>
+            </li>
+          ))}
+        </ul>
 
         <form
           onSubmit={(e) => {
@@ -244,6 +245,7 @@ export function Terminal({
           <div className="relative min-w-0 flex-1">
             <input
               ref={inputRef}
+              role="combobox"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
@@ -252,6 +254,7 @@ export function Terminal({
               aria-label="Terminal command input"
               aria-autocomplete="list"
               aria-expanded={showSugg}
+              aria-controls="terminal-cmd-listbox"
               spellCheck={false}
               autoComplete="off"
               autoCapitalize="off"

@@ -64,5 +64,18 @@ ${articles ? `\n## Articles & Writing\n${articles}` : ""}${notes ? `\n\n## Engin
 - Structured résumé (JSON): ${BASE}/api/resume.json
 - MCP server (for AI agents): ${BASE}/api/mcp/sse
 - RSS feed: ${BASE}/feed.xml
+
+## Markdown Versions
+Every content page is available as clean markdown by appending .md to the URL.
+${allWork.map((w) => `- ${BASE}${w.url}.md`).join("\n")}
+
+### Projects
+${allProjects.map((p) => `- ${BASE}${p.url}.md`).join("\n")}
+
+### Notes
+${allNotes.length > 0 ? allNotes.map((n) => `- ${BASE}${n.url}.md`).join("\n") : "(none yet)"}
+
+### Articles (native only)
+${allArticles.filter((a) => !a.externalUrl).map((a) => `- ${BASE}${a.url}.md`).join("\n")}
 `;
 }

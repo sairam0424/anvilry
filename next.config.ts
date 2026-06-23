@@ -99,9 +99,10 @@ const nextConfig: NextConfig = {
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
     // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
-    // `export const dynamic` / `export const runtime` segment configs (17 files use them).
-    // Migration path: remove segment configs site-wide and rely on per-route caching
-    // defaults instead. Deferred to v2.1 — not worth the blast radius now.
+    // `export const runtime = "nodejs"` segment configs present on all 9 API routes
+    // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
+    // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
+    // PPR enablement deferred until Next.js provides a per-route escape hatch.
     // cacheComponents: true,
   },
   images: {

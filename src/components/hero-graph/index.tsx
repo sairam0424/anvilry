@@ -5,8 +5,14 @@ import { useReducedMotion } from "motion/react";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useView } from "@/components/view-context";
 
+const GRAPH_PHYSICS = process.env.NEXT_PUBLIC_GRAPH_PHYSICS === "true";
+
 // Client-only, lazily loaded — Three.js never enters the critical path / SSR.
-const HeroGraphScene = dynamic(() => import("./scene"), { ssr: false });
+// When NEXT_PUBLIC_GRAPH_PHYSICS=true the Rapier physics variant is loaded instead;
+// when off (default) rapier is never imported — zero bundle impact.
+const HeroGraphScene = GRAPH_PHYSICS
+  ? dynamic(() => import("./scene-physics").then((m) => m.HeroGraphScenePhysics), { ssr: false })
+  : dynamic(() => import("./scene"), { ssr: false });
 
 /**
  * Hero WebGL slot. Mounts the R3F graph ONLY when:

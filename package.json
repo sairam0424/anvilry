@@ -24,6 +24,7 @@
     "@react-three/fiber": "^9.6.1",
     "@react-three/offscreen": "^0.0.8",
     "@react-three/postprocessing": "^3.0.4",
+    "@react-three/rapier": "^2.2.0",
     "@types/three": "^0.184.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",

@@ -4,12 +4,22 @@ import { useId, useRef } from "react";
 import { Paperclip } from "lucide-react";
 import type { FileUIPart } from "@/components/chat/use-chat";
 
+// PDF support deferred — deep-research verdict (2026-06-23):
+// Sending PDFs as base64 hits our 2MB payload cap immediately (1MB PDF → ~1.37MB base64).
+// The correct approach is client-side text extraction via pdf.js, then send as a text block
+// (~5-10KB instead of MBs). This is also what ChatGPT/Claude.ai/Gemini do internally.
+// AWS Bedrock Converse API does support PDF DocumentBlocks natively (base64 bytes, format='pdf'),
+// but requires citations:true for full visual understanding — and still hits the payload limit.
+// TODO: uncomment "application/pdf" and implement pdf.js extraction pipeline when ready:
+//   1. npm install pdfjs-dist
+//   2. Read PDF → extract text pages → send as { type: "text", text: extractedText }
+//   3. Increase MAX_FILE_SIZE to 10MB (pdf.js extracts text, no base64 overhead)
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
-  "application/pdf",
+  // "application/pdf", // TODO: re-enable after pdf.js text extraction pipeline is implemented
 ]);
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB per file
@@ -91,7 +101,7 @@ export function FilePickerButton({
     <>
       <label
         htmlFor={inputId}
-        title="Attach image or PDF"
+        title="Attach image (jpg, png, gif, webp)"
         className={[
           "inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-border",
           "text-fg-muted transition-colors hover:border-accent hover:text-fg",
@@ -102,17 +112,17 @@ export function FilePickerButton({
           .join(" ")}
       >
         <Paperclip size={16} aria-hidden="true" />
-        <span className="sr-only">Attach image or PDF</span>
+        <span className="sr-only">Attach image</span>
         <input
           id={inputId}
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+          accept="image/jpeg,image/png,image/gif,image/webp"
           multiple
           disabled={disabled}
           onChange={handleChange}
           className="sr-only"
-          aria-label="Attach image or PDF"
+          aria-label="Attach image"
         />
       </label>
     </>

@@ -377,8 +377,9 @@ export function ChatMessages({
                     {/* Attachment previews — mosaic grid for images (xopc/Telegram pattern),
                         filename badge for PDFs, hover-download (VS Code Copilot / Slack pattern) */}
                     {m.attachments && m.attachments.length > 0 && (() => {
-                      const images = m.attachments!.filter((f) => f.mediaType !== "application/pdf");
-                      const pdfs = m.attachments!.filter((f) => f.mediaType === "application/pdf");
+                      // All attachments are images — PDF excluded until pdf.js pipeline is ready
+                      const images = m.attachments!;
+                      const pdfs: typeof images = []; // TODO: re-populate when PDF support restored
                       const lightboxImages = images.map((f) => ({ src: f.previewUrl, name: f.name }));
                       const count = images.length;
                       // Mosaic grid classes — 1: single large, 2: side by side, 3: first spans 2 rows + 2 stacked, 3+: 2-col grid

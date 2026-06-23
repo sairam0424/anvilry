@@ -13,8 +13,10 @@ export type ChatRole = "user" | "assistant";
 export type FileUIPart = {
   /** Browser-local object URL for preview rendering (URL.createObjectURL). Revoked on cleanup. */
   previewUrl: string;
-  /** MIME type validated on the client before base64 encoding. */
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
+  /** MIME type validated on the client before base64 encoding.
+   * NOTE: application/pdf excluded — base64 overhead hits payload limit.
+   * TODO: re-enable after pdf.js text extraction pipeline is implemented. */
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
   /** Base64-encoded file contents (raw, without the data: prefix). */
   data: string;
   /** Original filename for the preview strip label. */
@@ -94,11 +96,11 @@ export function useChat() {
           return { role: m.role, content: m.content };
         }
         // Multi-modal: attachment blocks first (Anthropic convention), text last
-        const blocks: object[] = m.attachments.map((f) =>
-          f.mediaType === "application/pdf"
-            ? { type: "document", source: { type: "base64", media_type: f.mediaType, data: f.data } }
-            : { type: "image", source: { type: "base64", media_type: f.mediaType, data: f.data } },
-        );
+        // TODO: when pdf.js pipeline is implemented, add document block path here
+        const blocks: object[] = m.attachments.map((f) => ({
+          type: "image",
+          source: { type: "base64", media_type: f.mediaType, data: f.data },
+        }));
         if (m.content) blocks.push({ type: "text", text: m.content });
         return { role: "user", content: blocks };
       });

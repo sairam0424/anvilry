@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 
 // ISR: prerender at build with whatever repos resolve, regenerate at most once/hour.
 // The GitHub API is fetched server-side here (never in the visitor's request path),
-// so the page stays static-served — cacheComponents is OFF, so this segment config
-// is valid. Empty-safe: getRepoFeed() returns [] on failure and the feed hides.
+// so the page stays static-served. Empty-safe: getRepoFeed() returns [] on failure
+// and the feed hides.
 export const revalidate = 3600;
 
 export default async function ProjectsPage() {

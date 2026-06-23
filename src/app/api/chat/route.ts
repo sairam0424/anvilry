@@ -138,7 +138,21 @@ NAVIGATION TOKENS (optional, for live page control — use sparingly):
 ${githubStats ? githubStats + "\n\n" : ""}CONTEXT (the only source of truth):
 ${corpus}`;
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+/** Matches the Anthropic SDK's ImageBlockParam / DocumentBlockParam source shape. */
+type AttachmentBlock =
+  | {
+      type: "image";
+      source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp"; data: string };
+    }
+  | {
+      type: "document";
+      source: { type: "base64"; media_type: "application/pdf"; data: string };
+    };
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string | AttachmentBlock[];
+};
 
 export async function POST(req: Request) {
   return withTrace(req, "chat", async (ctx) => {
@@ -158,9 +172,11 @@ export async function POST(req: Request) {
 
     // Reject an oversized payload by its declared length BEFORE reading the body — a
     // cheap guard so a malicious client can't stream a huge JSON to exhaust memory. The
-    // real chat payload (<=12 msgs x <=600 chars + envelope) fits comfortably under 64KB.
+    // real chat payload (<=12 msgs x <=600 chars + envelope) fits comfortably under 64KB
+    // for text-only. With multi-modal attachments (base64-encoded images/PDFs) the ceiling
+    // is raised to 2MB: 12 msgs × 600 chars ≈ 7KB text + one 1MB image ≈ 1.33MB base64.
     const declaredLen = Number(req.headers.get("content-length") ?? 0);
-    if (declaredLen > 64 * 1024) {
+    if (declaredLen > 2 * 1024 * 1024) {
       return Response.json({ error: "Request too large." }, { status: 413 });
     }
 
@@ -173,10 +189,42 @@ export async function POST(req: Request) {
 
     const incoming = Array.isArray(body.messages) ? body.messages : [];
     // Sanitize + bound: cap history length and per-message length.
+    // User messages may carry multi-modal content blocks (images/PDFs); assistant
+    // messages are always plain strings from the server.
     const messages: Anthropic.MessageParam[] = incoming
       .slice(-MAX_MESSAGES)
-      .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-      .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_CHARS) }));
+      .filter(
+        (m) =>
+          (m.role === "user" || m.role === "assistant") &&
+          (typeof m.content === "string" || Array.isArray(m.content)),
+      )
+      .map((m) => {
+        if (m.role === "assistant" || typeof m.content === "string") {
+          return { role: m.role, content: (m.content as string).slice(0, MAX_CHARS) };
+        }
+        // User message with attachments: validate each block's structure.
+        const validImageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"] as const;
+        const blocks = (m.content as AttachmentBlock[]).filter((b) => {
+          if (!b || typeof b !== "object") return false;
+          if (b.type === "image") {
+            return (
+              b.source?.type === "base64" &&
+              (validImageTypes as readonly string[]).includes(b.source.media_type) &&
+              typeof b.source.data === "string"
+            );
+          }
+          if (b.type === "document") {
+            return (
+              b.source?.type === "base64" &&
+              b.source.media_type === "application/pdf" &&
+              typeof b.source.data === "string"
+            );
+          }
+          // Pass through text blocks the client may append
+          return (b as { type: string }).type === "text";
+        });
+        return { role: "user" as const, content: blocks as Anthropic.ContentBlockParam[] };
+      });
 
     if (messages.length === 0 || messages[messages.length - 1].role !== "user") {
       return Response.json({ error: "Expected a user message." }, { status: 400 });
@@ -185,7 +233,9 @@ export async function POST(req: Request) {
     // Surface message-count + last-user-msg-length to the auto http.request span
     // (free aggregate stats without logging actual prompts — those go via
     // llm.attempt below, redacted).
-    ctx.attrs({ messageCount: messages.length, lastMessageLen: messages[messages.length - 1].content.length });
+    const last = messages[messages.length - 1];
+    const lastLen = typeof last.content === "string" ? last.content.length : (last.content as unknown[]).length;
+    ctx.attrs({ messageCount: messages.length, lastMessageLen: lastLen });
 
     // Fetch live GitHub stats in parallel with corpus assembly. Fails open — if it
     // times out or the GitHub token is unset, githubStats is null and the prompt

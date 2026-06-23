@@ -4,11 +4,31 @@ import { useCallback, useRef, useState } from "react";
 import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
 
 export type ChatRole = "user" | "assistant";
+
+/**
+ * A single file attachment to be sent alongside a user message.
+ * Mirrors the Anthropic SDK's base64 source shape so the API route
+ * can pass blocks directly to the SDK without translation.
+ */
+export type FileUIPart = {
+  /** Browser-local object URL for preview rendering (URL.createObjectURL). Revoked on cleanup. */
+  previewUrl: string;
+  /** MIME type validated on the client before base64 encoding. */
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
+  /** Base64-encoded file contents (raw, without the data: prefix). */
+  data: string;
+  /** Original filename for the preview strip label. */
+  name: string;
+  /** Byte size before encoding — used to enforce the per-file 2MB guard. */
+  size: number;
+};
+
 /** `model`/`fellBack` come from the server's honest trailing trace frame (which model
  *  served the bytes), parsed out of the stream — never shown as message text. */
 export type ChatMessage = {
   role: ChatRole;
   content: string;
+  attachments?: FileUIPart[];
   model?: string;
   fellBack?: boolean;
   /** Reasoning text as it streams live (populated while isThinking may still be true).
@@ -48,6 +68,7 @@ export type ChatStatus = "idle" | "streaming" | "error";
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [status, setStatus] = useState<ChatStatus>("idle");
+  const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => {
@@ -57,13 +78,30 @@ export function useChat() {
   }, []);
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, files?: FileUIPart[]) => {
       const q = text.trim();
-      if (!q || status === "streaming") return;
+      if ((!q && !files?.length) || status === "streaming") return;
 
-      const history = [...messages, { role: "user" as const, content: q }];
+      // Build local message for display (text + attachment previews)
+      const userMsg: ChatMessage = { role: "user" as const, content: q, attachments: files };
+      const history = [...messages, userMsg];
       setMessages([...history, { role: "assistant", content: "" }]);
       setStatus("streaming");
+
+      // Build the wire payload: multi-modal messages use content-block arrays
+      const wireMessages = history.map((m) => {
+        if (m.role !== "user" || !m.attachments?.length) {
+          return { role: m.role, content: m.content };
+        }
+        // Multi-modal: attachment blocks first (Anthropic convention), text last
+        const blocks: object[] = m.attachments.map((f) =>
+          f.mediaType === "application/pdf"
+            ? { type: "document", source: { type: "base64", media_type: f.mediaType, data: f.data } }
+            : { type: "image", source: { type: "base64", media_type: f.mediaType, data: f.data } },
+        );
+        if (m.content) blocks.push({ type: "text", text: m.content });
+        return { role: "user", content: blocks };
+      });
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -72,7 +110,7 @@ export function useChat() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: history }),
+          body: JSON.stringify({ messages: wireMessages }),
           signal: controller.signal,
         });
 
@@ -166,9 +204,23 @@ export function useChat() {
 
   const reset = useCallback(() => {
     stop();
-    setMessages([]);
+    setMessages((prev) => {
+      // Revoke any object URLs created for attachment previews to avoid memory leaks
+      prev.forEach((m) => m.attachments?.forEach((f) => URL.revokeObjectURL(f.previewUrl)));
+      return [];
+    });
+    setPendingFiles([]);
     setStatus("idle");
   }, [stop]);
 
-  return { messages, status, send, stop, reset, isStreaming: status === "streaming" };
+  return {
+    messages,
+    status,
+    send,
+    stop,
+    reset,
+    isStreaming: status === "streaming",
+    pendingFiles,
+    setPendingFiles,
+  };
 }

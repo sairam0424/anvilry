@@ -12,7 +12,7 @@ const isOpenToWork = now.focus.some((f) => /open to (new )?roles?/i.test(f));
  * connect this site to GitHub/LinkedIn (sameAs). Rendered server-side in <head>.
  */
 export function PersonJsonLd() {
-  const data = {
+  const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: profile.name,
@@ -23,6 +23,10 @@ export function PersonJsonLd() {
     address: { "@type": "PostalAddress", addressLocality: profile.locationCity, addressCountry: profile.locationCountry },
     sameAs: [profile.links.github, profile.links.linkedin],
     knowsAbout: skills.flatMap((s) => s.items),
+    skills: skills.flatMap((s) => s.items).map((item) => ({
+      "@type": "DefinedTerm",
+      name: item,
+    })),
     ...(isOpenToWork && { seeks: { "@type": "Demand", name: "GenAI & Backend Engineering roles" } }),
   };
   return (

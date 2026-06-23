@@ -130,7 +130,11 @@ export function ChatView() {
           Returns null when empty so there is no layout shift. */}
       <AttachmentPreviewStrip
         files={pendingFiles}
-        onRemove={(i) => setPendingFiles((prev) => prev.filter((_, idx) => idx !== i))}
+        onRemove={(i) => setPendingFiles((prev) => {
+          const removed = prev[i];
+          if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+          return prev.filter((_, idx) => idx !== i);
+        })}
       />
 
       {/* Composer. shrink-0: the input the user types in must NEVER be compressed or

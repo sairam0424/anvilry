@@ -220,9 +220,26 @@ export async function POST(req: Request) {
               typeof b.source.data === "string"
             );
           }
-          // Pass through text blocks the client may append
-          return (b as { type: string }).type === "text";
+          // Pass through text blocks the client may append — cap length to MAX_CHARS
+          // to prevent bypassing the per-message length guard via content-block path.
+          if ((b as { type: string }).type === "text") {
+            const tb = b as { type: string; text?: unknown };
+            return typeof tb.text === "string" && tb.text.length > 0;
+          }
+          return false;
+        }).map((b) => {
+          // Enforce MAX_CHARS on text blocks — same cap as the string path.
+          if ((b as { type: string }).type === "text") {
+            const tb = b as unknown as { type: string; text: string };
+            return { ...tb, text: tb.text.slice(0, MAX_CHARS) };
+          }
+          return b;
         });
+        // Guard: empty blocks array would produce { role: "user", content: [] } which
+        // the Anthropic SDK rejects with a 400. Return a plain empty-string message instead.
+        if (blocks.length === 0) {
+          return { role: "user" as const, content: "" };
+        }
         return { role: "user" as const, content: blocks as Anthropic.ContentBlockParam[] };
       });
 

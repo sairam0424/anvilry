@@ -16,6 +16,45 @@ import { highlightProject } from "@/lib/highlight-store";
 import { unlock } from "@/lib/discovery-store";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 
+/**
+ * Fullscreen image lightbox — click a thumbnail to expand, click backdrop or press
+ * Escape to dismiss. Uses a fixed overlay so it escapes the scroll container.
+ * Fade-in transition matches the site's dark aesthetic.
+ */
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Full size: ${alt}`}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL, next/image unsupported */}
+      <img
+        src={src}
+        alt={alt}
+        className="max-h-[90vh] max-w-[90vw] rounded-2xl shadow-2xl object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close image"
+        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 /** Renders Claude's extended thinking — animated + live reasoning while streaming,
  *  expandable collapsed toggle once the reasoning phase is complete. */
 function ThinkingBlock({
@@ -128,6 +167,11 @@ export function ChatMessages({
 }) {
   const { setView } = useView();
 
+  // Lightbox state — null when closed, { src, alt } when open.
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const openLightbox = useCallback((src: string, alt: string) => setLightbox({ src, alt }), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
+
   // Dispatch cmd-view and cmd-highlight tokens from completed (non-streaming) assistant
   // messages. We track which message indices have been dispatched so cmd tokens only
   // fire once per message, not on every re-render. Kept in a ref (not state) so the
@@ -225,6 +269,8 @@ export function ChatMessages({
   return (
     // relative wrapper anchors the floating JumpToLatest; min-h-0 lets the inner
     // scroll child shrink below content so overflow-y-auto engages (see chat-view).
+    <>
+    {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={closeLightbox} />}
     <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
       <div
         ref={setScroll}
@@ -254,13 +300,23 @@ export function ChatMessages({
                       <div className="flex flex-wrap justify-end gap-1.5">
                         {m.attachments.map((f, fi) =>
                           f.mediaType !== "application/pdf" ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- previewUrl is a blob: object URL; next/image does not support blob: URLs
-                            <img
+                            <button
                               key={fi}
-                              src={f.previewUrl}
-                              alt={f.name}
-                              className="h-20 w-20 rounded-xl object-cover border border-white/20"
-                            />
+                              type="button"
+                              onClick={() => openLightbox(f.previewUrl, f.name)}
+                              aria-label={`View full size: ${f.name}`}
+                              className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+                              <img
+                                src={f.previewUrl}
+                                alt={f.name}
+                                className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-150 group-hover:bg-black/30 group-hover:opacity-100">
+                                <span className="text-white text-xs font-medium">View</span>
+                              </span>
+                            </button>
                           ) : (
                             <div
                               key={fi}
@@ -350,5 +406,6 @@ export function ChatMessages({
 
       <JumpToLatest show={!isAtBottom} onClick={onJump} />
     </div>
+    </>
   );
 }

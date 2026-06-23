@@ -1,8 +1,7 @@
 "use client";
 
 import { useRef, useMemo, useEffect } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { Canvas, useThree, useFrame, THREE } from "@/lib/r3f";
 import { graphNodes, graphEdges, kindColor } from "@/lib/graph-data";
 
 const SCALE = 1.6;
@@ -89,7 +88,8 @@ function Rig({ group }: { group: React.RefObject<THREE.Group | null> }) {
   return null;
 }
 
-function Graph() {
+/** Inner graph group — exported for the physics variant to embed inside its own Canvas. */
+export function Graph() {
   const group = useRef<THREE.Group>(null);
   const { invalidate } = useThree();
   useEffect(() => {
@@ -125,4 +125,9 @@ export default function HeroGraphScene() {
       <Graph />
     </Canvas>
   );
+}
+
+/** Inner scene content without Canvas — used by scene-physics.tsx to avoid nested Canvas. */
+export function HeroGraphInner() {
+  return <Graph />;
 }

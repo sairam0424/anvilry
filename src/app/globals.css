@@ -260,9 +260,26 @@ body {
   Only `view-body` cross-fades; `site-header` is its own group and is pinned (no
   animation) so the sticky nav stays put across a switch.
 */
-::view-transition-group(view-body) {
-  animation-duration: 0.28s;
-  animation-timing-function: cubic-bezier(0.21, 0.47, 0.32, 0.98);
+/* Directional slide keyframes for view transitions (C-1 upgrade from plain cross-fade) */
+@keyframes vt-slide-in-from-right  { from { transform: translateX(6%);  opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes vt-slide-in-from-left   { from { transform: translateX(-6%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes vt-slide-out-to-left    { from { transform: none; opacity: 1; } to { transform: translateX(-6%); opacity: 0; } }
+@keyframes vt-slide-out-to-right   { from { transform: none; opacity: 1; } to { transform: translateX(6%);  opacity: 0; } }
+
+/* Forward (classic→chat etc): new view slides in from right, old slides out left */
+[data-view-dir="forward"]::view-transition-new(view-body)  {
+  animation: vt-slide-in-from-right 0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+[data-view-dir="forward"]::view-transition-old(view-body)  {
+  animation: vt-slide-out-to-left   0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+
+/* Backward (chat→classic etc): new view slides in from left, old slides out right */
+[data-view-dir="backward"]::view-transition-new(view-body) {
+  animation: vt-slide-in-from-left  0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
+}
+[data-view-dir="backward"]::view-transition-old(view-body) {
+  animation: vt-slide-out-to-right  0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both;
 }
 ::view-transition-old(site-header),
 ::view-transition-new(site-header) {

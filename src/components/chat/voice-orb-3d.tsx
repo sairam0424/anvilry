@@ -1,11 +1,9 @@
 "use client";
 
 import { useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration } from "@react-three/postprocessing";
+import { Canvas, useFrame, EffectComposer, Bloom, Vignette, Noise, ChromaticAberration, THREE } from "@/lib/r3f";
 import { BlendFunction } from "postprocessing"; // peer dep of @react-three/postprocessing
 import { Fluid } from "@whatisjery/react-fluid-distortion";
-import * as THREE from "three";
 import type { VoiceSessionState } from "@/components/chat/use-voice-session";
 
 /**

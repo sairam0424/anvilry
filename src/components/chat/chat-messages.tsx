@@ -410,9 +410,10 @@ export function ChatMessages({
                                     alt={f.name}
                                     className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                                   />
-                                  {/* Hover overlay — view + download (gptme + Copilot pattern) */}
+                                  {/* Hover overlay — view label (download in lightbox header via "↓ Download" button) */}
                                   <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
                                     <span className="text-white text-[11px] font-medium">View</span>
+                                    {/* TODO: uncomment to re-enable "↓ Save" on hover (Slack/Copilot pattern)
                                     <a
                                       href={f.previewUrl}
                                       download={f.name}
@@ -422,6 +423,7 @@ export function ChatMessages({
                                     >
                                       ↓ Save
                                     </a>
+                                    */}
                                   </span>
                                 </button>
                               ))}

@@ -44,6 +44,10 @@ export type ChatMessage = {
   /** true while THINKING_SENTINEL seen but THINKING_END not yet received.
    *  false once THINKING_END arrives (thinking phase complete). */
   isThinking?: boolean;
+  /** Unix ms when THINKING_SENTINEL first arrived — used to compute live elapsed timer. */
+  thinkingStartedAt?: number;
+  /** How long thinking took in seconds — set when THINKING_END arrives. */
+  thinkingDuration?: number;
 };
 
 /** Split a streamed assistant chunk into visible text + an optional parsed trace frame.
@@ -151,43 +155,62 @@ export function useChat() {
           let liveReasoning: string | undefined;
           let isThinking: boolean | undefined;
           let textRegion: string; // the part to pass through splitTrace
+          let thinkingStartedAt: number | undefined;
+          let thinkingDuration: number | undefined;
 
           if (hasSentinel) {
             const afterSentinel = acc.slice(THINKING_SENTINEL.length);
             const endIdx = afterSentinel.indexOf(THINKING_END);
             if (endIdx === -1) {
               // THINKING_END not yet arrived: still in reasoning phase.
-              // Everything after the sentinel is live reasoning.
               liveReasoning = afterSentinel;
               isThinking = true;
-              textRegion = ""; // no answer text yet
+              textRegion = "";
+              // Preserve thinkingStartedAt from the previous state update if already set.
+              // We read it from the current last message to avoid losing it on each tick.
+              thinkingStartedAt = undefined; // will be set below via functional update
             } else {
-              // THINKING_END arrived: reasoning is the slice before it, answer is after.
+              // THINKING_END arrived: compute duration from sentinel → end.
               liveReasoning = afterSentinel.slice(0, endIdx);
               isThinking = false;
               textRegion = afterSentinel.slice(endIdx + THINKING_END.length);
+              thinkingStartedAt = undefined; // will be read from prev state below
+              thinkingDuration = undefined;  // computed below from startedAt
             }
           } else {
-            // No thinking sentinel — standard path.
             liveReasoning = undefined;
             isThinking = undefined;
             textRegion = acc;
           }
 
-          // Strip the trailing trace frame from the DISPLAYED text; capture the model
-          // (honest, server-sourced — which model served the bytes / did it fall back).
           const { text, trace } = splitTrace(textRegion);
-          setMessages((m) => [
-            ...m.slice(0, -1),
+          const now = Date.now();
+          setMessages((prev) => {
+            const prevLast = prev[prev.length - 1];
+            const prevStartedAt = prevLast?.thinkingStartedAt;
+            const newStartedAt =
+              isThinking === true
+                ? (prevStartedAt ?? now)           // first tick sets it; subsequent ticks preserve it
+                : undefined;
+            const newDuration =
+              isThinking === false && prevStartedAt
+                ? Math.round((now - prevStartedAt) / 1000)
+                : prevLast?.thinkingDuration;      // preserve settled duration across answer streaming
+
+            return [
+            ...prev.slice(0, -1),
             {
-              role: "assistant",
+              role: "assistant" as const,
               content: text,
-              model: trace?.model,
-              fellBack: trace?.fellBack,
+              model: (trace as { model?: string } | undefined)?.model,
+              fellBack: (trace as { fellBack?: boolean } | undefined)?.fellBack,
+              reasoning: (trace as { reasoning?: string } | undefined)?.reasoning ?? liveReasoning,
               liveReasoning,
               isThinking,
+              thinkingStartedAt: newStartedAt,
+              thinkingDuration: newDuration,
             },
-          ]);
+          ]});
         }
         setStatus("idle");
       } catch (err) {

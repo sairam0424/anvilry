@@ -134,30 +134,62 @@ function ImageLightbox({
   );
 }
 
-/** Renders Claude's extended thinking — animated + live reasoning while streaming,
- *  expandable collapsed toggle once the reasoning phase is complete. */
+/** Renders Claude's extended thinking.
+ *
+ * Phase 1 (thinking): "Thinking… 12s" live timer + scrolling reasoning text.
+ * Phase 2 (settled):  "Thought for 12s (ctrl+o to expand)" — matches Claude Code pattern.
+ *                     Click or ctrl+o to toggle the full reasoning.
+ */
 function ThinkingBlock({
   isThinking,
   liveReasoning,
   isStreaming,
+  thinkingStartedAt,
+  thinkingDuration,
 }: {
   isThinking?: boolean;
   liveReasoning?: string;
   isStreaming: boolean;
+  thinkingStartedAt?: number;
+  thinkingDuration?: number;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [elapsed, setElapsed] = React.useState(0);
   const liveEndRef = useRef<HTMLPreElement>(null);
   const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== "false";
 
-  // useEffect MUST come before any early return — Rules of Hooks.
+  // Live elapsed timer — ticks every second while thinking is in progress.
+  // Initial value stays 0; first tick fires at ~1s which is accurate enough.
+  useEffect(() => {
+    if (!isThinking || !thinkingStartedAt) return;
+    const id = setInterval(() => {
+      setElapsed(Math.round((Date.now() - thinkingStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isThinking, thinkingStartedAt]);
+
+  // Auto-scroll live reasoning to bottom as it streams in.
   useEffect(() => {
     if (!enabled || !isThinking || !liveEndRef.current) return;
     liveEndRef.current.scrollTop = liveEndRef.current.scrollHeight;
   }, [enabled, isThinking, liveReasoning]);
 
+  // Ctrl+O keyboard shortcut — toggles the reasoning panel when settled.
+  useEffect(() => {
+    if (!liveReasoning || isThinking) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "o") {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [liveReasoning, isThinking]);
+
   if (!enabled) return null;
 
-  // Phase 1 — thinking in progress: animated dots + live reasoning text below.
+  // Phase 1 — thinking in progress: "Thinking… 12s" + live scrolling reasoning.
   if (isThinking && isStreaming) {
     return (
       <div className="mb-2 max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
@@ -167,7 +199,10 @@ function ThinkingBlock({
             <span className="animate-pulse [animation-delay:150ms]">·</span>
             <span className="animate-pulse [animation-delay:300ms]">·</span>
           </span>
-          <span>Thinking…</span>
+          <span>
+            Thinking…{" "}
+            {elapsed > 0 && <strong className="font-semibold text-fg-muted">{elapsed}s</strong>}
+          </span>
         </div>
         {liveReasoning && (
           <pre
@@ -183,21 +218,25 @@ function ThinkingBlock({
     );
   }
 
-  // Phase 2 — thinking done: show collapsed toggle with the full liveReasoning.
-  // This renders whether streaming is ongoing (answer phase) or complete.
+  // Phase 2 — settled: "Thought for Xs (ctrl+o to expand)" — Claude Code pattern.
   if (!liveReasoning) return null;
-  const wordCount = liveReasoning.trim().split(/\s+/).length;
+  const duration = thinkingDuration ?? elapsed;
 
   return (
     <div className="mb-2 max-w-[88%]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-[11px] text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex items-center gap-1.5 text-[11px] text-fg-subtle/70 transition-colors hover:text-fg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         aria-expanded={open}
+        title={open ? "Collapse reasoning (ctrl+o)" : "Expand reasoning (ctrl+o)"}
       >
-        <span>{open ? "▾" : "▶"}</span>
-        <span>Show reasoning ({wordCount} words)</span>
+        <span className="text-fg-subtle/40">{open ? "▾" : "▶"}</span>
+        <span>
+          Thought for{" "}
+          <strong className="font-semibold text-fg-muted">{duration > 0 ? `${duration}s` : "a moment"}</strong>
+          {!open && <span className="ml-1.5 text-fg-subtle/40">(ctrl+o to expand)</span>}
+        </span>
       </button>
       {open && (
         <pre className="mt-1.5 max-h-48 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle">
@@ -470,6 +509,8 @@ export function ChatMessages({
                     isThinking={m.isThinking}
                     liveReasoning={m.liveReasoning}
                     isStreaming={isStreaming && isLast}
+                    thinkingStartedAt={m.thinkingStartedAt}
+                    thinkingDuration={m.thinkingDuration}
                   />
                 ) : null}
                 {/* Pre-flight waiting indicator — shown when streaming has started but no bytes

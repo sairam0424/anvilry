@@ -3,8 +3,6 @@ import { Section } from "@/components/ui/section";
 import { CopyButton } from "@/components/copy-button";
 import { profile } from "@/lib/profile";
 
-export const dynamic = "force-static";
-
 const ENDPOINT = "https://anvilry.vercel.app/api/mcp/mcp";
 
 const description = `Connect your AI assistant to ${profile.name}'s portfolio via the Model Context Protocol.`;

@@ -1,9 +1,7 @@
+import { unstable_noStore as noStore } from "next/cache";
+
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
-
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 // ── Data layer ────────────────────────────────────────────────────────────────
 
@@ -20,6 +18,7 @@ async function fetchKind(kind: string, since: number): Promise<TelemetryEvent[]>
 }
 
 async function fetchAll(since: number): Promise<TelemetryEvent[]> {
+  noStore();
   const results = await Promise.all(KIND_LITERALS.map((k) => fetchKind(k, since)));
   return results.flat().sort((a, b) => a.ts - b.ts);
 }

@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Canvas, useThree, useFrame, OrbitControls, Billboard, Text, THREE } from "@/lib/r3f";
-import type { ThreeEvent } from "@react-three/fiber";
+import type { ThreeEvent } from "@/lib/r3f";
 import { kindColor } from "@/lib/graph-data";
 import { questNodes, graphEdgesResolved } from "@/lib/game-model";
 

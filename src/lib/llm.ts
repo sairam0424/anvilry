@@ -293,6 +293,10 @@ export function streamWithFallback(
         let thinkingEndEmitted = false;
 
         // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
+        // NOTE: If multimodal attachments are present (content is a ContentBlockParam[]),
+        // extended thinking + image content blocks may conflict on some Bedrock inference
+        // profiles. If this becomes an issue, disable thinking when content is not a plain
+        // string by checking: messages.some(m => Array.isArray(m.content)).
         const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
 
         // Build the params for this attempt — add thinking config if enabled.

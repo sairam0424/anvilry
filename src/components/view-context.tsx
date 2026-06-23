@@ -26,6 +26,16 @@ export type View = "classic" | "gamified" | "chat" | "developer" | "voice" | "re
 const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice", "resume"] as const;
 const DEFAULT_VIEW: View = "classic";
 
+/** Nav order used to compute slide direction for view transitions. */
+const VIEW_ORDER: Record<View, number> = {
+  classic: 0,
+  gamified: 1,
+  chat: 2,
+  developer: 3,
+  voice: 4,
+  resume: 5,
+};
+
 const isView = (v: string | null | undefined): v is View =>
   v != null && (VIEWS as readonly string[]).includes(v);
 
@@ -118,6 +128,12 @@ function setViewInternal(
   { updateUrl = true, transition = true }: { updateUrl?: boolean; transition?: boolean } = {},
 ) {
   if (!isView(view) || view === current) return;
+  // Stamp direction on <html> so CSS keyframes pick the right slide direction.
+  // Must happen before startViewTransition snapshots the DOM.
+  if (typeof document !== "undefined" && transition) {
+    document.documentElement.dataset.viewDir =
+      VIEW_ORDER[view] > VIEW_ORDER[current] ? "forward" : "backward";
+  }
   current = view;
   // Discovery badge: any deliberate view switch unlocks the first milestone.
   if (typeof window !== "undefined") unlock("view-switch");

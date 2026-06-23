@@ -88,7 +88,7 @@ export function FilePickerButton({
                     const content = await page.getTextContent();
                     pages.push(
                       content.items
-                        .map((item) => ("str" in item ? (item.str as string) : ""))
+                        .map((item) => ("str" in item ? (item as { str: string }).str : ""))
                         .join(" "),
                     );
                   }

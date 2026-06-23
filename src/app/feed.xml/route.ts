@@ -1,10 +1,8 @@
 import { allNotes, allArticles } from "@/lib/content";
 import { profile } from "@/lib/profile";
 
-// Hand-rolled RSS (no dep), force-static — prerendered like the rest of the SSG surface.
+// Hand-rolled RSS (no dep).
 // Empty-safe: with no published notes the feed is valid but item-less.
-export const dynamic = "force-static";
-
 const BASE = "https://anvilry.vercel.app";
 
 /** Escape the 5 XML predefined entities so titles/summaries can't break the document. */

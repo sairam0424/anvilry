@@ -21,19 +21,18 @@ function readRawContent(slug: string): string | null {
   return null;
 }
 
-export function GET(
+export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  return params.then(({ slug }) => {
-    const item = allWork.find((w) => w.slug === slug);
-    if (!item) return new Response("Not found", { status: 404 });
+  const { slug } = await params;
+  const item = allWork.find((w) => w.slug === slug);
+  if (!item) return new Response("Not found", { status: 404 });
 
-    const raw = readRawContent(slug);
-    if (!raw) return new Response("Not found", { status: 404 });
+  const raw = readRawContent(slug);
+  if (!raw) return new Response("Not found", { status: 404 });
 
-    return new Response(stripFrontmatter(raw), {
-      headers: { "Content-Type": "text/markdown; charset=utf-8" },
-    });
+  return new Response(stripFrontmatter(raw), {
+    headers: { "Content-Type": "text/markdown; charset=utf-8" },
   });
 }

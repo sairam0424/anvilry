@@ -229,9 +229,11 @@ export async function POST(req: Request) {
           return false;
         }).map((b) => {
           // Enforce MAX_CHARS on text blocks — same cap as the string path.
+          // PDF text blocks can be larger than user-typed messages (legitimate content).
           if ((b as { type: string }).type === "text") {
             const tb = b as unknown as { type: string; text: string };
-            return { ...tb, text: tb.text.slice(0, MAX_CHARS) };
+            const isFromPdf = typeof tb.text === "string" && tb.text.startsWith("[PDF:");
+            return { ...tb, text: tb.text.slice(0, isFromPdf ? 10000 : MAX_CHARS) };
           }
           return b;
         });

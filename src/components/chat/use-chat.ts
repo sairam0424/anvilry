@@ -9,19 +9,24 @@ export type ChatRole = "user" | "assistant";
  * A single file attachment to be sent alongside a user message.
  * Mirrors the Anthropic SDK's base64 source shape so the API route
  * can pass blocks directly to the SDK without translation.
+ *
+ * For images: `data` is base64-encoded; `pdfText` is undefined.
+ * For PDFs: `data` is an empty string (no base64); `pdfText` holds the
+ * extracted text from pdf.js — sent as a text block to avoid base64 overhead.
  */
 export type FileUIPart = {
-  /** Browser-local object URL for preview rendering (URL.createObjectURL). Revoked on cleanup. */
+  /** Browser-local object URL for preview rendering (URL.createObjectURL). Revoked on cleanup.
+   * Empty string for PDFs (no visual thumbnail). */
   previewUrl: string;
-  /** MIME type validated on the client before base64 encoding.
-   * NOTE: application/pdf excluded — base64 overhead hits payload limit.
-   * TODO: re-enable after pdf.js text extraction pipeline is implemented. */
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-  /** Base64-encoded file contents (raw, without the data: prefix). */
+  /** For images: base64 encoded data. For PDFs: empty string (text extracted separately). */
   data: string;
+  /** For PDFs: extracted text content via pdf.js. Undefined for images. */
+  pdfText?: string;
+  /** MIME type validated on the client before encoding. */
+  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
   /** Original filename for the preview strip label. */
   name: string;
-  /** Byte size before encoding — used to enforce the per-file 2MB guard. */
+  /** Byte size before encoding — used to enforce the per-file size guard. */
   size: number;
 };
 
@@ -96,11 +101,14 @@ export function useChat() {
           return { role: m.role, content: m.content };
         }
         // Multi-modal: attachment blocks first (Anthropic convention), text last
-        // TODO: when pdf.js pipeline is implemented, add document block path here
-        const blocks: object[] = m.attachments.map((f) => ({
-          type: "image",
-          source: { type: "base64", media_type: f.mediaType, data: f.data },
-        }));
+        const blocks: object[] = m.attachments.map((f) => {
+          if (f.mediaType === "application/pdf" && f.pdfText) {
+            // PDF: send extracted text as a text block — no base64 overhead
+            return { type: "text", text: `[PDF: ${f.name}]\n${f.pdfText}` };
+          }
+          // Image: send as base64 content block
+          return { type: "image", source: { type: "base64", media_type: f.mediaType, data: f.data } };
+        });
         if (m.content) blocks.push({ type: "text", text: m.content });
         return { role: "user", content: blocks };
       });

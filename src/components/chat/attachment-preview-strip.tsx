@@ -30,15 +30,22 @@ export function AttachmentPreviewStrip({
           role="listitem"
           className="relative inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg-surface/60 p-1 pr-2"
         >
-          {/* TODO: when PDF support is restored via pdf.js, add mediaType === "application/pdf" branch here */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={f.previewUrl}
-            alt={f.name}
-            width={48}
-            height={48}
-            className="h-12 w-12 rounded-md object-cover"
-          />
+          {f.mediaType === "application/pdf" ? (
+            <span className="flex items-center gap-1 px-1 text-xs text-fg-muted">
+              <span aria-hidden="true">📄</span>
+              <span className="max-w-[120px] truncate">{f.name}</span>
+              {f.pdfText && <span className="text-fg-subtle/60">({Math.round(f.pdfText.length / 1000)}k chars)</span>}
+            </span>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={f.previewUrl}
+              alt={f.name}
+              width={48}
+              height={48}
+              className="h-12 w-12 rounded-md object-cover"
+            />
+          )}
           <button
             type="button"
             onClick={() => onRemove(i)}

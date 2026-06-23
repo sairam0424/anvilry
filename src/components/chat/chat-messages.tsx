@@ -30,14 +30,14 @@ function ThinkingBlock({
   const [open, setOpen] = React.useState(false);
   const liveEndRef = useRef<HTMLPreElement>(null);
   const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== "false";
-  if (!enabled) return null;
 
-  // Auto-scroll the live reasoning pre to the bottom as new text streams in.
+  // useEffect MUST come before any early return — Rules of Hooks.
   useEffect(() => {
-    if (isThinking && liveEndRef.current) {
-      liveEndRef.current.scrollTop = liveEndRef.current.scrollHeight;
-    }
-  }, [isThinking, liveReasoning]);
+    if (!enabled || !isThinking || !liveEndRef.current) return;
+    liveEndRef.current.scrollTop = liveEndRef.current.scrollHeight;
+  }, [enabled, isThinking, liveReasoning]);
+
+  if (!enabled) return null;
 
   // Phase 1 — thinking in progress: animated dots + live reasoning text below.
   if (isThinking && isStreaming) {

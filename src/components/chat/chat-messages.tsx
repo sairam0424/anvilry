@@ -472,6 +472,21 @@ export function ChatMessages({
                     isStreaming={isStreaming && isLast}
                   />
                 ) : null}
+                {/* Pre-flight waiting indicator — shown when streaming has started but no bytes
+                    have arrived yet (content="", no thinking sentinel, no segments).
+                    This covers: (a) PDF extraction delay before send(), (b) network latency
+                    before the first byte, (c) any gap between send and THINKING_SENTINEL.
+                    Collapses immediately once any content, thinking, or reasoning appears. */}
+                {isStreaming && isLast && !m.isThinking && m.liveReasoning === undefined && !m.content && (
+                  <div className="flex max-w-[88%] items-center gap-2 rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
+                    <span className="inline-flex gap-1" aria-label="Waiting for response">
+                      <span className="animate-pulse">·</span>
+                      <span className="animate-pulse [animation-delay:200ms]">·</span>
+                      <span className="animate-pulse [animation-delay:400ms]">·</span>
+                    </span>
+                    <span>Waiting…</span>
+                  </div>
+                )}
                 {/* Answer segments — hidden while still in thinking phase (no content yet) */}
                 {!(m.isThinking && isStreaming && isLast) &&
                   segments.map((seg, j) =>

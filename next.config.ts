@@ -115,6 +115,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async rewrites() {
+    // Rewrite /:collection/:slug.md → /api/md/:collection/:slug so that AI crawlers
+    // can fetch raw markdown via canonical pretty-URLs (e.g. /work/pensieve.md).
+    return [
+      { source: "/work/:slug.md", destination: "/api/md/work/:slug" },
+      { source: "/projects/:slug.md", destination: "/api/md/projects/:slug" },
+      { source: "/articles/:slug.md", destination: "/api/md/articles/:slug" },
+      { source: "/notes/:slug.md", destination: "/api/md/notes/:slug" },
+    ];
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);

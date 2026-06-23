@@ -248,8 +248,34 @@ export function ChatMessages({
                   ref={i === lastUserIdx ? anchorRef : undefined}
                   className="flex justify-end scroll-mt-3"
                 >
-                  <div className="max-w-[88%] whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
-                    {m.content}
+                  <div className="flex max-w-[88%] flex-col items-end gap-1.5">
+                    {/* Attachment previews — images show as thumbnails, PDFs as filename badges */}
+                    {m.attachments && m.attachments.length > 0 && (
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        {m.attachments.map((f, fi) =>
+                          f.mediaType !== "application/pdf" ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- previewUrl is a blob: object URL; next/image does not support blob: URLs
+                            <img
+                              key={fi}
+                              src={f.previewUrl}
+                              alt={f.name}
+                              className="h-20 w-20 rounded-xl object-cover border border-white/20"
+                            />
+                          ) : (
+                            <div
+                              key={fi}
+                              className="flex items-center gap-1.5 rounded-xl bg-accent/80 px-3 py-2 text-xs text-bg-base"
+                            >
+                              <span aria-hidden="true">📄</span>
+                              <span className="max-w-[120px] truncate">{f.name}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                    <div className="whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
+                      {m.content}
+                    </div>
                   </div>
                 </div>
               );

@@ -150,11 +150,14 @@ export function ChatView() {
         {/* Push-to-talk mic — renders only where Web Speech is supported (else nothing,
             the text input is untouched). Transcripts fill the input for review. */}
         <MicButton onText={setInput} disabled={isStreaming} />
-        {/* File attachment picker — accepts images and PDFs up to 2MB each, max 3 files. */}
-        <FilePickerButton
-          onFiles={(f) => setPendingFiles((prev) => [...prev, ...f].slice(0, 3))}
-          disabled={isStreaming}
-        />
+        {/* File attachment picker — feature-flagged via NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS.
+            Defaults to disabled so the button only appears when explicitly enabled. */}
+        {process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === "true" && (
+          <FilePickerButton
+            onFiles={(f) => setPendingFiles((prev) => [...prev, ...f].slice(0, 3))}
+            disabled={isStreaming}
+          />
+        )}
         {isStreaming ? (
           <button
             type="button"

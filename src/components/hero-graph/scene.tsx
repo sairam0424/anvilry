@@ -126,3 +126,8 @@ export default function HeroGraphScene() {
     </Canvas>
   );
 }
+
+/** Inner scene content without Canvas — used by scene-physics.tsx to avoid nested Canvas. */
+export function HeroGraphInner() {
+  return <Graph />;
+}

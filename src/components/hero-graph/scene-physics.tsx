@@ -5,17 +5,12 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import type { RootState } from "@react-three/fiber";
 import { Physics, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
-import HeroGraphScene from "./scene";
+import { HeroGraphInner } from "./scene";
 
 /**
- * Physics-enhanced hero graph scene — zero-gravity world with gentle idle drift.
- *
- * Wraps the base HeroGraphScene in a Rapier Physics world. The scene group gets a
- * subtle sinusoidal impulse each frame to make it feel alive and floating in space.
- * Reduced-motion preference is respected: impulses are suppressed when active.
- *
- * Architecture: this file is only ever imported when NEXT_PUBLIC_GRAPH_PHYSICS=true.
- * Zero bundle impact when the flag is off.
+ * Physics-enhanced hero graph scene — single Canvas with Rapier Physics world inside.
+ * The graph group gets a subtle sinusoidal drift impulse each frame.
+ * Only imported when NEXT_PUBLIC_GRAPH_PHYSICS=true.
  */
 export function HeroGraphScenePhysics() {
   return (
@@ -53,7 +48,7 @@ function PhysicsInner() {
 
   return (
     <RigidBody ref={bodyRef} type="dynamic" colliders={false}>
-      <HeroGraphScene />
+      <HeroGraphInner />
     </RigidBody>
   );
 }

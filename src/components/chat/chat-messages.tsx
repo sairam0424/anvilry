@@ -17,40 +17,119 @@ import { unlock } from "@/lib/discovery-store";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 
 /**
- * Fullscreen image lightbox — click a thumbnail to expand, click backdrop or press
- * Escape to dismiss. Uses a fixed overlay so it escapes the scroll container.
- * Fade-in transition matches the site's dark aesthetic.
+ * Fullscreen image lightbox — inspired by gptme, VS Code Copilot Chat, and ChatGPT patterns:
+ * - Filename header (accessible DialogTitle equivalent) + "Open original" link (gptme pattern)
+ * - Backdrop blur overlay, click-outside to dismiss (universal pattern)
+ * - Escape key + arrow keys for multi-image navigation
+ * - Download button in header (VS Code Copilot / Slack-inspired hover affordance)
  */
-function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+function ImageLightbox({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: { src: string; name: string }[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [idx, setIdx] = React.useState(startIndex);
+  const current = images[idx];
+  const hasPrev = idx > 0;
+  const hasNext = idx < images.length - 1;
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev) setIdx((i) => i - 1);
+      if (e.key === "ArrowRight" && hasNext) setIdx((i) => i + 1);
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, hasPrev, hasNext]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Full size: ${alt}`}
+      aria-label={current?.name ?? "Image viewer"}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL, next/image unsupported */}
-      <img
-        src={src}
-        alt={alt}
-        className="max-h-[90vh] max-w-[90vw] rounded-2xl shadow-2xl object-contain"
+      {/* Header — filename + open original + download + close (gptme + Copilot pattern) */}
+      <div
+        className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3"
         onClick={(e) => e.stopPropagation()}
-      />
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close image"
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
-        ✕
-      </button>
+        <span className="max-w-[60%] truncate text-sm font-medium text-white/90">
+          {current?.name}
+        </span>
+        <div className="flex items-center gap-2">
+          {/* "Open original" link — gptme pattern, opens blob URL in new tab */}
+          <a
+            href={current?.src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            Open original ↗
+          </a>
+          {/* Download button — VS Code Copilot / Slack pattern */}
+          <a
+            href={current?.src}
+            download={current?.name}
+            className="rounded-lg px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            ↓ Download
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {/* Image + prev/next arrows */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+        <img
+          src={current?.src}
+          alt={current?.name}
+          className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+        {hasPrev && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => i - 1); }}
+            aria-label="Previous image"
+            className="absolute left-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ‹
+          </button>
+        )}
+        {hasNext && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => i + 1); }}
+            aria-label="Next image"
+            className="absolute right-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ›
+          </button>
+        )}
+      </div>
+
+      {/* Image counter for multi-image */}
+      {images.length > 1 && (
+        <div className="shrink-0 pb-3 text-center text-xs text-white/40">
+          {idx + 1} / {images.length}
+        </div>
+      )}
     </div>
   );
 }
@@ -167,9 +246,9 @@ export function ChatMessages({
 }) {
   const { setView } = useView();
 
-  // Lightbox state — null when closed, { src, alt } when open.
-  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
-  const openLightbox = useCallback((src: string, alt: string) => setLightbox({ src, alt }), []);
+  // Lightbox state — null when closed, images array + start index when open.
+  const [lightbox, setLightbox] = useState<{ images: { src: string; name: string }[]; startIndex: number } | null>(null);
+  const openLightbox = useCallback((images: { src: string; name: string }[], startIndex: number) => setLightbox({ images, startIndex }), []);
   const closeLightbox = useCallback(() => setLightbox(null), []);
 
   // Dispatch cmd-view and cmd-highlight tokens from completed (non-streaming) assistant
@@ -270,7 +349,7 @@ export function ChatMessages({
     // relative wrapper anchors the floating JumpToLatest; min-h-0 lets the inner
     // scroll child shrink below content so overflow-y-auto engages (see chat-view).
     <>
-    {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={closeLightbox} />}
+    {lightbox && <ImageLightbox images={lightbox.images} startIndex={lightbox.startIndex} onClose={closeLightbox} />}
     <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
       <div
         ref={setScroll}
@@ -295,29 +374,60 @@ export function ChatMessages({
                   className="flex justify-end scroll-mt-3"
                 >
                   <div className="flex max-w-[88%] flex-col items-end gap-1.5">
-                    {/* Attachment previews — images show as thumbnails, PDFs as filename badges */}
-                    {m.attachments && m.attachments.length > 0 && (
-                      <div className="flex flex-wrap justify-end gap-1.5">
-                        {m.attachments.map((f, fi) =>
-                          f.mediaType !== "application/pdf" ? (
-                            <button
-                              key={fi}
-                              type="button"
-                              onClick={() => openLightbox(f.previewUrl, f.name)}
-                              aria-label={`View full size: ${f.name}`}
-                              className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
-                              <img
-                                src={f.previewUrl}
-                                alt={f.name}
-                                className="h-full w-full object-cover transition-transform duration-150 group-hover:scale-105"
-                              />
-                              <span className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all duration-150 group-hover:bg-black/30 group-hover:opacity-100">
-                                <span className="text-white text-xs font-medium">View</span>
-                              </span>
-                            </button>
-                          ) : (
+                    {/* Attachment previews — mosaic grid for images (xopc/Telegram pattern),
+                        filename badge for PDFs, hover-download (VS Code Copilot / Slack pattern) */}
+                    {m.attachments && m.attachments.length > 0 && (() => {
+                      const images = m.attachments!.filter((f) => f.mediaType !== "application/pdf");
+                      const pdfs = m.attachments!.filter((f) => f.mediaType === "application/pdf");
+                      const lightboxImages = images.map((f) => ({ src: f.previewUrl, name: f.name }));
+                      const count = images.length;
+                      // Mosaic grid classes — 1: single large, 2: side by side, 3: first spans 2 rows + 2 stacked, 3+: 2-col grid
+                      const gridClass =
+                        count === 1 ? "flex" :
+                        count === 2 ? "grid grid-cols-2 gap-1.5" :
+                        count === 3 ? "grid grid-cols-2 grid-rows-2 gap-1.5 h-44" :
+                        "grid grid-cols-2 gap-1.5";
+                      return (
+                        <div className="flex flex-col items-end gap-1.5">
+                          {images.length > 0 && (
+                            <div className={gridClass}>
+                              {images.map((f, fi) => (
+                                <button
+                                  key={fi}
+                                  type="button"
+                                  onClick={() => openLightbox(lightboxImages, fi)}
+                                  aria-label={`View full size: ${f.name}`}
+                                  className={[
+                                    "group relative overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                                    count === 1 ? "h-40 w-40" :
+                                    count === 3 && fi === 0 ? "row-span-2 h-full min-h-0" :
+                                    "h-20 w-20",
+                                  ].join(" ")}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+                                  <img
+                                    src={f.previewUrl}
+                                    alt={f.name}
+                                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                  />
+                                  {/* Hover overlay — view + download (gptme + Copilot pattern) */}
+                                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                                    <span className="text-white text-[11px] font-medium">View</span>
+                                    <a
+                                      href={f.previewUrl}
+                                      download={f.name}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-white/70 text-[10px] hover:text-white"
+                                      aria-label={`Download ${f.name}`}
+                                    >
+                                      ↓ Save
+                                    </a>
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {pdfs.map((f, fi) => (
                             <div
                               key={fi}
                               className="flex items-center gap-1.5 rounded-xl bg-accent/80 px-3 py-2 text-xs text-bg-base"
@@ -325,10 +435,10 @@ export function ChatMessages({
                               <span aria-hidden="true">📄</span>
                               <span className="max-w-[120px] truncate">{f.name}</span>
                             </div>
-                          )
-                        )}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <div className="whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
                       {m.content}
                     </div>

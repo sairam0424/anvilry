@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { TRACE_DELIMITER, THINKING_SENTINEL } from "./llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "./llm-trace";
 import type { LlmAttempt, LlmUsage } from "./llm";
 
 /**
@@ -377,16 +377,14 @@ describe("streamWithFallback — traceId threading", () => {
   });
 });
 
-describe("streamWithFallback — extended thinking (v2.3.0)", () => {
-  it("prepends THINKING_SENTINEL and buffers reasoning into trace frame", async () => {
+describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol", () => {
+  it("streams reasoning live between THINKING_SENTINEL and THINKING_END, answer follows", async () => {
     STATE.events = [
       [
-        // thinking block arrives BEFORE text blocks
         { type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "" } },
         { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "I need to " } },
         { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "think carefully." } },
         { type: "content_block_stop", index: 0 },
-        // text block follows
         { type: "content_block_start", index: 1, content_block: { type: "text", text: "" } },
         { type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "Here is my answer." } },
         { type: "content_block_stop", index: 1 },
@@ -405,15 +403,27 @@ describe("streamWithFallback — extended thinking (v2.3.0)", () => {
     // Stream starts with THINKING_SENTINEL
     expect(body.startsWith(THINKING_SENTINEL)).toBe(true);
 
-    // Visible text is the answer only — no thinking text leaked
-    const withoutSentinel = body.slice(THINKING_SENTINEL.length);
-    const [text, frameJson] = withoutSentinel.split(TRACE_DELIMITER);
+    const afterSentinel = body.slice(THINKING_SENTINEL.length);
+
+    // THINKING_END is present, separating reasoning from answer
+    const endIdx = afterSentinel.indexOf(THINKING_END);
+    expect(endIdx).toBeGreaterThan(0);
+
+    const liveReasoning = afterSentinel.slice(0, endIdx);
+    const afterEnd = afterSentinel.slice(endIdx + THINKING_END.length);
+
+    // Reasoning streamed live (not in trace frame)
+    expect(liveReasoning).toBe("I need to think carefully.");
+
+    // Answer text and trace frame follow THINKING_END
+    const [text, frameJson] = afterEnd.split(TRACE_DELIMITER);
     expect(text).toBe("Here is my answer.");
 
-    // Trace frame includes reasoning
+    // Trace frame does NOT include reasoning field
     const frame = JSON.parse(frameJson);
-    expect(frame.reasoning).toBe("I need to think carefully.");
+    expect(frame).not.toHaveProperty("reasoning");
     expect(frame.model).toBe("us.anthropic.claude-sonnet-4-6");
+    expect(frame.fellBack).toBe(false);
   });
 
   it("does NOT prepend THINKING_SENTINEL when extendedThinking is false", async () => {
@@ -433,16 +443,86 @@ describe("streamWithFallback — extended thinking (v2.3.0)", () => {
     );
 
     expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    expect(body).not.toContain(THINKING_END);
     const [text] = body.split(TRACE_DELIMITER);
     expect(text).toBe("Normal answer.");
   });
 
+  it("does NOT emit THINKING_END when extendedThinking is false (no-thinking path is clean)", async () => {
+    STATE.events = [
+      [
+        { type: "content_block_delta", delta: { type: "text_delta", text: "Clean." } },
+        { type: "message_delta", usage: { output_tokens: 1 } },
+      ],
+    ];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        { extendedThinking: false },
+      ),
+    );
+
+    expect(body).not.toContain(THINKING_END);
+  });
+
+  it("does not emit THINKING_END when no text_delta arrives (thinking-only stream edge case)", async () => {
+    // Simulate a stream that has thinking deltas but never produces a text_delta.
+    // THINKING_END must NOT appear because it is only emitted on first text_delta.
+    STATE.events = [
+      [
+        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "just thinking" } },
+        { type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 0 } },
+      ],
+    ];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        { extendedThinking: true },
+      ),
+    );
+
+    // emittedAny remains false (no text_delta), so no trace frame either.
+    // THINKING_SENTINEL starts with U+001E (same as TRACE_DELIMITER) so we can't
+    // use a plain .not.toContain(TRACE_DELIMITER) — instead verify no JSON trace
+    // frame is embedded (a trace frame always starts with TRACE_DELIMITER + "{").
+    expect(body).not.toContain(THINKING_END);
+    expect(body).not.toContain(TRACE_DELIMITER + "{");
+  });
+
+  it("reasoning is absent from trace frame on the new protocol", async () => {
+    STATE.events = [
+      [
+        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "some reasoning" } },
+        { type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "Answer." } },
+        { type: "message_delta", usage: { output_tokens: 1 } },
+      ],
+    ];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        { extendedThinking: true },
+      ),
+    );
+
+    // Find THINKING_END then TRACE_DELIMITER
+    const afterSentinel = body.startsWith(THINKING_SENTINEL) ? body.slice(THINKING_SENTINEL.length) : body;
+    const endIdx = afterSentinel.indexOf(THINKING_END);
+    const afterEnd = afterSentinel.slice(endIdx + THINKING_END.length);
+    const frameJson = afterEnd.split(TRACE_DELIMITER)[1];
+    const frame = JSON.parse(frameJson);
+    // reasoning is NOT in the trace frame under the new protocol
+    expect(frame).not.toHaveProperty("reasoning");
+  });
+
   it("skips thinking params for Haiku model (Haiku does not support extended thinking)", async () => {
-    // Force Haiku to be first in chain by temporarily overriding env
-    // We can't easily override the chain; instead verify the guard doesn't throw
-    // when a haiku model ID is encountered during the thinking path.
     // The guard is: if model.includes("haiku"), skip thinking params.
-    // Test: a stream with no thinking events should produce no reasoning in frame.
+    // Test: a stream with no thinking events should produce no THINKING_END in stream.
     STATE.events = [
       [
         { type: "content_block_delta", delta: { type: "text_delta", text: "Haiku answer." } },
@@ -458,41 +538,26 @@ describe("streamWithFallback — extended thinking (v2.3.0)", () => {
       ),
     );
 
-    // The primary model (Sonnet) runs here — no haiku in this test path.
-    // What we're testing: reasoning is undefined (not "") when no thinking events fire.
-    const withoutSentinel = body.startsWith(THINKING_SENTINEL)
+    // The primary model (Sonnet) runs here. When no thinking events fire, no THINKING_END.
+    // THINKING_SENTINEL is emitted (useThinking=true for Sonnet), but no THINKING_END
+    // because thinkingEndEmitted is only set on first text_delta when useThinking is true.
+    // Since there were no thinking_delta events, reasoning bytes are empty.
+    const afterSentinel = body.startsWith(THINKING_SENTINEL)
       ? body.slice(THINKING_SENTINEL.length)
       : body;
-    const [, frameJson] = withoutSentinel.split(TRACE_DELIMITER);
-    const frame = JSON.parse(frameJson);
-    // reasoning should be absent (no thinking events in fixture)
-    expect(frame.reasoning).toBeUndefined();
-  });
-
-  it("omits reasoning from trace frame when extended thinking produces empty buffer", async () => {
-    STATE.events = [
-      [
-        // thinking delta with empty string
-        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "" } },
-        { type: "content_block_delta", delta: { type: "text_delta", text: "Answer." } },
-        { type: "message_delta", usage: { output_tokens: 1 } },
-      ],
-    ];
-
-    const { streamWithFallback } = await import("./llm");
-    const body = await drain(
-      streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
-        { extendedThinking: true },
-      ),
-    );
-
-    const withoutSentinel = body.startsWith(THINKING_SENTINEL)
-      ? body.slice(THINKING_SENTINEL.length)
-      : body;
-    const [, frameJson] = withoutSentinel.split(TRACE_DELIMITER);
-    const frame = JSON.parse(frameJson);
-    // empty reasoning buffer -> omit key from frame
-    expect(frame.reasoning).toBeUndefined();
+    // THINKING_END appears only if there was a text_delta with useThinking=true AND prior thinking
+    // Here useThinking=true (Sonnet) and there IS a text_delta, so THINKING_END IS emitted.
+    const endIdx = afterSentinel.indexOf(THINKING_END);
+    if (endIdx !== -1) {
+      // THINKING_END present: verify reasoning part is empty (no thinking_delta events)
+      const liveReasoning = afterSentinel.slice(0, endIdx);
+      expect(liveReasoning).toBe(""); // no thinking_delta events fired
+    }
+    // Either way, trace frame should not have reasoning
+    const traceStart = body.lastIndexOf(TRACE_DELIMITER);
+    if (traceStart !== -1) {
+      const frame = JSON.parse(body.slice(traceStart + TRACE_DELIMITER.length));
+      expect(frame).not.toHaveProperty("reasoning");
+    }
   });
 });

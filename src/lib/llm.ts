@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import { profile } from "@/lib/profile";
-import { TRACE_DELIMITER, THINKING_SENTINEL } from "@/lib/llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -157,7 +157,7 @@ export function isFallbackEligible(err: unknown): boolean {
  */
 // TRACE_DELIMITER lives in the client-safe llm-trace module (so the chat client can
 // import it without the Bedrock SDK); re-exported here for existing server callers.
-export { TRACE_DELIMITER, THINKING_SENTINEL };
+export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };
 
 /**
  * Per-attempt usage block captured from the streamed events. Snake-case fields
@@ -207,8 +207,8 @@ export function streamWithFallback(
     traceId?: string;
     /** When true, enables Anthropic extended thinking (budget_tokens: 1024).
      *  Haiku models are silently excluded — they do not support extended thinking.
-     *  The stream will be prefixed with THINKING_SENTINEL and the trace frame will
-     *  include a `reasoning` field with the buffered thinking text. */
+     *  The stream is: THINKING_SENTINEL + reasoning bytes + THINKING_END + answer bytes.
+     *  Reasoning streams live to the client; the trace frame does NOT include reasoning. */
     extendedThinking?: boolean;
   },
 ): ReadableStream<Uint8Array> {
@@ -223,7 +223,7 @@ export function streamWithFallback(
   const traceFrame = (
     model: string,
     index: number,
-    extra: { usage?: LlmUsage; ttft_ms?: number; latency_ms?: number; reasoning?: string },
+    extra: { usage?: LlmUsage; ttft_ms?: number; latency_ms?: number },
   ) =>
     encoder.encode(
       `${TRACE_DELIMITER}${JSON.stringify({
@@ -233,7 +233,6 @@ export function streamWithFallback(
         ...(extra.usage ? { usage: extra.usage } : {}),
         ...(extra.ttft_ms != null ? { ttftMs: extra.ttft_ms } : {}),
         ...(extra.latency_ms != null ? { latencyMs: extra.latency_ms } : {}),
-        ...(extra.reasoning ? { reasoning: extra.reasoning } : {}),
       })}`,
     );
 
@@ -291,7 +290,7 @@ export function streamWithFallback(
         let usage: LlmUsage | undefined;
         let ttftMs: number | undefined;
         let finishReason: string | undefined;
-        let reasoningBuffer = "";
+        let thinkingEndEmitted = false;
 
         // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
         const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
@@ -359,17 +358,25 @@ export function streamWithFallback(
               if (sr) finishReason = sr;
               continue;
             }
-            // Extended thinking: buffer thinking_delta events server-side.
-            // They arrive BEFORE text_delta events. Never emit to client stream.
+            // Extended thinking: stream thinking_delta bytes live to the client.
+            // They arrive BEFORE text_delta events. The client uses THINKING_SENTINEL
+            // (already emitted above) + THINKING_END (emitted on first text_delta below)
+            // to delineate the reasoning phase from the answer phase.
             if (
               event.type === "content_block_delta" &&
               (event.delta as { type: string; thinking?: string }).type === "thinking_delta"
             ) {
-              reasoningBuffer += (event.delta as { type: string; thinking?: string }).thinking ?? "";
+              const chunk = (event.delta as { type: string; thinking?: string }).thinking ?? "";
+              if (chunk) controller.enqueue(encoder.encode(chunk));
               continue;
             }
             if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
               if (ttftMs == null) ttftMs = Date.now() - attemptStart;
+              // On the FIRST text_delta: emit THINKING_END to signal reasoning is done.
+              if (useThinking && !thinkingEndEmitted) {
+                controller.enqueue(encoder.encode(THINKING_END));
+                thinkingEndEmitted = true;
+              }
               controller.enqueue(encoder.encode(event.delta.text));
               emittedAny = true;
               continue;
@@ -397,7 +404,6 @@ export function streamWithFallback(
                 usage,
                 ttft_ms: ttftMs,
                 latency_ms: latencyMs,
-                reasoning: reasoningBuffer || undefined,
               }),
             );
           close();

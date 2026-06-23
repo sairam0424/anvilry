@@ -7,6 +7,8 @@ import { RECRUITER_CHIPS, STARTER_CHIPS } from "@/components/chat/chat-suggestio
 import { ChatMessages } from "@/components/chat/chat-messages";
 import { MicButton } from "@/components/chat/mic-button";
 import { TalkLaunchButton } from "@/components/chat/talk-launch-button";
+import { FilePickerButton } from "@/components/chat/file-picker-button";
+import { AttachmentPreviewStrip } from "@/components/chat/attachment-preview-strip";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { profile, impactMetrics } from "@/lib/profile";
 
@@ -20,19 +22,20 @@ import { profile, impactMetrics } from "@/lib/profile";
  * a11y (aria-live announce-on-settle, Stop, pin-aware autoscroll) lands in 2.3.
  */
 export function ChatView() {
-  const { messages, send, stop, isStreaming } = useChat();
+  const { messages, send, stop, isStreaming, pendingFiles, setPendingFiles } = useChat();
   const [input, setInput] = useState("");
   const empty = messages.length === 0;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    send(input);
+    send(input, pendingFiles.length > 0 ? pendingFiles : undefined);
     setInput("");
+    setPendingFiles([]);
   };
 
   const ask = (q: string) => {
     if (isStreaming) return;
-    send(q);
+    send(q, []);
     setInput("");
   };
 
@@ -123,6 +126,17 @@ export function ChatView() {
         )}
       </div>
 
+      {/* Pending attachment previews — rendered above the composer when files are queued.
+          Returns null when empty so there is no layout shift. */}
+      <AttachmentPreviewStrip
+        files={pendingFiles}
+        onRemove={(i) => setPendingFiles((prev) => {
+          const removed = prev[i];
+          if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+          return prev.filter((_, idx) => idx !== i);
+        })}
+      />
+
       {/* Composer. shrink-0: the input the user types in must NEVER be compressed or
           pushed below the console border on a short viewport (it was escaping the section). */}
       <form onSubmit={onSubmit} className="mt-3 flex shrink-0 items-center gap-2">
@@ -136,6 +150,14 @@ export function ChatView() {
         {/* Push-to-talk mic — renders only where Web Speech is supported (else nothing,
             the text input is untouched). Transcripts fill the input for review. */}
         <MicButton onText={setInput} disabled={isStreaming} />
+        {/* File attachment picker — feature-flagged via NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS.
+            Defaults to disabled so the button only appears when explicitly enabled. */}
+        {process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === "true" && (
+          <FilePickerButton
+            onFiles={(f) => setPendingFiles((prev) => [...prev, ...f].slice(0, 3))}
+            disabled={isStreaming}
+          />
+        )}
         {isStreaming ? (
           <button
             type="button"
@@ -147,7 +169,7 @@ export function ChatView() {
         ) : (
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() && pendingFiles.length === 0}
             aria-label="Send"
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-bg-base transition-opacity disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
           >

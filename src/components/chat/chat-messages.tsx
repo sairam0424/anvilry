@@ -16,30 +16,180 @@ import { highlightProject } from "@/lib/highlight-store";
 import { unlock } from "@/lib/discovery-store";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 
-/** Renders Claude's extended thinking — animated + live reasoning while streaming,
- *  expandable collapsed toggle once the reasoning phase is complete. */
+/**
+ * Fullscreen image lightbox — inspired by gptme, VS Code Copilot Chat, and ChatGPT patterns:
+ * - Filename header (accessible DialogTitle equivalent) + "Open original" link (gptme pattern)
+ * - Backdrop blur overlay, click-outside to dismiss (universal pattern)
+ * - Escape key + arrow keys for multi-image navigation
+ * - Download button in header (VS Code Copilot / Slack-inspired hover affordance)
+ */
+function ImageLightbox({
+  images,
+  startIndex,
+  onClose,
+}: {
+  images: { src: string; name: string }[];
+  startIndex: number;
+  onClose: () => void;
+}) {
+  const [idx, setIdx] = React.useState(startIndex);
+  const current = images[idx];
+  const hasPrev = idx > 0;
+  const hasNext = idx < images.length - 1;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && hasPrev) setIdx((i) => i - 1);
+      if (e.key === "ArrowRight" && hasNext) setIdx((i) => i + 1);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose, hasPrev, hasNext]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-black/85 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={current?.name ?? "Image viewer"}
+    >
+      {/* Header — filename + open original + download + close (gptme + Copilot pattern) */}
+      <div
+        className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="max-w-[60%] truncate text-sm font-medium text-white/90">
+          {current?.name}
+        </span>
+        <div className="flex items-center gap-2">
+          {/* "Open original" link — gptme pattern, opens blob URL in new tab */}
+          <a
+            href={current?.src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            Open original ↗
+          </a>
+          {/* Download button — VS Code Copilot / Slack pattern */}
+          <a
+            href={current?.src}
+            download={current?.name}
+            className="rounded-lg px-3 py-1.5 text-xs text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            ↓ Download
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-lg p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {/* Image + prev/next arrows */}
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+        <img
+          src={current?.src}
+          alt={current?.name}
+          className="max-h-full max-w-full rounded-xl object-contain shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        />
+        {hasPrev && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => i - 1); }}
+            aria-label="Previous image"
+            className="absolute left-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ‹
+          </button>
+        )}
+        {hasNext && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIdx((i) => i + 1); }}
+            aria-label="Next image"
+            className="absolute right-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            ›
+          </button>
+        )}
+      </div>
+
+      {/* Image counter for multi-image */}
+      {images.length > 1 && (
+        <div className="shrink-0 pb-3 text-center text-xs text-white/40">
+          {idx + 1} / {images.length}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Renders Claude's extended thinking.
+ *
+ * Phase 1 (thinking): "Thinking… 12s" live timer + scrolling reasoning text.
+ * Phase 2 (settled):  "Thought for 12s (ctrl+o to expand)" — matches Claude Code pattern.
+ *                     Click or ctrl+o to toggle the full reasoning.
+ */
 function ThinkingBlock({
   isThinking,
   liveReasoning,
   isStreaming,
+  thinkingStartedAt,
+  thinkingDuration,
 }: {
   isThinking?: boolean;
   liveReasoning?: string;
   isStreaming: boolean;
+  thinkingStartedAt?: number;
+  thinkingDuration?: number;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [elapsed, setElapsed] = React.useState(0);
   const liveEndRef = useRef<HTMLPreElement>(null);
   const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== "false";
 
-  // useEffect MUST come before any early return — Rules of Hooks.
+  // Live elapsed timer — ticks every second while thinking is in progress.
+  // Initial value stays 0; first tick fires at ~1s which is accurate enough.
+  useEffect(() => {
+    if (!isThinking || !thinkingStartedAt) return;
+    const id = setInterval(() => {
+      setElapsed(Math.round((Date.now() - thinkingStartedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isThinking, thinkingStartedAt]);
+
+  // Auto-scroll live reasoning to bottom as it streams in.
   useEffect(() => {
     if (!enabled || !isThinking || !liveEndRef.current) return;
     liveEndRef.current.scrollTop = liveEndRef.current.scrollHeight;
   }, [enabled, isThinking, liveReasoning]);
 
+  // Ctrl+O keyboard shortcut — toggles the reasoning panel when settled.
+  useEffect(() => {
+    if (!liveReasoning || isThinking) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "o") {
+        e.preventDefault();
+        setOpen((o) => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [liveReasoning, isThinking]);
+
   if (!enabled) return null;
 
-  // Phase 1 — thinking in progress: animated dots + live reasoning text below.
+  // Phase 1 — thinking in progress: "Thinking… 12s" + live scrolling reasoning.
   if (isThinking && isStreaming) {
     return (
       <div className="mb-2 max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
@@ -49,7 +199,10 @@ function ThinkingBlock({
             <span className="animate-pulse [animation-delay:150ms]">·</span>
             <span className="animate-pulse [animation-delay:300ms]">·</span>
           </span>
-          <span>Thinking…</span>
+          <span>
+            Thinking…{" "}
+            {elapsed > 0 && <strong className="font-semibold text-fg-muted">{elapsed}s</strong>}
+          </span>
         </div>
         {liveReasoning && (
           <pre
@@ -65,21 +218,25 @@ function ThinkingBlock({
     );
   }
 
-  // Phase 2 — thinking done: show collapsed toggle with the full liveReasoning.
-  // This renders whether streaming is ongoing (answer phase) or complete.
+  // Phase 2 — settled: "Thought for Xs (ctrl+o to expand)" — Claude Code pattern.
   if (!liveReasoning) return null;
-  const wordCount = liveReasoning.trim().split(/\s+/).length;
+  const duration = thinkingDuration ?? elapsed;
 
   return (
     <div className="mb-2 max-w-[88%]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-[11px] text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex items-center gap-1.5 text-[11px] text-fg-subtle/70 transition-colors hover:text-fg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         aria-expanded={open}
+        title={open ? "Collapse reasoning (ctrl+o)" : "Expand reasoning (ctrl+o)"}
       >
-        <span>{open ? "▾" : "▶"}</span>
-        <span>Show reasoning ({wordCount} words)</span>
+        <span className="text-fg-subtle/40">{open ? "▾" : "▶"}</span>
+        <span>
+          Thought for{" "}
+          <strong className="font-semibold text-fg-muted">{duration > 0 ? `${duration}s` : "a moment"}</strong>
+          {!open && <span className="ml-1.5 text-fg-subtle/40">(ctrl+o to expand)</span>}
+        </span>
       </button>
       {open && (
         <pre className="mt-1.5 max-h-48 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle">
@@ -127,6 +284,11 @@ export function ChatMessages({
   isStreaming: boolean;
 }) {
   const { setView } = useView();
+
+  // Lightbox state — null when closed, images array + start index when open.
+  const [lightbox, setLightbox] = useState<{ images: { src: string; name: string }[]; startIndex: number } | null>(null);
+  const openLightbox = useCallback((images: { src: string; name: string }[], startIndex: number) => setLightbox({ images, startIndex }), []);
+  const closeLightbox = useCallback(() => setLightbox(null), []);
 
   // Dispatch cmd-view and cmd-highlight tokens from completed (non-streaming) assistant
   // messages. We track which message indices have been dispatched so cmd tokens only
@@ -225,6 +387,8 @@ export function ChatMessages({
   return (
     // relative wrapper anchors the floating JumpToLatest; min-h-0 lets the inner
     // scroll child shrink below content so overflow-y-auto engages (see chat-view).
+    <>
+    {lightbox && <ImageLightbox images={lightbox.images} startIndex={lightbox.startIndex} onClose={closeLightbox} />}
     <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
       <div
         ref={setScroll}
@@ -248,8 +412,77 @@ export function ChatMessages({
                   ref={i === lastUserIdx ? anchorRef : undefined}
                   className="flex justify-end scroll-mt-3"
                 >
-                  <div className="max-w-[88%] whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
-                    {m.content}
+                  <div className="flex max-w-[88%] flex-col items-end gap-1.5">
+                    {/* Attachment previews — mosaic grid for images (xopc/Telegram pattern),
+                        filename badge for PDFs, hover-download (VS Code Copilot / Slack pattern) */}
+                    {m.attachments && m.attachments.length > 0 && (() => {
+                      const images = m.attachments!.filter((f) => f.mediaType !== "application/pdf");
+                      const pdfs = m.attachments!.filter((f) => f.mediaType === "application/pdf");
+                      const lightboxImages = images.map((f) => ({ src: f.previewUrl, name: f.name }));
+                      const count = images.length;
+                      // Mosaic grid classes — 1: single large, 2: side by side, 3: first spans 2 rows + 2 stacked, 3+: 2-col grid
+                      const gridClass =
+                        count === 1 ? "flex" :
+                        count === 2 ? "grid grid-cols-2 gap-1.5" :
+                        count === 3 ? "grid grid-cols-2 grid-rows-2 gap-1.5 h-44" :
+                        "grid grid-cols-2 gap-1.5";
+                      return (
+                        <div className="flex flex-col items-end gap-1.5">
+                          {images.length > 0 && (
+                            <div className={gridClass}>
+                              {images.map((f, fi) => (
+                                <button
+                                  key={fi}
+                                  type="button"
+                                  onClick={() => openLightbox(lightboxImages, fi)}
+                                  aria-label={`View full size: ${f.name}`}
+                                  className={[
+                                    "group relative overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                                    count === 1 ? "h-40 w-40" :
+                                    count === 3 && fi === 0 ? "row-span-2 h-full min-h-0" :
+                                    "h-20 w-20",
+                                  ].join(" ")}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+                                  <img
+                                    src={f.previewUrl}
+                                    alt={f.name}
+                                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                  />
+                                  {/* Hover overlay — view label (download in lightbox header via "↓ Download" button) */}
+                                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                                    <span className="text-white text-[11px] font-medium">View</span>
+                                    {/* TODO: uncomment to re-enable "↓ Save" on hover (Slack/Copilot pattern)
+                                    <a
+                                      href={f.previewUrl}
+                                      download={f.name}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-white/70 text-[10px] hover:text-white"
+                                      aria-label={`Download ${f.name}`}
+                                    >
+                                      ↓ Save
+                                    </a>
+                                    */}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {pdfs.map((f, fi) => (
+                            <div
+                              key={fi}
+                              className="flex items-center gap-1.5 rounded-xl bg-accent/80 px-3 py-2 text-xs text-bg-base"
+                            >
+                              <span aria-hidden="true">📄</span>
+                              <span className="max-w-[120px] truncate">{f.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                    <div className="whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
+                      {m.content}
+                    </div>
                   </div>
                 </div>
               );
@@ -276,8 +509,25 @@ export function ChatMessages({
                     isThinking={m.isThinking}
                     liveReasoning={m.liveReasoning}
                     isStreaming={isStreaming && isLast}
+                    thinkingStartedAt={m.thinkingStartedAt}
+                    thinkingDuration={m.thinkingDuration}
                   />
                 ) : null}
+                {/* Pre-flight waiting indicator — shown when streaming has started but no bytes
+                    have arrived yet (content="", no thinking sentinel, no segments).
+                    This covers: (a) PDF extraction delay before send(), (b) network latency
+                    before the first byte, (c) any gap between send and THINKING_SENTINEL.
+                    Collapses immediately once any content, thinking, or reasoning appears. */}
+                {isStreaming && isLast && !m.isThinking && m.liveReasoning === undefined && !m.content && (
+                  <div className="flex max-w-[88%] items-center gap-2 rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
+                    <span className="inline-flex gap-1" aria-label="Loading response">
+                      <span className="animate-pulse">·</span>
+                      <span className="animate-pulse [animation-delay:200ms]">·</span>
+                      <span className="animate-pulse [animation-delay:400ms]">·</span>
+                    </span>
+                    <span>Loading…</span>
+                  </div>
+                )}
                 {/* Answer segments — hidden while still in thinking phase (no content yet) */}
                 {!(m.isThinking && isStreaming && isLast) &&
                   segments.map((seg, j) =>
@@ -324,5 +574,6 @@ export function ChatMessages({
 
       <JumpToLatest show={!isAtBottom} onClick={onJump} />
     </div>
+    </>
   );
 }

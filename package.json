@@ -37,6 +37,7 @@
     "mcp-handler": "^1.1.0",
     "motion": "^12.40.0",
     "next": "16.2.9",
+    "pdfjs-dist": "^6.0.227",
     "postprocessing": "^6.39.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",

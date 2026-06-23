@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useView } from "@/components/view-context";
 

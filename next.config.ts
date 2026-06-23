@@ -99,9 +99,10 @@ const nextConfig: NextConfig = {
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
     // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
-    // `export const dynamic` / `export const runtime` segment configs (17 files use them).
-    // Migration path: remove segment configs site-wide and rely on per-route caching
-    // defaults instead. Deferred to v2.1 — not worth the blast radius now.
+    // `export const runtime = "nodejs"` segment configs present on all 9 API routes
+    // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
+    // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
+    // PPR enablement deferred until Next.js provides a per-route escape hatch.
     // cacheComponents: true,
   },
   images: {
@@ -114,6 +115,16 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  async rewrites() {
+    // Rewrite /:collection/:slug.md → /api/md/:collection/:slug so that AI crawlers
+    // can fetch raw markdown via canonical pretty-URLs (e.g. /work/pensieve.md).
+    return [
+      { source: "/work/:slug.md", destination: "/api/md/work/:slug" },
+      { source: "/projects/:slug.md", destination: "/api/md/projects/:slug" },
+      { source: "/articles/:slug.md", destination: "/api/md/articles/:slug" },
+      { source: "/notes/:slug.md", destination: "/api/md/notes/:slug" },
+    ];
   },
 };
 

@@ -1,12 +1,23 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { TRACE_DELIMITER } from "@/lib/llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
 
 export type ChatRole = "user" | "assistant";
 /** `model`/`fellBack` come from the server's honest trailing trace frame (which model
  *  served the bytes), parsed out of the stream — never shown as message text. */
-export type ChatMessage = { role: ChatRole; content: string; model?: string; fellBack?: boolean };
+export type ChatMessage = {
+  role: ChatRole;
+  content: string;
+  model?: string;
+  fellBack?: boolean;
+  /** Reasoning text as it streams live (populated while isThinking may still be true).
+   *  Set from the bytes between THINKING_SENTINEL and THINKING_END. */
+  liveReasoning?: string;
+  /** true while THINKING_SENTINEL seen but THINKING_END not yet received.
+   *  false once THINKING_END arrives (thinking phase complete). */
+  isThinking?: boolean;
+};
 
 /** Split a streamed assistant chunk into visible text + an optional parsed trace frame.
  *  The frame (if present) is the LAST record after TRACE_DELIMITER. */
@@ -84,12 +95,50 @@ export function useChat() {
           const { value, done } = await reader.read();
           if (done) break;
           acc += decoder.decode(value, { stream: true });
+
+          // --- New THINKING_SENTINEL + THINKING_END state machine ---
+          // Protocol: [THINKING_SENTINEL][reasoning bytes][THINKING_END][answer bytes][TRACE_DELIMITER][JSON]
+          const hasSentinel = acc.startsWith(THINKING_SENTINEL);
+
+          let liveReasoning: string | undefined;
+          let isThinking: boolean | undefined;
+          let textRegion: string; // the part to pass through splitTrace
+
+          if (hasSentinel) {
+            const afterSentinel = acc.slice(THINKING_SENTINEL.length);
+            const endIdx = afterSentinel.indexOf(THINKING_END);
+            if (endIdx === -1) {
+              // THINKING_END not yet arrived: still in reasoning phase.
+              // Everything after the sentinel is live reasoning.
+              liveReasoning = afterSentinel;
+              isThinking = true;
+              textRegion = ""; // no answer text yet
+            } else {
+              // THINKING_END arrived: reasoning is the slice before it, answer is after.
+              liveReasoning = afterSentinel.slice(0, endIdx);
+              isThinking = false;
+              textRegion = afterSentinel.slice(endIdx + THINKING_END.length);
+            }
+          } else {
+            // No thinking sentinel — standard path.
+            liveReasoning = undefined;
+            isThinking = undefined;
+            textRegion = acc;
+          }
+
           // Strip the trailing trace frame from the DISPLAYED text; capture the model
           // (honest, server-sourced — which model served the bytes / did it fall back).
-          const { text, trace } = splitTrace(acc);
+          const { text, trace } = splitTrace(textRegion);
           setMessages((m) => [
             ...m.slice(0, -1),
-            { role: "assistant", content: text, model: trace?.model, fellBack: trace?.fellBack },
+            {
+              role: "assistant",
+              content: text,
+              model: trace?.model,
+              fellBack: trace?.fellBack,
+              liveReasoning,
+              isThinking,
+            },
           ]);
         }
         setStatus("idle");

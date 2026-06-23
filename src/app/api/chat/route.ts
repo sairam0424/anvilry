@@ -192,6 +192,8 @@ export async function POST(req: Request) {
     // just omits the LIVE GITHUB STATS block.
     const githubStats = await getLiveGithubStats();
 
+    const extendedThinking = process.env.EXTENDED_THINKING !== "false";
+
     const stream = streamWithFallback(
       {
         max_tokens: 1024,
@@ -240,6 +242,7 @@ export async function POST(req: Request) {
             },
           });
         },
+        extendedThinking,
       },
     );
 

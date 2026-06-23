@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import { profile } from "@/lib/profile";
-import { TRACE_DELIMITER } from "@/lib/llm-trace";
+import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -157,7 +157,7 @@ export function isFallbackEligible(err: unknown): boolean {
  */
 // TRACE_DELIMITER lives in the client-safe llm-trace module (so the chat client can
 // import it without the Bedrock SDK); re-exported here for existing server callers.
-export { TRACE_DELIMITER };
+export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };
 
 /**
  * Per-attempt usage block captured from the streamed events. Snake-case fields
@@ -205,6 +205,11 @@ export function streamWithFallback(
     /** Optional traceId threaded into the trace frame so the client can correlate
      *  the streamed answer with the server-side llm.attempt events. */
     traceId?: string;
+    /** When true, enables Anthropic extended thinking (budget_tokens: 1024).
+     *  Haiku models are silently excluded — they do not support extended thinking.
+     *  The stream is: THINKING_SENTINEL + reasoning bytes + THINKING_END + answer bytes.
+     *  Reasoning streams live to the client; the trace frame does NOT include reasoning. */
+    extendedThinking?: boolean;
   },
 ): ReadableStream<Uint8Array> {
   const chain = modelChain();
@@ -285,7 +290,42 @@ export function streamWithFallback(
         let usage: LlmUsage | undefined;
         let ttftMs: number | undefined;
         let finishReason: string | undefined;
-        const stream = client.messages.stream({ ...params, model });
+        let thinkingEndEmitted = false;
+
+        // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
+        const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
+
+        // Build the params for this attempt — add thinking config if enabled.
+        // IMPORTANT: Anthropic requires max_tokens > budget_tokens. The route
+        // passes max_tokens: 1024 which equals budget_tokens — bump it to 2048
+        // so the model has room to both think (1024) and answer (1024).
+        //
+        // CRITICAL: When using extended thinking, we MUST use client.beta.messages.stream()
+        // instead of client.messages.stream(). The beta stream method correctly extracts
+        // the `betas` array from params and sets it as the `anthropic-beta` HTTP header,
+        // which the Bedrock adapter reads and includes as `anthropic_beta` in the Bedrock
+        // request body. Using client.messages.stream() with a `betas` body param causes a
+        // 400 — Bedrock rejects unknown body keys and never sees the beta header.
+        let stream: ReturnType<typeof client.messages.stream>;
+        if (useThinking) {
+          const thinkingParams = {
+            ...params,
+            model,
+            max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),
+            thinking: { type: "enabled" as const, budget_tokens: 1024 },
+            betas: ["interleaved-thinking-2025-05-14"] as string[],
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          stream = (client as any).beta.messages.stream(thinkingParams);
+        } else {
+          stream = client.messages.stream({ ...params, model } as Anthropic.MessageStreamParams & { model: string });
+        }
+
+        // Emit THINKING_SENTINEL immediately so client shows animation without
+        // waiting for the first thinking_delta (which may take several hundred ms).
+        if (useThinking && !emittedAny) {
+          controller.enqueue(encoder.encode(THINKING_SENTINEL));
+        }
         try {
           for await (const event of stream) {
             // message_start carries the initial usage block: input_tokens (the
@@ -318,8 +358,25 @@ export function streamWithFallback(
               if (sr) finishReason = sr;
               continue;
             }
+            // Extended thinking: stream thinking_delta bytes live to the client.
+            // They arrive BEFORE text_delta events. The client uses THINKING_SENTINEL
+            // (already emitted above) + THINKING_END (emitted on first text_delta below)
+            // to delineate the reasoning phase from the answer phase.
+            if (
+              event.type === "content_block_delta" &&
+              (event.delta as { type: string; thinking?: string }).type === "thinking_delta"
+            ) {
+              const chunk = (event.delta as { type: string; thinking?: string }).thinking ?? "";
+              if (chunk) controller.enqueue(encoder.encode(chunk));
+              continue;
+            }
             if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
               if (ttftMs == null) ttftMs = Date.now() - attemptStart;
+              // On the FIRST text_delta: emit THINKING_END to signal reasoning is done.
+              if (useThinking && !thinkingEndEmitted) {
+                controller.enqueue(encoder.encode(THINKING_END));
+                thinkingEndEmitted = true;
+              }
               controller.enqueue(encoder.encode(event.delta.text));
               emittedAny = true;
               continue;
@@ -342,7 +399,13 @@ export function streamWithFallback(
           // Only on a real answer (emittedAny) — preserves the v1.6 invariant that the
           // trace frame can't materialize on a zero-byte attempt.
           if (emittedAny)
-            controller.enqueue(traceFrame(model, i, { usage, ttft_ms: ttftMs, latency_ms: latencyMs }));
+            controller.enqueue(
+              traceFrame(model, i, {
+                usage,
+                ttft_ms: ttftMs,
+                latency_ms: latencyMs,
+              }),
+            );
           close();
           return;
         } catch (err) {

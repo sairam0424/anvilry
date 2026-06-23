@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import { parseCards } from "@/components/chat/parse-cards";
@@ -15,6 +15,80 @@ import { useView } from "@/components/view-context";
 import { highlightProject } from "@/lib/highlight-store";
 import { unlock } from "@/lib/discovery-store";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
+
+/** Renders Claude's extended thinking — animated + live reasoning while streaming,
+ *  expandable collapsed toggle once the reasoning phase is complete. */
+function ThinkingBlock({
+  isThinking,
+  liveReasoning,
+  isStreaming,
+}: {
+  isThinking?: boolean;
+  liveReasoning?: string;
+  isStreaming: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const liveEndRef = useRef<HTMLPreElement>(null);
+  const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== "false";
+
+  // useEffect MUST come before any early return — Rules of Hooks.
+  useEffect(() => {
+    if (!enabled || !isThinking || !liveEndRef.current) return;
+    liveEndRef.current.scrollTop = liveEndRef.current.scrollHeight;
+  }, [enabled, isThinking, liveReasoning]);
+
+  if (!enabled) return null;
+
+  // Phase 1 — thinking in progress: animated dots + live reasoning text below.
+  if (isThinking && isStreaming) {
+    return (
+      <div className="mb-2 max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex gap-1" aria-label="Thinking">
+            <span className="animate-pulse">·</span>
+            <span className="animate-pulse [animation-delay:150ms]">·</span>
+            <span className="animate-pulse [animation-delay:300ms]">·</span>
+          </span>
+          <span>Thinking…</span>
+        </div>
+        {liveReasoning && (
+          <pre
+            ref={liveEndRef}
+            className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle"
+            aria-live="polite"
+            aria-label="Claude's live reasoning"
+          >
+            {liveReasoning}
+          </pre>
+        )}
+      </div>
+    );
+  }
+
+  // Phase 2 — thinking done: show collapsed toggle with the full liveReasoning.
+  // This renders whether streaming is ongoing (answer phase) or complete.
+  if (!liveReasoning) return null;
+  const wordCount = liveReasoning.trim().split(/\s+/).length;
+
+  return (
+    <div className="mb-2 max-w-[88%]">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 text-[11px] text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-expanded={open}
+      >
+        <span>{open ? "▾" : "▶"}</span>
+        <span>Show reasoning ({wordCount} words)</span>
+      </button>
+      {open && (
+        <pre className="mt-1.5 max-h-48 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle">
+          {liveReasoning}
+        </pre>
+      )}
+    </div>
+  );
+}
 
 /** Map a Bedrock/Anthropic model id to a readable name for the badge. */
 function friendlyModel(id: string): string {
@@ -193,11 +267,19 @@ export function ChatMessages({
             const canRead = ttsAvailable && !!spokenText && (!isStreaming || !isLast);
             return (
               <div key={i} className="flex flex-col items-start gap-2">
-                {segments.length === 0 && isStreaming && isLast ? (
-                  <div className="max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg">
-                    Thinking…
-                  </div>
-                ) : (
+                {/* ThinkingBlock: visible in all three states:
+                    (a) isThinking=true, isStreaming=true  → dots + live reasoning
+                    (b) isThinking=false, liveReasoning set, isStreaming=true  → collapsed toggle above streaming answer
+                    (c) isThinking=false, liveReasoning set, isStreaming=false → collapsed toggle above settled answer */}
+                {m.liveReasoning !== undefined || m.isThinking ? (
+                  <ThinkingBlock
+                    isThinking={m.isThinking}
+                    liveReasoning={m.liveReasoning}
+                    isStreaming={isStreaming && isLast}
+                  />
+                ) : null}
+                {/* Answer segments — hidden while still in thinking phase (no content yet) */}
+                {!(m.isThinking && isStreaming && isLast) &&
                   segments.map((seg, j) =>
                     seg.type === "text" ? (
                       seg.text.trim() ? (
@@ -213,8 +295,7 @@ export function ChatMessages({
                         <ChatCard segment={seg} />
                       </div>
                     ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
-                  )
-                )}
+                  )}
                 {/* Answer footer: the honest model badge + the optional read-aloud
                     toggle. The badge shows which model served the bytes (and if the
                     Opus→Sonnet→Haiku fallback fired) — NOT a RAG citation. Read-aloud

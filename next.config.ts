@@ -98,9 +98,13 @@ const nextConfig: NextConfig = {
     // View Transitions API — enables React 19's <ViewTransition> component and
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
-    // Tree-shake icon/animation/3D library imports at module level — reduces
-    // first-load JS for pages that only use a subset of these packages.
-    optimizePackageImports: ["lucide-react", "motion", "@react-three/fiber", "@react-three/drei", "three"],
+    // Tree-shake icon/animation imports at module level — reduces first-load JS.
+    // NOTE: three, @react-three/fiber, @react-three/drei are intentionally excluded.
+    // The C-3 investigation (commit 6246ed9) confirmed this flag does NOT collapse
+    // the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit
+    // f7c5110) is the correct fix and is already live. Re-adding these packages
+    // would re-introduce the disproven optimization against the live barrel.
+    optimizePackageImports: ["lucide-react", "motion"],
     // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
     // `export const runtime = "nodejs"` segment configs present on all 9 API routes
     // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).

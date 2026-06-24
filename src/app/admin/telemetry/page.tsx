@@ -158,6 +158,7 @@ async function fetchEvalResult() {
 type GithubStats = { totalStars: number; totalForks: number; repoCount: number; mostRecentPush: string | null };
 type SeoAudit = { run_at: number; checks: { name: string; pass: boolean }[]; all_routes_pass: boolean; content_missing_summary: number };
 type ContentAudit = { run_at: number; stale_articles: string[]; stale_notes: string[]; total_stale: number };
+type HealthCheck = { run_at: number; status: "pass" | "warn" | "fail"; total_checks: number; failed_checks: number; warn_checks: number; duration_ms: number; failed_names: string[]; warn_names: string[] };
 
 async function fetchGithubStats() {
   return fetchRedisJson<GithubStats>("anvilry:github:stats:latest");
@@ -168,6 +169,10 @@ async function fetchSeoAudit() {
 async function fetchContentAudit() {
   return fetchRedisJson<ContentAudit>("anvilry:content:audit:latest");
 }
+async function fetchHealthCheck() {
+  return fetchRedisJson<HealthCheck>("anvilry:health:latest");
+}
+
 async function fetchCorpusBuiltAt(): Promise<number | null> {
   if (!redis) return null;
   try {
@@ -294,7 +299,7 @@ export default async function TelemetryDashboard() {
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  const [allEvents, ttsEvents, transcribeEvents, evalResult, githubStats, seoAudit, contentAudit, corpusBuiltAt] = await Promise.all([
+  const [allEvents, ttsEvents, transcribeEvents, evalResult, githubStats, seoAudit, contentAudit, corpusBuiltAt, healthCheck] = await Promise.all([
     fetchAll(since24h),
     fetchKind("tts.request", since24h),
     fetchKind("transcribe.request", since24h),
@@ -303,6 +308,7 @@ export default async function TelemetryDashboard() {
     fetchSeoAudit(),
     fetchContentAudit(),
     fetchCorpusBuiltAt(),
+    fetchHealthCheck(),
   ]);
   const llmAttempts = allEvents.filter((e) => e.kind === "llm.attempt");
   const httpRequests = allEvents.filter((e) => e.kind === "http.request");
@@ -525,7 +531,7 @@ export default async function TelemetryDashboard() {
         </div>
 
         {/* ── Cron health tiles ───────────────────────────────────────── */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Tile
             label="GitHub stars"
             value={githubStats ? String(githubStats.totalStars) : "—"}
@@ -562,6 +568,20 @@ export default async function TelemetryDashboard() {
               : "set on production cold start"}
             warn={corpusStale}
             accent={corpusAgeMs != null && !corpusStale}
+          />
+          <Tile
+            label="Site health"
+            value={healthCheck
+              ? healthCheck.status === "pass" ? "✓ All pass"
+              : healthCheck.status === "warn"
+                ? `${healthCheck.warn_checks} warn · ${healthCheck.failed_checks} fail`
+                : `${healthCheck.failed_checks} failing`
+              : "—"}
+            sub={healthCheck
+              ? `${healthCheck.total_checks} checks · ${healthCheck.duration_ms}ms · ${new Date(healthCheck.run_at).toLocaleDateString()}`
+              : "run /api/cron/health-check to populate"}
+            warn={!!healthCheck && healthCheck.status === "fail"}
+            accent={!!healthCheck && healthCheck.status === "pass"}
           />
         </div>
 

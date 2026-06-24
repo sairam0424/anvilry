@@ -4,6 +4,32 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] — 2026-06-25
+
+**Patch** — daily site health-check cron + Hobby plan schedule fix.
+
+### Added
+- **`/api/cron/health-check`** — daily cron (5am UTC) that probes 13 endpoints in
+  parallel and writes structured `pass`/`warn`/`fail` results to Redis:
+  - P1: `/`, `/work`, `/projects`, `/sitemap.xml`, `/robots.txt`
+  - P2: `/api/github/stats` (repoCount guard), `/api/mcp/mcp`, `/llms.txt` (>1000 chars),
+    `/llms-full.txt` (>1000 chars), `/feed.xml`, `/about`, `/mcp`
+  - P3: `/api/resume.json` (basics field check)
+  - State-transition alert: `anvilry:health:alert:active` set on `pass→fail`, auto-cleared
+    on recovery. `nx: true` suppresses alert storms on repeated failures.
+  - 25h TTL on `anvilry:health:latest` — missed runs are visible as absent key.
+- **"Site health" dashboard tile** in `/admin/telemetry` — 5th tile in cron health row.
+  Green = all pass; neutral = `N warn · N fail`; red = `N failing`.
+
+### Fixed
+- **Hobby plan schedule fix**: `github-sync` cron changed from hourly (`0 * * * *`) to
+  daily (`0 8 * * *`) — hourly was causing Vercel deployment failure on Hobby plan.
+- **WARN-01**: `github_stats_api` `warn` status (repoCount=0, degraded GitHub token)
+  was silently swallowed — `topStatus` evaluated to `pass` despite degraded service.
+  Fixed by introducing `warnNames` array and including warn-status checks in the
+  `topStatus` ternary. Dashboard label now shows `N warn · N fail` separately.
+- **HealthCheck type**: tightened `status: string` → `status: 'pass'|'warn'|'fail'`.
+
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 

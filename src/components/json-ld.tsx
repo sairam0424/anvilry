@@ -217,6 +217,44 @@ export function FaqJsonLd() {
   );
 }
 
+/**
+ * Article JSON-LD for article/note detail pages.
+ * Exported here so notes pages can use it without duplicating the schema.
+ */
+export function ArticleJsonLd({
+  title,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  tags,
+}: {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  tags?: string[];
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    url,
+    author: { "@type": "Person", name: profile.name, url: BASE_URL },
+    datePublished,
+    ...(dateModified && { dateModified }),
+    ...(tags?.length && { keywords: tags.join(", ") }),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
 /** ProfilePage schema for /about — enables Google Discussions/Forums eligibility.
  *  mainEntity must be typed Person with name as required field. */
 export function ProfilePageJsonLd() {

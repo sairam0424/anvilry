@@ -195,10 +195,23 @@ pnpm e2e:ui       # interactive Playwright UI mode
 E2E specs live in `e2e/`. The suite covers all four views (classic, chat, gamified, developer),
 SEO routes (llms.txt, sitemap.xml, robots.txt), and API smoke tests.
 
-### Knowledge Base (new-loop)
-After running `/new-loop`, the knowledge base lives at the repo root:
-- `ARCHITECTURE.md` — system structure (agent-readable map)
-- `LOG.md` — global append-only feed of agent work
-- `signals/` — ephemeral observations (SEO findings, perf metrics, support friction)
-- `docs/` — durable artifacts (decisions, research, guides)
-- `domains/` — loop charters (each loop owns a `domains/<name>/README.md`)
+### ship-change workflow
+The most powerful addition — ships a scoped change end-to-end with worktree isolation:
+```javascript
+Workflow({ name: 'ship-change', args: { task: 'what to build', repo: '/abs/path/to/repo' } })
+```
+Phases: **Setup** (isolated git worktree + env copy + deps) → **Implement** → **Simplify** →
+**Review** (Codex if available) → **Verify** → **PR** (delegates to `/pr` skill).
+Multiple ship-change runs can run in parallel — each gets its own worktree, no collisions.
+
+### Knowledge Base
+Already bootstrapped at the repo root:
+- `ARCHITECTURE.md` — system map: repo layout, invariants, active domain loops
+- `LOG.md` — append-only journal of finished work (newest first)
+- `signals/` — evidence: feedback, ideas, observations (deduped, frequency-counted)
+- `docs/` — durable knowledge: decisions, analyses, learnings
+- `domains/content/` — content freshness loop (MDX quality, metrics completeness)
+- `domains/seo/` — discoverability loop (llms.txt, structured data, sitemap)
+- `domains/performance/` — web vitals loop (bundle analysis, LCP, R3F chunk tracking)
+
+Add new loops with `/new-loop`. Append to `LOG.md` after any significant work session.

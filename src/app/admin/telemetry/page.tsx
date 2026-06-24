@@ -136,14 +136,44 @@ function latencyStats(events: TelemetryEvent[]): LatencyStats {
   };
 }
 
-// Read the latest eval result from Redis (written by /api/cron/eval).
-async function fetchEvalResult(): Promise<{ pass_rate: number; run_at: number; total: number } | null> {
+// ── Cron dashboard helpers ────────────────────────────────────────────────────
+
+async function fetchRedisJson<T>(key: string): Promise<T | null> {
   if (!redis) return null;
   try {
-    const raw = await redis.get<string | object>("anvilry:eval:latest");
+    const raw = await redis.get<string | object>(key);
     if (!raw) return null;
-    if (typeof raw === "object") return raw as { pass_rate: number; run_at: number; total: number };
-    return JSON.parse(raw as string) as { pass_rate: number; run_at: number; total: number };
+    if (typeof raw === "object") return raw as T;
+    return JSON.parse(raw as string) as T;
+  } catch {
+    return null;
+  }
+}
+
+// Read the latest eval result from Redis (written by /api/cron/eval).
+async function fetchEvalResult() {
+  return fetchRedisJson<{ pass_rate: number; run_at: number; total: number }>("anvilry:eval:latest");
+}
+
+type GithubStats = { totalStars: number; totalForks: number; repoCount: number; mostRecentPush: string | null };
+type SeoAudit = { run_at: number; checks: { name: string; pass: boolean }[]; all_routes_pass: boolean; content_missing_summary: number };
+type ContentAudit = { run_at: number; stale_articles: string[]; stale_notes: string[]; total_stale: number };
+
+async function fetchGithubStats() {
+  return fetchRedisJson<GithubStats>("anvilry:github:stats:latest");
+}
+async function fetchSeoAudit() {
+  return fetchRedisJson<SeoAudit>("anvilry:seo:audit:latest");
+}
+async function fetchContentAudit() {
+  return fetchRedisJson<ContentAudit>("anvilry:content:audit:latest");
+}
+async function fetchCorpusBuiltAt(): Promise<number | null> {
+  if (!redis) return null;
+  try {
+    const raw = await redis.get<string>("anvilry:corpus:built_at");
+    if (!raw) return null;
+    return parseInt(raw, 10);
   } catch {
     return null;
   }
@@ -264,11 +294,15 @@ export default async function TelemetryDashboard() {
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  const [allEvents, ttsEvents, transcribeEvents, evalResult] = await Promise.all([
+  const [allEvents, ttsEvents, transcribeEvents, evalResult, githubStats, seoAudit, contentAudit, corpusBuiltAt] = await Promise.all([
     fetchAll(since24h),
     fetchKind("tts.request", since24h),
     fetchKind("transcribe.request", since24h),
     fetchEvalResult(),
+    fetchGithubStats(),
+    fetchSeoAudit(),
+    fetchContentAudit(),
+    fetchCorpusBuiltAt(),
   ]);
   const llmAttempts = allEvents.filter((e) => e.kind === "llm.attempt");
   const httpRequests = allEvents.filter((e) => e.kind === "http.request");
@@ -296,6 +330,15 @@ export default async function TelemetryDashboard() {
 
   // Format total tokens as K
   const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+
+  // Corpus age (hours or days since last deploy)
+  const corpusAgeMs = corpusBuiltAt ? now - corpusBuiltAt : null;
+  const corpusAgeLabel = corpusAgeMs == null
+    ? "—"
+    : corpusAgeMs < 24 * 3600_000
+      ? `${Math.floor(corpusAgeMs / 3600_000)}h ago`
+      : `${Math.floor(corpusAgeMs / (24 * 3600_000))}d ago`;
+  const corpusStale = corpusAgeMs != null && corpusAgeMs > 7 * 24 * 3600_000;
 
   return (
     <div className="min-h-screen bg-bg-base p-4 font-sans text-fg md:p-6">
@@ -478,6 +521,47 @@ export default async function TelemetryDashboard() {
             accent={evalPct != null && evalPct >= 90}
             warn={evalPct != null && evalPct < 80}
             pct={evalPct ?? undefined}
+          />
+        </div>
+
+        {/* ── Cron health tiles ───────────────────────────────────────── */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <Tile
+            label="GitHub stars"
+            value={githubStats ? String(githubStats.totalStars) : "—"}
+            sub={githubStats
+              ? `${githubStats.repoCount} repos · ${githubStats.totalForks} forks`
+              : "run /api/cron/github-sync to populate"}
+            accent={!!githubStats}
+          />
+          <Tile
+            label="SEO health"
+            value={seoAudit
+              ? seoAudit.all_routes_pass ? "✓ All pass" : `${seoAudit.checks.filter((c) => !c.pass).length} failing`
+              : "—"}
+            sub={seoAudit
+              ? `${seoAudit.content_missing_summary} items missing summary · ${new Date(seoAudit.run_at).toLocaleDateString()}`
+              : "run /api/cron/seo-audit to populate"}
+            warn={!!seoAudit && !seoAudit.all_routes_pass}
+            accent={!!seoAudit && seoAudit.all_routes_pass}
+          />
+          <Tile
+            label="Stale content"
+            value={contentAudit ? String(contentAudit.total_stale) : "—"}
+            sub={contentAudit
+              ? `${contentAudit.stale_articles.length} articles · ${contentAudit.stale_notes.length} notes > 18mo`
+              : "run /api/cron/content-audit to populate"}
+            warn={!!contentAudit && contentAudit.total_stale > 0}
+            accent={!!contentAudit && contentAudit.total_stale === 0}
+          />
+          <Tile
+            label="Corpus age"
+            value={corpusAgeLabel}
+            sub={corpusBuiltAt
+              ? `Last deployed: ${new Date(corpusBuiltAt).toLocaleDateString()}`
+              : "set on production cold start"}
+            warn={corpusStale}
+            accent={corpusAgeMs != null && !corpusStale}
           />
         </div>
 

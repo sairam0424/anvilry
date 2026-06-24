@@ -7,6 +7,93 @@ All notable changes to Anvilry are documented here. The format follows
 Branch model: `develop` (working) → `main` (release; auto-deploys to
 [anvilry.vercel.app](https://anvilry.vercel.app)).
 
+## [3.0.0] — 2026-06-24
+
+**Self-maintaining portfolio** — 5 PRs (#86–#90) transforming Anvilry from a portfolio
+you manage into one that monitors and verifies itself. Anchored in a 107-agent deep
+research run (5.5M tokens, 25 primary sources) and a 26-agent E2E quality gate
+(1.7M tokens, 640 tool calls) that caught 14 issues before any code reached production.
+
+### Major: Vercel Cron Automation Suite (PR #86)
+
+Four scheduled jobs now run automatically every week:
+
+- **`/api/cron/eval`** (Mon 9am) — fires 12 golden-pair questions at the live chatbot,
+  grades answers by category (factual / rag / injection), writes pass-rate + breakdown
+  to Redis. Weekly proof that the AI is still telling the truth.
+- **`/api/cron/github-sync`** (hourly) — warms `anvilry:github:stats:latest` via ISR
+  cache-bust; idempotent (skips if key is still fresh). Homepage strip always has
+  real data with zero cold-start latency.
+- **`/api/cron/seo-audit`** (Mon 6am) — HTTP health check on sitemap.xml, llms.txt,
+  robots.txt, feed.xml; counts content items missing summaries. Zero LLM calls.
+- **`/api/cron/content-audit`** (Mon 7am) — flags articles and notes older than 18
+  months. Writes stale slug lists to Redis for the dashboard.
+- **`vercel.json`** — registers all four crons plus the pre-existing eval job.
+
+**Security hardening applied across all cron routes:**
+- Auth guards changed from fail-open (`if (secret &&)`) to fail-closed
+  (`if (!secret ||)`) — a missing `CRON_SECRET` now always returns 401.
+- `eval` route: added GET handler (Vercel Cron sends GET; POST-only caused silent 405
+  every Monday). Added 8-day TTL on Redis write so stale data self-expires.
+- `github-sync`: explicit upstream-error return when GitHub API returns non-2xx.
+- `seo-audit`: fixed Project summary field (`excerpt`, not `summary` per Velite schema).
+- `.env.example`: added `CRON_SECRET` with `openssl rand -hex 32` generation hint.
+
+### Major: Observability Dashboard Expansion (PR #90)
+
+Four new cron-health tiles in `/admin/telemetry` (Server Component, Redis reads only):
+
+- **GitHub Stats** — totalStars, totalForks, repoCount from last hourly sync.
+- **SEO Health** — pass/fail per route, content missing-summary count.
+- **Content Freshness** — stale articles + notes counts; green if zero stale.
+- **Corpus Age** — hours/days since last production deploy; flags stale after 7 days.
+
+`/api/error` route now writes a fire-and-forget Redis list (`anvilry:errors:recent`,
+max 50) for future error-feed tile. Fixed blocking bug: `error_name` and `error_message`
+were never written to `emit()` attrs — every client.error row in the dashboard Details
+column was permanently blank. `componentStack` now runs through `redact()`.
+
+### Added: AI-Era SEO (PR #88)
+
+- **`/llms-full.txt`** — full chatbot corpus (~6KB) as `text/plain` with
+  `force-dynamic`. Recruiter AI assistants can fetch the entire portfolio in one call.
+- **`ArticleJsonLd`** — reusable `Article` schema component in `json-ld.tsx`.
+- **`safeJsonLd()`** — replaces `JSON.stringify` in all 8 JSON-LD components; escapes
+  `</script>` → `<\/` to prevent script-tag injection. Applied to all existing
+  components (PersonJsonLd, BreadcrumbJsonLd, etc.) as defence in depth.
+- **Open-redirect guard** in `articles/[slug]/page.tsx`: `externalUrl` redirects now
+  require `http://` or `https://` prefix (blocks `javascript:` / `data:` protocol).
+
+### Added: AI/LLM Feature Expansion (PR #89)
+
+- **12 golden pairs** (was 5) — 7 new pairs covering MindForge, AAVA Code user count,
+  Agent-Forge, languages, email, open-source projects, and a second injection variant.
+- **Per-category pass rates** — `by_category: { factual, rag, injection }` in Redis
+  summary. Dashboard can now surface category-level regressions.
+- **`forbidden` field per injection pair** — `checkPass()` now checks each injection
+  pair's own payload (was hardcoded to `HELLO_INJECTED` regardless of which pair was
+  being tested — the second injection test was vacuous and always passed).
+- **Corpus timestamp** — `instrumentation.ts` writes `anvilry:corpus:built_at` on
+  production cold starts. Uses `VERCEL_ENV=production` (not `NODE_ENV`) to exclude
+  preview deployments.
+- **2 new MCP tools** — `list_all_content` (all work/project/article/note items) and
+  `get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools.
+
+### Added: Performance Optimization (PR #87)
+
+- **`optimizePackageImports`** for `lucide-react` and `motion` — tree-shakes icon and
+  animation imports at module level. R3F packages excluded (C-3 investigation, commit
+  `6246ed9`, proved the flag doesn't collapse twin-chunks in Turbopack).
+- **`revalidate = 3600`** on `work/page.tsx` and `notes/page.tsx` (server components).
+  Removed from `stats/page.tsx` (Velite static data; ISR produces byte-identical HTML).
+
+### Infrastructure
+
+- All 5 PRs passed a 26-agent E2E quality gate (code review + TypeScript + 477 tests +
+  contract validation + security audit) before merge. 14 issues found and fixed in the
+  gate — none shipped to production.
+- 477 vitest tests pass on all branches; `tsc --noEmit` clean across all 5.
+
 ## [1.9.0] — 2026-06-17
 
 **Beast Mode upgrade** — 6 commits closing 3 critical production gaps and shipping 11

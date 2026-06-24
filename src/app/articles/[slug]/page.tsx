@@ -55,8 +55,11 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   }
 
   // External articles: redirect to the original publication.
+  // Protocol guard: only allow http/https to prevent javascript:/data: open-redirect.
   if (article.source !== "native" && article.externalUrl) {
-    redirect(article.externalUrl);
+    const url = article.externalUrl;
+    if (!url.startsWith("https://") && !url.startsWith("http://")) notFound();
+    redirect(url);
   }
 
   // Notes-only article (linkedNote + no externalUrl) with notes disabled — nothing to show.

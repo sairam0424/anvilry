@@ -6,6 +6,8 @@ import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
+export const revalidate = 3600;
+
 const description = `Production systems built by ${profile.name} at ${profile.company} — multi-agent LLM orchestration, AI coding tools, and GenAI platforms with real metrics.`;
 
 export const metadata: Metadata = {

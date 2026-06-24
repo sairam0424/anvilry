@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { allProjects, allWork, getProject, getWork } from "@/lib/content";
+import { allProjects, allWork, allArticles, allNotes, getProject, getWork } from "@/lib/content";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
 
 /**
@@ -139,4 +139,37 @@ export function getResumeVariantData(role: ResumeRole) {
   const variant = resumeVariants.find((r) => r.label === label);
   if (!variant) return notFound("resume_variant", role, [...RESUME_ROLES]);
   return { role, label: variant.label, tag: variant.tag, url: `${BASE}${variant.file}` };
+}
+
+export const contentTypeSchema = {
+  type: z.enum(["work", "project", "article", "note"]).describe("content type"),
+  slug: z.string().describe("content slug, e.g. 'pensieve' or 'mindforge'"),
+};
+
+/** Flat list of all content items (work, projects, articles, notes) — slug + title + type. */
+export function listAllContentData() {
+  return [
+    ...allWork.map((w) => ({ type: "work" as const, slug: w.slug, name: w.name, summary: w.summary, url: `${BASE}${w.url}` })),
+    ...allProjects.map((p) => ({ type: "project" as const, slug: p.slug, name: p.name, summary: p.tagline, url: `${BASE}${p.url}` })),
+    ...allArticles.map((a) => ({ type: "article" as const, slug: a.slug, name: a.title, summary: a.summary, url: `${BASE}${a.url}` })),
+    ...allNotes.map((n) => ({ type: "note" as const, slug: n.slug, name: n.title, summary: n.summary, url: `${BASE}${n.url}` })),
+  ];
+}
+
+/** Get a single content item by type + slug. */
+export function getContentItemData(type: "work" | "project" | "article" | "note", slug: string) {
+  switch (type) {
+    case "work":    return getWorkData(slug);
+    case "project": return getProjectData(slug);
+    case "article": {
+      const a = allArticles.find((x) => x.slug === slug);
+      if (!a) return notFound("article", slug, allArticles.map((x) => x.slug));
+      return { slug: a.slug, name: a.title, summary: a.summary, date: a.date, tags: a.tags, url: `${BASE}${a.url}` };
+    }
+    case "note": {
+      const n = allNotes.find((x) => x.slug === slug);
+      if (!n) return notFound("note", slug, allNotes.map((x) => x.slug));
+      return { slug: n.slug, name: n.title, summary: n.summary, date: n.date, url: `${BASE}${n.url}` };
+    }
+  }
 }

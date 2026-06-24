@@ -88,6 +88,24 @@ const handler = createMcpHandler(
       },
       async ({ role }) => wrap(T.getResumeVariantData(role)),
     );
+    server.registerTool(
+      "list_all_content",
+      {
+        title: "List all content",
+        description: "Flat list of every work case study, project, article, and note — with slug, name, summary, and URL.",
+        inputSchema: {},
+      },
+      async () => wrap(T.listAllContentData()),
+    );
+    server.registerTool(
+      "get_content_item",
+      {
+        title: "Get content item",
+        description: "Fetch a specific content item by type (work, project, article, note) and slug.",
+        inputSchema: T.contentTypeSchema,
+      },
+      async ({ type, slug }) => wrap(T.getContentItemData(type, slug)),
+    );
   },
   {},
   // disableSse: SSE was removed from the MCP spec (2025-03-26) and the only transport

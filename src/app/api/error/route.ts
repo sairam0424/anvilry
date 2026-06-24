@@ -4,6 +4,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { withTrace } from "@/lib/telemetry/with-trace";
 import { emit } from "@/lib/telemetry/emit";
 import { redact } from "@/lib/telemetry/schema";
+import { redis } from "@/lib/redis";
 
 export const runtime = "nodejs";
 // Tighter than /api/tts (15s): the route does no I/O — Zod parse + emit() and out.
@@ -169,6 +170,15 @@ export async function POST(req: Request) {
     // dashboard slice meta-events (e.g. "all 4xx /api/error from window source") without
     // pulling the client.error sink.
     ctx.attrs({ source, level, has_stack: !!stack, has_component_stack: !!componentStack });
+
+    // Append to recent-errors list in Redis for the telemetry dashboard (fire-and-forget).
+    if (redis) {
+      redis.pipeline()
+        .lpush("anvilry:errors:recent", JSON.stringify({ message: redact(message), url, ts: Date.now() }))
+        .ltrim("anvilry:errors:recent", 0, 49) // keep last 50
+        .exec()
+        .catch(() => {}); // never block the 204 response
+    }
 
     // 204 — no body. sendBeacon ignores response bodies; we save the bytes.
     return new Response(null, { status: 204 });

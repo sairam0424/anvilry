@@ -1,5 +1,6 @@
 {
   "crons": [
+    { "path": "/api/cron/health-check",  "schedule": "0 5 * * *" },
     { "path": "/api/cron/eval",          "schedule": "0 9 * * 1" },
     { "path": "/api/cron/github-sync",   "schedule": "0 8 * * *" },
     { "path": "/api/cron/seo-audit",     "schedule": "0 6 * * 1" },

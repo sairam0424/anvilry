@@ -82,4 +82,19 @@ export async function register() {
   // Single structured log — grep handle "[config]" is distinct from "[trace]"
   // (telemetry spans) and "[vitals]" (web-vitals RUM).
   console.log("[config]", JSON.stringify(config));
+
+  // Stamp corpus build time in Redis so the telemetry dashboard can surface
+  // "corpus age" — alerting when content hasn't been deployed in a while.
+  if (process.env.NODE_ENV === "production") {
+    try {
+      const { redis } = await import("@/lib/redis");
+      if (redis) {
+        await redis.set("anvilry:corpus:built_at", Date.now().toString(), {
+          ex: 7 * 24 * 3600, // 1 week — auto-expires if no new deploy
+        });
+      }
+    } catch {
+      // Fail silently — corpus timestamp is best-effort instrumentation.
+    }
+  }
 }

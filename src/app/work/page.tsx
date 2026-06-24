@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { allWork } from "@/lib/content";
 import { profile } from "@/lib/profile";
+
+export const revalidate = 3600;
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 

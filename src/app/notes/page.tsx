@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { allNotes } from "@/lib/content";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
+
+export const revalidate = 3600;
 import { NoteCard } from "@/components/note-card";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";

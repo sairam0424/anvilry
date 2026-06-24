@@ -1,5 +1,7 @@
 import { allProjects, allNotes, allArticles } from "@/lib/content";
 import { profile } from "@/lib/profile";
+
+export const revalidate = 3600;
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 

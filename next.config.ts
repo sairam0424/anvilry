@@ -98,6 +98,9 @@ const nextConfig: NextConfig = {
     // View Transitions API — enables React 19's <ViewTransition> component and
     // directional slide animations on project card links via transitionTypes.
     viewTransition: true,
+    // Tree-shake icon/animation/3D library imports at module level — reduces
+    // first-load JS for pages that only use a subset of these packages.
+    optimizePackageImports: ["lucide-react", "motion", "@react-three/fiber", "@react-three/drei", "three"],
     // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
     // `export const runtime = "nodejs"` segment configs present on all 9 API routes
     // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).

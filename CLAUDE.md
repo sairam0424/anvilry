@@ -171,3 +171,47 @@ Work frontmatter supports optional `constraints`, `tradeoffs`, and `diagram`/`di
 - `ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these.
 - `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`). A future SDK update that returns camelCase would silently zero out token telemetry; this test is the regression guard.
 - Tests run as part of `pnpm build` — a failing test blocks deployment.
+
+---
+
+## Skills (Loop-Engineer Harness)
+
+Skills live in `.claude/skills/` and are available as slash commands in Claude Code.
+
+| Skill | Command | When to use |
+|---|---|---|
+| **dev-local** | `/dev-local` | Start/stop/verify the local dev stack — Anvilry-specific launcher |
+| **pr** | `/pr` | Prove a feature works (fresh verifier sub-agent drives the app) then open PR |
+| **e2e-setup** | `/e2e-setup` | Add or extend the Playwright E2E suite (`e2e/` package) |
+| **new-loop** | `/new-loop` | Bootstrap the knowledge base and create a new compounding agent loop |
+| **setup-codebase-harness** | `/setup-codebase-harness` | Master harness skill — orchestrates the others |
+
+### E2E Tests
+```bash
+pnpm e2e          # run Playwright tests (requires dev server running at :3000)
+pnpm e2e:ui       # interactive Playwright UI mode
+```
+
+E2E specs live in `e2e/`. The suite covers all four views (classic, chat, gamified, developer),
+SEO routes (llms.txt, sitemap.xml, robots.txt), and API smoke tests.
+
+### ship-change workflow
+The most powerful addition — ships a scoped change end-to-end with worktree isolation:
+```javascript
+Workflow({ name: 'ship-change', args: { task: 'what to build', repo: '/abs/path/to/repo' } })
+```
+Phases: **Setup** (isolated git worktree + env copy + deps) → **Implement** → **Simplify** →
+**Review** (Codex if available) → **Verify** → **PR** (delegates to `/pr` skill).
+Multiple ship-change runs can run in parallel — each gets its own worktree, no collisions.
+
+### Knowledge Base
+Already bootstrapped at the repo root:
+- `ARCHITECTURE.md` — system map: repo layout, invariants, active domain loops
+- `LOG.md` — append-only journal of finished work (newest first)
+- `signals/` — evidence: feedback, ideas, observations (deduped, frequency-counted)
+- `docs/` — durable knowledge: decisions, analyses, learnings
+- `domains/content/` — content freshness loop (MDX quality, metrics completeness)
+- `domains/seo/` — discoverability loop (llms.txt, structured data, sitemap)
+- `domains/performance/` — web vitals loop (bundle analysis, LCP, R3F chunk tracking)
+
+Add new loops with `/new-loop`. Append to `LOG.md` after any significant work session.

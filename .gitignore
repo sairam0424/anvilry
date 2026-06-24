@@ -47,3 +47,7 @@ next-env.d.ts
 
 # Private working notes (daily logs, scratch) — never commit
 scratch-pad/
+
+# Playwright E2E test output
+test-results/
+playwright-report/

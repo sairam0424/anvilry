@@ -171,3 +171,34 @@ Work frontmatter supports optional `constraints`, `tradeoffs`, and `diagram`/`di
 - `ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these.
 - `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`). A future SDK update that returns camelCase would silently zero out token telemetry; this test is the regression guard.
 - Tests run as part of `pnpm build` — a failing test blocks deployment.
+
+---
+
+## Skills (Loop-Engineer Harness)
+
+Skills live in `.claude/skills/` and are available as slash commands in Claude Code.
+
+| Skill | Command | When to use |
+|---|---|---|
+| **dev-local** | `/dev-local` | Start/stop/verify the local dev stack — Anvilry-specific launcher |
+| **pr** | `/pr` | Prove a feature works (fresh verifier sub-agent drives the app) then open PR |
+| **e2e-setup** | `/e2e-setup` | Add or extend the Playwright E2E suite (`e2e/` package) |
+| **new-loop** | `/new-loop` | Bootstrap the knowledge base and create a new compounding agent loop |
+| **setup-codebase-harness** | `/setup-codebase-harness` | Master harness skill — orchestrates the others |
+
+### E2E Tests
+```bash
+pnpm e2e          # run Playwright tests (requires dev server running at :3000)
+pnpm e2e:ui       # interactive Playwright UI mode
+```
+
+E2E specs live in `e2e/`. The suite covers all four views (classic, chat, gamified, developer),
+SEO routes (llms.txt, sitemap.xml, robots.txt), and API smoke tests.
+
+### Knowledge Base (new-loop)
+After running `/new-loop`, the knowledge base lives at the repo root:
+- `ARCHITECTURE.md` — system structure (agent-readable map)
+- `LOG.md` — global append-only feed of agent work
+- `signals/` — ephemeral observations (SEO findings, perf metrics, support friction)
+- `docs/` — durable artifacts (decisions, research, guides)
+- `domains/` — loop charters (each loop owns a `domains/<name>/README.md`)

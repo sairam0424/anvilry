@@ -47,6 +47,8 @@ type HealthResult = {
   total_checks: number;
   failed_checks: number;
   failed_names: string[];
+  warn_checks: number;
+  warn_names: string[];
 };
 
 const CHECKS = [
@@ -137,6 +139,12 @@ export async function GET(req: Request) {
     .filter((_c, i) => results[i].status === "fail")
     .map((c) => c.name);
 
+  // warn-status checks (e.g. github_stats repoCount=0) must also bubble up to topStatus.
+  // Without this, a degraded-but-not-down service would silently report "pass".
+  const warnNames = CHECKS
+    .filter((_c, i) => results[i].status === "warn")
+    .map((c) => c.name);
+
   const p1Pass = CHECKS
     .filter((c) => c.criticality === "P1")
     .every((c) => checksMap[c.name].status !== "fail");
@@ -147,7 +155,7 @@ export async function GET(req: Request) {
 
   const topStatus: "pass" | "warn" | "fail" = !p1Pass
     ? "fail"
-    : failedNames.length > 0
+    : failedNames.length > 0 || warnNames.length > 0
       ? "warn"
       : "pass";
 
@@ -162,10 +170,12 @@ export async function GET(req: Request) {
     total_checks: CHECKS.length,
     failed_checks: failedNames.length,
     failed_names: failedNames,
+    warn_checks: warnNames.length,
+    warn_names: warnNames,
   };
 
   if (redis) {
-    // State-transition alert: set alert:active only on pass→fail transition (nx supresses storms)
+    // State-transition alert: set alert:active only on pass→fail transition (nx suppresses storms)
     const prev = await redis.get<string | object>("anvilry:health:latest");
     if (prev) {
       const prevResult = typeof prev === "object" ? prev : JSON.parse(prev as string) as HealthResult;

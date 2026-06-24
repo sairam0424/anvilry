@@ -158,7 +158,7 @@ async function fetchEvalResult() {
 type GithubStats = { totalStars: number; totalForks: number; repoCount: number; mostRecentPush: string | null };
 type SeoAudit = { run_at: number; checks: { name: string; pass: boolean }[]; all_routes_pass: boolean; content_missing_summary: number };
 type ContentAudit = { run_at: number; stale_articles: string[]; stale_notes: string[]; total_stale: number };
-type HealthCheck = { run_at: number; status: string; total_checks: number; failed_checks: number; duration_ms: number; failed_names: string[] };
+type HealthCheck = { run_at: number; status: "pass" | "warn" | "fail"; total_checks: number; failed_checks: number; warn_checks: number; duration_ms: number; failed_names: string[]; warn_names: string[] };
 
 async function fetchGithubStats() {
   return fetchRedisJson<GithubStats>("anvilry:github:stats:latest");
@@ -573,8 +573,9 @@ export default async function TelemetryDashboard() {
             label="Site health"
             value={healthCheck
               ? healthCheck.status === "pass" ? "✓ All pass"
-              : healthCheck.status === "warn" ? `${healthCheck.failed_checks} warn`
-              : `${healthCheck.failed_checks} failing`
+              : healthCheck.status === "warn"
+                ? `${healthCheck.warn_checks} warn · ${healthCheck.failed_checks} fail`
+                : `${healthCheck.failed_checks} failing`
               : "—"}
             sub={healthCheck
               ? `${healthCheck.total_checks} checks · ${healthCheck.duration_ms}ms · ${new Date(healthCheck.run_at).toLocaleDateString()}`

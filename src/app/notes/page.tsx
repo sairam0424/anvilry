@@ -6,6 +6,8 @@ import { NoteCard } from "@/components/note-card";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: "Notes",
   description: "Engineering notes & writing.",

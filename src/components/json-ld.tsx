@@ -1,6 +1,14 @@
 import { profile, skills } from "@/lib/profile";
 import { now } from "@/lib/personal";
 
+// Safe serialisation for <script type="application/ld+json"> blocks.
+// JSON.stringify alone does NOT escape `</script>` — a content field containing
+// that literal string would break out of the script tag and execute as HTML.
+// Standard fix: replace `</` with `<\/` (valid JSON, ignored by JSON parsers).
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/<\//g, "<\\/");
+}
+
 // Machine-readable "open to work" signal — derived from the owner-authored now.focus
 // (no new field invented). When Sairam is hired, removing the "open to new roles" line
 // from personal.ts automatically drops the schema signal. Invisible to humans; lets
@@ -33,7 +41,7 @@ export function PersonJsonLd() {
     <script
       type="application/ld+json"
       // Static, build-time data only — no user input.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }
@@ -55,7 +63,7 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string
     })),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
   );
 }
 
@@ -95,7 +103,7 @@ export function SoftwareSourceCodeJsonLd({
     keywords: tech.join(", "),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
   );
 }
 
@@ -126,7 +134,7 @@ export function WebSiteJsonLd() {
     },
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
   );
 }
 
@@ -153,7 +161,7 @@ export function CreativeWorkJsonLd({
     keywords: keywords.join(", "),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
   );
 }
 
@@ -212,7 +220,45 @@ export function FaqJsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(faq) }}
+    />
+  );
+}
+
+/**
+ * Article JSON-LD for article/note detail pages.
+ * Exported here so notes pages can use it without duplicating the schema.
+ */
+export function ArticleJsonLd({
+  title,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  tags,
+}: {
+  title: string;
+  description: string;
+  url: string;
+  datePublished: string;
+  dateModified?: string;
+  tags?: string[];
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    url,
+    author: { "@type": "Person", name: profile.name, url: BASE_URL },
+    datePublished,
+    ...(dateModified && { dateModified }),
+    ...(tags?.length && { keywords: tags.join(", ") }),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }
@@ -237,7 +283,7 @@ export function ProfilePageJsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(profilePage) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(profilePage) }}
     />
   );
 }

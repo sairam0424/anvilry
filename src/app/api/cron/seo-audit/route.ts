@@ -16,7 +16,7 @@ export const maxDuration = 60;
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -44,15 +44,17 @@ export async function GET(req: Request) {
     }),
   );
 
-  // Count content items missing a summary (our canonical description field).
-  const allContent = [
-    ...allWork.map((i) => ({ ...i, type: "work" as const })),
-    ...allProjects.map((i) => ({ ...i, type: "project" as const })),
-    ...allArticles.map((i) => ({ ...i, type: "article" as const })),
-    ...allNotes.map((i) => ({ ...i, type: "note" as const })),
+  // Count content items missing a summary field.
+  // NOTE: Project uses 'excerpt' (not 'summary') per the Velite schema, so we map
+  // it to a normalised shape before checking — otherwise every Project is false-positive.
+  const summaryItems = [
+    ...allWork.map((i) => i.summary),
+    ...allProjects.map((i) => i.excerpt),   // Velite Project schema field is 'excerpt'
+    ...allArticles.map((i) => i.summary),
+    ...allNotes.map((i) => i.summary),
   ];
-  const content_missing_summary = allContent.filter(
-    (i) => !("summary" in i) || !i.summary,
+  const content_missing_summary = summaryItems.filter(
+    (s) => typeof s !== "string" || s.trim().length === 0,
   ).length;
 
   const result = {
@@ -60,7 +62,7 @@ export async function GET(req: Request) {
     checks,
     all_routes_pass: checks.every((c) => c.pass),
     content_missing_summary,
-    total_content: allContent.length,
+    total_content: summaryItems.length,
   };
 
   if (redis) {

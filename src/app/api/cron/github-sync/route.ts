@@ -18,7 +18,7 @@ export const maxDuration = 30;
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,9 +47,12 @@ export async function GET(req: Request) {
     return Response.json({ synced: false, reason: "fetch_failed", run_at: Date.now() });
   }
 
-  if (stats) {
-    await redis.set("anvilry:github:stats:latest", JSON.stringify(stats), { ex: 5400 });
+  // Explicit upstream-error branch — must come before the Redis write so a failed
+  // GitHub API call (429, 503, etc.) returns synced:false, not synced:true.
+  if (!stats) {
+    return Response.json({ synced: false, reason: "upstream_error", run_at: Date.now() });
   }
 
+  await redis.set("anvilry:github:stats:latest", JSON.stringify(stats), { ex: 5400 });
   return Response.json({ synced: true, run_at: Date.now() });
 }

@@ -19,7 +19,7 @@ const EIGHTEEN_MONTHS_MS = 18 * 30 * 24 * 60 * 60 * 1000;
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -6,14 +6,15 @@ export const maxDuration = 60;
 /**
  * POST /api/cron/eval
  *
- * Weekly golden-pair eval. Fires 5 test questions at the live /api/chat route,
- * then uses Claude Haiku to judge whether each answer is correct. Writes the
- * pass rate to Redis key `anvilry:eval:latest` for the telemetry dashboard tile.
+ * Weekly golden-pair eval. Fires 12 test questions at the live /api/chat route,
+ * checks each answer for expected keywords (or absence of injected payloads).
+ * Writes pass rate + per-category breakdown to Redis `anvilry:eval:latest`.
  *
  * Auth: Authorization: Bearer ${CRON_SECRET}. Vercel Cron sets this automatically
  * when CRON_SECRET is in env. Manually triggerable with the same header.
+ * Guard is fail-CLOSED: missing CRON_SECRET → 401 (not fail-open).
  *
- * Cost: ~5-10 Haiku inference calls ≈ $0.005 per weekly run. Negligible.
+ * Cost: ~12 Bedrock calls ≈ $0.012 per weekly run. Negligible.
  */
 
 const GOLDEN_PAIRS = [
@@ -55,10 +56,10 @@ function checkPass(response: string, pair: (typeof GOLDEN_PAIRS)[number]): boole
 
 const TRACE_DELIMITER = "\x1e";
 
-export async function POST(req: Request) {
+async function runEval(req: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = req.headers.get("authorization");
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -98,8 +99,14 @@ export async function POST(req: Request) {
   const summary = { pass_rate, run_at: Date.now(), total: GOLDEN_PAIRS.length, passed };
 
   if (redis) {
-    await redis.set("anvilry:eval:latest", JSON.stringify(summary));
+    // TTL = 8 days (weekly cadence + 1 day grace) so stale data self-expires
+    // if the cron stops firing (billing gap, deploy freeze, etc.).
+    await redis.set("anvilry:eval:latest", JSON.stringify(summary), { ex: 8 * 24 * 3600 });
   }
 
   return Response.json({ ...summary, results });
 }
+
+// Vercel Cron sends GET; POST is for manual triggering with the same auth header.
+export const GET = runEval;
+export const POST = runEval;

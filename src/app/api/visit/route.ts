@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ total, today });
   } catch {
-    // Fail open on Redis errors (quota exhausted, network, etc.) — badge shows 0.
+    // Fail open on Redis errors (quota exhausted, network, etc.) — client shows last-known cached count or hides.
     return NextResponse.json({ total: 0, today: 0 });
   }
 }

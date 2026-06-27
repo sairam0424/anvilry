@@ -1,0 +1,27 @@
+---
+slug: trelix
+name: trelix
+tagline: Production-grade code indexing and semantic retrieval engine.
+group: Code Intelligence & Engines
+repo: https://github.com/sairam0424/trelix
+commits: 201
+tech: [Python, tree-sitter, sqlite-vec, SQLite, BM25, Pydantic, FastAPI, LiteLLM, networkx]
+pinned: true
+pinRank: 5
+featured: true
+order: 6
+excerpt: Hybrid semantic + BM25 + grep code search with call-graph expansion, adaptive query planning, and GraphRAG synthesis. Zero-infra default (SQLite + HNSW). 929 unit tests. MCP server for Claude Code and Cursor.
+---
+
+**trelix** is a production-ready code indexing and retrieval engine that transforms any repository into a queryable knowledge base. Where grep finds exact strings, trelix finds *relevant* code — via a hybrid retrieval pipeline, call-graph traversal, and LLM synthesis that answers "how does auth work?" with actual code paths, not a keyword hit list.
+
+The engine combines three parallel retrieval legs — **semantic embeddings** (voyage/OpenAI/Bedrock Titan), **BM25 keyword search** (SQLite FTS5), and **exact grep** — fused via Reciprocal Rank Fusion. A **3-tier adaptive query planner** routes direct lookups to tier 1 (zero retrieval), single-intent queries to tier 2 (8 intent types), and complex decomposition to tier 3 (LLM parallel planning). For large result sets, **GraphRAG map-reduce** scales synthesis beyond context limits.
+
+- **Contextual chunking** — LLM-generated per-chunk summaries; 67% retrieval failure reduction vs. naive chunking
+- **Call-graph expansion** — PageRank-weighted traversal with `callee_type_hint` precision (40% fewer false edges)
+- **Universal LLM client factory** — 5 provider backends (OpenAI, Azure, Anthropic, Bedrock, Vertex) via one env var
+- **Zero-infra default** — single `.trelix/index.db` SQLite file with HNSW vector index + FTS5; no external services
+- **Real-time watcher** — debounced 500ms incremental re-indexing on file save, respects `.gitignore`
+- **MCP server** — integrates natively with Claude Code, Cursor, Windsurf, LangChain, LlamaIndex
+
+> 929 unit tests + 16 integration tests, 75% coverage gate enforced. First stable release v1.0.0.

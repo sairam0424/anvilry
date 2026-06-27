@@ -33,9 +33,10 @@ export const graphNodes: GraphNode[] = [
   { id: "commandvault", label: "CommandVault", kind: "tool", pos: [-0.3, 1.5, 0.5] },
   { id: "nhl", label: "Not-Humans-Lab", kind: "tool", pos: [0.2, -1.6, -0.5] },
   // Production intelligence & publishing tools
-  { id: "tombstone", label: "Tombstone", kind: "tool", pos: [-1.0, 2.1, 0.8] },
-  { id: "trelix", label: "trelix", kind: "engine", pos: [3.0, 0.5, -0.8] },
-  { id: "inkforge", label: "Inkforge", kind: "tool", pos: [0.8, 2.0, 1.2] },
+  // Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units
+  { id: "tombstone", label: "Tombstone", kind: "tool", pos: [-1.7, -0.7, 0.9] },
+  { id: "trelix", label: "trelix", kind: "engine", pos: [2.2, -0.6, -0.9] },
+  { id: "inkforge", label: "Inkforge", kind: "tool", pos: [0.1, 1.7, 0.9] },
 ];
 
 export const graphEdges: GraphEdge[] = [

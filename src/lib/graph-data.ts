@@ -32,6 +32,11 @@ export const graphNodes: GraphNode[] = [
   // Tooling & lab
   { id: "commandvault", label: "CommandVault", kind: "tool", pos: [-0.3, 1.5, 0.5] },
   { id: "nhl", label: "Not-Humans-Lab", kind: "tool", pos: [0.2, -1.6, -0.5] },
+  // Production intelligence & publishing tools
+  // Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units
+  { id: "tombstone", label: "Tombstone", kind: "tool", pos: [-1.7, -0.7, 0.9] },
+  { id: "trelix", label: "trelix", kind: "engine", pos: [2.2, -0.6, -0.9] },
+  { id: "inkforge", label: "Inkforge", kind: "tool", pos: [0.1, 1.7, 0.9] },
 ];
 
 export const graphEdges: GraphEdge[] = [
@@ -57,6 +62,10 @@ export const graphEdges: GraphEdge[] = [
   ["nhl", "commandvault"],
   ["nhl", "contextos"],
   ["commandvault", "mindforge"],
+  // Tombstone and Inkforge are in the same production-tooling cluster
+  ["tombstone", "nhl"],         // Tombstone is part of the Not-Humans-World workspace
+  ["trelix", "graph-forge"],    // trelix is a code-intelligence engine (sibling of Graph-Forge)
+  ["inkforge", "commandvault"], // Inkforge generates content that CommandVault indexes
 ];
 
 export const kindColor: Record<GraphNode["kind"], string> = {

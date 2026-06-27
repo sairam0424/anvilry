@@ -1,0 +1,28 @@
+---
+slug: inkforge
+name: Inkforge
+tagline: Notes, topics, or code → published technical articles.
+group: Tooling & Lab
+repo: https://github.com/sairam0424/Inkforge
+commits: 89
+tech: [TypeScript, Node.js, Next.js, Turborepo, Bedrock, BM25, Playwright, Commander, Vitest]
+pinned: true
+pinRank: 7
+featured: true
+order: 7
+excerpt: STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to, Hashnode, and a Playwright-rendered LinkedIn carousel.
+---
+
+**Inkforge** is personal publishing infrastructure — a CLI + web UI that turns scattered notes, topics, or code directories into polished technical articles and publishes them to Dev.to, Hashnode, and LinkedIn without leaving the terminal.
+
+The core is a **STORM two-stage pipeline**: first an explicit outline artifact is generated (section tree + word budgets per section), then each section is drafted independently with context chaining, then a single humanization pass adds voice and transitions. For notes-dump inputs, an in-process **BM25 RAG layer** (no external vector DB — k1=1.5, b=0.75, hierarchical Markdown chunker) surfaces the top-5 relevant chunks into the outline prompt.
+
+- **STORM pipeline with explicit outlines** — sections drafted independently, no context explosion; 4096-token budget with JSON truncation repair
+- **BM25 in-memory RAG** — zero external service; scales to thousands of personal notes; 95% of semantic search quality at 10% of the cost
+- **Dual output sinks** — primary `.md` files for portability; optional Anvilry `.mdx` mirror for Velite
+- **Playwright-based asset rendering** — pixel-perfect 1400×787px cover images and 15-slide LinkedIn carousels (2× pixel density); never macOS `qlmanage`
+- **Platform publishers** — Dev.to REST API v1 (canonical_url), Hashnode GraphQL v2 (originalArticleURL), cross-posting without SEO duplicate penalties
+- **Streaming web UI** — SSE event stream from CLI pipeline into browser; section-by-section live preview at `/generate`
+- **Content-as-committed-data** — generated articles gitignored; published tracking committed as source of truth
+
+> 11/11 tests passing. Built the Tombstone launch article (3,531 words) from incident notes in one command. Ships as `@inkforge/cli`.

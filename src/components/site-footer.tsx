@@ -7,21 +7,46 @@ import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { useView } from "@/components/view-context";
 
-const showVisitorCounter = process.env.NEXT_PUBLIC_VISITOR_COUNTER === "true";
+const VISIT_CACHE_KEY = "anvilry:visits:total";
 
 /**
  * Fire-and-forget visitor counter. POSTs to /api/visit on mount (once per page load),
  * then shows the running total. Rate-limited server-side to 1 increment per IP / 30 min.
  * Gate: NEXT_PUBLIC_VISITOR_COUNTER=true (default OFF).
+ *
+ * localStorage fallback: seeds from cache on mount so repeat visitors see the last-known
+ * count instantly, and so the badge shows a real number when Redis is unavailable (total=0).
+ * Only a positive total from the API overwrites the cache — a 0 (Redis down) is ignored.
  */
 function VisitorBadge() {
-  const [total, setTotal] = useState<number | null>(null);
+  // Seed from localStorage so the badge shows instantly on repeat visits,
+  // and so it shows the last-known count when Redis is unavailable (total=0).
+  const [total, setTotal] = useState<number | null>(() => {
+    try {
+      const cached = localStorage.getItem(VISIT_CACHE_KEY);
+      return cached !== null ? Number(cached) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     fetch("/api/visit", { method: "POST" })
       .then((r) => r.ok ? r.json() : null)
-      .then((data) => { if (data?.total != null) setTotal(data.total as number); })
-      .catch(() => {}); // fail silently — decorative
+      .then((data: { total: number; today: number } | null) => {
+        if (data?.total != null && data.total > 0) {
+          setTotal(data.total);
+          try {
+            localStorage.setItem(VISIT_CACHE_KEY, String(data.total));
+          } catch {
+            // localStorage blocked (private browsing / storage full) — ignore
+          }
+        }
+        // If total === 0: Redis was unavailable. Keep the cached value (don't call setTotal).
+      })
+      .catch(() => {
+        // Network error — cached value (already in state) stays visible
+      });
   }, []);
 
   if (total === null) {
@@ -29,6 +54,8 @@ function VisitorBadge() {
       <span className="inline-block h-3 w-28 animate-pulse rounded bg-fg-subtle/20" aria-hidden="true" />
     );
   }
+  if (total === 0) return null; // No cache, no real count — hide the badge entirely
+
   return (
     <span className="font-mono text-xs text-fg-subtle">
       ↑ {total.toLocaleString()} engineers visited
@@ -54,6 +81,7 @@ const MACHINE_LINKS = [
 const FULL_HEIGHT_VIEWS = new Set(["chat", "developer"]);
 
 export function SiteFooter() {
+  const showVisitorCounter = process.env.NEXT_PUBLIC_VISITOR_COUNTER === "true";
   const { view } = useView();
   if (FULL_HEIGHT_VIEWS.has(view)) return null;
 

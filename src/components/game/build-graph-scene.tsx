@@ -89,19 +89,13 @@ function Node({
         <sphereGeometry args={[0.16, 24, 24]} />
         <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
-      {/* Always-visible label: dim at rest, bright on hover so the graph is readable without interaction */}
-      <Billboard position={[0, 0.34, 0]}>
-        <Text
-          fontSize={hovered ? 0.22 : 0.17}
-          color={hovered ? "#e9ecf5" : "#8b92a8"}
-          anchorX="center"
-          anchorY="bottom"
-          outlineWidth={0.01}
-          outlineColor="#07080d"
-        >
-          {label}
-        </Text>
-      </Billboard>
+      {hovered && (
+        <Billboard position={[0, 0.36, 0]}>
+          <Text fontSize={0.22} color="#e9ecf5" anchorX="center" anchorY="bottom" outlineWidth={0.012} outlineColor="#07080d">
+            {label}
+          </Text>
+        </Billboard>
+      )}
     </group>
   );
 }

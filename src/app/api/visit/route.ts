@@ -59,15 +59,20 @@ export async function POST(req: Request) {
   );
   const ttl = Math.floor((midnight.getTime() - now.getTime()) / 1000);
 
-  const [total, today] = await redis.pipeline()
-    .incr("anvilry:visits:total")
-    .incr("anvilry:visits:daily")
-    .exec() as [number, number];
+  try {
+    const [total, today] = await redis.pipeline()
+      .incr("anvilry:visits:total")
+      .incr("anvilry:visits:daily")
+      .exec() as [number, number];
 
-  // Set daily TTL only on the first increment of the day (when today === 1).
-  if (today === 1 && ttl > 0) {
-    await redis.expire("anvilry:visits:daily", ttl);
+    // Set daily TTL only on the first increment of the day (when today === 1).
+    if (today === 1 && ttl > 0) {
+      await redis.expire("anvilry:visits:daily", ttl);
+    }
+
+    return NextResponse.json({ total, today });
+  } catch {
+    // Fail open on Redis errors (quota exhausted, network, etc.) — badge shows 0.
+    return NextResponse.json({ total: 0, today: 0 });
   }
-
-  return NextResponse.json({ total, today });
 }

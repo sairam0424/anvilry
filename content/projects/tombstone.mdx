@@ -1,0 +1,28 @@
+---
+slug: tombstone
+name: Tombstone
+tagline: Production intelligence layer for 5,000+ feature flags.
+group: Agent Frameworks & Infrastructure
+repo: https://github.com/sairam0424/Tombstone
+commits: 289
+tech: [Go, Python, TypeScript, React, PostgreSQL, Redis, Kafka, pgvector, Docker, Kubernetes]
+pinned: true
+pinRank: 4
+featured: true
+order: 5
+excerpt: Self-hosted feature flag intelligence with blast-radius gating, circuit-breaker auto-rollback, causal incident correlation ("What Changed?"), and Knight Capital–style tombstoning. Go + Python + TypeScript polyglot.
+---
+
+**Tombstone** is a self-hosted production intelligence layer for feature flags at scale — built to answer the question that every SRE asks at 2am but no flag system answers: *which flag caused this incident, and can I roll it back safely right now?*
+
+At its core, Tombstone treats flags as **causal agents in a live production system**, not boolean configuration. It combines an 8-service polyglot backend (Go for performance, Python for ML, TypeScript for the management UI) with a **circuit-breaker auto-rollback** engine, a **causal dependency graph** for "What Changed?" incident correlation, and a **Merkle-linked audit trail** connected to Sigstore Rekor for SOC2-grade immutability.
+
+- **Circuit-breaker auto-rollback** — 5%+ error rate over 100 requests in 10s auto-disables the flag; no human in the loop
+- **Blast-radius gating** — BLOCKED / HIGH / MEDIUM / LOW tiers; BLOCKED changes require a 10-char justification
+- **3-model ensemble anomaly detection** — Z-score + Isolation Forest + EWMA with 2/3 vote, eliminating false positives
+- **Thompson Sampling + LinUCB bandit** for ML-driven rollout recommendations
+- **Causal dependency graph** — Redis sorted sets (O(log n) updates), daily rebuild at 02:00 UTC
+- **Merkle audit chains** — SHA-256 coverage of every state transition, Rekor transparency log submission
+- **WASM evaluation engine** (`@flagmind/eval`) — zero-dependency, runs on Cloudflare Workers
+
+> Inspired by Knight Capital's $440M flag incident (2012). 289 commits, 8 services, full Kubernetes operator.

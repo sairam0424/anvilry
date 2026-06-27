@@ -22,8 +22,8 @@ export function GraphIndex() {
         <div key={g.group} className="mt-8">
           <h2 className="mono-label">{g.group}</h2>
           <ul className="mt-3 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2">
-            {g.nodes.map((node) => (
-              <li key={node.id}>
+            {g.nodes.map((node, i) => (
+              <li key={node.id} className={g.nodes.length % 2 !== 0 && i === g.nodes.length - 1 ? "sm:col-span-2" : ""}>
                 <DossierCard node={node} />
               </li>
             ))}

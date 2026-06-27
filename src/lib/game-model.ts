@@ -43,6 +43,10 @@ export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> =
   // Tooling & lab (projects)
   commandvault: { kind: "project", slug: "commandvault" },
   nhl: { kind: "project", slug: "not-humans-lab" }, // node id != slug
+  // Production intelligence & publishing
+  tombstone: { kind: "project", slug: "tombstone" },
+  trelix: { kind: "project", slug: "trelix" },
+  inkforge: { kind: "project", slug: "inkforge" },
 };
 
 export type ResolvedContent =

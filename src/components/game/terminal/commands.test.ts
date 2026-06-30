@@ -174,7 +174,7 @@ describe("terminal command registry", () => {
 
   it("resume lists variants, opens a real one externally, rejects fake", () => {
     expect(runCommand("resume").lines.length).toBeGreaterThan(1);
-    expect(runCommand("resume master").nav?.type).toBe("external");
+    expect(runCommand("resume sairam").nav?.type).toBe("external");
     expect(runCommand("resume nope").lines.some((l) => l.kind === "err")).toBe(true);
   });
 

@@ -179,8 +179,8 @@ describe("terminal command registry", () => {
   });
 
   it("resume <substring> is first-wins on label .includes() (resume f -> Full-Stack)", () => {
-    // Order is Master, Backend, Full-Stack, Frontend, GenAI. "master"/"backend" do NOT
-    // contain 'f', so the FIRST label containing 'f' is Full-Stack — not Frontend.
+    // Order is Sairam Resume, Backend, Full-Stack, Frontend, GenAI. Neither "sairam resume"
+    // nor "backend" contain 'f', so the FIRST label containing 'f' is Full-Stack — not Frontend.
     const fullStack = resumeVariants.find((r) => r.label === "Full-Stack");
     expect(runCommand("resume f").nav).toEqual({ type: "external", href: fullStack!.file });
   });

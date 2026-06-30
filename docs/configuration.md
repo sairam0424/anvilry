@@ -162,6 +162,7 @@ All default `false`. Set to `"true"` and redeploy to enable. The portfolio funct
 | `NEXT_PUBLIC_SKILL_TREE` | v1.9 | SVG RPG Skill Tree at the bottom of the Play view. |
 | `NEXT_PUBLIC_404_ORB` | v2.0 | Distressed red/orange 3D orb above the 404 terminal. `WebGLBoundary` fallback to terminal-only when WebGL unavailable. |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | v2.0 | Shows an `"↑ N engineers visited"` badge in the site footer. Increments a Redis counter (`anvilry:visits:total`) on each page load, rate-limited to 1 increment per IP per 30 min via `@upstash/ratelimit`. Requires Upstash Redis. **Fallback:** when Redis is unavailable (quota exhausted, network error), the badge shows the last-known count from `localStorage["anvilry:visits:total"]`. If no cached value exists, the badge hides. |
+| `NEXT_PUBLIC_RESUME_VARIANTS` | v3.1 | Show 4 role-targeted PDF variants (Backend / Full-Stack / Frontend / GenAI) on the `/resume` page and in the `?view=resume` PDF downloads section. When unset, only the master "Sairam Resume" PDF is shown. | `"true"` to enable; unset = OFF | Redeploy required |
 | `NEXT_PUBLIC_DISCOVERY_BADGES` | v2.0 | "★ N/5 discovered" badge (bottom-right). localStorage-backed. 5 unlock triggers: view switch, chat question, terminal command, Konami, dossier open. Escape hatch: ⌘K → "Unlock all discoveries". **Can also be toggled at runtime** via Vercel Flags SDK — see §14. |
 | `NEXT_PUBLIC_VOICE_TEST_AUDIO` | v1.6 | Shows "🔊 Test audio" button in talk mode (dev/QA only). No backend required. |
 

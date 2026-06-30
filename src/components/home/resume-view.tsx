@@ -19,7 +19,7 @@
  * Used by src/app/resume/page.tsx to avoid nesting two <main> landmarks.
  *
  * Feature flag NEXT_PUBLIC_RESUME_VARIANTS:
- *   "true"  → show all 4 role-targeted PDF download pills
+ *   "true"  → show all 5 PDF download pills (master + 4 role-targeted)
  *   unset   → show only the master "Sairam Resume" pill (default)
  * Read inside function body (not module scope) so vi.stubEnv works in tests.
  */

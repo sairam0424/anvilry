@@ -201,18 +201,21 @@ const resume: Command = {
   description: "open a résumé variant",
   usage: "resume [variant]",
   run: (args) => {
+    // Flag read inside run() body — module-scope const would break vi.stubEnv in tests.
+    const visibleVariants =
+      process.env.NEXT_PUBLIC_RESUME_VARIANTS === "true" ? resumeVariants : [resumeVariants[0]];
     const arg = (args[0] ?? "").toLowerCase();
     if (!arg) {
       return {
         lines: out(
           "résumé variants (resume <name>):",
-          ...resumeVariants.map(
+          ...visibleVariants.map(
             (r) => `  ${r.label.toLowerCase().split(" ")[0].padEnd(12)} ${r.label} — ${r.tag}`,
           ),
         ),
       };
     }
-    const match = resumeVariants.find((r) => r.label.toLowerCase().includes(arg));
+    const match = visibleVariants.find((r) => r.label.toLowerCase().includes(arg));
     if (!match) return { lines: err(`no variant: ${arg}  (run 'resume')`) };
     return { lines: out(`opening ${match.label} …`), nav: { type: "external", href: match.file } };
   },

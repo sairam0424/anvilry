@@ -178,11 +178,22 @@ describe("terminal command registry", () => {
     expect(runCommand("resume nope").lines.some((l) => l.kind === "err")).toBe(true);
   });
 
-  it("resume <substring> is first-wins on label .includes() (resume f -> Full-Stack)", () => {
-    // Order is Sairam Resume, Backend, Full-Stack, Frontend, GenAI. Neither "sairam resume"
-    // nor "backend" contain 'f', so the FIRST label containing 'f' is Full-Stack — not Frontend.
-    const fullStack = resumeVariants.find((r) => r.label === "Full-Stack");
-    expect(runCommand("resume f").nav).toEqual({ type: "external", href: fullStack!.file });
+  it("resume <substring> is first-wins on label .includes() (resume f -> Full-Stack, flag ON)", () => {
+    // Stub the flag ON so all 5 variants are visible — tests multi-variant matching.
+    // Order: Sairam Resume, Backend, Full-Stack, Frontend, GenAI.
+    // Neither "sairam resume" nor "backend" contain 'f', so first match is Full-Stack.
+    vi.stubEnv("NEXT_PUBLIC_RESUME_VARIANTS", "true");
+    try {
+      const fullStack = resumeVariants.find((r) => r.label === "Full-Stack");
+      expect(runCommand("resume f").nav).toEqual({ type: "external", href: fullStack!.file });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("resume <substring> errors on unknown variant when flag OFF (only master visible)", () => {
+    // Flag OFF: only "Sairam Resume" visible — "backend" is not accessible via terminal.
+    expect(runCommand("resume backend").lines.some((l) => l.kind === "err")).toBe(true);
   });
 
   it("chat switches to chat view; neofetch aliases whoami; sudo is a harmless gag", () => {

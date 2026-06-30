@@ -66,9 +66,9 @@ test.describe("/resume page — flag OFF (default)", () => {
     // Only the master pill link is present
     await expect(page.getByRole("link", { name: /Sairam Resume/ })).toBeVisible();
 
-    // Role-targeted variant pills are NOT present
-    await expect(page.getByRole("link", { name: /Backend/ })).not.toBeVisible();
-    await expect(page.getByRole("link", { name: /Full-Stack/ })).not.toBeVisible();
+    // Role-targeted variant pills must not exist in DOM at all (never rendered, not just hidden)
+    await expect(page.getByRole("link", { name: /Backend/ })).not.toBeAttached();
+    await expect(page.getByRole("link", { name: /Full-Stack/ })).not.toBeAttached();
   });
 
   test("returns to PDF view when PDF tab is re-clicked", async ({ page }) => {

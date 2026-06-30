@@ -56,7 +56,7 @@ describe("useTerminal run() dispatch", () => {
     const open = vi.fn();
     vi.stubGlobal("open", open);
     const { result } = renderHook(() => useTerminal());
-    act(() => result.current.run("resume master"));
+    act(() => result.current.run("resume sairam"));
     expect(open).toHaveBeenCalledWith(
       expect.stringContaining(".pdf"),
       "_blank",

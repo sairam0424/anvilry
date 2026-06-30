@@ -214,7 +214,9 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
       // not mutate (cmdk re-scores on value change).
       value: `Copy email ${profile.email} clipboard contact mail address`,
     },
-    ...resumeVariants.map((v) => ({
+    // Flag-gate: when NEXT_PUBLIC_RESUME_VARIANTS is unset only the master entry appears.
+    // Read inside function body (not module scope) so vi.stubEnv works in tests.
+    ...(process.env.NEXT_PUBLIC_RESUME_VARIANTS === "true" ? resumeVariants : [resumeVariants[0]]).map((v) => ({
       id: `dl-${v.file}`,
       label: `Download résumé — ${v.label}`,
       hint: v.tag,

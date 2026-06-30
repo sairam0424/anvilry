@@ -18,7 +18,7 @@ export type ResumeRole = (typeof RESUME_ROLES)[number];
 
 // Map the public role keyword -> the real resumeVariants label (single source).
 const ROLE_TO_LABEL: Record<ResumeRole, string> = {
-  master: "Master (All-purpose)",
+  master: "Sairam Resume",
   backend: "Backend",
   fullstack: "Full-Stack",
   frontend: "Frontend",

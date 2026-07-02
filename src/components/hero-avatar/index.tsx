@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import dynamic from "next/dynamic";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -40,13 +41,17 @@ function GlowFallback() {
  *   "hero-split"           — right column with border separator
  *   "hero-top"             — centered above headline
  */
-export function HeroAvatar(): JSX.Element {
+export function HeroAvatar(): React.JSX.Element | null {
   const reduced   = useReducedMotion();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { view }  = useView();
 
-  // Read flags inside function body — NOT module scope.
+  // Read flags inside function body — NOT module scope (required for vi.stubEnv in tests).
+  const heroMode = process.env.NEXT_PUBLIC_HERO_MODE;
   const position = process.env.NEXT_PUBLIC_AVATAR_POSITION ?? "hero-side";
+
+  // Early exit when avatar mode is not active — renders nothing.
+  if (heroMode !== "avatar") return null;
 
   const showWebGL = isDesktop && !reduced && view === "classic";
 

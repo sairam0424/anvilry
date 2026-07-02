@@ -37,6 +37,13 @@ describe("HeroAvatar", () => {
     vi.unstubAllEnvs();
   });
 
+  it("returns null when NEXT_PUBLIC_HERO_MODE is not 'avatar'", async () => {
+    vi.stubEnv("NEXT_PUBLIC_HERO_MODE", "graph");
+    const { HeroAvatar } = await import("./index");
+    const { container } = render(<HeroAvatar />);
+    expect(container.firstChild).toBeNull();
+  });
+
   it("renders CSS glow fallback on mobile (< 768px)", async () => {
     vi.stubEnv("NEXT_PUBLIC_HERO_MODE", "avatar");
     // jsdom: matchMedia returns false by default — simulates mobile

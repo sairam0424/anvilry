@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useFrame } from "@/lib/r3f";
+import { useFrame, useThree } from "@/lib/r3f";
 
 export interface IdleOutput {
   chestY: number;
@@ -20,9 +20,11 @@ export function computeIdle(t: number): IdleOutput {
  */
 export function useAvatarIdle(): React.RefObject<IdleOutput> {
   const idleRef = useRef<IdleOutput>({ chestY: 0, spineY: 0 });
+  const { invalidate } = useThree();
 
   useFrame(({ clock }) => {
     idleRef.current = computeIdle(clock.getElapsedTime());
+    invalidate();
   });
 
   return idleRef;

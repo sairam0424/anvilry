@@ -104,7 +104,8 @@ export function HeroAvatar(): React.JSX.Element | null {
       aria-hidden="true"
       className="pointer-events-none absolute left-1/2 top-8 -z-10 h-36 w-36 -translate-x-1/2 overflow-hidden"
     >
-      {showWebGL ? scene : <GlowFallback />}
+      <GlowFallback />
+      {showWebGL && scene}
     </div>
   );
 }

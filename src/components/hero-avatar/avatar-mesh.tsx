@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useFrame, useGLTF, THREE } from "@/lib/r3f";
 import { useAvatarGaze } from "./use-avatar-gaze";
 import { useAvatarIdle } from "./use-avatar-idle";
@@ -48,12 +48,26 @@ export function AvatarMesh({
       if (
         obj.type === "SkinnedMesh" &&
         (obj as THREE.SkinnedMesh).morphTargetDictionary &&
-        (name.includes("head") || name.includes("wolf3d"))
+        name.includes("head")
       ) {
         morphMeshRef.current = obj as THREE.SkinnedMesh;
       }
     });
   }
+
+  useEffect(() => {
+    return () => {
+      scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          (obj as THREE.Mesh).geometry?.dispose();
+          const mat = (obj as THREE.Mesh).material;
+          if (Array.isArray(mat)) mat.forEach(m => m.dispose());
+          else mat?.dispose();
+        }
+      });
+      useGLTF.clear("/avatar/sairam.glb");
+    };
+  }, [scene]);
 
   const gazeRef = useAvatarGaze(controlsRef);
   const idleRef = useAvatarIdle();

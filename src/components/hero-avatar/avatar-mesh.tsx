@@ -16,7 +16,7 @@ useGLTF.preload("/avatar/sairam.glb");
  *
  * ALL mutations are direct ref/property writes — never setState.
  * frameloop="demand" on the parent Canvas means this only runs when
- * invalidate() is called (mousemove or the gaze/breathing tick).
+ * invalidate() is called (mousemove or touchmove from AvatarControls).
  */
 export function AvatarMesh({
   controlsRef,
@@ -42,10 +42,13 @@ export function AvatarMesh({
       if (name.includes("neck"))  neckBoneRef.current  = obj as THREE.Bone;
       if (name.includes("chest") || name.includes("spine1")) chestBoneRef.current = obj as THREE.Bone;
       if (name.includes("spine") && !name.includes("spine1")) spineBoneRef.current = obj as THREE.Bone;
-      // ReadyPlayerMe morph targets live on the head mesh (Wolf3D_Head or similar)
+      // ReadyPlayerMe morph targets live on the head mesh (Wolf3D_Head or similar).
+      // Restrict to meshes whose name includes "head" or "wolf3d" so that secondary
+      // morph-enabled meshes (teeth, body) in custom RPM exports don't silently win.
       if (
         obj.type === "SkinnedMesh" &&
-        (obj as THREE.SkinnedMesh).morphTargetDictionary
+        (obj as THREE.SkinnedMesh).morphTargetDictionary &&
+        (name.includes("head") || name.includes("wolf3d"))
       ) {
         morphMeshRef.current = obj as THREE.SkinnedMesh;
       }

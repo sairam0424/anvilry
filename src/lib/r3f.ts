@@ -21,7 +21,7 @@ export type { ThreeEvent, RootState, RenderCallback } from "@react-three/fiber";
 export * as THREE from "three";
 
 // ---- @react-three/drei ----
-export { OrbitControls, Billboard, Text, Html, useTexture, useGLTF, Float, MeshDistortMaterial, GradientTexture } from "@react-three/drei";
+export { OrbitControls, Billboard, Text, Html, useTexture, useGLTF, useAnimations, Float, MeshDistortMaterial, GradientTexture } from "@react-three/drei";
 
 // ---- @react-three/postprocessing ----
 export { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration } from "@react-three/postprocessing";

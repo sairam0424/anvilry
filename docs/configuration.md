@@ -329,6 +329,14 @@ export function runAlgo(data: Data[], config = DEFAULT_CONFIG) { ... }
 
 ---
 
+## Security Headers — Per-Route CSP Overrides
+
+The global `securityHeaders` array in `next.config.ts` applies `frame-ancestors 'none'` and `X-Frame-Options: DENY` to all routes (`source: "/:path*"`) as a clickjacking defense.
+
+**Per-route CSP overrides:** The `/resume` and `/resume/:path*` routes override `frame-ancestors 'none'` → `frame-ancestors 'self'` so the PDF iframe on the résumé page can load. All other routes keep `frame-ancestors 'none'` (clickjacking defense). See `async headers()` in `next.config.ts`.
+
+---
+
 ## Quick-Reference: What to Set Per Environment
 
 | Variable | Local dev | Vercel Production |

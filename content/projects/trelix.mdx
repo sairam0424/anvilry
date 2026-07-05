@@ -1,16 +1,16 @@
 ---
 slug: trelix
 name: Trelix
-tagline: Production-grade code indexing and semantic retrieval engine.
+tagline: Offline code intelligence engine — Tree-sitter indexing, hybrid BM25+vector+graph search.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/trelix
-commits: 201
-tech: [Python, tree-sitter, sqlite-vec, SQLite, BM25, Pydantic, FastAPI, LiteLLM, networkx]
+commits: 501
+tech: [Python, tree-sitter, sqlite-vec, SQLite, BM25, FastAPI, LiteLLM, networkx, Qdrant, LanceDB, PyInstaller, Pydantic]
 pinned: true
 pinRank: 5
 featured: true
 order: 6
-excerpt: Hybrid semantic + BM25 + grep code search with call-graph expansion, adaptive query planning, and GraphRAG synthesis. Zero-infra default (SQLite + HNSW). 929 unit tests. MCP server for Claude Code and Cursor.
+excerpt: Zero-infra code intelligence — Tree-sitter AST indexing + 7-leg RRF retrieval (BM25 + vector + call-graph + SPLADE + multi-granularity) + knowledge graph (Louvain community detection, Pyvis). MCP server. 1,467 unit tests. Works offline with no API key.
 ---
 
 **trelix** is a production-ready code indexing and retrieval engine that transforms any repository into a queryable knowledge base. Where grep finds exact strings, trelix finds *relevant* code — via a hybrid retrieval pipeline, call-graph traversal, and LLM synthesis that answers "how does auth work?" with actual code paths, not a keyword hit list.

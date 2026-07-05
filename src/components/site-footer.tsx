@@ -19,18 +19,25 @@ const VISIT_CACHE_KEY = "anvilry:visits:total";
  * Only a positive total from the API overwrites the cache — a 0 (Redis down) is ignored.
  */
 function VisitorBadge() {
-  // Seed from localStorage so the badge shows instantly on repeat visits,
-  // and so it shows the last-known count when Redis is unavailable (total=0).
-  const [total, setTotal] = useState<number | null>(() => {
-    try {
-      const cached = localStorage.getItem(VISIT_CACHE_KEY);
-      return cached !== null ? Number(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Always start with null — localStorage is browser-only and must not be read during SSR.
+  // Reading it in the useState initializer causes a hydration mismatch because the server
+  // renders null→skeleton while the client renders cached count→real badge.
+  // Seed from localStorage in useEffect (client-only, post-hydration) instead.
+  const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
+    // Seed from localStorage cache so repeat visitors see the last-known count
+    // before the API call resolves. This setState call is intentional and safe:
+    // it runs once on mount (client-only) and does not depend on any external
+    // subscription — it is a one-time initialisation from a local store, which is
+    // a documented exception to the set-state-in-effect heuristic.
+    try {
+      const cached = localStorage.getItem(VISIT_CACHE_KEY);
+      if (cached !== null) setTotal(Number(cached)); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: one-time localStorage seed on mount, no subscription
+    } catch {
+      // localStorage unavailable — stay on null (skeleton shown)
+    }
+
     fetch("/api/visit", { method: "POST" })
       .then((r) => r.ok ? r.json() : null)
       .then((data: { total: number; today: number } | null) => {

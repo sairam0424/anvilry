@@ -121,7 +121,28 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // Per-route CSP override for /resume — the PDF iframe needs frame-ancestors 'self'
+    // so the browser allows anvilry.vercel.app to embed its own PDF inside the page.
+    // The global securityHeaders sets frame-ancestors 'none' (clickjacking defense);
+    // we override only X-Frame-Options and the CSP frame-ancestors directive here.
+    const resumeHeaders = securityHeaders.map((h) => {
+      if (h.key === "X-Frame-Options") return { key: h.key, value: "SAMEORIGIN" };
+      if (h.key === "Content-Security-Policy") {
+        return {
+          key: h.key,
+          value: h.value
+            .replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+        };
+      }
+      return h;
+    });
+
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Override frame-ancestors for the resume route so the PDF iframe works.
+      { source: "/resume", headers: resumeHeaders },
+      { source: "/resume/:path*", headers: resumeHeaders },
+    ];
   },
   async rewrites() {
     // Rewrite /:collection/:slug.md → /api/md/:collection/:slug so that AI crawlers

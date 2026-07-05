@@ -26,11 +26,14 @@ function VisitorBadge() {
   const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
-    // Read localStorage cache here (client-only, post-hydration) to show last-known
-    // count while the API call is in-flight.
+    // Seed from localStorage cache so repeat visitors see the last-known count
+    // before the API call resolves. This setState call is intentional and safe:
+    // it runs once on mount (client-only) and does not depend on any external
+    // subscription — it is a one-time initialisation from a local store, which is
+    // a documented exception to the set-state-in-effect heuristic.
     try {
       const cached = localStorage.getItem(VISIT_CACHE_KEY);
-      if (cached !== null) setTotal(Number(cached));
+      if (cached !== null) setTotal(Number(cached)); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: one-time localStorage seed on mount, no subscription
     } catch {
       // localStorage unavailable — stay on null (skeleton shown)
     }

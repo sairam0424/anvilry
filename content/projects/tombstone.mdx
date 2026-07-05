@@ -25,16 +25,6 @@ At its core, Tombstone treats flags as **causal agents in a live production syst
 - **Merkle audit chains** — SHA-256 coverage of every state transition, Rekor transparency log submission
 - **WASM evaluation engine** (`@flagmind/eval`) — zero-dependency, runs on Cloudflare Workers
 
-> Inspired by Knight Capital's $440M flag incident (2012). 289 commits, 8 services, full Kubernetes operator.
+> Inspired by Knight Capital's $440M flag incident (2012). 492 commits, 8 services, full Kubernetes operator.
 
-### v1.2.1 — Production Resilience Release
-
-The v1.2 cycle hardened Tombstone against real-world distributed failure modes discovered during pressure testing:
-
-- **Resilient inter-service HTTP** — `failsafe-go` retry + jitter + per-client circuit breakers across all 6 services
-- **Distributed Redis Lua rate limiting** — shared across replicas (replaces the per-process `sync.Map`)
-- **Dependency-aware `/readyz` probes** — Postgres + Redis health checks; 503 on degraded dependencies
-- **Idempotency keys** on `CreateFlag`, `UpdateEnvironment`, `KillSwitch` mutations
-- **Redis Streams DLQ** — dead-letter replay for poison messages
-- **`FOR UPDATE SKIP LOCKED` scheduler** — multi-replica safe, prevents duplicate flag evaluations
-- **9 regressions fixed** in v1.2.1: Slack kill-switch 400 (env in query param vs JSON body), four-eyes approval endpoints never registered in `main.go`, Datadog auto kill-switch 401, audit log `actor` always "unknown", `/readyz` returning 429/503 under load
+The production resilience work hardened Tombstone against distributed failure modes discovered during real-world pressure testing: resilient inter-service HTTP with `failsafe-go` retry + jitter, distributed Redis Lua rate limiting (shared across replicas), dependency-aware `/readyz` probes, idempotency keys on mutation endpoints, Redis Streams dead-letter queue, and multi-replica-safe scheduler via `FOR UPDATE SKIP LOCKED`.

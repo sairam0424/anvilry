@@ -19,18 +19,22 @@ const VISIT_CACHE_KEY = "anvilry:visits:total";
  * Only a positive total from the API overwrites the cache — a 0 (Redis down) is ignored.
  */
 function VisitorBadge() {
-  // Seed from localStorage so the badge shows instantly on repeat visits,
-  // and so it shows the last-known count when Redis is unavailable (total=0).
-  const [total, setTotal] = useState<number | null>(() => {
-    try {
-      const cached = localStorage.getItem(VISIT_CACHE_KEY);
-      return cached !== null ? Number(cached) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Always start with null — localStorage is browser-only and must not be read during SSR.
+  // Reading it in the useState initializer causes a hydration mismatch because the server
+  // renders null→skeleton while the client renders cached count→real badge.
+  // Seed from localStorage in useEffect (client-only, post-hydration) instead.
+  const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
+    // Read localStorage cache here (client-only, post-hydration) to show last-known
+    // count while the API call is in-flight.
+    try {
+      const cached = localStorage.getItem(VISIT_CACHE_KEY);
+      if (cached !== null) setTotal(Number(cached));
+    } catch {
+      // localStorage unavailable — stay on null (skeleton shown)
+    }
+
     fetch("/api/visit", { method: "POST" })
       .then((r) => r.ok ? r.json() : null)
       .then((data: { total: number; today: number } | null) => {

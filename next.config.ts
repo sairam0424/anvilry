@@ -40,11 +40,15 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  // 'unsafe-eval' is required in dev ONLY: MDXContent uses `new Function(code)` to
-  // compile Velite-generated MDX function-body strings at runtime. In production,
-  // Next.js + Velite pre-compile MDX at build time so this path is never hit in a
-  // browser. Production CSP intentionally omits 'unsafe-eval'.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com https://vercel.live`,
+  // 'unsafe-eval' is required in BOTH dev AND production: MDXContent uses `new Function(code)`
+  // to evaluate Velite-generated MDX function-body strings in the browser at runtime. The
+  // comment previously claimed Velite pre-compiles MDX at build time — this was incorrect.
+  // Velite outputs a serialized `code` string; MDXContent deserialises it via `new Function`
+  // client-side on EVERY page with MDX body content (projects, work, notes). Removing
+  // 'unsafe-eval' crashes all project/work/note pages with a React render-error boundary.
+  // This site has no auth, no untrusted user input, and rehype-sanitize guards chat markdown —
+  // so the eval surface is limited to author-controlled MDX. Accepted risk, same as 'unsafe-inline'.
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://va.vercel-scripts.com https://vercel.live`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.shields.io",
   "media-src 'self' blob:",

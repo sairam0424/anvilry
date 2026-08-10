@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Mic, Square, X, Captions, CaptionsOff, ChevronDown } from "lucide-react";
-import { useVoiceSession, toCaptionText, type VoiceSessionState } from "@/components/chat/use-voice-session";
+import {
+  Mic,
+  Square,
+  X,
+  Captions,
+  CaptionsOff,
+  ChevronDown,
+} from "lucide-react";
+import {
+  useVoiceSession,
+  toCaptionText,
+  type VoiceSessionState,
+} from "@/components/chat/use-voice-session";
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
 import { VoicePicker } from "@/components/chat/voice-picker";
@@ -45,11 +56,16 @@ function TtsTestButton() {
         // resume() clears Chrome's paused_ guard (Chromium tts_controller_impl.cc).
         synth.resume();
         const voices = synth.getVoices();
-        const en = voices.find((v) => v.lang?.startsWith("en") && v.localService);
+        const en = voices.find(
+          (v) => v.lang?.startsWith("en") && v.localService,
+        );
         const voiceName = en?.name ?? "default";
         const u = new SpeechSynthesisUtterance("Audio test. One two three.");
         if (en) u.voice = en;
-        u.onstart = () => { setStatus("ok"); setDetail(voiceName); };
+        u.onstart = () => {
+          setStatus("ok");
+          setDetail(voiceName);
+        };
         u.onend = () => setDetail((d) => d + " ✓");
         u.onerror = (e) => {
           setStatus("error");
@@ -58,12 +74,18 @@ function TtsTestButton() {
         synth.speak(u);
       }}
       className={`rounded-full border px-3 py-1.5 text-[11px] transition-colors ${
-        status === "ok" ? "border-green-500/60 bg-green-500/10 text-green-400" :
-        status === "error" ? "border-red-500/60 bg-red-500/10 text-red-400" :
-        "border-yellow-500/60 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
+        status === "ok"
+          ? "border-green-500/60 bg-green-500/10 text-green-400"
+          : status === "error"
+            ? "border-red-500/60 bg-red-500/10 text-red-400"
+            : "border-yellow-500/60 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
       }`}
     >
-      {status === "ok" ? `✅ ${detail}` : status === "error" ? `❌ ${detail}` : "🔊 Test audio"}
+      {status === "ok"
+        ? `✅ ${detail}`
+        : status === "error"
+          ? `❌ ${detail}`
+          : "🔊 Test audio"}
     </button>
   );
 }
@@ -80,7 +102,8 @@ function isChromeTtsBuggy(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
   const isChromium = /Chrome\//.test(ua);
-  const isBrave = (navigator as { brave?: { isBrave?: () => unknown } }).brave !== undefined;
+  const isBrave =
+    (navigator as { brave?: { isBrave?: () => unknown } }).brave !== undefined;
   const isEdge = /Edg\//.test(ua);
   return isChromium && !isBrave && !isEdge;
 }
@@ -93,7 +116,9 @@ const STATUS_LABEL: Record<VoiceSessionState, string> = {
   paused: "Paused — tap to talk",
 };
 
-function lastAssistantText(messages: { role: string; content: string }[]): string {
+function lastAssistantText(
+  messages: { role: string; content: string }[],
+): string {
   for (let i = messages.length - 1; i >= 0; i--) {
     if (messages[i].role === "assistant") return messages[i].content;
   }
@@ -125,8 +150,19 @@ export function TalkMode({
   autoStart?: boolean;
 }) {
   const session = useVoiceSession();
-  const { supported, active, state, interim, messages, start, ask, stop, interrupt, pause, resume } =
-    session;
+  const {
+    supported,
+    active,
+    state,
+    interim,
+    messages,
+    start,
+    ask,
+    stop,
+    interrupt,
+    pause,
+    resume,
+  } = session;
   const { settings, toggle, set } = useVoiceSettings();
   // Voice picker mounted INSIDE TalkMode so it inherits the voice-settings store
   // (one source of truth) and so opening the picker doesn't tear down the session.
@@ -135,7 +171,8 @@ export function TalkMode({
   const [pickerOpen, setPickerOpen] = useState(false);
   const voiceLabelRef = useRef<HTMLButtonElement>(null);
   const currentVoiceId = settings.voiceId ?? getDefaultVoiceId();
-  const currentVoiceName = getVoiceById(currentVoiceId)?.displayName ?? "Default";
+  const currentVoiceName =
+    getVoiceById(currentVoiceId)?.displayName ?? "Default";
 
   // First-run primer: a one-time, dismissible card that surfaces the picker
   // affordance to a visitor who's never opened TalkMode before. The catalog
@@ -156,6 +193,10 @@ export function TalkMode({
   // Smoothed 0..1 amplitude driving the orb (synthetic per-state envelope — browser
   // TTS isn't audio-tappable; see use-voice-level).
   const level = useVoiceLevel(state);
+  // Caption block auto-scrolls to the latest line as long responses stream in —
+  // without this, a long answer just grows the dialog past the viewport (the
+  // dialog itself doesn't scroll; see talk-mode-overlay.tsx).
+  const captionsRef = useRef<HTMLDivElement>(null);
   // The persistent primary control (mic/orb). Focus rescues here when the prompt chips
   // unmount on the first turn (else focus would orphan to <body> — WCAG 2.4.3).
   const primaryRef = useRef<HTMLButtonElement>(null);
@@ -176,7 +217,11 @@ export function TalkMode({
   const hadMessages = useRef(false);
   useEffect(() => {
     const has = messages.length > 0;
-    if (has && !hadMessages.current && document.activeElement === document.body) {
+    if (
+      has &&
+      !hadMessages.current &&
+      document.activeElement === document.body
+    ) {
       // The just-clicked chip has unmounted; move focus to the always-present control.
       primaryRef.current?.focus();
     }
@@ -217,12 +262,20 @@ export function TalkMode({
   const youSaid = interim || lastUserText(messages);
   const answerText = toCaptionText(lastAssistantText(messages));
 
+  // Keep the latest caption line in view as long answers stream/wrap past the
+  // block's max-height — same pattern as the live-reasoning auto-scroll in
+  // chat-messages.tsx.
+  useEffect(() => {
+    if (!captionsRef.current) return;
+    captionsRef.current.scrollTop = captionsRef.current.scrollHeight;
+  }, [youSaid, answerText]);
+
   if (!supported) {
     return (
       <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
         <p className="text-sm text-fg-muted">
-          Voice conversation isn&apos;t available in this browser. You can still type your
-          questions in the chat.
+          Voice conversation isn&apos;t available in this browser. You can still
+          type your questions in the chat.
         </p>
         <button
           type="button"
@@ -254,7 +307,10 @@ export function TalkMode({
         : "Mute microphone";
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center gap-6 px-6 py-8">
+    <div
+      ref={containerRef}
+      className="flex flex-col items-center gap-6 px-6 py-8"
+    >
       {/* Status (polite, atomic — announced without stealing focus). */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {active ? STATUS_LABEL[state] : ""}
@@ -265,10 +321,17 @@ export function TalkMode({
           (demoted from a solid glyph that read as a sticker) — meaning is carried by the
           visible label + the aria-live region, so this is a glance cue only.
           Reduced-motion -> the canvas draws a calm static ring (handled inside). */}
-      <div className="relative flex h-40 w-40 items-center justify-center" aria-hidden="true">
+      <div
+        className="relative flex h-40 w-40 items-center justify-center"
+        aria-hidden="true"
+      >
         <VoiceOrb level={level} state={state} size={160} />
         <span className="pointer-events-none absolute text-accent/30 blur-[1px]">
-          {speaking ? <Square size={18} className="fill-current" /> : <Mic size={18} />}
+          {speaking ? (
+            <Square size={18} className="fill-current" />
+          ) : (
+            <Mic size={18} />
+          )}
         </span>
       </div>
 
@@ -282,16 +345,19 @@ export function TalkMode({
           a paused state and speak() silently does nothing. Brave and Safari use
           different TTS backends and are unaffected. Show a dismissible inline notice
           so the user knows to use Brave/Edge/Safari for spoken responses. */}
-      {CHROME_TTS_BANNER_ENABLED && isChromeTtsBuggy() && settings.ttsEngine === "browser" && (
-        <div className="flex max-w-sm items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-[11px] text-yellow-400/80">
-          <span className="mt-0.5 shrink-0">⚠</span>
-          <span>
-            Chrome&apos;s built-in TTS has a known initialization bug — spoken responses
-            may not play. Try <strong>Brave</strong> or <strong>Edge</strong> for full
-            voice support, or switch to a Polly/Google voice above.
-          </span>
-        </div>
-      )}
+      {CHROME_TTS_BANNER_ENABLED &&
+        isChromeTtsBuggy() &&
+        settings.ttsEngine === "browser" && (
+          <div className="flex max-w-sm items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-3 py-2 text-[11px] text-yellow-400/80">
+            <span className="mt-0.5 shrink-0">⚠</span>
+            <span>
+              Chrome&apos;s built-in TTS has a known initialization bug — spoken
+              responses may not play. Try <strong>Brave</strong> or{" "}
+              <strong>Edge</strong> for full voice support, or switch to a
+              Polly/Google voice above.
+            </span>
+          </div>
+        )}
 
       {/* Live captions — both sides of the turn as text so voice is never the only
           channel (good UX + 4.1.3; NOT a WCAG-1.2.2 claim — computer-gen audio isn't
@@ -303,10 +369,15 @@ export function TalkMode({
           is suppressed during active speech. */}
       {settings.captions && (
         <div
+          ref={captionsRef}
           aria-live="polite"
           aria-atomic="false"
           aria-hidden={speaking}
-          className="flex min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 text-center"
+          // max-h + overflow-y-auto: a long answer scrolls WITHIN this block instead
+          // of growing the dialog past the viewport (the dialog itself has no scroll —
+          // see talk-mode-overlay.tsx). [overflow-anchor:none] matches chat-messages.tsx
+          // so the browser doesn't fight the JS-driven scroll-to-bottom above.
+          className="flex max-h-[40vh] min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 overflow-y-auto text-center [overflow-anchor:none]"
         >
           {youSaid && (
             <>
@@ -316,7 +387,9 @@ export function TalkMode({
               <p className="text-sm leading-relaxed text-fg-muted">{youSaid}</p>
             </>
           )}
-          {answerText && <p className="text-sm leading-relaxed text-fg">{answerText}</p>}
+          {answerText && (
+            <p className="text-sm leading-relaxed text-fg">{answerText}</p>
+          )}
           {!youSaid && !answerText && (
             <p className="text-sm text-fg-subtle">
               Ask about my work, projects, or what I&apos;m looking for.
@@ -360,7 +433,11 @@ export function TalkMode({
               : "border-border bg-bg-surface text-fg hover:border-accent"
           }`}
         >
-          {speaking ? <Square size={22} className="fill-current" /> : <Mic size={22} />}
+          {speaking ? (
+            <Square size={22} className="fill-current" />
+          ) : (
+            <Mic size={22} />
+          )}
         </button>
         <button
           type="button"
@@ -387,16 +464,18 @@ export function TalkMode({
               : "border-border text-fg-muted hover:border-accent hover:text-fg"
           }`}
         >
-          {settings.captions ? <Captions size={16} /> : <CaptionsOff size={16} />}
+          {settings.captions ? (
+            <Captions size={16} />
+          ) : (
+            <CaptionsOff size={16} />
+          )}
         </button>
       </div>
 
       {/* TTS smoke test — gated by NEXT_PUBLIC_VOICE_TEST_AUDIO=true (default off).
           Shows ✅/❌ directly on the button; no DevTools needed. Set the env var
           in .env.local to enable during QA. Never shown in production by default. */}
-      {process.env.NEXT_PUBLIC_VOICE_TEST_AUDIO === "true" && (
-        <TtsTestButton />
-      )}
+      {process.env.NEXT_PUBLIC_VOICE_TEST_AUDIO === "true" && <TtsTestButton />}
 
       {/* Voice picker trigger — sits BELOW the controls so it doesn't compete with
           the primary mic button for visual weight. Mirrors the captions toggle's
@@ -437,7 +516,9 @@ export function TalkMode({
               Tip ·{" "}
             </span>
             Anvil reads answers in {currentVoiceName} by default. Press{" "}
-            <kbd className="rounded bg-bg-elevated px-1 py-0.5 text-[10px]">⌘K</kbd>{" "}
+            <kbd className="rounded bg-bg-elevated px-1 py-0.5 text-[10px]">
+              ⌘K
+            </kbd>{" "}
             → &quot;Pick voice&quot; or use the Voice menu above to swap.
           </span>
           <button

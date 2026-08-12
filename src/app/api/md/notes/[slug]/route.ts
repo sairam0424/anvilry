@@ -3,7 +3,6 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import type { NextRequest } from "next/server";
 
-export const dynamic = "force-dynamic";
 
 function stripFrontmatter(raw: string): string {
   return raw.replace(/^---[\s\S]*?---\s*\n?/, "").trimStart();

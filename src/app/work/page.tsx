@@ -6,7 +6,11 @@ import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
-export const revalidate = 3600;
+// `export const revalidate = 3600` removed for cacheComponents (which rejects it).
+// Deliberately NOT replaced with `"use cache"` + cacheLife: this page's only data source is
+// the build-time Velite import `allWork`, so there is nothing to revalidate against — a
+// regenerated page would be byte-identical until the next deploy. It is fully static.
+// (Contrast src/app/projects/page.tsx, which awaits a live GitHub fetch and does need cacheLife.)
 
 const description = `Production systems built by ${profile.name} at ${profile.company} — multi-agent LLM orchestration, AI coding tools, and GenAI platforms with real metrics.`;
 
@@ -14,7 +18,12 @@ export const metadata: Metadata = {
   title: "Work",
   description,
   alternates: { canonical: "/work" },
-  openGraph: { type: "website", url: "/work", title: `Work — ${profile.name}`, description },
+  openGraph: {
+    type: "website",
+    url: "/work",
+    title: `Work — ${profile.name}`,
+    description,
+  },
 };
 
 export default function WorkPage() {
@@ -27,8 +36,9 @@ export default function WorkPage() {
       >
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
-            Production systems shipping to thousands of users daily. Every metric is real and defensible;
-            the register is honest — &quot;co-built&quot; means exactly that.
+            Production systems shipping to thousands of users daily. Every
+            metric is real and defensible; the register is honest —
+            &quot;co-built&quot; means exactly that.
           </p>
         </Reveal>
 
@@ -56,7 +66,9 @@ export default function WorkPage() {
                 <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-t border-border pt-4">
                   {w.metrics.map((m) => (
                     <div key={m.label}>
-                      <dt className="text-lg font-semibold text-accent">{m.value}</dt>
+                      <dt className="text-lg font-semibold text-accent">
+                        {m.value}
+                      </dt>
                       <dd className="text-[11px] text-fg-subtle">{m.label}</dd>
                     </div>
                   ))}

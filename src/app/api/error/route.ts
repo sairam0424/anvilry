@@ -6,7 +6,6 @@ import { emit } from "@/lib/telemetry/emit";
 import { redact } from "@/lib/telemetry/schema";
 import { redis } from "@/lib/redis";
 
-export const runtime = "nodejs";
 // Tighter than /api/tts (15s): the route does no I/O — Zod parse + emit() and out.
 // 5s gives generous slack for cold starts but caps a misbehaving payload at a fraction
 // of a paid Polly call's blast radius. If this ever exceeds 5s something is structurally

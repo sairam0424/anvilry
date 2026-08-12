@@ -1,7 +1,10 @@
 import { getRepoFeed } from "@/lib/github";
 
-export const runtime = "nodejs";
-export const revalidate = 3600; // Revalidate once per hour — matches getRepoFeed() ISR cadence.
+// `export const revalidate = 3600` removed for cacheComponents (which rejects it).
+// The 1-hour cadence is PRESERVED at the fetch level, which cacheComponents does not reject:
+// the inner users/ fetch below carries `next: { revalidate: 3600 }`, and getRepoFeed() does the
+// same on each repo call (src/lib/github.ts:101). The segment export was belt-and-braces on top
+// of those, so removing it does not change the effective GitHub-polling cadence.
 
 /**
  * GET /api/github/stats
@@ -23,7 +26,10 @@ export async function GET() {
   // Fetch repos + user profile in parallel — fail-open on either.
   const [repos, userJson] = await Promise.all([
     getRepoFeed(),
-    fetch("https://api.github.com/users/sairam0424", { headers, next: { revalidate: 3600 } })
+    fetch("https://api.github.com/users/sairam0424", {
+      headers,
+      next: { revalidate: 3600 },
+    })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null),
   ]);
@@ -33,7 +39,8 @@ export async function GET() {
 
   const langCounts = new Map<string, number>();
   for (const r of repos) {
-    if (r.language) langCounts.set(r.language, (langCounts.get(r.language) ?? 0) + 1);
+    if (r.language)
+      langCounts.set(r.language, (langCounts.get(r.language) ?? 0) + 1);
   }
   const topLanguages = [...langCounts.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -41,7 +48,10 @@ export async function GET() {
 
   const mostRecentPush =
     repos.length > 0
-      ? repos.reduce((latest, r) => (!latest || r.pushedAt > latest ? r.pushedAt : latest), "")
+      ? repos.reduce(
+          (latest, r) => (!latest || r.pushedAt > latest ? r.pushedAt : latest),
+          "",
+        )
       : null;
 
   return Response.json({
@@ -51,6 +61,8 @@ export async function GET() {
     mostRecentPush,
     repoCount: repos.length,
     followers: (userJson as { followers?: number } | null)?.followers ?? 0,
-    publicRepos: (userJson as { public_repos?: number } | null)?.public_repos ?? repos.length,
+    publicRepos:
+      (userJson as { public_repos?: number } | null)?.public_repos ??
+      repos.length,
   });
 }

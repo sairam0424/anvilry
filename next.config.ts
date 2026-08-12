@@ -97,6 +97,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (multiple lockfiles exist on the machine).
   turbopack: { root: __dirname },
+  // Build-time constants inlined into the client bundle.
+  // NEXT_PUBLIC_BUILD_YEAR exists because the footer copyright year must be a STABLE value:
+  // under nextConfig.cacheComponents, calling `new Date()` during render fails the prerender
+  // ("encountered the unstable value `new Date()` in a Client Component") and that error cannot
+  // be deferred with `instant = false`. Computing it HERE runs in the Node config at build time,
+  // never during prerender, so it is a plain literal by the time the footer renders — and it
+  // still refreshes on every deploy, so it never goes stale in practice.
+  env: { NEXT_PUBLIC_BUILD_YEAR: String(new Date().getFullYear()) },
   // Inline critical CSS into <head> to cut a render-blocking stylesheet request —
   // Tailwind v4 is the exact use case this flag targets. Kept only if a before/after
   // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
@@ -145,7 +153,7 @@ const nextConfig: NextConfig = {
     // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
     // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
     // PPR enablement deferred until Next.js provides a per-route escape hatch.
-    // cacheComponents: true,
+    cacheComponents: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],

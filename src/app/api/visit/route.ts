@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { Ratelimit } from "@upstash/ratelimit";
 
-export const runtime = "nodejs";
 
 /**
  * POST /api/visit — increments a global visitor counter backed by Upstash Redis.

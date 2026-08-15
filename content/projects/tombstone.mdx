@@ -4,7 +4,7 @@ name: Tombstone
 tagline: Production intelligence layer for 5,000+ feature flags.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/Tombstone
-commits: 289
+commits: 492
 tech: [Go, Python, TypeScript, React, PostgreSQL, Redis, Kafka, pgvector, Docker, Kubernetes]
 pinned: true
 pinRank: 4
@@ -25,4 +25,6 @@ At its core, Tombstone treats flags as **causal agents in a live production syst
 - **Merkle audit chains** — SHA-256 coverage of every state transition, Rekor transparency log submission
 - **WASM evaluation engine** (`@flagmind/eval`) — zero-dependency, runs on Cloudflare Workers
 
-> Inspired by Knight Capital's $440M flag incident (2012). 289 commits, 8 services, full Kubernetes operator.
+> Inspired by Knight Capital's $440M flag incident (2012). 492 commits, 8 services, full Kubernetes operator.
+
+The production resilience work hardened Tombstone against distributed failure modes discovered during real-world pressure testing: resilient inter-service HTTP with `failsafe-go` retry + jitter, distributed Redis Lua rate limiting (shared across replicas), dependency-aware `/readyz` probes, idempotency keys on mutation endpoints, Redis Streams dead-letter queue, and multi-replica-safe scheduler via `FOR UPDATE SKIP LOCKED`.

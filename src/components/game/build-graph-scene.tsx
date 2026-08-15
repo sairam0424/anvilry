@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Canvas, useThree, useFrame, OrbitControls, Billboard, Text, THREE } from "@/lib/r3f";
+import { Canvas, useThree, useFrame, OrbitControls, THREE } from "@/lib/r3f";
+// Billboard, Text — unused while the hover label is disabled, see comment below.
 import type { ThreeEvent } from "@/lib/r3f";
 import { kindColor } from "@/lib/graph-data";
 import { questNodes, graphEdgesResolved } from "@/lib/game-model";
@@ -33,14 +34,19 @@ function Edges() {
   }, []);
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#3a4258" transparent opacity={0.7} toneMapped={false} />
+      <lineBasicMaterial
+        color="#3a4258"
+        transparent
+        opacity={0.7}
+        toneMapped={false}
+      />
     </lineSegments>
   );
 }
 
 function Node({
   id,
-  label,
+  // label is unused while the hover label is disabled — see comment below.
   color,
   position,
   hovered,
@@ -89,13 +95,27 @@ function Node({
         <sphereGeometry args={[0.16, 24, 24]} />
         <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
+      {/* Hover label disabled for now: troika-three-text's <Text> has no local
+          `font` prop set, so it falls back to fetching font metadata from
+          cdn.jsdelivr.net on every render. That fetch fails without outbound
+          network access and surfaces as an unhandled rejection inside troika's
+          own internals (impossible for app code to .catch()). Re-enable once a
+          bundled local font asset is wired up via the `font` prop — see
+          troika-three-text docs for the font-file requirement.
       {hovered && (
         <Billboard position={[0, 0.36, 0]}>
-          <Text fontSize={0.22} color="#e9ecf5" anchorX="center" anchorY="bottom" outlineWidth={0.012} outlineColor="#07080d">
+          <Text
+            fontSize={0.22}
+            color="#e9ecf5"
+            anchorX="center"
+            anchorY="bottom"
+            outlineWidth={0.012}
+            outlineColor="#07080d"
+          >
             {label}
           </Text>
         </Billboard>
-      )}
+      )} */}
     </group>
   );
 }
@@ -121,7 +141,11 @@ function Graph({ onSelect }: { onSelect: (id: string) => void }) {
   );
 }
 
-export default function BuildGraphScene({ onSelect }: { onSelect: (id: string) => void }) {
+export default function BuildGraphScene({
+  onSelect,
+}: {
+  onSelect: (id: string) => void;
+}) {
   return (
     <Canvas
       frameloop="demand"

@@ -102,15 +102,43 @@ const nextConfig: NextConfig = {
   // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
   experimental: {
     inlineCss: true,
-    // View Transitions API — enables React 19's <ViewTransition> component and
-    // directional slide animations on project card links via transitionTypes.
-    viewTransition: true,
+    // NOTE: `viewTransition: true` was REMOVED here in the 16.3.0 upgrade. It no longer exists in
+    // Next's ExperimentalConfig (absent from both config-schema.js and the types), so leaving it
+    // was a hard typecheck failure. Per the installed 16.3 guide
+    // (node_modules/next/dist/docs/01-app/02-guides/view-transitions.md): "View transitions work in
+    // the App Router with no configuration" — the flag graduated to always-on rather than being cut.
+    //
+    // Removing it is a no-op for THIS app regardless: the flag gated React's <ViewTransition>
+    // component, which this codebase never adopted. Our four-view transition is the NATIVE
+    // document.startViewTransition + ::view-transition-* CSS path (src/components/view-context.tsx
+    // :106-115, src/app/globals.css:263-299). The previous comment claimed this flag drove
+    // "directional slide animations on project card links via transitionTypes" — inaccurate:
+    // `transitionTypes` appears nowhere in src/, and the only "ViewTransition" identifier in the
+    // codebase is an unrelated local skeleton component (ui/skeleton.tsx:102 SkeletonViewTransition).
     // Tree-shake icon/animation imports at module level — reduces first-load JS.
     // NOTE: three, @react-three/fiber, @react-three/drei are intentionally excluded.
     // The C-3 investigation (commit 6246ed9) confirmed this flag does NOT collapse
     // the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit
     // f7c5110) is the correct fix and is already live. Re-adding these packages
     // would re-introduce the disproven optimization against the live barrel.
+    //
+    // R3F TWIN-CHUNK: RESOLVED by the 16.3.0 upgrade itself — measured, not assumed.
+    // This was recorded for months as "upstream blocked, needs a turbopack chunk config API".
+    // It is now fixed with NO experimental flags. Clean-build measurements (`rm -rf .next`,
+    // `pnpm build`, exit 0), counting chunks that contain `react-three`/`THREE.`:
+    //   16.2.9 → 876 + 876 + 256 + 20 + 8 = 2036 KB across 5 chunks (TWO 876 KB copies)
+    //   16.3.0 → 876 +       256 + 20 + 8 = 1160 KB across 4 chunks (ONE 876 KB copy)
+    //   delta  → -876 KB (-43%)
+    // Confirmed by symbol count, not just chunk count: the three.js core symbol
+    // `WebGLRenderer` now appears in exactly ONE chunk (37 occurrences, all in the single
+    // 876 KB chunk). Two chunks still *reference* react-three, but only one carries the core.
+    // Reproduced across two independent 16.2.9 builds (both showed 2 copies) and one clean
+    // 16.3.0 build.
+    //
+    // CONSEQUENCE: do NOT adopt `experimental.turbopackChunking` / `turbopackSharedRuntime`
+    // for this. The win is already banked, and those flags are doc-labeled "not recommended
+    // for production" and `turbopackSharedRuntime` shipped with a hydration-breaking race.
+    // The src/lib/r3f.ts barrel stays — it is load-bearing for the single-copy outcome.
     optimizePackageImports: ["lucide-react", "motion"],
     // Partial Prerendering — in Next 16 this is `cacheComponents: true`, which SUPERSEDES the old
     // `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins as one top-level key.

@@ -40,7 +40,7 @@
     "mcp-handler": "^1.1.0",
     "motion": "^12.40.0",
     "next": "16.3.0",
-    "pdfjs-dist": "^6.0.227",
+    "pdfjs-dist": "^6.2.108",
     "postprocessing": "^6.39.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -74,6 +74,14 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "hono": "^4.12.34",
+      "@hono/node-server": "^1.19.15",
+      "ip-address": "^10.3.1",
+      "fast-uri": "^3.1.5",
+      "js-yaml": "^4.3.1",
+      "postcss": "^8.5.23"
+    }
   }
 }

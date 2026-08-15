@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, impactMetrics } from "@/lib/profile";
 import { HeroGraph } from "@/components/hero-graph";
+import { HeroAvatar } from "@/components/hero-avatar";
 
 /**
  * Above-the-fold hero. Renders VISIBLE at first paint via a pure-CSS entrance
@@ -11,10 +12,13 @@ import { HeroGraph } from "@/components/hero-graph";
  * graph mounts behind this via a dynamic, client-only slot — never blocking paint.
  */
 export function Hero() {
+  // Read flag inside function body — NOT module scope (required for vi.stubEnv in tests).
+  const heroMode = process.env.NEXT_PUBLIC_HERO_MODE;
+
   return (
     <section className="relative overflow-hidden">
-      {/* WebGL knowledge-graph, behind the text. Client-only, lazy, mobile/reduced-motion fallbacks. */}
-      <HeroGraph />
+      {/* WebGL slot: avatar when NEXT_PUBLIC_HERO_MODE=avatar, otherwise knowledge-graph (default). */}
+      {heroMode === "avatar" ? <HeroAvatar /> : <HeroGraph />}
       <div className="relative mx-auto w-full max-w-5xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-24">
         <p className="hero-rise mono-label">{`> ${profile.role} @ ${profile.company}`}</p>
 

@@ -51,3 +51,99 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Wired in deliberately: `pnpm e2e` was referenced by NO workflow, so the suite rotted
+    # unnoticed until 5 of 19 tests were failing on selectors that could never match. A gate that
+    # nobody runs provides zero signal. playwright.config.ts now carries a `webServer` block, so
+    # this job needs no manual server step.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+        with:
+          version: 10
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Pin the browser download to the installed @playwright/test version. A version/browser
+      # mismatch fails with "Executable doesn't exist at .../chromium_headless_shell-<rev>".
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # webServer runs `pnpm start`, which needs a production build present.
+      - name: Build
+        run: pnpm build
+
+      - name: Run E2E
+        run: pnpm e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  security-alerts:
+    name: Security alerts (report)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # NON-BLOCKING BY DESIGN (continue-on-error). Its job is VISIBILITY, not enforcement.
+    #
+    # Why this exists: a HIGH-severity arbitrary-JS-execution advisory (pdfjs-dist) sat open while
+    # the "Dependabot Updates" workflow failed for 4 consecutive runs with the reason buried inside
+    # its log (`security_update_not_possible`). Nothing surfaced it. 23 alerts across 10 packages
+    # had accumulated. This prints the current count into the job summary on every run so it is
+    # impossible to miss.
+    #
+    # Left non-blocking on purpose: a brand-new gate that fails on a pre-existing backlog, or on a
+    # token-permission quirk, trains people to ignore red. Promote to blocking (drop
+    # continue-on-error and `exit 1` on high/critical) once the backlog is at zero.
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: read
+
+    steps:
+      - name: Count open Dependabot alerts by severity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          alerts=$(gh api "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" 2>/dev/null)
+          if [ -z "$alerts" ] || ! printf '%s' "$alerts" | jq -e 'type == "array"' >/dev/null 2>&1; then
+            echo "Could not read Dependabot alerts (token may lack the security_events scope)." \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          total=$(printf '%s' "$alerts" | jq 'length')
+          {
+            echo "## Open Dependabot alerts: ${total}"
+            echo ""
+            echo "| Severity | Count |"
+            echo "|---|---|"
+            printf '%s' "$alerts" | jq -r '[.[].security_advisory.severity] | group_by(.)
+              | map({s: .[0], n: length}) | .[] | "| \(.s) | \(.n) |"'
+            echo ""
+            if [ "$total" != "0" ]; then
+              echo "### Affected packages"
+              printf '%s' "$alerts" | jq -r '[.[].dependency.package.name] | unique | .[] | "- \(.)"'
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # NOTE: deliberately exits 0. See the comment on this job.
+

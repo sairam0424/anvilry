@@ -148,11 +148,38 @@ const nextConfig: NextConfig = {
     // for production" and `turbopackSharedRuntime` shipped with a hydration-breaking race.
     // The src/lib/r3f.ts barrel stays — it is load-bearing for the single-copy outcome.
     optimizePackageImports: ["lucide-react", "motion"],
-    // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
-    // `export const runtime = "nodejs"` segment configs present on all 9 API routes
-    // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
-    // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
-    // PPR enablement deferred until Next.js provides a per-route escape hatch.
+    // Cache Components (Next 16's `cacheComponents: true`) — ENABLED. This one key SUPERSEDES the
+    // old `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins.
+    //
+    // This was recorded for months as "upstream blocked, waiting for a per-route escape hatch".
+    // That diagnosis was WRONG and no upstream fix was ever needed. The RSC transform
+    // (react_server_components.rs, verified at tag v16.2.9) rejects the mere PRESENCE of
+    // `export const runtime` — the `"runtime" =>` arm receives only (&export_name, &span) and never
+    // inspects `decl.init`, so "nodejs" and "edge" are indistinguishable to it. But `nodejs` is
+    // already the DEFAULT and Cache Components *requires* it (only `edge` is unsupported), so those
+    // exports were redundant and the remedy was deletion.
+    //
+    // Migration scope was 26 segment configs across 22 files — NOT the 9 previously claimed.
+    // Confirmed empirically: enabling this flag failed the build with exactly `26 errors`.
+    //   13x `runtime`     -> deleted (redundant; nodejs is the default)
+    //    4x `revalidate`  -> handled per actual data source, not uniformly. /projects awaits a live
+    //                        getRepoFeed() so it got `"use cache"` + cacheLife("hours") (that profile
+    //                        is { stale: 300, revalidate: 3600, expire: 86400 }, preserving the old
+    //                        3600s exactly). /work + /notes are pure build-time Velite data with
+    //                        nothing to revalidate against, so theirs were simply deleted.
+    //                        api/github/stats already had fetch-level revalidate.
+    //    9x `force-dynamic` -> deleted; none were a caching decision. The .md routes read req.url
+    //                        (which is what makes them dynamic anyway) and llms-full.txt became
+    //                        correctly STATIC.
+    // `maxDuration` (11 uses) and `preferredRegion` are NOT rejected — streaming timeouts survive.
+    //
+    // Two constraints only a real build surfaces, both handled:
+    //   1. `generateStaticParams` must return >=1 result — collided with the flag-gated /notes
+    //      "ship dark" pattern. Behaviour is unchanged (the page still calls notFound()); those
+    //      routes are now prerendered AS 404s. Verified live: /notes/<slug> -> 404.
+    //   2. Synchronous IO (`new Date()`, `Date.now()`) fails prerender and CANNOT be deferred with
+    //      `instant = false`. Hence NEXT_PUBLIC_BUILD_YEAR above (footer) and
+    //      `await connection()` + `instant = false` on /admin/telemetry.
     cacheComponents: true,
   },
   images: {

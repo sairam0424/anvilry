@@ -4,6 +4,58 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.2] — 2026-08-15
+
+**Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them
+high severity. Also wires E2E into CI and makes the Playwright suite self-managing.
+
+Until this release, production served the vulnerable versions — the fixes had been merged to
+`develop` (Preview only) but not promoted.
+
+### Security
+- **`pdfjs-dist` 6.0.227 -> 6.2.108** (high) — arbitrary JavaScript execution upon opening a
+  malicious PDF. REACHABLE: `file-picker-button.tsx` does `await import("pdfjs-dist")` and parses
+  user-selected PDFs client-side.
+- **`ip-address` 10.2.0 -> 10.5.0** (high) — `Address4` decodes leading-zero octets as decimal
+  while resolvers decode them as octal, allowing SSRF and trust-boundary bypass. Reached via
+  `mcp-handler` -> `@modelcontextprotocol/sdk` -> `express-rate-limit`; server-side only.
+- **`hono` 4.12.25 -> 4.13.2** (medium x3, low x1) — `memo()` retained SSR output across requests
+  (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language
+  middleware, Proxy Helper header leak.
+- **`js-yaml` 4.2.0 -> 4.3.1** (high) — quadratic CPU consumption in `!!omap` resolution.
+- **`fast-uri` 3.1.2 -> 3.1.5** (high) — host confusion via backslash authority introducer.
+- **`brace-expansion` -> 1.1.18 and 5.0.9** (high) — two separate major lines, each patched within
+  its own line via version-scoped overrides. A blanket override would have forced `minimatch@3`
+  onto 5.x and broken the eslint chain.
+- **`sharp` 0.34.5 -> 0.35.3** (high) — only velite's build-time instance was affected; Next 16.3.0
+  already carried the patched 0.35.3.
+- **`@hono/node-server` -> 1.19.17** (medium) — `serve-static` path traversal via `%5C` on Windows.
+- **`postcss` -> 8.5.23+** (medium/high) — attacker-controlled `sourceMappingURL` read arbitrary
+  `.map` files when `from` is unset.
+- **`body-parser` 2.2.2 -> 2.3.0** (low).
+
+Six were transitive and lockfile-pinned, so `pnpm update` could not move them —
+`@modelcontextprotocol/sdk` is pinned exactly to 1.26.0, which is why Dependabot reported
+`security_update_not_possible`. Fixed via `pnpm.overrides`.
+
+### Added
+- **E2E is now a CI gate.** `pnpm e2e` was referenced by no workflow, so the suite had rotted
+  until 5 of 19 tests failed on selectors that could never match. Now runs on every push/PR.
+- **`security-alerts` CI job** — prints the open advisory count, severity breakdown, and affected
+  packages into the job summary. Non-blocking by design. Requires a `SECURITY_ALERTS_TOKEN` secret,
+  because the default `GITHUB_TOKEN` cannot read the Dependabot alerts API.
+- **Playwright `webServer`** — the suite now starts and health-checks its own server. Previously a
+  stale server on :3000 (or one that failed to bind) meant Playwright silently tested an OLDER
+  build, which twice produced spurious failures that read like app regressions.
+
+### Fixed
+- Repaired five stale E2E selectors: `[data-view]` (never existed in src),
+  `input[type="text"]` for a composer with no `type` attribute, `[role="combobox"]` for a terminal
+  exposing `[role="log"]`, a bare `locator("canvas")` matching two canvases and tripping strict
+  mode, and `[data-role="assistant"]` which is not applied to assistant turns.
+- Dependabot ignores now live on `main`. Dependabot reads `dependabot.yml` from the DEFAULT BRANCH
+  only, so the `typescript`/`eslint` semver-major ignores added on `develop` had been inert.
+
 ## [3.4.1] — 2026-08-15
 
 **Patch** — dependency updates and a repaired E2E suite. No feature or behaviour changes.

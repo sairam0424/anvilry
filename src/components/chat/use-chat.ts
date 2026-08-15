@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  TRACE_DELIMITER,
+  THINKING_SENTINEL,
+  THINKING_END,
+} from "@/lib/llm-trace";
 
 export type ChatRole = "user" | "assistant";
 
@@ -23,7 +27,8 @@ export type FileUIPart = {
   /** For PDFs: extracted text content via pdf.js. Undefined for images. */
   pdfText?: string;
   /** MIME type validated on the client before encoding. */
-  mediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
+  mediaType:
+    "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "application/pdf";
   /** Original filename for the preview strip label. */
   name: string;
   /** Byte size before encoding — used to enforce the per-file size guard. */
@@ -52,7 +57,10 @@ export type ChatMessage = {
 
 /** Split a streamed assistant chunk into visible text + an optional parsed trace frame.
  *  The frame (if present) is the LAST record after TRACE_DELIMITER. */
-function splitTrace(acc: string): { text: string; trace?: { model: string; fellBack: boolean } } {
+function splitTrace(acc: string): {
+  text: string;
+  trace?: { model: string; fellBack: boolean };
+} {
   const idx = acc.indexOf(TRACE_DELIMITER);
   if (idx === -1) return { text: acc };
   const text = acc.slice(0, idx);
@@ -64,6 +72,56 @@ function splitTrace(acc: string): { text: string; trace?: { model: string; fellB
     return { text };
   }
 }
+
+/** Fields derived from the accumulated stream buffer, before merging with previous state. */
+type ParsedAccumulation = {
+  liveReasoning?: string;
+  isThinking?: boolean;
+  text: string;
+  trace?: { model: string; fellBack: boolean };
+};
+
+/**
+ * Parse the whole accumulated buffer into the assistant-message fields.
+ *
+ * Protocol: [THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]
+ *
+ * Extracted from the read loop so the frame-coalesced flush and the final trailing flush
+ * run byte-identical logic — previously this lived inline and could only ever be exercised
+ * on the per-chunk path.
+ */
+function parseAccumulated(acc: string): ParsedAccumulation {
+  if (!acc.startsWith(THINKING_SENTINEL)) {
+    const { text, trace } = splitTrace(acc);
+    return { text, trace };
+  }
+
+  const afterSentinel = acc.slice(THINKING_SENTINEL.length);
+  const endIdx = afterSentinel.indexOf(THINKING_END);
+
+  if (endIdx === -1) {
+    // THINKING_END not yet arrived: still reasoning, nothing to show as answer text.
+    return { liveReasoning: afterSentinel, isThinking: true, text: "" };
+  }
+
+  const { text, trace } = splitTrace(
+    afterSentinel.slice(endIdx + THINKING_END.length),
+  );
+  return {
+    liveReasoning: afterSentinel.slice(0, endIdx),
+    isThinking: false,
+    text,
+    trace,
+  };
+}
+
+/**
+ * How long to wait before force-flushing when requestAnimationFrame never fires.
+ * Browsers pause rAF in hidden/background tabs, so a stream that completes while
+ * backgrounded would otherwise never paint. Coarse on purpose — it only ever runs when
+ * rAF is unavailable, and 250ms is imperceptible on return to the tab.
+ */
+const BACKGROUND_FLUSH_MS = 250;
 
 export type ChatStatus = "idle" | "streaming" | "error";
 
@@ -82,6 +140,116 @@ export function useChat() {
   const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
+  // --- Streaming write coalescing -------------------------------------------------------
+  // The read loop used to call setMessages once per network chunk. React's automatic
+  // batching does NOT help here: chunks arrive on separate macrotasks, so each one produced
+  // its own render, and every render re-parsed the entire accumulated message as markdown
+  // downstream. Cost therefore grew with message length (verified: 60 macrotask-spaced
+  // writes => 60 flushes, vs 1 for a synchronous burst).
+  //
+  // Now the loop only records the latest buffer and asks for a flush; at most one commit
+  // happens per animation frame, so render count is bounded by frame rate rather than by
+  // chunk count. The display cannot update faster than a frame anyway, so nothing visible
+  // is lost.
+  const pendingRef = useRef<string | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const safetyRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Thinking-phase timing is captured from BYTE ARRIVAL in the read loop, not derived from
+  // render-to-render deltas. The previous approach diffed timestamps across two renders (the
+  // first with isThinking=true, the later one with false) — which coalescing breaks, because
+  // a short thinking phase can collapse into a single frame so the intermediate render never
+  // happens and the duration silently becomes undefined. Anchoring to arrival makes the
+  // measurement independent of paint cadence, and is more accurate: it times actual thinking
+  // rather than render latency.
+  const thinkingStartRef = useRef<number | null>(null);
+  const thinkingEndRef = useRef<number | null>(null);
+
+  /** Apply an accumulated buffer to the message list. */
+  const commit = useCallback((acc: string) => {
+    const { liveReasoning, isThinking, text, trace } = parseAccumulated(acc);
+    const startedAt = thinkingStartRef.current;
+    const endedAt = thinkingEndRef.current;
+    // While thinking, expose the start so the UI can run its live elapsed timer. Once the
+    // phase has settled, report the arrival-to-arrival duration (floored at 0 — a sub-second
+    // thinking phase is a legitimate 0s, not a missing value).
+    const newStartedAt =
+      isThinking === true && startedAt !== null ? startedAt : undefined;
+    const newDuration =
+      startedAt !== null && endedAt !== null
+        ? Math.max(0, Math.round((endedAt - startedAt) / 1000))
+        : undefined;
+    setMessages((prev) => {
+      return [
+        ...prev.slice(0, -1),
+        {
+          role: "assistant" as const,
+          content: text,
+          model: trace?.model,
+          fellBack: trace?.fellBack,
+          reasoning:
+            (trace as { reasoning?: string } | undefined)?.reasoning ??
+            liveReasoning,
+          liveReasoning,
+          isThinking,
+          thinkingStartedAt: newStartedAt,
+          thinkingDuration: newDuration,
+        },
+      ];
+    });
+  }, []);
+
+  /**
+   * Commit whatever is pending and clear both schedulers.
+   * `pendingRef` is a single-consumption token: whichever of rAF / the safety timer runs
+   * first takes the buffer and nulls it, so the loser is a no-op instead of a double render.
+   */
+  const flushPending = useCallback(() => {
+    const acc = pendingRef.current;
+    pendingRef.current = null;
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (safetyRef.current !== null) {
+      clearTimeout(safetyRef.current);
+      safetyRef.current = null;
+    }
+    if (acc !== null) commit(acc);
+  }, [commit]);
+
+  /** Record the latest buffer; schedule a flush if one isn't already pending. */
+  const scheduleFlush = useCallback(
+    (acc: string) => {
+      pendingRef.current = acc;
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(flushPending);
+      }
+      if (safetyRef.current === null) {
+        safetyRef.current = setTimeout(flushPending, BACKGROUND_FLUSH_MS);
+      }
+    },
+    [flushPending],
+  );
+
+  /** Commit immediately, bypassing the frame wait. Used when the stream ends or aborts. */
+  const flushNow = useCallback(
+    (acc: string) => {
+      pendingRef.current = acc;
+      flushPending();
+    },
+    [flushPending],
+  );
+
+  // Never leave a frame or timer behind on unmount (e.g. the widget closing mid-stream).
+  useEffect(
+    () => () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (safetyRef.current !== null) clearTimeout(safetyRef.current);
+    },
+    [],
+  );
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
@@ -94,7 +262,11 @@ export function useChat() {
       if ((!q && !files?.length) || status === "streaming") return;
 
       // Build local message for display (text + attachment previews)
-      const userMsg: ChatMessage = { role: "user" as const, content: q, attachments: files };
+      const userMsg: ChatMessage = {
+        role: "user" as const,
+        content: q,
+        attachments: files,
+      };
       const history = [...messages, userMsg];
       setMessages([...history, { role: "assistant", content: "" }]);
       setStatus("streaming");
@@ -111,11 +283,20 @@ export function useChat() {
             return { type: "text", text: `[PDF: ${f.name}]\n${f.pdfText}` };
           }
           // Image: send as base64 content block
-          return { type: "image", source: { type: "base64", media_type: f.mediaType, data: f.data } };
+          return {
+            type: "image",
+            source: { type: "base64", media_type: f.mediaType, data: f.data },
+          };
         });
         if (m.content) blocks.push({ type: "text", text: m.content });
         return { role: "user", content: blocks };
       });
+
+      // Reset per-request state: arrival clocks for the thinking phase, and any buffer left
+      // pending from a previous stream (so a new answer can never inherit stale bytes).
+      thinkingStartRef.current = null;
+      thinkingEndRef.current = null;
+      pendingRef.current = null;
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -135,7 +316,10 @@ export function useChat() {
               : res.status === 429
                 ? "That's a lot of questions! Give it a moment and try again."
                 : "Something went wrong. Please try again.";
-          setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: msg }]);
+          setMessages((m) => [
+            ...m.slice(0, -1),
+            { role: "assistant", content: msg },
+          ]);
           setStatus("error");
           return;
         }
@@ -148,98 +332,65 @@ export function useChat() {
           if (done) break;
           acc += decoder.decode(value, { stream: true });
 
-          // --- New THINKING_SENTINEL + THINKING_END state machine ---
-          // Protocol: [THINKING_SENTINEL][reasoning bytes][THINKING_END][answer bytes][TRACE_DELIMITER][JSON]
-          const hasSentinel = acc.startsWith(THINKING_SENTINEL);
-
-          let liveReasoning: string | undefined;
-          let isThinking: boolean | undefined;
-          let textRegion: string; // the part to pass through splitTrace
-          let thinkingStartedAt: number | undefined;
-          let thinkingDuration: number | undefined;
-
-          if (hasSentinel) {
-            const afterSentinel = acc.slice(THINKING_SENTINEL.length);
-            const endIdx = afterSentinel.indexOf(THINKING_END);
-            if (endIdx === -1) {
-              // THINKING_END not yet arrived: still in reasoning phase.
-              liveReasoning = afterSentinel;
-              isThinking = true;
-              textRegion = "";
-              // Preserve thinkingStartedAt from the previous state update if already set.
-              // We read it from the current last message to avoid losing it on each tick.
-              thinkingStartedAt = undefined; // will be set below via functional update
-            } else {
-              // THINKING_END arrived: compute duration from sentinel → end.
-              liveReasoning = afterSentinel.slice(0, endIdx);
-              isThinking = false;
-              textRegion = afterSentinel.slice(endIdx + THINKING_END.length);
-              thinkingStartedAt = undefined; // will be read from prev state below
-              thinkingDuration = undefined;  // computed below from startedAt
-            }
-          } else {
-            liveReasoning = undefined;
-            isThinking = undefined;
-            textRegion = acc;
+          // Stamp the thinking phase from ARRIVAL, not from render cadence. Both are
+          // latched once (monotonic buffer => these transitions happen at most once).
+          if (thinkingStartRef.current === null && acc.startsWith(THINKING_SENTINEL)) {
+            thinkingStartRef.current = Date.now();
+          }
+          if (
+            thinkingEndRef.current === null &&
+            thinkingStartRef.current !== null &&
+            acc.includes(THINKING_END)
+          ) {
+            thinkingEndRef.current = Date.now();
           }
 
-          const { text, trace } = splitTrace(textRegion);
-          const now = Date.now();
-          setMessages((prev) => {
-            const prevLast = prev[prev.length - 1];
-            const prevStartedAt = prevLast?.thinkingStartedAt;
-            const newStartedAt =
-              isThinking === true
-                ? (prevStartedAt ?? now)           // first tick sets it; subsequent ticks preserve it
-                : undefined;
-            const newDuration =
-              isThinking === false && prevStartedAt
-                ? Math.round((now - prevStartedAt) / 1000)
-                : prevLast?.thinkingDuration;      // preserve settled duration across answer streaming
-
-            return [
-            ...prev.slice(0, -1),
-            {
-              role: "assistant" as const,
-              content: text,
-              model: (trace as { model?: string } | undefined)?.model,
-              fellBack: (trace as { fellBack?: boolean } | undefined)?.fellBack,
-              reasoning: (trace as { reasoning?: string } | undefined)?.reasoning ?? liveReasoning,
-              liveReasoning,
-              isThinking,
-              thinkingStartedAt: newStartedAt,
-              thinkingDuration: newDuration,
-            },
-          ]});
+          // Record only. The frame scheduler decides when to paint, so a burst of chunks
+          // inside one frame costs one render instead of one render each.
+          scheduleFlush(acc);
         }
+        // Trailing flush is mandatory, not an optimisation: the stream can close between
+        // frames, so anything that arrived after the last frame would never be committed.
+        flushNow(acc);
         setStatus("idle");
       } catch (err) {
+        // Commit whatever was still waiting on a frame before touching the message list.
+        // Without this, an abort (or network error) mid-flight would append to a STALE
+        // buffer and silently discard the last coalesced chunk of the partial answer.
+        flushPending();
         // Abort is a user action, not an error — keep what streamed, but mark it
         // stopped so a half-finished answer isn't mistaken for a complete one.
         if (err instanceof DOMException && err.name === "AbortError") {
           setMessages((m) => {
             const last = m[m.length - 1];
             if (!last || last.role !== "assistant") return m;
-            const stopped = last.content ? `${last.content} …[stopped]` : "[stopped]";
+            const stopped = last.content
+              ? `${last.content} …[stopped]`
+              : "[stopped]";
             return [...m.slice(0, -1), { role: "assistant", content: stopped }];
           });
           setStatus("idle");
           return;
         }
-        setMessages((m) => [...m.slice(0, -1), { role: "assistant", content: "Network error — please try again." }]);
+        setMessages((m) => [
+          ...m.slice(0, -1),
+          { role: "assistant", content: "Network error — please try again." },
+        ]);
         setStatus("error");
       } finally {
         abortRef.current = null;
       }
     },
-    [messages, status],
+    [messages, status, scheduleFlush, flushNow, flushPending],
   );
 
   const reset = useCallback(() => {
     stop();
     setMessages((prev) => {
       // Revoke any object URLs created for attachment previews to avoid memory leaks
-      prev.forEach((m) => m.attachments?.forEach((f) => URL.revokeObjectURL(f.previewUrl)));
+      prev.forEach((m) =>
+        m.attachments?.forEach((f) => URL.revokeObjectURL(f.previewUrl)),
+      );
       return [];
     });
     setPendingFiles([]);

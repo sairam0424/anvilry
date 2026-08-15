@@ -115,6 +115,19 @@ just quietly doubles.
   `f7c5110`) stays: it is load-bearing for the single-copy outcome and was never tested absent.
   Do **not** re-try `optimizePackageImports` — already disproven here (commit `6246ed9`).
 
+- **TypeScript 7** — *NEW 2026-08-15: blocks the lint toolchain, not our code.* Dependabot #128
+  proposed `typescript ^7` (with eslint ^10, @types/node ^26, velite ^0.4.0 grouped in). CI failed
+  at `pnpm lint`: `@typescript-eslint/typescript-estree@8.61.0` crashes on load under
+  typescript@7.0.2 with `TypeError: Cannot read properties of undefined (reading 'Cjs')`
+  (create-program/shared.js:59). **Reproduced with eslint pinned at 9.39.4**, which proves this is
+  NOT the ESLint 10 issue below — it is @typescript-eslint lacking TS7 support. Importantly
+  `tsc --noEmit` under TS 7.0.2 is **CLEAN**, so our own source is already TS7-ready; only linting
+  breaks. Blocked via a semver-major dependabot ignore (minors/patches still flow). Re-check when
+  @typescript-eslint announces TypeScript 7 support.
+  *Triage result:* velite ^0.4.0 and @types/node ^26 from that same group are SAFE — verified
+  independently (velite content-gen ok, tsc clean, lint 0 errors, 531/531 tests, build 113/113).
+  Merging them separately unblocks 2 of the 4 bumps instead of leaving all four stuck.
+
 - **ESLint 10** — *hard-blocked upstream, and the recorded cause was wrong.* `eslint-config-next` does
   **not** call `getFilename()` (grep of the installed package returns zero hits). Two stacked failures:
   (1) `eslint-plugin-react` calls removed APIs (`context.getFilename()`, `sourceCode.getJSDocComment` —

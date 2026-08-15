@@ -1,17 +1,37 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { connection } from "next/server";
+
+// This dashboard is 100% request-time: it reads a rolling 24h window out of Redis on every
+// load and sits behind the HTTP Basic auth gate in src/proxy.ts. It has no meaningful static
+// shell, so under nextConfig.cacheComponents it is marked as allowed-to-block rather than
+// being forced into a prerender it can never satisfy ("encountered uncached or runtime data
+// during prerendering"). `instant = false` is the sanctioned per-segment opt-out for exactly
+// this case; note it does NOT clear synchronous-IO errors, which is why the Date.now() call
+// below is separately guarded by `await connection()`.
+export const instant = false;
 
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
 
 // ── Data layer ────────────────────────────────────────────────────────────────
 
-async function fetchKind(kind: string, since: number): Promise<TelemetryEvent[]> {
+async function fetchKind(
+  kind: string,
+  since: number,
+): Promise<TelemetryEvent[]> {
   if (!redis) return [];
   try {
-    const raw = await redis.zrange<TelemetryEvent[]>(`anvilry:trace:${kind}`, since, "+inf", {
-      byScore: true,
-    });
-    return (raw ?? []).filter((e): e is TelemetryEvent => e !== null && typeof e === "object");
+    const raw = await redis.zrange<TelemetryEvent[]>(
+      `anvilry:trace:${kind}`,
+      since,
+      "+inf",
+      {
+        byScore: true,
+      },
+    );
+    return (raw ?? []).filter(
+      (e): e is TelemetryEvent => e !== null && typeof e === "object",
+    );
   } catch {
     return [];
   }
@@ -19,7 +39,9 @@ async function fetchKind(kind: string, since: number): Promise<TelemetryEvent[]>
 
 async function fetchAll(since: number): Promise<TelemetryEvent[]> {
   noStore();
-  const results = await Promise.all(KIND_LITERALS.map((k) => fetchKind(k, since)));
+  const results = await Promise.all(
+    KIND_LITERALS.map((k) => fetchKind(k, since)),
+  );
   return results.flat().sort((a, b) => a.ts - b.ts);
 }
 
@@ -31,9 +53,13 @@ function cacheHitRate(llmAttempts: TelemetryEvent[]) {
   let totalTokens = 0;
   let totalOutputTokens = 0;
   for (const e of llmAttempts) {
-    const u = (e.attrs as Record<string, unknown>).usage as Record<string, number> | undefined;
+    const u = (e.attrs as Record<string, unknown>).usage as
+      Record<string, number> | undefined;
     if (u) {
-      const inp = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+      const inp =
+        (u.input_tokens ?? 0) +
+        (u.cache_read_input_tokens ?? 0) +
+        (u.cache_creation_input_tokens ?? 0);
       totalInput += inp;
       cacheRead += u.cache_read_input_tokens ?? 0;
       totalTokens += inp + (u.output_tokens ?? 0);
@@ -50,29 +76,45 @@ function cacheHitRate(llmAttempts: TelemetryEvent[]) {
 }
 
 function avgLatency(llmAttempts: TelemetryEvent[]): number {
-  const withLatency = llmAttempts.filter((e) => typeof (e.attrs as Record<string, unknown>).latency_ms === "number");
+  const withLatency = llmAttempts.filter(
+    (e) => typeof (e.attrs as Record<string, unknown>).latency_ms === "number",
+  );
   if (withLatency.length === 0) return 0;
-  const sum = withLatency.reduce((acc, e) => acc + ((e.attrs as Record<string, unknown>).latency_ms as number), 0);
+  const sum = withLatency.reduce(
+    (acc, e) =>
+      acc + ((e.attrs as Record<string, unknown>).latency_ms as number),
+    0,
+  );
   return Math.round(sum / withLatency.length);
 }
 
 function avgTtft(llmAttempts: TelemetryEvent[]): number {
-  const withTtft = llmAttempts.filter((e) => typeof (e.attrs as Record<string, unknown>).ttft_ms === "number");
+  const withTtft = llmAttempts.filter(
+    (e) => typeof (e.attrs as Record<string, unknown>).ttft_ms === "number",
+  );
   if (withTtft.length === 0) return 0;
-  const sum = withTtft.reduce((acc, e) => acc + ((e.attrs as Record<string, unknown>).ttft_ms as number), 0);
+  const sum = withTtft.reduce(
+    (acc, e) => acc + ((e.attrs as Record<string, unknown>).ttft_ms as number),
+    0,
+  );
   return Math.round(sum / withTtft.length);
 }
 
 function fallbackRate(llmAttempts: TelemetryEvent[]): number {
   if (llmAttempts.length === 0) return 0;
-  const fallen = llmAttempts.filter((e) => (e.attrs as Record<string, unknown>).fell_back).length;
+  const fallen = llmAttempts.filter(
+    (e) => (e.attrs as Record<string, unknown>).fell_back,
+  ).length;
   return Math.round((fallen / llmAttempts.length) * 100);
 }
 
 // Cost per cache-read token in USD per million tokens
-const CACHE_READ_PRICE_PER_MTOK = 0.30;
+const CACHE_READ_PRICE_PER_MTOK = 0.3;
 
-function costSummary(llmAttempts: TelemetryEvent[]): { totalUsd: number; savedUsd: number } {
+function costSummary(llmAttempts: TelemetryEvent[]): {
+  totalUsd: number;
+  savedUsd: number;
+} {
   let totalUsd = 0;
   let savedUsd = 0;
   for (const e of llmAttempts) {
@@ -82,13 +124,17 @@ function costSummary(llmAttempts: TelemetryEvent[]): { totalUsd: number; savedUs
     }
     const u = a.usage as Record<string, number> | undefined;
     if (u?.cache_read_input_tokens) {
-      savedUsd += (u.cache_read_input_tokens / 1_000_000) * CACHE_READ_PRICE_PER_MTOK;
+      savedUsd +=
+        (u.cache_read_input_tokens / 1_000_000) * CACHE_READ_PRICE_PER_MTOK;
     }
   }
   return { totalUsd, savedUsd };
 }
 
-function uniqueSessions(httpRequests: TelemetryEvent[]): { count: number; allAnonymous: boolean } {
+function uniqueSessions(httpRequests: TelemetryEvent[]): {
+  count: number;
+  allAnonymous: boolean;
+} {
   const ids = new Set<string>();
   let allAnonymous = true;
   for (const e of httpRequests) {
@@ -98,18 +144,33 @@ function uniqueSessions(httpRequests: TelemetryEvent[]): { count: number; allAno
       allAnonymous = false;
     }
   }
-  return { count: ids.size, allAnonymous: httpRequests.length === 0 || allAnonymous };
+  return {
+    count: ids.size,
+    allAnonymous: httpRequests.length === 0 || allAnonymous,
+  };
 }
 
 // Per-model cost breakdown for the Costs tab.
-type ModelCostRow = { model: string; calls: number; totalUsd: number; cacheRead: number; cacheWrite: number };
+type ModelCostRow = {
+  model: string;
+  calls: number;
+  totalUsd: number;
+  cacheRead: number;
+  cacheWrite: number;
+};
 
 function costByModel(llmAttempts: TelemetryEvent[]): ModelCostRow[] {
   const map = new Map<string, ModelCostRow>();
   for (const e of llmAttempts) {
     const a = e.attrs as Record<string, unknown>;
     const model = (a.model as string | undefined) ?? "unknown";
-    const existing = map.get(model) ?? { model, calls: 0, totalUsd: 0, cacheRead: 0, cacheWrite: 0 };
+    const existing = map.get(model) ?? {
+      model,
+      calls: 0,
+      totalUsd: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    };
     existing.calls += 1;
     existing.totalUsd += typeof a.cost_usd === "number" ? a.cost_usd : 0;
     const u = a.usage as Record<string, number> | undefined;
@@ -130,7 +191,7 @@ function latencyStats(events: TelemetryEvent[]): LatencyStats {
     .sort((a, b) => a - b);
   if (vals.length === 0) return { p50: 0, p95: 0, count: 0 };
   return {
-    p50: vals[Math.floor(vals.length * 0.50)] ?? 0,
+    p50: vals[Math.floor(vals.length * 0.5)] ?? 0,
     p95: vals[Math.floor(vals.length * 0.95)] ?? 0,
     count: vals.length,
   };
@@ -152,13 +213,39 @@ async function fetchRedisJson<T>(key: string): Promise<T | null> {
 
 // Read the latest eval result from Redis (written by /api/cron/eval).
 async function fetchEvalResult() {
-  return fetchRedisJson<{ pass_rate: number; run_at: number; total: number }>("anvilry:eval:latest");
+  return fetchRedisJson<{ pass_rate: number; run_at: number; total: number }>(
+    "anvilry:eval:latest",
+  );
 }
 
-type GithubStats = { totalStars: number; totalForks: number; repoCount: number; mostRecentPush: string | null };
-type SeoAudit = { run_at: number; checks: { name: string; pass: boolean }[]; all_routes_pass: boolean; content_missing_summary: number };
-type ContentAudit = { run_at: number; stale_articles: string[]; stale_notes: string[]; total_stale: number };
-type HealthCheck = { run_at: number; status: "pass" | "warn" | "fail"; total_checks: number; failed_checks: number; warn_checks: number; duration_ms: number; failed_names: string[]; warn_names: string[] };
+type GithubStats = {
+  totalStars: number;
+  totalForks: number;
+  repoCount: number;
+  mostRecentPush: string | null;
+};
+type SeoAudit = {
+  run_at: number;
+  checks: { name: string; pass: boolean }[];
+  all_routes_pass: boolean;
+  content_missing_summary: number;
+};
+type ContentAudit = {
+  run_at: number;
+  stale_articles: string[];
+  stale_notes: string[];
+  total_stale: number;
+};
+type HealthCheck = {
+  run_at: number;
+  status: "pass" | "warn" | "fail";
+  total_checks: number;
+  failed_checks: number;
+  warn_checks: number;
+  duration_ms: number;
+  failed_names: string[];
+  warn_names: string[];
+};
 
 async function fetchGithubStats() {
   return fetchRedisJson<GithubStats>("anvilry:github:stats:latest");
@@ -184,24 +271,34 @@ async function fetchCorpusBuiltAt(): Promise<number | null> {
   }
 }
 
-function routeCounts(httpRequests: TelemetryEvent[]): Array<{ route: string; count: number; avgMs: number }> {
+function routeCounts(
+  httpRequests: TelemetryEvent[],
+): Array<{ route: string; count: number; avgMs: number }> {
   const counts: Record<string, { count: number; totalMs: number }> = {};
   for (const e of httpRequests) {
     const route = e.route ?? "unknown";
-    const latMs = (e.attrs as Record<string, unknown>).latency_ms as number ?? 0;
+    const latMs =
+      ((e.attrs as Record<string, unknown>).latency_ms as number) ?? 0;
     if (!counts[route]) counts[route] = { count: 0, totalMs: 0 };
     counts[route].count += 1;
     counts[route].totalMs += latMs;
   }
   return Object.entries(counts)
     .sort((a, b) => b[1].count - a[1].count)
-    .map(([route, { count, totalMs }]) => ({ route, count, avgMs: Math.round(totalMs / count) }));
+    .map(([route, { count, totalMs }]) => ({
+      route,
+      count,
+      avgMs: Math.round(totalMs / count),
+    }));
 }
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
 function fmtTs(ts: number): string {
-  return new Date(ts).toISOString().replace("T", " ").replace(/\.\d{3}Z/, " UTC");
+  return new Date(ts)
+    .toISOString()
+    .replace("T", " ")
+    .replace(/\.\d{3}Z/, " UTC");
 }
 
 function fmtMs(ms: number): string {
@@ -220,15 +317,19 @@ function fmtAttrs(e: TelemetryEvent): string {
     case "llm.attempt": {
       const u = a.usage as Record<string, number> | undefined;
       const parts = [];
-      if (a.model) parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+      if (a.model)
+        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
       if (u?.input_tokens != null) parts.push(`in:${u.input_tokens}`);
-      if (u?.cache_read_input_tokens) parts.push(`cached:${u.cache_read_input_tokens}`);
+      if (u?.cache_read_input_tokens)
+        parts.push(`cached:${u.cache_read_input_tokens}`);
       if (u?.output_tokens != null) parts.push(`out:${u.output_tokens}`);
       if (a.ttft_ms != null) parts.push(`ttft:${fmtMs(a.ttft_ms as number)}`);
-      if (a.latency_ms != null) parts.push(`lat:${fmtMs(a.latency_ms as number)}`);
+      if (a.latency_ms != null)
+        parts.push(`lat:${fmtMs(a.latency_ms as number)}`);
       if (a.fell_back) parts.push("⚡fallback");
       if (a.finish_reason) parts.push(String(a.finish_reason));
-      if (typeof a.cost_usd === "number") parts.push(`$${a.cost_usd.toFixed(4)}`);
+      if (typeof a.cost_usd === "number")
+        parts.push(`$${a.cost_usd.toFixed(4)}`);
       return parts.join("  ·  ");
     }
     case "http.request": {
@@ -236,7 +337,8 @@ function fmtAttrs(e: TelemetryEvent): string {
       if (a.status != null) parts.push(`${a.status}`);
       if (a.latency_ms != null) parts.push(fmtMs(a.latency_ms as number));
       if (a.messageCount != null) parts.push(`msgs:${a.messageCount}`);
-      if (a.cache_hit != null) parts.push(a.cache_hit ? "cache:hit" : "cache:miss");
+      if (a.cache_hit != null)
+        parts.push(a.cache_hit ? "cache:hit" : "cache:miss");
       if (a.char_count != null) parts.push(`chars:${a.char_count}`);
       if (typeof a.session_id === "string" && a.session_id !== "anonymous") {
         parts.push(`sess:${a.session_id.slice(0, 6)}`);
@@ -245,7 +347,11 @@ function fmtAttrs(e: TelemetryEvent): string {
     }
     case "client.error":
     case "server.error":
-      return [a.error_name, a.error_message, a.aws_request_id ? `aws:${String(a.aws_request_id).slice(0, 8)}` : null]
+      return [
+        a.error_name,
+        a.error_message,
+        a.aws_request_id ? `aws:${String(a.aws_request_id).slice(0, 8)}` : null,
+      ]
         .filter(Boolean)
         .join("  ·  ") as string;
     default:
@@ -257,26 +363,49 @@ function fmtAttrs(e: TelemetryEvent): string {
 
 function kindBadge(kind: string): string {
   switch (kind) {
-    case "llm.attempt":    return "bg-violet-500/20 text-violet-300";
-    case "http.request":   return "bg-blue-500/20 text-blue-300";
-    case "client.error":   return "bg-red-500/20 text-red-300";
-    case "server.error":   return "bg-orange-500/20 text-orange-300";
-    case "tts.request":    return "bg-teal-500/20 text-teal-300";
-    case "budget.tick":    return "bg-yellow-500/20 text-yellow-300";
-    default:               return "bg-bg-elevated text-fg-muted";
+    case "llm.attempt":
+      return "bg-violet-500/20 text-violet-300";
+    case "http.request":
+      return "bg-blue-500/20 text-blue-300";
+    case "client.error":
+      return "bg-red-500/20 text-red-300";
+    case "server.error":
+      return "bg-orange-500/20 text-orange-300";
+    case "tts.request":
+      return "bg-teal-500/20 text-teal-300";
+    case "budget.tick":
+      return "bg-yellow-500/20 text-yellow-300";
+    default:
+      return "bg-bg-elevated text-fg-muted";
   }
 }
 
 // ── Tile component ────────────────────────────────────────────────────────────
 
-function Tile({ label, value, sub, pct, accent = false, warn = false }: {
-  label: string; value: string; sub?: string; pct?: number; accent?: boolean; warn?: boolean;
+function Tile({
+  label,
+  value,
+  sub,
+  pct,
+  accent = false,
+  warn = false,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  pct?: number;
+  accent?: boolean;
+  warn?: boolean;
 }) {
   const color = warn ? "text-red-400" : accent ? "text-accent" : "text-fg";
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">{label}</span>
-      <span className={`text-2xl font-semibold tabular-nums ${color}`}>{value}</span>
+      <span className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">
+        {label}
+      </span>
+      <span className={`text-2xl font-semibold tabular-nums ${color}`}>
+        {value}
+      </span>
       {sub && <span className="text-[11px] text-fg-subtle">{sub}</span>}
       {pct != null && (
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
@@ -295,11 +424,29 @@ function Tile({ label, value, sub, pct, accent = false, warn = false }: {
 export default async function TelemetryDashboard() {
   // Auth is handled upstream by src/proxy.ts — by the time this renders,
   // the request is authenticated. No html/body shell here; the layout provides those.
+  // `await connection()` marks this page as request-time, which is required under
+  // nextConfig.cacheComponents: Date.now() is synchronous IO and fails the prerender otherwise
+  // ("encountered the unstable value `Date.now()` while prerendering"). That error cannot be
+  // deferred with `instant = false` — it must be moved out of the prerendered shell.
+  // This dashboard is inherently request-time anyway (it reads a rolling 24h Redis window and
+  // sits behind the HTTP Basic auth gate in src/proxy.ts), so it should never have been a
+  // prerender candidate.
+  await connection();
   // eslint-disable-next-line react-hooks/purity -- async Server Component, not a client render
   const now = Date.now();
   const since24h = now - 24 * 60 * 60 * 1000;
 
-  const [allEvents, ttsEvents, transcribeEvents, evalResult, githubStats, seoAudit, contentAudit, corpusBuiltAt, healthCheck] = await Promise.all([
+  const [
+    allEvents,
+    ttsEvents,
+    transcribeEvents,
+    evalResult,
+    githubStats,
+    seoAudit,
+    contentAudit,
+    corpusBuiltAt,
+    healthCheck,
+  ] = await Promise.all([
     fetchAll(since24h),
     fetchKind("tts.request", since24h),
     fetchKind("transcribe.request", since24h),
@@ -316,7 +463,10 @@ export default async function TelemetryDashboard() {
   const serverErrors = allEvents.filter((e) => e.kind === "server.error");
 
   const errorCount = clientErrors.length + serverErrors.length;
-  const errorRate = allEvents.length > 0 ? Math.round((errorCount / allEvents.length) * 100) : 0;
+  const errorRate =
+    allEvents.length > 0
+      ? Math.round((errorCount / allEvents.length) * 100)
+      : 0;
   const routes = routeCounts(httpRequests);
   const cache = cacheHitRate(llmAttempts);
   const fallback = fallbackRate(llmAttempts);
@@ -326,7 +476,10 @@ export default async function TelemetryDashboard() {
   const redisStatus = redis ? "connected" : "not configured (log-only mode)";
   const cost = costSummary(llmAttempts);
   const sessions = uniqueSessions(httpRequests);
-  const avgTurns = sessions.count > 0 ? (httpRequests.length / sessions.count).toFixed(1) : "—";
+  const avgTurns =
+    sessions.count > 0
+      ? (httpRequests.length / sessions.count).toFixed(1)
+      : "—";
 
   // New: Costs + Voice + Eval data
   const modelCosts = costByModel(llmAttempts);
@@ -335,27 +488,29 @@ export default async function TelemetryDashboard() {
   const evalPct = evalResult ? Math.round(evalResult.pass_rate * 100) : null;
 
   // Format total tokens as K
-  const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
+  const fmtTokens = (n: number) =>
+    n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
   // Corpus age (hours or days since last deploy)
   const corpusAgeMs = corpusBuiltAt ? now - corpusBuiltAt : null;
-  const corpusAgeLabel = corpusAgeMs == null
-    ? "—"
-    : corpusAgeMs < 24 * 3600_000
-      ? `${Math.floor(corpusAgeMs / 3600_000)}h ago`
-      : `${Math.floor(corpusAgeMs / (24 * 3600_000))}d ago`;
+  const corpusAgeLabel =
+    corpusAgeMs == null
+      ? "—"
+      : corpusAgeMs < 24 * 3600_000
+        ? `${Math.floor(corpusAgeMs / 3600_000)}h ago`
+        : `${Math.floor(corpusAgeMs / (24 * 3600_000))}d ago`;
   const corpusStale = corpusAgeMs != null && corpusAgeMs > 7 * 24 * 3600_000;
 
   return (
     <div className="min-h-screen bg-bg-base p-4 font-sans text-fg md:p-6">
       <div className="mx-auto max-w-6xl">
-
         {/* Header */}
         <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-fg">Anvilry telemetry</h1>
             <p className="mt-1 text-xs text-fg-muted">
-              Last 24 h &nbsp;·&nbsp; {allEvents.length} events &nbsp;·&nbsp; Redis: {redisStatus}
+              Last 24 h &nbsp;·&nbsp; {allEvents.length} events &nbsp;·&nbsp;
+              Redis: {redisStatus}
             </p>
           </div>
           <span className="font-mono text-[10px] uppercase tracking-widest text-fg-subtle">
@@ -443,14 +598,23 @@ export default async function TelemetryDashboard() {
             </h2>
             <div className="flex flex-col gap-2">
               {routes.map(({ route, count, avgMs }) => {
-                const pct = Math.round((count / Math.max(1, httpRequests.length)) * 100);
+                const pct = Math.round(
+                  (count / Math.max(1, httpRequests.length)) * 100,
+                );
                 return (
                   <div key={route} className="flex items-center gap-3 text-sm">
-                    <span className="w-36 shrink-0 font-mono text-xs text-fg-muted">{route}</span>
+                    <span className="w-36 shrink-0 font-mono text-xs text-fg-muted">
+                      {route}
+                    </span>
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-bg-elevated">
-                      <div className="h-full rounded-full bg-accent/60" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full rounded-full bg-accent/60"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                    <span className="w-6 text-right text-xs text-fg-subtle">{count}</span>
+                    <span className="w-6 text-right text-xs text-fg-subtle">
+                      {count}
+                    </span>
                     <span className="w-14 text-right font-mono text-[10px] text-fg-subtle/70">
                       {avgMs > 0 ? fmtMs(avgMs) : ""}
                     </span>
@@ -481,14 +645,25 @@ export default async function TelemetryDashboard() {
               </thead>
               <tbody>
                 {modelCosts.map((row) => (
-                  <tr key={row.model} className="border-b border-border-strong/10 hover:bg-bg-elevated/40">
+                  <tr
+                    key={row.model}
+                    className="border-b border-border-strong/10 hover:bg-bg-elevated/40"
+                  >
                     <td className="px-2 py-2 font-mono text-fg-muted">
                       {row.model.replace("us.anthropic.claude-", "")}
                     </td>
-                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{row.calls}</td>
-                    <td className="px-2 py-2 text-right tabular-nums text-accent">${row.totalUsd.toFixed(4)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{fmtTokens(row.cacheRead)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">{fmtTokens(row.cacheWrite)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">
+                      {row.calls}
+                    </td>
+                    <td className="px-2 py-2 text-right tabular-nums text-accent">
+                      ${row.totalUsd.toFixed(4)}
+                    </td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">
+                      {fmtTokens(row.cacheRead)}
+                    </td>
+                    <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">
+                      {fmtTokens(row.cacheWrite)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -501,7 +676,11 @@ export default async function TelemetryDashboard() {
           <Tile
             label="TTS P50 latency"
             value={ttsLatency.count > 0 ? fmtMs(ttsLatency.p50) : "—"}
-            sub={ttsLatency.count > 0 ? `${ttsLatency.count} requests` : "no TTS requests yet"}
+            sub={
+              ttsLatency.count > 0
+                ? `${ttsLatency.count} requests`
+                : "no TTS requests yet"
+            }
           />
           <Tile
             label="TTS P95 latency"
@@ -511,19 +690,31 @@ export default async function TelemetryDashboard() {
           />
           <Tile
             label="Transcribe P50"
-            value={transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p50) : "—"}
-            sub={transcribeLatency.count > 0 ? `${transcribeLatency.count} requests` : "no transcribe yet"}
+            value={
+              transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p50) : "—"
+            }
+            sub={
+              transcribeLatency.count > 0
+                ? `${transcribeLatency.count} requests`
+                : "no transcribe yet"
+            }
           />
           <Tile
             label="Transcribe P95"
-            value={transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p95) : "—"}
+            value={
+              transcribeLatency.count > 0 ? fmtMs(transcribeLatency.p95) : "—"
+            }
             sub="high-percentile STT"
             warn={transcribeLatency.p95 > 5000}
           />
           <Tile
             label="Eval pass rate"
             value={evalPct != null ? `${evalPct}%` : "—"}
-            sub={evalResult ? `${evalResult.total} golden pairs · ${new Date(evalResult.run_at).toLocaleDateString()}` : "run /api/cron/eval to populate"}
+            sub={
+              evalResult
+                ? `${evalResult.total} golden pairs · ${new Date(evalResult.run_at).toLocaleDateString()}`
+                : "run /api/cron/eval to populate"
+            }
             accent={evalPct != null && evalPct >= 90}
             warn={evalPct != null && evalPct < 80}
             pct={evalPct ?? undefined}
@@ -535,51 +726,68 @@ export default async function TelemetryDashboard() {
           <Tile
             label="GitHub stars"
             value={githubStats ? String(githubStats.totalStars) : "—"}
-            sub={githubStats
-              ? `${githubStats.repoCount} repos · ${githubStats.totalForks} forks`
-              : "run /api/cron/github-sync to populate"}
+            sub={
+              githubStats
+                ? `${githubStats.repoCount} repos · ${githubStats.totalForks} forks`
+                : "run /api/cron/github-sync to populate"
+            }
             accent={!!githubStats}
           />
           <Tile
             label="SEO health"
-            value={seoAudit
-              ? seoAudit.all_routes_pass ? "✓ All pass" : `${seoAudit.checks.filter((c) => !c.pass).length} failing`
-              : "—"}
-            sub={seoAudit
-              ? `${seoAudit.content_missing_summary} items missing summary · ${new Date(seoAudit.run_at).toLocaleDateString()}`
-              : "run /api/cron/seo-audit to populate"}
+            value={
+              seoAudit
+                ? seoAudit.all_routes_pass
+                  ? "✓ All pass"
+                  : `${seoAudit.checks.filter((c) => !c.pass).length} failing`
+                : "—"
+            }
+            sub={
+              seoAudit
+                ? `${seoAudit.content_missing_summary} items missing summary · ${new Date(seoAudit.run_at).toLocaleDateString()}`
+                : "run /api/cron/seo-audit to populate"
+            }
             warn={!!seoAudit && !seoAudit.all_routes_pass}
             accent={!!seoAudit && seoAudit.all_routes_pass}
           />
           <Tile
             label="Stale content"
             value={contentAudit ? String(contentAudit.total_stale) : "—"}
-            sub={contentAudit
-              ? `${contentAudit.stale_articles.length} articles · ${contentAudit.stale_notes.length} notes > 18mo`
-              : "run /api/cron/content-audit to populate"}
+            sub={
+              contentAudit
+                ? `${contentAudit.stale_articles.length} articles · ${contentAudit.stale_notes.length} notes > 18mo`
+                : "run /api/cron/content-audit to populate"
+            }
             warn={!!contentAudit && contentAudit.total_stale > 0}
             accent={!!contentAudit && contentAudit.total_stale === 0}
           />
           <Tile
             label="Corpus age"
             value={corpusAgeLabel}
-            sub={corpusBuiltAt
-              ? `Last deployed: ${new Date(corpusBuiltAt).toLocaleDateString()}`
-              : "set on production cold start"}
+            sub={
+              corpusBuiltAt
+                ? `Last deployed: ${new Date(corpusBuiltAt).toLocaleDateString()}`
+                : "set on production cold start"
+            }
             warn={corpusStale}
             accent={corpusAgeMs != null && !corpusStale}
           />
           <Tile
             label="Site health"
-            value={healthCheck
-              ? healthCheck.status === "pass" ? "✓ All pass"
-              : healthCheck.status === "warn"
-                ? `${healthCheck.warn_checks} warn · ${healthCheck.failed_checks} fail`
-                : `${healthCheck.failed_checks} failing`
-              : "—"}
-            sub={healthCheck
-              ? `${healthCheck.total_checks} checks · ${healthCheck.duration_ms}ms · ${new Date(healthCheck.run_at).toLocaleDateString()}`
-              : "run /api/cron/health-check to populate"}
+            value={
+              healthCheck
+                ? healthCheck.status === "pass"
+                  ? "✓ All pass"
+                  : healthCheck.status === "warn"
+                    ? `${healthCheck.warn_checks} warn · ${healthCheck.failed_checks} fail`
+                    : `${healthCheck.failed_checks} failing`
+                : "—"
+            }
+            sub={
+              healthCheck
+                ? `${healthCheck.total_checks} checks · ${healthCheck.duration_ms}ms · ${new Date(healthCheck.run_at).toLocaleDateString()}`
+                : "run /api/cron/health-check to populate"
+            }
             warn={!!healthCheck && healthCheck.status === "fail"}
             accent={!!healthCheck && healthCheck.status === "pass"}
           />
@@ -589,7 +797,8 @@ export default async function TelemetryDashboard() {
         <div className="rounded-xl border border-border-strong/60 bg-bg-surface">
           <div className="border-b border-border-strong/40 px-4 py-3">
             <h2 className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">
-              Recent events &nbsp;·&nbsp; last {recentEvents.length} of {allEvents.length}
+              Recent events &nbsp;·&nbsp; last {recentEvents.length} of{" "}
+              {allEvents.length}
             </h2>
           </div>
           {recentEvents.length === 0 ? (
@@ -625,14 +834,18 @@ export default async function TelemetryDashboard() {
                           {fmtTs(e.ts)}
                         </td>
                         <td className="px-4 py-2">
-                          <span className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] ${kindBadge(e.kind)}`}>
+                          <span
+                            className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] ${kindBadge(e.kind)}`}
+                          >
                             {e.kind}
                           </span>
                         </td>
                         <td className="px-4 py-2 font-mono text-fg-muted">
                           {e.route ?? "—"}
                           {attrs.status != null && (
-                            <span className={`ml-1.5 text-[10px] ${Number(attrs.status) >= 400 ? "text-red-400" : "text-fg-subtle/60"}`}>
+                            <span
+                              className={`ml-1.5 text-[10px] ${Number(attrs.status) >= 400 ? "text-red-400" : "text-fg-subtle/60"}`}
+                            >
                               {String(attrs.status)}
                             </span>
                           )}
@@ -644,7 +857,9 @@ export default async function TelemetryDashboard() {
                           {isError ? (
                             <span className="text-red-300">{fmtAttrs(e)}</span>
                           ) : (
-                            <span className="text-fg-subtle/80">{fmtAttrs(e)}</span>
+                            <span className="text-fg-subtle/80">
+                              {fmtAttrs(e)}
+                            </span>
                           )}
                         </td>
                       </tr>

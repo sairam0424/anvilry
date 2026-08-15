@@ -1,6 +1,5 @@
 import { redis } from "@/lib/redis";
 
-export const runtime = "nodejs";
 export const maxDuration = 25;
 
 /**

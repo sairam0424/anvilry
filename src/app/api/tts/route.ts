@@ -12,7 +12,6 @@ import { redact } from "@/lib/telemetry/schema";
 import { randomUUID } from "node:crypto";
 import { cacheGet, cacheKey, cacheSet } from "./cache";
 
-export const runtime = "nodejs";
 export const maxDuration = 15;
 
 /**

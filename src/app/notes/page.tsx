@@ -6,7 +6,9 @@ import { NoteCard } from "@/components/note-card";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 
-export const revalidate = 3600;
+// `export const revalidate = 3600` removed for cacheComponents (which rejects it).
+// Deliberately NOT replaced with `"use cache"` + cacheLife: the only data source is the
+// build-time Velite import `allNotes`, so there is nothing to revalidate against. Fully static.
 
 export const metadata: Metadata = {
   title: "Notes",

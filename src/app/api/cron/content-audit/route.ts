@@ -1,7 +1,6 @@
 import { redis } from "@/lib/redis";
 import { allArticles, allNotes } from "@/lib/content";
 
-export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /**

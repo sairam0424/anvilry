@@ -77,7 +77,10 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Voice requests the mic — scope it to same-origin and deny camera/geo/etc.
-  { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()" },
+  {
+    key: "Permissions-Policy",
+    value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()",
+  },
   // ENFORCED. Shipped Report-Only in v1.4.0; a live Playwright sweep across all four
   // views (incl. the WebGL Play view) logged ZERO violations, and a per-directive
   // audit against the real resource loads (scripts/styles/fonts/img/media/connect/
@@ -94,27 +97,90 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (multiple lockfiles exist on the machine).
   turbopack: { root: __dirname },
+  // Build-time constants inlined into the client bundle.
+  // NEXT_PUBLIC_BUILD_YEAR exists because the footer copyright year must be a STABLE value:
+  // under nextConfig.cacheComponents, calling `new Date()` during render fails the prerender
+  // ("encountered the unstable value `new Date()` in a Client Component") and that error cannot
+  // be deferred with `instant = false`. Computing it HERE runs in the Node config at build time,
+  // never during prerender, so it is a plain literal by the time the footer renders — and it
+  // still refreshes on every deploy, so it never goes stale in practice.
+  env: { NEXT_PUBLIC_BUILD_YEAR: String(new Date().getFullYear()) },
   // Inline critical CSS into <head> to cut a render-blocking stylesheet request —
   // Tailwind v4 is the exact use case this flag targets. Kept only if a before/after
   // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
   experimental: {
     inlineCss: true,
-    // View Transitions API — enables React 19's <ViewTransition> component and
-    // directional slide animations on project card links via transitionTypes.
-    viewTransition: true,
+    // NOTE: `viewTransition: true` was REMOVED here in the 16.3.0 upgrade. It no longer exists in
+    // Next's ExperimentalConfig (absent from both config-schema.js and the types), so leaving it
+    // was a hard typecheck failure. Per the installed 16.3 guide
+    // (node_modules/next/dist/docs/01-app/02-guides/view-transitions.md): "View transitions work in
+    // the App Router with no configuration" — the flag graduated to always-on rather than being cut.
+    //
+    // Removing it is a no-op for THIS app regardless: the flag gated React's <ViewTransition>
+    // component, which this codebase never adopted. Our four-view transition is the NATIVE
+    // document.startViewTransition + ::view-transition-* CSS path (src/components/view-context.tsx
+    // :106-115, src/app/globals.css:263-299). The previous comment claimed this flag drove
+    // "directional slide animations on project card links via transitionTypes" — inaccurate:
+    // `transitionTypes` appears nowhere in src/, and the only "ViewTransition" identifier in the
+    // codebase is an unrelated local skeleton component (ui/skeleton.tsx:102 SkeletonViewTransition).
     // Tree-shake icon/animation imports at module level — reduces first-load JS.
     // NOTE: three, @react-three/fiber, @react-three/drei are intentionally excluded.
     // The C-3 investigation (commit 6246ed9) confirmed this flag does NOT collapse
     // the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit
     // f7c5110) is the correct fix and is already live. Re-adding these packages
     // would re-introduce the disproven optimization against the live barrel.
+    //
+    // R3F TWIN-CHUNK: RESOLVED by the 16.3.0 upgrade itself — measured, not assumed.
+    // This was recorded for months as "upstream blocked, needs a turbopack chunk config API".
+    // It is now fixed with NO experimental flags. Clean-build measurements (`rm -rf .next`,
+    // `pnpm build`, exit 0), counting chunks that contain `react-three`/`THREE.`:
+    //   16.2.9 → 876 + 876 + 256 + 20 + 8 = 2036 KB across 5 chunks (TWO 876 KB copies)
+    //   16.3.0 → 876 +       256 + 20 + 8 = 1160 KB across 4 chunks (ONE 876 KB copy)
+    //   delta  → -876 KB (-43%)
+    // Confirmed by symbol count, not just chunk count: the three.js core symbol
+    // `WebGLRenderer` now appears in exactly ONE chunk (37 occurrences, all in the single
+    // 876 KB chunk). Two chunks still *reference* react-three, but only one carries the core.
+    // Reproduced across two independent 16.2.9 builds (both showed 2 copies) and one clean
+    // 16.3.0 build.
+    //
+    // CONSEQUENCE: do NOT adopt `experimental.turbopackChunking` / `turbopackSharedRuntime`
+    // for this. The win is already banked, and those flags are doc-labeled "not recommended
+    // for production" and `turbopackSharedRuntime` shipped with a hydration-breaking race.
+    // The src/lib/r3f.ts barrel stays — it is load-bearing for the single-copy outcome.
     optimizePackageImports: ["lucide-react", "motion"],
-    // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
-    // `export const runtime = "nodejs"` segment configs present on all 9 API routes
-    // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
-    // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
-    // PPR enablement deferred until Next.js provides a per-route escape hatch.
-    // cacheComponents: true,
+    // Cache Components (Next 16's `cacheComponents: true`) — ENABLED. This one key SUPERSEDES the
+    // old `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins.
+    //
+    // This was recorded for months as "upstream blocked, waiting for a per-route escape hatch".
+    // That diagnosis was WRONG and no upstream fix was ever needed. The RSC transform
+    // (react_server_components.rs, verified at tag v16.2.9) rejects the mere PRESENCE of
+    // `export const runtime` — the `"runtime" =>` arm receives only (&export_name, &span) and never
+    // inspects `decl.init`, so "nodejs" and "edge" are indistinguishable to it. But `nodejs` is
+    // already the DEFAULT and Cache Components *requires* it (only `edge` is unsupported), so those
+    // exports were redundant and the remedy was deletion.
+    //
+    // Migration scope was 26 segment configs across 22 files — NOT the 9 previously claimed.
+    // Confirmed empirically: enabling this flag failed the build with exactly `26 errors`.
+    //   13x `runtime`     -> deleted (redundant; nodejs is the default)
+    //    4x `revalidate`  -> handled per actual data source, not uniformly. /projects awaits a live
+    //                        getRepoFeed() so it got `"use cache"` + cacheLife("hours") (that profile
+    //                        is { stale: 300, revalidate: 3600, expire: 86400 }, preserving the old
+    //                        3600s exactly). /work + /notes are pure build-time Velite data with
+    //                        nothing to revalidate against, so theirs were simply deleted.
+    //                        api/github/stats already had fetch-level revalidate.
+    //    9x `force-dynamic` -> deleted; none were a caching decision. The .md routes read req.url
+    //                        (which is what makes them dynamic anyway) and llms-full.txt became
+    //                        correctly STATIC.
+    // `maxDuration` (11 uses) and `preferredRegion` are NOT rejected — streaming timeouts survive.
+    //
+    // Two constraints only a real build surfaces, both handled:
+    //   1. `generateStaticParams` must return >=1 result — collided with the flag-gated /notes
+    //      "ship dark" pattern. Behaviour is unchanged (the page still calls notFound()); those
+    //      routes are now prerendered AS 404s. Verified live: /notes/<slug> -> 404.
+    //   2. Synchronous IO (`new Date()`, `Date.now()`) fails prerender and CANNOT be deferred with
+    //      `instant = false`. Hence NEXT_PUBLIC_BUILD_YEAR above (footer) and
+    //      `await connection()` + `instant = false` on /admin/telemetry.
+    cacheComponents: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],
@@ -130,12 +196,15 @@ const nextConfig: NextConfig = {
     // The global securityHeaders sets frame-ancestors 'none' (clickjacking defense);
     // we override only X-Frame-Options and the CSP frame-ancestors directive here.
     const resumeHeaders = securityHeaders.map((h) => {
-      if (h.key === "X-Frame-Options") return { key: h.key, value: "SAMEORIGIN" };
+      if (h.key === "X-Frame-Options")
+        return { key: h.key, value: "SAMEORIGIN" };
       if (h.key === "Content-Security-Policy") {
         return {
           key: h.key,
-          value: h.value
-            .replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+          value: h.value.replace(
+            "frame-ancestors 'none'",
+            "frame-ancestors 'self'",
+          ),
         };
       }
       return h;

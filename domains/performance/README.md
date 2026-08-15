@@ -13,21 +13,48 @@ output (`ANALYZE=true pnpm build`) and web-vitals measurements. Produces bundle 
 PRs, lazy-loading improvements, and signals flagging regressions.
 
 ## Current focus
-Two tracks, both unblocked as of the 2026-08-12 correction below:
-1. **cacheComponents migration** — reclassified from "upstream blocked" to ours-to-do (26 segment
-   configs / 22 files). Gated on a 16.3.0 upgrade.
-2. **R3F twin-chunk** — still genuinely unresolved upstream, but there is now an untestable-until-16.3.0
-   lever worth an A/B. Measured baseline: 2 × 876 KB chunks, ~1.75 MB duplicated.
+Both long-standing tracks are **DONE** — implemented in the PRs below, not merely reclassified.
+Neither needed an upstream fix; the original "upstream blocked" diagnosis was wrong on both.
+
+1. **cacheComponents migration** — ✅ implemented in **#121**. All 26 segment configs migrated
+   (scope confirmed empirically: enabling the flag failed with exactly `26 errors`). Verified on
+   the live Vercel preview, including `x-vercel-cache: PRERENDER` on the routes that should be
+   static and a preserved `404` on the flag-gated `/notes/[slug]`.
+2. **R3F twin-chunk** — ✅ resolved by the Next **16.3.0** upgrade itself (**#120**), with *no*
+   experimental flags. `2036 KB / 5 chunks (two 876 KB copies)` → `1160 KB / 4 chunks (one copy)`
+   = **−876 KB (−43%)**, confirmed by the `WebGLRenderer` symbol appearing in exactly one chunk
+   rather than by chunk count alone.
+
+The planned `turbopackChunking` / `turbopackSharedRuntime` A/B was **cancelled, not skipped**: the
+win is already banked without them, both are doc-labeled "not recommended for production", and
+`turbopackSharedRuntime` shipped with a hydration-breaking race. Rationale is recorded in
+`next.config.ts` so it isn't relitigated.
 
 ## Backlog
 - [ ] Run `ANALYZE=true pnpm build` and check `.next/analyze/` for any new large chunks
 - [ ] Verify AnvilCoreSurface lazy-load is still saving ~148KB per page (shipped v2.6.0-B)
-- [ ] A/B the R3F twin-chunk lever on 16.3.0 (`turbopackChunking: { minChunkSize: 0 }` +
-      `turbopackSharedRuntime: true`) — record before/after even if it produces no win
-- [ ] Coalesce per-chunk writes in `src/components/chat/use-chat.ts` (~L146-188) — currently re-parses
-      the whole accumulated string and re-renders per network chunk, so cost grows with message length
+- [ ] **Compress `public/avatar/sairam.glb`** — 2.5 MB uncompressed (no Draco / meshopt / KTX2),
+      larger than the entire JS bundle, and on the hero path once `NEXT_PUBLIC_HERO_MODE=avatar`.
+      Ships dark by default so not urgent, but should land before that flag is flipped.
 - [ ] Add web-vitals collection to Vercel Analytics dashboard (already has `@vercel/speed-insights`)
 - [ ] Check LCP on `/?view=gamified` — 3D canvas should not be in critical path
+- [x] ~~A/B the R3F twin-chunk lever on 16.3.0~~ — cancelled; resolved by the upgrade alone (#120)
+- [x] ~~Coalesce per-chunk writes in `src/components/chat/use-chat.ts`~~ — done in **#122**
+
+## Regression guards (cheap checks, silent failures otherwise)
+Each of these fails *silently* — nothing type-checks or test-fails when they regress, the bundle
+just quietly doubles.
+
+- **R3F dedup depends on ONE resolved `three` version.** After any `three`/fiber/drei bump:
+  `find node_modules/.pnpm -maxdepth 1 -name "three@*"` should show a single live version, and
+  `WebGLRenderer` should grep to exactly one chunk. (Checked for Dependabot #118 → `three` 0.185.1
+  preserves it: 1160 → 1164 KB, one copy.)
+- **`src/lib/r3f.ts` is load-bearing.** The barrel gives the bundler one module-graph node for the
+  R3F universe, which is the precondition 16.3.0's chunking exploits. Do not delete it on the
+  theory that "16.3 handles this now" — that combination was never tested.
+- **Each new `dynamic()` R3F boundary added a copy pre-16.3.0.** Measured on the avatar branch
+  (#103): a third boundary took 16.2.9 from 2 copies / 2036 KB to 3 copies / 2988 KB, while the
+  same branch on 16.3.0 collapses to 1 copy / 1236 KB.
 
 ## Evidence & analysis
 *(link signals and docs here as they accumulate)*
@@ -42,8 +69,12 @@ Two tracks, both unblocked as of the 2026-08-12 correction below:
 > **Corrected 2026-08-12.** All three entries below previously misdiagnosed their own cause. Two were
 > not "waiting for a Next.js fix" at all. Verified against the compiler source at the pinned version,
 > the installed `node_modules`, and upstream issue/PR state — not from memory.
+>
+> **Updated 2026-08-15: the first two are now RESOLVED**, not just reclassified. Their diagnostic
+> detail is kept below because the *mechanism* explanations remain correct and useful — only the
+> "still blocked" framing was stale. Exactly one real constraint remains (ESLint 10).
 
-- **PPR / `cacheComponents`** — *not upstream-blocked; ours to do.* The RSC transform rejects the
+- ✅ **RESOLVED in #121** — **PPR / `cacheComponents`** — *not upstream-blocked; ours to do.* The RSC transform rejects the
   **presence** of `export const runtime`, never its value (`react_server_components.rs`, verified at tag
   v16.2.9; Next's own e2e test asserts the build fails). `nodejs` is already the default and Cache
   Components *requires* it — only `edge` is unsupported. So the exports are redundant and the fix is
@@ -51,17 +82,28 @@ Two tracks, both unblocked as of the 2026-08-12 correction below:
   `instant = false` defers validation, not this check. Real scope is **26 configs / 22 files**
   (13 `runtime` → delete · 4 `revalidate` → need `"use cache"` + `cacheLife` · 9 `force-dynamic` →
   investigate first, they work around the `[param].ext` params gap, not caching). `maxDuration` survives.
-  Prerequisite: **16.3.0**.
+  Prerequisite: **16.3.0** — satisfied in #120. All 26 migrated in #121; the `26 errors` the
+  build reported on enabling the flag matched this inventory exactly. Two constraints only a real
+  build surfaced: `generateStaticParams` must return >=1 result (collided with the flag-gated
+  `/notes` ship-dark pattern), and synchronous IO (`new Date()`, `Date.now()`) fails prerender and
+  is NOT deferrable via `instant = false`.
 
-- **R3F twin-chunk** — *genuinely unresolved upstream.* Confirmed real by measurement: two chunks of
+- ✅ **RESOLVED in #120** — **R3F twin-chunk.** The framing below (*"genuinely unresolved upstream"*)
+  was accurate when written and is now obsolete: upgrading to **16.3.0 fixed it outright**, with no
+  experimental flags and no upstream change. Post-fix: `1160 KB / 4 chunks`, `WebGLRenderer` in
+  exactly ONE chunk. The measurement and mechanism notes below are retained as the historical record.
+  Confirmed real by measurement: two chunks of
   **876 KB each** both containing `react-three`/`THREE.` (~1.75 MB duplicated) across **16 `dynamic()`
   boundaries**. `experimental.turbopackChunking` did ship in stable **16.3.0**, but it is a set of
   size/merge thresholds, **not** a dedup primitive — zero mentions of three/R3F across the PR's 29
   changed files, and neither it nor `turbopackSharedRuntime` exists in the installed 16.2.9.
   Upstream request is [vercel/next.js#96040](https://github.com/vercel/next.js/discussions/96040)
-  (still OPEN; reproductions at 2.08 copies/module vs webpack's 1.00). Untested lever worth an A/B:
-  `turbopackChunking: { minChunkSize: 0 }` + `turbopackSharedRuntime: true` — never tested against
-  three.js, and the `src/lib/r3f.ts` barrel (commit `f7c5110`) may already have captured most of the win.
+  (still OPEN; reproductions at 2.08 copies/module vs webpack's 1.00) — now moot for us.
+  The proposed A/B (`turbopackChunking: { minChunkSize: 0 }` + `turbopackSharedRuntime: true`) was
+  **CANCELLED, not skipped**: unnecessary once 16.3.0 fixed this, and actively risky — both are
+  doc-labeled "not recommended for production" and `turbopackSharedRuntime` shipped with a
+  hydration-breaking race. Do **not** adopt them for this. The `src/lib/r3f.ts` barrel (commit
+  `f7c5110`) stays: it is load-bearing for the single-copy outcome and was never tested absent.
   Do **not** re-try `optimizePackageImports` — already disproven here (commit `6246ed9`).
 
 - **ESLint 10** — *hard-blocked upstream, and the recorded cause was wrong.* `eslint-config-next` does
@@ -105,3 +147,10 @@ Two tracks, both unblocked as of the 2026-08-12 correction below:
             (218 agents, 50 claims verified / 20 refuted) + direct compiler-source and node_modules
             inspection. PPR reclassified from upstream-blocked to ours-to-do; R3F confirmed real by
             measurement; ESLint cause corrected and a stay-on-9 decision recorded.
+2026-08-15 | both long-standing "upstream blocked" tracks CLOSED. #120 (Next 16.3.0) resolved the R3F
+            twin-chunk outright with no experimental flags (2036 -> 1160 KB, two copies -> one, verified
+            by symbol count); #121 migrated all 26 cacheComponents segment configs and was verified on
+            the live Vercel preview; #122 coalesced chat streaming writes to one commit per frame.
+            The turbopackChunking/turbopackSharedRuntime A/B was cancelled as unnecessary and risky.
+            #103 (avatar) unblocked — its GLB had landed on develop; measured that a third dynamic()
+            boundary costs a third three.js copy pre-16.3.0, so #120 must merge first.

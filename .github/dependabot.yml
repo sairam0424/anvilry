@@ -82,4 +82,21 @@ updates:
     ignore:
       - dependency-name: "@react-three/postprocessing"
         versions: ["3.0.5"]
+      # TypeScript 7 breaks the LINT toolchain, not our code. `@typescript-eslint/typescript-estree`
+      # (8.61.0) crashes on load under typescript@7.0.2 with
+      #   TypeError: Cannot read properties of undefined (reading 'Cjs')
+      #   at .../typescript-estree/dist/create-program/shared.js:59
+      # Reproduced with eslint pinned at 9.39.4, so this is NOT the ESLint 10 issue — it is
+      # @typescript-eslint lacking TS7 support. Notably `tsc --noEmit` under TS 7.0.2 is CLEAN, so
+      # OUR source is already TS7-ready; only linting fails. Re-check when @typescript-eslint
+      # announces TypeScript 7 support, then drop this entry.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # ESLint 10 is separately blocked upstream (see domains/performance/README.md):
+      # eslint-plugin-react calls APIs removed in 10 (sourceCode.getJSDocComment has no
+      # replacement), and eslint-config-next's vendored Babel 7 @babel/eslint-parser lacks
+      # ScopeManager#addGlobals with Babel having ruled out ESLint 10 support in Babel 7.
+      # Re-check trigger: jsx-eslint/eslint-plugin-react#4022.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
 

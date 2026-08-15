@@ -4,6 +4,62 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] — 2026-08-15
+
+**Minor** — Next.js 16.3.0, Cache Components enabled, hero avatar, chat streaming rewrite.
+
+Two performance items recorded for months as "upstream blocked" turned out to be
+misdiagnosed; both are now shipped and neither needed an upstream fix.
+
+### Added
+- **Hero avatar (Tier 1)** — cursor-reactive 3D avatar with procedural gaze and idle
+  breathing, behind `NEXT_PUBLIC_HERO_MODE=avatar`. **Default remains `graph`**, so this
+  ships dark. Note the shipped GLB is an Avaturn export with **zero morph targets**, so the
+  eye-gaze code path is inert; head/neck rotation and idle breathing (bone-driven) do work.
+- **`cacheComponents: true`** — supersedes the old `experimental.ppr` / `dynamicIO` /
+  `useCache` opt-ins as a single key.
+- **`NEXT_PUBLIC_BUILD_YEAR`** — computed in `next.config.ts` at build time and inlined, so
+  the footer copyright is a stable value the prerenderer accepts. Do NOT set this by hand.
+- First loop-level test coverage of the chat streaming read loop, plus GLB asset-invariant
+  tests (`src/lib/avatar-glb.test.ts`). 484 -> 531 tests.
+
+### Changed
+- **Next.js 16.2.9 -> 16.3.0.** Removed `experimental.viewTransition`, which no longer exists
+  in 16.3 — it graduated to always-on. This is a no-op here: the flag gated React's
+  `<ViewTransition>` component, which this codebase never adopted (the four-view transition is
+  the native `document.startViewTransition` path).
+- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,
+  4 `revalidate`, 9 `dynamic = "force-dynamic"`. Handled per data source rather than
+  uniformly: `/projects` uses `"use cache"` + `cacheLife("hours")` because it awaits a live
+  GitHub fetch; `/work` and `/notes` simply dropped theirs (build-time Velite data only).
+- **`/llms-full.txt` is now static** rather than `force-dynamic` — its old rationale did not
+  hold, since `buildCorpus()` reads build-time content and a static route is regenerated
+  every deploy anyway.
+- **Chat streaming writes are coalesced** to at most one commit per animation frame, with a
+  250ms background-tab safety flush. React's automatic batching does not help here because
+  streamed chunks arrive on separate macrotasks. Thinking-phase timing now derives from byte
+  arrival rather than render deltas.
+- **Avatar GLB recompressed** 2.55 MB -> 1.055 MB (-59%) by re-encoding all 13 textures to
+  WebP via `EXT_texture_webp` at unchanged resolution. Geometry was untouched (it was already
+  meshopt-compressed; textures were ~90% of the payload).
+- Dependencies: three 0.185.1, @react-three/fiber 9.7.0, @react-three/drei 10.7.8,
+  postprocessing 6.39.4, @types/three 0.185.4.
+
+### Fixed
+- **R3F twin-chunk resolved** — the 16.3.0 upgrade alone collapsed two 876 KB copies of
+  three.js into one: 2036 KB -> 1160 KB (-876 KB, -43%). No experimental flags were needed;
+  `turbopackChunking` / `turbopackSharedRuntime` were evaluated and deliberately NOT adopted
+  (both doc-labeled "not recommended for production").
+- Corrected false "upstream blocked" claims in `next.config.ts` and
+  `domains/performance/README.md`. The real segment-config count was 26, not the 9 recorded.
+
+### Pinned
+- **`@react-three/postprocessing` held at 3.0.4.** 3.0.5 ships a types-only regression: its
+  `ChromaticAberration` props are declared `Omit<Partial<ConstructorParameters<...>[0]>, 'offset'>`,
+  but that constructor parameter is optional, so the type includes `| undefined`, `keyof`
+  collapses to `never`, and every real prop is erased. A version-scoped Dependabot `ignore`
+  accompanies the pin so 3.0.6+ still comes through.
+
 ## [3.0.1] — 2026-06-25
 
 **Patch** — daily site health-check cron + Hobby plan schedule fix.

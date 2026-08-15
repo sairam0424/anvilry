@@ -33,9 +33,13 @@ win is already banked without them, both are doc-labeled "not recommended for pr
 ## Backlog
 - [ ] Run `ANALYZE=true pnpm build` and check `.next/analyze/` for any new large chunks
 - [ ] Verify AnvilCoreSurface lazy-load is still saving ~148KB per page (shipped v2.6.0-B)
-- [ ] **Compress `public/avatar/sairam.glb`** — 2.5 MB uncompressed (no Draco / meshopt / KTX2),
-      larger than the entire JS bundle, and on the hero path once `NEXT_PUBLIC_HERO_MODE=avatar`.
-      Ships dark by default so not urgent, but should land before that flag is flipped.
+- [x] ~~Compress `public/avatar/sairam.glb`~~ — done in **#124**: 2.55 MB -> 1.055 MB (-59%).
+      NOTE the original diagnosis in this backlog was WRONG and is corrected here: the asset was
+      never "uncompressed (no Draco/meshopt/KTX2)" — `extensionsUsed` already carried
+      EXT_meshopt_compression + KHR_mesh_quantization, so geometry was the SMALL part (~190 KB for
+      24,370 triangles). The weight was TEXTURES (~2.28 MB of the 2.52 MB BIN chunk, ~90%), one
+      1024x1024 PNG alone being 925 KB. Fixed by re-encoding all 13 textures to WebP via
+      EXT_texture_webp at UNCHANGED resolution. Draco would not have helped.
 - [ ] Add web-vitals collection to Vercel Analytics dashboard (already has `@vercel/speed-insights`)
 - [ ] Check LCP on `/?view=gamified` — 3D canvas should not be in critical path
 - [x] ~~A/B the R3F twin-chunk lever on 16.3.0~~ — cancelled; resolved by the upgrade alone (#120)
@@ -54,7 +58,12 @@ just quietly doubles.
   theory that "16.3 handles this now" — that combination was never tested.
 - **Each new `dynamic()` R3F boundary added a copy pre-16.3.0.** Measured on the avatar branch
   (#103): a third boundary took 16.2.9 from 2 copies / 2036 KB to 3 copies / 2988 KB, while the
-  same branch on 16.3.0 collapses to 1 copy / 1236 KB.
+  same branch on 16.3.0 collapses to 1 copy.
+- **CURRENT BASELINE (integrated, post-#121/#123/#124, measured with production hero defaults):
+  exactly 1 three.js copy, 1248 KB total across R3F chunks, 113/113 static pages.** Use these
+  numbers, not the per-branch figures above, when checking for regression. Note the raw
+  `grep -l "react-three" | wc -l` metric below returns 5 (chunks REFERENCING R3F) — that is not
+  the copy count. The copy count is `grep -l "WebGLRenderer" | wc -l`, which must be 1.
 
 ## Evidence & analysis
 *(link signals and docs here as they accumulate)*

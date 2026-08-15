@@ -69,3 +69,17 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+    # `@react-three/postprocessing` 3.0.5 ships a types-only regression that breaks the
+    # build. Its ChromaticAberration props are declared as
+    #   Omit<Partial<ConstructorParameters<typeof ChromaticAberrationEffect>[0]>, 'offset'>
+    # but that constructor parameter is OPTIONAL, so ConstructorParameters[0] includes
+    # `| undefined`. `keyof` of a union is the INTERSECTION of its keys and `keyof undefined`
+    # is `never`, so Omit collapses the whole prop set to `{}` and every real prop
+    # (radialModulation, modulationOffset, …) becomes unknown. Runtime is unaffected — the
+    # component still spreads ...props — so only `tsc` catches it.
+    # Pinned to 3.0.4 in package.json. This ignore is scoped to the single broken version so
+    # 3.0.6+ (expected to carry the fix) still comes through normally.
+    ignore:
+      - dependency-name: "@react-three/postprocessing"
+        versions: ["3.0.5"]
+

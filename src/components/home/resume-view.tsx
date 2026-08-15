@@ -26,7 +26,13 @@
 
 import Link from "next/link";
 import { allWork, allProjects } from "@/lib/content";
-import { profile, skills, achievements, resumeVariants, impactMetrics } from "@/lib/profile";
+import {
+  profile,
+  skills,
+  achievements,
+  resumeVariants,
+  impactMetrics,
+} from "@/lib/profile";
 
 const WRAPPER_CLASS =
   "bg-bg-base px-4 py-10 text-fg print:bg-white print:text-black sm:px-8";
@@ -38,7 +44,6 @@ function ResumeContent() {
 
   return (
     <div className="mx-auto max-w-3xl">
-
       {/* ── Identity ──────────────────────────────────────────────────────── */}
       <header className="mb-8 border-b border-border pb-6 print:border-gray-300">
         <h1 className="text-2xl font-semibold tracking-tight print:text-black">
@@ -54,8 +59,8 @@ function ResumeContent() {
             className="text-accent hover:underline print:text-black"
           >
             {profile.email}
-          </a>
-          {" "}·{" "}
+          </a>{" "}
+          ·{" "}
           <a
             href={profile.links.github}
             target="_blank"
@@ -63,8 +68,8 @@ function ResumeContent() {
             className="text-accent hover:underline print:text-black"
           >
             GitHub
-          </a>
-          {" "}·{" "}
+          </a>{" "}
+          ·{" "}
           <a
             href={profile.links.linkedin}
             target="_blank"
@@ -81,9 +86,10 @@ function ResumeContent() {
         {/* Impact metrics strip */}
         <div className="mt-4 flex flex-wrap gap-4">
           {impactMetrics.map((m) => (
-            <div key={m.label} className="text-sm">
-              <span className="font-semibold text-accent print:text-black">{m.value}</span>
-              {" "}
+            <div key={m.sub} className="text-sm">
+              <span className="font-semibold text-accent print:text-black">
+                {m.value}
+              </span>{" "}
               <span className="text-fg-muted print:text-gray-600">
                 {m.label} ({m.sub})
               </span>
@@ -102,12 +108,16 @@ function ResumeContent() {
               className="rounded-lg border border-border p-4 print:border-gray-300"
             >
               <div className="flex flex-wrap items-start justify-between gap-1">
-                <h3 className="font-medium text-fg print:text-black">{w.name}</h3>
+                <h3 className="font-medium text-fg print:text-black">
+                  {w.name}
+                </h3>
                 <span className="font-mono text-[10px] uppercase tracking-wider text-fg-subtle print:text-gray-500">
                   {w.register}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-fg-muted print:text-gray-700">{w.role}</p>
+              <p className="mt-1 text-sm text-fg-muted print:text-gray-700">
+                {w.role}
+              </p>
               {w.metrics.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-3">
                   {w.metrics.map((met) => (
@@ -127,7 +137,9 @@ function ResumeContent() {
 
       {/* ── Open-Source Projects ──────────────────────────────────────────── */}
       <section className="mb-8">
-        <h2 className="mono-label mb-4 print:text-black">Open-Source Projects</h2>
+        <h2 className="mono-label mb-4 print:text-black">
+          Open-Source Projects
+        </h2>
         <div className="space-y-3">
           {allProjects.map((p) => (
             <div
@@ -135,12 +147,16 @@ function ResumeContent() {
               className="rounded-lg border border-border p-3 print:border-gray-300"
             >
               <div className="flex flex-wrap items-start justify-between gap-1">
-                <h3 className="font-medium text-fg print:text-black">{p.name}</h3>
+                <h3 className="font-medium text-fg print:text-black">
+                  {p.name}
+                </h3>
                 <span className="font-mono text-[10px] text-fg-subtle print:text-gray-500">
                   {p.group}
                 </span>
               </div>
-              <p className="mt-1 text-xs text-fg-muted print:text-gray-700">{p.tagline}</p>
+              <p className="mt-1 text-xs text-fg-muted print:text-gray-700">
+                {p.tagline}
+              </p>
             </div>
           ))}
         </div>
@@ -155,7 +171,9 @@ function ResumeContent() {
               <span className="min-w-[11rem] shrink-0 font-medium text-fg print:text-black">
                 {s.group}
               </span>
-              <span className="text-fg-muted print:text-gray-700">{s.items.join(", ")}</span>
+              <span className="text-fg-muted print:text-gray-700">
+                {s.items.join(", ")}
+              </span>
             </div>
           ))}
         </div>
@@ -167,8 +185,12 @@ function ResumeContent() {
         <ul className="space-y-1">
           {achievements.map((a) => (
             <li key={a.title} className="flex flex-wrap gap-x-2 text-sm">
-              <span className="font-medium text-fg print:text-black">{a.title}</span>
-              <span className="text-fg-subtle print:text-gray-600">— {a.detail}</span>
+              <span className="font-medium text-fg print:text-black">
+                {a.title}
+              </span>
+              <span className="text-fg-subtle print:text-gray-600">
+                — {a.detail}
+              </span>
             </li>
           ))}
         </ul>
@@ -203,8 +225,8 @@ function ResumeContent() {
             className="text-accent hover:underline print:text-black"
           >
             {profile.email}
-          </a>
-          {" "}or on{" "}
+          </a>{" "}
+          or on{" "}
           <Link
             href={profile.links.linkedin}
             target="_blank"
@@ -215,7 +237,6 @@ function ResumeContent() {
           </Link>
         </p>
       </footer>
-
     </div>
   );
 }

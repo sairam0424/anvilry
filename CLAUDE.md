@@ -45,6 +45,49 @@ make trace TRACE_ID=abc123           # replay a request from Redis telemetry
 make deploy-prod                     # vercel deploy --prod
 ```
 
+### Extended Makefile Targets
+
+```bash
+# Environment
+make env-check             # audit which env vars are set (Bedrock, Redis, GCP TTS, admin, flags)
+make env-setup             # step-by-step guide to bootstrap .env.local
+make env-vercel            # pull Vercel production vars into local .env.local
+
+# Feature flags
+make flags-show            # print all NEXT_PUBLIC_* flags + current values
+make flags-beast           # print unlock commands for all visual effects (orb bloom, ink, skill tree)
+make flags-notes-on / flags-notes-off  # toggle /notes section on Vercel
+
+# Observability
+make logs                  # stream Vercel runtime logs
+make logs-llm              # stream logs, grep LLM lines
+make admin                 # open /admin/telemetry in browser
+
+# Deployment / git
+make deploy-preview        # trigger manual Vercel preview
+make rollback              # rollback to previous Vercel deployment
+make pr                    # open PR: current branch → develop
+make pr-prod               # open PR: develop → main
+make push                  # push current branch
+
+# Content management
+make resume-list / resume-open   # manage PDFs in public/resume/
+```
+
+---
+
+## Branch Model & CI
+
+**Branch topology:**
+- `develop` — integration branch; all feature work targets this; Vercel Preview deploys
+- `main` — production release branch; merged from `develop` only; Vercel Production deploys
+
+**CI pipeline (`.github/workflows/`):**
+- `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm test`. Generates `.velite/` before typecheck and vitest — this mirrors the production build order and is required because `.velite/` is gitignored.
+- `bundle-analysis.yml` — runs on `develop`/`main` and their PRs; posts bundle-diff comment.
+- `codeql.yml` — static JavaScript/TypeScript analysis on `develop` PRs + weekly.
+- `dependency-review.yml` — dependency security check on PRs.
+
 ---
 
 ## Architecture Overview
@@ -64,6 +107,41 @@ View state is managed via a **module-level external store** (`src/components/vie
 
 View switches reflect in `?view=` query params (no localStorage/cookie persistence — first load is always Classic by owner design).
 
+### Route Tree
+
+```
+/ (SSG → ViewRouter → Classic | Chat | Gamified | Developer)
+├── /projects                    ISR 1h; live GitHub feed server-side
+│   └── /[slug]
+├── /articles                    cross-posted + native articles
+│   └── /[slug]
+├── /notes
+│   └── /[slug]
+├── /work
+│   └── /[slug]
+├── /resume                      print-optimized recruiter view
+├── /search                      Pagefind static search
+├── /stats                       GitHub/writing aggregate stats
+├── /mcp                         MCP server documentation (force-static)
+├── /about
+├── /admin/telemetry             HTTP Basic Auth; reads Upstash Redis
+├── /.well-known/vercel/flags    Vercel Flags SDK endpoint
+├── /llms.txt                    AI model discovery file
+├── /feed.xml                    RSS/Atom
+├── /api/resume.json
+├── /api/chat                    LLM streaming; rate-limited; telemetry (Node, 30s)
+├── /api/mcp/[transport]         MCP server — GET/POST/DELETE; use /api/mcp/mcp (Node, 30s)
+├── /api/tts                     AWS Polly TTS caching; rate-limited
+├── /api/tts-google              Google Cloud TTS caching; rate-limited
+├── /api/transcribe              AWS Transcribe STT; rate-limited
+├── /api/visit                   page visit tracking
+├── /api/error                   client-side error beaconing
+├── /api/github/stats            ISR 1h; GitHub aggregate feed
+└── /api/cron/eval               evaluation cron (CRON_SECRET protected)
+```
+
+All content routes generate per-route `opengraph-image.tsx` images. Every API route runs on the **Node.js runtime** (not Edge) with a 30s max duration.
+
 ### Content Layer
 
 All content (work case studies, OSS projects, notes, articles) lives in `content/` as MDX files. **Velite** processes them at build time into typed TypeScript collections in `.velite/`. The access layer is `src/lib/content.ts`.
@@ -80,6 +158,10 @@ No view owns its own copy of content. Every view derives from the same Velite ou
 
 **Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean` in dev mode or you'll get a race where webpack tries to resolve a momentarily deleted `.velite/projects.json`. The `build` script passes `--clean` explicitly for a pristine production build.
 
+**Notes accept both `.md` and `.mdx`** — `.md` files come from the Inkforge pipeline and carry extended frontmatter (`tone`, `format`, `length`, `wordCount`, `readingTime`, `generatedBy`, `platforms`). Hand-written `.mdx` notes omit these fields and still compile.
+
+**Articles support a `linkedNote` field** — when set to a note slug, the article card links to the `/notes/[slug]` page instead of the external URL. Use this for cross-posted content to avoid duplicate body rendering.
+
 ### LLM / Chat Architecture
 
 `src/lib/llm.ts` is the single source of truth for the chatbot's AI layer:
@@ -91,6 +173,33 @@ No view owns its own copy of content. Every view derives from the same Velite ou
 - **Telemetry:** Each model attempt emits an `LlmAttempt` span via `onAttempt` callback. The chat route uses this to write structured `llm.attempt` events for the dashboard.
 
 The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). No vector DB at this scale. The model can emit `[[card:work:slug]]` intent tokens; the client validates slugs against a build-time allowlist before rendering — this is the structural zero-fabrication guard.
+
+### MCP Server
+
+`/api/mcp/[transport]` exposes the portfolio as a read-only MCP server (HTTP Streamable, legacy SSE disabled). Public endpoint: `https://anvilry.vercel.app/api/mcp/mcp`.
+
+**7 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):
+
+| Tool | Description |
+|---|---|
+| `get_profile` | Identity, headline, links, skills, achievements |
+| `list_projects` | All OSS projects |
+| `get_project` | Single project by slug |
+| `list_work` | All case studies |
+| `get_work` | Single case study by slug |
+| `search_experience` | Keyword search across work, projects, skills |
+| `get_resume_variant` | Role-targeted PDF URL (`master \| backend \| fullstack \| frontend \| genai`) |
+
+Deliberately excludes `personal.ts` (hobbies) — professional-only surface. Tools return `isError: true` with valid options on not-found rather than fabricating.
+
+**Configuration:**
+```
+# Claude Desktop
+npx -y mcp-remote https://anvilry.vercel.app/api/mcp/mcp
+
+# Cursor (direct HTTP)
+https://anvilry.vercel.app/api/mcp/mcp
+```
 
 ### Voice Layer
 
@@ -112,6 +221,18 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 
 - `/api/chat`, `/api/tts`, `/api/transcribe` are guarded by Upstash Redis rate limiting (8 req/min per IP).
 - Telemetry uses a dual-sink strategy: Vercel Runtime Logs (permanent) + Upstash Redis sorted sets (7-day retention, queryable). The `/admin/telemetry` dashboard is HTTP Basic Auth–protected via `ADMIN_PASSWORD`.
+- `src/proxy.ts` is the **Edge-runtime** auth gate for `/admin/*` (uses Web Crypto SubtleCrypto SHA-256). `src/lib/admin-auth.ts` is the **server-side** version (Node.js `timingSafeEqual`). Both exist because Edge runtime lacks Node.js APIs.
+
+### Feature Flags
+
+Two mechanisms — choose based on how fast you need the toggle:
+
+| Mechanism | How | Latency |
+|---|---|---|
+| `NEXT_PUBLIC_*` env vars | Build-time; set in Vercel dashboard → redeploy | Minutes |
+| Vercel Flags SDK | Runtime; set `FLAG_DRIVER=vercel` → instant | Seconds |
+
+Key flags: `NEXT_PUBLIC_DISCOVERY_BADGES`, `NEXT_PUBLIC_OPEN_TO_WORK`, `NEXT_PUBLIC_GITHUB_STATS_ENABLED`, `NEXT_PUBLIC_ANVIL_ORB_MODE`, `NEXT_PUBLIC_INK_TRANSITION`, `NEXT_PUBLIC_SKILL_TREE`. Run `make flags-show` to see all current values.
 
 ---
 
@@ -125,10 +246,20 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 | `src/lib/corpus.ts` | Chatbot grounding corpus (built from Velite output) |
 | `src/lib/game-model.ts` | 3D graph derivation layer + content-coverage assertions |
 | `src/lib/content.ts` | Velite typed-access layer |
+| `src/lib/mcp-tools.ts` | Pure MCP tool implementations (transport-agnostic) |
+| `src/lib/agent-trace.ts` | Glass-box agent demo; `PLACEHOLDER_SENTINEL` shipping gate |
+| `src/lib/voice-settings-context.tsx` | Persisted voice prefs (external store, localStorage) |
+| `src/lib/voice-catalog.ts` | Authoritative voice catalog for all engines |
+| `src/lib/rate-limit.ts` | Per-IP Upstash rate limiter (fails open) |
+| `src/lib/redis.ts` | Upstash Redis singleton (shared by rate-limit, telemetry, admin) |
+| `src/lib/flags.ts` | Feature flag resolver (build-time env vs. Vercel Flags SDK runtime) |
+| `src/proxy.ts` | Edge-runtime HTTP Basic Auth for /admin/* (SubtleCrypto) |
 | `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |
-| `next.config.ts` | CSP headers, security, Turbopack, experimental flags |
+| `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags |
 | `src/app/api/chat/route.ts` | LLM streaming endpoint |
-| `src/instrumentation.ts` | Next.js instrumentation hook (telemetry init) |
+| `src/app/api/mcp/[transport]/route.ts` | MCP server (7 read-only tools) |
+| `src/instrumentation.ts` | Next.js instrumentation hook (config snapshot on cold start) |
+| `src/instrumentation-client.ts` | Browser error beaconing + web-vitals reporting |
 
 ---
 
@@ -151,9 +282,14 @@ UPSTASH_REDIS_REST_TOKEN=...
 GOOGLE_TTS_API_KEY=...
 ADMIN_PASSWORD=...                    # /admin/telemetry dashboard
 NEXT_PUBLIC_ANVIL_ORB_MODE=inplace    # build-time feature flags
+CRON_SECRET=...                       # /api/cron/eval protection
 ```
 
 Pull production env vars with: `vercel env pull .env.local`
+
+**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missing the `u`). Always use `BEDROCK_REGION`.
+
+**Custom domain:** If pointing a custom domain at the deployment, update the hardcoded base URL in exactly four files: `src/app/layout.tsx`, `src/app/sitemap.ts`, `src/app/robots.ts`, `src/components/json-ld.tsx`.
 
 ---
 
@@ -167,9 +303,11 @@ Work frontmatter supports optional `constraints`, `tradeoffs`, and `diagram`/`di
 
 ## Testing Notes
 
-- `game-model.test.ts` asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned. Run it whenever you add or rename content.
+- `game-model.test.ts` asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned. Run it whenever you add or rename content. Three node IDs intentionally differ from their slugs: `aava` → `aava-code`, `grpc` → `grpc-microservices`, `nhl` → `not-humans-lab` — this is by design, not a bug.
 - `ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these.
 - `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`). A future SDK update that returns camelCase would silently zero out token telemetry; this test is the regression guard.
+- `agent-trace.test.ts` blocks shipping the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contains `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). The demo is dark until the owner fills in real reasoning traces.
+- **Vitest runs two projects:** `node` (default, all `*.test.ts` except `*.dom.test.*`) and `dom` (happy-dom environment, all `*.dom.test.*`). `NODE_ENV` is forced to `"test"` to prevent React's missing `act()` warning in the production-default Node environment.
 - Tests run as part of `pnpm build` — a failing test blocks deployment.
 
 ---

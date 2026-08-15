@@ -36,7 +36,9 @@ export function TalkModeOverlay({
             // Land focus on the primary (mic/start) control rather than the dialog
             // container, so a keyboard user can start talking immediately (WCAG 2.4.3).
             const content = e.currentTarget as HTMLElement | null;
-            const primary = content?.querySelector<HTMLButtonElement>('button[type="button"]');
+            const primary = content?.querySelector<HTMLButtonElement>(
+              'button[type="button"]',
+            );
             if (primary) {
               e.preventDefault();
               primary.focus();
@@ -59,13 +61,23 @@ export function TalkModeOverlay({
           <motion.div
             initial={{ opacity: 0, scale: 0.82, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.7 }}
-            className="rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
+            transition={{
+              type: "spring",
+              stiffness: 420,
+              damping: 32,
+              mass: 0.7,
+            }}
+            // max-h-[90vh] + overflow-y-auto: safety net for short viewports where the
+            // Chrome-TTS banner / first-run primer / prompt chips stack on top of the
+            // (already internally-scrollable) caption block and could otherwise still
+            // push the dialog past the screen edge.
+            className="max-h-[90vh] overflow-y-auto rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
           >
             <Dialog.Title className="sr-only">Voice conversation</Dialog.Title>
             <Dialog.Description className="sr-only">
-              Talk with the portfolio assistant. Press Space to talk, Escape to close. A
-              live transcript is shown, and you can always type instead.
+              Talk with the portfolio assistant. Press Space to talk, Escape to
+              close. A live transcript is shown, and you can always type
+              instead.
             </Dialog.Description>
             <TalkMode onClose={() => onOpenChange(false)} />
           </motion.div>

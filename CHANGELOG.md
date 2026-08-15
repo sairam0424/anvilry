@@ -4,6 +4,52 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] — 2026-08-15
+
+**Patch** — dependency updates and a repaired E2E suite. No feature or behaviour changes.
+
+Deliberately a PATCH, not a minor: nothing user-facing changed. Every item below is either a
+dependency bump or a test fix.
+
+### Changed
+- `react` / `react-dom` 19.2.7 -> **19.2.8** (patch)
+- `@anthropic-ai/sdk` ^0.105.0 -> **^0.116.0**, `@anthropic-ai/bedrock-sdk` -> ^0.32.1.
+  Verified against `llm.test.ts`, which pins the SDK's **snake_case** usage field names
+  (`input_tokens`, not `inputTokens`) — a camelCase SDK would silently zero out token
+  telemetry with no crash. 14/14 pass, and production returns non-zero
+  `usage.input_tokens` / `output_tokens` on a live request.
+- `@aws-sdk/client-polly` + `@aws-sdk/client-transcribe-streaming` -> ^3.1108.0
+- `lucide-react` ^1.17.0 -> **^1.31.0**. Bundle measured rather than assumed: lucide still
+  lands in exactly ONE chunk and `optimizePackageImports` still tree-shakes the barrel.
+- `@radix-ui/react-dialog` ^1.1.16 -> ^1.1.23
+- `@types/three` ^0.184.1 -> **^0.185.4**, finally tracking runtime `three@0.185.1`. Caret
+  ranges on `0.x` are restrictive, so `^0.184.1` resolved `>=0.184.1 <0.185.0` and could not
+  follow the runtime bump on its own.
+- Dev tooling: `velite` ^0.3.1 -> ^0.4.0, `@types/node` ^20 -> ^26, `vitest` -> ^4.1.10,
+  `happy-dom` -> ^20.11.2, `@next/bundle-analyzer` -> ^16.3.0
+
+### Fixed
+- **E2E suite was permanently red** — 5 of 19 Playwright tests failing, none of them app bugs.
+  Every failure was a selector that cannot match current markup: `[data-view]` (never existed
+  in src), `input[type="text"]` for a composer that has no `type` attribute,
+  `[role="combobox"]` for a terminal that exposes `[role="log"]`, and a bare
+  `locator("canvas")` that matched two canvases and failed Playwright STRICT MODE — which read
+  as "the 3D view is broken" while it rendered fine. Now **19 passed / 3 skipped / 0 failed**.
+  `pnpm e2e` is not wired into CI, which is why this rotted unnoticed.
+- View-switch assertions raised 5s -> 15s: SSR is always Classic by design (the deep-linked
+  `?view=` applies post-hydration via `ViewQuerySync`), so 5s was racing hydration.
+
+### Held back deliberately
+- **`typescript` major (7.x)** — `@typescript-eslint/typescript-estree` 8.61.0 crashes on load
+  under typescript@7.0.2 (`TypeError: Cannot read properties of undefined (reading 'Cjs')`).
+  Reproduced with `eslint` pinned at 9.39.4, so this is NOT the ESLint 10 issue. Notably
+  `tsc --noEmit` under TS 7.0.2 is **clean** — our source is already TS7-ready; only the lint
+  toolchain fails.
+- **`eslint` major (10.x)** — separately blocked upstream (`eslint-plugin-react` calls APIs
+  removed in 10; `eslint-config-next`'s vendored Babel 7 lacks `ScopeManager#addGlobals`).
+Both blocked via Dependabot `ignore` scoped to `version-update:semver-major`, so minors and
+patches still flow.
+
 ## [3.4.0] — 2026-08-15
 
 **Minor** — Next.js 16.3.0, Cache Components enabled, hero avatar, chat streaming rewrite.

@@ -97,6 +97,14 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Pin the workspace root to this project (multiple lockfiles exist on the machine).
   turbopack: { root: __dirname },
+  // Build-time constants inlined into the client bundle.
+  // NEXT_PUBLIC_BUILD_YEAR exists because the footer copyright year must be a STABLE value:
+  // under nextConfig.cacheComponents, calling `new Date()` during render fails the prerender
+  // ("encountered the unstable value `new Date()` in a Client Component") and that error cannot
+  // be deferred with `instant = false`. Computing it HERE runs in the Node config at build time,
+  // never during prerender, so it is a plain literal by the time the footer renders — and it
+  // still refreshes on every deploy, so it never goes stale in practice.
+  env: { NEXT_PUBLIC_BUILD_YEAR: String(new Date().getFullYear()) },
   // Inline critical CSS into <head> to cut a render-blocking stylesheet request —
   // Tailwind v4 is the exact use case this flag targets. Kept only if a before/after
   // Lighthouse on the deployed URL shows an FCP/LCP win without a TTFB regression.
@@ -140,37 +148,39 @@ const nextConfig: NextConfig = {
     // for production" and `turbopackSharedRuntime` shipped with a hydration-breaking race.
     // The src/lib/r3f.ts barrel stays — it is load-bearing for the single-copy outcome.
     optimizePackageImports: ["lucide-react", "motion"],
-    // Partial Prerendering — in Next 16 this is `cacheComponents: true`, which SUPERSEDES the old
-    // `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins as one top-level key.
+    // Cache Components (Next 16's `cacheComponents: true`) — ENABLED. This one key SUPERSEDES the
+    // old `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins.
     //
-    // NOT YET ENABLED, and the previous comment here misdiagnosed why. Corrected 2026-08-12 after
-    // reading the compiler source at the exact pinned version:
+    // This was recorded for months as "upstream blocked, waiting for a per-route escape hatch".
+    // That diagnosis was WRONG and no upstream fix was ever needed. The RSC transform
+    // (react_server_components.rs, verified at tag v16.2.9) rejects the mere PRESENCE of
+    // `export const runtime` — the `"runtime" =>` arm receives only (&export_name, &span) and never
+    // inspects `decl.init`, so "nodejs" and "edge" are indistinguishable to it. But `nodejs` is
+    // already the DEFAULT and Cache Components *requires* it (only `edge` is unsupported), so those
+    // exports were redundant and the remedy was deletion.
     //
-    //   The RSC transform (crates/next-custom-transforms/src/transforms/react_server_components.rs,
-    //   verified identical at tag v16.2.9) rejects the mere PRESENCE of `export const runtime` — the
-    //   `"runtime" =>` arm receives only (&export_name, &span) and never inspects `decl.init`, so
-    //   "nodejs" and "edge" are indistinguishable to it. Next's own e2e test
-    //   (test/e2e/app-dir/cache-components-segment-configs) patches in `export const runtime = 'nodejs'`
-    //   and asserts the build FAILS. There is no per-route escape hatch: `cacheComponents` is a plain
-    //   boolean in config-shared.ts with no allowlist, and the compiler's only offered remedy is
-    //   deletion. `export const instant = false` (16.3+) defers VALIDATION, not this check.
-    //
-    // So the old claim that those routes "cannot be removed" was backwards: `nodejs` is already the
-    // DEFAULT runtime, and the docs state Cache Components *requires* it (only `edge` is unsupported).
-    // The exports are redundant — the fix is deletion, not waiting on upstream.
-    //
-    // Real migration scope is 26 segment configs across 22 files, not the 9 previously claimed:
-    //   13x `runtime`   — all src/app/api/**/route.ts — safe to delete outright
-    //    4x `revalidate = 3600` — work/notes/projects pages + api/github/stats — carry REAL ISR
-    //       semantics, so these need `"use cache"` + a matching `cacheLife` profile, NOT deletion
-    //    9x `dynamic = "force-dynamic"` — the raw-markdown AI-crawler endpoints + llms-full.txt.
-    //       NOTE: these are NOT a caching decision — see the comment in work/[slug].md/route.ts;
-    //       they work around Next not populating `params` for `[param].ext` segments, so the handler
-    //       reads req.url. Verify empirically before changing; they are the agent-facing freshness surface.
+    // Migration scope was 26 segment configs across 22 files — NOT the 9 previously claimed.
+    // Confirmed empirically: enabling this flag failed the build with exactly `26 errors`.
+    //   13x `runtime`     -> deleted (redundant; nodejs is the default)
+    //    4x `revalidate`  -> handled per actual data source, not uniformly. /projects awaits a live
+    //                        getRepoFeed() so it got `"use cache"` + cacheLife("hours") (that profile
+    //                        is { stale: 300, revalidate: 3600, expire: 86400 }, preserving the old
+    //                        3600s exactly). /work + /notes are pure build-time Velite data with
+    //                        nothing to revalidate against, so theirs were simply deleted.
+    //                        api/github/stats already had fetch-level revalidate.
+    //    9x `force-dynamic` -> deleted; none were a caching decision. The .md routes read req.url
+    //                        (which is what makes them dynamic anyway) and llms-full.txt became
+    //                        correctly STATIC.
     // `maxDuration` (11 uses) and `preferredRegion` are NOT rejected — streaming timeouts survive.
     //
-    // Prerequisite: 16.3.0 (for the `instant` config + `cache-components-instant-false` codemod).
-    // cacheComponents: true,
+    // Two constraints only a real build surfaces, both handled:
+    //   1. `generateStaticParams` must return >=1 result — collided with the flag-gated /notes
+    //      "ship dark" pattern. Behaviour is unchanged (the page still calls notFound()); those
+    //      routes are now prerendered AS 404s. Verified live: /notes/<slug> -> 404.
+    //   2. Synchronous IO (`new Date()`, `Date.now()`) fails prerender and CANNOT be deferred with
+    //      `instant = false`. Hence NEXT_PUBLIC_BUILD_YEAR above (footer) and
+    //      `await connection()` + `instant = false` on /admin/telemetry.
+    cacheComponents: true,
   },
   images: {
     formats: ["image/avif", "image/webp"],

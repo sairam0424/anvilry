@@ -28,6 +28,12 @@ awk '/^## 20/{p=/^## 2026-06/} p' LOG.md
 
 ---
 
+## 2026-08-15 · cacheComponents enabled; Next 16.3.0 resolves R3F twin-chunk (−876 KB) · #performance #docs
+What: Enabled `cacheComponents` by migrating all 26 rejected route segment configs — the long-standing "upstream blocked, needs a per-route escape hatch" claim was false, and the inventory said 9 configs when the real count was 26 (confirmed empirically: the build failed with exactly 26 errors). The 16.3.0 upgrade separately resolved the R3F twin-chunk with no experimental flags: 2036 KB / 5 chunks (two 876 KB copies) → 1160 KB / 4 chunks (one copy), −876 KB (−43%), verified by `WebGLRenderer` appearing in exactly one chunk.
+Refs: PRs #119 (docs correction), #120 (16.3.0, supersedes Dependabot #113), #121 (cacheComponents, stacked on #120); commits be9105f, 89cbba1, 91dbdc9. Rationale for rejecting `turbopackChunking`/`turbopackSharedRuntime` recorded in `next.config.ts`.
+
+---
+
 ## 2026-06-24 · Loop-engineer harness bootstrapped · #harness #loop
 What: Added AI-Builder-Club loop-engineer skills (.claude/skills/), ship-change.js workflow, Playwright E2E suite (e2e/views.spec.ts), and knowledge base (ARCHITECTURE.md, LOG.md, signals/, docs/, domains/).
 Refs: feat/loop-engineer-skills branch, commit bf2038d (skills + e2e).

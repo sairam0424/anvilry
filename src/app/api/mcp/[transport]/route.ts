@@ -3,7 +3,9 @@ import * as T from "@/lib/mcp-tools";
 
 // The SDK transitively needs Node (express/hono) — never edge. Inherently dynamic
 // (POST/SSE), so it can't be statically prerendered and won't regress the Classic SSG.
-export const runtime = "nodejs";
+// NOTE: `export const runtime = "nodejs"` was removed for cacheComponents (which rejects the
+// export's mere presence). Node is still what runs here — it is the DEFAULT runtime, and Cache
+// Components requires it; only `runtime = "edge"` is unsupported. Behaviour is unchanged.
 export const maxDuration = 30;
 
 /** Wrap a tool result as MCP content + structuredContent; mark not-found as an error. */
@@ -29,7 +31,8 @@ const handler = createMcpHandler(
       "get_profile",
       {
         title: "Get profile",
-        description: "Sairam Ugge's identity, headline, links, skills, and achievements.",
+        description:
+          "Sairam Ugge's identity, headline, links, skills, and achievements.",
         inputSchema: {},
       },
       async () => wrap(T.getProfileData()),
@@ -38,7 +41,8 @@ const handler = createMcpHandler(
       "list_projects",
       {
         title: "List open-source projects",
-        description: "All open-source projects (name, tagline, group, repo, tech).",
+        description:
+          "All open-source projects (name, tagline, group, repo, tech).",
         inputSchema: {},
       },
       async () => wrap(T.listProjectsData()),
@@ -56,7 +60,8 @@ const handler = createMcpHandler(
       "list_work",
       {
         title: "List production work",
-        description: "Production work case studies (role, register, metrics, tech).",
+        description:
+          "Production work case studies (role, register, metrics, tech).",
         inputSchema: {},
       },
       async () => wrap(T.listWorkData()),
@@ -74,7 +79,8 @@ const handler = createMcpHandler(
       "search_experience",
       {
         title: "Search experience",
-        description: "Keyword search across work, projects, and skills (e.g. 'kafka', 'multi-agent').",
+        description:
+          "Keyword search across work, projects, and skills (e.g. 'kafka', 'multi-agent').",
         inputSchema: T.searchSchema,
       },
       async ({ query }) => wrap(T.searchExperienceData(query)),
@@ -83,7 +89,8 @@ const handler = createMcpHandler(
       "get_resume_variant",
       {
         title: "Get résumé variant",
-        description: "A role-targeted résumé PDF URL (master, backend, fullstack, frontend, genai).",
+        description:
+          "A role-targeted résumé PDF URL (master, backend, fullstack, frontend, genai).",
         inputSchema: T.resumeRoleSchema,
       },
       async ({ role }) => wrap(T.getResumeVariantData(role)),
@@ -92,7 +99,8 @@ const handler = createMcpHandler(
       "list_all_content",
       {
         title: "List all content",
-        description: "Flat list of every work case study, project, article, and note — with slug, name, summary, and URL.",
+        description:
+          "Flat list of every work case study, project, article, and note — with slug, name, summary, and URL.",
         inputSchema: {},
       },
       async () => wrap(T.listAllContentData()),
@@ -101,7 +109,8 @@ const handler = createMcpHandler(
       "get_content_item",
       {
         title: "Get content item",
-        description: "Fetch a specific content item by type (work, project, article, note) and slug.",
+        description:
+          "Fetch a specific content item by type (work, project, article, note) and slug.",
         inputSchema: T.contentTypeSchema,
       },
       async ({ type, slug }) => wrap(T.getContentItemData(type, slug)),

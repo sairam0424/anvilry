@@ -6,6 +6,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { ProjectCard } from "@/components/project-card";
 import { GithubFeed } from "@/components/github-feed";
 import { getRepoFeed } from "@/lib/github";
+import { cacheLife } from "next/cache";
 
 const description = `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, and developer tooling.`;
 export const metadata: Metadata = {
@@ -14,25 +15,42 @@ export const metadata: Metadata = {
   alternates: { canonical: "/projects" },
   // Page-specific OG so a share of /projects shows this page (Next replaces the nested
   // openGraph per segment, otherwise it inherits the homepage identity).
-  openGraph: { type: "website", url: "/projects", title: `Projects — ${profile.name}`, description },
+  openGraph: {
+    type: "website",
+    url: "/projects",
+    title: `Projects — ${profile.name}`,
+    description,
+  },
 };
 
 // ISR: prerender at build with whatever repos resolve, regenerate at most once/hour.
 // The GitHub API is fetched server-side here (never in the visitor's request path),
 // so the page stays static-served. Empty-safe: getRepoFeed() returns [] on failure
 // and the feed hides.
-export const revalidate = 3600;
-
+//
+// Migrated from `export const revalidate = 3600` (rejected under cacheComponents) to
+// `"use cache"` + cacheLife("hours"). This preserves the cadence EXACTLY: the built-in
+// "hours" profile is { stale: 300, revalidate: 3600, expire: 86400 } — verified in
+// node_modules/next/dist/server/config-shared.js:164-168 — so revalidate stays 3600s.
+// Unlike /work and /notes (pure Velite static, where revalidate was a no-op and was simply
+// deleted), this page genuinely needs it: it awaits a live getRepoFeed() GitHub call.
 export default async function ProjectsPage() {
+  "use cache";
+  cacheLife("hours");
   const groups = projectsByGroup();
   const repos = await getRepoFeed();
   return (
     <main className="flex-1">
-      <Section label="// open-source AI infrastructure" title="Projects I build in the open" titleAs="h1">
+      <Section
+        label="// open-source AI infrastructure"
+        title="Projects I build in the open"
+        titleAs="h1"
+      >
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
-            Agent frameworks, code-intelligence engines, and AI-native tooling. Each card describes architecture and
-            tech, not adoption — clone any repo and inspect it.
+            Agent frameworks, code-intelligence engines, and AI-native tooling.
+            Each card describes architecture and tech, not adoption — clone any
+            repo and inspect it.
           </p>
         </Reveal>
         {repos.length > 0 && (
@@ -43,7 +61,12 @@ export default async function ProjectsPage() {
       </Section>
 
       {groups.map((g) => (
-        <Section key={g.group} label={`// ${g.group.toLowerCase()}`} title={g.group} className="py-12">
+        <Section
+          key={g.group}
+          label={`// ${g.group.toLowerCase()}`}
+          title={g.group}
+          className="py-12"
+        >
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {g.items.map((p, i) => (
               <Reveal key={p.slug} delay={(i % 3) * 0.06}>

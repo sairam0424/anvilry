@@ -9,7 +9,6 @@ import { emit } from "@/lib/telemetry/emit";
 import { redact } from "@/lib/telemetry/schema";
 import { randomUUID } from "node:crypto";
 
-export const runtime = "nodejs";
 export const maxDuration = 30;
 
 /* ----------------------------- Cost estimation ----------------------------- */

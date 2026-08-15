@@ -39,7 +39,7 @@ function VisitorBadge() {
     }
 
     fetch("/api/visit", { method: "POST" })
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data: { total: number; today: number } | null) => {
         if (data?.total != null && data.total > 0) {
           setTotal(data.total);
@@ -58,7 +58,10 @@ function VisitorBadge() {
 
   if (total === null) {
     return (
-      <span className="inline-block h-3 w-28 animate-pulse rounded bg-fg-subtle/20" aria-hidden="true" />
+      <span
+        className="inline-block h-3 w-28 animate-pulse rounded bg-fg-subtle/20"
+        aria-hidden="true"
+      />
     );
   }
   if (total === 0) return null; // No cache, no real count — hide the badge entirely
@@ -111,23 +114,46 @@ export function SiteFooter() {
 
         <div className="flex flex-col items-start gap-4 sm:items-end">
           {/* For AI agents — the machine-readable links. */}
-          <nav aria-label="Machine-readable" className="flex items-center gap-4 text-xs text-fg-subtle">
+          <nav
+            aria-label="Machine-readable"
+            className="flex items-center gap-4 text-xs text-fg-subtle"
+          >
             <span className="font-mono">{"// for AI:"}</span>
             {MACHINE_LINKS.map((l) => (
-              <Link key={l.href} href={l.href} className="font-mono hover:text-accent">
+              <Link
+                key={l.href}
+                href={l.href}
+                className="font-mono hover:text-accent"
+              >
                 {l.label}
               </Link>
             ))}
           </nav>
 
           <div className="flex items-center gap-5 text-fg-muted">
-            <a href={profile.links.github} target="_blank" rel="noopener noreferrer" className="hover:text-accent" aria-label="GitHub">
+            <a
+              href={profile.links.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="GitHub"
+            >
               <Github size={18} />
             </a>
-            <a href={profile.links.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-accent" aria-label="LinkedIn">
+            <a
+              href={profile.links.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="LinkedIn"
+            >
               <Linkedin size={18} />
             </a>
-            <a href={`mailto:${profile.email}`} className="hover:text-accent" aria-label="Email">
+            <a
+              href={`mailto:${profile.email}`}
+              className="hover:text-accent"
+              aria-label="Email"
+            >
               <Mail size={18} />
             </a>
           </div>
@@ -136,12 +162,27 @@ export function SiteFooter() {
 
       {/* Copyright + RSS + newsletter — full-width bottom strip */}
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 border-t border-border/40 px-6 pb-6 pt-4 font-mono text-[11px] text-fg-subtle">
-        <span>© {new Date().getFullYear()} Sairam Ugge</span>
+        {/* Build-time year, not a render-time `new Date()`. Under cacheComponents an in-render
+            new Date() fails the prerender as an "unstable value" (and this footer is on nearly
+            every route, so it broke /, /articles and /resume). NEXT_PUBLIC_BUILD_YEAR is computed
+            in next.config.ts at build time and inlined, so it is stable AND refreshes per deploy.
+            Fallback keeps local/test renders sane if the env var is ever absent. */}
+        <span>
+          © {process.env.NEXT_PUBLIC_BUILD_YEAR ?? "2026"} Sairam Ugge
+        </span>
         <div className="flex items-center gap-4">
-          <a href={profile.substackUrl} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-accent">
+          <a
+            href={profile.substackUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-accent"
+          >
             Subscribe
           </a>
-          <a href="/feed.xml" className="inline-flex items-center gap-1 transition-colors hover:text-accent">
+          <a
+            href="/feed.xml"
+            className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+          >
             <Rss size={11} aria-hidden="true" /> RSS
           </a>
         </div>

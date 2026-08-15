@@ -3,9 +3,10 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import type { NextRequest } from "next/server";
 
-// Dynamic route — slug extracted from URL since Next.js does not populate params
-// for directory segments of the form `[param].ext` (ParamMap resolves to {}).
-export const dynamic = "force-dynamic";
+// Slug is extracted from the URL because Next.js does not populate params for directory
+// segments of the form `[param].ext` (ParamMap resolves to {}). Reading the request is what
+// makes this handler dynamic, so the explicit `export const dynamic = "force-dynamic"` was
+// redundant — it is also rejected under nextConfig.cacheComponents, so it was removed.
 
 function stripFrontmatter(raw: string): string {
   // Remove YAML frontmatter delimited by --- at the start of the file

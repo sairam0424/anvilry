@@ -107,43 +107,72 @@ jobs:
     #
     # Why this exists: a HIGH-severity arbitrary-JS-execution advisory (pdfjs-dist) sat open while
     # the "Dependabot Updates" workflow failed for 4 consecutive runs with the reason buried inside
-    # its log (`security_update_not_possible`). Nothing surfaced it. 23 alerts across 10 packages
-    # had accumulated. This prints the current count into the job summary on every run so it is
-    # impossible to miss.
+    # its log (`security_update_not_possible`). 23 alerts across 10 packages had accumulated and
+    # nothing surfaced them.
     #
-    # Left non-blocking on purpose: a brand-new gate that fails on a pre-existing backlog, or on a
-    # token-permission quirk, trains people to ignore red. Promote to blocking (drop
-    # continue-on-error and `exit 1` on high/critical) once the backlog is at zero.
+    # IMPORTANT TOKEN LIMITATION: the default GITHUB_TOKEN CANNOT read the Dependabot alerts API,
+    # even with `security-events: read` declared. That endpoint requires a PAT carrying the
+    # `security_events` (or `repo`) scope — the restriction is on the token TYPE, not the declared
+    # permission. Verified empirically: with GITHUB_TOKEN this step reported
+    # "Could not read Dependabot alerts", i.e. it passed while surfacing nothing.
+    #
+    # TO ENABLE: create a fine-grained PAT with Repository permissions ->
+    # "Dependabot alerts: Read-only", save it as the repo secret SECURITY_ALERTS_TOKEN, and this
+    # step starts reporting. Until then it prints actionable setup instructions instead of a
+    # misleading green tick.
+    #
+    # Promote to blocking (drop continue-on-error, exit 1 on high/critical) once a token is wired
+    # AND the existing backlog is at zero.
     continue-on-error: true
     permissions:
       contents: read
-      security-events: read
 
     steps:
-      - name: Count open Dependabot alerts by severity
+      - name: Report open Dependabot alerts
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.SECURITY_ALERTS_TOKEN }}
         run: |
           set +e
+          if [ -z "${GH_TOKEN}" ]; then
+            {
+              echo "## Security alert reporting is NOT ENABLED"
+              echo ""
+              echo "The default \`GITHUB_TOKEN\` cannot read the Dependabot alerts API, so this"
+              echo "step needs its own token."
+              echo ""
+              echo "**To enable:**"
+              echo "1. Create a fine-grained PAT with Repository permissions -> \`Dependabot alerts: Read-only\`"
+              echo "2. Add it as the repository secret \`SECURITY_ALERTS_TOKEN\`"
+              echo ""
+              echo "Until then, check manually:"
+              echo "\`\`\`"
+              echo "gh api repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open --jq length"
+              echo "\`\`\`"
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
           alerts=$(gh api "repos/${GITHUB_REPOSITORY}/dependabot/alerts?state=open&per_page=100" 2>/dev/null)
           if [ -z "$alerts" ] || ! printf '%s' "$alerts" | jq -e 'type == "array"' >/dev/null 2>&1; then
-            echo "Could not read Dependabot alerts (token may lack the security_events scope)." \
+            echo "SECURITY_ALERTS_TOKEN is set but the alerts API was unreadable — check that the PAT grants 'Dependabot alerts: Read-only' and has not expired." \
               | tee -a "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
+
           total=$(printf '%s' "$alerts" | jq 'length')
           {
             echo "## Open Dependabot alerts: ${total}"
             echo ""
-            echo "| Severity | Count |"
-            echo "|---|---|"
-            printf '%s' "$alerts" | jq -r '[.[].security_advisory.severity] | group_by(.)
-              | map({s: .[0], n: length}) | .[] | "| \(.s) | \(.n) |"'
-            echo ""
-            if [ "$total" != "0" ]; then
+            if [ "$total" = "0" ]; then
+              echo "No open alerts."
+            else
+              echo "| Severity | Count |"
+              echo "|---|---|"
+              printf '%s' "$alerts" | jq -r '[.[].security_advisory.severity] | group_by(.)
+                | map({s: .[0], n: length}) | .[] | "| \(.s) | \(.n) |"'
+              echo ""
               echo "### Affected packages"
               printf '%s' "$alerts" | jq -r '[.[].dependency.package.name] | unique | .[] | "- \(.)"'
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
-          # NOTE: deliberately exits 0. See the comment on this job.
-
+          # Deliberately exits 0 — see the comment on this job.

@@ -77,7 +77,10 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Voice requests the mic — scope it to same-origin and deny camera/geo/etc.
-  { key: "Permissions-Policy", value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()" },
+  {
+    key: "Permissions-Policy",
+    value: "microphone=(self), camera=(), geolocation=(), browsing-topics=()",
+  },
   // ENFORCED. Shipped Report-Only in v1.4.0; a live Playwright sweep across all four
   // views (incl. the WebGL Play view) logged ZERO violations, and a per-directive
   // audit against the real resource loads (scripts/styles/fonts/img/media/connect/
@@ -109,11 +112,36 @@ const nextConfig: NextConfig = {
     // f7c5110) is the correct fix and is already live. Re-adding these packages
     // would re-introduce the disproven optimization against the live barrel.
     optimizePackageImports: ["lucide-react", "motion"],
-    // Partial Prerendering (PPR) — blocked: cacheComponents:true is incompatible with
-    // `export const runtime = "nodejs"` segment configs present on all 9 API routes
-    // (chat, mcp, visit, github/stats, tts, error, tts-google, transcribe, cron/eval).
-    // Those routes require the Node.js runtime for streaming/AWS SDK and cannot be removed.
-    // PPR enablement deferred until Next.js provides a per-route escape hatch.
+    // Partial Prerendering — in Next 16 this is `cacheComponents: true`, which SUPERSEDES the old
+    // `experimental.ppr` / `experimental_ppr` / `dynamicIO` / `useCache` opt-ins as one top-level key.
+    //
+    // NOT YET ENABLED, and the previous comment here misdiagnosed why. Corrected 2026-08-12 after
+    // reading the compiler source at the exact pinned version:
+    //
+    //   The RSC transform (crates/next-custom-transforms/src/transforms/react_server_components.rs,
+    //   verified identical at tag v16.2.9) rejects the mere PRESENCE of `export const runtime` — the
+    //   `"runtime" =>` arm receives only (&export_name, &span) and never inspects `decl.init`, so
+    //   "nodejs" and "edge" are indistinguishable to it. Next's own e2e test
+    //   (test/e2e/app-dir/cache-components-segment-configs) patches in `export const runtime = 'nodejs'`
+    //   and asserts the build FAILS. There is no per-route escape hatch: `cacheComponents` is a plain
+    //   boolean in config-shared.ts with no allowlist, and the compiler's only offered remedy is
+    //   deletion. `export const instant = false` (16.3+) defers VALIDATION, not this check.
+    //
+    // So the old claim that those routes "cannot be removed" was backwards: `nodejs` is already the
+    // DEFAULT runtime, and the docs state Cache Components *requires* it (only `edge` is unsupported).
+    // The exports are redundant — the fix is deletion, not waiting on upstream.
+    //
+    // Real migration scope is 26 segment configs across 22 files, not the 9 previously claimed:
+    //   13x `runtime`   — all src/app/api/**/route.ts — safe to delete outright
+    //    4x `revalidate = 3600` — work/notes/projects pages + api/github/stats — carry REAL ISR
+    //       semantics, so these need `"use cache"` + a matching `cacheLife` profile, NOT deletion
+    //    9x `dynamic = "force-dynamic"` — the raw-markdown AI-crawler endpoints + llms-full.txt.
+    //       NOTE: these are NOT a caching decision — see the comment in work/[slug].md/route.ts;
+    //       they work around Next not populating `params` for `[param].ext` segments, so the handler
+    //       reads req.url. Verify empirically before changing; they are the agent-facing freshness surface.
+    // `maxDuration` (11 uses) and `preferredRegion` are NOT rejected — streaming timeouts survive.
+    //
+    // Prerequisite: 16.3.0 (for the `instant` config + `cache-components-instant-false` codemod).
     // cacheComponents: true,
   },
   images: {
@@ -130,12 +158,15 @@ const nextConfig: NextConfig = {
     // The global securityHeaders sets frame-ancestors 'none' (clickjacking defense);
     // we override only X-Frame-Options and the CSP frame-ancestors directive here.
     const resumeHeaders = securityHeaders.map((h) => {
-      if (h.key === "X-Frame-Options") return { key: h.key, value: "SAMEORIGIN" };
+      if (h.key === "X-Frame-Options")
+        return { key: h.key, value: "SAMEORIGIN" };
       if (h.key === "Content-Security-Policy") {
         return {
           key: h.key,
-          value: h.value
-            .replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+          value: h.value.replace(
+            "frame-ancestors 'none'",
+            "frame-ancestors 'self'",
+          ),
         };
       }
       return h;

@@ -23,11 +23,11 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 
 | File | Role | Key exports / anchors |
 |---|---|---|
-| `README.md` | Public-facing project pitch: four-view system, highlights, stack table, develop/content/chat/voice/deploy quickstarts. | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
+| `README.md` | Public-facing project pitch: "a beast with **four switchable experiences** over one canonical content source" (`README.md:5`) — marketing framing, not the store shape; the `View` union has **six** members and "four-view" describes only the default server-rendered pill set (`CLAUDE.md:98`). Plus highlights, stack table, develop/content/chat/voice/deploy quickstarts. Its terminal-command count was corrected to **31** on this branch (`README.md:10`). | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
-| `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
+| `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line was corrected on this branch — it used to say "4-view system"; it now records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`). | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 5-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. | (no headings beyond the single H1) |
-| `CHANGELOG.md` | Keep-a-Changelog release history, 17 version entries, newest first. | `[3.4.2]` … `[1.0.0]`, link-ref footer |
+| `CHANGELOG.md` | Keep-a-Changelog release history, 17 released version entries, newest first, **plus an `[Unreleased]` section** (`CHANGELOG.md:7-53`) recording the correctness pass on this branch. | `[Unreleased]`, `[3.4.2]` … `[1.0.0]`, link-ref footer |
 | `LOG.md` | Append-only activity journal, newest first, with a strict entry grammar, tag vocabulary, and grep/awk retrieval recipes. | §Entry grammar, §Tags, §Retrieval recipes, 3 entries |
 | `VOICE.md` | Canonical voice-layer reference (940 lines): architecture, 4 opt-in features, settings/flag tables, env+IAM+cost, privacy & a11y model, developer notes, v1.7 voice picker. | §1 Overview, §2 Features, §3 Flags/Settings, §4 Env/IAM/Cost, §5 Privacy & A11y, §6 Dev Notes, §7 Voice picker |
 | `TELEMETRY.md` | Canonical observability reference (v1.8 header): dual-sink pipeline, `TelemetryEvent` schema, 7 span kinds, trace-ID correlation, PII policy, admin dashboard, replay CLI, debugging cookbook, file map. | §1–§9 |
@@ -88,6 +88,11 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 `mtime` is a weak signal here — a large block of files shares `28 Jun 01:31` (a bulk move), so the in-document
 version marker is the better freshness cue. Both are given.
 
+The mtimes below were read at `release/v3.4.2`. The correctness pass on this branch rewrote
+`CLAUDE.md`, `ARCHITECTURE.md`, `DEPLOY.md`, `README.md`, `CHANGELOG.md` and `docs/README.md`, so those six
+rows' mtimes are now newer than listed — and their *content* is what §Doc-vs-code drift below describes as
+corrected. The version markers are unchanged.
+
 | File | Kind | Authoritative for | Last-updated signal |
 |---|---|---|---|
 | `README.md` | public readme | The outward-facing pitch, stack table, voice cost table | mtime 28 Jun; no version marker |
@@ -102,7 +107,7 @@ version marker is the better freshness cue. Both are given.
 | `SECURITY.md` | policy | Disclosure channel + SLA + scope | mtime 28 Jun |
 | `CODE_OF_CONDUCT.md` | policy | Contributor Covenant v2.1 adoption + enforcement contact | mtime 28 Jun |
 | `LICENSE` | legal | MIT for code; all-rights-reserved carve-out for content/identity/résumés/branding | copyright range `2024–2026`; mtime 28 Jun |
-| `docs/README.md` | schema readme | The `doc` frontmatter schema | mtime 28 Jun; `§Existing Docs` still says "none yet" |
+| `docs/README.md` | schema readme | The `doc` frontmatter schema | rewritten on this branch; `§Existing Docs` now tables the four real entries (`docs/README.md:36-43`) — it used to say "none yet" |
 | `docs/configuration.md` | config reference | Every env var + flag, defaults, add-a-flag recipes, CSP override | mtime 15 Aug; flags tagged up to `v3.3` |
 | `docs/superpowers/plans/*` (14) | point-in-time plans | What was *intended* on the plan's date — **not** current-state assertions | filename dates 2026-06-13 → 2026-07-06 |
 | `docs/superpowers/specs/*` (5) | point-in-time design specs | Locked decisions + rejected alternatives for their feature | filename dates 2026-06-13 → 2026-07-01 |
@@ -120,7 +125,9 @@ version marker is the better freshness cue. Both are given.
 
 ## Version history
 
-Read in full from `CHANGELOG.md`. **17 version tags** are present. Note the gap: no `2.x` entry and no
+Read in full from `CHANGELOG.md`. **17 released version tags** are present, plus an `[Unreleased]` section
+at the top (`CHANGELOG.md:7-53`) for the correctness pass on this branch — the five fixes and the
+documentation corrections listed in §Doc-vs-code drift. Note the gap: no `2.x` entry and no
 `3.1.x`–`3.3.x` entry exists at all — `LOG.md:33` records that the 3.4.0 entry was "added after a
 **13-release gap**", so the changelog is not a complete release ledger.
 
@@ -144,7 +151,7 @@ Read in full from `CHANGELOG.md`. **17 version tags** are present. Note the gap:
 | 1.1.0 (2026-06-14) | Developer Mode view (full-page keyboard-native terminal) + autoscroll engine fix. |
 | 1.0.0 (2026-06-13) | Initial public portfolio: four switchable views over one content source + the Bedrock "Ask my portfolio" chat. |
 
-**Current version:** `3.4.2` (`package.json:3`). **What v3.4.2 shipped** (`CHANGELOG.md:7-57`): a
+**Current version:** `3.4.2` (`package.json:3`). **What v3.4.2 shipped** (`CHANGELOG.md:55-105`): a
 security-only promotion of fixes that had sat on `develop` while production served vulnerable versions —
 `pdfjs-dist` 6.0.227→6.2.108 (high, reachable via `file-picker-button.tsx`'s `await import("pdfjs-dist")`),
 `ip-address` 10.2.0→10.5.0 (high, SSRF via `mcp-handler` → MCP SDK → `express-rate-limit`), `hono`
@@ -189,11 +196,13 @@ Timeline entries (`signals/README.md:36`).
 
 Two structural facts a maintainer should know:
 
-- **The `signals/` and `docs/` artifact stores are effectively empty.** `signals/` contains only its schema
-  README (zero signal files), and `docs/README.md:38-40` still lists "*(none yet — add docs here as they
-  accumulate)*". Every domain's `## Evidence & analysis` section is the literal placeholder
-  "*(link signals and docs here as they accumulate)*". All accumulated knowledge instead lives inline in the
-  three domain READMEs.
+- **`signals/` is empty; `docs/` no longer is.** `signals/` contains only its schema README (zero signal
+  files). ~~`docs/README.md` lists "*(none yet — add docs here as they accumulate)*"~~ — **corrected on this
+  branch:** `§Existing Docs` is now a real table of four entries — `configuration.md`, `index/`,
+  `superpowers/plans/` (14), `superpowers/specs/` (5) (`docs/README.md:36-43`). Every domain's
+  `## Evidence & analysis` section is still the literal placeholder "*(link signals and docs here as they
+  accumulate)*", so the *linking* half of the model remains unused: accumulated knowledge still lives inline
+  in the three domain READMEs rather than as linked `docs/`/`signals/` artifacts.
 - **`domains/seo/README.md` carries a self-correction, not just a charter.** Its `goal:` frontmatter was
   rewritten to "*NOT llms.txt — see below*" (line 5), and lines 19-47 record the evidence: Google Search
   Central's own statement that AI text files "neither harm nor help … Google Search ignores them"; a
@@ -253,81 +262,119 @@ holds the same hash as its only line. No Anvilry source file references either.
 Each item cites the doc line and the code that disproves it. Conservative — plan/spec files are excluded as
 drift because they are dated point-in-time artifacts, except where called out as such.
 
-1. **Model-chain order in `DEPLOY.md` is inverted.** `DEPLOY.md:92-96` tables Primary =
-   `us.anthropic.claude-opus-4-6-v1`, Secondary = `us.anthropic.claude-sonnet-4-6`. Code has Sonnet first:
-   `src/lib/llm.ts:31-35` = `["us.anthropic.claude-sonnet-4-6" /* primary */,
-   "us.anthropic.claude-opus-4-6-v1" /* secondary */, "us.anthropic.claude-haiku-4-5-20251001-v1:0"]`.
-   `CLAUDE.md:170` and `docs/configuration.md:43-46` both state the correct Sonnet-first order.
-   `DEPLOY.md:98-99` likewise claims the `anthropic` chain becomes
-   `claude-opus-4-7 → claude-sonnet-4-6 → claude-haiku-4-5`, but `src/lib/llm.ts:38` is
-   `["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"]`. (`CHANGELOG.md:380-383` records fixing the
-   same inversion once already, in a `streamWithFallback` docblock at v1.8.0.)
-2. **MCP tool count is 9, not 7.** `CLAUDE.md:181` says "**7 tools** (all sourced from
-   `src/lib/mcp-tools.ts`)" and tables seven; `CLAUDE.md:260` repeats "MCP server (7 read-only tools)"
-   in the Key Files table. `src/app/api/mcp/[transport]/route.ts` calls
-   `server.registerTool` nine times — the seven listed plus `list_all_content` (`:98-99`) and
-   `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions. `CHANGELOG.md:260`
-   records the 7 → 9 growth at v3.0.0.
-3. **"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**
-   `CLAUDE.md:143`. No `export const runtime` remains anywhere in `src/` — the only hit is a comment noting
-   its removal (`src/app/api/mcp/[transport]/route.ts:6`), consistent with `CHANGELOG.md:129-131` (13
-   `runtime` exports deleted for Cache Components). And `maxDuration` is per-route, not uniformly 30:
-   `chat` 30, `mcp` 30, `cron/github-sync` 30, `cron/health-check` 25, `transcribe` 20, `tts` 15,
-   `tts-google` 15, `error` 5, `cron/{eval,seo-audit,content-audit}` 60.
-4. **`pnpm search-index` does not exist.** `CLAUDE.md:31-32` lists `pnpm search-index` under "After build".
-   `package.json:5-16` has no `search-index` script; the target is `make search-index`
-   (`Makefile:65-66`, which runs `pnpm pagefind --site .next/server/app --output-path public/pagefind`).
-   `docs/configuration.md:132` correctly says `make search-index`.
-5. **Velite does not run in watch mode during `pnpm dev`.** `CLAUDE.md:14` ("starts Velite watch + Next.js
-   dev"), `README.md:45` ("Velite runs in watch mode via predev") and
-   `.claude/skills/dev-local/SKILL.md:30` ("This runs `velite --watch & next dev`") all claim a watcher.
+**Not every item below is live.** Seven of the fifteen were closed by the correctness pass on this branch
+(items 1, 2, 3, 4, 6, 9, 10). Those keep their entry — they are the claims that misled earlier readings of
+this repo — but their stale heading is **struck through** and marked *corrected on this branch*, same
+convention as [README § By the numbers](./README.md) and
+[15 § Documented-but-unconfirmed](./15-invariants-and-gotchas.md). A struck-through heading is history; the
+citations beside it point at the **corrected** text, and where a test now prevents regression it is named.
+Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
+
+1. ~~**Model-chain order in `DEPLOY.md` is inverted.**~~ — **corrected on this branch, both chains.**
+   `DEPLOY.md` used to table Primary = `us.anthropic.claude-opus-4-6-v1`, Secondary =
+   `us.anthropic.claude-sonnet-4-6`, and to say the `anthropic` chain becomes
+   `claude-opus-4-7 → claude-sonnet-4-6 → claude-haiku-4-5` — both inverted relative to the code. Current
+   state: `DEPLOY.md:94` = Primary `us.anthropic.claude-sonnet-4-6`, `:95` = Secondary
+   `us.anthropic.claude-opus-4-6-v1`, `:96` = Fallback `us.anthropic.claude-haiku-4-5-20251001-v1:0`, and
+   `:99` = `claude-sonnet-4-6 → claude-opus-4-7 → claude-haiku-4-5`. Both now match
+   `src/lib/llm.ts:32-34` (`BEDROCK_CHAIN`) and `src/lib/llm.ts:38` (`ANTHROPIC_CHAIN` =
+   `["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"]`). The same edit added a standing rule at
+   `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is authoritative
+   if this table ever disagrees with it" — with the source citations inline. `CLAUDE.md:191` and
+   `docs/configuration.md:43-46` always stated the correct order. No test guards this; the anchor is the
+   pointer at `DEPLOY.md:102-103`. (`CHANGELOG.md:428-431` records fixing the same inversion once already,
+   in a `streamWithFallback` docblock at v1.8.0 — so this is the second recurrence, which is why the
+   authoritative-source note was added rather than just the numbers.)
+2. ~~**MCP tool count is 9, not 7.**~~ — **corrected on this branch, and guarded.** `CLAUDE.md` used to say
+   "**7 tools** (all sourced from `src/lib/mcp-tools.ts`)" with a seven-row table, and to repeat "MCP server
+   (7 read-only tools)" in the Key Files table. `src/app/api/mcp/[transport]/route.ts` calls
+   `server.registerTool` **nine** times — the seven plus `list_all_content` (`:98-99`) and
+   `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions. Current state: the
+   prose says **9 tools** with all nine tabled (`CLAUDE.md:202`), the Key Files row says "MCP server (9
+   read-only tools)" (`CLAUDE.md:293`), the route's own docblock says "9 read-only tools"
+   (`src/app/api/mcp/[transport]/route.ts:22`), and the public `/mcp` page tables all nine
+   (`src/app/mcp/page.tsx:35-45`). **Guard:** `src/app/mcp/tools-documented.test.ts` asserts set equality
+   between the page's `TOOLS` rows and the route's `registerTool` calls (`:92`, with the missing names in the
+   failure message at `:85`); `vitest run` is chained into `pnpm build`, so adding a tool without
+   documenting it fails the build. `CLAUDE.md:216-220` records that this is why the count is safe to quote.
+   `CHANGELOG.md:308` records the 7 → 9 growth at v3.0.0.
+3. ~~**"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**~~ —
+   **corrected on this branch.** `CLAUDE.md` now leads the section with "**Runtime & duration — do not add
+   `export const runtime`.** No route exports `runtime` anywhere in `src/`" and states that `maxDuration` is
+   "**per-route, not a uniform 30s**" (`CLAUDE.md:152`), followed by the real per-route table
+   (`CLAUDE.md:154-162`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
+   25 for `cron/health-check`, 20 `transcribe`, 15 `tts`/`tts-google`, 5 `error`, none for
+   `visit`/`github/stats`/`md/*`/`resume.json`). The only `runtime` string left in `src/` is the comment
+   noting its removal (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:177-179`
+   (13 `runtime` exports deleted for Cache Components).
+4. ~~**`pnpm search-index` does not exist.**~~ — **corrected on this branch.** `CLAUDE.md` used to list
+   `pnpm search-index` under "After build". `package.json:5-16` has no `search-index` script; the target is
+   `make search-index` (`Makefile:65-66`, which runs
+   `pnpm pagefind --site .next/server/app --output-path public/pagefind`). Current state: `CLAUDE.md:32`
+   carries the explicit warning "**NOTE:** this is a Makefile target only — there is NO `pnpm search-index`
+   script" immediately above the `make search-index` line at `:33`. `docs/configuration.md:132` always said
+   `make search-index`.
+5. **Velite does not run in watch mode during `pnpm dev`.** *(Still live.)* `CLAUDE.md:14` ("starts Velite
+   watch + Next.js dev"), `README.md:45` ("Velite runs in watch mode via predev") and
+   `.claude/skills/dev-local/SKILL.md:29` ("This runs `velite --watch & next dev`") all claim a watcher.
    `package.json:6-7` is `"predev": "velite"` (one-shot) + `"dev": "next dev"` — no `--watch` anywhere.
-   `CLAUDE.md:159` separately and correctly describes `predev` as running "Velite synchronously before
-   `next dev` starts".
-6. **The route tree in `CLAUDE.md` lists one cron route; there are five.** `CLAUDE.md:140` shows only
-   `/api/cron/eval`. `src/app/api/cron/` contains `content-audit`, `eval`, `github-sync`, `health-check`,
-   `seo-audit`. The same tree also omits the `/api/md/{work,projects,articles,notes}/[slug]` handlers
-   (4 route files) that back the `.md` endpoints.
-7. **`SECURITY.md` under-states the attack surface.** `SECURITY.md:5` — "a Next.js frontend with three API
+   `CLAUDE.md:178` separately and correctly describes `predev` as running "Velite synchronously before
+   `next dev` starts", and `.claude/skills/dev-local/SKILL.md:30-31` says the same two lines later — so each
+   of the two files contradicts itself. The correctness pass on this branch did **not** touch this one.
+6. ~~**The route tree in `CLAUDE.md` lists one cron route; there are five.**~~ — **corrected on this branch.**
+   The tree used to show only `/api/cron/eval` and to omit the `.md` handlers. Current state: `CLAUDE.md:146`
+   is `└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}` with `CLAUDE.md:147` recording
+   "5 crons, ALL fail-closed on CRON_SECRET (`vercel.json:3-7`)", and `CLAUDE.md:145` lists
+   `/api/md/{articles,notes,projects,work}/[slug]   raw-markdown passthrough (4 handlers)`. Both now match
+   `src/app/api/cron/` (`content-audit`, `eval`, `github-sync`, `health-check`, `seo-audit`) and the four
+   `src/app/api/md/*/[slug]/route.ts` files.
+7. **`SECURITY.md` under-states the attack surface.** *(Still live.)* `SECURITY.md:5` — "a Next.js frontend with three API
    routes (`/api/chat`, `/api/tts`, `/api/transcribe`)". `src/app/api/` has eleven entries: `chat`, `cron`
    (×5), `error`, `github`, `mcp`, `md` (×4), `resume.json`, `transcribe`, `tts`, `tts-google`, `visit`.
-8. **`VOICE.md`'s settings tables omit the Google TTS engine.** `VOICE.md:156` ("TTS engines |
+8. **`VOICE.md`'s settings tables omit the Google TTS engine.** *(Still live.)* `VOICE.md:156` ("TTS engines |
    `"browser"` … | `"polly"`") and `VOICE.md:373` (`ttsEngine` type `"browser" | "polly"`) contradict
    `src/lib/voice-settings-context.tsx:29`: `export type TtsEngine = "browser" | "polly" | "google";`.
    `VOICE.md`'s own §7 (line 873) and `docs/configuration.md:240` both describe the `google` engine, so
    only §1/§3 are stale. Same section: `VOICE.md:162` calls the Polly voice "Joanna" a fixed property,
    which §7's catalog (`src/lib/voice-catalog.ts`, 6 curated + 12 extended voices) supersedes.
-9. **Terminal command count is understated.** `CLAUDE.md:104` says "~16 commands" and
-   `ARCHITECTURE.md:74` says "16 commands". `src/components/game/terminal/commands.ts:503-508` registers
-   **31**: 27 visible (`help, whoami, neofetch, ls, cat, tree, grep, find, top, stats, stack, awards,
-   summary, career, about, resume, open, contact, email, social, chat, theme, classic, developer, cd, clear,
-   sudo`) plus 4 hidden eggs (`secret, personal, uses, now`) that are dispatchable but filtered out of
-   `COMMAND_NAMES` (`:525-527`).
-10. **`docs/README.md` still claims there are no docs.** `docs/README.md:38-40` — "*(none yet — add docs
-    here as they accumulate)*". `docs/` contains `configuration.md`, `docs/superpowers/plans/` (14),
-    `docs/superpowers/specs/` (5) and `docs/index/` (17 files — this index).
-11. **`CLAUDE.md`'s CI description omits two jobs.** `CLAUDE.md:86` describes `ci.yml` as
+9. ~~**Terminal command count is understated.**~~ — **corrected on this branch, all three places.**
+   `CLAUDE.md` used to say "~16 commands", `ARCHITECTURE.md` "16 commands", and `README.md` "~16 commands".
+   `src/components/game/terminal/commands.ts:503-508` registers **31**: 27 visible (`help, whoami, neofetch,
+   ls, cat, tree, grep, find, top, stats, stack, awards, summary, career, about, resume, open, contact,
+   email, social, chat, theme, classic, developer, cd, clear, sudo`) plus 4 hidden eggs (`secret, personal,
+   uses, now`) that are dispatchable but filtered out of `COMMAND_NAMES` (`:525-527`). Current state:
+   `CLAUDE.md:105` = "Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs)",
+   `ARCHITECTURE.md:74` = "Developer terminal view (31 commands, combobox)", `README.md:10` = "31 commands".
+   No test guards the count; re-derive it from `commands.ts:503-508` if it looks stale again.
+10. ~~**`docs/README.md` still claims there are no docs.**~~ — **corrected on this branch.** It used to say
+    "*(none yet — add docs here as they accumulate)*". Current state: `§Existing Docs` is a real table
+    (`docs/README.md:36-43`) listing `configuration.md`, `index/` ("Per-file/per-route codebase index,
+    version-pinned. Start at `index/README.md`"), `superpowers/plans/` (14) and `superpowers/specs/` (5).
+    `docs/index/` itself holds 17 markdown files — this index.
+11. **`CLAUDE.md`'s CI description omits two jobs.** *(Still live.)* `CLAUDE.md:87` describes `ci.yml` as
     "lint → typecheck (`tsc --noEmit`) → `pnpm test`". `.github/workflows/ci.yml` defines three jobs:
-    `ci:` (`:10`), `e2e:` "E2E (Playwright)" running `pnpm e2e` (`:55-92`), and `security-alerts:` (`:102`)
-    — both added in v3.4.2 per `CHANGELOG.md:41-49`.
-12. **`DEPLOY.md`'s build command drops the test step.** `DEPLOY.md:20` — "Build command: `pnpm build`
-    (runs `velite --clean && next build`)". `package.json:8` is
-    `"build": "velite --clean && vitest run && next build"`. `README.md:46` and `CLAUDE.md:16` both state
-    the three-step form, and `CLAUDE.md:311` relies on it ("a failing test blocks deployment").
-13. **Plan-vs-shipped, flags package (informational, plan is dated).**
+    `ci:` (`:10`), `e2e:` "E2E (Playwright)" (`:55-56`) running `pnpm e2e` (`:92`), and `security-alerts:`
+    (`:102`) — both added in v3.4.2 per `CHANGELOG.md:89-97`.
+12. **`DEPLOY.md`'s build command drops the test step.** *(Still live.)* `DEPLOY.md:20` — "Build command:
+    `pnpm build` (runs `velite --clean && next build`)". `package.json:8` is
+    `"build": "velite --clean && vitest run && next build"`. `README.md:46` and `CLAUDE.md:16-17` both state
+    the three-step form, and `CLAUDE.md:362` relies on it ("a failing test blocks deployment"). Note this
+    branch *did* rewrite `DEPLOY.md` (§3 model chains, §4 base-URL count) without touching `:20`.
+13. **Plan-vs-shipped, flags package (informational, plan is dated).** *(Still live.)*
     `docs/superpowers/plans/2026-06-18-vercel-flags-sdk.md:51,76` prescribes `pnpm add @vercel/flags` and
     `import { flag } from "@vercel/flags/next"`. The shipped code is `import { flag } from "flags/next"`
     (`src/lib/flags.ts:10`) with `"flags": "^4.2.0"` in `package.json:38` — the renamed package.
     `docs/configuration.md:215-226` documents `FLAG_DRIVER`/`FLAGS`/`FLAGS_SECRET` without naming a package,
     so it is not itself wrong.
-14. **Template-vs-instantiation, LOG ordering.** `.claude/skills/new-loop/references/LOG.md:5` seeds
+14. **Template-vs-instantiation, LOG ordering.** *(Still live.)* `.claude/skills/new-loop/references/LOG.md:4` seeds
     "Newest at the **BOTTOM**". The repo's `LOG.md:4` states "Newest first. Append an entry **above** older
     entries", and its three entries are ordered newest-first (2026-08-15, 2026-08-15, 2026-06-24). Anyone
     following the reference template verbatim would append in the wrong direction.
-15. **Version-marker skew (not a code contradiction, but a freshness trap).** `ARCHITECTURE.md:8` is stamped
-    "`**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24`" while the project is at `3.4.2`; the
-    marker versions the knowledge-base model, not the app. Likewise `CHANGELOG.md:663-671` has link
-    references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after have no link-ref footer entry.
+15. **Version-marker skew (not a code contradiction, but a freshness trap).** *(Still live.)*
+    `ARCHITECTURE.md:8` is stamped "`**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24`" while the
+    project is at `3.4.2`; the marker versions the knowledge-base model, not the app. Likewise
+    `CHANGELOG.md:711-719` has link references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after — now
+    including `[Unreleased]` — have no link-ref footer entry.
 
 ## Coverage
 

@@ -91,7 +91,7 @@ handlers, and `command-palette.tsx` (~44 non-test importers in total, per sectio
 | 4 | `.velite/*.json` + `index.d.ts` | Generated, gitignored. Every Article body is `""`; every Note body is compiled MDX. |
 | 5 | `src/lib/content.ts:18-21,23,26-28,30-34,43-44,48-71` | Copies before sorting (`[...raw]`), `byOrder` ascending, notes/articles newest-first by **ISO string compare**, drafts excluded here so nothing downstream re-checks `draft`. |
 | 6 | `src/lib/game-model.ts:28-50` | `NODE_CONTENT`: 16 graph-node ids → `{kind, slug}`. `resolveNode()` (`:62-71`) returns `null` on a miss; `questNodes` `flatMap`s nulls away (`:96-109`). |
-| 7 | `src/lib/graph-data.ts:17-40` | Hand-authored 16 nodes + 19 edges + `kindColor` (`:71-76`). No `Math.random` — build output is stable (`:1-6`). |
+| 7 | `src/lib/graph-data.ts:18-41` | Hand-authored 16 nodes + 19 edges (`graphEdges` `:43-70`) + `kindColor` (`:72-77`). No `Math.random` — build output is stable (`:1-6`); the docblock now defers the node count to `graphNodes` instead of hardcoding it (`:3`). |
 | 8 | `src/lib/corpus.ts:13-76` | The whole chatbot grounding document as one markdown string. Reads work/projects/**notes** — never articles. |
 | 9 | `src/lib/llms-txt.ts:12-79` | `/llms.txt`. Dedupes articles through `groupArticles` (`:22`), truncates summaries (100/80 chars), emits a `## Markdown Versions` block (`:68-79`). |
 | 10 | `src/lib/resume-json.ts:12-45` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:30`). |
@@ -545,12 +545,14 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 | `list_all_content` | `{}` | `listAllContentData()` `:150` | n/a |
 | `get_content_item` | `contentTypeSchema` `:144-147` | `getContentItemData()` `:160` | delegates, or `notFound("article"\|"note", …)` `:166`,`:171` |
 
-Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9, not 7.**
-`CLAUDE.md:181` and `CLAUDE.md:260`, `src/app/api/mcp/[transport]/route.ts:22` (its own docblock), and the
-hand-written 7-row `TOOLS` table at `src/app/mcp/page.tsx:32-40` all still say seven — `src/lib/mcp-tools.ts`
-itself is correct, exporting all nine `*Data` functions (`:50,65,77,93,105,121,137,150,160`);
-`list_all_content` and `get_content_item` were added later (`CHANGELOG.md:260` records the 7→9 growth at
-v3.0.0).
+Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9** — and as of this
+branch every copy of that count agrees. The 7-vs-9 drift this index originally recorded is **fixed**: the
+route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:202`
+and `CLAUDE.md:293` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
+(`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
+`src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
+(`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:307-308` records the
+7 → 9 growth) and the docs caught up here (`CHANGELOG.md:22-24`).
 
 ### Participating files, in flow order
 
@@ -560,9 +562,9 @@ v3.0.0).
 | 2 | `src/lib/mcp-tools.ts` | Nine pure data functions, five Zod **raw-shape** input schemas (plain objects of `z.*` fields, which is what `registerTool` takes), `notFound()`, `ROLE_TO_LABEL`, hardcoded `BASE` (`:14`). |
 | 3 | `src/lib/content.ts` | The allowlist the tools resolve against. |
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
-| 5 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table is a manual duplicate. |
-| 6 | `src/lib/llms-txt.ts:65` | Advertises the server to agents. |
-| 7 | `src/app/api/cron/health-check/route.ts:60` | Probes `/api/mcp/mcp` as a P2 check expecting 200. |
+| 5 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:35-45`) is still a hand-maintained duplicate, but it is now **enforced** rather than trusted — the comment at `:32-34` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
+| 6 | `src/lib/llms-txt.ts:65` | Advertises the server to agents. Fixed on this branch: it now publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`). |
+| 7 | `src/app/api/cron/health-check/route.ts:61` | Probes `/api/mcp/mcp` as a P2 check. Fixed on this branch: the expected status is per-check (`:81`, gated at `:83`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30`). |
 
 ### Entry point
 
@@ -599,8 +601,8 @@ silent success.
 | `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:6-8`). |
 | `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:20-26`) hardcodes the exact strings, including `"Sairam Resume"` and hyphenated `"Full-Stack"`. `mcp-tools.test.ts:65` asserts every role resolves to a PDF that exists on disk. |
 | Tool list drifts from content | `mcp-tools.test.ts:36` asserts `list_projects`/`list_work` cover the whole content layer. |
-| Agents pointed at a dead endpoint | `src/lib/llms-txt.ts:65` advertises `${BASE}/api/mcp/sse`, which `disableSse: true` 404s; the working endpoint is `/api/mcp/mcp`. |
-| `/mcp` docs drift | `src/app/mcp/page.tsx:32-40` is a manual duplicate — adding a tool does not update it. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:65` used to do exactly that; **fixed on this branch** — it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:15-18`), and `src/lib/llms-txt.test.ts:22,25-26` pins both the live path and the absence of `/api/mcp/sse`. |
+| `/mcp` docs drift | `src/app/mcp/page.tsx:35-45` is still hand-maintained, but **no longer unguarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
 
 ### Flags / env that alter it
 
@@ -695,7 +697,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Failure | Mechanism |
 |---|---|
 | Every error double-beacons | Renaming `DEDUPE_FLAG = "__anvilry_error_recently__"` in one of its three homes: `src/app/error.tsx:39`, `src/app/global-error.tsx:33`, `src/instrumentation-client.ts` (100 ms window). |
-| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. `src/lib/rate-limit.ts:57` and `src/lib/telemetry/with-trace.ts:71` both take the last; `src/lib/telemetry/with-trace.test.ts:220-230` pins it. ⚠️ `src/app/api/visit/route.ts:23` takes the **leftmost** segment — inconsistent with both, and a defect, not a choice. The only evidence of intent was its own comment (`// leftmost = client IP`), which was wrong. Not exploitable in production (the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` runs, and `x-vercel-forwarded-for` is checked first), so it is a latent fallback inconsistency. |
+| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies now take the last: `src/lib/rate-limit.ts:57`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it is **fixed on this branch** (`CHANGELOG.md:30-35`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
 | Secrets in the trace log | A producer emitting without `redact()` first — `emit` does none (`emit.ts:30-35`). `src/app/api/error/route.test.ts:218-255` pins redact-before-emit. `componentStack` is deliberately **not** redacted (React-internal, `api/error/route.ts:145-166`). |
 | Retention stops trimming | The trim is piggybacked on writes (`emit.ts:74`), so a kind that stops receiving events is never trimmed again. |
 | Telemetry failure becomes request failure | Removing a `.catch()` from either Redis promise, or awaiting `emit` (it returns `void` by design, `emit.ts:30-35`). |

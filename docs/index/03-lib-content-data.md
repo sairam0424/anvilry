@@ -78,7 +78,9 @@ Three of the 16 graph node ids do **not** equal their content slug. These are in
 | `grpc` | `project` | `grpc-microservices` | `src/lib/game-model.ts:42` (`// node id != slug`) |
 | `nhl` | `project` | `not-humans-lab` | `src/lib/game-model.ts:45` (`// node id != slug`) |
 
-All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The module docblock states the failure this map prevents: without it, "click a node → open its card" would 404 for 30% of the graph (`game-model.ts:20-27`).
+All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The module docblock states the failure this map prevents: without it, "click a node → open its card" would 404 for "those three (including the flagship AAVA work item)" (`game-model.ts:21-22`).
+
+**Both numbers in that docblock were corrected on this branch.** It used to open "3 of the 10 graph node ids" — a count left over from when the graph had 10 nodes — and derived a "would 404 for 30% of the graph" figure from it. It now reads "3 of the **16** graph node ids" (`game-model.ts:19`), matching `graphNodes` and `NODE_CONTENT`, and the derived percentage was replaced with the count-free "would 404 for those three" (`:21-22`), so neither can go stale when content is added.
 
 ## Flag inventory (complete, all three flag modules)
 
@@ -117,7 +119,13 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 
 ## MCP tool inventory
 
-`src/lib/mcp-tools.ts` is transport-agnostic; the wiring is `src/app/api/mcp/[transport]/route.ts`. **The route registers 9 tools**, not 7 — `CLAUDE.md:181` and the `mcp-tools.ts:5-13` docblock both still say "7 tools"; `list_all_content` and `get_content_item` were added later (`route.ts` registrations after `get_resume_variant`).
+`src/lib/mcp-tools.ts` is transport-agnostic; the wiring is `src/app/api/mcp/[transport]/route.ts`. **The route registers 9 tools.**
+
+**The "7 tools" drift is fixed on this branch — do not go looking for it.** `list_all_content` and `get_content_item` were added after the original seven (`route.ts` registrations after `get_resume_variant`), and the prose count lagged behind in the docs, the route docblock and the public tools table. Every one of those now says 9 — and the two sites this index used to cite were each wrong in a second way as well:
+
+- `CLAUDE.md` says **9 tools** with all nine rows (`CLAUDE.md:202`) and its Key Files row says "MCP server (9 read-only tools)" (`CLAUDE.md:293`). An earlier reading of this index cited `CLAUDE.md:181` — that line is blank; every `CLAUDE.md` line number shifted when the file was rewritten on this branch.
+- the `mcp-tools.ts` docblock (`mcp-tools.ts:5-13`) **never carried a tool count at all** — it states the single-source and professional-only boundaries only, so there is nothing there to drift. The count that *was* stale lived in the route docblock, which now reads "9 read-only tools" (`route.ts:22`).
+- the public documentation table `src/app/mcp/page.tsx:35-45` lists all nine, and is now enforced rather than trusted: `src/app/mcp/tools-documented.test.ts` asserts the documented set and the route's `registerTool` calls are the same set — documents-nothing-extra (`:76`), documents-everything (`:81`), identical counts (`:90`) — plus a regex-drop guard so an extraction failure cannot make the comparison vacuous (`:61`). `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build.
 
 | Tool (registered name) | Input schema (exact) | Impl | Not-found behaviour |
 |---|---|---|---|
@@ -165,7 +173,8 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 - **Reads / depends on:** nothing — pure data, no imports.
 - **Consumed by:** `src/components/game/build-graph-scene.tsx`, `game/dossier-card.tsx`, `src/components/hero-graph/scene.tsx`, and `src/lib/game-model.ts`.
 - **Behaviour notes:** Positions are literal tuples with **no `Math.random`**, so SSR/build output is stable (`graph-data.ts:1-6`). Visual `kind` is one of `work | agent | engine | tool` (`:10`) and maps to hex colors `#38e1ff` / `#a78bfa` / `#4ade80` / `#fbbf24` (`:71-76`).
-- **Gotchas / invariants:** Positions are constrained by an explicit frustum budget recorded inline: "camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units" (`:36`) — node coordinates outside roughly ±1.8 on Y will clip. Adding a node here without a matching `NODE_CONTENT` entry fails `game-model.test.ts`. The module header comment still reads "the 5 flagship work systems + 8 OSS repos" (`:3-4`) while the array actually holds 5 work + 11 project nodes — the comment is stale, the data is authoritative.
+- **Gotchas / invariants:** Positions are constrained by an explicit frustum budget recorded inline: "Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units" (`:37`) — node coordinates outside roughly ±1.8 on Y will clip. Adding a node here without a matching `NODE_CONTENT` entry fails `game-model.test.ts`.
+- **Fixed on this branch — the stale header count is gone.** The module docblock used to read "the 5 flagship work systems + 8 OSS repos" while the array held 5 work + **11** project nodes, so the comment lied about the data it introduced. Rather than re-numbering it (which would go stale again on the next content file), it was **de-numbered**: it now reads "Nodes = every flagship work system + every OSS repo (see `graphNodes` below for the count — game-model.ts asserts a bijection with real content, so it moves with the content)" (`graph-data.ts:3-4`). The data is unchanged and still authoritative — 16 nodes, 5 work + 11 projects (`:18-41`) — and the bijection test (`game-model.test.ts:55-57`) is what actually pins the number.
 
 ### `src/lib/article-grouping.ts`
 - **Role:** Collapses the same article syndicated to multiple platforms into a single canonical group.
@@ -181,7 +190,9 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 - **Reads / depends on:** `@/lib/profile`, `@/lib/content` (`allWork`, `allProjects`, `allNotes`, `allArticles`), `@/lib/article-grouping` (`groupArticles`).
 - **Consumed by:** `src/app/llms.txt/route.ts` (a bare `GET` returning `text/plain; charset=utf-8`).
 - **Behaviour notes:** `BASE = "https://anvilry.vercel.app"` is hardcoded (`:5`). Articles are deduped through `groupArticles(allArticles)` with the default config (`:22`); each group's href prefers `${BASE}/notes/${linkedNote}`, then `externalUrl`, then `${BASE}${url}` (`:27-29`). Summaries are truncated — articles to 100 chars + `"..."` (`:30`), notes to 80 chars + `"..."` (`:38`). The Articles and Notes sections are omitted entirely when empty (`:57`). A `## Markdown Versions` section lists `<url>.md` for all work, all projects, all notes (or the literal `"(none yet)"`), and **only non-external articles** (`:68-79`).
-- **Gotchas / invariants:** `:65` advertises the MCP server as `${BASE}/api/mcp/sse`, but the route sets `disableSse: true` (`src/app/api/mcp/[transport]/route.ts`, `{ basePath: "/api/mcp", disableSse: true }`) and the documented public endpoint is `/api/mcp/mcp` — the URL in `llms.txt` points at a deliberately 404'd transport. The hardcoded `BASE` here is a fifth base-URL site beyond the four `CLAUDE.md:292` names (`layout.tsx`, `sitemap.ts`, `robots.ts`, `json-ld.tsx`); `resume-json.ts:4` and `mcp-tools.ts:14` are two more. No dedicated test file.
+- **Fixed on this branch — the dead-transport advertisement is gone.** `:65` used to emit `${BASE}/api/mcp/sse`, a path the route deliberately 404s via `disableSse: true` (`route.ts:126`, rationale `:120`), so `llms.txt` — the one file AI agents read to *find* this MCP server — pointed every agent at a transport that never answers. It now emits `- MCP server (for AI agents): ${BASE}/api/mcp/mcp`, the live Streamable HTTP endpoint (`llms-txt.ts:65`).
+- **Guard (new on this branch):** `src/lib/llms-txt.test.ts` — asserts the advertised transport by anchoring on the exact `- MCP server (for AI agents):` line prefix rather than a substring, because `includes("MCP server")` matched a project summary interpolated above the Links section (`:14`); asserts `/api/mcp/sse` appears nowhere in the output (`:25`); and reads `route.ts` to tie the assertion to the actual `disableSse: true` setting so the two files cannot drift apart again (`:29`).
+- **Gotchas / invariants:** The hardcoded `BASE` here is one of the base-URL sites — `https://anvilry.vercel.app` is hardcoded in **19 files / 25 occurrences**, not the four this index once claimed (`CLAUDE.md:325`, which now says so explicitly and gives the grep). `resume-json.ts:4` and `mcp-tools.ts:14` are two of the sibling lib copies. Run `grep -rn 'anvilry\.vercel\.app' src Makefile` rather than trusting any enumeration.
 
 ### `src/lib/profile.ts`
 - **Role:** Static, hand-maintained identity/skills/achievements/résumé-variant record.
@@ -280,12 +291,13 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 | `content.ts` | `src/lib/notes.test.ts`, `src/lib/case-study-depth.test.ts` |
 | `corpus.ts` | `src/lib/corpus.test.ts` |
 | `game-model.ts` + `graph-data.ts` | `src/lib/game-model.test.ts` (**blocks deploys** on orphaned nodes/content) |
-| `mcp-tools.ts` | `src/lib/mcp-tools.test.ts` |
+| `mcp-tools.ts` | `src/lib/mcp-tools.test.ts`; the *documented* tool set is additionally pinned by `src/app/mcp/tools-documented.test.ts:81`, `:90` (route registrations ≡ `src/app/mcp/page.tsx:35-45`) |
+| `llms-txt.ts` | `src/lib/llms-txt.test.ts` (**new on this branch**) — advertised MCP transport (`:14`), no `/api/mcp/sse` anywhere (`:25`), consistency with the route's `disableSse` (`:29`) |
 | `personal.ts` | `src/lib/personal.test.ts` |
 | `testimonials.ts` | `src/lib/testimonials.test.ts` |
 | `github.ts` | `src/lib/github.test.ts` |
 | `profile.ts` (indirect) | `src/lib/mcp-tools.test.ts:65` (résumé PDFs exist), `src/components/game/terminal/commands.test.ts` |
-| `article-grouping.ts`, `llms-txt.ts`, `resume-json.ts`, `flags.ts`, `writing-flags.ts`, `enabled-views.ts`, `discovery-store.ts`, `highlight-store.ts`, `utils.ts` | **no dedicated test file** |
+| `article-grouping.ts`, `resume-json.ts`, `flags.ts`, `writing-flags.ts`, `enabled-views.ts`, `discovery-store.ts`, `highlight-store.ts`, `utils.ts` | **no dedicated test file** (`llms-txt.ts` was on this list until this branch — see the row above) |
 
 ## Coverage
 

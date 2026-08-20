@@ -33,19 +33,72 @@ const CITABLE = /^(?:src|e2e|scripts|content|domains|signals|\.github)\//;
 const CITATION_RE =
   /`?((?:src|e2e|scripts|content|domains|signals|\.github)\/[A-Za-z0-9_[\]/.\-]+\.(?:ts|tsx|mjs|js|md|mdx|yml|yaml|css))`?\s*:\s*(\d+)/g;
 
+/** A bare filename + line, e.g. `scene.tsx:44`. Resolvable only if the basename is unique. */
+const BASENAME_RE =
+  /(?<![/A-Za-z0-9_.\-])([A-Za-z0-9_\-[\]]+\.(?:ts|tsx|mjs|js|yml|yaml|css))\s*:\s*(\d+)/g;
+
+/** A context-relative citation, e.g. `(:44)` — means "line 44 of the file this section is about". */
+const CONTEXTUAL_RE = /\(`?:\d+(?:-\d+)?`?\)|`:\d+(?:-\d+)?`/g;
+
+/**
+ * COVERAGE IS PARTIAL, AND THAT IS REPORTED — not implied away.
+ *
+ * The index uses three citation forms. Only the first is machine-resolvable without understanding
+ * the prose, and an earlier version of this script checked only that one while its own docs claimed
+ * "staleness is enforced". Measured: 1,137 qualified vs 952 bare-filename vs 2,095 contextual —
+ * so the honest coverage was ~27% of detectable citations, presented as total. The summary now
+ * always prints the unverified counts so the limit is visible at a glance.
+ */
+function buildBasenameIndex() {
+  const map = new Map();
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+      const p = join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/\.(ts|tsx|mjs|js|yml|yaml|css)$/.test(e.name)) {
+        if (map.has(e.name)) map.set(e.name, null); // ambiguous basename — unresolvable
+        else map.set(e.name, p);
+      }
+    }
+  };
+  for (const root of ["src", "scripts", "e2e", ".github"]) if (existsSync(root)) walk(root);
+  return map;
+}
+
 const fingerprint = (text) => createHash("sha256").update(text.trim()).digest("hex").slice(0, 12);
+
+/** Counts of citations this script cannot verify, so the coverage limit is always visible. */
+const unverified = { bareFilenameAmbiguous: 0, contextual: 0 };
 
 function collectCitations() {
   const out = new Map();
+  const basenames = buildBasenameIndex();
   for (const file of readdirSync(INDEX_DIR).filter((f) => f.endsWith(".md")).sort()) {
     const body = readFileSync(join(INDEX_DIR, file), "utf8");
-    for (const m of body.matchAll(CITATION_RE)) {
-      const [, path, lineStr] = m;
-      if (!CITABLE.test(path)) continue;
+    const add = (path, lineStr) => {
       const key = `${path}:${lineStr}`;
       if (!out.has(key)) out.set(key, { path, line: Number(lineStr), citedBy: new Set() });
       out.get(key).citedBy.add(file);
+    };
+
+    // 1. Fully-qualified — always resolvable.
+    let remainder = body;
+    for (const m of body.matchAll(CITATION_RE)) {
+      if (!CITABLE.test(m[1])) continue;
+      add(m[1], m[2]);
+      remainder = remainder.replace(m[0], "");
     }
+
+    // 2. Bare filename — resolvable when the basename is unique in the tree.
+    for (const m of remainder.matchAll(BASENAME_RE)) {
+      const resolved = basenames.get(m[1]);
+      if (resolved) add(resolved, m[2]);
+      else unverified.bareFilenameAmbiguous++;
+    }
+
+    // 3. Context-relative (`(:44)`) — needs the prose's current-file context. Counted, not checked.
+    unverified.contextual += (body.match(CONTEXTUAL_RE) ?? []).length;
   }
   return out;
 }
@@ -114,6 +167,12 @@ if (asJson) {
   console.log(JSON.stringify(report, null, 2));
 } else {
   console.log(`index citations: ${citations.size} | verified: ${unchanged} | drifted: ${drifted.length} | unresolvable: ${errored.length}`);
+  console.log(
+    `NOT CHECKED by this script: ${unverified.contextual} context-relative citations like \`(:44)\`` +
+      `${unverified.bareFilenameAmbiguous ? ` and ${unverified.bareFilenameAmbiguous} ambiguous bare filenames` : ""}` +
+      " — they need the prose's current-file context to resolve. Treat a green run as evidence about" +
+      " the checkable citations only, not the whole index.",
+  );
   for (const e of errored) {
     console.error(`\nUNRESOLVABLE  ${e.key}\n  ${e.reason}\n  cited by: ${e.citedBy.join(", ")}`);
   }

@@ -43,20 +43,20 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 
 | Decision | Where | Value / note |
 |---|---|---|
-| Frameloop — hero graph | `src/components/hero-graph/scene.tsx:116` | `frameloop="demand"` |
+| Frameloop — hero graph | `src/components/hero-graph/scene.tsx:117` | `frameloop="demand"` |
 | Frameloop — physics variant | `src/components/hero-graph/scene-physics.tsx:20` | `frameloop="always"` (the only always-on hero canvas) |
 | Frameloop — avatar | `src/components/hero-avatar/avatar-scene.tsx:22` | `frameloop="demand"` |
-| DPR clamp | `scene.tsx:121`, `scene-physics.tsx:23`, `avatar-scene.tsx:25` | `dpr={[1, 1.75]}` in all three |
-| GL context opts | `scene.tsx:122`, `scene-physics.tsx:24`, `avatar-scene.tsx:26` | `{ antialias: true, alpha: true, powerPreference: "high-performance" }` — identical in all three |
-| Resize measurement fix | `scene.tsx:119`, `scene-physics.tsx:21`, `avatar-scene.tsx:23` | `resize={{ offsetSize: true }}` — comment at `scene.tsx:117-118` states this fixes the "canvas stuck at 300x150" race when the `ResizeObserver` reports 0 on first measure inside an absolutely-positioned parent |
-| Camera | `scene.tsx:120` / `scene-physics.tsx:22` vs `avatar-scene.tsx:24` | graph: `position: [0,0,7], fov: 45`; avatar: `position: [0,0.1,2.5], fov: 40` |
-| Instanced meshes | `scene.tsx:44` | one `<instancedMesh args={[geo, mat, graphNodes.length]} />` for every node — single draw call |
-| Batched line geometry | `scene.tsx:48-68` | all edges flattened into one `THREE.BufferGeometry` rendered as one `<lineSegments>` |
-| Lazy import boundary — graph | `src/components/hero-graph/index.tsx:13-15` | `dynamic(() => import("./scene"), { ssr: false })` (or `./scene-physics` under the flag) |
+| DPR clamp | `scene.tsx:122`, `scene-physics.tsx:23`, `avatar-scene.tsx:25` | `dpr={[1, 1.75]}` in all three |
+| GL context opts | `scene.tsx:123`, `scene-physics.tsx:24`, `avatar-scene.tsx:26` | `{ antialias: true, alpha: true, powerPreference: "high-performance" }` — identical in all three |
+| Resize measurement fix | `scene.tsx:120`, `scene-physics.tsx:21`, `avatar-scene.tsx:23` | `resize={{ offsetSize: true }}` — comment at `scene.tsx:118-119` states this fixes the "canvas stuck at 300x150" race when the `ResizeObserver` reports 0 on first measure inside an absolutely-positioned parent |
+| Camera | `scene.tsx:121` / `scene-physics.tsx:22` vs `avatar-scene.tsx:24` | graph: `position: [0,0,7], fov: 45`; avatar: `position: [0,0.1,2.5], fov: 40` |
+| Instanced meshes | `scene.tsx:45` | one `<instancedMesh args={[geo, mat, graphNodes.length]} />` for every node — single draw call |
+| Batched line geometry | `scene.tsx:49-69` | all edges flattened into one `THREE.BufferGeometry` rendered as one `<lineSegments>` |
+| Lazy import boundary — graph | `src/components/hero-graph/index.tsx:15-17` | `dynamic(() => import("./scene"), { ssr: false })` (or `./scene-physics` under the flag) |
 | Lazy import boundary — avatar | `src/components/hero-avatar/index.tsx:10-13` | `dynamic(() => import("./avatar-scene").then(m => ({ default: m.AvatarScene })), { ssr: false })` |
-| Mobile drop | `hero-graph/index.tsx:29,32`; `hero-avatar/index.tsx:46,56` | `useMediaQuery("(min-width: 768px)")` must be true; the whole WebGL layer is skipped below 768 px |
-| Reduced motion | `hero-graph/index.tsx:28,32`; `hero-avatar/index.tsx:45,56`; `scene-physics.tsx:34,38` | `useReducedMotion()` blocks mounting at both entry points; the physics variant additionally early-returns inside `useFrame` (so under reduced motion it still renders every frame, it just does not move) |
-| View-scoped mount | `hero-graph/index.tsx:32`; `hero-avatar/index.tsx:56` | `view === "classic"` — the hidden Classic page must not hold a live WebGL context while the gamified view uses one |
+| Mobile drop | `hero-graph/index.tsx:31,34`; `hero-avatar/index.tsx:46,56` | `useMediaQuery("(min-width: 768px)")` must be true; the whole WebGL layer is skipped below 768 px |
+| Reduced motion | `hero-graph/index.tsx:30,34`; `hero-avatar/index.tsx:45,56`; `scene-physics.tsx:34,38` | `useReducedMotion()` blocks mounting at both entry points; the physics variant additionally early-returns inside `useFrame` (so under reduced motion it still renders every frame, it just does not move) |
+| View-scoped mount | `hero-graph/index.tsx:34`; `hero-avatar/index.tsx:56` | `view === "classic"` — the hidden Classic page must not hold a live WebGL context while the gamified view uses one |
 | Chunk dedup barrel | `src/lib/r3f.ts:1-27`, `next.config.ts:127-149` | all R3F consumers import from the barrel so the bundler sees one module-graph node |
 | Error containment | `hero-avatar/index.tsx:59-61` | `<WebGLBoundary>` wraps the lazy avatar scene. **The hero graph is NOT wrapped** — see gotchas. |
 
@@ -70,7 +70,7 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 |---|---|---|
 | `NEXT_PUBLIC_HERO_MODE` | `src/components/home/hero.tsx:16` and `src/components/hero-avatar/index.tsx:50` | `"avatar"` → `<HeroAvatar />`; anything else (default) → `<HeroGraph />` (`hero.tsx:21`). `HeroAvatar` independently re-checks and returns `null` when `!== "avatar"` (`index.tsx:54`). |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `src/components/hero-avatar/index.tsx:51` | `"hero-side"` (default via `?? "hero-side"`), `"hero-split"`, `"hero-top"` — three different wrapper layouts (lines 65, 85, 102). |
-| `NEXT_PUBLIC_GRAPH_PHYSICS` | `src/components/hero-graph/index.tsx:8` (**module scope**) | `"true"` → import `./scene-physics`; otherwise `./scene`. Comment at `index.tsx:11-12` states rapier is never imported when off — and in fact it is never imported at all (see gotchas). |
+| `NEXT_PUBLIC_GRAPH_PHYSICS` | `src/components/hero-graph/index.tsx:8` (**module scope**) | `"true"` → import `./scene-physics`; otherwise `./scene`. The comment previously claimed rapier is "never imported when off"; that half-truth was corrected in the comment sweep — `index.tsx:12-14` now states outright that no physics engine is involved and that `@react-three/rapier` is declared in `package.json` but imported nowhere in `src/`. |
 
 There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_PHYSICS` is the only "physics" switch, and no effects flag applies here.
 
@@ -81,38 +81,38 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 - **Exports:** `HeroGraph` (component) — no props.
 - **Reads / depends on:** `next/dynamic`; `@/lib/use-reduced-motion` (`useReducedMotion`); `@/lib/use-media-query` (`useMediaQuery`); `@/components/view-context` (`useView`); env `NEXT_PUBLIC_GRAPH_PHYSICS`.
 - **Consumed by:** `src/components/home/hero.tsx:5,21` — the only importer.
-- **Behaviour notes:** `GRAPH_PHYSICS` is evaluated at **module scope** (`index.tsx:8`), so the dynamic-import target is fixed at module-evaluation time (`index.tsx:13-15`). Gate is `isDesktop && !reduced && view === "classic"` (`index.tsx:32`). The wrapper is `aria-hidden="true"`, `pointer-events-none`, `absolute inset-0 -z-10 overflow-hidden` (`index.tsx:35-38`) so it can never block the static LCP (`index.tsx:25`). Two blurred CSS circles are always rendered (`index.tsx:40-41`) as the pre-hydration / mobile / reduced-motion visual. When WebGL is on, the scene sits inside an `opacity-45` radial mask centred at 82% x / 42% y (`index.tsx:46`) plus a left-to-right scrim gradient (`index.tsx:51`) so the headline keeps contrast.
-- **Gotchas / invariants:** The Classic-view condition (`index.tsx:32`) is documented at `index.tsx:19-22` as avoiding a second/leaked WebGL context on low-end mobile and freeing the single context in software-GL environments — dropping it would let two hero canvases coexist. Unlike `HeroAvatar`, this component does **not** wrap the scene in `WebGLBoundary` and does not call `useWebGLSupported()`.
+- **Behaviour notes:** `GRAPH_PHYSICS` is evaluated at **module scope** (`index.tsx:8`), so the dynamic-import target is fixed at module-evaluation time (`index.tsx:15-17`). Gate is `isDesktop && !reduced && view === "classic"` (`index.tsx:34`). The wrapper is `aria-hidden="true"`, `pointer-events-none`, `absolute inset-0 -z-10 overflow-hidden` (`index.tsx:37-40`) so it can never block the static LCP (`index.tsx:27`). Two blurred CSS circles are always rendered (`index.tsx:42-43`) as the pre-hydration / mobile / reduced-motion visual. When WebGL is on, the scene sits inside an `opacity-45` radial mask centred at 82% x / 42% y (`index.tsx:48`) plus a left-to-right scrim gradient (`index.tsx:53`) so the headline keeps contrast.
+- **Gotchas / invariants:** The Classic-view condition (`index.tsx:34`) is documented at `index.tsx:21-23` as avoiding a second/leaked WebGL context on low-end mobile and freeing the single context in software-GL environments — dropping it would let two hero canvases coexist. Unlike `HeroAvatar`, this component does **not** wrap the scene in `WebGLBoundary` and does not call `useWebGLSupported()`.
 
 ### `src/components/hero-graph/scene.tsx`
 - **Role:** The default hero graph Canvas: instanced spheres for nodes, one `lineSegments` for edges, and a pointer-eased group rotation, all on an on-demand frameloop.
 - **Exports:** `default` = `HeroGraphScene` (component, the Canvas), `Graph` (component, the inner group), `HeroGraphInner` (component, `Graph` with no Canvas).
 - **Reads / depends on:** `@/lib/r3f` (`Canvas`, `useThree`, `useFrame`, `THREE`) at `scene.tsx:4`; `@/lib/graph-data` (`graphNodes`, `graphEdges`, `kindColor`) at `scene.tsx:5`.
-- **Consumed by:** `src/components/hero-graph/index.tsx:15` (default export, via `dynamic`); `src/components/hero-graph/scene-physics.tsx:8` imports `HeroGraphInner`. `Graph` is exported (`scene.tsx:92`) with the comment "exported for the physics variant to embed inside its own Canvas" but no file imports `Graph` directly — the physics variant uses `HeroGraphInner` instead.
+- **Consumed by:** `src/components/hero-graph/index.tsx:17` (default export, via `dynamic`); `src/components/hero-graph/scene-physics.tsx:8` imports `HeroGraphInner`. `Graph` is exported (`scene.tsx:93`) with the comment "exported for the physics variant to embed inside its own Canvas" but no file imports `Graph` directly — the physics variant uses `HeroGraphInner` instead.
 - **Behaviour notes:**
-  - `SCALE = 1.6` (`scene.tsx:7`) multiplies every node/edge coordinate. `graph-data.ts:36` documents the frustum budget this scale implies (camera z=7, fov=45 → visible half-height ≈ 2.9 / 1.6 ≈ 1.8 units).
+  - `SCALE = 1.6` (`scene.tsx:7`) multiplies every node/edge coordinate. `graph-data.ts:37` documents the frustum budget this scale implies (camera z=7, fov=45 → visible half-height ≈ 2.9 / 1.6 ≈ 1.8 units).
   - `idx` (`scene.tsx:8`) is a module-level `id → array index` map built once from `graphNodes`, used by `Edges` to resolve endpoints.
-  - `ptr` (`scene.tsx:15`) is a **module-level mutable singleton** `{x, y}`, not React state. `Graph`'s effect (`scene.tsx:96-103`) attaches a `window` `pointermove` listener that writes `ptr` in NDC-ish `[-1,1]` (`y` inverted) and calls `invalidate()`. The comment at `scene.tsx:11-14` explains why: the canvas has `pointer-events: none` (`scene.tsx:123`) so R3F's own pointer tracking never fires.
-  - `Nodes` (`scene.tsx:18-45`): geometry `SphereGeometry(0.13, 24, 24)`, material `MeshBasicMaterial({ toneMapped: false })`, both `useMemo`'d. A one-shot effect writes per-instance matrices and colors (`kindColor[n.kind]`), flags `instanceMatrix.needsUpdate` / `instanceColor.needsUpdate`, then `invalidate()` (`scene.tsx:26-36`). A second effect disposes `geo` and `mat` on unmount (`scene.tsx:39-42`).
-  - `Edges` (`scene.tsx:48-68`): flattens all `graphEdges` into a `Float32BufferAttribute("position", …, 3)`; material `lineBasicMaterial color="#3a4258" transparent opacity={0.7} toneMapped={false}` (`scene.tsx:65`); geometry disposed on unmount (`scene.tsx:62`).
-  - `Rig` (`scene.tsx:71-89`): eases `group.rotation` toward `ptr.y * 0.22` (x) and `ptr.x * 0.4` (y) at 5% per frame, and only re-`invalidate()`s while `|delta| > 0.0006` (`scene.tsx:86`) — that threshold is what lets the demand loop actually come to rest.
-  - Initial group rotation is `[0.15, -0.3, 0]` (`scene.tsx:105`).
+  - `ptr` (`scene.tsx:15`) is a **module-level mutable singleton** `{x, y}`, not React state. `Graph`'s effect (`scene.tsx:97-104`) attaches a `window` `pointermove` listener that writes `ptr` in NDC-ish `[-1,1]` (`y` inverted) and calls `invalidate()`. The comment at `scene.tsx:11-14` explains why: the canvas has `pointer-events: none` (`scene.tsx:124`) so R3F's own pointer tracking never fires.
+  - `Nodes` (`scene.tsx:19-46`): geometry `SphereGeometry(0.13, 24, 24)`, material `MeshBasicMaterial({ toneMapped: false })`, both `useMemo`'d. A one-shot effect writes per-instance matrices and colors (`kindColor[n.kind]`), flags `instanceMatrix.needsUpdate` / `instanceColor.needsUpdate`, then `invalidate()` (`scene.tsx:27-37`). A second effect disposes `geo` and `mat` on unmount (`scene.tsx:40-43`).
+  - `Edges` (`scene.tsx:49-69`): flattens all `graphEdges` into a `Float32BufferAttribute("position", …, 3)`; material `lineBasicMaterial color="#3a4258" transparent opacity={0.7} toneMapped={false}` (`scene.tsx:66`); geometry disposed on unmount (`scene.tsx:63`).
+  - `Rig` (`scene.tsx:72-90`): eases `group.rotation` toward `ptr.y * 0.22` (x) and `ptr.x * 0.4` (y) at 5% per frame, and only re-`invalidate()`s while `|delta| > 0.0006` (`scene.tsx:87`) — that threshold is what lets the demand loop actually come to rest.
+  - Initial group rotation is `[0.15, -0.3, 0]` (`scene.tsx:106`).
 - **Gotchas / invariants:**
-  - The `invalidate()` threshold at `scene.tsx:86` is the settle condition for `frameloop="demand"`; removing it turns the demand loop into a perpetual loop.
-  - The in-render mutation of `g.rotation` is wrapped in an explicit `/* eslint-disable react-hooks/immutability */` … `enable` pair (`scene.tsx:82-85`) with the rationale that `g` is a live scene-graph node, not React state. Deleting the disable comment fails lint.
-  - The doc comment at `scene.tsx:17` says "All 10 nodes as ONE InstancedMesh", but `src/lib/graph-data.ts:17-40` currently defines **16** nodes. The code is count-agnostic (`graphNodes.length` at `scene.tsx:44`); the comment is stale.
+  - The `invalidate()` threshold at `scene.tsx:87` is the settle condition for `frameloop="demand"`; removing it turns the demand loop into a perpetual loop.
+  - The in-render mutation of `g.rotation` is wrapped in an explicit `/* eslint-disable react-hooks/immutability */` … `enable` pair (`scene.tsx:83-86`) with the rationale that `g` is a live scene-graph node, not React state. Deleting the disable comment fails lint.
+  - The `Nodes` doc comment used to hard-code a node count ("All 10 nodes as ONE InstancedMesh") while `graphNodes` had grown to 16 — **fixed in the comment sweep**: `scene.tsx:17-18` now reads "Every node as ONE InstancedMesh … Count is taken from `graphNodes.length`, so adding content never adds a draw call", which matches the count-agnostic `graphNodes.length` at `scene.tsx:45`. `src/lib/graph-data.ts:18-41` defines the **16** nodes, and that file's own docblock was de-numbered the same way (`graph-data.ts:3-4` now says "every flagship work system + every OSS repo (see `graphNodes` below for the count)" instead of "the 5 flagship work systems + 8 OSS repos"). Adding a node no longer makes either comment lie.
   - `ptr` being module-level means two simultaneously mounted `Graph` instances would share pointer state (in practice only one hero canvas mounts at a time).
 
 ### `src/components/hero-graph/scene-physics.tsx`
 - **Role:** The `NEXT_PUBLIC_GRAPH_PHYSICS=true` variant of the hero graph — same inner graph, wrapped in a group that drifts sinusoidally on an always-on frameloop.
 - **Exports:** `HeroGraphScenePhysics` (component). `DriftWrapper` is module-private (`scene-physics.tsx:33`).
 - **Reads / depends on:** `@react-three/fiber` (`Canvas`, `useFrame`, type `RootState`) and `three` (`* as THREE`) **imported directly, not through the barrel** (`scene-physics.tsx:4-6`); `@/lib/use-reduced-motion`; `./scene` (`HeroGraphInner`).
-- **Consumed by:** `src/components/hero-graph/index.tsx:14` only.
+- **Consumed by:** `src/components/hero-graph/index.tsx:16` only.
 - **Behaviour notes:** `frameloop="always"` (`scene-physics.tsx:20`) — no `invalidate()` calls anywhere in this file, because none are needed. `DriftWrapper` sets (never accumulates) `position.x = sin(t*0.4)*0.08`, `position.y = cos(t*0.25)*0.06`, `position.z = sin(t*0.3+1)*0.04` from `clock.elapsedTime` (`scene-physics.tsx:42-44`); the comment at lines 43-44 states position is SET so it stays bounded. Under reduced motion the `useFrame` callback returns early (`scene-physics.tsx:38`) leaving the group at the origin.
 - **Gotchas / invariants:**
   - **Despite the filename and the flag name, there is no physics engine here.** The header comment (`scene-physics.tsx:10-16`) states "No RigidBody / Rapier needed for this effect". `@react-three/rapier` is a declared dependency (`package.json:31`) but is imported by **no** file in `src/` — the only textual match is that comment.
   - This is the **only** file in the 3D subsystem that bypasses `@/lib/r3f` (`scene-physics.tsx:4-6`). The barrel's whole purpose (`src/lib/r3f.ts:5-8`) is that every R3F consumer route through one module-graph node; a direct `@react-three/fiber` + `three` import here is exactly the pattern the barrel exists to prevent. Because this variant is flag-off by default it is not in the default production graph.
-  - Reduced motion is handled *inside* the frame callback, not at the Canvas level — so with the flag on and reduced-motion set, the canvas still renders continuously (`frameloop="always"`), it just renders a static scene. The upstream gate in `hero-graph/index.tsx:32` normally prevents this from ever mounting under reduced motion.
+  - Reduced motion is handled *inside* the frame callback, not at the Canvas level — so with the flag on and reduced-motion set, the canvas still renders continuously (`frameloop="always"`), it just renders a static scene. The upstream gate in `hero-graph/index.tsx:34` normally prevents this from ever mounting under reduced motion.
 
 ### `src/components/hero-avatar/index.tsx`
 - **Role:** Gate + layout host for the 3D avatar hero slot; returns `null` entirely unless the avatar hero mode is selected.
@@ -123,7 +123,7 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
   - `"hero-side"` (default): full-bleed `-z-10` wrapper, `opacity-60` radial mask at 82% x / 45% y, plus the left-to-right scrim (`index.tsx:65-82`).
   - `"hero-split"`: `absolute inset-y-0 right-0 w-[42%] border-l border-border` (`index.tsx:85-99`).
   - `"hero-top"` (the fall-through default for any other value): `left-1/2 top-8 h-36 w-36 -translate-x-1/2` (`index.tsx:102-110`).
-- **Gotchas / invariants:** `GlowFallback` (`index.tsx:19-26`) intentionally duplicates the two blurred circles from `hero-graph/index.tsx:40-41`; the comment at `index.tsx:16-18` states this is so switching hero modes produces no fallback-path layout shift — the two must be kept in sync manually. Every branch sets `aria-hidden="true"` and `pointer-events-none`, so the avatar is decorative-only. Unknown `NEXT_PUBLIC_AVATAR_POSITION` values silently render the `hero-top` layout rather than erroring.
+- **Gotchas / invariants:** `GlowFallback` (`index.tsx:19-26`) intentionally duplicates the two blurred circles from `hero-graph/index.tsx:42-43`; the comment at `index.tsx:16-18` states this is so switching hero modes produces no fallback-path layout shift — the two must be kept in sync manually. Every branch sets `aria-hidden="true"` and `pointer-events-none`, so the avatar is decorative-only. Unknown `NEXT_PUBLIC_AVATAR_POSITION` values silently render the `hero-top` layout rather than erroring.
 
 ### `src/components/hero-avatar/avatar-scene.tsx`
 - **Role:** The avatar `<Canvas>` — owns the `controlsRef` that the controls hook writes and the mesh hook reads, plus the two lights.
@@ -225,7 +225,7 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 ## Cross-references outside this section
 
 - `src/components/home/hero.tsx:16,21` is the sole mount point for both hero WebGL slots and the place `NEXT_PUBLIC_HERO_MODE` is branched.
-- `src/lib/graph-data.ts` supplies `graphNodes` (16 entries), `graphEdges` (19 pairs), and `kindColor` (`work: #38e1ff`, `agent: #a78bfa`, `engine: #4ade80`, `tool: #fbbf24`); positions are deliberately deterministic — "no Math.random — so SSR/build stays stable" (`graph-data.ts:5`).
+- `src/lib/graph-data.ts` supplies `graphNodes` (16 entries), `graphEdges` (19 pairs), and `kindColor` (`work: #38e1ff`, `agent: #a78bfa`, `engine: #4ade80`, `tool: #fbbf24`); positions are deliberately deterministic — "Positions are deterministic (no Math.random) so SSR/build stays stable" (`graph-data.ts:6`).
 - `src/lib/use-reduced-motion.ts` and `src/lib/use-media-query.ts` (`useMediaQuery`, `useWebGLSupported`) are the gate primitives; both return `false` on the server.
 - `src/components/game/build-graph.tsx` / `build-graph-scene.tsx` are the Play-view R3F surface (game section) and share `WebGLBoundary`, the barrel, `frameloop="demand"` and `dpr={[1,1.75]}`.
 - `src/components/chat/voice-orb-3d.tsx` is the only post-processing consumer of the barrel and the only canvas that toggles `frameloop` at runtime (`errorMode ? "demand" : "always"`, `voice-orb-3d.tsx:306`).

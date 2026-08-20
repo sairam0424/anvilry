@@ -174,10 +174,10 @@ Terse index of all 67 files in scope, in the same order as [Coverage](#coverage)
 
 ## The four load-bearing gates — verified against source
 
-CLAUDE.md's "Testing Notes" section (`CLAUDE.md:304-311`) names four gates. Verified one by one:
+CLAUDE.md's "Testing Notes" section (`CLAUDE.md:353-362`) names four gates. Verified one by one:
 
 ### 1. `game-model.test.ts` bijection — **CLAUDE.md is correct**
-`CLAUDE.md:306`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
+`CLAUDE.md:355`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
 
 Confirmed. Seven forward/reverse coverage assertions plus an explicit count identity:
 - forward: every `graphNodes` id is a key of `NODE_CONTENT` (`game-model.test.ts:22-25`), resolves via `resolveNode` (`:27-32`), and points at a slug present in `allWork`/`allProjects` (`:34-40`);
@@ -188,10 +188,10 @@ Confirmed. Seven forward/reverse coverage assertions plus an explicit count iden
 
 The three intentional node-id≠slug exceptions CLAUDE.md lists are real, but they live in the source, not the test: `aava → aava-code` (`src/lib/game-model.ts:31`), `grpc → grpc-microservices` (`:42`), `nhl → not-humans-lab` (`:45`), documented at `src/lib/game-model.ts:20`.
 
-### 2. `ask-portfolio.dom.test.tsx` injection/XSS guards — **CLAUDE.md is WRONG on both count**
-`CLAUDE.md:307`: "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these."
+### 2. Injection/XSS guard location — **CLAUDE.md was wrong on both counts; now corrected**
+CLAUDE.md used to say "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these." Both halves of that were wrong, and both are now fixed: `CLAUDE.md:356` names `src/components/chat/parse-cards.test.ts` as the prompt-injection / XSS guard, and `CLAUDE.md:357` records that `src/components/ask-portfolio.dom.test.tsx` "has exactly two tests" and "contains zero injection or XSS assertions."
 
-Two corrections:
+The two errors, for the record:
 1. **Wrong filename.** There is no `ask-portfolio.dom.test.ts`. The file is `src/components/ask-portfolio.dom.test.tsx`.
 2. **Wrong contents.** That file contains exactly two tests and neither is an injection or XSS test: "streams an assistant answer through the shared transport" (`ask-portfolio.dom.test.tsx:46-68`) and "surfaces the 503 not-configured message gracefully" (`:70-86`). Its own header comment describes it as the "Phase 0 unification contract" proving the widget rides the shared `useChat` transport (`:12-19`). A `grep -rl "injection\|XSS"` over the test suite returns only `parse-cards.test.ts` and `markdown-message.test.ts`.
 
@@ -199,17 +199,17 @@ Where the guards actually live:
 - **`src/components/chat/parse-cards.test.ts`** is the prompt-injection / XSS fail-closed gate. Header: "Prompt-injection / XSS guard for the chat card layer" (`parse-cards.test.ts:5-11`). It drops hallucinated slugs without echoing the raw token (`:41-48`), ignores non-`project|work` kinds (`:50-53`), rejects `../../etc/passwd`, `javascript:alert(1)`, `https://evil.example.com` and uppercase/underscore slugs because the charset is locked to `[a-z0-9-]` (`:55-65`), and keeps `<img src=x onerror=...>` / `<script>` as inert text segments (`:67-75`).
 - **`src/components/chat/markdown-message.test.ts`** explicitly *disclaims* XSS coverage: "The XSS posture itself lives in react-markdown's skipHtml + defaultUrlTransform — verified via a real-browser render, not here. This file pins OUR logic only." (`markdown-message.test.ts:9-11`). The runtime posture is `rehypePlugins={[rehypeSanitize]}` + `skipHtml` in `src/components/chat/markdown-message.tsx:90-91`.
 
-Net: the guard exists and is a deploy blocker — CLAUDE.md just points at the wrong file.
+Net: the guard exists and is a deploy blocker; CLAUDE.md now points at the right file.
 
 ### 3. `llm.test.ts` snake_case usage-field pin — **CLAUDE.md is correct**
-`CLAUDE.md:308`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
+`CLAUDE.md:358`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
 
 Confirmed, and it is a dedicated test, not incidental: "uses snake_case keys verbatim (regression guard against a silent SDK swap)" (`llm.test.ts:220-250`). It asserts `Object.keys(usage)` contains `["input_tokens", "cache_read_input_tokens", "output_tokens"]` (`:244-246`) and then explicitly forbids the camelCase forms: `expect(usage).not.toHaveProperty("inputTokens")` and `not.toHaveProperty("cacheReadInputTokens")` (`:248-249`). The file header records the reason: Bedrock Converse uses camelCase but `@anthropic-ai/bedrock-sdk` uses snake_case, so an SDK swap would silently zero the dashboard's cache-hit tile (`llm.test.ts:14-18`).
 
 Two adjacent tests pin the full usage capture: `message_start` + `message_delta` extraction of `{input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens}` (`:114-181`) and a warm-cache turn where `cache_read_input_tokens === 4096` / `cache_creation_input_tokens === 0` (`:183-218`).
 
-### 4. `agent-trace.test.ts` `PLACEHOLDER_SENTINEL` ship gate — **CLAUDE.md overstates this; the source contradicts it**
-`CLAUDE.md:309`: "`agent-trace.test.ts` **blocks shipping** the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contains `PLACEHOLDER_SENTINEL` (`\"[DRAFT — owner to approve]\"`)."
+### 4. `agent-trace.test.ts` `PLACEHOLDER_SENTINEL` gate — **not a ship block, and CLAUDE.md now says so**
+CLAUDE.md used to claim the test "**blocks shipping**" the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contained `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). That claim has been corrected: `CLAUDE.md:359` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check."
 
 What the test actually does (`agent-trace.test.ts:51-57`):
 
@@ -222,9 +222,11 @@ expect(traceApproved).toBe(!hasSentinel);
 
 This is a **consistency assertion, not a ship block.** It passes when the sentinel is present *and* `traceApproved === false`, and equally when the sentinel is gone *and* `traceApproved === true`. It only fails if the flag and the prose disagree.
 
-The source says so in as many words: `src/lib/agent-trace.ts:111-116` — "Until then the glass-box demo renders DARK (empty-safe…) — so the scaffolding can ship without exposing un-reviewed prose… **NOT a hard build failure.**" (Note that the banner comment higher in the same file, `src/lib/agent-trace.ts:13-14`, still claims the test "BLOCKS shipping" — the two comments contradict each other; line 115 matches the test.)
+The source says so in as many words: the `traceApproved` docblock at `src/lib/agent-trace.ts:114-119` — "Until then the glass-box demo renders DARK (empty-safe…) — so the scaffolding can ship without exposing un-reviewed prose… **NOT a hard build failure.**" (`:118` carries that last clause.)
 
-Current state: the string literal `"[DRAFT — owner to approve]"` occurs exactly once in that file — the `PLACEHOLDER_SENTINEL` declaration (`src/lib/agent-trace.ts:19`). The identifier itself occurs 16 times: that declaration, one header-comment mention (`:11`), 12 template interpolations (`:56-57`, `:63-64`, `:70-71`, `:83-84`, `:90-91`, `:97-98`) covering all 6 scenario steps — 2 scenarios × 3 steps, each step carrying it in both `action` and `output` — and 2 in the `traceApproved` predicate (`:118`). Every step therefore carries the sentinel, so `traceApproved` (`:117-119`) is `false` and `src/components/game/glass-box-demo.tsx:40` short-circuits with `if (!traceApproved) return null;`. The demo is dark; nothing is blocked.
+The file's top banner used to contradict that docblock by claiming the test "BLOCKS shipping". **That contradiction is fixed** — the banner at `src/lib/agent-trace.ts:13-16` now states that "agent-trace.test.ts asserts the gate AGREES WITH REALITY (sentinel present <=> not approved)" and that "It does NOT block the build: while the sentinel remains, traceApproved is false and glass-box-demo.tsx renders NOTHING". Banner, docblock and test now all say the same thing; there is no longer a contradictory comment in this file.
+
+Current state: the string literal `"[DRAFT — owner to approve]"` occurs exactly once in that file — the `PLACEHOLDER_SENTINEL` declaration (`src/lib/agent-trace.ts:22`). The identifier itself occurs 16 times: that declaration, one header-comment mention (`:11`), 12 template interpolations (`:59-60`, `:66-67`, `:73-74`, `:86-87`, `:93-94`, `:100-101`) covering all 6 scenario steps — 2 scenarios × 3 steps, each step carrying it in both `action` and `output` — and 2 in the `traceApproved` predicate (`:121`). Every step therefore carries the sentinel, so `traceApproved` (`:120-122`) is `false` and `src/components/game/glass-box-demo.tsx:40` short-circuits with `if (!traceApproved) return null;`. The demo is dark; nothing is blocked.
 
 The other three assertions in that file *are* real deploy blockers: every `refs` slug must resolve via `getWork`/`getProject` and produce a link (`:20-28`), ≥2 scenarios each with ≥1 ref-bearing step (`:30-36`), and every step must use a known `AGENTS` key with finite positive `ms` summing to <8000 per scenario (`:38-49`).
 

@@ -41,8 +41,9 @@ carried-forward ledger for both parts.
 **Subsystems 1–6 are in [`14-subsystems.md`](./14-subsystems.md):** content pipeline · view system ·
 chat/LLM request path · voice pipeline · MCP server · telemetry & observability.
 **Synthesized from** sections [01](./01-routes-pages.md)–[13](./13-dependencies-and-versions.md) (each cites
-its own reads), plus one direct read recorded inline: a `force-static` grep across `src/` (returns nothing;
-`CLAUDE.md:125` claims `/mcp` is `(force-static)`).
+its own reads), plus one direct read recorded inline: a `force-static` grep across `src/` (returns nothing —
+and `CLAUDE.md:130` now documents `/mcp` as "no segment config", so the mismatch this index recorded against
+that line is gone).
 
 ---
 
@@ -90,7 +91,7 @@ if (!secret || authHeader !== `Bearer ${secret}`) {
 }
 ```
 
-Sites: `eval/route.ts:98-102`, `health-check/route.ts:117-121`, `github-sync/route.ts:18-22`,
+Sites: `eval/route.ts:98-102`, `health-check/route.ts:126-130`, `github-sync/route.ts:18-22`,
 `seo-audit/route.ts:16-20`, `content-audit/route.ts:19-23`. Properties exactly as implemented:
 **fail-closed** (unset `CRON_SECRET` ⇒ 401, never open — stated at `eval/route.ts:14`), lower-case header
 name, plain non-constant-time `!==`, no scheme-case tolerance, no trimming, no `x-vercel-*` alternative.
@@ -297,7 +298,7 @@ Four independent canvases exist; at most one hero canvas and one orb canvas are 
 
 ```
 GATE (evaluated in a client component, before any import resolves)
-  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:32
+  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:34
   hero avatar:  heroMode === "avatar" && isDesktop && !reduced && view === "classic"
                                                                   hero-avatar/index.tsx:54,:56
   build graph:  isDesktop && !reduced && webglOk && !webglFailed && !talkOpen      game/build-graph.tsx:50
@@ -306,7 +307,7 @@ GATE (evaluated in a client component, before any import resolves)
         │  false on ANY term → CSS glow fallback / 2D canvas orb / DOM index; no WebGL at all
         ▼
 LAZY BOUNDARY   next/dynamic(..., { ssr: false })
-  hero-graph/index.tsx:13-15   → ./scene  OR  ./scene-physics   (target fixed at module eval, :8)
+  hero-graph/index.tsx:15-17   → ./scene  OR  ./scene-physics   (target fixed at module eval, :8)
   hero-avatar/index.tsx:10-13  → ./avatar-scene
   game/build-graph.tsx:16      → ./build-graph-scene
   chat/voice-orb.tsx:11-16     → ./voice-orb-3d
@@ -347,7 +348,7 @@ SCENE       hero graph : 1 instancedMesh for all graphNodes + 1 lineSegments for
 | 1 | `src/lib/use-media-query.ts:14-15,28-47` | `useMediaQuery` (server snapshot `false`) and the memoized `useWebGLSupported` probe (`webgl2` → `webgl` → `experimental-webgl`, any throw ⇒ false). |
 | 2 | `src/lib/use-reduced-motion.ts:9-21` | The native hook, written to avoid importing `motion/react` for this alone. |
 | 3 | `src/components/home/hero.tsx:16,21` | The sole mount point for both hero slots. |
-| 4 | `src/components/hero-graph/index.tsx:8,13-15,32,35-51` | Flag-fixed dynamic target; the triple gate; the always-rendered CSS glow fallback + radial mask + scrim. |
+| 4 | `src/components/hero-graph/index.tsx:8,15-17,34,41-53` | Flag-fixed dynamic target; the triple gate; the always-rendered CSS glow fallback + radial mask + scrim. |
 | 5 | `src/components/hero-avatar/index.tsx:49-62,65-110` | Flags read **inside** the function body (for `vi.stubEnv`); `WebGLBoundary`; three layout wrappers. |
 | 6 | `src/components/game/build-graph.tsx:28-60` | The five-term gate incl. the three voice stores. |
 | 7 | `src/components/chat/voice-orb.tsx:38-50` | Capability tiering with a permanent flip to the 2D orb on failure. |
@@ -380,7 +381,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Decision | Value | Cite |
 |---|---|---|
 | DPR clamp | `[1, 1.75]` on all hero/graph canvases | `scene.tsx:121`, `scene-physics.tsx:23`, `avatar-scene.tsx:25`, `build-graph-scene.tsx:154`; voice orb `voice-orb-3d.tsx:310` |
-| Mobile cutoff | `(min-width: 768px)` — the whole WebGL layer is skipped below it | `hero-graph/index.tsx:29`, `hero-avatar/index.tsx:46`, `build-graph.tsx:28` |
+| Mobile cutoff | `(min-width: 768px)` — the whole WebGL layer is skipped below it | `hero-graph/index.tsx:31`, `hero-avatar/index.tsx:46`, `build-graph.tsx:28` |
 | Draw-call batching (hero) | one `instancedMesh` for all nodes, one `lineSegments` for all edges | `scene.tsx:44,48-68` |
 | Demand-loop settle | re-`invalidate()` only while `\|delta\| > 0.0006` | `scene.tsx:86` |
 | Resize race fix | `resize={{ offsetSize: true }}` — fixes "canvas stuck at 300×150" when the ResizeObserver reports 0 on first measure | `scene.tsx:117-119` |
@@ -389,14 +390,14 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages | `domains/performance/README.md:62-66` |
 | Asset budget | `MAX_BYTES = 1.5 * 1024 * 1024`; current asset 1,105,768 B | `src/lib/avatar-glb.test.ts:21,58-61` |
 | LOD | **none exists** — no `<Detailed>`, no `THREE.LOD`, no distance swap. The only quality knobs are the dpr clamp and the 768 px cutoff. | verified absence, section 07 |
-| Worker offload | **not present in source.** `@react-three/offscreen` is declared (`package.json:28`) but imported by no file in `src/`. `CLAUDE.md:217` claims otherwise. | section 07, section 13 |
-| Physics engine | **not present in source.** `@react-three/rapier` (`package.json:31`) is imported by no file; `scene-physics.tsx:12-16` states "No RigidBody / Rapier needed for this effect". | section 07, section 13 |
+| Worker offload | **not present in source.** `@react-three/offscreen` is declared (`package.json:27`) but imported by no file in `src/`. `CLAUDE.md:250` now says the same ("no worker/OffscreenCanvas anywhere") — it previously claimed worker offload existed. | section 07, section 13 |
+| Physics engine | **not present in source.** `@react-three/rapier` (`package.json:29`) is imported by no file; `scene-physics.tsx:12-16` states "No RigidBody / Rapier needed for this effect". The mount-side comment agrees now too: `hero-graph/index.tsx:12-13` says "despite the flag name, there is no physics engine involved" — it used to read as though the flag loaded Rapier, which is the reading this index carried. | section 07, section 13 |
 
 ### The reduced-motion path
 
 | Surface | Behaviour under `prefers-reduced-motion: reduce` |
 |---|---|
-| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:32,40-41`) |
+| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:34,42-43`) |
 | Hero avatar | Never mounts; `GlowFallback` duplicates those same two circles so switching hero modes causes no layout shift (`hero-avatar/index.tsx:16-26`) |
 | Build graph | Never mounts; `GraphIndex` (the accessible DOM-first list) is the whole experience (`build-graph.tsx:50`) |
 | Voice orb | 3D skipped; `VoiceOrbCanvas` draws **one static ring** and returns early with no rAF loop (`voice-orb-canvas.tsx:54-63`) |
@@ -409,7 +410,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 
 | Failure | Mechanism |
 |---|---|
-| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:19-22`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
+| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:34`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
 | Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-graph/index.tsx` and `hero-avatar/index.tsx` neither probe nor (for the graph) wrap. |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:86`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
@@ -421,7 +422,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Skill tree throws at render | `skills.find(s => s.group === groupName)!` is a non-null assertion against six hardcoded group names (`skill-tree.tsx:60-61,155`); renaming a group in `src/lib/profile.ts:42-64` throws. |
 | Build fails on an avatar re-export | Re-exporting without meshopt/quantization, or with PNG/JPEG textures, or above 1.5 MB — `avatar-glb.test.ts` runs inside `pnpm build` (`:69-95`). |
 | Wrong scene named in the console | `WebGLBoundary` hardcodes a `[build-graph]` prefix (`webgl-boundary.tsx:25`) even when the failing surface is the hero avatar, the voice orb, or the 404 orb. |
-| Nodes clip out of frustum | `graph-data.ts:36` records the budget: camera z=7, fov=45 ⇒ visible half-height ≈ 2.9 / SCALE 1.6 ≈ 1.8 units. |
+| Nodes clip out of frustum | `graph-data.ts:37` records the budget: camera z=7, fov=45 ⇒ visible half-height ≈ 2.9 / SCALE 1.6 ≈ 1.8 units. |
 
 ### Flags / env that alter it
 
@@ -508,15 +509,24 @@ blocker on the Vercel build path. Concretely, these invariants block a deploy:
 - snake_case Anthropic usage keys — `src/lib/llm.test.ts:244-249`
 - card-token fail-closed behaviour — `src/components/chat/parse-cards.test.ts:55-75`
 - redact-before-emit — `src/app/api/error/route.test.ts:218-255`
-- last-XFF-segment IP derivation — `src/lib/telemetry/with-trace.test.ts:220-230`
+- last-XFF-segment IP derivation — `src/lib/telemetry/with-trace.test.ts:220-230`, and, across **all
+  three** `clientIp` copies, `src/lib/client-ip-consistency.test.ts` (`:26-30` the enumerated copies —
+  `rate-limit.ts`, `telemetry/with-trace.ts`, `api/visit/route.ts`; `:101` a discovery check that fails
+  if a fourth copy appears unguarded; `:140` "takes the LAST x-forwarded-for segment, never the
+  first"). This is the guard added when `api/visit/route.ts` was corrected from the leftmost segment to
+  `xff.split(",").pop()!.trim()` (`:34`) — the divergence this index used to record there is gone.
 - SSR-is-always-Classic — `src/components/view-context.test.ts:30-34`
 
 **Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:55-92`).
 `agent-trace.test.ts` is a **consistency** check, not a ship block: `expect(traceApproved).toBe(!hasSentinel)`
 (`src/lib/agent-trace.test.ts:56`) passes in both states. The sentinel is currently present, so
 `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo is
-dark and nothing is blocked. `src/lib/agent-trace.ts:13-14` says the test "BLOCKS shipping" while `:115`
-says "NOT a hard build failure"; line 115 is what the test implements.
+dark and nothing is blocked. The file used to contradict itself on this — its header banner claimed the
+test "BLOCKS shipping" while the `traceApproved` docblock said "NOT a hard build failure", and the banner
+is what this index and `CLAUDE.md` originally believed. **Fixed in the comment sweep on this branch:** the
+banner now states outright that the test does **NOT** block the build and that the demo renders nothing
+while the sentinel remains (`src/lib/agent-trace.ts:13-16`), which agrees with the docblock at `:114-119`
+(the phrase at `:118`), the declaration at `:120`, and what the test actually asserts.
 
 ### Branch model
 
@@ -532,8 +542,9 @@ branch, merged from `develop` only (Vercel Production). `make pr` opens feature 
 `/search` loads `/pagefind/pagefind-ui.css` and `/pagefind/pagefind-ui.js` at runtime by injected tag
 (`src/app/search/page.tsx:16-31`). Those files come from `make search-index`
 (`Makefile:64-66`), whose `--site .next/server/app` input only exists after `pnpm build`. **There is no
-`pnpm search-index` script** — `package.json` has 11 scripts and none is named that; `CLAUDE.md:32`
-documents a script that does not exist. `public/pagefind/` is absent from the working tree and untracked,
+`pnpm search-index` script** — `package.json` has 11 scripts and none is named that; `CLAUDE.md:32-33` now
+says so explicitly ("this is a Makefile target only"), where it previously documented the non-existent
+script. `public/pagefind/` is absent from the working tree and untracked,
 so `/search` 404s its Pagefind assets until that target is run against a fresh build. `SEARCH_ENABLED`
 does not gate the route — only the nav link and the sitemap entry.
 
@@ -578,8 +589,8 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Coupling | Sites that must agree |
 |---|---|
 | Project group names (3 copies) | `velite.config.ts:4-8` · `src/lib/content.ts:30-34` · `src/lib/game-model.ts:177-181` |
-| Graph node ↔ content slug | `src/lib/graph-data.ts:17-40` · `src/lib/game-model.ts:28-50` · gate `src/lib/game-model.test.ts:55-58` |
-| Base URL `https://anvilry.vercel.app` (**18 files / 24 occurrences**; `CLAUDE.md:292` names four) | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,101,125,131,160,168,214` (7 of the 24, one of them inside FAQ prose at `:214`) |
+| Graph node ↔ content slug | `src/lib/graph-data.ts:18-41` (`graphNodes`, 16 entries) · `src/lib/game-model.ts:28-50` · gate `src/lib/game-model.test.ts:55-58` |
+| Base URL `https://anvilry.vercel.app` (**18 non-test files / 24 occurrences**; `CLAUDE.md:325` now says **19 / 25**, counting `src/lib/mcp-tools.test.ts:69`, and no longer says "four") | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,101,125,131,160,168,214` (7 of the 24, one of them inside FAQ prose at `:214`) |
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:33` · `src/instrumentation-client.ts` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
 | Telemetry kind union | `src/lib/telemetry/schema.ts:37-45` · the `/admin/telemetry` kind filter · `scripts/replay-trace.mjs:47-55` |
@@ -604,11 +615,11 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 
 | If you want to change… | Start at | Then also touch / be aware of |
 |---|---|---|
-| Add or edit a case study / OSS project / note / article | `content/<collection>/<slug>.mdx` (or `make new-work SLUG=…`) | Run `pnpm content`. A new work/project **requires** a matching node in `src/lib/graph-data.ts:17` and an entry in `src/lib/game-model.ts:28` or `game-model.test.ts:55-58` fails `pnpm build`. |
+| Add or edit a case study / OSS project / note / article | `content/<collection>/<slug>.mdx` (or `make new-work SLUG=…`) | Run `pnpm content`. A new work/project **requires** a matching node in `src/lib/graph-data.ts:18` (`graphNodes`) and an entry in `src/lib/game-model.ts:28` or `game-model.test.ts:55-58` fails `pnpm build`. |
 | Add or change a content **field** | `velite.config.ts` (the relevant `defineCollection`) | Make it `.optional()` or every existing file fails validation at once. Then `src/lib/content.ts`, plus any projection that should surface it. |
 | Change how content is sorted / filtered / subsetted | `src/lib/content.ts:18-71` | `pinned` without `pinRank` is dropped (`:26-28`); notes/articles sort by ISO **string** compare (`:50,:68`). |
 | Change what the chatbot knows | `src/lib/corpus.ts:13-76` | Guarded by `src/lib/corpus.test.ts`. `register` flows verbatim from `:17`. Also feeds `/llms-full.txt` and the terminal `grep`. |
-| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:31-38` (chains), `:52-54` (provider), `:63-97` (creds/region) | `DEPLOY.md:92-99` states the chains inverted; `CLAUDE.md:170` is correct. `src/lib/llm.test.ts:156,282` pins two model ids. Update `BEDROCK_PRICE` (`api/chat/route.ts:24-46`) or `cost_usd` will be wrong-but-non-zero. |
+| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:31-38` (chains), `:52-54` (provider), `:63-97` (creds/region) | Both docs now state the chain correctly and Sonnet-primary — `CLAUDE.md:191` and `DEPLOY.md:92-101` (the "inverted chains" discrepancy this index recorded in `DEPLOY.md` is fixed; `:101` says so outright). `src/lib/llm.test.ts:156,282` pins two model ids. Update `BEDROCK_PRICE` (`api/chat/route.ts:24-46`) or `cost_usd` will be wrong-but-non-zero. |
 | Change the streaming fallback rule | `src/lib/llm.ts:433` | `emittedAny` also gates trace-frame emission (`:405`) and the thinking sentinel (`:330`). Pinned by `src/lib/llm.test.ts:253-309`. |
 | Change chat request limits / validation | `src/app/api/chat/route.ts:61-62,177-249` | `MAX_MESSAGES`, `MAX_CHARS`, the 2 MB ceiling, the 10000-char PDF-block cap, the mediatype allowlists. |
 | Change the chat wire protocol | `src/lib/llm-trace.ts:23-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:60-116` parses it; `api/cron/eval/route.ts:95` duplicates `TRACE_DELIMITER` as a literal. |
@@ -621,7 +632,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change voice defaults or add a persisted setting | `src/lib/voice-settings-context.tsx:77-88` (`DEFAULTS`) + `:92-158` (`parse`) | Every capability must stay default-OFF; `voice-settings-context.test.ts` asserts it. `parse` must never throw. |
 | Add a voice surface | `src/components/chat/voice-surface-mutex.ts:23` (`VoiceSurfaceId`) | Create a store that calls `registerVoiceSurface` at module scope and `claimVoiceSurface` at the top of `open*()`; then route to it from `header-orb-trigger.tsx:69-78`. |
 | Change how the mic opens | `src/components/chat/use-speech-recognition.ts:161-164` | `continuous = false` is load-bearing for the whole half-duplex loop (`use-voice-session.ts:26-31`). `mic-button.tsx:60-63` is the consent gate. |
-| Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:32-40`, `CLAUDE.md:181`, `CLAUDE.md:260`, and `route.ts:22` — all four still say "7 tools" against 9 registered (`mcp-tools.ts` itself exports all nine `*Data` functions). Never import `personal.ts` (`mcp-tools.test.ts:22`). |
+| Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:35-45`. The count drift is **fixed**: the page listed 7 while the route registered 9 (`list_all_content` and `get_content_item` were live but undocumented); the page now documents all nine, and `route.ts:22` + `CLAUDE.md:202,293` say 9 too. It is now enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (`:25-40`), so it cannot silently drift again. Never import `personal.ts` (`mcp-tools.test.ts:22`). |
 | Change the MCP not-found contract | `src/lib/mcp-tools.ts:42-48` | `route.ts:13` keys `isError` on the literal `notFound` property; renaming it turns errors into successes. |
 | Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-45` | Then the `/admin/telemetry` kind filter and `scripts/replay-trace.mjs:47-55` (hardcoded `KINDS`). `schema.test.ts:150` pins the 7-kind union. |
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:83-106` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
@@ -629,20 +640,20 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:449-459`; every fetch helper must stay fail-soft (`:22-38,203-212`). Warn thresholds are inline magic numbers (`:545,567,689,708,718-719`). |
 | Change `/admin` auth | `src/proxy.ts:22-79` | `src/lib/admin-auth.ts` is the unwired Node twin — keep them in agreement or `/admin` can pass one and fail the other (`proxy.ts:11-20`). The page itself checks nothing. |
 | Add an authenticated route | `src/proxy.ts:22-24` (`config.matcher`) | Currently exactly `["/admin/:path*"]`. |
-| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:140` lists only one of the five that already exist. |
+| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:146-147` now lists all five and records that they are all fail-closed; it previously listed one. |
 | Change the CSP or a security header | `next.config.ts:37-95` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41`. HSTS is deliberately absent. |
 | Change rate limits | `src/lib/rate-limit.ts:22-25` | One budget shared by chat, tts, tts-google, transcribe, error. `/api/visit` has its own (`api/visit/route.ts:27-34`). Both fail-open paths are deliberate (`:73,79-82`). |
 | Add a build-time feature flag | `src/lib/writing-flags.ts` (or a component-local read) | Match the `=== "true"` convention (only `ARTICLES_ENABLED` is `!== "false"`). Read it **inside** a function body if a test needs `vi.stubEnv`. Then `.env.example`, `docs/configuration.md`, and `Makefile:154-180` (`flags-show`). |
 | Migrate a flag to runtime toggling | `src/lib/flags.ts:17-29` | Also declare it in `src/app/.well-known/vercel/flags/route.ts:11-22`; requires `FLAG_DRIVER=vercel` + `FLAGS_SECRET`. `FLAG_DRIVER` is captured at module load (`:13`). |
 | Gate which views exist in a build | `src/lib/enabled-views.ts:20-40` | Unset ⇒ all on; empty string ⇒ all optional off. `classic` and `resume` cannot be disabled. |
 | Change a 3D scene | `src/components/hero-graph/scene.tsx` · `hero-avatar/avatar-scene.tsx` · `game/build-graph-scene.tsx` · `chat/voice-orb-3d.tsx` | Import from `@/lib/r3f`, never directly (`scene-physics.tsx:4-6` is the one exception). On a demand frameloop something must call `invalidate()`. |
-| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:32` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
+| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:34` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
 | Swap the avatar model | `public/avatar/sairam.glb` + `src/components/hero-avatar/avatar-mesh.tsx:10,27,54` (path in 3 places) | `src/lib/avatar-glb.test.ts` blocks the build on size (<1.5 MB), glTF 2.0, meshopt+quantization+WebP, named bones, and the current **zero** morph targets (`:132-157`). |
-| Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden), not the "~16" in `CLAUDE.md:104` / `ARCHITECTURE.md:74`. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
+| Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:105` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
 | Change build ordering or add a build step | `package.json:8` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`). |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:88-92`). E2E does not block `pnpm build`. |
-| Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:292` names only four. |
+| Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:325` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
 | Regenerate the search index | `Makefile:64-66` (`make search-index`) | Must run **after** `make build`; `pnpm search-index` does not exist. Output goes to the untracked `public/pagefind/`. |
 | Add or bump a dependency | `package.json:19-72` | Respect the exact pins (`next`/`eslint-config-next` 16.3.0, `react`/`react-dom` 19.2.8, `@modelcontextprotocol/sdk` 1.26.0, `@react-three/postprocessing` 3.0.4), the `three < 0.186.0` ceiling from `postprocessing`, and the 10 `pnpm.overrides`. |
 | Add a Dependabot hold | `.github/dependabot.yml` | It is read from the **default branch only** — on any other branch it is inert. `ignore` entries accept a version-scoped `versions: ["x.y.z"]` form as well as a bare package name. |
@@ -658,7 +669,10 @@ Every item below was left open by the section it came from, or is a limitation o
 and are recorded in the subsystem maps themselves — subsystem 4 and subsystem 6, both in part 1 — rather
 than here.
 
-**Resolved while writing this section**
+**Resolved**
+
+The first two were resolved while writing this section. The rest were resolved by the fix branch
+afterwards; those entries record the outcome rather than the original open question.
 
 - `budget.tick` has **no producer** in `src/` — declared at `src/lib/telemetry/schema.ts:44`, asserted at
   `schema.test.ts:150`, consumed at `src/app/admin/telemetry/page.tsx:376`, and emitted nowhere
@@ -666,6 +680,26 @@ than here.
 - `getDefaultVoiceId()` returns the literal `"polly-neural-joanna"` for any non-`"male"` argument:
   `return JOANNA.id` (`src/lib/voice-catalog.ts:317-320`) and `id: "polly-neural-joanna"` (`:62`).
   Section 02 asserted this from a comment; it is now read from source.
+- **A bare `GET /api/mcp/mcp` returns 405, not 200.** This index recorded the cron as probing that
+  endpoint "expecting 200" and left the real GET behaviour unexercised; it was in fact a standing false
+  negative — the blanket `!== 200` gate failed `mcp_get` on **every** run, so a genuine MCP outage was
+  indistinguishable from it. **Fixed:** expectations are now per-check, with `mcp_get: 405` in
+  `EXPECTED_STATUS_OVERRIDES` (`src/lib/health-expectations.ts:30-32`), applied via
+  `isExpectedStatus` at `src/app/api/cron/health-check/route.ts:83`; the probed row itself is
+  `route.ts:61`. The 405 is mcp-handler's own unconditional JSON-RPC reply on the Streamable-HTTP
+  endpoint — verified live, alongside `GET /api/mcp/sse → 404` and a POSTed `initialize → 200` — so it
+  still proves the route is mounted and the handler is alive; the reasoning and the upgrade caveat are
+  at `health-expectations.ts:1-29`, guarded behaviourally by `src/lib/health-expectations.test.ts`
+  (`:22` the 405 expectation, `:68` the mcp-handler version pin, `:80` the "405 branch is still
+  unconditional" check). The old `EXPECTED_STATUS` map and its source-grep guard
+  `expected-status.test.ts` are **deleted**, and the caveat comment no longer points at the dead file:
+  it now names `health-expectations.test.ts` as what pins the mcp-handler version and asserts the GET
+  branch is still unconditional (`health-expectations.ts:26`). An earlier reading of this index
+  recorded that comment as still naming `expected-status.test.ts` — that dangling reference is gone.
+- **`/mcp` as `(force-static)`** — the documentation/source mismatch this index recorded is gone.
+  `src/app/mcp/page.tsx` still exports no segment config and a grep for `force-static` across `src/`
+  still returns nothing (re-verified), and `CLAUDE.md:130` now documents the route as "no segment
+  config" instead of `(force-static)`.
 
 **Still open**
 
@@ -676,8 +710,6 @@ than here.
 - **That `src/proxy.ts` executes on the Edge runtime.** Its docblock (`:5`) and `CLAUDE.md` both assert it,
   the code uses only Web Crypto + `atob`, and no Node-proxy opt-in exists in `next.config.ts` (verified
   absent) — but the app was not run to confirm the runtime Next 16 assigns.
-- **That a bare `GET /api/mcp/mcp` returns 200.** `src/app/api/cron/health-check/route.ts:60` probes it
-  expecting 200; mcp-handler's Streamable-HTTP GET behaviour without a session was not exercised.
 - **That Vercel Cron injects `Authorization: Bearer ${CRON_SECRET}` automatically.** The claim comes from
   the route docstring (`src/app/api/cron/eval/route.ts:12-13`); platform behaviour was not verified.
 - **Runtime cache/CDN behaviour of the statically-eligible routes** (`/llms.txt`, `/llms-full.txt`,
@@ -691,9 +723,6 @@ than here.
 - **Whether `/articles/<slug>` routes that `redirect()` emit a prerendered page artifact.** Several slugs
   present in `generateStaticParams` have an `opengraph-image` manifest entry but no page entry — consistent
   with the redirect path, not proven.
-- **`/mcp` as `(force-static)`** (`CLAUDE.md:125`). `src/app/mcp/page.tsx` exports no segment config and a
-  grep for `force-static` across `src/` returns nothing (re-verified here). Recorded as a
-  documentation/source mismatch, not resolved.
 - **Whether `@react-three/offscreen` and `@react-three/rapier` are retained intentionally.** Neither is
   imported anywhere in the repo. `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` is the origin of the
   rapier install but does not say why it stayed after the physics variant shipped without it.
@@ -709,10 +738,13 @@ than here.
 - **Whether the Vercel build shell sets `NODE_ENV=production`** (the stated reason for
   `vitest.config.ts:26`) — taken from the config comment.
 - **What generates `public/static/`.** It is an empty, untracked directory; the only references are
-  `src/lib/case-study-depth.test.ts:24` and `eslint.config.mjs:19`. No script writes to it. Related
-  verified defect: `src/app/manifest.ts:19-34` declares PWA screenshots at
-  `/static/screenshot-{desktop,mobile}.png`, and no `*screenshot*` file exists under `public/` — both
-  URLs 404.
+  `src/lib/case-study-depth.test.ts:24` and `eslint.config.mjs:19`. No script writes to it. The related
+  defect this index recorded — `manifest.ts` declaring PWA screenshots at
+  `/static/screenshot-{desktop,mobile}.png` with no such file under `public/`, so both URLs 404 — is
+  **fixed**: `src/app/manifest.ts` no longer has a `screenshots` key at all (`icons` at `:14-18` is the
+  last entry), and the comment at `:19-24` records what was dropped, why, and how to re-add it.
+  `src/app/manifest.test.ts` now pins the current shape (`:66` asserts zero screenshots) and walks
+  whatever *is* declared, so a re-added screenshot with no file behind it fails the build.
 - **Actual PDF text extraction under `pdfjs-dist` 6.2.108.** Commit `2f309d2` flags it as NOT VERIFIED
   (needs a real browser upload); build and typecheck pass but the extraction path was never exercised
   post-bump.
@@ -734,10 +766,16 @@ than here.
   described is read from source, not observed at runtime.
 - **Stale-comment / doc-drift items carried forward** without further investigation (each cited in its
   originating section): the `highlight-store.ts:9-10` claim that `project-card.tsx` subscribes;
-  `graph-data.ts:3-4` "5 flagship work systems + 8 OSS repos"; `game-model.ts:19` "3 of the 10 graph node
-  ids"; `scene.tsx:17` "All 10 nodes"; `open-to-work-banner.tsx:6-8` "hidden via CSS (h-0)";
+  `open-to-work-banner.tsx:6-8` "hidden via CSS (h-0)";
   `home/resume-view.tsx:12-14` "ViewEscapeHatch auto-rendered by view-router";
   `anvil-core-surface.tsx:20-22` "~200px reactive orb"; `easter-eggs.tsx:57-66` "once per session";
-  `use-trace-runner.ts:69-70` "Reset when the scenario changes"; `agent-trace.ts:13-14` vs `:115`;
-  `CLAUDE.md:210`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);
+  `use-trace-runner.ts:69-70` "Reset when the scenario changes";
+  `CLAUDE.md:239`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);
   `ARCHITECTURE.md:99` listing `EXTENDED_THINKING` among `NEXT_PUBLIC_*` flags.
+- **Four stale-comment items previously listed above are now FIXED** by the comment sweep on the fix
+  branch, and are dropped from the carried-forward list rather than renumbered: `graph-data.ts:3` no
+  longer counts systems ("every flagship work system + every OSS repo … see `graphNodes` below for the
+  count"); `game-model.ts:19` now reads "3 of the **16** graph node ids" and names the three affected ids
+  instead of quoting a stale percentage; `scene.tsx:17-18` is count-agnostic ("Count is taken from
+  `graphNodes.length`"); and `agent-trace.ts:13-16` no longer claims the test "BLOCKS shipping" (see
+  [§ Tests as a gate](#tests-as-a-gate--what-that-actually-means)).

@@ -45,6 +45,12 @@ version-pinned: every `path:line` citation is against that commit.
 
 Measured from the working tree at `release/v3.4.2`.
 
+Where a row once recorded a doc-vs-code drift that has since been closed, the old claim is **struck
+through** and marked *corrected on this branch* — same convention as
+[15 § Documented-but-unconfirmed](./15-invariants-and-gotchas.md#documented-but-unconfirmed). A
+struck-through phrase is history, not a live contradiction; the citation beside it points at the
+corrected text.
+
 | Metric | Value | How measured |
 |---|---|---|
 | Files covered by this index | **416 files across 419 distinct paths** — 407 files inside `sairam-dev/`, plus 3 directory entries (`public/static/`, `.swarm/`, `.claude-flow/`), plus 9 parent-directory appendix files | union of the `## Coverage` lists in sections 01–13; `public/static/` holds 0 files and is flagged as an empty dir in three places in section 11 — its `**Files indexed:**` note, its `public/static/` row in [11 § At a glance](./11-config-build-ci-infra.md#at-a-glance), and its [11 § Coverage](./11-config-build-ci-infra.md#coverage) list |
@@ -60,9 +66,9 @@ Measured from the working tree at `release/v3.4.2`.
 | Dependencies | **35 prod + 17 dev**, plus 10 `pnpm.overrides` and 1 `onlyBuiltDependencies` | `package.json` (see [13](./13-dependencies-and-versions.md)) |
 | npm scripts | 11 (no `search-index` — see [11](./11-config-build-ci-infra.md)) | `package.json:5-17` |
 | Content items | 5 work · 11 projects · 5 notes · 15 articles (14 non-draft) | `.velite/*.json`, section [09](./09-content-and-schemas.md) |
-| 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects | `src/lib/graph-data.ts:17-40` |
-| MCP tools | **9** registered (docs still say 7) | `src/app/api/mcp/[transport]/route.ts:30-117` |
-| Terminal commands | **31** — 27 visible + 4 hidden eggs (docs still say ~16) | `src/components/game/terminal/commands.ts:503-508` |
+| 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects; count it from the arrays — the file's header docblock no longer hardcodes a node count (it now says "every flagship work system + every OSS repo … see `graphNodes` below for the count") | `src/lib/graph-data.ts:18-41` (nodes), `:43-70` (edges); de-numbered docblock `:3-4` |
+| MCP tools | **9** registered. ~~"docs still say 7"~~ — **corrected on this branch:** the route docblock now says "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), the public table lists all 9 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`:202`, `:293`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:30-117` |
+| Terminal commands | **31** — 27 visible + 4 hidden eggs. ~~"docs still say roughly 16"~~ — **corrected on this branch:** `CLAUDE.md:105` and `ARCHITECTURE.md:74` both say 31 now | `src/components/game/terminal/commands.ts:503-508` |
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
@@ -227,7 +233,7 @@ every route handler runs on Next's default Node.js runtime; `src/proxy.ts` is th
 |---|---|---|---|
 | `/` | page | `src/app/page.tsx` | PARTIALLY_STATIC, `compute:"static"`; the only `ViewRouter` mount |
 | `/about` | page | `src/app/about/page.tsx` | PARTIALLY_STATIC, static |
-| `/mcp` | page | `src/app/mcp/page.tsx` | PARTIALLY_STATIC, static (exports **no** segment config, despite `CLAUDE.md:125`) |
+| `/mcp` | page | `src/app/mcp/page.tsx` | PARTIALLY_STATIC, static; exports **no** segment config — `CLAUDE.md:130` now says the same ("no segment config"), so this is no longer a doc contradiction |
 | `/resume` | page | `src/app/resume/page.tsx` + `resume/layout.tsx` | PARTIALLY_STATIC, static; page is `"use client"`; relaxed `frame-ancestors 'self'` CSP |
 | `/search` | page | `src/app/search/page.tsx` + `search/layout.tsx` | PARTIALLY_STATIC, static; `"use client"`; injects `/pagefind/*` at runtime |
 | `/stats` | page | `src/app/stats/page.tsx` + `stats/layout.tsx` | PARTIALLY_STATIC, static; **not** flag-gated (`STATS_ENABLED` only hides the nav link) |
@@ -250,7 +256,7 @@ every route handler runs on Next's default Node.js runtime; `src/proxy.ts` is th
 | `/admin/telemetry` | page | `src/app/admin/telemetry/page.tsx` | **No static shell** (`response:"empty"`, `htmlSize:0`): `export const instant = false` + `await connection()`; HTTP Basic auth upstream in `src/proxy.ts` |
 | `/opengraph-image` | image | `src/app/opengraph-image.tsx` | Static image route (prerendered) |
 | `/icon` · `/apple-icon` | image | `src/app/icon.tsx` · `src/app/apple-icon.tsx` | Static image routes (32×32 · 180×180) |
-| `/manifest.webmanifest` | metadata | `src/app/manifest.ts` | Static metadata route (its two PWA screenshot URLs 404 — see [15](./15-invariants-and-gotchas.md)) |
+| `/manifest.webmanifest` | metadata | `src/app/manifest.ts` | Static metadata route. It used to declare two PWA screenshots (`/static/screenshot-{desktop,mobile}.png`) that 404 because `public/static/` is empty; **both entries were deleted on this branch** and the file now carries **no `screenshots` key** at all, with a comment recording why and how to re-add them (`src/app/manifest.ts:19-24`). Guarded: `src/app/manifest.test.ts:66-72` asserts `screenshots` is empty, and `:74-80` asserts that if it is ever re-declared every `src` must resolve. See [15](./15-invariants-and-gotchas.md) for the history |
 | `/robots.txt` | metadata | `src/app/robots.ts` | Static; allow-all, no `disallow` entries |
 | `/sitemap.xml` | metadata | `src/app/sitemap.ts` | Static; flag-aware; never emits `lastModified` |
 | `/_not-found` (404) | page | `src/app/not-found.tsx` | Prerendered; `"use client"`; a live terminal seeded with a fake kernel panic |
@@ -316,9 +322,12 @@ Reading order for a new maintainer. Sections 14 and 15 carry the highest informa
 9. **[`13-dependencies-and-versions.md`](./13-dependencies-and-versions.md)** — before touching
    `package.json`; several pins are load-bearing.
 10. **[`12-docs-knowledge-and-harness.md`](./12-docs-knowledge-and-harness.md)** last. Its doc-vs-code
-    drift ledger matters because `CLAUDE.md`, `ARCHITECTURE.md`, `DEPLOY.md` and `VOICE.md` each contain
+    drift ledger matters because `CLAUDE.md`, `ARCHITECTURE.md`, `DEPLOY.md` and `VOICE.md` each contained
     claims the code contradicts — the code wins, and section 12 (with section 15's
-    "Documented-but-unconfirmed" table) records exactly where.
+    "Documented-but-unconfirmed" table) records exactly where. A batch of those entries — the MCP tool
+    count, the terminal command count, the `/mcp` segment-config claim, the base-URL occurrence count and
+    the two test-guard claims — was **corrected in `CLAUDE.md` and `ARCHITECTURE.md` on this branch**, so
+    read the ledgers for what they now mark as still-live rather than assuming every row is open.
 
 ---
 
@@ -353,7 +362,8 @@ across two files to stay inside the per-file size budget) and
 This front door is the third synthesis pass.
 
 **Adversarial verification.** Load-bearing claims were re-read against source rather than inherited: the
-four gates `CLAUDE.md:304-311` names were each checked line by line (two were found to be misstated), the
+four gates `CLAUDE.md:355-359` names were each checked line by line (two were misstated at the time of
+indexing, and **both have since been corrected in `CLAUDE.md` on this branch**), the
 `emittedAny` fallback condition, the card-token regex, the `getServerSnapshot` contract, the
 `CRON_SECRET` guard and the base-URL occurrence list were all quoted verbatim from source, and
 `npx tsc --noEmit` was run once (exit 0) to settle one open type question. Where a section could not

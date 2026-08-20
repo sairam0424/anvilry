@@ -278,7 +278,7 @@ siblings group by `linkedNote` — see `src/lib/article-grouping.ts:23-45` for t
 `src/lib/game-model.ts:28-50` (`NODE_CONTENT`) maps **16** hero-graph node IDs to
 `{ kind, slug }` pairs, covering all 5 Work slugs and all 11 Project slugs — a total bijection
 with `content/work` + `content/projects`. The node list itself is `graphNodes` in
-`src/lib/graph-data.ts:17-39` (16 entries). `resolveNode()` (`src/lib/game-model.ts:62-71`) looks
+`src/lib/graph-data.ts:18-41` (16 entries). `resolveNode()` (`src/lib/game-model.ts:62-71`) looks
 the slug up via `getWork`/`getProject`, returning `null` when absent, and `hrefFor()`
 (`:74-76`) returns the Velite-derived `item.url`.
 
@@ -291,12 +291,14 @@ also recorded in `CLAUDE.md:306`):
 | `grpc` | `grpc-microservices` | project | `src/lib/game-model.ts:42` |
 | `nhl` | `not-humans-lab` | project | `src/lib/game-model.ts:45` |
 
-Every other node id equals its slug exactly. `src/lib/game-model.ts:19` describes these as
-"3 of the **10** graph node ids" — that count is stale: `graphNodes` and `NODE_CONTENT` both hold
-16 entries today. The bijection is guarded at build time by `src/lib/game-model.test.ts`
+Every other node id equals its slug exactly. The docblock line `src/lib/game-model.ts:19` now
+reads "3 of the **16** graph node ids" — the stale `10` this index previously recorded has since
+been **fixed**, so the comment agrees with the 16 entries that `graphNodes`
+(`src/lib/graph-data.ts:18-41`) and `NODE_CONTENT` (`src/lib/game-model.ts:28-50`) each hold
+today. The bijection is guarded at build time by `src/lib/game-model.test.ts`
 (`CLAUDE.md:306`, `ARCHITECTURE.md:96` — "it blocks deploys if orphaned").
 
-`aava-code` is also hard-referenced outside the graph: `src/lib/agent-trace.ts:58` and `:72`
+`aava-code` is also hard-referenced outside the graph: `src/lib/agent-trace.ts:61` and `:75`
 (`refs: ["aava-code", "mindforge"]`, `refs: ["aava-code"]`), the terminal's sample output comment
 `src/components/game/terminal/fmt.ts:79`, and the card-parsing test fixture
 `src/components/chat/parse-cards.test.ts:14`.

@@ -12,8 +12,13 @@ describe("buildLlmsTxt — advertised MCP endpoint", () => {
   const txt = buildLlmsTxt();
 
   it("advertises the Streamable HTTP transport, not the disabled SSE one", () => {
-    const line = txt.split("\n").find((l) => l.includes("MCP server"));
-    expect(line, "llms.txt should advertise an MCP server").toBeDefined();
+    // Anchor on the exact line prefix. `includes("MCP server")` matched the FIRST line
+    // containing that phrase, and every content section is interpolated ABOVE the Links
+    // section — so a project summary mentioning "MCP server" would fail a code test.
+    const line = txt
+      .split("\n")
+      .find((l) => l.startsWith("- MCP server (for AI agents):"));
+    expect(line, "llms.txt should advertise an MCP server in its Links section").toBeDefined();
     expect(line).toContain("/api/mcp/mcp");
   });
 

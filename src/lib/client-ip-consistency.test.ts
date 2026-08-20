@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * `clientIp` is deliberately duplicated rather than shared — src/lib/telemetry/with-trace.ts:56-62
+ * `clientIp` is deliberately duplicated rather than shared — src/lib/telemetry/with-trace.ts
  * documents why: the rate-limit module's surface is intentionally tiny, and cross-importing a
  * private helper would couple observability to the cost guard when both should stay
  * independently swappable.
@@ -12,9 +12,14 @@ import { describe, expect, it } from "vitest";
  * take the LAST (set by Vercel's infrastructure). Taking the first lets a client rotate spoofed
  * header values to bypass its own rate limit.
  *
- * This test pins the security-relevant half of the contract across every copy. It reads source
+ * This pins the security-relevant half of the contract across every copy. It reads source
  * because the helpers are module-private by design — the same reason avatar-glb.test.ts reads
  * the GLB bytes rather than importing a loader.
+ *
+ * IMPORTANT: every assertion below runs against COMMENT-STRIPPED source. An earlier version of
+ * this test compared `indexOf("x-vercel-forwarded-for")` (which matches the explanatory comment)
+ * against the code, so the ordering assertion held no matter what the code did — a security test
+ * that could not fail. Strip first, then assert, or you are testing prose.
  */
 const COPIES = [
   "src/lib/rate-limit.ts",
@@ -22,43 +27,66 @@ const COPIES = [
   "src/app/api/visit/route.ts",
 ];
 
+/** Remove block and line comments so assertions can only ever match real code. */
+function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
+/** The body of `function clientIp(...) { ... }`, comments removed, via brace matching. */
+function clientIpBody(path: string): string {
+  const code = stripComments(readFileSync(path, "utf8"));
+  const start = code.search(/function\s+clientIp\s*\(/);
+  if (start === -1) return "";
+  const open = code.indexOf("{", start);
+  let depth = 0;
+  for (let i = open; i < code.length; i++) {
+    if (code[i] === "{") depth++;
+    else if (code[i] === "}" && --depth === 0) return code.slice(open + 1, i);
+  }
+  return "";
+}
+
 describe("clientIp — every duplicated copy resolves the IP the same way", () => {
+  it("guards its own premise: finds a clientIp body in every copy", () => {
+    // Without this, a rename would empty every body and silently pass the suite below.
+    for (const path of COPIES) {
+      expect(clientIpBody(path).length, `no clientIp body extracted from ${path}`).toBeGreaterThan(
+        0,
+      );
+    }
+  });
+
   for (const path of COPIES) {
     describe(path, () => {
-      const src = readFileSync(path, "utf8");
+      const body = clientIpBody(path);
 
-      it("has a clientIp implementation", () => {
-        expect(src).toMatch(/function clientIp\s*\(/);
-      });
-
-      it("prefers the unspoofable x-vercel-forwarded-for header first", () => {
-        const vercelFirst = src.indexOf('x-vercel-forwarded-for');
-        const xffPlain = src.indexOf('headers.get("x-forwarded-for")');
-        expect(vercelFirst, "x-vercel-forwarded-for must be read").toBeGreaterThan(-1);
-        expect(
-          vercelFirst,
-          "x-vercel-forwarded-for must be checked BEFORE x-forwarded-for",
-        ).toBeLessThan(xffPlain);
+      it("reads the unspoofable x-vercel-forwarded-for accessor BEFORE x-forwarded-for", () => {
+        // Match the ACCESSOR, not the bare header name — the bare name also appears in comments.
+        const vercel = body.indexOf('headers.get("x-vercel-forwarded-for")');
+        const xff = body.indexOf('headers.get("x-forwarded-for")');
+        expect(vercel, "no x-vercel-forwarded-for accessor in code").toBeGreaterThan(-1);
+        expect(xff, "no x-forwarded-for accessor in code").toBeGreaterThan(-1);
+        expect(vercel, "x-vercel-forwarded-for must be read first").toBeLessThan(xff);
       });
 
       it("takes the LAST x-forwarded-for segment, never the first", () => {
-        // The XFF fallback line must use .pop() — `.split(",")[0]` is the bypass vector.
-        const xffFallback = src
+        // Assert on the RETURN statement that consumes xff, not on any line mentioning it.
+        const ret = body
           .split("\n")
-          .find((l) => l.includes('headers.get("x-forwarded-for")') || l.includes("xff.split"));
-        expect(xffFallback, "no x-forwarded-for fallback found").toBeDefined();
-
-        const block = src.slice(src.indexOf("function clientIp"));
-        const xffLine = block
-          .split("\n")
-          .find((l) => l.includes("xff.split") || l.includes("xff!.split"));
-        expect(xffLine, "no xff.split(...) line found inside clientIp").toBeDefined();
+          .map((l) => l.trim())
+          .find((l) => l.startsWith("if (xff) return") || /return\s+xff[.!]/.test(l));
+        expect(ret, `no \`return xff…\` statement found in ${path}`).toBeDefined();
         expect(
-          xffLine,
-          `${path} takes the FIRST x-forwarded-for segment — that is attacker-controlled and ` +
-            "allows rate-limit bypass via rotating spoofed headers. Use .split(\",\").pop().",
+          ret,
+          `${path} takes the FIRST x-forwarded-for segment — attacker-controlled, allows ` +
+            'rate-limit bypass via rotating spoofed headers. Use .split(",").pop().',
         ).toContain(".pop()");
-        expect(xffLine).not.toMatch(/\.split\(","\)\[0\]/);
+        expect(ret, "indexing [0] is the bypass vector").not.toMatch(/\.split\(","\)\[0\]/);
+      });
+
+      it("falls back to x-real-ip then a constant, never to undefined", () => {
+        expect(body).toContain('headers.get("x-real-ip")');
+        expect(body).toMatch(/\?\?\s*"anonymous"/);
       });
     });
   }

@@ -14,10 +14,22 @@ import { describe, expect, it } from "vitest";
 const PAGE = "src/app/mcp/page.tsx";
 const ROUTE = "src/app/api/mcp/[transport]/route.ts";
 
-/** Tool names the route registers, in registration order. */
+/**
+ * Tool names the route registers, in registration order.
+ *
+ * The name pattern is deliberately wide (`[A-Za-z0-9_]+`): a narrower `[a-z_]+` would silently
+ * DROP any tool whose name contains a digit or capital, and a dropped registration reads as
+ * "already documented" — a false negative in the exact check this file exists to make. The
+ * `registeredCount` cross-check below turns any such drop into a loud failure.
+ */
 function registeredTools(): string[] {
   const src = readFileSync(ROUTE, "utf8");
-  return [...src.matchAll(/server\.registerTool\(\s*"([a-z_]+)"/g)].map((m) => m[1]);
+  return [...src.matchAll(/server\.registerTool\(\s*"([A-Za-z0-9_]+)"/g)].map((m) => m[1]);
+}
+
+/** How many registerTool calls exist at all, independent of the name pattern. */
+function registeredCallCount(): number {
+  return readFileSync(ROUTE, "utf8").split("server.registerTool(").length - 1;
 }
 
 /** Tool names the /mcp page documents, in table order. */
@@ -26,7 +38,15 @@ function documentedTools(): string[] {
   const start = src.indexOf("const TOOLS = [");
   expect(start, `${PAGE} no longer has a \`const TOOLS = [\` table`).toBeGreaterThan(-1);
   const block = src.slice(start, src.indexOf("];", start));
-  return [...block.matchAll(/\[\s*"([a-z_]+)"/g)].map((m) => m[1]);
+  return [...block.matchAll(/\[\s*"([A-Za-z0-9_]+)"/g)].map((m) => m[1]);
+}
+
+/** How many rows the TOOLS table has at all, independent of the name pattern. */
+function documentedRowCount(): number {
+  const src = readFileSync(PAGE, "utf8");
+  const start = src.indexOf("const TOOLS = [");
+  const block = src.slice(start, src.indexOf("];", start));
+  return (block.match(/^\s*\[/gm) ?? []).length;
 }
 
 describe("/mcp page documents every registered MCP tool", () => {
@@ -36,6 +56,21 @@ describe("/mcp page documents every registered MCP tool", () => {
   it("finds tools in both sources", () => {
     expect(registered.length, "no registerTool calls found").toBeGreaterThan(0);
     expect(documented.length, "no TOOLS rows found").toBeGreaterThan(0);
+  });
+
+  it("extracts EVERY registration and row — no silent regex drops", () => {
+    // Without this, a tool named e.g. `get_v2Profile` would vanish from `registered` and the
+    // set-equality assertions below would pass while the tool stayed undocumented.
+    expect(
+      registered.length,
+      `name regex matched ${registered.length} of ${registeredCallCount()} registerTool calls — ` +
+        "a registration was silently dropped; widen the pattern in registeredTools()",
+    ).toBe(registeredCallCount());
+    expect(
+      documented.length,
+      `name regex matched ${documented.length} of ${documentedRowCount()} TOOLS rows — ` +
+        "a row was silently dropped; widen the pattern in documentedTools()",
+    ).toBe(documentedRowCount());
   });
 
   it("documents no tool the route does not register", () => {

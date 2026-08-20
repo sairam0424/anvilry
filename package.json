@@ -30,7 +30,7 @@
     "@react-three/postprocessing": "3.0.4",
     "@types/three": "^0.185.4",
     "@upstash/ratelimit": "^2.0.8",
-    "@upstash/redis": "^1.38.0",
+    "@upstash/redis": "^1.38.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@whatisjery/react-fluid-distortion": "^1.6.3",

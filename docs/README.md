@@ -37,4 +37,7 @@ Main text = *what's true now*. Append an optional `## Timeline` for *what happen
 
 | File | Description |
 |------|-------------|
-| *(none yet — add docs here as they accumulate)* | |
+| `configuration.md` | Environment variables, feature flags, and provider configuration |
+| `index/` | Per-file/per-route codebase index, version-pinned. Start at `index/README.md` |
+| `superpowers/plans/` | 14 dated implementation plans (one per shipped change) |
+| `superpowers/specs/` | 5 dated design specs |

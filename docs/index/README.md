@@ -367,8 +367,25 @@ index. Every behavioural claim is read from source, not observed at runtime. Bun
 figures are the repo's own recorded measurements (`next.config.ts:133-144`,
 `domains/performance/README.md:62-66`), not reproduced here.
 
-**Regenerate when:** this index is **version-pinned to v3.4.2**. Every `path:line` citation, every count,
-and every render-mode value is anchored to that tree, so line numbers drift on the first refactor. Refresh
-it on the next release — regenerate all thirteen area sections, then re-run the two synthesis passes and
-this file, and bump the `version:` frontmatter in all seventeen files together. Until then, treat this index
-as a description of v3.4.2 and the working tree as authoritative for anything newer.
+**Staleness is enforced, not trusted.** Every `path:line` citation in this directory is
+fingerprinted into `.citations.json` (699 of them), and `scripts/check-index-citations.mjs`
+re-checks them. `src/lib/index-citations.test.ts` runs that check, and `vitest run` is chained into
+`pnpm build` — so a citation that no longer points at what it described **fails the build**, naming
+the file, the old line, the new line, and which index file cites it.
+
+```bash
+node scripts/check-index-citations.mjs           # verify
+node scripts/check-index-citations.mjs --write   # re-fingerprint, after reviewing the drift
+```
+
+This exists because the honest criticism of a document like this is that it is write-only prose
+that decays invisibly — a reader cannot tell a live citation from a dead one. Measured before the
+guard existed: one unrelated 530-line change invalidated **33 of 699** citations with no signal at
+all. Now that shows up as a red build with the exact list.
+
+**Regenerate when:** this index is **pinned to commit `a848117`** (released as v3.4.2 — note that
+`develop` may still show an earlier `package.json` version until it is fast-forwarded). Counts and
+render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
+sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all
+seventeen, then `--write` the fingerprints. Between releases the working tree is authoritative for
+anything newer — and the citation check tells you exactly where the index has fallen behind.

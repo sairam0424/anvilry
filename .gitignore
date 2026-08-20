@@ -54,7 +54,7 @@ playwright-report/
 
 # Agent-tooling state (claude-flow / Ruflo). Written into the CURRENT working
 # directory, so a `cd` into any subdirectory drops a second copy there too.
-# ~3.8 MB of regenerable binaries — never commit.
+# ~5.9 MB of regenerable binaries at last measure, and growing — never commit.
 ruvector.db
 agentdb.rvf
 agentdb.rvf.*

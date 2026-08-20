@@ -1,0 +1,5156 @@
+{
+  "generated": "manual",
+  "citations": {
+    ".github/CONTRIBUTING.md:19": {
+      "fp": "303521714815",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- **Content changes** — my work history, project descriptions, profile data, and personal metrics ar"
+    },
+    ".github/dependabot.yml:83": {
+      "fp": "c5b3f07685fd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- dependency-name: \"@react-three/postprocessing\""
+    },
+    ".github/PULL_REQUEST_TEMPLATE.md:25": {
+      "fp": "0a895e6c106e",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- [ ] No changes to `content/`, `src/lib/profile.ts`, or `public/resume/` (content is not open for c"
+    },
+    ".github/workflows/bundle-analysis.yml:50": {
+      "fp": "57127a4b6fe4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Generate Velite content types"
+    },
+    ".github/workflows/bundle-analysis.yml:54": {
+      "fp": "c0750c4f21f2",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# opt-in via --turbopack flag, dev-only). withBundleAnalyzer hooks"
+    },
+    ".github/workflows/bundle-analysis.yml:57": {
+      "fp": "8db700617f19",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "env:"
+    },
+    ".github/workflows/ci.yml:10": {
+      "fp": "17f613ed4649",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "ci:"
+    },
+    ".github/workflows/ci.yml:106": {
+      "fp": "65e75314491a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# NON-BLOCKING BY DESIGN (continue-on-error). Its job is VISIBILITY, not enforcement."
+    },
+    ".github/workflows/ci.yml:43": {
+      "fp": "57127a4b6fe4",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Generate Velite content types"
+    },
+    ".github/workflows/ci.yml:46": {
+      "fp": "8afdfe384b36",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Lint"
+    },
+    ".github/workflows/ci.yml:52": {
+      "fp": "06b55be62dec",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Test"
+    },
+    ".github/workflows/ci.yml:55": {
+      "fp": "7af4bc963258",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "e2e:"
+    },
+    ".github/workflows/ci.yml:88": {
+      "fp": "67734fc49fb2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Build"
+    },
+    ".github/workflows/ci.yml:91": {
+      "fp": "022ae3ac4600",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "- name: Run E2E"
+    },
+    ".github/workflows/dependency-review.yml:27": {
+      "fp": "fe04789876fa",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# Only fail on runtime-scoped vulnerabilities."
+    },
+    "content/projects/grpc-microservices.mdx:3": {
+      "fp": "d25a6a52f41a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "name: Order Processing System"
+    },
+    "content/projects/grpc-microservices.mdx:6": {
+      "fp": "b5ba529091f9",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "repo: https://github.com/sairam0424/gRPC-micro-services"
+    },
+    "content/work/aava-code.mdx:31": {
+      "fp": "1196ebb6f643",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "> **Contribution:** Co-built the plugin; I majorly contributed to and architected the backend, and a"
+    },
+    "domains/performance/README.md:62": {
+      "fp": "947ff0b10a81",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "- **CURRENT BASELINE (integrated, post-#121/#123/#124, measured with production hero defaults):"
+    },
+    "domains/README.md:55": {
+      "fp": "38fb971dca1f",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "| Domain | Goal | Cadence | Collector |"
+    },
+    "domains/seo/README.md:45": {
+      "fp": "c5e0703452dc",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "**Also note:** the per-route `.md` endpoints are *not* covered by Google's \"ignores them\" assurance "
+    },
+    "e2e/resume.spec.ts:1": {
+      "fp": "0e25836e4062",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { test, expect } from \"@playwright/test\";"
+    },
+    "e2e/resume.spec.ts:99": {
+      "fp": "e613c6c8961d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "test.skip("
+    },
+    "e2e/views.spec.ts:1": {
+      "fp": "0e25836e4062",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { test, expect } from \"@playwright/test\";"
+    },
+    "e2e/views.spec.ts:101": {
+      "fp": "7ba9677d7b80",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "test(\"sitemap.xml is accessible\", async ({ page }) => {"
+    },
+    "e2e/views.spec.ts:86": {
+      "fp": "19f5206389e0",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
+    },
+    "e2e/views.spec.ts:96": {
+      "fp": "8e5c494d0c11",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
+    },
+    "scripts/replay-trace.mjs:25": {
+      "fp": "9c7a4af1b403",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Redis } from \"@upstash/redis\";"
+    },
+    "scripts/replay-trace.mjs:27": {
+      "fp": "fe1d67792b8e",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const url = process.env.UPSTASH_REDIS_REST_URL;"
+    },
+    "scripts/replay-trace.mjs:28": {
+      "fp": "27c5db0b14fd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const token = process.env.UPSTASH_REDIS_REST_TOKEN;"
+    },
+    "scripts/replay-trace.mjs:47": {
+      "fp": "261806d1c563",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const KINDS = ["
+    },
+    "scripts/replay-trace.mjs:64": {
+      "fp": "1454d312a00e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const since = Date.now() - 7 * 24 * 60 * 60 * 1000;"
+    },
+    "scripts/replay-trace.mjs:65": {
+      "fp": "f33d1e8a8e4e",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "// @upstash/redis automaticDeserialization=true already parses each member"
+    },
+    "signals/README.md:28": {
+      "fp": "983e7bafeb37",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "A short statement of the signal (what, and why it matters), then an optional append-only"
+    },
+    "signals/README.md:36": {
+      "fp": "b5c9cadf2ee3",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "`frequency` = number of Timeline entries. Link related artifacts with `[[slug]]`."
+    },
+    "src/app/.well-known/vercel/flags/route.ts:1": {
+      "fp": "cc2b3caa3fdf",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { verifyAccess } from \"flags\";"
+    },
+    "src/app/.well-known/vercel/flags/route.ts:11": {
+      "fp": "9123a8e9a757",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "NEXT_PUBLIC_DISCOVERY_BADGES: {"
+    },
+    "src/app/.well-known/vercel/flags/route.ts:6": {
+      "fp": "3c55f49f4fec",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const access = await verifyAccess(request.headers.get(\"Authorization\"));"
+    },
+    "src/app/about/page.tsx:10": {
+      "fp": "cfeff0da6803",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function formatUpdated(iso: string): string {"
+    },
+    "src/app/admin/telemetry/page.tsx:13": {
+      "fp": "30d93a0ed4ee",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redis } from \"@/lib/redis\";"
+    },
+    "src/app/admin/telemetry/page.tsx:14": {
+      "fp": "b8f73389aa1d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { KIND_LITERALS, type TelemetryEvent } from \"@/lib/telemetry/schema\";"
+    },
+    "src/app/admin/telemetry/page.tsx:25": {
+      "fp": "fb9543c1a83d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "`anvilry:trace:${kind}`,"
+    },
+    "src/app/admin/telemetry/page.tsx:376": {
+      "fp": "a6508a8680db",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "case \"budget.tick\":"
+    },
+    "src/app/admin/telemetry/page.tsx:425": {
+      "fp": "79acbd9fe3a0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Auth is handled upstream by src/proxy.ts — by the time this renders,"
+    },
+    "src/app/admin/telemetry/page.tsx:428": {
+      "fp": "de9cb5028713",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// nextConfig.cacheComponents: Date.now() is synchronous IO and fails the prerender otherwise"
+    },
+    "src/app/admin/telemetry/page.tsx:59": {
+      "fp": "a407d6866632",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const inp ="
+    },
+    "src/app/api/chat/route.ts:1": {
+      "fp": "30c95feae9f5",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import type Anthropic from \"@anthropic-ai/sdk\";"
+    },
+    "src/app/api/chat/route.ts:114": {
+      "fp": "b6dad2aa8338",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "- Preserve the honest contribution register exactly: Pensieve and AAVA Code are \"co-built\" (AAVA: I "
+    },
+    "src/app/api/chat/route.ts:24": {
+      "fp": "74d534124972",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const BEDROCK_PRICE: Record<"
+    },
+    "src/app/api/chat/route.ts:263": {
+      "fp": "8ea76524cdbc",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const extendedThinking = process.env.EXTENDED_THINKING !== \"false\";"
+    },
+    "src/app/api/chat/route.ts:284": {
+      "fp": "807d36fd6b30",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "emit({"
+    },
+    "src/app/api/chat/route.ts:293": {
+      "fp": "5ce89913ccc9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "? { message: redact(attempt.error.message ?? attempt.error.name) }"
+    },
+    "src/app/api/chat/route.ts:5": {
+      "fp": "184b4bead712",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { isConfigured, streamWithFallback } from \"@/lib/llm\";"
+    },
+    "src/app/api/chat/route.ts:6": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/chat/route.ts:61": {
+      "fp": "105c20d18ff6",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const MAX_MESSAGES = 12;"
+    },
+    "src/app/api/chat/route.ts:66": {
+      "fp": "eb7163fe2078",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
+    },
+    "src/app/api/chat/route.ts:7": {
+      "fp": "3a7ea27ec96e",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
+    },
+    "src/app/api/chat/route.ts:77": {
+      "fp": "a155cea2fe6f",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const res = await fetch(`${base}/api/github/stats`, {"
+    },
+    "src/app/api/chat/route.ts:8": {
+      "fp": "e627f704b032",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+    },
+    "src/app/api/chat/route.ts:9": {
+      "fp": "e8c4209fbe6d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redact } from \"@/lib/telemetry/schema\";"
+    },
+    "src/app/api/cron/content-audit/route.ts:16": {
+      "fp": "d2fbfdb0c7bc",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const EIGHTEEN_MONTHS_MS = 18 * 30 * 24 * 60 * 60 * 1000;"
+    },
+    "src/app/api/cron/eval/route.ts:113": {
+      "fp": "0eb4a9f31c29",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md"
+      ],
+      "preview": "const chatRes = await fetch(`${base}/api/chat`, {"
+    },
+    "src/app/api/cron/eval/route.ts:12": {
+      "fp": "c737be8195e4",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Auth: Authorization: Bearer ${CRON_SECRET}. Vercel Cron sets this automatically"
+    },
+    "src/app/api/cron/eval/route.ts:16": {
+      "fp": "e068c8f22289",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Cost: ~12 Bedrock calls ≈ $0.012 per weekly run. Negligible."
+    },
+    "src/app/api/cron/eval/route.ts:95": {
+      "fp": "5d7c609f46fb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const TRACE_DELIMITER = \"\\x1e\";"
+    },
+    "src/app/api/cron/eval/route.ts:98": {
+      "fp": "02621e2e2851",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const secret = process.env.CRON_SECRET;"
+    },
+    "src/app/api/cron/github-sync/route.ts:40": {
+      "fp": "a155cea2fe6f",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const res = await fetch(`${base}/api/github/stats`, {"
+    },
+    "src/app/api/cron/github-sync/route.ts:8": {
+      "fp": "e29919645dd1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Hourly GitHub stats cache warm. Fetches /api/github/stats with cache:no-store"
+    },
+    "src/app/api/cron/health-check/route.ts:151": {
+      "fp": "e028164a5de5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const p2Pass = CHECKS"
+    },
+    "src/app/api/cron/health-check/route.ts:165": {
+      "fp": "54d6d647b6c0",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "release_id: process.env.VERCEL_GIT_COMMIT_SHA ?? null,"
+    },
+    "src/app/api/cron/health-check/route.ts:60": {
+      "fp": "2bd2fe6450dc",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{ name: \"mcp_get\",          path: \"/api/mcp/mcp\",     criticality: \"P2\", timeout:  8_000 },"
+    },
+    "src/app/api/cron/seo-audit/route.ts:47": {
+      "fp": "85545c58fb43",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// NOTE: Project uses 'excerpt' (not 'summary') per the Velite schema, so we map"
+    },
+    "src/app/api/error/route.test.ts:1": {
+      "fp": "b3e7120b9d8e",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { afterEach, beforeEach, describe, expect, it, vi } from \"vitest\";"
+    },
+    "src/app/api/error/route.test.ts:218": {
+      "fp": "50e2c4261b22",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"scrubs emails and tokens from message + stack before the event lands in emit()\", async () => {"
+    },
+    "src/app/api/error/route.ts:1": {
+      "fp": "24a7c06b2ab0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { z } from \"zod\";"
+    },
+    "src/app/api/error/route.ts:127": {
+      "fp": "8a972bb11ccf",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Content-Length bypass backstop: sendBeacon and the fetch fallback in"
+    },
+    "src/app/api/error/route.ts:145": {
+      "fp": "629946db0396",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Emit. message + stack are redacted (visitor-supplied free-text — high PII risk"
+    },
+    "src/app/api/error/route.ts:174": {
+      "fp": "a6a3dbcf91aa",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (redis) {"
+    },
+    "src/app/api/error/route.ts:3": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/error/route.ts:7": {
+      "fp": "30d93a0ed4ee",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redis } from \"@/lib/redis\";"
+    },
+    "src/app/api/error/route.ts:83": {
+      "fp": "eaad5cf962f9",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "source: z.enum([\"boundary\", \"global-boundary\", \"window\", \"unhandledrejection\", \"react19\"]),"
+    },
+    "src/app/api/error/route.ts:89": {
+      "fp": "3851ca6893f1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Stage 2 — opt-out env. The \"false\" string check is deliberate: any other"
+    },
+    "src/app/api/error/route.ts:92": {
+      "fp": "c4c187643227",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "if (process.env.TELEMETRY_ENABLED === \"false\") {"
+    },
+    "src/app/api/github/stats/route.ts:19": {
+      "fp": "296214da00e6",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const token = process.env.GITHUB_TOKEN;"
+    },
+    "src/app/api/github/stats/route.ts:3": {
+      "fp": "b59ffee26674",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
+    },
+    "src/app/api/github/stats/route.ts:31": {
+      "fp": "d30f8f8c3e96",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "next: { revalidate: 3600 },"
+    },
+    "src/app/api/mcp/[transport]/route.ts:1": {
+      "fp": "9d46e54aa9af",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md"
+      ],
+      "preview": "import { createMcpHandler } from \"mcp-handler\";"
+    },
+    "src/app/api/mcp/[transport]/route.ts:126": {
+      "fp": "5dc910c00777",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{ basePath: \"/api/mcp\", disableSse: true },"
+    },
+    "src/app/api/mcp/[transport]/route.ts:13": {
+      "fp": "72aba18a365b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const isNotFound = !!data && typeof data === \"object\" && \"notFound\" in data;"
+    },
+    "src/app/api/mcp/[transport]/route.ts:22": {
+      "fp": "75a6e94df79c",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "* Portfolio MCP server — exposes the real content layer as 7 read-only tools so a"
+    },
+    "src/app/api/mcp/[transport]/route.ts:30": {
+      "fp": "abd9c5281100",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "server.registerTool("
+    },
+    "src/app/api/mcp/[transport]/route.ts:6": {
+      "fp": "79214e4ca231",
+      "citedBy": [
+        "02-api-routes.md",
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// NOTE: `export const runtime = \"nodejs\"` was removed for cacheComponents (which rejects the"
+    },
+    "src/app/api/mcp/[transport]/route.ts:9": {
+      "fp": "4799a6f6e27b",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const maxDuration = 30;"
+    },
+    "src/app/api/mcp/[transport]/route.ts:98": {
+      "fp": "abd9c5281100",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "server.registerTool("
+    },
+    "src/app/api/md/work/[slug]/route.ts:11": {
+      "fp": "c0bdb2811a68",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function readRawContent(slug: string): string | null {"
+    },
+    "src/app/api/transcribe/route.ts:1": {
+      "fp": "e0cbdab30393",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import {"
+    },
+    "src/app/api/transcribe/route.ts:27": {
+      "fp": "37d4e56c1d31",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "* Fails CLOSED: unconfigured/over-limit/error -> non-2xx -> client uses browser STT."
+    },
+    "src/app/api/transcribe/route.ts:6": {
+      "fp": "1469f71df728",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { bedrockCreds } from \"@/lib/llm\";"
+    },
+    "src/app/api/transcribe/route.ts:7": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/tts-google/route.ts:1": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/tts-google/route.ts:39": {
+      "fp": "5c677e73254d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const k = process.env.GOOGLE_TTS_API_KEY;"
+    },
+    "src/app/api/tts-google/route.ts:5": {
+      "fp": "be8a1a5eca98",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/voice-catalog\";"
+    },
+    "src/app/api/tts/cache.test.ts:1": {
+      "fp": "9234ed86c2c3",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { afterEach, describe, expect, it } from \"vitest\";"
+    },
+    "src/app/api/tts/route.ts:1": {
+      "fp": "a385f563ce17",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from \"@aws-sdk/client-polly\";"
+    },
+    "src/app/api/tts/route.ts:2": {
+      "fp": "1469f71df728",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { bedrockCreds } from \"@/lib/llm\";"
+    },
+    "src/app/api/tts/route.ts:3": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/tts/route.ts:30": {
+      "fp": "bf6edd9a36f4",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "* client falls back to browser speechSynthesis — voice never breaks, it just degrades."
+    },
+    "src/app/api/tts/route.ts:8": {
+      "fp": "be8a1a5eca98",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/voice-catalog\";"
+    },
+    "src/app/api/visit/route.ts:19": {
+      "fp": "a3e15e396e9c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function clientIp(req: Request): string {"
+    },
+    "src/app/api/visit/route.ts:2": {
+      "fp": "30d93a0ed4ee",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redis } from \"@/lib/redis\";"
+    },
+    "src/app/api/visit/route.ts:23": {
+      "fp": "39aee75f4015",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (xff) return xff.split(\",\")[0].trim();   // leftmost = client IP"
+    },
+    "src/app/api/visit/route.ts:27": {
+      "fp": "d2269dd5d199",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const limiter = redis"
+    },
+    "src/app/api/visit/route.ts:3": {
+      "fp": "ee19a3b132a4",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Ratelimit } from \"@upstash/ratelimit\";"
+    },
+    "src/app/api/visit/route.ts:44": {
+      "fp": "7fa6a959f38a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Still return the current counts (don't leak a 429 to the badge)."
+    },
+    "src/app/articles/[slug]/opengraph-image.tsx:15": {
+      "fp": "329ab2f477b4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function generateStaticParams() {"
+    },
+    "src/app/articles/[slug]/page.tsx:21": {
+      "fp": "329ab2f477b4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function generateStaticParams() {"
+    },
+    "src/app/articles/[slug]/page.tsx:25": {
+      "fp": "6b7888f40c69",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ".filter((a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED))"
+    },
+    "src/app/articles/[slug]/page.tsx:4": {
+      "fp": "287acc5c8325",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { ArrowLeft } from \"lucide-react\";"
+    },
+    "src/app/articles/[slug]/page.tsx:53": {
+      "fp": "10f5c27b4a77",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (article.linkedNote && NOTES_ENABLED) {"
+    },
+    "src/app/articles/[slug]/page.tsx:59": {
+      "fp": "b117ab7b76b5",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (article.source !== \"native\" && article.externalUrl) {"
+    },
+    "src/app/articles/layout.tsx:12": {
+      "fp": "8126ad920d5f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!ARTICLES_ENABLED) notFound();"
+    },
+    "src/app/articles/page.tsx:152": {
+      "fp": "b2d92ef5416b",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "featuredGroup.canonical.linkedNote && NOTES_ENABLED"
+    },
+    "src/app/articles/page.tsx:25": {
+      "fp": "1bdb85527c3e",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const SOURCE_LABELS: Record<ArticleSource, string> = {"
+    },
+    "src/app/articles/page.tsx:5": {
+      "fp": "1dd4c15cfc8f",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Clock, ArrowUpRight, Sparkles } from \"lucide-react\";"
+    },
+    "src/app/articles/page.tsx:6": {
+      "fp": "f4add6c8be1e",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { motion, AnimatePresence } from \"motion/react\";"
+    },
+    "src/app/error.tsx:35": {
+      "fp": "21e688761736",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useEffect } from \"react\";"
+    },
+    "src/app/error.tsx:39": {
+      "fp": "a9bd6aeeeec2",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const DEDUPE_FLAG = \"__anvilry_error_recently__\" as const;"
+    },
+    "src/app/error.tsx:64": {
+      "fp": "7ed112724ee5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import(\"@/lib/telemetry/beacon\")"
+    },
+    "src/app/feed.xml/route.ts:5": {
+      "fp": "11e14e329715",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Empty-safe: with no published notes the feed is valid but item-less."
+    },
+    "src/app/global-error.tsx:14": {
+      "fp": "a1708fa3cde6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*      practice (especially during the very-early bootstrap window where global-error"
+    },
+    "src/app/global-error.tsx:33": {
+      "fp": "a9bd6aeeeec2",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const DEDUPE_FLAG = \"__anvilry_error_recently__\" as const;"
+    },
+    "src/app/global-error.tsx:52": {
+      "fp": "7ed112724ee5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import(\"@/lib/telemetry/beacon\")"
+    },
+    "src/app/globals.css:1": {
+      "fp": "944e6e12c006",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "@import \"tailwindcss\";"
+    },
+    "src/app/globals.css:194": {
+      "fp": "03022f223a14",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/* focus-visible: keyboard nav (a11y)."
+    },
+    "src/app/globals.css:257": {
+      "fp": "766e0153d3f7",
+      "citedBy": [
+        "08-components-site-shell-ui.md",
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "/*"
+    },
+    "src/app/globals.css:270": {
+      "fp": "ce2d7a4f3dd3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "[data-view-dir=\"forward\"]::view-transition-new(view-body)  {"
+    },
+    "src/app/globals.css:332": {
+      "fp": "8468833f2de1",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": ".scroll-reveal {"
+    },
+    "src/app/globals.css:357": {
+      "fp": "e09f73efc530",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "Single keyframe drives the sweep; .skeleton-shimmer applies gradient + size."
+    },
+    "src/app/globals.css:67": {
+      "fp": "eff6fb6c7011",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "@media (prefers-reduced-motion: reduce) {"
+    },
+    "src/app/globals.css:76": {
+      "fp": "6a884c2ebc63",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "@keyframes hero-rise {"
+    },
+    "src/app/globals.css:8": {
+      "fp": "06458dce3748",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ":root {"
+    },
+    "src/app/icon.tsx:1": {
+      "fp": "9ba6bd62b27a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { ImageResponse } from \"next/og\";"
+    },
+    "src/app/layout.hydration-proof.dom.test.tsx:1": {
+      "fp": "a6a78a74784c",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { describe, it, expect, vi, afterEach } from \"vitest\";"
+    },
+    "src/app/layout.hydration-proof.dom.test.tsx:2": {
+      "fp": "3b648df43c76",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { renderToString } from \"react-dom/server\";"
+    },
+    "src/app/layout.hydration-proof.dom.test.tsx:33": {
+      "fp": "ea56b9657feb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function hydrateWithInjectedAttr(suppress: boolean): string[] {"
+    },
+    "src/app/layout.hydration-proof.dom.test.tsx:4": {
+      "fp": "ae537fcd252b",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { act } from \"@testing-library/react\";"
+    },
+    "src/app/layout.tsx:103": {
+      "fp": "6335ce5900dc",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<SiteFooter />"
+    },
+    "src/app/layout.tsx:104": {
+      "fp": "23d6aa6056b7",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<CommandPalette discoveryBadgesEnabled={discoveryBadgesEnabled} />"
+    },
+    "src/app/layout.tsx:14": {
+      "fp": "8a5049afc12d",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "import { EasterEggs } from \"@/components/game/easter-eggs\";"
+    },
+    "src/app/layout.tsx:16": {
+      "fp": "3a3301d7bfed",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Analytics } from \"@vercel/analytics/next\";"
+    },
+    "src/app/layout.tsx:17": {
+      "fp": "b1c211a4550a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { SpeedInsights } from \"@vercel/speed-insights/next\";"
+    },
+    "src/app/layout.tsx:19": {
+      "fp": "458e6f57db40",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "import { getDiscoveryBadgesEnabled } from \"@/lib/flags\";"
+    },
+    "src/app/layout.tsx:26": {
+      "fp": "32188ba408ee",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const siteUrl = \"https://anvilry.vercel.app\";"
+    },
+    "src/app/layout.tsx:66": {
+      "fp": "4d62de6580f9",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const discoveryBadgesEnabled = await getDiscoveryBadgesEnabled();"
+    },
+    "src/app/layout.tsx:85": {
+      "fp": "ca2d89ce1d5b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "suppressHydrationWarning"
+    },
+    "src/app/layout.tsx:97": {
+      "fp": "70319a5df06f",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>"
+    },
+    "src/app/layout.tsx:98": {
+      "fp": "30149a9540d9",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<SiteNav />"
+    },
+    "src/app/layout.tsx:99": {
+      "fp": "6c0a3ea199fc",
+      "citedBy": [
+        "08-components-site-shell-ui.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{OPEN_TO_WORK && <OpenToWorkBanner />}"
+    },
+    "src/app/manifest.ts:19": {
+      "fp": "85e146f88083",
+      "citedBy": [
+        "01-routes-pages.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "screenshots: ["
+    },
+    "src/app/mcp/page.tsx:32": {
+      "fp": "272296ea19e0",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const TOOLS = ["
+    },
+    "src/app/not-found.tsx:21": {
+      "fp": "466a89f53465",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useRef } from \"react\";"
+    },
+    "src/app/not-found.tsx:24": {
+      "fp": "f835dddef274",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "import { Terminal } from \"@/components/game/terminal/terminal\";"
+    },
+    "src/app/not-found.tsx:25": {
+      "fp": "7ed60ae45675",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "import { bootBanner404 } from \"@/components/game/terminal/boot-banner\";"
+    },
+    "src/app/not-found.tsx:26": {
+      "fp": "a496a73e5b83",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "07-components-3d.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { WebGLBoundary } from \"@/components/game/webgl-boundary\";"
+    },
+    "src/app/not-found.tsx:34": {
+      "fp": "f52863c128e2",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const showOrb = process.env.NEXT_PUBLIC_404_ORB === \"true\";"
+    },
+    "src/app/notes/[slug]/page.tsx:16": {
+      "fp": "7b14f6e1541f",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// NOTE: the `if (!NOTES_ENABLED) return []` short-circuit was removed for cacheComponents,"
+    },
+    "src/app/notes/[slug]/page.tsx:68": {
+      "fp": "f72740c0d118",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<ReadingProgress />"
+    },
+    "src/app/notes/page.tsx:21": {
+      "fp": "5e41c6e68c54",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!NOTES_ENABLED) notFound();"
+    },
+    "src/app/notes/page.tsx:9": {
+      "fp": "b59ffee26674",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
+    },
+    "src/app/page.tsx:26": {
+      "fp": "d7128aabf3b5",
+      "citedBy": [
+        "08-components-site-shell-ui.md",
+        "14-subsystems.md",
+        "README.md"
+      ],
+      "preview": "<ViewRouter>"
+    },
+    "src/app/page.tsx:28": {
+      "fp": "1eab17062247",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<Hero />"
+    },
+    "src/app/page.tsx:31": {
+      "fp": "e131fe2c467d",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "{GITHUB_STATS_ENABLED && <GithubStatsStrip />}"
+    },
+    "src/app/projects/[slug]/page.tsx:4": {
+      "fp": "9a6d44646ec0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { ArrowLeft, ExternalLink, GitCommitHorizontal } from \"lucide-react\";"
+    },
+    "src/app/projects/page.tsx:38": {
+      "fp": "9050977792a2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"use cache\";"
+    },
+    "src/app/resume/page.tsx:119": {
+      "fp": "ab6546c7cfa3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<iframe"
+    },
+    "src/app/resume/page.tsx:24": {
+      "fp": "daabbba7392d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const showVariants = process.env.NEXT_PUBLIC_RESUME_VARIANTS === \"true\";"
+    },
+    "src/app/resume/page.tsx:3": {
+      "fp": "593b7cbc7e24",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useState } from \"react\";"
+    },
+    "src/app/resume/page.tsx:4": {
+      "fp": "ce8e7933755b",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Download, FileText, Globe, ChevronRight } from \"lucide-react\";"
+    },
+    "src/app/resume/page.tsx:5": {
+      "fp": "f4add6c8be1e",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { motion, AnimatePresence } from \"motion/react\";"
+    },
+    "src/app/robots.ts:1": {
+      "fp": "bf43a9340345",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import type { MetadataRoute } from \"next\";"
+    },
+    "src/app/robots.ts:5": {
+      "fp": "a0e4a79830e4",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "rules: { userAgent: \"*\", allow: \"/\" },"
+    },
+    "src/app/search/page.tsx:16": {
+      "fp": "f28ea927c74f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "useEffect(() => {"
+    },
+    "src/app/search/page.tsx:20": {
+      "fp": "454a2219db63",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "link.href = \"/pagefind/pagefind-ui.css\";"
+    },
+    "src/app/search/page.tsx:6": {
+      "fp": "48f274cfb790",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Pagefind UI is a static bundle generated post-build by `make search-index`."
+    },
+    "src/app/sitemap.ts:27": {
+      "fp": "39a96bfadd2d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const noteRoutes = NOTES_ENABLED && allNotes.length"
+    },
+    "src/app/sitemap.ts:50": {
+      "fp": "07da74a494fa",
+      "citedBy": [
+        "01-routes-pages.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const statsRoute = STATS_ENABLED"
+    },
+    "src/app/stats/page.tsx:11": {
+      "fp": "4573707ab582",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{ value: \"2K+\", label: \"Daily users\", sub: \"Pensieve at peak\" },"
+    },
+    "src/app/work/[slug].md/route.ts:6": {
+      "fp": "8771870880fd",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Slug is extracted from the URL because Next.js does not populate params for directory"
+    },
+    "src/app/work/[slug]/opengraph-image.tsx:21": {
+      "fp": "75064c133f32",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const register = work?.register ?? profile.role;"
+    },
+    "src/app/work/[slug]/page.tsx:105": {
+      "fp": "71ae39a95dc1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{work.diagram && ("
+    },
+    "src/app/work/[slug]/page.tsx:112": {
+      "fp": "41a32e5e61f1",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "{/* eslint-disable-next-line @next/next/no-img-element */}"
+    },
+    "src/app/work/[slug]/page.tsx:57": {
+      "fp": "a77a7e276421",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<p className=\"mono-label\">{work.register}</p>"
+    },
+    "src/app/work/page.tsx:53": {
+      "fp": "61323bc8fc69",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<span className=\"mono-label\">{w.register}</span>"
+    },
+    "src/app/work/page.tsx:9": {
+      "fp": "b59ffee26674",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
+    },
+    "src/components/article-card.tsx:18": {
+      "fp": "89f11ea62f9a",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (a.linkedNote) return { href: `/notes/${a.linkedNote}`, external: false };"
+    },
+    "src/components/article-group-card.tsx:21": {
+      "fp": "94b61cd82740",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (canonical.linkedNote && NOTES_ENABLED)"
+    },
+    "src/components/article-group-card.tsx:5": {
+      "fp": "34196aeda4ce",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { motion } from \"motion/react\";"
+    },
+    "src/components/ask-portfolio.dom.test.tsx:2": {
+      "fp": "4243799a32cd",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { render, screen, fireEvent, waitFor, cleanup } from \"@testing-library/react\";"
+    },
+    "src/components/ask-portfolio.dom.test.tsx:67": {
+      "fp": "91109d4c8598",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "expect(fetchMock).toHaveBeenCalledWith(\"/api/chat\", expect.objectContaining({ method: \"POST\" }));"
+    },
+    "src/components/ask-portfolio.tsx:12": {
+      "fp": "dc2b18fdd7a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useAutoScroll } from \"@/lib/scroll/use-auto-scroll\";"
+    },
+    "src/components/chat/anvil-core-surface.tsx:163": {
+      "fp": "baaecc9edc43",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<MarkdownMessage text={lastAnswer} />"
+    },
+    "src/components/chat/anvil-core-surface.tsx:20": {
+      "fp": "ea5763e8c6e8",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*  - A minimal frosted result card beneath the orb: the answer text only, scrollable,"
+    },
+    "src/components/chat/anvil-core-surface.tsx:6": {
+      "fp": "1bda1d2c464c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { MarkdownMessage } from \"@/components/chat/markdown-message\";"
+    },
+    "src/components/chat/chat-card.tsx:12": {
+      "fp": "e34369ef7f2b",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function ChatCard({ segment }: { segment: Extract<CardSegment, { type: \"project\" | \"work\" }> "
+    },
+    "src/components/chat/chat-messages.tsx:11": {
+      "fp": "8be6cbcc6da8",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useVoiceSettings } from \"@/lib/voice-settings-context\";"
+    },
+    "src/components/chat/chat-messages.tsx:12": {
+      "fp": "dc2b18fdd7a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useAutoScroll } from \"@/lib/scroll/use-auto-scroll\";"
+    },
+    "src/components/chat/chat-messages.tsx:15": {
+      "fp": "e3a0566e221c",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { highlightProject } from \"@/lib/highlight-store\";"
+    },
+    "src/components/chat/chat-messages.tsx:159": {
+      "fp": "bc39954bb91a",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== \"false\";"
+    },
+    "src/components/chat/chat-messages.tsx:259": {
+      "fp": "09aa20cab5e6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Lazy-loaded so the ~46KB react-markdown tree stays OUT of the initial route"
+    },
+    "src/components/chat/chat-messages.tsx:557": {
+      "fp": "ac02b6cc738a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{m.fellBack ? \"↳ primary unavailable · \" : \"\"}Answered by{\" \"}"
+    },
+    "src/components/chat/chat-view.tsx:155": {
+      "fp": "1b8545939f1c",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "{process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === \"true\" && ("
+    },
+    "src/components/chat/file-picker-button.tsx:7": {
+      "fp": "a94ce8742449",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const PDF_ENABLED = process.env.NEXT_PUBLIC_PDF_ATTACHMENTS === \"true\";"
+    },
+    "src/components/chat/file-picker-button.tsx:77": {
+      "fp": "0459e6579dce",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const pdfjsLib = await import(\"pdfjs-dist\");"
+    },
+    "src/components/chat/header-orb-trigger.tsx:32": {
+      "fp": "3bbb66ee2518",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Read once at module load — NEXT_PUBLIC_ vars are inlined at build time."
+    },
+    "src/components/chat/header-orb-trigger.tsx:34": {
+      "fp": "f18b3455e0dd",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const ORB_MODE: OrbMode = (() => {"
+    },
+    "src/components/chat/header-orb-trigger.tsx:35": {
+      "fp": "9706eaf6b2a0",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const raw = process.env.NEXT_PUBLIC_ANVIL_ORB_MODE;"
+    },
+    "src/components/chat/header-orb-trigger.tsx:37": {
+      "fp": "43dd90624265",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "if (process.env.NEXT_PUBLIC_ENABLE_ANVIL_ORB === \"false\") return \"off\";"
+    },
+    "src/components/chat/header-orb-trigger.tsx:45": {
+      "fp": "9b8934b80580",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE === \"core\" ? \"core\" : \"classic\";"
+    },
+    "src/components/chat/header-orb-trigger.tsx:62": {
+      "fp": "a06a2193e119",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (ORB_MODE === \"off\" || !supported) return null;"
+    },
+    "src/components/chat/header-orb-trigger.tsx:67": {
+      "fp": "ecd3ef6ff2eb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const onVoiceView = view === \"voice\";"
+    },
+    "src/components/chat/header-orb-trigger.tsx:7": {
+      "fp": "bb991c6106f9",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useMediaQuery } from \"@/lib/use-media-query\";"
+    },
+    "src/components/chat/markdown-message.tsx:10": {
+      "fp": "f10038f2778b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "* Renders ONE assistant text segment as markdown — safe by construction:"
+    },
+    "src/components/chat/markdown-message.tsx:4": {
+      "fp": "213439504dea",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import Markdown from \"react-markdown\";"
+    },
+    "src/components/chat/markdown-message.tsx:47": {
+      "fp": "37a213375459",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const components: Components = {"
+    },
+    "src/components/chat/markdown-message.tsx:5": {
+      "fp": "8f6848ccde51",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import remarkGfm from \"remark-gfm\";"
+    },
+    "src/components/chat/markdown-message.tsx:6": {
+      "fp": "94c6d484080a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import rehypeSanitize from \"rehype-sanitize\";"
+    },
+    "src/components/chat/markdown-message.tsx:88": {
+      "fp": "53fc0c7532a6",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<Markdown"
+    },
+    "src/components/chat/markdown-message.tsx:90": {
+      "fp": "5882be697ba0",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "rehypePlugins={[rehypeSanitize]}"
+    },
+    "src/components/chat/mic-button.tsx:40": {
+      "fp": "859221575da4",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (!supported) return null;"
+    },
+    "src/components/chat/parse-cards.test.ts:14": {
+      "fp": "588f54d0291f",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "const realWork = allWork.find((w) => w.slug === \"aava-code\")?.slug ?? allWork[0].slug;"
+    },
+    "src/components/chat/parse-cards.test.ts:55": {
+      "fp": "124296ff8c42",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"never treats an injected URL/path as an href — slug charset is locked\", () => {"
+    },
+    "src/components/chat/parse-cards.ts:33": {
+      "fp": "872a47796244",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const ALL_RE = /\\[\\[(card:(project|work)|cmd:(view|highlight)):([a-z0-9-]+)\\]\\]/g;"
+    },
+    "src/components/chat/talk-mode-overlay.tsx:3": {
+      "fp": "1faf4767abc1",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import * as Dialog from \"@radix-ui/react-dialog\";"
+    },
+    "src/components/chat/talk-mode.tsx:21": {
+      "fp": "a72b91774ecf",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { getDefaultVoiceId, getVoiceById } from \"@/lib/voice-catalog\";"
+    },
+    "src/components/chat/talk-mode.tsx:263": {
+      "fp": "951e0d602d4e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const answerText = toCaptionText(lastAssistantText(messages));"
+    },
+    "src/components/chat/talk-mode.tsx:273": {
+      "fp": "91f55af2a2e6",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (!supported) {"
+    },
+    "src/components/chat/talk-mode.tsx:478": {
+      "fp": "2dca153ad497",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "{process.env.NEXT_PUBLIC_VOICE_TEST_AUDIO === \"true\" && <TtsTestButton />}"
+    },
+    "src/components/chat/use-chat-a11y.ts:19": {
+      "fp": "839cde06031e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* NO DOUBLE-SPEAK: when text-to-speech is reading the answer aloud (read-aloud button"
+    },
+    "src/components/chat/use-chat-stream.dom.test.tsx:175": {
+      "fp": "41b89a06943c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(nonEmpty.length).toBeLessThanOrEqual(words.length / 2);"
+    },
+    "src/components/chat/use-chat-stream.dom.test.tsx:2": {
+      "fp": "208ac84461af",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { renderHook, act, waitFor } from \"@testing-library/react\";"
+    },
+    "src/components/chat/use-chat.ts:190": {
+      "fp": "64def9a2121d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "reasoning:"
+    },
+    "src/components/chat/use-chat.ts:305": {
+      "fp": "33912ed4260a",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const res = await fetch(\"/api/chat\", {"
+    },
+    "src/components/chat/use-chat.ts:353": {
+      "fp": "2ec6d510733d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// frames, so anything that arrived after the last frame would never be committed."
+    },
+    "src/components/chat/use-chat.ts:384": {
+      "fp": "7a773d4f9ab7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "[messages, status, scheduleFlush, flushNow, flushPending],"
+    },
+    "src/components/chat/use-chat.ts:8": {
+      "fp": "d9b68daf357a",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/llm-trace\";"
+    },
+    "src/components/chat/use-speech-recognition.ts:161": {
+      "fp": "2fedef9e5a08",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "rec.lang = \"en-US\";"
+    },
+    "src/components/chat/use-speech-recognition.ts:162": {
+      "fp": "48e62f07be6a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "rec.continuous = false; // single utterance — push-to-talk, not always-on"
+    },
+    "src/components/chat/use-speech-recognition.ts:224": {
+      "fp": "2d62549c7e51",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "useEffect(() => () => stop(), [stop]);"
+    },
+    "src/components/chat/use-speech-synthesis.ts:310": {
+      "fp": "df5e16b9d4ac",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "url: \"/api/tts\","
+    },
+    "src/components/chat/use-speech-synthesis.ts:318": {
+      "fp": "d6eb56d4776a",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "url: \"/api/tts-google\","
+    },
+    "src/components/chat/use-speech-synthesis.ts:9": {
+      "fp": "be8a1a5eca98",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/voice-catalog\";"
+    },
+    "src/components/chat/use-stt.ts:25": {
+      "fp": "698f3983ec4c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (engine === \"transcribe\" && transcribe.supported && !transcribe.error) {"
+    },
+    "src/components/chat/use-transcribe-recognition.ts:112": {
+      "fp": "9470afde69ca",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "setError(null);"
+    },
+    "src/components/chat/use-transcribe-recognition.ts:87": {
+      "fp": "013b4e49f570",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "fetch(\"/api/transcribe\", {"
+    },
+    "src/components/chat/use-voice-session.dom.test.tsx:159": {
+      "fp": "bdab94e3cd6c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"does NOT cancel TTS on re-renders during a normal turn (the cancel-every-render bug)\", () => {"
+    },
+    "src/components/chat/use-voice-session.ts:26": {
+      "fp": "9f75257e5eb5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* SELF-HEARING is avoided by design: recognition uses continuous=false, so the mic"
+    },
+    "src/components/chat/use-voice-session.ts:81": {
+      "fp": "d89a67634965",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const [active, setActive] = useState(false);"
+    },
+    "src/components/chat/voice-orb-3d.tsx:217": {
+      "fp": "7edb47a7866e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// eslint-disable-next-line react-hooks/exhaustive-deps"
+    },
+    "src/components/chat/voice-orb-3d.tsx:3": {
+      "fp": "f0619eba9deb",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useMemo, useRef } from \"react\";"
+    },
+    "src/components/chat/voice-orb-3d.tsx:300": {
+      "fp": "bf1b128046e6",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const postFx = process.env.NEXT_PUBLIC_ORB_POSTPROCESSING === \"true\";"
+    },
+    "src/components/chat/voice-orb-3d.tsx:4": {
+      "fp": "88ad97f50279",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Canvas, useFrame, EffectComposer, Bloom, Vignette, Noise, ChromaticAberration, THREE } from"
+    },
+    "src/components/chat/voice-orb-3d.tsx:47": {
+      "fp": "101fcfc38486",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const SNOISE = /* glsl */ `"
+    },
+    "src/components/chat/voice-orb-3d.tsx:5": {
+      "fp": "746e59a0e60b",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { BlendFunction } from \"postprocessing\"; // peer dep of @react-three/postprocessing"
+    },
+    "src/components/chat/voice-orb-3d.tsx:6": {
+      "fp": "34be422a04ef",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Fluid } from \"@whatisjery/react-fluid-distortion\";"
+    },
+    "src/components/chat/voice-orb.tsx:38": {
+      "fp": "31fc4bdbac5a",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const webgl = useWebGLSupported();"
+    },
+    "src/components/chat/voice-orb.tsx:46": {
+      "fp": "ffaed1dadc51",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<WebGLBoundary onFail={() => setGlFailed(true)}>"
+    },
+    "src/components/chat/voice-orb.tsx:7": {
+      "fp": "a496a73e5b83",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "07-components-3d.md"
+      ],
+      "preview": "import { WebGLBoundary } from \"@/components/game/webgl-boundary\";"
+    },
+    "src/components/chat/voice-picker.tsx:12": {
+      "fp": "be8a1a5eca98",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/voice-catalog\";"
+    },
+    "src/components/chat/voice-picker.tsx:13": {
+      "fp": "b5bbfd569a49",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { VOICE_PICKER_MODE } from \"@/lib/voice-picker-mode\";"
+    },
+    "src/components/chat/voice-picker.tsx:4": {
+      "fp": "1faf4767abc1",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import * as Dialog from \"@radix-ui/react-dialog\";"
+    },
+    "src/components/chat/voice-pitfalls.test.ts:14": {
+      "fp": "a915ef01ceb2",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "* under happy-dom — keeping pure logic in node-env tests so the fast suite"
+    },
+    "src/components/chat/voice-settings-dialog.tsx:111": {
+      "fp": "a0cb92d44148",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "role=\"radiogroup\""
+    },
+    "src/components/chat/voice-settings-dialog.tsx:18": {
+      "fp": "a72b91774ecf",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { getDefaultVoiceId, getVoiceById } from \"@/lib/voice-catalog\";"
+    },
+    "src/components/chat/voice-surface-mutex.ts:18": {
+      "fp": "028a6d34e92e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* The ?view=voice view is handled separately (the header orb is disabled on that view —"
+    },
+    "src/components/chat/voice-surface-mutex.ts:23": {
+      "fp": "eb89efcdb716",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export type VoiceSurfaceId = \"modal\" | \"inline\" | \"core\";"
+    },
+    "src/components/chat/wake-word-controller.tsx:29": {
+      "fp": "02f61b67e127",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const ACTIVE_VIEWS = new Set([\"chat\"]);"
+    },
+    "src/components/command-palette.tsx:11": {
+      "fp": "97465a7301d7",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Title as DialogTitle, Description as DialogDescription } from \"@radix-ui/react-dialog\";"
+    },
+    "src/components/command-palette.tsx:213": {
+      "fp": "38947763460b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Fixed value — the label flips to \"Copied!\" for ~1.5s, but the search value must"
+    },
+    "src/components/command-palette.tsx:219": {
+      "fp": "0d27445c395e",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "...(process.env.NEXT_PUBLIC_RESUME_VARIANTS === \"true\" ? resumeVariants : [resumeVariants[0]]).map(("
+    },
+    "src/components/command-palette.tsx:40": {
+      "fp": "8be6cbcc6da8",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useVoiceSettings } from \"@/lib/voice-settings-context\";"
+    },
+    "src/components/command-palette.tsx:46": {
+      "fp": "be8a1a5eca98",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "} from \"@/lib/voice-catalog\";"
+    },
+    "src/components/command-palette.tsx:499": {
+      "fp": "82ff7b7cd295",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{showRecent && <Group heading=\"Recent\" actions={recentItems} onRun={record} valuePrefix=\"recent\" />}"
+    },
+    "src/components/command-palette.tsx:5": {
+      "fp": "68b248bb9d1a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { track } from \"@vercel/analytics\";"
+    },
+    "src/components/command-palette.tsx:512": {
+      "fp": "65d2b09330d7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Voice picker dialog. Mounted as a sibling to the palette so the palette's"
+    },
+    "src/components/command-palette.tsx:6": {
+      "fp": "74d3ef65ccab",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Command } from \"cmdk\";"
+    },
+    "src/components/game/build-graph-scene.tsx:10": {
+      "fp": "690e3e224d1d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const SCALE = 1.6;"
+    },
+    "src/components/game/build-graph-scene.tsx:4": {
+      "fp": "c025ddaf9700",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Canvas, useThree, useFrame, OrbitControls, THREE } from \"@/lib/r3f\";"
+    },
+    "src/components/game/build-graph-scene.tsx:98": {
+      "fp": "d1c449267ff8",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Hover label disabled for now: troika-three-text's <Text> has no local"
+    },
+    "src/components/game/build-graph.tsx:10": {
+      "fp": "a496a73e5b83",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { WebGLBoundary } from \"@/components/game/webgl-boundary\";"
+    },
+    "src/components/game/build-graph.tsx:28": {
+      "fp": "479e471d7958",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const isDesktop = useMediaQuery(\"(min-width: 768px)\");"
+    },
+    "src/components/game/build-graph.tsx:29": {
+      "fp": "03e10e91b0df",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const webglOk = useWebGLSupported();"
+    },
+    "src/components/game/build-graph.tsx:50": {
+      "fp": "07792f63bfa0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!isDesktop || reduced || !webglOk || webglFailed || talkOpen) return null;"
+    },
+    "src/components/game/developer-rail.tsx:35": {
+      "fp": "234dd6302c72",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{resumeVariants.map((r) => ("
+    },
+    "src/components/game/developer-rail.tsx:77": {
+      "fp": "8be27a8aaf2d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<Linkedin size={13} className=\"text-accent\" /> linkedin.com/in/{profile.githubUser}"
+    },
+    "src/components/game/dossier-card.tsx:27": {
+      "fp": "c53ace21d331",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<Link"
+    },
+    "src/components/game/easter-eggs.tsx:131": {
+      "fp": "3c98b4b189a9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// .hero-rise is an existing CSS keyframe (rise + fade) that is itself"
+    },
+    "src/components/game/easter-eggs.tsx:133": {
+      "fp": "4572e4193478",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// utility (Tailwind v4 here has no tailwindcss-animate, so those silently no-op)."
+    },
+    "src/components/game/easter-eggs.tsx:139": {
+      "fp": "67c01e488f86",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "aria-label=\"Dismiss\""
+    },
+    "src/components/game/easter-eggs.tsx:31": {
+      "fp": "b0effc3b6de7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "let consoleGreeted = false;"
+    },
+    "src/components/game/easter-eggs.tsx:57": {
+      "fp": "f28ea927c74f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "useEffect(() => {"
+    },
+    "src/components/game/game-view.tsx:57": {
+      "fp": "ee1b441d5e2c",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "{process.env.NEXT_PUBLIC_SKILL_TREE === \"true\" && ("
+    },
+    "src/components/game/glass-box-demo.tsx:114": {
+      "fp": "38fa946de6dd",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{step.refs.map((slug) => {"
+    },
+    "src/components/game/glass-box-demo.tsx:40": {
+      "fp": "0a29cf5952c4",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!traceApproved) return null;"
+    },
+    "src/components/game/glass-box-demo.tsx:59": {
+      "fp": "dbaa019ddc4f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "reset();"
+    },
+    "src/components/game/glass-box-demo.tsx:8": {
+      "fp": "4faf0af02fd7",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { AGENTS, scenarios, traceApproved, linkForSlug } from \"@/lib/agent-trace\";"
+    },
+    "src/components/game/graph-index.tsx:26": {
+      "fp": "516b2c338b1d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<li key={node.id} className={g.nodes.length % 2 !== 0 && i === g.nodes.length - 1 ? \"sm:col-span-2\" "
+    },
+    "src/components/game/skill-tree.tsx:155": {
+      "fp": "37133bfd7a20",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const cat = skills.find((s) => s.group === groupName)!;"
+    },
+    "src/components/game/skill-tree.tsx:230": {
+      "fp": "d4ab59c4e7be",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const id = col.group.replace(/[^a-z0-9]/gi, \"-\");"
+    },
+    "src/components/game/skill-tree.tsx:353": {
+      "fp": "e7a311cf1a67",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const { columns, svgWidth, svgHeight } = buildColumns();"
+    },
+    "src/components/game/skill-tree.tsx:571": {
+      "fp": "41a2f4897c61",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<style>{`"
+    },
+    "src/components/game/terminal/boot-banner.ts:38": {
+      "fp": "cce21b883388",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ".map((m) => `${m.value} ${m.label.replace(\"daily users\", \"users\").replace(\"open-source repos\", \"OSS "
+    },
+    "src/components/game/terminal/commands.ts:204": {
+      "fp": "febc556f74cf",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Flag read inside run() body — module-scope const would break vi.stubEnv in tests."
+    },
+    "src/components/game/terminal/commands.ts:206": {
+      "fp": "aa2b31501b7b",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_RESUME_VARIANTS === \"true\" ? resumeVariants : [resumeVariants[0]];"
+    },
+    "src/components/game/terminal/commands.ts:503": {
+      "fp": "66ada372648f",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "12-docs-knowledge-and-harness.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "export const COMMANDS: Record<string, Command> = {"
+    },
+    "src/components/game/terminal/commands.ts:525": {
+      "fp": "90272d741cdd",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const COMMAND_NAMES = Object.entries(COMMANDS)"
+    },
+    "src/components/game/terminal/commands.ts:535": {
+      "fp": "8bc838be61ed",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function commandEventName(raw: string): string {"
+    },
+    "src/components/game/terminal/fmt.ts:13": {
+      "fp": "ee9f5678bf7c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const W = 56; // content width inside a box (box outer width = W + 4 for │ + spaces)"
+    },
+    "src/components/game/terminal/fmt.ts:79": {
+      "fp": "a7c2346c2e69",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "*   ● aava-code             AI Coding Plugin for VS Code"
+    },
+    "src/components/game/terminal/terminal-overlay.tsx:3": {
+      "fp": "1faf4767abc1",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import * as Dialog from \"@radix-ui/react-dialog\";"
+    },
+    "src/components/game/terminal/terminal-overlay.tsx:39": {
+      "fp": "4de219cd58dd",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const input = content?.querySelector<HTMLInputElement>("
+    },
+    "src/components/game/terminal/terminal.tsx:17": {
+      "fp": "d07a264d2e46",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const COMMAND_SUGGESTIONS = Object.values(COMMANDS)"
+    },
+    "src/components/game/terminal/terminal.tsx:203": {
+      "fp": "bcda7f349b8d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Autocomplete dropdown — always in DOM so aria-controls is never a dangling"
+    },
+    "src/components/game/terminal/terminal.tsx:254": {
+      "fp": "bdb1982e55a3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "aria-label=\"Terminal command input\""
+    },
+    "src/components/game/terminal/terminal.tsx:4": {
+      "fp": "68b248bb9d1a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { track } from \"@vercel/analytics\";"
+    },
+    "src/components/game/terminal/terminal.tsx:7": {
+      "fp": "dc2b18fdd7a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useAutoScroll } from \"@/lib/scroll/use-auto-scroll\";"
+    },
+    "src/components/game/terminal/use-terminal.ts:6": {
+      "fp": "68b248bb9d1a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { track } from \"@vercel/analytics\";"
+    },
+    "src/components/game/use-trace-runner.ts:4": {
+      "fp": "3c69bb640ad3",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import type { Scenario } from \"@/lib/agent-trace\";"
+    },
+    "src/components/game/use-trace-runner.ts:69": {
+      "fp": "ac3faa4962f7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Reset when the scenario changes; clear timers on unmount."
+    },
+    "src/components/game/webgl-boundary.tsx:19": {
+      "fp": "7728d39c8471",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "static getDerivedStateFromError() {"
+    },
+    "src/components/game/webgl-boundary.tsx:25": {
+      "fp": "3a30af4a4d08",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "console.warn(\"[build-graph] WebGL scene unavailable — falling back to the index.\", error);"
+    },
+    "src/components/github-stats-strip.tsx:35": {
+      "fp": "73ed368077b4",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "fetch(\"/api/github/stats\")"
+    },
+    "src/components/github-stats-strip.tsx:77": {
+      "fp": "423f84fd7463",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<StatCard icon={<Users size={16} />} value={stats!.followers.toLocaleString()} label=\"GitHub followe"
+    },
+    "src/components/hero-avatar/avatar-controls.tsx:31": {
+      "fp": "6f51be79b30f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "controlsRef.current.yaw   =  (e.clientX / window.innerWidth  - 0.5) * 2;"
+    },
+    "src/components/hero-avatar/avatar-mesh.tsx:10": {
+      "fp": "4f444c686a78",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "useGLTF.preload(\"/avatar/sairam.glb\");"
+    },
+    "src/components/hero-avatar/avatar-mesh.tsx:5": {
+      "fp": "3d3f6bc6e8a3",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { useAvatarGaze } from \"./use-avatar-gaze\";"
+    },
+    "src/components/hero-avatar/avatar-mesh.tsx:6": {
+      "fp": "07e64fcf0f09",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { useAvatarIdle } from \"./use-avatar-idle\";"
+    },
+    "src/components/hero-avatar/avatar-mesh.tsx:7": {
+      "fp": "fdc4bd4e006a",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { resolveRig, type AvatarRig } from \"./rig\";"
+    },
+    "src/components/hero-avatar/avatar-mesh.tsx:97": {
+      "fp": "6f301a305e67",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const setMorph = (key: string, val: number) => {"
+    },
+    "src/components/hero-avatar/avatar-scene.tsx:18": {
+      "fp": "4e370589e2f2",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const controlsRef = useRef<{ pitch: number; yaw: number }>({ pitch: 0, yaw: 0 });"
+    },
+    "src/components/hero-avatar/avatar-scene.tsx:22": {
+      "fp": "5d1f878926a7",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "frameloop=\"demand\""
+    },
+    "src/components/hero-avatar/avatar-scene.tsx:30": {
+      "fp": "8ae6f73f4182",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "<AvatarControls controlsRef={controlsRef} />"
+    },
+    "src/components/hero-avatar/avatar-scene.tsx:31": {
+      "fp": "48d77f326abc",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "<AvatarMesh controlsRef={controlsRef} />"
+    },
+    "src/components/hero-avatar/avatar-scene.tsx:4": {
+      "fp": "33839080481a",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { Canvas } from \"@/lib/r3f\";"
+    },
+    "src/components/hero-avatar/index.dom.test.tsx:31": {
+      "fp": "15b0ef15dc70",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "vi.mock(\"@/components/game/webgl-boundary\", () => ({"
+    },
+    "src/components/hero-avatar/index.dom.test.tsx:44": {
+      "fp": "3d07276cb130",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "it(\"returns null when NEXT_PUBLIC_HERO_MODE is not 'avatar'\", async () => {"
+    },
+    "src/components/hero-avatar/index.tsx:10": {
+      "fp": "18a8c125d69e",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "const AvatarSceneLazy = dynamic("
+    },
+    "src/components/hero-avatar/index.tsx:102": {
+      "fp": "fc4c1868f34c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return ("
+    },
+    "src/components/hero-avatar/index.tsx:16": {
+      "fp": "597099fddedf",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* CSS glow fallback — identical to HeroGraph fallback so switching between"
+    },
+    "src/components/hero-avatar/index.tsx:49": {
+      "fp": "e88dc56fbadd",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// Read flags inside function body — NOT module scope (required for vi.stubEnv in tests)."
+    },
+    "src/components/hero-avatar/index.tsx:50": {
+      "fp": "2099d7c5bae0",
+      "citedBy": [
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const heroMode = process.env.NEXT_PUBLIC_HERO_MODE;"
+    },
+    "src/components/hero-avatar/index.tsx:51": {
+      "fp": "690504be59b9",
+      "citedBy": [
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const position = process.env.NEXT_PUBLIC_AVATAR_POSITION ?? \"hero-side\";"
+    },
+    "src/components/hero-avatar/index.tsx:56": {
+      "fp": "703a10ad75f6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const showWebGL = isDesktop && !reduced && view === \"classic\";"
+    },
+    "src/components/hero-avatar/index.tsx:59": {
+      "fp": "5682a37ed4db",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<WebGLBoundary>"
+    },
+    "src/components/hero-avatar/index.tsx:8": {
+      "fp": "a496a73e5b83",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "07-components-3d.md"
+      ],
+      "preview": "import { WebGLBoundary } from \"@/components/game/webgl-boundary\";"
+    },
+    "src/components/hero-avatar/rig.test.ts:2": {
+      "fp": "2b65087a1cb2",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import type * as THREE from \"three\";"
+    },
+    "src/components/hero-avatar/rig.test.ts:3": {
+      "fp": "bfe68e90c011",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { resolveRig } from \"./rig\";"
+    },
+    "src/components/hero-avatar/rig.ts:1": {
+      "fp": "7e77e6202c20",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "// Type-only import: erased at compile time, so this file adds NOTHING to the runtime graph"
+    },
+    "src/components/hero-avatar/rig.ts:4": {
+      "fp": "2b65087a1cb2",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import type * as THREE from \"three\";"
+    },
+    "src/components/hero-avatar/rig.ts:41": {
+      "fp": "118c0801d5da",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// @ts-expect-error — THREE.Bone.isBone is a runtime flag not in the type stubs"
+    },
+    "src/components/hero-avatar/rig.ts:43": {
+      "fp": "7fcd752bde75",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const name = obj.name.toLowerCase();"
+    },
+    "src/components/hero-avatar/rig.ts:57": {
+      "fp": "933ffa4c2bb3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if ("
+    },
+    "src/components/hero-avatar/use-avatar-gaze.test.ts:2": {
+      "fp": "0f1679d29502",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { computeGaze } from \"./use-avatar-gaze\";"
+    },
+    "src/components/hero-avatar/use-avatar-gaze.ts:22": {
+      "fp": "0d28613602b3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const driftX = Math.sin(t * 0.31) * Math.cos(t * 0.73) * 0.008;"
+    },
+    "src/components/hero-avatar/use-avatar-idle.test.ts:2": {
+      "fp": "2112dc4a1d12",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { computeIdle } from \"./use-avatar-idle\";"
+    },
+    "src/components/hero-avatar/use-avatar-idle.ts:27": {
+      "fp": "588d162db3eb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "invalidate();"
+    },
+    "src/components/hero-graph/index.tsx:11": {
+      "fp": "20ef83d9fd4a",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "// When NEXT_PUBLIC_GRAPH_PHYSICS=true the Rapier physics variant is loaded instead;"
+    },
+    "src/components/hero-graph/index.tsx:12": {
+      "fp": "f42831d3aa77",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// when off (default) rapier is never imported — zero bundle impact."
+    },
+    "src/components/hero-graph/index.tsx:13": {
+      "fp": "c29fbb7dae5d",
+      "citedBy": [
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const HeroGraphScene = GRAPH_PHYSICS"
+    },
+    "src/components/hero-graph/index.tsx:14": {
+      "fp": "2000a543e5ea",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "? dynamic(() => import(\"./scene-physics\").then((m) => m.HeroGraphScenePhysics), { ssr: false })"
+    },
+    "src/components/hero-graph/index.tsx:15": {
+      "fp": "78b14cb317cd",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": ": dynamic(() => import(\"./scene\"), { ssr: false });"
+    },
+    "src/components/hero-graph/index.tsx:3": {
+      "fp": "871d856a4eab",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import dynamic from \"next/dynamic\";"
+    },
+    "src/components/hero-graph/index.tsx:32": {
+      "fp": "703a10ad75f6",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const showWebGL = isDesktop && !reduced && view === \"classic\";"
+    },
+    "src/components/hero-graph/index.tsx:8": {
+      "fp": "4944a7b4e0c6",
+      "citedBy": [
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const GRAPH_PHYSICS = process.env.NEXT_PUBLIC_GRAPH_PHYSICS === \"true\";"
+    },
+    "src/components/hero-graph/scene-physics.tsx:20": {
+      "fp": "116fe13a79cf",
+      "citedBy": [
+        "07-components-3d.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "frameloop=\"always\""
+    },
+    "src/components/hero-graph/scene-physics.tsx:37": {
+      "fp": "00141aedd9c6",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "useFrame(({ clock }: RootState) => {"
+    },
+    "src/components/hero-graph/scene-physics.tsx:4": {
+      "fp": "6f5f2cff37ff",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { Canvas, useFrame } from \"@react-three/fiber\";"
+    },
+    "src/components/hero-graph/scene-physics.tsx:42": {
+      "fp": "863ea9fa9342",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "groupRef.current.position.x = Math.sin(t * 0.4) * 0.08;"
+    },
+    "src/components/hero-graph/scene-physics.tsx:6": {
+      "fp": "cc68db15ace9",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import * as THREE from \"three\";"
+    },
+    "src/components/hero-graph/scene-physics.tsx:8": {
+      "fp": "5bd6d2edd599",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { HeroGraphInner } from \"./scene\";"
+    },
+    "src/components/hero-graph/scene.tsx:116": {
+      "fp": "5d1f878926a7",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "frameloop=\"demand\""
+    },
+    "src/components/hero-graph/scene.tsx:15": {
+      "fp": "1bd18caed7c9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const ptr = { x: 0, y: 0 };"
+    },
+    "src/components/hero-graph/scene.tsx:17": {
+      "fp": "0ea96ecb5b27",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/** All 10 nodes as ONE InstancedMesh — single draw call (research-verified). */"
+    },
+    "src/components/hero-graph/scene.tsx:4": {
+      "fp": "7b5316a6ebb1",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Canvas, useThree, useFrame, THREE } from \"@/lib/r3f\";"
+    },
+    "src/components/hero-graph/scene.tsx:7": {
+      "fp": "690e3e224d1d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const SCALE = 1.6;"
+    },
+    "src/components/hero-graph/scene.tsx:86": {
+      "fp": "970262f315ea",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (Math.abs(dx) > 0.0006 || Math.abs(dy) > 0.0006) invalidate();"
+    },
+    "src/components/hero-graph/scene.tsx:92": {
+      "fp": "44092fe3ee20",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function Graph() {"
+    },
+    "src/components/home/featured-projects.tsx:24": {
+      "fp": "d1d325835b8d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "View all 8 projects"
+    },
+    "src/components/home/featured-projects.tsx:3": {
+      "fp": "c3a915b02ab9",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "import { featuredProjects } from \"@/lib/content\";"
+    },
+    "src/components/home/featured-work.tsx:12": {
+      "fp": "e49aa0da6332",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "{allWork.map((w, i) => ("
+    },
+    "src/components/home/featured-work.tsx:3": {
+      "fp": "c6adfd053f63",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "import { allWork } from \"@/lib/content\";"
+    },
+    "src/components/home/hero.tsx:16": {
+      "fp": "2099d7c5bae0",
+      "citedBy": [
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "const heroMode = process.env.NEXT_PUBLIC_HERO_MODE;"
+    },
+    "src/components/home/hero.tsx:5": {
+      "fp": "ffbdf1a03dc0",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { HeroGraph } from \"@/components/hero-graph\";"
+    },
+    "src/components/home/hero.tsx:6": {
+      "fp": "788ed4d8f341",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "import { HeroAvatar } from \"@/components/hero-avatar\";"
+    },
+    "src/components/home/hero.tsx:62": {
+      "fp": "d1e964a41923",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Impact strip — headline metrics above the fold (all real, work-context)."
+    },
+    "src/components/home/resume-view.tsx:12": {
+      "fp": "8fc555e442e3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* ViewEscapeHatch component (auto-rendered by view-router for non-classic views)"
+    },
+    "src/components/home/resume-view.tsx:255": {
+      "fp": "80537f6c17fe",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "* Use inside src/app/resume/page.tsx to avoid nesting two <main> landmarks."
+    },
+    "src/components/home/resume-view.tsx:42": {
+      "fp": "daabbba7392d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const showVariants = process.env.NEXT_PUBLIC_RESUME_VARIANTS === \"true\";"
+    },
+    "src/components/json-ld.tsx:29": {
+      "fp": "405a6d04d62f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "url: \"https://anvilry.vercel.app\","
+    },
+    "src/components/json-ld.tsx:4": {
+      "fp": "0ef7dac074d3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// Safe serialisation for <script type=\"application/ld+json\"> blocks."
+    },
+    "src/components/mdx-content.tsx:14": {
+      "fp": "407efc7d2819",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function compileMDX(code: string) {"
+    },
+    "src/components/mdx-content.tsx:8": {
+      "fp": "684888c0ebb1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*"
+    },
+    "src/components/mobile-nav.tsx:24": {
+      "fp": "f28ea927c74f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "useEffect(() => {"
+    },
+    "src/components/open-to-work-banner.tsx:6": {
+      "fp": "9ace8b0bd7bc",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* NEXT_PUBLIC_OPEN_TO_WORK=true. Intentionally low-chrome — signals"
+    },
+    "src/components/platform-badge.tsx:13": {
+      "fp": "82e95a44afba",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const SOURCE_CONFIG: Record<"
+    },
+    "src/components/providers.tsx:1": {
+      "fp": "c5e39c2214a9",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "\"use client\";"
+    },
+    "src/components/providers.tsx:20": {
+      "fp": "b1a01bb706f6",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "const DiscoveryBadgeComponent = dynamic("
+    },
+    "src/components/providers.tsx:51": {
+      "fp": "74719b2562e4",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "<MotionConfig reducedMotion=\"user\">"
+    },
+    "src/components/providers.tsx:57": {
+      "fp": "f15fe9b3fe9a",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "{discoveryBadgesEnabled && <DiscoveryBadgeComponent />}"
+    },
+    "src/components/providers.tsx:7": {
+      "fp": "1f6be278ae45",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { ScrollFlagsSync } from \"@/lib/scroll/scroll-flags\";"
+    },
+    "src/components/site-footer.dom.test.tsx:2": {
+      "fp": "5964046a870e",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { render, screen, waitFor, cleanup } from \"@testing-library/react\";"
+    },
+    "src/components/site-footer.tsx:165": {
+      "fp": "c2431368efe2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Build-time year, not a render-time `new Date()`. Under cacheComponents an in-render"
+    },
+    "src/components/site-footer.tsx:171": {
+      "fp": "8961a62769e9",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "© {process.env.NEXT_PUBLIC_BUILD_YEAR ?? \"2026\"} Sairam Ugge"
+    },
+    "src/components/site-footer.tsx:183": {
+      "fp": "88f218773711",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "href=\"/feed.xml\""
+    },
+    "src/components/site-footer.tsx:36": {
+      "fp": "c530b67c3e19",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "if (cached !== null) setTotal(Number(cached)); // eslint-disable-line react-hooks/set-state-in-effec"
+    },
+    "src/components/site-footer.tsx:41": {
+      "fp": "1d64734204c6",
+      "citedBy": [
+        "02-api-routes.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "fetch(\"/api/visit\", { method: \"POST\" })"
+    },
+    "src/components/site-footer.tsx:81": {
+      "fp": "ccae2efb6db2",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "{ href: \"/llms.txt\", label: \"llms.txt\" },"
+    },
+    "src/components/site-footer.tsx:94": {
+      "fp": "38f1bd0357e8",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const showVisitorCounter = process.env.NEXT_PUBLIC_VISITOR_COUNTER === \"true\";"
+    },
+    "src/components/site-nav.tsx:103": {
+      "fp": "b4c0a352429e",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<MobileNav links={navLinks} />"
+    },
+    "src/components/site-nav.tsx:22": {
+      "fp": "22465afeb992",
+      "citedBy": [
+        "01-routes-pages.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "...(STATS_ENABLED ? [{ href: \"/stats\", label: \"Stats\" }] : []),"
+    },
+    "src/components/site-nav.tsx:40": {
+      "fp": "c093b79e6b04",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "style={{ viewTransitionName: \"site-header\" }}"
+    },
+    "src/components/site-nav.tsx:42": {
+      "fp": "28129c65b8a9",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<nav className=\"mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6\">"
+    },
+    "src/components/ui/ink-transition.tsx:213": {
+      "fp": "f28ea927c74f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "useEffect(() => {"
+    },
+    "src/components/ui/reveal.tsx:28": {
+      "fp": "47a2dd114020",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (reduced || !mounted) return <div className={className}>{children}</div>;"
+    },
+    "src/components/ui/reveal.tsx:4": {
+      "fp": "208b41ba8055",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { useReducedMotion } from \"@/lib/use-reduced-motion\";"
+    },
+    "src/components/ui/section.tsx:4": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/components/ui/skeleton.tsx:102": {
+      "fp": "98b008934d63",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function SkeletonViewTransition({ label }: { label?: string }) {"
+    },
+    "src/components/view-context.test.ts:30": {
+      "fp": "c39ddaf30fca",
+      "citedBy": [
+        "08-components-site-shell-ui.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"default + server snapshot stay 'classic' (the SSG/hydration guard)\", () => {"
+    },
+    "src/components/view-context.tsx:115": {
+      "fp": "40868904dd21",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "doc.startViewTransition(() => flushSync(emit));"
+    },
+    "src/components/view-context.tsx:12": {
+      "fp": "647371add96d",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { flushSync } from \"react-dom\";"
+    },
+    "src/components/view-context.tsx:133": {
+      "fp": "7b665a06fcd1",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (typeof document !== \"undefined\" && transition) {"
+    },
+    "src/components/view-context.tsx:139": {
+      "fp": "96437043edcb",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (typeof window !== \"undefined\") unlock(\"view-switch\");"
+    },
+    "src/components/view-context.tsx:162": {
+      "fp": "16f2be7d07ae",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "function ViewQuerySync() {"
+    },
+    "src/components/view-context.tsx:182": {
+      "fp": "dffcc8d01178",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ViewQuerySync />"
+    },
+    "src/components/view-context.tsx:24": {
+      "fp": "f361cf1c4c36",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "export type View = \"classic\" | \"gamified\" | \"chat\" | \"developer\" | \"voice\" | \"resume\";"
+    },
+    "src/components/view-context.tsx:26": {
+      "fp": "50ce46aa8f76",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const VIEWS: readonly View[] = [\"classic\", \"gamified\", \"chat\", \"developer\", \"voice\", \"resume\"] as co"
+    },
+    "src/components/view-context.tsx:49": {
+      "fp": "51af0b0f1c46",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "let current: View = DEFAULT_VIEW;"
+    },
+    "src/components/view-context.tsx:64": {
+      "fp": "7a56dbbe864b",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "const getClientSnapshot = () => current;"
+    },
+    "src/components/view-context.tsx:65": {
+      "fp": "31b78e869455",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const getServerSnapshot = (): View => DEFAULT_VIEW;"
+    },
+    "src/components/view-context.tsx:79": {
+      "fp": "52ddac48590f",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "function commitViewChange() {"
+    },
+    "src/components/view-context.tsx:99": {
+      "fp": "d7ac10000216",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_INK_TRANSITION === \"true\""
+    },
+    "src/components/view-router.tsx:29": {
+      "fp": "1e29c19db662",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "const GameView = dynamic(() => import(\"@/components/game/game-view\").then((m) => m.GameView), {"
+    },
+    "src/components/view-router.tsx:34": {
+      "fp": "5771244ef1f8",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "() => import(\"@/components/game/developer-view\").then((m) => m.DeveloperView),"
+    },
+    "src/components/view-router.tsx:44": {
+      "fp": "248a58b77e2b",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "const ResumeView = dynamic("
+    },
+    "src/components/view-router.tsx:52": {
+      "fp": "81c9ac5c642d",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export function ViewRouter({ children }: { children: ReactNode }) {"
+    },
+    "src/components/view-router.tsx:56": {
+      "fp": "0fb84c0f57ad",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<div style={{ viewTransitionName: \"view-body\" }}>"
+    },
+    "src/components/view-router.tsx:58": {
+      "fp": "a3c48126e3f1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<div hidden={view !== \"classic\"} aria-hidden={view !== \"classic\"}>"
+    },
+    "src/components/view-router.tsx:9": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "/**"
+    },
+    "src/components/view-switcher.tsx:16": {
+      "fp": "75a5840cf89e",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGrid }[] = ["
+    },
+    "src/components/view-switcher.tsx:3": {
+      "fp": "34196aeda4ce",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { motion } from \"motion/react\";"
+    },
+    "src/components/view-switcher.tsx:32": {
+      "fp": "78071b8f8bda",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "// Compact (mobile) drops the 5th \"Voice\" pill to protect the tight h-14 header row —"
+    },
+    "src/instrumentation-client.ts:26": {
+      "fp": "27a4d17a2c01",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "* DEDUPE — the most subtle bit:"
+    },
+    "src/instrumentation-client.ts:50": {
+      "fp": "638048fec8ab",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import(\"web-vitals\").then(({ onLCP, onINP, onCLS }) => {"
+    },
+    "src/instrumentation-client.ts:52": {
+      "fp": "4488b6e39747",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "console.info(\"[vitals]\", name, Math.round(value), rating);"
+    },
+    "src/instrumentation-client.ts:59": {
+      "fp": "8fd4e5fdd12b",
+      "citedBy": [
+        "02-api-routes.md",
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import(\"@/lib/telemetry/beacon\").then(({ sendErrorBeacon }) => {"
+    },
+    "src/instrumentation.ts:12": {
+      "fp": "2485991aa95e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* SECURITY: no secret values are logged — only whether a var is present/absent"
+    },
+    "src/instrumentation.ts:35": {
+      "fp": "c80706837467",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "if (process.env.NEXT_RUNTIME === \"edge\") return;"
+    },
+    "src/instrumentation.ts:41": {
+      "fp": "48453da2375d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "vercel_env: enumVal(env.VERCEL_ENV, [\"production\", \"preview\", \"development\"], \"local\"),"
+    },
+    "src/instrumentation.ts:42": {
+      "fp": "68e0d108c611",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "node_env: enumVal(env.NODE_ENV, [\"production\", \"development\", \"test\"], \"development\"),"
+    },
+    "src/instrumentation.ts:43": {
+      "fp": "8f2b28787a52",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "region: env.VERCEL_REGION ?? env.AWS_REGION ?? \"unknown\","
+    },
+    "src/instrumentation.ts:49": {
+      "fp": "cc2cf6ab33f6",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "flags_sdk_configured: present(env.FLAGS),         // SDK connection string"
+    },
+    "src/instrumentation.ts:65": {
+      "fp": "f7dbd51d59be",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "bedrock: present(env.BEDROCK_ACCESS_KEY_ID),"
+    },
+    "src/instrumentation.ts:75": {
+      "fp": "dc90fa6b5cc6",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "llm_sdk: enumVal("
+    },
+    "src/instrumentation.ts:76": {
+      "fp": "09ce176523d2",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "env.NEXT_PUBLIC_LLM_SDK,"
+    },
+    "src/instrumentation.ts:84": {
+      "fp": "532f4f2f07f1",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "console.log(\"[config]\", JSON.stringify(config));"
+    },
+    "src/instrumentation.ts:86": {
+      "fp": "d7249f04b41d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Stamp corpus build time in Redis on production deploys only."
+    },
+    "src/instrumentation.ts:87": {
+      "fp": "7da3e6c7b349",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "// Use VERCEL_ENV=production to exclude preview deployments — on Vercel, preview"
+    },
+    "src/instrumentation.ts:95": {
+      "fp": "4a07d8962238",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const { redis } = await import(\"@/lib/redis\");"
+    },
+    "src/lib/admin-auth.ts:22": {
+      "fp": "a004878e1411",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const envPassword = process.env.ADMIN_PASSWORD;"
+    },
+    "src/lib/admin-auth.ts:57": {
+      "fp": "ffa1b3b5c9c0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function constantTimeEqual(a: string, b: string): boolean {"
+    },
+    "src/lib/agent-trace.test.ts:20": {
+      "fp": "2122fa3f7a92",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"every referenced slug resolves to real content (anti-fabrication)\", () => {"
+    },
+    "src/lib/agent-trace.test.ts:56": {
+      "fp": "49c8c712842b",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(traceApproved).toBe(!hasSentinel);"
+    },
+    "src/lib/agent-trace.ts:111": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/agent-trace.ts:115": {
+      "fp": "2c73036a5779",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* prose, and lights up the moment Sairam replaces the drafts. NOT a hard build failure."
+    },
+    "src/lib/agent-trace.ts:117": {
+      "fp": "a6ab1fe42a89",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "export const traceApproved: boolean = scenarios.every((s) =>"
+    },
+    "src/lib/agent-trace.ts:13": {
+      "fp": "1e433b414772",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* ║  A build-time test (agent-trace.test.ts) BLOCKS shipping while the sentinel    ║"
+    },
+    "src/lib/agent-trace.ts:19": {
+      "fp": "a1ec165be9c6",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const PLACEHOLDER_SENTINEL = \"[DRAFT — owner to approve]\";"
+    },
+    "src/lib/agent-trace.ts:58": {
+      "fp": "8e6ec68488ef",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "refs: [\"aava-code\", \"mindforge\"],"
+    },
+    "src/lib/article-grouping.ts:10": {
+      "fp": "7646af96f122",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const safeMs = (d: string): number => {"
+    },
+    "src/lib/article-grouping.ts:23": {
+      "fp": "8aea77e24193",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "* - \"linkedNote\"   → prefer internal note slug (stable, survives URL changes)"
+    },
+    "src/lib/article-grouping.ts:30": {
+      "fp": "82fdecf3a237",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const DEFAULT_CONFIG: GroupingConfig = { primaryKey: ARTICLE_DEDUP_KEY };"
+    },
+    "src/lib/article-grouping.ts:32": {
+      "fp": "f276d751aed7",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "export interface ArticleGroup {"
+    },
+    "src/lib/article-grouping.ts:42": {
+      "fp": "16dd55ac7968",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "* Group articles by canonical URL or linkedNote reference."
+    },
+    "src/lib/article-grouping.ts:62": {
+      "fp": "c427035a00a1",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (config.primaryKey === \"canonicalUrl\") {"
+    },
+    "src/lib/avatar-glb.test.ts:132": {
+      "fp": "7c23ee1ac96e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"avatar GLB — documented gap: eye-gaze morph targets are ABSENT\", () => {"
+    },
+    "src/lib/avatar-glb.test.ts:18": {
+      "fp": "c59066756ff8",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "/** Max on-disk size. The asset is on the hero path when NEXT_PUBLIC_HERO_MODE=avatar, so a"
+    },
+    "src/lib/avatar-glb.test.ts:21": {
+      "fp": "01b8943fbc26",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const MAX_BYTES = 1.5 * 1024 * 1024;"
+    },
+    "src/lib/avatar-glb.test.ts:53": {
+      "fp": "4977ae472b98",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "it(\"exists at the path the loader requests\", () => {"
+    },
+    "src/lib/case-study-depth.test.ts:12": {
+      "fp": "19fc7e7c6269",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"every work item with a diagram has non-empty alt text (a11y)\", () => {"
+    },
+    "src/lib/case-study-depth.test.ts:24": {
+      "fp": "0129de8dc9cc",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// diagram paths are public assets, e.g. \"/static/foo.svg\" → public/static/foo.svg"
+    },
+    "src/lib/content.ts:14": {
+      "fp": "a5eee16e35ae",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "} from \"../../.velite\";"
+    },
+    "src/lib/content.ts:18": {
+      "fp": "60fa5f032163",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const byOrder = <T extends { order: number }>(a: T, b: T) => a.order - b.order;"
+    },
+    "src/lib/content.ts:23": {
+      "fp": "0a65c6fc2ddd",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "export const featuredProjects = allProjects.filter((p) => p.featured);"
+    },
+    "src/lib/content.ts:26": {
+      "fp": "920188cfb732",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const pinnedProjects = allProjects"
+    },
+    "src/lib/content.ts:30": {
+      "fp": "7b8486568765",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const projectGroups = ["
+    },
+    "src/lib/content.ts:43": {
+      "fp": "f544e6237aaa",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const getProject = (slug: string) => allProjects.find((p) => p.slug === slug);"
+    },
+    "src/lib/content.ts:5": {
+      "fp": "e0cbdab30393",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md"
+      ],
+      "preview": "import {"
+    },
+    "src/lib/content.ts:50": {
+      "fp": "b3206b155109",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ".sort((a, b) => (a.date < b.date ? 1 : -1));"
+    },
+    "src/lib/content.ts:56": {
+      "fp": "8d99790b473a",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const inkforgeNotes = allNotes.filter((n) => n.generatedBy === \"inkforge\");"
+    },
+    "src/lib/corpus.test.ts:13": {
+      "fp": "6e05a802981a",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"always includes the professional record\", () => {"
+    },
+    "src/lib/corpus.ts:13": {
+      "fp": "b6b911433f0f",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function buildCorpus(): string {"
+    },
+    "src/lib/corpus.ts:17": {
+      "fp": "93d856da5c59",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "`### ${w.name} (${w.role})\\nContribution: ${w.register}\\n${w.summary}\\nMetrics: ${w.metrics"
+    },
+    "src/lib/corpus.ts:26": {
+      "fp": "4682b25a39cb",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "`### ${p.name} — ${p.tagline}\\nGroup: ${p.group}${"
+    },
+    "src/lib/corpus.ts:60": {
+      "fp": "6a9096da7ec8",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return `# ${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})"
+    },
+    "src/lib/discovery-store.ts:20": {
+      "fp": "cd02d428f936",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "const ALL_KEYS: DiscoveryKey[] = ["
+    },
+    "src/lib/discovery-store.ts:63": {
+      "fp": "063a5e7d541b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const getServerSnapshot = (): Set<DiscoveryKey> => new Set();"
+    },
+    "src/lib/enabled-views.ts:20": {
+      "fp": "5b4101d14d22",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "const ALWAYS_OPTIONAL: View[] = [\"resume\"];"
+    },
+    "src/lib/enabled-views.ts:23": {
+      "fp": "312f59c2221c",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const raw = process.env.NEXT_PUBLIC_ENABLED_VIEWS;"
+    },
+    "src/lib/enabled-views.ts:28": {
+      "fp": "8443e20c07a4",
+      "citedBy": [
+        "14-subsystems.md",
+        "README.md"
+      ],
+      "preview": "if (raw === undefined || raw === null) return new Set(ALL_OPTIONAL);"
+    },
+    "src/lib/flags.ts:10": {
+      "fp": "f88c63464521",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { flag } from \"flags/next\";"
+    },
+    "src/lib/flags.ts:12": {
+      "fp": "81b8310017ef",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Evaluated once at process start — changing FLAG_DRIVER at runtime without a restart has no effect"
+    },
+    "src/lib/flags.ts:13": {
+      "fp": "d8da10e26ba4",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "const useVercelDriver = process.env.FLAG_DRIVER === \"vercel\";"
+    },
+    "src/lib/flags.ts:17": {
+      "fp": "aa8a6d203ca7",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const discoveryBadgesFlag = flag<boolean>({"
+    },
+    "src/lib/flags.ts:18": {
+      "fp": "7c2653b35837",
+      "citedBy": [
+        "02-api-routes.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "key: \"NEXT_PUBLIC_DISCOVERY_BADGES\","
+    },
+    "src/lib/flags.ts:33": {
+      "fp": "f2bd6465c789",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "* Call from a Server Component or a Route Handler (never from client components)."
+    },
+    "src/lib/flags.ts:41": {
+      "fp": "52b65dd163fb",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "export async function getDiscoveryBadgesEnabled(): Promise<boolean> {"
+    },
+    "src/lib/flags.ts:44": {
+      "fp": "699fb2aebe45",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "console.log("
+    },
+    "src/lib/flags.ts:45": {
+      "fp": "e6b432ee016e",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"[flags]\","
+    },
+    "src/lib/flags.ts:5": {
+      "fp": "372aa266b359",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "* FLAG_DRIVER=local   → NEXT_PUBLIC_DISCOVERY_BADGES env var (build-time, current default)"
+    },
+    "src/lib/flags.ts:50": {
+      "fp": "9fe46ce3d285",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "// FLAGS_SECRET presence tells us whether the manifest endpoint will work"
+    },
+    "src/lib/flags.ts:51": {
+      "fp": "878470938bd9",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "flags_secret_present: typeof process.env.FLAGS_SECRET === \"string\" && process.env.FLAGS_SECRET.lengt"
+    },
+    "src/lib/flags.ts:58": {
+      "fp": "7a629323f8cd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const value = process.env.NEXT_PUBLIC_DISCOVERY_BADGES === \"true\";"
+    },
+    "src/lib/game-model.test.ts:22": {
+      "fp": "9a67747768b2",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"maps every graph node id (no node left unmapped)\", () => {"
+    },
+    "src/lib/game-model.test.ts:55": {
+      "fp": "ba5713aa3d03",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "it(\"is a bijection between nodes and content (counts line up)\", () => {"
+    },
+    "src/lib/game-model.test.ts:66": {
+      "fp": "510da333d1f9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"groups every quest node exactly once (no loss, no dup)\", () => {"
+    },
+    "src/lib/game-model.test.ts:72": {
+      "fp": "38d3776348bb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"game-model anti-fabrication\", () => {"
+    },
+    "src/lib/game-model.ts:16": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/game-model.ts:177": {
+      "fp": "f2463a3807a8",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const projectGroupOrder = ["
+    },
+    "src/lib/game-model.ts:19": {
+      "fp": "25c394a4c58d",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* LAUNCH BLOCKER this fixes: 3 of the 10 graph node ids do NOT equal their content"
+    },
+    "src/lib/game-model.ts:20": {
+      "fp": "34a737a99d76",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "* slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→"
+    },
+    "src/lib/game-model.ts:28": {
+      "fp": "25568e0d1df0",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> = {"
+    },
+    "src/lib/game-model.ts:31": {
+      "fp": "4110549ed870",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "09-content-and-schemas.md",
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "aava: { kind: \"work\", slug: \"aava-code\" }, // node id != slug"
+    },
+    "src/lib/game-model.ts:42": {
+      "fp": "14656fcc666c",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "09-content-and-schemas.md"
+      ],
+      "preview": "grpc: { kind: \"project\", slug: \"grpc-microservices\" }, // node id != slug"
+    },
+    "src/lib/game-model.ts:45": {
+      "fp": "cbd717db45ab",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "09-content-and-schemas.md"
+      ],
+      "preview": "nhl: { kind: \"project\", slug: \"not-humans-lab\" }, // node id != slug"
+    },
+    "src/lib/game-model.ts:62": {
+      "fp": "b16bb8263d70",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function resolveNode(nodeId: string): ResolvedContent | null {"
+    },
+    "src/lib/game-model.ts:75": {
+      "fp": "0d83c037274d",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "return resolved.item.url; // Velite sets /work/<slug> or /projects/<slug>"
+    },
+    "src/lib/github.ts:101": {
+      "fp": "d30f8f8c3e96",
+      "citedBy": [
+        "02-api-routes.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "next: { revalidate: 3600 },"
+    },
+    "src/lib/github.ts:28": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/github.ts:29": {
+      "fp": "ceb0a33a0adc",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "export const REPO_ALLOWLIST: readonly string[] = ["
+    },
+    "src/lib/github.ts:6": {
+      "fp": "5c9db1dc14a7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* own server-side fetch, cached via ISR (revalidate=3600 on the /projects page)."
+    },
+    "src/lib/github.ts:9": {
+      "fp": "76ae69e6f79c",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "* process.env.GITHUB_TOKEN, which must never reach the client. (No `server-only`"
+    },
+    "src/lib/github.ts:90": {
+      "fp": "296214da00e6",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const token = process.env.GITHUB_TOKEN;"
+    },
+    "src/lib/graph-data.ts:17": {
+      "fp": "5ab004a1f564",
+      "citedBy": [
+        "07-components-3d.md",
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "export const graphNodes: GraphNode[] = ["
+    },
+    "src/lib/graph-data.ts:3": {
+      "fp": "f791e96a70af",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Nodes = the 5 flagship work systems + 8 OSS repos; edges = real lineage"
+    },
+    "src/lib/graph-data.ts:36": {
+      "fp": "5d67285fa5d5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 u"
+    },
+    "src/lib/graph-data.ts:71": {
+      "fp": "6c0c2a225a75",
+      "citedBy": [
+        "06-components-game-terminal.md"
+      ],
+      "preview": "export const kindColor: Record<GraphNode[\"kind\"], string> = {"
+    },
+    "src/lib/highlight-store.ts:40": {
+      "fp": "178679d99016",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function clearHighlight() {"
+    },
+    "src/lib/highlight-store.ts:9": {
+      "fp": "508d8ee1bbfe",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* anvil-inline-store.ts so project-card.tsx can subscribe with useSyncExternalStore."
+    },
+    "src/lib/llm-sdk-mode.test.ts:2": {
+      "fp": "33714b006d24",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "import { getLlmSdkMode, LLM_SDK_MODE } from \"./llm-sdk-mode\";"
+    },
+    "src/lib/llm-sdk-mode.ts:13": {
+      "fp": "3386c041e331",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* v1.8 ships ONLY the flag; the aws-sdk branch is wired in a v1.8.x follow-up"
+    },
+    "src/lib/llm-sdk-mode.ts:22": {
+      "fp": "f6ad9723bbd9",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "export type LlmSdkMode = \"anthropic-bedrock\" | \"aws-sdk-bedrock\";"
+    },
+    "src/lib/llm-sdk-mode.ts:24": {
+      "fp": "422df8996e1f",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const DEFAULT_MODE: LlmSdkMode = \"anthropic-bedrock\";"
+    },
+    "src/lib/llm-sdk-mode.ts:26": {
+      "fp": "5e157852104f",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const raw = process.env.NEXT_PUBLIC_LLM_SDK;"
+    },
+    "src/lib/llm-trace.ts:11": {
+      "fp": "3a0226d9fe1b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* THINKING_SENTINEL — emitted as the very first bytes when extended thinking is"
+    },
+    "src/lib/llm-trace.ts:23": {
+      "fp": "d998532fdb6f",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const TRACE_DELIMITER = \"\u001e\";"
+    },
+    "src/lib/llm.test.ts:156": {
+      "fp": "9e0b2ee1b6fd",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "expect(frame.model).toBe(\"us.anthropic.claude-sonnet-4-6\");"
+    },
+    "src/lib/llm.test.ts:244": {
+      "fp": "f23f675ed6dd",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(Object.keys(usage)).toEqual("
+    },
+    "src/lib/llm.test.ts:253": {
+      "fp": "b763473a288e",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"streamWithFallback — emittedAny invariant (load-bearing)\", () => {"
+    },
+    "src/lib/llm.test.ts:491": {
+      "fp": "cba25067c0ac",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// frame is embedded (a trace frame always starts with TRACE_DELIMITER + \"{\")."
+    },
+    "src/lib/llm.test.ts:55": {
+      "fp": "6fa3481f1dcf",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "vi.mock(\"@anthropic-ai/bedrock-sdk\", () => {"
+    },
+    "src/lib/llm.test.ts:72": {
+      "fp": "b3850b7cf776",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "vi.mock(\"@anthropic-ai/sdk\", () => {"
+    },
+    "src/lib/llm.ts:1": {
+      "fp": "9b50ed19e88f",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import Anthropic from \"@anthropic-ai/sdk\";"
+    },
+    "src/lib/llm.ts:119": {
+      "fp": "76cbb0b1edd5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "providerChainResolver: async () => async () => ({"
+    },
+    "src/lib/llm.ts:136": {
+      "fp": "a2ff46aedeef",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export function isFallbackEligible(err: unknown): boolean {"
+    },
+    "src/lib/llm.ts:149": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:162": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:2": {
+      "fp": "2c4b2c59b645",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { AnthropicBedrock } from \"@anthropic-ai/bedrock-sdk\";"
+    },
+    "src/lib/llm.ts:220": {
+      "fp": "97dee7aa6df0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and"
+    },
+    "src/lib/llm.ts:251": {
+      "fp": "d85ca4170ed1",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "let emittedAny = false;"
+    },
+    "src/lib/llm.ts:27": {
+      "fp": "afa2751ea73d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Region-prefixed Bedrock inference-profile IDs (verified live in the reference"
+    },
+    "src/lib/llm.ts:300": {
+      "fp": "ca8c8d5abc55",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const useThinking = opts?.extendedThinking === true && !model.includes(\"haiku\");"
+    },
+    "src/lib/llm.ts:31": {
+      "fp": "696ec84e3fe9",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const BEDROCK_CHAIN = ["
+    },
+    "src/lib/llm.ts:32": {
+      "fp": "036d38ce5d14",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "\"us.anthropic.claude-sonnet-4-6\", // primary (fast, cost-effective)"
+    },
+    "src/lib/llm.ts:322": {
+      "fp": "8a528046fa1f",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// eslint-disable-next-line @typescript-eslint/no-explicit-any"
+    },
+    "src/lib/llm.ts:38": {
+      "fp": "d799dc85feb4",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "const ANTHROPIC_CHAIN = [\"claude-sonnet-4-6\", \"claude-opus-4-7\", \"claude-haiku-4-5\"];"
+    },
+    "src/lib/llm.ts:4": {
+      "fp": "c9d661110f63",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from \"@/lib/llm-trace\";"
+    },
+    "src/lib/llm.ts:433": {
+      "fp": "1e5dd3bb1b61",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (emittedAny || isLast || !isFallbackEligible(err)) {"
+    },
+    "src/lib/llm.ts:52": {
+      "fp": "28e482b4574c",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export function getProvider(): LlmProvider {"
+    },
+    "src/lib/llm.ts:53": {
+      "fp": "4dbee38e3b8a",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return process.env.LLM_PROVIDER === \"anthropic\" ? \"anthropic\" : \"bedrock\";"
+    },
+    "src/lib/llm.ts:63": {
+      "fp": "60816a809cd0",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function decodeSecret(value: string | undefined): string {"
+    },
+    "src/lib/llm.ts:79": {
+      "fp": "3cef92f00ee1",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "accessKeyId: decodeSecret(process.env.BEDROCK_ACCESS_KEY_ID),"
+    },
+    "src/lib/llm.ts:80": {
+      "fp": "10778a20d729",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "secretAccessKey: decodeSecret(process.env.BEDROCK_SECRET_ACCESS_KEY),"
+    },
+    "src/lib/llm.ts:81": {
+      "fp": "830ed5dbac1d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "sessionToken: process.env.BEDROCK_SESSION_TOKEN"
+    },
+    "src/lib/llm.ts:84": {
+      "fp": "0a2e4b86b89d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Prefer BEDROCK_REGION: AWS_REGION is a RESERVED var on Vercel/Lambda and was"
+    },
+    "src/lib/llm.ts:87": {
+      "fp": "128e81a4c7d8",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "region: process.env.BEDROCK_REGION || process.env.AWS_REGION || \"us-east-1\","
+    },
+    "src/lib/llm.ts:97": {
+      "fp": "41a67112c993",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "return Boolean(process.env.ANTHROPIC_API_KEY);"
+    },
+    "src/lib/llms-txt.ts:12": {
+      "fp": "11c93aa6278f",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export function buildLlmsTxt(): string {"
+    },
+    "src/lib/llms-txt.ts:27": {
+      "fp": "fe251ff7ebd4",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const href = g.canonical.linkedNote"
+    },
+    "src/lib/llms-txt.ts:65": {
+      "fp": "a79fb6235c94",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- MCP server (for AI agents): ${BASE}/api/mcp/sse"
+    },
+    "src/lib/llms-txt.ts:69": {
+      "fp": "22009a2ce176",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "Every content page is available as clean markdown by appending .md to the URL."
+    },
+    "src/lib/mcp-tools.test.ts:22": {
+      "fp": "e6f11f167cce",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"get_profile returns identity + skills + achievements and does NOT leak personal.ts\", () => {"
+    },
+    "src/lib/mcp-tools.test.ts:65": {
+      "fp": "3ccd3850eef8",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"every résumé role maps to a real variant whose PDF exists on disk\", () => {"
+    },
+    "src/lib/mcp-tools.test.ts:69": {
+      "fp": "7729b5ef9ac4",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const path = (v.url ?? \"\").replace(\"https://anvilry.vercel.app\", \"\");"
+    },
+    "src/lib/mcp-tools.ts:1": {
+      "fp": "24a7c06b2ab0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { z } from \"zod\";"
+    },
+    "src/lib/mcp-tools.ts:11": {
+      "fp": "ff390c0fc175",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Deliberately PROFESSIONAL-ONLY: personal.ts (hobbies/now/uses) is NOT exposed — those"
+    },
+    "src/lib/mcp-tools.ts:20": {
+      "fp": "f7b7d17ee1e4",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const ROLE_TO_LABEL: Record<ResumeRole, string> = {"
+    },
+    "src/lib/mcp-tools.ts:29": {
+      "fp": "9569f0249990",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const projectSlugSchema = { slug: z.string().describe(\"project slug, e.g. mindforge\") };"
+    },
+    "src/lib/mcp-tools.ts:42": {
+      "fp": "ec8b540d6545",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export type NotFound = { notFound: true; kind: string; given: string; valid: string[] };"
+    },
+    "src/lib/mcp-tools.ts:5": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/mcp-tools.ts:50": {
+      "fp": "8df3da22cd47",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export function getProfileData() {"
+    },
+    "src/lib/personal.ts:83": {
+      "fp": "88843f20da9f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const hasPersonalContent: boolean ="
+    },
+    "src/lib/profile.ts:36": {
+      "fp": "10464a5be48c",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const impactMetrics: { value: string; label: string; sub: string }[] = ["
+    },
+    "src/lib/profile.ts:42": {
+      "fp": "769e77ab0d11",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const skills: { group: string; items: string[] }[] = ["
+    },
+    "src/lib/profile.ts:76": {
+      "fp": "3fdfb777f881",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const resumeVariants = ["
+    },
+    "src/lib/profile.ts:77": {
+      "fp": "bbe83648441f",
+      "citedBy": [
+        "06-components-game-terminal.md",
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "{ label: \"Sairam Resume\", file: \"/resume/Sairam_Resume_MX_E.pdf\", tag: \"Backend & GenAI\" },"
+    },
+    "src/lib/r3f.ts:1": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/r3f.ts:17": {
+      "fp": "43575f082479",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "export { Canvas, useFrame, useThree, useLoader, useGraph, extend } from \"@react-three/fiber\";"
+    },
+    "src/lib/r3f.ts:21": {
+      "fp": "a383c303319e",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export * as THREE from \"three\";"
+    },
+    "src/lib/r3f.ts:24": {
+      "fp": "a3e8ce986823",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "export { OrbitControls, Billboard, Text, Html, useTexture, useGLTF, useAnimations, Float, MeshDistor"
+    },
+    "src/lib/r3f.ts:27": {
+      "fp": "c2e5acb755b6",
+      "citedBy": [
+        "07-components-3d.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "export { EffectComposer, Bloom, Vignette, Noise, ChromaticAberration } from \"@react-three/postproces"
+    },
+    "src/lib/r3f.ts:5": {
+      "fp": "23831af4e20c",
+      "citedBy": [
+        "07-components-3d.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* All R3F-consuming dynamic components import from this barrel so that"
+    },
+    "src/lib/rate-limit.ts:1": {
+      "fp": "ee19a3b132a4",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Ratelimit } from \"@upstash/ratelimit\";"
+    },
+    "src/lib/rate-limit.ts:19": {
+      "fp": "d2269dd5d199",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md"
+      ],
+      "preview": "const limiter = redis"
+    },
+    "src/lib/rate-limit.ts:2": {
+      "fp": "917771898a5d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redis } from \"./redis\";"
+    },
+    "src/lib/rate-limit.ts:22": {
+      "fp": "8dfe42a801f7",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// 8 messages per minute per IP — generous for a real visitor, hostile to a bot."
+    },
+    "src/lib/rate-limit.ts:41": {
+      "fp": "76e6f5e3e94b",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "if (!isRateLimitEnabled && process.env.NODE_ENV === \"production\") {"
+    },
+    "src/lib/rate-limit.ts:53": {
+      "fp": "a3e15e396e9c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function clientIp(req: Request): string {"
+    },
+    "src/lib/rate-limit.ts:57": {
+      "fp": "9491d12b819d",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md"
+      ],
+      "preview": "if (xff) return xff.split(\",\").pop()!.trim();"
+    },
+    "src/lib/rate-limit.ts:73": {
+      "fp": "fb5579499be4",
+      "citedBy": [
+        "02-api-routes.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!limiter) return { ok: true }; // not configured -> fail open"
+    },
+    "src/lib/redis.ts:1": {
+      "fp": "9c7a4af1b403",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Redis } from \"@upstash/redis\";"
+    },
+    "src/lib/redis.ts:26": {
+      "fp": "fe1d67792b8e",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "const url = process.env.UPSTASH_REDIS_REST_URL;"
+    },
+    "src/lib/redis.ts:27": {
+      "fp": "27c5db0b14fd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const token = process.env.UPSTASH_REDIS_REST_TOKEN;"
+    },
+    "src/lib/redis.ts:29": {
+      "fp": "486aa47a26e4",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// Wrap in try/catch: the @upstash/redis SDK throws a synchronous UrlError at"
+    },
+    "src/lib/resume-json.ts:12": {
+      "fp": "507cbcb1669b",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export function buildResumeJson() {"
+    },
+    "src/lib/resume-json.ts:2": {
+      "fp": "fc032892f764",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "import { allWork, allProjects } from \"@/lib/content\";"
+    },
+    "src/lib/resume-json.ts:30": {
+      "fp": "e42ee22040fb",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "summary: `${w.register}. ${w.summary}`,"
+    },
+    "src/lib/resume-json.ts:44": {
+      "fp": "0669b0fb90ac",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "// education: omitted — no data; we don't fabricate it."
+    },
+    "src/lib/scroll/resolve-flag.ts:12": {
+      "fp": "0b82494d45ae",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function resolveFlag<T extends string>("
+    },
+    "src/lib/scroll/scroll-flags.tsx:21": {
+      "fp": "dee2e6b013ae",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const DEFAULT_ENGINE: ScrollEngine = \"custom\";"
+    },
+    "src/lib/scroll/use-auto-scroll.ts:5": {
+      "fp": "0ade2b1916ce",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useStickToBottomLibrary } from \"./use-stick-to-bottom-library\";"
+    },
+    "src/lib/scroll/use-stick-to-bottom-custom.dom.test.tsx:144": {
+      "fp": "0b126b8dd679",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"a programmatic snap does NOT de-pin itself (150ms guard)\", async () => {"
+    },
+    "src/lib/scroll/use-stick-to-bottom-custom.ts:29": {
+      "fp": "62d5152ebff6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const PROGRAMMATIC_WINDOW_MS = 150;"
+    },
+    "src/lib/scroll/use-stick-to-bottom-library.dom.test.tsx:3": {
+      "fp": "0ade2b1916ce",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useStickToBottomLibrary } from \"./use-stick-to-bottom-library\";"
+    },
+    "src/lib/scroll/use-stick-to-bottom-library.ts:3": {
+      "fp": "c4113f44065c",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { useStickToBottom } from \"use-stick-to-bottom\";"
+    },
+    "src/lib/telemetry/beacon.dom.test.ts:79": {
+      "fp": "73a5c6177c72",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "expect(sendBeaconSpy.mock.calls[0]?.[0]).toBe(\"/api/error\");"
+    },
+    "src/lib/telemetry/beacon.ts:42": {
+      "fp": "9646982f65fe",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "source: \"boundary\" | \"global-boundary\" | \"window\" | \"unhandledrejection\" | \"react19\";"
+    },
+    "src/lib/telemetry/beacon.ts:52": {
+      "fp": "ede4db9f195b",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const BEACON_URL = \"/api/error\";"
+    },
+    "src/lib/telemetry/emit.ts:1": {
+      "fp": "30d93a0ed4ee",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redis } from \"@/lib/redis\";"
+    },
+    "src/lib/telemetry/emit.ts:30": {
+      "fp": "c0cab6d01032",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* What emit() does NOT do: redaction. The caller is responsible for redacting"
+    },
+    "src/lib/telemetry/emit.ts:42": {
+      "fp": "85d21d457dbf",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const SEVEN_DAYS_MS = 7 * 86_400_000;"
+    },
+    "src/lib/telemetry/emit.ts:49": {
+      "fp": "14fb8028f984",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "console.log(\"[trace]\", JSON.stringify(event));"
+    },
+    "src/lib/telemetry/emit.ts:58": {
+      "fp": "6a676195306c",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const key = `anvilry:trace:${event.kind}`;"
+    },
+    "src/lib/telemetry/schema.test.ts:150": {
+      "fp": "b6b9ae4dbb58",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "\"budget.tick\","
+    },
+    "src/lib/telemetry/schema.ts:101": {
+      "fp": "c2f09f5d776e",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function redact(text: string): string {"
+    },
+    "src/lib/telemetry/schema.ts:2": {
+      "fp": "24a7c06b2ab0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { z } from \"zod\";"
+    },
+    "src/lib/telemetry/schema.ts:37": {
+      "fp": "dac293095972",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const KIND_LITERALS = ["
+    },
+    "src/lib/telemetry/schema.ts:44": {
+      "fp": "b6b9ae4dbb58",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"budget.tick\","
+    },
+    "src/lib/telemetry/schema.ts:83": {
+      "fp": "6166c30a9770",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}/g;"
+    },
+    "src/lib/telemetry/with-trace.test.ts:220": {
+      "fp": "208c3aa9d689",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"uses the LAST segment of x-forwarded-for (set by Vercel infrastructure, not spoofable)\", async ("
+    },
+    "src/lib/telemetry/with-trace.ts:10": {
+      "fp": "25b9f01925a0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// eslint-disable-next-line @typescript-eslint/no-require-imports"
+    },
+    "src/lib/telemetry/with-trace.ts:157": {
+      "fp": "f6f68e16f1c3",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const salt = process.env.TELEMETRY_IP_SALT;"
+    },
+    "src/lib/telemetry/with-trace.ts:2": {
+      "fp": "e627f704b032",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+    },
+    "src/lib/telemetry/with-trace.ts:200": {
+      "fp": "ccd9f79a1429",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "// streamed; a JSON Response keeps its already-encoded body. We do NOT clone the"
+    },
+    "src/lib/telemetry/with-trace.ts:202": {
+      "fp": "3881ded07caf",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const traced = new Response(res.body, {"
+    },
+    "src/lib/telemetry/with-trace.ts:3": {
+      "fp": "cbca846a5bfc",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { hashIp, redact, type KindLiteral, type TelemetryEvent } from \"@/lib/telemetry/schema\";"
+    },
+    "src/lib/telemetry/with-trace.ts:63": {
+      "fp": "a3e15e396e9c",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function clientIp(req: Request): string {"
+    },
+    "src/lib/telemetry/with-trace.ts:71": {
+      "fp": "9491d12b819d",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md"
+      ],
+      "preview": "if (xff) return xff.split(\",\").pop()!.trim();"
+    },
+    "src/lib/telemetry/with-trace.ts:98": {
+      "fp": "b44ef92f7c77",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (maybe && typeof (maybe as { catch?: unknown }).catch === \"function\") {"
+    },
+    "src/lib/testimonials.test.ts:14": {
+      "fp": "7c9da59d16fe",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"every testimonial (when present) has a real source URL + required fields\", () => {"
+    },
+    "src/lib/testimonials.ts:8": {
+      "fp": "6893cb5a10cc",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* entry with no real, checkable source is invalid and must not be added. Lead with"
+    },
+    "src/lib/use-media-query.ts:14": {
+      "fp": "4b5b744ef6f1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "() => window.matchMedia(query).matches,"
+    },
+    "src/lib/use-media-query.ts:21": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/use-media-query.ts:28": {
+      "fp": "b12ac4789f50",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "export function useWebGLSupported(): boolean {"
+    },
+    "src/lib/use-reduced-motion.ts:9": {
+      "fp": "cff67cc5aff8",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const [reduced, setReduced] = useState("
+    },
+    "src/lib/utils.ts:1": {
+      "fp": "ab23b4435b2d",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { clsx, type ClassValue } from \"clsx\";"
+    },
+    "src/lib/utils.ts:2": {
+      "fp": "26779ba8cfff",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { twMerge } from \"tailwind-merge\";"
+    },
+    "src/lib/voice-catalog.ts:134": {
+      "fp": "70d3d06e1a0c",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "export const CURATED_VOICES: ReadonlyArray<VoiceEntry> = ["
+    },
+    "src/lib/voice-catalog.ts:27": {
+      "fp": "4284ed181ce1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export type VoiceAccent = \"us\" | \"gb\" | \"au\" | \"in\";"
+    },
+    "src/lib/voice-catalog.ts:317": {
+      "fp": "141ac8b696d7",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function getDefaultVoiceId(genderPref?: VoiceGender): string {"
+    },
+    "src/lib/voice-catalog.ts:322": {
+      "fp": "80e02020cc99",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/** Look up a catalog entry by id. Returns undefined for unknown ids — callers MUST"
+    },
+    "src/lib/voice-catalog.ts:350": {
+      "fp": "4dc2b400073e",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function validateVoiceForEngine("
+    },
+    "src/lib/voice-catalog.ts:61": {
+      "fp": "13807e175efd",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const JOANNA: VoiceEntry = {"
+    },
+    "src/lib/voice-catalog.ts:62": {
+      "fp": "bab7b1dd22cb",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "id: \"polly-neural-joanna\","
+    },
+    "src/lib/voice-picker-mode.ts:20": {
+      "fp": "0baa6ae6197c",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const raw = process.env.NEXT_PUBLIC_VOICE_PICKER_MODE;"
+    },
+    "src/lib/voice-settings-context.tsx:29": {
+      "fp": "a0184f00add5",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export type TtsEngine = \"browser\" | \"polly\" | \"google\";"
+    },
+    "src/lib/voice-settings-context.tsx:4": {
+      "fp": "58c38aad3e40",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { getVoiceById } from \"@/lib/voice-catalog\";"
+    },
+    "src/lib/voice-settings-context.tsx:77": {
+      "fp": "4ab22e93b2c6",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const DEFAULTS: VoiceSettings = {"
+    },
+    "src/lib/writing-flags.ts:16": {
+      "fp": "03112e8830a3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* NEXT_PUBLIC_ vars are inlined at build time — a redeploy is needed to toggle."
+    },
+    "src/lib/writing-flags.ts:19": {
+      "fp": "0bd5d4d01fac",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const ARTICLES_ENABLED ="
+    },
+    "src/lib/writing-flags.ts:20": {
+      "fp": "7be37a037fcd",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_ARTICLES_ENABLED !== \"false\";"
+    },
+    "src/lib/writing-flags.ts:22": {
+      "fp": "a157b1e1389e",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const NOTES_ENABLED ="
+    },
+    "src/lib/writing-flags.ts:23": {
+      "fp": "ac59d3c345ce",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_NOTES_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:26": {
+      "fp": "de3bb27f0c6d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_OPEN_TO_WORK === \"true\";"
+    },
+    "src/lib/writing-flags.ts:31": {
+      "fp": "fa17609ff3cb",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_STATS_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:34": {
+      "fp": "878111049150",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_SEARCH_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:39": {
+      "fp": "814848740496",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_TESTIMONIALS_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:44": {
+      "fp": "3848c9289cae",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:49": {
+      "fp": "dd09f1a4805a",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_GITHUB_STATS_ENABLED === \"true\";"
+    },
+    "src/lib/writing-flags.ts:72": {
+      "fp": "842df177674b",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const raw = process.env.NEXT_PUBLIC_ARTICLE_DEDUP_KEY;"
+    },
+    "src/lib/writing-flags.ts:73": {
+      "fp": "0ca2b872e32f",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "export const ARTICLE_DEDUP_KEY: DedupPrimaryKey ="
+    },
+    "src/lib/writing-flags.ts:87": {
+      "fp": "65f06b8111cd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "process.env.NEXT_PUBLIC_CHROME_TTS_BANNER === \"true\";"
+    },
+    "src/proxy.ts:1": {
+      "fp": "09e43d1f4645",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import type { NextRequest } from \"next/server\";"
+    },
+    "src/proxy.ts:11": {
+      "fp": "c76022b1b579",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* The timing-safe compare from src/lib/admin-auth.ts is intentionally NOT imported"
+    },
+    "src/proxy.ts:12": {
+      "fp": "45c5e48940a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* here because the Edge runtime has a limited Node.js API surface. Instead we use"
+    },
+    "src/proxy.ts:16": {
+      "fp": "af241ecd4de4",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* in admin-auth.ts remains the server-component layer."
+    },
+    "src/proxy.ts:22": {
+      "fp": "089c767ed959",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const config = {"
+    },
+    "src/proxy.ts:26": {
+      "fp": "8fb6d16d7872",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "async function sha256Hex(s: string): Promise<string> {"
+    },
+    "src/proxy.ts:27": {
+      "fp": "0a1095ea1d43",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const buf = await crypto.subtle.digest(\"SHA-256\", new TextEncoder().encode(s));"
+    },
+    "src/proxy.ts:34": {
+      "fp": "a004878e1411",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const envPassword = process.env.ADMIN_PASSWORD;"
+    },
+    "src/proxy.ts:5": {
+      "fp": "f671edc84c04",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "* Next 16 Proxy (formerly Middleware) — runs at the Edge before any route handler."
+    }
+  }
+}

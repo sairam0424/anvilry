@@ -14,7 +14,8 @@ const idx = Object.fromEntries(graphNodes.map((n, i) => [n.id, i]));
  */
 const ptr = { x: 0, y: 0 };
 
-/** All 10 nodes as ONE InstancedMesh — single draw call (research-verified). */
+/** Every node as ONE InstancedMesh — single draw call (research-verified). Count is taken
+ *  from `graphNodes.length`, so adding content never adds a draw call. */
 function Nodes() {
   const mesh = useRef<THREE.InstancedMesh>(null!);
   const { invalidate } = useThree();

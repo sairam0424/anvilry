@@ -16,21 +16,11 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },
       { src: "/icon", sizes: "any", type: "image/png", purpose: "maskable" },
     ],
-    screenshots: [
-      {
-        src: "/static/screenshot-desktop.png",
-        sizes: "1280x800",
-        type: "image/png",
-        form_factor: "wide",
-        label: "Anvilry Portfolio — Desktop",
-      },
-      {
-        src: "/static/screenshot-mobile.png",
-        sizes: "390x844",
-        type: "image/png",
-        form_factor: "narrow",
-        label: "Anvilry Portfolio — Mobile",
-      },
-    ],
+    // NOTE: no `screenshots` key. It previously declared /static/screenshot-desktop.png and
+    // /static/screenshot-mobile.png, but public/static/ is empty — both 404'd, so the PWA
+    // install card rendered with broken images. Screenshots are optional in the manifest
+    // spec; omitting them is correct until the assets actually exist.
+    // To re-add: drop the PNGs in public/static/ and restore a `screenshots` array here —
+    // manifest.test.ts asserts every declared src resolves, so it will hold you to it.
   };
 }

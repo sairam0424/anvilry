@@ -1,6 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { EXPECTED_STATUS_OVERRIDES, expectedStatus, isExpectedStatus } from "./health-expectations";
+import {
+  EXPECTED_STATUS_OVERRIDES,
+  expectedStatus,
+  isExpectedStatus,
+  probeBase,
+} from "./health-expectations";
 
 /**
  * BEHAVIOURAL, deliberately. The first version of this guard grepped the cron route's source for
@@ -50,6 +55,94 @@ describe("isExpectedStatus", () => {
     for (const status of [201, 301, 404, 405, 500]) {
       expect(isExpectedStatus("homepage", status), `${status} must fail`).toBe(false);
     }
+  });
+});
+
+/**
+ * `probeBase` must resolve to the PRODUCTION ALIAS, never the per-deployment host.
+ *
+ * This is the bug that made the whole mcp_get story wrong. Vercel deployment protection is enabled
+ * on this project for everything except custom domains, so the per-deployment host 302s to Vercel
+ * SSO — and because `fetch` follows redirects by default, the probe used to read 200 with ~478 KB
+ * of `vercel.com/login` HTML. Measured:
+ *   https://<deployment>.vercel.app/api/mcp/mcp -> 302 -> follows to 200 (login page, 478,796 B)
+ *   https://anvilry.vercel.app/api/mcp/mcp      -> 405 (alias is exempt)
+ * So mcp_get was FALSELY PASSING, not failing — and expecting 405 against that host would have
+ * turned a false pass into a permanent false failure.
+ */
+describe("probeBase", () => {
+  const saved = {
+    prod: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    deployment: process.env.VERCEL_URL,
+  };
+  const restore = () => {
+    if (saved.prod === undefined) delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    else process.env.VERCEL_PROJECT_PRODUCTION_URL = saved.prod;
+    if (saved.deployment === undefined) delete process.env.VERCEL_URL;
+    else process.env.VERCEL_URL = saved.deployment;
+  };
+
+  it("prefers the production alias over the per-deployment host", () => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "anvilry.vercel.app";
+    process.env.VERCEL_URL = "anvilry-abc123-team.vercel.app";
+    expect(probeBase()).toBe("https://anvilry.vercel.app");
+    restore();
+  });
+
+  it("never returns the per-deployment host when the alias is available", () => {
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "anvilry.vercel.app";
+    process.env.VERCEL_URL = "anvilry-abc123-team.vercel.app";
+    expect(probeBase()).not.toContain("abc123");
+    restore();
+  });
+
+  it("falls back to the deployment host only when the alias is unset", () => {
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    process.env.VERCEL_URL = "anvilry-abc123-team.vercel.app";
+    expect(probeBase()).toBe("https://anvilry-abc123-team.vercel.app");
+    restore();
+  });
+
+  it("falls back to localhost off-platform", () => {
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    delete process.env.VERCEL_URL;
+    expect(probeBase()).toBe("http://localhost:3000");
+    restore();
+  });
+});
+
+/**
+ * The probe must not follow redirects. `redirect: "manual"` is what stops a deployment-protection
+ * 302 from being followed to a 200 login page and scored as a healthy app.
+ */
+describe("probe() redirect handling", () => {
+  const raw = readFileSync("src/app/api/cron/health-check/route.ts", "utf8");
+  // COMMENT-STRIPPED. The phrase `redirect: "manual"` also appears in the explanatory comment
+  // above it, so asserting against the raw source passes even after the real option is deleted —
+  // verified by mutation. Assert against code only.
+  const route = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/gm, "$1");
+
+  it('sets redirect: "manual" on the probe fetch', () => {
+    expect(
+      route,
+      'probe() must pass redirect: "manual" — with the default "follow", an auth wall reads as 200',
+    ).toMatch(/redirect:\s*"manual"/);
+  });
+
+  it("treats any 3xx as a failure rather than following it", () => {
+    expect(route).toMatch(/http_status\s*>=\s*300\s*&&\s*http_status\s*<\s*400/);
+  });
+
+  it("names Vercel SSO specifically, so a responder is not sent chasing the app", () => {
+    expect(route).toMatch(/vercel\\?\.com\\?\/\(\?:?sso-api\|login\)|sso-api/);
+  });
+
+  it("resolves its base through probeBase, not VERCEL_URL directly", () => {
+    expect(route).toMatch(/probeBase\(\)/);
+    expect(
+      route,
+      "route must not read VERCEL_URL directly — that is the protected per-deployment host",
+    ).not.toMatch(/process\.env\.VERCEL_URL/);
   });
 });
 

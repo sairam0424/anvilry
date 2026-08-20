@@ -31,6 +31,33 @@ export const EXPECTED_STATUS_OVERRIDES: Readonly<Record<string, number>> = Objec
   mcp_get: 405,
 });
 
+/**
+ * The host the health-check cron probes.
+ *
+ * MUST be the production alias, NOT `VERCEL_URL`. `VERCEL_URL` is the per-DEPLOYMENT hostname, and
+ * this project has Vercel deployment protection enabled for everything except custom domains — so
+ * every request to the deployment host 302s to Vercel SSO. `fetch` follows redirects by default,
+ * so the probe then reads **200 with ~478 KB of `vercel.com/login` HTML** and the check "passes"
+ * having never reached the app.
+ *
+ * Measured, not assumed:
+ *   curl -sD- https://<deployment>.vercel.app/api/mcp/mcp   -> 302 -> vercel.com/login, follows to 200
+ *   curl -s   https://anvilry.vercel.app/api/mcp/mcp        -> 405   (alias is exempt)
+ *
+ * `VERCEL_PROJECT_PRODUCTION_URL` is the production alias as a bare hostname — the same variable
+ * Next uses for `getProductionDeploymentUrl()`
+ * (node_modules/next/dist/lib/metadata/resolvers/resolve-url.js:54-57).
+ */
+export function probeBase(): string {
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (prod) return `https://${prod}`;
+  // Fallback only. On a protected deployment this yields an SSO wall, which `probe()` now detects
+  // via `redirect: "manual"` rather than silently scoring a login page as healthy.
+  const deployment = process.env.VERCEL_URL;
+  if (deployment) return `https://${deployment}`;
+  return "http://localhost:3000";
+}
+
 /** The status a given check must return to be considered up. */
 export function expectedStatus(checkName: string): number {
   return EXPECTED_STATUS_OVERRIDES[checkName] ?? 200;

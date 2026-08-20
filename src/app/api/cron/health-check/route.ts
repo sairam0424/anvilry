@@ -1,5 +1,5 @@
 import { redis } from "@/lib/redis";
-import { expectedStatus, isExpectedStatus } from "@/lib/health-expectations";
+import { expectedStatus, isExpectedStatus, probeBase } from "@/lib/health-expectations";
 
 export const maxDuration = 25;
 
@@ -72,10 +72,30 @@ async function probe(base: string, check: (typeof CHECKS)[number]): Promise<Chec
   try {
     const res = await fetch(`${base}${check.path}`, {
       cache: "no-store",
+      // `redirect: "manual"` is load-bearing, not a style choice. With the default "follow", a
+      // Vercel deployment-protection 302 is followed to vercel.com/login and the probe records a
+      // 200 — an auth wall scoring as a healthy app. Surfacing the 3xx makes that impossible.
+      redirect: "manual",
       signal: AbortSignal.timeout(check.timeout),
     });
     const latency_ms = Math.round(performance.now() - t0);
     const http_status = res.status;
+
+    // A redirect is never a healthy answer for any of these paths. Name the destination so a
+    // responder sees "auth wall" rather than a bare status code.
+    if (http_status >= 300 && http_status < 400) {
+      const location = res.headers.get("location") ?? "(no location header)";
+      const isAuthWall = /vercel\.com\/(sso-api|login)/.test(location);
+      return {
+        status: "fail",
+        http_status,
+        latency_ms,
+        detail: isAuthWall
+          ? `redirected to Vercel SSO — the probe never reached the app. base=${base} is protected; ` +
+            "VERCEL_PROJECT_PRODUCTION_URL should be set."
+          : `unexpected redirect to ${location}`,
+      };
+    }
     // Expected status is per-check, NOT a blanket 200 — see @/lib/health-expectations for why
     // mcp_get expects 405. A blanket gate failed that check on every single run.
     const expected = expectedStatus(check.name);
@@ -129,9 +149,7 @@ export async function GET(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const base = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const base = probeBase();
 
   const wallStart = performance.now();
 

@@ -22,11 +22,28 @@ repo's own claims match its code. Two changes alter **public artifacts** (`llms.
 - **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`
   were live and callable but absent from the only page an integrator reads. Now guarded by
   set-equality against the route's `registerTool` calls, so the build fails if they drift.
-- **`mcp_get` health check failed on every cron run.** It expected 200 from an endpoint that
-  answers a plain GET with 405 (mcp-handler's unconditional behaviour on the Streamable HTTP
-  endpoint). Every run therefore reported top-level `warn`, and a real MCP outage was
-  indistinguishable from the standing false negative. Expected status is now per-check.
-  **Changes cron alerting semantics** — `mcp_get` can now actually fail.
+- **The health-check cron never reached the app at all.** It probed
+  `https://${VERCEL_URL}` — the *per-deployment* host — and this project has Vercel deployment
+  protection enabled for everything except custom domains. That host `302`s to Vercel SSO, and
+  because `fetch` follows redirects by default the probe read **200 with ~478 KB of
+  `vercel.com/login` HTML**. Measured: the deployment host redirects to `vercel.com/login`, while
+  the `anvilry.vercel.app` alias returns the real `405`.
+
+  Consequences, all now fixed:
+  - **11 of 13 checks were scoring an auth wall as healthy.** `llms_txt` and `llms_full_txt` even
+    passed their ">1000 bytes" body assertion — on the login page.
+  - `mcp_get` was **falsely passing**, not failing. The standing `warn` came from
+    `github_stats_api` and `resume_json_api`, whose `res.json()` throws on HTML.
+  - Probing now resolves through `probeBase()`, which prefers
+    `VERCEL_PROJECT_PRODUCTION_URL` (the production alias — the same variable Next uses for
+    `getProductionDeploymentUrl()`) and only falls back to `VERCEL_URL`.
+  - `probe()` sets `redirect: "manual"` and fails any `3xx`, naming Vercel SSO explicitly when it
+    sees one. An auth wall can no longer masquerade as a healthy 200.
+- **`mcp_get` expected the wrong status.** A plain GET on the Streamable HTTP endpoint answers 405
+  unconditionally (mcp-handler's first branch — *not* a consequence of this project's
+  `disableSse`). Expected status is now per-check via `@/lib/health-expectations`.
+  **Changes cron alerting semantics** — the first post-deploy run reports real results for the
+  first time, so a `warn` that appears then is pre-existing truth surfacing, not a regression.
 - **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the
   first segment (attacker-controlled) where `rate-limit.ts` and `with-trace.ts` take the last, and
   carried a comment asserting the wrong behaviour was correct. Not exploitable in production —

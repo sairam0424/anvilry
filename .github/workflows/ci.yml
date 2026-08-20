@@ -52,6 +52,19 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Deliberately a CI step and NOT part of `pnpm build`.
+      #
+      # This verifies the docs/index/ codebase index still cites the lines it claims. It was
+      # briefly wired into a vitest test, which meant it ran inside `vitest run` — which
+      # `pnpm build` chains — so a stale INDEX would have failed the VERCEL PRODUCTION BUILD.
+      # Documentation freshness must gate a merge, never a deploy: otherwise a stale doc blocks
+      # shipping a hotfix. Here it fails the PR, which is the right level.
+      #
+      # On drift, the script names the file, the recorded line, the current line, and which index
+      # file cites it. Re-fingerprint with: node scripts/check-index-citations.mjs --write
+      - name: Codebase index citations
+        run: node scripts/check-index-citations.mjs
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

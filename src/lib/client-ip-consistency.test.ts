@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -21,11 +22,27 @@ import { describe, expect, it } from "vitest";
  * against the code, so the ordering assertion held no matter what the code did — a security test
  * that could not fail. Strip first, then assert, or you are testing prose.
  */
+/** The copies that are known and reviewed. A new one must be added here deliberately. */
 const COPIES = [
   "src/lib/rate-limit.ts",
   "src/lib/telemetry/with-trace.ts",
   "src/app/api/visit/route.ts",
 ];
+
+/** Every file under src/ that defines its own `clientIp`, discovered rather than assumed. */
+function discoverCopies(dir = "src"): string[] {
+  const found: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) found.push(...discoverCopies(path));
+    else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) {
+      if (/function\s+clientIp\s*\(|const\s+clientIp\s*[:=]/.test(readFileSync(path, "utf8"))) {
+        found.push(path);
+      }
+    }
+  }
+  return found;
+}
 
 /** Remove block and line comments so assertions can only ever match real code. */
 function stripComments(src: string): string {
@@ -47,6 +64,23 @@ function clientIpBody(path: string): string {
 }
 
 describe("clientIp — every duplicated copy resolves the IP the same way", () => {
+  it("guards its own coverage: no UNKNOWN copy exists anywhere under src/", () => {
+    // A hardcoded list cannot see a fourth inline copy in a new route — which is exactly the
+    // drift this file exists to prevent. Discover them instead, and fail until a new one is
+    // reviewed and added to COPIES above.
+    const discovered = discoverCopies().sort();
+    const known = [...COPIES].sort();
+    const unguarded = discovered.filter((p) => !known.includes(p));
+    expect(
+      unguarded,
+      `unreviewed clientIp implementation(s): ${unguarded.join(", ")}. Add to COPIES after ` +
+        "confirming they resolve the IP the same way, or reuse an existing helper.",
+    ).toEqual([]);
+    // And the reverse: a listed copy that no longer defines clientIp means COPIES is stale.
+    const missing = known.filter((p) => !discovered.includes(p));
+    expect(missing, `COPIES lists files with no clientIp: ${missing.join(", ")}`).toEqual([]);
+  });
+
   it("guards its own premise: finds a clientIp body in every copy", () => {
     // Without this, a rename would empty every body and silently pass the suite below.
     for (const path of COPIES) {

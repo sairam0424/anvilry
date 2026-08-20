@@ -1,4 +1,5 @@
 import { redis } from "@/lib/redis";
+import { expectedStatus, isExpectedStatus, probeBase } from "@/lib/health-expectations";
 
 export const maxDuration = 25;
 
@@ -71,13 +72,46 @@ async function probe(base: string, check: (typeof CHECKS)[number]): Promise<Chec
   try {
     const res = await fetch(`${base}${check.path}`, {
       cache: "no-store",
+      // `redirect: "manual"` is load-bearing, not a style choice. With the default "follow", a
+      // Vercel deployment-protection 302 is followed to vercel.com/login and the probe records a
+      // 200 — an auth wall scoring as a healthy app. Surfacing the 3xx makes that impossible.
+      redirect: "manual",
       signal: AbortSignal.timeout(check.timeout),
     });
     const latency_ms = Math.round(performance.now() - t0);
     const http_status = res.status;
 
-    if (http_status !== 200) {
-      return { status: "fail", http_status, latency_ms };
+    // A redirect is never a healthy answer for any of these paths. Name the destination so a
+    // responder sees "auth wall" rather than a bare status code.
+    if (http_status >= 300 && http_status < 400) {
+      const location = res.headers.get("location") ?? "(no location header)";
+      const isAuthWall = /vercel\.com\/(sso-api|login)/.test(location);
+      return {
+        status: "fail",
+        http_status,
+        latency_ms,
+        detail: isAuthWall
+          ? `redirected to Vercel SSO — the probe never reached the app. base=${base} is protected; ` +
+            "VERCEL_PROJECT_PRODUCTION_URL should be set."
+          : `unexpected redirect to ${location}`,
+      };
+    }
+    // Expected status is per-check, NOT a blanket 200 — see @/lib/health-expectations for why
+    // mcp_get expects 405.
+    //
+    // NOTE: a blanket 200 gate would fail mcp_get against the production alias. It did NOT do that
+    // in production, because the probe was pointed at the SSO-protected per-deployment host and
+    // scored the login page as a 200 — mcp_get was falsely PASSING. Both halves had to be fixed;
+    // see probeBase() and the redirect: "manual" guard above.
+    const expected = expectedStatus(check.name);
+
+    if (!isExpectedStatus(check.name, http_status)) {
+      return {
+        status: "fail",
+        http_status,
+        latency_ms,
+        ...(expected !== 200 && { detail: `expected ${expected}, got ${http_status}` }),
+      };
     }
 
     // Extra validation per check type
@@ -120,9 +154,7 @@ export async function GET(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const base = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  const base = probeBase();
 
   const wallStart = performance.now();
 

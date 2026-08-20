@@ -106,7 +106,7 @@ The entire site is one Next.js App Router app that presents client-side switchab
 | `voice` | desktop only, post-hydration | Optional full-page two-way talk surface; normally unused (the default talk UI is a modal overlay) |
 | `resume` | never | Recruiter view. Reached via Cmd+K → "Recruiter view" (`command-palette.tsx:179` calls `switchTo("resume")`) or `?view=resume`. **Distinct from the standalone `/resume` page**, which renders `ResumeViewInline` and never touches the view store |
 
-The switcher renders **4 pills server-side, then upgrades to 5 on desktop after hydration** on a default build — an unset `NEXT_PUBLIC_ENABLED_VIEWS` enables every optional view (`src/lib/enabled-views.ts:21,:29`), and Voice is appended only when `mounted && !compact` (`src/components/view-switcher.tsx:38`). The compact/mobile instance stays at 4.
+The switcher renders **4 pills server-side, then upgrades to 5 on desktop after hydration** on a default build — an unset `NEXT_PUBLIC_ENABLED_VIEWS` enables every optional view (`src/lib/enabled-views.ts:21,:28`), and Voice is appended only when `mounted && !compact` (`src/components/view-switcher.tsx:38`). The compact/mobile instance stays at 4.
 
 View state is managed via a **module-level external store** (`src/components/view-context.tsx`) using `useSyncExternalStore`. State lives outside React so it can be read synchronously on first render (prevents Classic→other flash on deep-linked `?view=` URLs). The server and first-client snapshot always return `classic` — SSR is always Classic for crawlers; the deep-link applies post-hydration via `<ViewQuerySync>`.
 
@@ -322,11 +322,13 @@ Pull production env vars with: `vercel env pull .env.local`
 
 **Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missing the `u`). Always use `BEDROCK_REGION`.
 
-**Custom domain:** `https://anvilry.vercel.app` is hardcoded in **18 files / 24 occurrences**, not four. Find them all with:
+**Custom domain:** `https://anvilry.vercel.app` is hardcoded in **19 files / 25 occurrences**, not four. Find them all with:
 
 ```bash
-grep -rn 'anvilry\.vercel\.app' src Makefile | grep -v '\.test\.'
+grep -rn 'anvilry\.vercel\.app' src Makefile
 ```
+
+That count *includes* `src/lib/mcp-tools.test.ts:69`, which asserts against the same host — so it must change with the rest or the suite goes red. The 18 non-test sites are:
 
 `src/components/json-ld.tsx` alone has **7** (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_URL`, `:214`). The other 17 files have one apiece:
 

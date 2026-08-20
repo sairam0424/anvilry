@@ -143,12 +143,15 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
 ## 4. Custom domain (optional)
 1. Project → Settings → Domains → add your domain (e.g. `example.com` and `www.example.com`).
 2. Point DNS per Vercel's instructions (A/ALIAS to Vercel, or move nameservers).
-3. The base URL `https://anvilry.vercel.app` is hardcoded in **18 files / 24 occurrences** — not
+3. The base URL `https://anvilry.vercel.app` is hardcoded in **19 files / 25 occurrences** — not
    the four this step used to list. Find every one with:
 
    ```bash
-   grep -rn 'anvilry\.vercel\.app' src Makefile | grep -v '\.test\.'
+   grep -rn 'anvilry\.vercel\.app' src Makefile
    ```
+
+   One of the 19 is `src/lib/mcp-tools.test.ts:69`, which asserts against the same host — change
+   it with the others or the test suite goes red.
 
    `src/components/json-ld.tsx` alone accounts for 7 of them. See CLAUDE.md →
    "Environment Variables" → **Custom domain** for the per-directory breakdown. Run the grep

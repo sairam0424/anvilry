@@ -32,7 +32,8 @@ export function bootBanner404(): Line[] {
  * Kind "out" = readable identity content, announced by the live region.
  */
 export function bootBanner(): Line[] {
-  // Compact metrics: "2K+ users · 3K+ users · 8 OSS repos" — fits ~60 chars without wrapping.
+  // Compact metrics, e.g. "2K+ users · 3K+ users · N OSS repos" — fits ~60 chars without
+  // wrapping. Values are derived from impactMetrics, so the counts move with the content.
   // Full sub-labels (Pensieve, AAVA Code) available via 'ls work' and 'stats' commands.
   const metricsShort = impactMetrics
     .map((m) => `${m.value} ${m.label.replace("daily users", "users").replace("open-source repos", "OSS repos")}`)

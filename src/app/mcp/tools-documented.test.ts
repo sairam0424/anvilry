@@ -15,7 +15,7 @@ const PAGE = "src/app/mcp/page.tsx";
 const ROUTE = "src/app/api/mcp/[transport]/route.ts";
 
 /**
- * Tool names the route registers, in registration order.
+ * Tool names the route registers. Order is not asserted — every comparison sorts.
  *
  * The name pattern is deliberately wide (`[A-Za-z0-9_]+`): a narrower `[a-z_]+` would silently
  * DROP any tool whose name contains a digit or capital, and a dropped registration reads as
@@ -32,7 +32,7 @@ function registeredCallCount(): number {
   return readFileSync(ROUTE, "utf8").split("server.registerTool(").length - 1;
 }
 
-/** Tool names the /mcp page documents, in table order. */
+/** Tool names the /mcp page documents. Order is not asserted — every comparison sorts. */
 function documentedTools(): string[] {
   const src = readFileSync(PAGE, "utf8");
   const start = src.indexOf("const TOOLS = [");

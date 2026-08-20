@@ -72,8 +72,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       flags:
-        specifier: ^4.2.0
-        version: 4.2.0(next@16.3.0(@babel/core@7.29.7)(@playwright/test@1.61.1)(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^4.3.0
+        version: 4.3.0(next@16.3.0(@babel/core@7.29.7)(@playwright/test@1.61.1)(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react:
         specifier: ^1.31.0
         version: 1.31.0(react@19.2.8)
@@ -2913,18 +2913,15 @@ packages:
     resolution: {integrity: sha512-78/PXT1wlLLDgTzDs7sjq9hzz0vXD+zn+7wypEe4fXQxCmdmqfGsEPQxmiCSQI3ajFV91bVSsvNtrJRiW6nGng==}
     engines: {node: '>=10'}
 
-  flags@4.2.0:
-    resolution: {integrity: sha512-/ahGKxe4Q3C2pi2FS7h6cNR4HWnU7/MWAtwcrTHLBQjM9vVe5NR+uRIbL+vXYYU8PYbb8VnwnD+bdLH6l69m0g==}
+  flags@4.3.0:
+    resolution: {integrity: sha512-e4L4QBxGCMNTFzwleCBP1dSl4tET6t3Iv2REfMtBdfMNsD700s0LbgDgS8SsxkRpWrtJamRhsVqaqUwZaCyhtQ==}
     peerDependencies:
       '@opentelemetry/api': ^1.7.0
-      '@sveltejs/kit': '*'
       next: '*'
       react: '*'
       react-dom: '*'
     peerDependenciesMeta:
       '@opentelemetry/api':
-        optional: true
-      '@sveltejs/kit':
         optional: true
       next:
         optional: true
@@ -7887,7 +7884,7 @@ snapshots:
       locate-path: 6.0.0
       path-exists: 4.0.0
 
-  flags@4.2.0(next@16.3.0(@babel/core@7.29.7)(@playwright/test@1.61.1)(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  flags@4.3.0(next@16.3.0(@babel/core@7.29.7)(@playwright/test@1.61.1)(@types/node@26.2.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       '@edge-runtime/cookies': 5.0.2
       jose: 5.10.0

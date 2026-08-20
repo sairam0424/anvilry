@@ -1,3 +1,38 @@
+# pnpm settings live HERE, not in package.json's `pnpm` field.
+#
+# WHY THIS MOVED: pnpm v11 no longer reads the `pnpm` field of package.json at all — it prints
+# "The "pnpm" field in package.json is no longer read by pnpm" and skips it. Every setting below
+# was previously in that field, which meant that on pnpm 11 the ten security `overrides` shipped
+# in v3.4.2 were being IGNORED. CI pins pnpm 10 and pnpm-lock.yaml already encodes them, so
+# resolution was correct in CI — but one `pnpm install` on pnpm 11 would have regenerated the
+# lockfile WITHOUT the overrides block and silently reverted that security release.
+#
+# Both pnpm 10 and 11 read settings from this file, so this is the single source of truth that
+# works on either. Verified by regenerating the lockfile with both and diffing the `overrides:`
+# block. See docs: https://pnpm.io/settings/dependency-resolution and https://pnpm.io/configuring
+
+# --- Dependency resolution -------------------------------------------------------------------
+# Transitive-dependency pins resolving the 23 Dependabot advisories that v3.4.2 shipped.
+# These are SECURITY-LOAD-BEARING. Do not remove one without confirming the advisory is closed
+# by the resolved graph — `pnpm why <pkg>` and the CHANGELOG entry for 3.4.2 are the references.
+overrides:
+  hono: ^4.12.34
+  '@hono/node-server': ^1.19.15
+  ip-address: ^10.3.1
+  fast-uri: ^3.1.5
+  js-yaml: ^4.3.1
+  postcss: ^8.5.23
+  brace-expansion@1: ^1.1.16
+  brace-expansion@>=3: ^5.0.7
+  sharp: ^0.35.0
+  body-parser: ^2.3.0
+
+# --- Build scripts ---------------------------------------------------------------------------
+# Only these packages may run install lifecycle scripts.
+onlyBuiltDependencies:
+  - esbuild
+
+# Explicitly denied, so pnpm stops prompting about them.
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

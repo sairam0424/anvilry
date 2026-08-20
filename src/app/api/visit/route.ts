@@ -16,11 +16,22 @@ import { Ratelimit } from "@upstash/ratelimit";
  * flag is toggled at the edge.
  */
 
+/**
+ * Best-effort client IP from proxy headers. Inlined verbatim from src/lib/rate-limit.ts
+ * for the same reason with-trace.ts inlines it — see the note there: keeping these modules
+ * free of cross-imports leaves them independently swappable. src/lib/client-ip-consistency.test.ts
+ * pins all three copies to the same resolution order so the duplication can't drift.
+ */
 function clientIp(req: Request): string {
+  // On Vercel, x-vercel-forwarded-for is set by the platform and cannot be spoofed. The
+  // FIRST x-forwarded-for segment is attacker-controlled; the LAST is the outermost hop set
+  // by Vercel infrastructure. Taking the last closes a rate-limit bypass: with the first, a
+  // client could rotate spoofed XFF values and mint a fresh 1-per-30-min budget each time,
+  // inflating the visitor counter at will.
   const vercel = req.headers.get("x-vercel-forwarded-for");
   if (vercel) return vercel.split(",")[0].trim();
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();   // leftmost = client IP
+  if (xff) return xff.split(",").pop()!.trim();
   return req.headers.get("x-real-ip") ?? "anonymous";
 }
 

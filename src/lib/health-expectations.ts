@@ -22,9 +22,10 @@
  * on EVERY run, so a real MCP outage was indistinguishable from the standing false negative.
  *
  * CAVEAT: the 405 is mcp-handler's behaviour, not ours. A future major version could answer GET
- * with 200 by opening a notification stream (which the MCP spec permits). `expected-status.test.ts`
- * pins the installed version so that upgrade fails the suite rather than silently re-breaking
- * this check.
+ * with 200 by opening a notification stream (which the MCP spec permits).
+ * `health-expectations.test.ts` pins the installed mcp-handler version and asserts its GET branch
+ * is still unconditional, so that upgrade fails the suite rather than silently re-breaking this
+ * check.
  */
 export const EXPECTED_STATUS_OVERRIDES: Readonly<Record<string, number>> = Object.freeze({
   mcp_get: 405,

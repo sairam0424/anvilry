@@ -29,7 +29,8 @@ pnpm lint                  # eslint (flat config, no --fix by default)
 pnpm content               # velite --clean
 
 # After build: generate Pagefind search index
-pnpm search-index
+# NOTE: this is a Makefile target only — there is NO `pnpm search-index` script.
+make search-index          # == pnpm pagefind --site .next/server/app --output-path public/pagefind
 
 # Cache wipe (all build artifacts)
 pnpm clean
@@ -92,16 +93,20 @@ make resume-list / resume-open   # manage PDFs in public/resume/
 
 ## Architecture Overview
 
-### The Four-View System
+### The View System
 
-The entire site is one Next.js App Router app that presents four client-side switchable experiences from the same URL (`/`):
+The entire site is one Next.js App Router app that presents client-side switchable experiences from the same URL (`/`). The `View` union has **six** members (`src/components/view-context.tsx:24`) and `ViewRouter` branches on all six (`src/components/view-router.tsx:58-69`) — "four-view" describes the switcher's default *server-rendered* pill set, not the store:
 
-| View | Description |
-|---|---|
-| `classic` | SSG-rendered, SEO default — what crawlers and first-paint serve |
-| `gamified` | 3D WebGL graph explorer (React Three Fiber, lazy-imported) |
-| `chat` | AI chatbot grounded on the MDX content corpus |
-| `developer` | Keyboard-driven terminal with ~16 commands |
+| View | Switcher pill? | Description |
+|---|---|---|
+| `classic` | yes | SSG-rendered, SEO default — what crawlers and first-paint serve |
+| `gamified` | yes | 3D WebGL graph explorer (React Three Fiber, lazy-imported) |
+| `chat` | yes | AI chatbot grounded on the MDX content corpus |
+| `developer` | yes | Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs) |
+| `voice` | desktop only, post-hydration | Optional full-page two-way talk surface; normally unused (the default talk UI is a modal overlay) |
+| `resume` | never | Recruiter view. Reached via Cmd+K → "Recruiter view" (`command-palette.tsx:179` calls `switchTo("resume")`) or `?view=resume`. **Distinct from the standalone `/resume` page**, which renders `ResumeViewInline` and never touches the view store |
+
+The switcher renders **4 pills server-side, then upgrades to 5 on desktop after hydration** on a default build — an unset `NEXT_PUBLIC_ENABLED_VIEWS` enables every optional view (`src/lib/enabled-views.ts:21,:29`), and Voice is appended only when `mounted && !compact` (`src/components/view-switcher.tsx:38`). The compact/mobile instance stays at 4.
 
 View state is managed via a **module-level external store** (`src/components/view-context.tsx`) using `useSyncExternalStore`. State lives outside React so it can be read synchronously on first render (prevents Classic→other flash on deep-linked `?view=` URLs). The server and first-client snapshot always return `classic` — SSR is always Classic for crawlers; the deep-link applies post-hydration via `<ViewQuerySync>`.
 
@@ -122,7 +127,7 @@ View switches reflect in `?view=` query params (no localStorage/cookie persisten
 ├── /resume                      print-optimized recruiter view
 ├── /search                      Pagefind static search
 ├── /stats                       GitHub/writing aggregate stats
-├── /mcp                         MCP server documentation (force-static)
+├── /mcp                         MCP server documentation (no segment config — see note below)
 ├── /about
 ├── /admin/telemetry             HTTP Basic Auth; reads Upstash Redis
 ├── /.well-known/vercel/flags    Vercel Flags SDK endpoint
@@ -137,10 +142,24 @@ View switches reflect in `?view=` query params (no localStorage/cookie persisten
 ├── /api/visit                   page visit tracking
 ├── /api/error                   client-side error beaconing
 ├── /api/github/stats            ISR 1h; GitHub aggregate feed
-└── /api/cron/eval               evaluation cron (CRON_SECRET protected)
+├── /api/md/{articles,notes,projects,work}/[slug]   raw-markdown passthrough (4 handlers)
+└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}
+                                 5 crons, ALL fail-closed on CRON_SECRET (vercel.json:3-7)
 ```
 
-All content routes generate per-route `opengraph-image.tsx` images. Every API route runs on the **Node.js runtime** (not Edge) with a 30s max duration.
+All content routes generate per-route `opengraph-image.tsx` images.
+
+**Runtime & duration — do not add `export const runtime`.** No route exports `runtime` anywhere in `src/`; the export was removed because `cacheComponents: true` (`next.config.ts:183`) rejects its mere *presence* (see the note at `src/app/api/mcp/[transport]/route.ts:6-8`). Routes therefore run on Next's default Node.js runtime. `maxDuration` is **per-route, not a uniform 30s**:
+
+| maxDuration | Routes |
+|---|---|
+| 60 | `cron/eval`, `cron/seo-audit`, `cron/content-audit` |
+| 30 | `chat`, `mcp/[transport]`, `cron/github-sync` |
+| 25 | `cron/health-check` |
+| 20 | `transcribe` |
+| 15 | `tts`, `tts-google` |
+| 5 | `error` |
+| — | `visit`, `github/stats`, `md/*`, `resume.json` (no export) |
 
 ### Content Layer
 
@@ -158,7 +177,9 @@ No view owns its own copy of content. Every view derives from the same Velite ou
 
 **Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean` in dev mode or you'll get a race where webpack tries to resolve a momentarily deleted `.velite/projects.json`. The `build` script passes `--clean` explicitly for a pristine production build.
 
-**Notes accept both `.md` and `.mdx`** — `.md` files come from the Inkforge pipeline and carry extended frontmatter (`tone`, `format`, `length`, `wordCount`, `readingTime`, `generatedBy`, `platforms`). Hand-written `.mdx` notes omit these fields and still compile.
+**Notes accept both `.md` and `.mdx`** — the Velite schema makes the extended Inkforge frontmatter (`tone`, `format`, `length`, `wordCount`, `readingTime`, `generatedBy`, `platforms`) optional, so a hand-written note that omits those fields still compiles.
+
+Note that **the extension does not indicate provenance**: at v3.4.2 all five notes carry `generatedBy: inkforge`, including both `.mdx` ones. So `inkforgeNotes` (`src/lib/content.ts:56`) currently equals *every* note. Do not infer "hand-written" from `.mdx`.
 
 **Articles support a `linkedNote` field** — when set to a note slug, the article card links to the `/notes/[slug]` page instead of the external URL. Use this for cross-posted content to avoid duplicate body rendering.
 
@@ -178,7 +199,7 @@ The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). 
 
 `/api/mcp/[transport]` exposes the portfolio as a read-only MCP server (HTTP Streamable, legacy SSE disabled). Public endpoint: `https://anvilry.vercel.app/api/mcp/mcp`.
 
-**7 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):
+**9 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):
 
 | Tool | Description |
 |---|---|
@@ -189,6 +210,14 @@ The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). 
 | `get_work` | Single case study by slug |
 | `search_experience` | Keyword search across work, projects, skills |
 | `get_resume_variant` | Role-targeted PDF URL (`master \| backend \| fullstack \| frontend \| genai`) |
+| `list_all_content` | Flat list of every work item, project, article and note — slug, name, summary, URL |
+| `get_content_item` | One content item by `type` (`work \| project \| article \| note`) and slug |
+
+`src/app/mcp/page.tsx:35-45` renders the public `TOOLS` table — the documentation contract for
+this server. It is hand-maintained, but **enforced**: `src/app/mcp/tools-documented.test.ts`
+asserts the documented set and the route's `registerTool` calls are identical, and because
+`vitest run` is chained into `pnpm build`, adding a tool without documenting it fails the build
+with the missing names in the message. So the count above is safe to quote.
 
 Deliberately excludes `personal.ts` (hobbies) — professional-only surface. Tools return `isError: true` with valid options on not-found rather than fabricating.
 
@@ -213,9 +242,13 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 
 `src/components/hero-graph/` — React Three Fiber canvas. Key decisions:
 - `frameloop="demand"` — no perpetual render loop at idle
-- `@react-three/offscreen` for worker offload
 - Instanced meshes (one draw call for all nodes)
 - Lazy-imported — NOT in the LCP critical path
+- `src/lib/r3f.ts` is a single barrel for the whole R3F/three surface — it is load-bearing for keeping three.js to **one** copy in the bundle; import R3F/three through it, never directly
+
+**Two declared dependencies are not actually used** (`package.json`, but zero imports in `src/`):
+- `@react-three/offscreen` — no worker/OffscreenCanvas anywhere; the "worker offload" this file previously claimed does not exist.
+- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain sinusoidal `useFrame` maths (`scene-physics.tsx:12-16,:42-44`), not a physics engine. The flag and filename are historical.
 
 ### Rate Limiting & Telemetry
 
@@ -257,7 +290,7 @@ Key flags: `NEXT_PUBLIC_DISCOVERY_BADGES`, `NEXT_PUBLIC_OPEN_TO_WORK`, `NEXT_PUB
 | `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |
 | `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags |
 | `src/app/api/chat/route.ts` | LLM streaming endpoint |
-| `src/app/api/mcp/[transport]/route.ts` | MCP server (7 read-only tools) |
+| `src/app/api/mcp/[transport]/route.ts` | MCP server (9 read-only tools) |
 | `src/instrumentation.ts` | Next.js instrumentation hook (config snapshot on cold start) |
 | `src/instrumentation-client.ts` | Browser error beaconing + web-vitals reporting |
 
@@ -289,7 +322,21 @@ Pull production env vars with: `vercel env pull .env.local`
 
 **Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missing the `u`). Always use `BEDROCK_REGION`.
 
-**Custom domain:** If pointing a custom domain at the deployment, update the hardcoded base URL in exactly four files: `src/app/layout.tsx`, `src/app/sitemap.ts`, `src/app/robots.ts`, `src/components/json-ld.tsx`.
+**Custom domain:** `https://anvilry.vercel.app` is hardcoded in **18 files / 24 occurrences**, not four. Find them all with:
+
+```bash
+grep -rn 'anvilry\.vercel\.app' src Makefile | grep -v '\.test\.'
+```
+
+`src/components/json-ld.tsx` alone has **7** (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_URL`, `:214`). The other 17 files have one apiece:
+
+- `src/app/`: `layout.tsx`, `sitemap.ts`, `robots.ts`, `mcp/page.tsx`, `opengraph-image.tsx`, `feed.xml/route.ts`
+- a `const BASE` in all four `[slug]/page.tsx` (`articles`, `notes`, `projects`, `work`)
+- three `[slug]/opengraph-image.tsx` (`articles`, `notes`, `work` — `projects` does **not** hardcode it)
+- `src/lib/`: `llms-txt.ts`, `resume-json.ts`, `mcp-tools.ts`
+- `Makefile`
+
+Run the grep rather than trusting this list — it is the only thing that cannot go stale.
 
 ---
 
@@ -304,9 +351,11 @@ Work frontmatter supports optional `constraints`, `tradeoffs`, and `diagram`/`di
 ## Testing Notes
 
 - `game-model.test.ts` asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned. Run it whenever you add or rename content. Three node IDs intentionally differ from their slugs: `aava` → `aava-code`, `grpc` → `grpc-microservices`, `nhl` → `not-humans-lab` — this is by design, not a bug.
-- `ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these.
+- **The prompt-injection / XSS guard is `src/components/chat/parse-cards.test.ts`** — do not weaken or skip it. It pins the fail-closed behaviour of the card-token path: an unknown/hallucinated slug is dropped entirely (`:41`), a malformed token kind is ignored (`:50`), an injected URL or path can never become an `href` because the slug charset is locked (`:55`), and raw HTML/`<script>` stays inert text (`:67`).
+  (`src/components/ask-portfolio.dom.test.tsx` — note the `.tsx` extension — is **not** this guard. It has exactly two tests: shared-transport streaming (`:46`) and the 503 not-configured message (`:70`), and contains zero injection or XSS assertions.)
 - `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`). A future SDK update that returns camelCase would silently zero out token telemetry; this test is the regression guard.
-- `agent-trace.test.ts` blocks shipping the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contains `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). The demo is dark until the owner fills in real reasoning traces.
+- `agent-trace.test.ts` does **not** block shipping — it is a *consistency* check. The assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:56`), which passes in both states: sentinel present ⇔ not approved. `src/lib/agent-trace.ts:118` says so outright ("NOT a hard build failure"), and the file's header banner now says the same — it previously claimed the test "BLOCKS shipping", which is what sent this doc wrong in the first place.
+  What actually happens: `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`) is currently present, so `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo ships **dark**, nothing is blocked. Replacing the draft prose lights it up; the test keeps the flag honest either way.
 - **Vitest runs two projects:** `node` (default, all `*.test.ts` except `*.dom.test.*`) and `dom` (happy-dom environment, all `*.dom.test.*`). `NODE_ENV` is forced to `"test"` to prevent React's missing `act()` warning in the production-default Node environment.
 - Tests run as part of `pnpm build` — a failing test blocks deployment.
 

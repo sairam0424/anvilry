@@ -91,13 +91,16 @@ input errors (malformed prompt, bad creds) fail immediately rather than burning 
 
 | Tier | Bedrock inference-profile ID | Status |
 |---|---|---|
-| Primary | `us.anthropic.claude-opus-4-6-v1` | ✅ verified (the `-v1` suffix is **required**) |
-| Secondary | `us.anthropic.claude-sonnet-4-6` | ✅ verified (bare id, no suffix) |
+| Primary | `us.anthropic.claude-sonnet-4-6` | ✅ verified (bare id, no suffix) — fast + cost-effective |
+| Secondary | `us.anthropic.claude-opus-4-6-v1` | ✅ verified (the `-v1` suffix is **required**; the bare id 400s) |
 | Fallback | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | ✅ verified |
 
 If you swap providers to `anthropic`, the chain becomes
-`claude-opus-4-7 → claude-sonnet-4-6 → claude-haiku-4-5`.
-Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` / `ANTHROPIC_CHAIN`).
+`claude-sonnet-4-6 → claude-opus-4-7 → claude-haiku-4-5`.
+
+Both chains are **Sonnet-primary**, not Opus-primary — Opus is the escalation tier, not the
+default. Model IDs live in `src/lib/llm.ts` (`BEDROCK_CHAIN` `:31-35` / `ANTHROPIC_CHAIN` `:38`);
+that file is authoritative if this table ever disagrees with it.
 
 ### Minimum AWS IAM policy
 ```json
@@ -140,8 +143,16 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
 ## 4. Custom domain (optional)
 1. Project → Settings → Domains → add your domain (e.g. `example.com` and `www.example.com`).
 2. Point DNS per Vercel's instructions (A/ALIAS to Vercel, or move nameservers).
-3. The base URL is hardcoded as `https://anvilry.vercel.app` in `src/app/layout.tsx`, `sitemap.ts`,
-   `robots.ts`, and `json-ld.tsx` — update those if you use a different domain.
+3. The base URL `https://anvilry.vercel.app` is hardcoded in **18 files / 24 occurrences** — not
+   the four this step used to list. Find every one with:
+
+   ```bash
+   grep -rn 'anvilry\.vercel\.app' src Makefile | grep -v '\.test\.'
+   ```
+
+   `src/components/json-ld.tsx` alone accounts for 7 of them. See CLAUDE.md →
+   "Environment Variables" → **Custom domain** for the per-directory breakdown. Run the grep
+   rather than trusting any list — it is the only thing that cannot go stale.
 
 ---
 

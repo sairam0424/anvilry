@@ -4,6 +4,54 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+**Correctness pass.** Five live defects found by indexing the tree at v3.4.2, each verified
+against production or source before being fixed, plus the documentation corrections that make the
+repo's own claims match its code. Two changes alter **public artifacts** (`llms.txt`,
+`manifest.webmanifest`) and one changes **cron alerting semantics** — see below.
+
+### Fixed
+- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the
+  route sets `disableSse: true`, so that path 404s (verified live). The live endpoint is
+  `/api/mcp/mcp`. The one file whose purpose is telling AI agents where the MCP server lives was
+  pointing them at nothing. **Public artifact change.**
+- **PWA manifest declared two screenshots that 404.** `/static/screenshot-{desktop,mobile}.png`
+  with an empty `public/static/`. `screenshots` is optional in the manifest spec, so the entries
+  are removed rather than faked. **Public artifact change.**
+- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`
+  were live and callable but absent from the only page an integrator reads. Now guarded by
+  set-equality against the route's `registerTool` calls, so the build fails if they drift.
+- **`mcp_get` health check failed on every cron run.** It expected 200 from an endpoint that
+  answers a plain GET with 405 (mcp-handler's unconditional behaviour on the Streamable HTTP
+  endpoint). Every run therefore reported top-level `warn`, and a real MCP outage was
+  indistinguishable from the standing false negative. Expected status is now per-check.
+  **Changes cron alerting semantics** — `mcp_get` can now actually fail.
+- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the
+  first segment (attacker-controlled) where `rate-limit.ts` and `with-trace.ts` take the last, and
+  carried a comment asserting the wrong behaviour was correct. Not exploitable in production —
+  the visitor counter is flag-off by default and the handler short-circuits on absent Redis before
+  `clientIp` runs, and both copies read the unspoofable `x-vercel-forwarded-for` first — so this
+  is a latent fallback inconsistency, not a live bypass.
+
+### Changed
+- Corrected documentation that contradicted the code: the `View` union has **six** members (not
+  four); the terminal has **31** commands (not "~16"); no API route exports `runtime` and
+  `maxDuration` is per-route (not a uniform 30s); five crons are scheduled (not one); the base URL
+  is hardcoded in **19 files / 25 occurrences** (not four); `pnpm search-index` does not exist
+  (only `make search-index`); `DEPLOY.md` had both Bedrock and Anthropic model chains **inverted**
+  (both are Sonnet-primary). Also corrected two `CLAUDE.md` claims about test guards that do not
+  guard what they say.
+- Corrected in-code comments that misdescribed their own code, including a banner claiming a test
+  "BLOCKS shipping" that the same file elsewhere admits is "NOT a hard build failure", and
+  `@react-three/rapier` described as loaded when it is imported nowhere.
+
+### Added
+- Behavioural guards for each fix: MCP tool-documentation set equality, manifest asset resolution,
+  `clientIp` cross-copy consistency (semantic allowlist, not a syntax pattern), health-check status
+  expectations, and `llms.txt` endpoint/transport coupling. Each mutation-tested.
+- `.gitignore` coverage for agent-tooling state (~5.9 MB, previously untracked *and* unignored).
+
 ## [3.4.2] — 2026-08-15
 
 **Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them

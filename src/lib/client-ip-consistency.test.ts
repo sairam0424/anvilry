@@ -44,9 +44,43 @@ function discoverCopies(dir = "src"): string[] {
   return found;
 }
 
-/** Remove block and line comments so assertions can only ever match real code. */
+/**
+ * Remove block and line comments so assertions can only ever match real code.
+ * The `(^|[^:])` guard keeps `https://…` inside a string literal from being eaten as a comment,
+ * which would truncate the body and red the suite on an innocent edit.
+ */
 function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/gm, "$1");
+}
+
+/**
+ * The `x-forwarded-for` expressions that are known to return the LAST segment.
+ *
+ * An allowlist rather than a pattern, because "contains `.pop()`" is not a safety property:
+ * `xff.split(",").reverse().pop()` and `xff.split(",").slice(0, 1).pop()` both contain `.pop()`
+ * and both return the attacker-controlled FIRST segment — the exact bug this file exists to
+ * prevent. An earlier version of this test passed both.
+ *
+ * Adding a form here is a deliberate review step, same as adding a path to COPIES: confirm by
+ * hand that it yields the last segment, then allow it.
+ */
+const SAFE_XFF_EXPRESSIONS = [
+  'xff.split(",").pop().trim()',
+  'xff.split(",").at(-1).trim()',
+];
+
+/** The xff return expression a copy uses, normalised for comparison against the allowlist. */
+function xffExpression(body: string): string | null {
+  const line = body
+    .split("\n")
+    .map((l) => l.trim())
+    .find((l) => /return\s+xff[.!]/.test(l));
+  if (!line) return null;
+  return line
+    .replace(/^.*?return\s+/, "")
+    .replace(/;$/, "")
+    .replace(/!/g, "") // TypeScript non-null assertions are not semantic
+    .replace(/\s+/g, ""); // whitespace-insensitive, so a reformat cannot red the suite
 }
 
 /** The body of `function clientIp(...) { ... }`, comments removed, via brace matching. */
@@ -104,18 +138,17 @@ describe("clientIp — every duplicated copy resolves the IP the same way", () =
       });
 
       it("takes the LAST x-forwarded-for segment, never the first", () => {
-        // Assert on the RETURN statement that consumes xff, not on any line mentioning it.
-        const ret = body
-          .split("\n")
-          .map((l) => l.trim())
-          .find((l) => l.startsWith("if (xff) return") || /return\s+xff[.!]/.test(l));
-        expect(ret, `no \`return xff…\` statement found in ${path}`).toBeDefined();
+        const expr = xffExpression(body);
+        expect(expr, `no \`return xff…\` statement found in ${path}`).not.toBeNull();
         expect(
-          ret,
-          `${path} takes the FIRST x-forwarded-for segment — attacker-controlled, allows ` +
-            'rate-limit bypass via rotating spoofed headers. Use .split(",").pop().',
-        ).toContain(".pop()");
-        expect(ret, "indexing [0] is the bypass vector").not.toMatch(/\.split\(","\)\[0\]/);
+          SAFE_XFF_EXPRESSIONS.map((e) => e.replace(/\s+/g, "")),
+          `${path} resolves x-forwarded-for with \`${expr}\`, which is not a reviewed ` +
+            "last-segment form. The FIRST segment is attacker-controlled and allows rate-limit " +
+            "bypass via rotating spoofed headers — note that `.reverse().pop()` and " +
+            "`.slice(0,1).pop()` both contain `.pop()` and both return the FIRST segment. " +
+            "If this form is genuinely safe, add it to SAFE_XFF_EXPRESSIONS after verifying it " +
+            "by hand.",
+        ).toContain(expr);
       });
 
       it("falls back to x-real-ip then a constant, never to undefined", () => {

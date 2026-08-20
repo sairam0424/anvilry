@@ -14,7 +14,7 @@ How this repo is organized as the operating substrate for a long-lived, autonomo
 agent-writable. This doc is the durable record of the model so the shape stays intentional as
 it grows.
 
-**Product:** Anvilry — personal portfolio + AI-powered developer showcase (Next.js 16, 4-view system).
+**Product:** Anvilry — personal portfolio + AI-powered developer showcase (Next.js 16). The `View` union has six members (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher shows four pills server-side and five on desktop after hydration. See `CLAUDE.md` → "The View System".
 
 ---
 
@@ -71,7 +71,7 @@ sairam-dev/
 │   ├── components/
 │   │   ├── chat/                   Chat view — use-chat.ts hook, chat-messages.tsx, file-picker
 │   │   ├── hero-graph/             3D R3F graph (scene.tsx, scene-physics.tsx, index.tsx)
-│   │   └── game/terminal/          Developer terminal view (16 commands, combobox)
+│   │   └── game/terminal/          Developer terminal view (31 commands, combobox)
 │   └── lib/
 │       ├── llm.ts                  LLM provider abstraction + extended thinking stream
 │       ├── corpus.ts               Chatbot grounding corpus (built from Velite)

@@ -62,7 +62,7 @@ ${articles ? `\n## Articles & Writing\n${articles}` : ""}${notes ? `\n\n## Engin
 - LinkedIn: ${profile.links.linkedin}
 - Résumé: ${BASE}/resume
 - Structured résumé (JSON): ${BASE}/api/resume.json
-- MCP server (for AI agents): ${BASE}/api/mcp/sse
+- MCP server (for AI agents): ${BASE}/api/mcp/mcp
 - RSS feed: ${BASE}/feed.xml
 
 ## Markdown Versions

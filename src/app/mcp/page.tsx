@@ -29,6 +29,9 @@ const CURSOR_CONFIG = `{
   }
 }`;
 
+// Public contract for this server — must list every tool the route registers.
+// tools-documented.test.ts asserts this table and the registerTool calls in
+// src/app/api/mcp/[transport]/route.ts stay in sync.
 const TOOLS = [
   ["get_profile", "Identity, headline, links, skills, achievements"],
   ["list_projects", "All open-source projects"],
@@ -37,6 +40,8 @@ const TOOLS = [
   ["get_work", "One case study's detail by slug"],
   ["search_experience", "Keyword search across work, projects, skills"],
   ["get_resume_variant", "A role-targeted résumé PDF URL"],
+  ["list_all_content", "Every work item, project, article and note — slug, name, summary, URL"],
+  ["get_content_item", "One content item by type (work, project, article, note) and slug"],
 ];
 
 export default function McpPage() {

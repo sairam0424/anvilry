@@ -12,7 +12,7 @@ const SCALE = 1.6;
 /**
  * Interactive 3D Build Graph — the desktop + full-motion ENHANCEMENT over the
  * accessible DOM index. Unlike the decorative hero (one InstancedMesh, no
- * interaction), each of the 10 nodes is an individual mesh so it can be hovered,
+ * interaction), each node is an individual mesh so it can be hovered,
  * clicked, and labelled — the draw-call cost is irrelevant at this count. Selecting
  * a node calls onSelect(nodeId); the parent opens that node's REAL card.
  *

@@ -97,7 +97,12 @@ async function probe(base: string, check: (typeof CHECKS)[number]): Promise<Chec
       };
     }
     // Expected status is per-check, NOT a blanket 200 — see @/lib/health-expectations for why
-    // mcp_get expects 405. A blanket gate failed that check on every single run.
+    // mcp_get expects 405.
+    //
+    // NOTE: a blanket 200 gate would fail mcp_get against the production alias. It did NOT do that
+    // in production, because the probe was pointed at the SSO-protected per-deployment host and
+    // scored the login page as a 200 — mcp_get was falsely PASSING. Both halves had to be fixed;
+    // see probeBase() and the redirect: "manual" guard above.
     const expected = expectedStatus(check.name);
 
     if (!isExpectedStatus(check.name, http_status)) {

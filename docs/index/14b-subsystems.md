@@ -91,7 +91,7 @@ if (!secret || authHeader !== `Bearer ${secret}`) {
 }
 ```
 
-Sites: `eval/route.ts:98-102`, `health-check/route.ts:126-130`, `github-sync/route.ts:18-22`,
+Sites: `eval/route.ts:98-102`, `health-check/route.ts:146-150`, `github-sync/route.ts:18-22`,
 `seo-audit/route.ts:16-20`, `content-audit/route.ts:19-23`. Properties exactly as implemented:
 **fail-closed** (unset `CRON_SECRET` ⇒ 401, never open — stated at `eval/route.ts:14`), lower-case header
 name, plain non-constant-time `!==`, no scheme-case tolerance, no trimming, no `x-vercel-*` alternative.
@@ -325,7 +325,7 @@ BARREL      src/lib/r3f.ts  — named re-exports only; `export * as THREE from "
             next.config.ts:149: "the barrel ... is load-bearing for the single-copy outcome"
             EXCEPTION: hero-graph/scene-physics.tsx:4-6 imports @react-three/fiber + three DIRECTLY
         ▼
-CANVAS      hero graph  frameloop="demand"   scene.tsx:116
+CANVAS      hero graph  frameloop="demand"   scene.tsx:117
             avatar      frameloop="demand"   avatar-scene.tsx:22
             physics     frameloop="always"   scene-physics.tsx:20
             build graph frameloop="demand"   build-graph-scene.tsx:151
@@ -354,7 +354,7 @@ SCENE       hero graph : 1 instancedMesh for all graphNodes + 1 lineSegments for
 | 7 | `src/components/chat/voice-orb.tsx:38-50` | Capability tiering with a permanent flip to the 2D orb on failure. |
 | 8 | `src/components/game/webgl-boundary.tsx:19-30` | The only WebGL error boundary; class component because only class boundaries catch descendant render errors (`:11-12`). |
 | 9 | `src/lib/r3f.ts:17-27` | The barrel. Also the **only** import site for `@react-three/drei` and `@react-three/postprocessing` in the repo. |
-| 10 | `src/components/hero-graph/scene.tsx:7-8,15,18-45,48-68,71-89,105,116-123` | `SCALE = 1.6`; the `idx` map; the module-level `ptr` singleton; instanced nodes; batched edges; the `\|delta\| > 0.0006` settle threshold. |
+| 10 | `src/components/hero-graph/scene.tsx:7-8,15,19-46,48-69,71-90,105,116-125` | `SCALE = 1.6`; the `idx` map; the module-level `ptr` singleton; instanced nodes; batched edges; the `\|delta\| > 0.0006` settle threshold. |
 | 11 | `src/components/hero-graph/scene-physics.tsx:20,33-44` | `frameloop="always"`; `DriftWrapper` **sets** (never accumulates) sinusoidal position; reduced motion handled inside the frame callback. |
 | 12 | `src/components/hero-avatar/avatar-scene.tsx:18,22-29` | Owns `controlsRef` — the only channel between input and animation, never React state. |
 | 13 | `src/components/hero-avatar/avatar-mesh.tsx:10,27,39-42,44-56,61-115` | Module-scope `useGLTF.preload` (a real network fetch on import); the one lazily-initialised rig ref; full dispose-on-unmount traversal; the single frame loop. |
@@ -380,11 +380,11 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 
 | Decision | Value | Cite |
 |---|---|---|
-| DPR clamp | `[1, 1.75]` on all hero/graph canvases | `scene.tsx:121`, `scene-physics.tsx:23`, `avatar-scene.tsx:25`, `build-graph-scene.tsx:154`; voice orb `voice-orb-3d.tsx:310` |
+| DPR clamp | `[1, 1.75]` on all hero/graph canvases | `scene.tsx:122`, `scene-physics.tsx:23`, `avatar-scene.tsx:25`, `build-graph-scene.tsx:154`; voice orb `voice-orb-3d.tsx:310` |
 | Mobile cutoff | `(min-width: 768px)` — the whole WebGL layer is skipped below it | `hero-graph/index.tsx:31`, `hero-avatar/index.tsx:46`, `build-graph.tsx:28` |
-| Draw-call batching (hero) | one `instancedMesh` for all nodes, one `lineSegments` for all edges | `scene.tsx:44,48-68` |
-| Demand-loop settle | re-`invalidate()` only while `\|delta\| > 0.0006` | `scene.tsx:86` |
-| Resize race fix | `resize={{ offsetSize: true }}` — fixes "canvas stuck at 300×150" when the ResizeObserver reports 0 on first measure | `scene.tsx:117-119` |
+| Draw-call batching (hero) | one `instancedMesh` for all nodes, one `lineSegments` for all edges | `scene.tsx:45,65-67` |
+| Demand-loop settle | re-`invalidate()` only while `\|delta\| > 0.0006` | `scene.tsx:87` |
+| Resize race fix | `resize={{ offsetSize: true }}` — fixes "canvas stuck at 300×150" when the ResizeObserver reports 0 on first measure | `scene.tsx:120` (rationale in the comment at `:118-119`) |
 | Chunk dedup | the `src/lib/r3f.ts` barrel; `three`/`fiber`/`drei` deliberately **excluded** from `optimizePackageImports` (which is `["lucide-react","motion"]`) | `next.config.ts:126-131,146-150` |
 | Recorded chunk measurement | 16.2.9: 2036 KB / 5 chunks (two 876 KB copies) → 16.3.0: 1160 KB / 4 chunks (one copy), −876 KB | `next.config.ts:133-144` |
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages | `domains/performance/README.md:62-66` |
@@ -412,7 +412,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 |---|---|
 | Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:34`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
 | Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-graph/index.tsx` and `hero-avatar/index.tsx` neither probe nor (for the graph) wrap. |
-| Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:86`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
+| Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:87`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
 | Twin three.js chunks return (−876 KB lost) | Deleting `src/lib/r3f.ts`, or re-adding `three`/`@react-three/*` to `optimizePackageImports` (`next.config.ts:146-149`). |
 | Node unit tests fail `ECONNREFUSED` | Importing `avatar-mesh.tsx` from a node test — `useGLTF.preload` at module scope fires a real fetch. This is why `resolveRig` lives in `rig.ts` (`rig.ts:19-22`). |
@@ -448,11 +448,14 @@ DEVELOPER
         ▼  git push (any branch)
 CI  .github/workflows/ci.yml   — 3 jobs, NO `needs:`, all parallel
    job `ci`   : pnpm install → pnpm content → pnpm lint → npx tsc --noEmit → pnpm test
+                             → node scripts/check-index-citations.mjs   (ci.yml:65-66)
                 ↑ the ONLY place lint and tsc run; neither is in pnpm build
+                ↑ the index-citation check is deliberately a CI step and NOT in `pnpm build`, so a
+                  stale doc fails the PR instead of blocking a production deploy (ci.yml:55-61)
    job `e2e`  : pnpm install → playwright install --with-deps chromium → pnpm build → pnpm e2e
                 ↑ pnpm build re-runs vitest, so tests execute TWICE per CI run
                 ↑ playwright.config.ts webServer runs `pnpm start`, which needs a prior build
-   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:106,126)
+   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:139,191)
   + bundle-analysis.yml (develop/main + PRs): pnpm content → ANALYZE=true npx next build
   + codeql.yml (develop + weekly cron 35 1 * * 1) — note: does NOT run on main
   + dependency-review.yml (PRs → develop/main): fail-on-severity high, fail-on-scopes runtime
@@ -517,7 +520,7 @@ blocker on the Vercel build path. Concretely, these invariants block a deploy:
   `xff.split(",").pop()!.trim()` (`:34`) — the divergence this index used to record there is gone.
 - SSR-is-always-Classic — `src/components/view-context.test.ts:30-34`
 
-**Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:55-92`).
+**Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:68-105`).
 `agent-trace.test.ts` is a **consistency** check, not a ship block: `expect(traceApproved).toBe(!hasSentinel)`
 (`src/lib/agent-trace.test.ts:56`) passes in both states. The sentinel is currently present, so
 `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo is
@@ -557,13 +560,13 @@ does not gate the route — only the nav link and the sitemap entry.
 | Every DOM suite runs twice, once without happy-dom globals | Removing the `node` project's `exclude: ["**/*.dom.test.{ts,tsx}", …]` (`vitest.config.ts:34`) — `src/x.dom.test.ts` also matches `src/**/*.test.ts`. |
 | "Failing test blocks deployment" property lost | Reordering or splitting the `build` chain into independent commands. |
 | Playwright tests a stale build | Without the `webServer` block, a leftover process on :3000 is silently tested — recorded as having produced 5 phantom failures during a release audit (`playwright.config.ts:23-32`). |
-| `Executable doesn't exist at .../chromium_headless_shell-<rev>` | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium`, which pins to the installed `@playwright/test` (`ci.yml:82-85`). |
+| `Executable doesn't exist at .../chromium_headless_shell-<rev>` | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium`, which pins to the installed `@playwright/test` (`ci.yml:95-98`). |
 | Dev server dies with "Can't resolve './projects.json'" | Passing `--clean` to Velite in dev, or setting `clean: true` in `velite.config.ts:125`. |
 | Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:107` → `site-footer.tsx:171`) and `/admin/telemetry`'s `export const instant = false` (`:11`) **plus** `await connection()` (`:434`) — the comment at `:428-433` records that `instant=false` alone does **not** clear it. |
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true`. The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. |
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:16-24` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
-| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:113-122`). |
+| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:126-135`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:28`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
 | eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:27-29`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
@@ -573,8 +576,9 @@ does not gate the route — only the nav link and the sitemap entry.
 
 `ANALYZE` (`next.config.ts:6`, set by `bundle-analysis.yml`), `VELITE_STARTED` (internal re-entrancy
 guard, `next.config.ts:13-14`), `CI` (`playwright.config.ts:6-8,36`), `NODE_ENV` (forced to `test` for
-the Vitest worker), `NEXT_PUBLIC_BUILD_YEAR` (written by the config), `VERCEL_URL`/`VERCEL_ENV`/
-`VERCEL_REGION`/`VERCEL_GIT_COMMIT_SHA`/`NEXT_RUNTIME` (platform-set), `CRON_SECRET` (whether the five
+the Vitest worker), `NEXT_PUBLIC_BUILD_YEAR` (written by the config), `VERCEL_URL`/
+`VERCEL_PROJECT_PRODUCTION_URL` (the alias the health cron must probe, `health-expectations.ts:51-59`)/
+`VERCEL_ENV`/`VERCEL_REGION`/`VERCEL_GIT_COMMIT_SHA`/`NEXT_RUNTIME` (platform-set), `CRON_SECRET` (whether the five
 schedules do anything), `SECURITY_ALERTS_TOKEN` (repo secret). Note: no `engines`, no `packageManager`,
 no `.nvmrc`, no `.npmrc` — CI runs Node 22 + pnpm 10 while the gitignored `.vercel/project.json` records
 `"nodeVersion": "24.x"` for production.
@@ -652,7 +656,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:105` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
 | Change build ordering or add a build step | `package.json:8` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`). |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
-| Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:88-92`). E2E does not block `pnpm build`. |
+| Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:100-102`). E2E does not block `pnpm build`. |
 | Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:325` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
 | Regenerate the search index | `Makefile:64-66` (`make search-index`) | Must run **after** `make build`; `pnpm search-index` does not exist. Output goes to the untracked `public/pagefind/`. |
 | Add or bump a dependency | `package.json:19-72` | Respect the exact pins (`next`/`eslint-config-next` 16.3.0, `react`/`react-dom` 19.2.8, `@modelcontextprotocol/sdk` 1.26.0, `@react-three/postprocessing` 3.0.4), the `three < 0.186.0` ceiling from `postprocessing`, and the 10 `pnpm.overrides`. |
@@ -681,17 +685,33 @@ afterwards; those entries record the outcome rather than the original open quest
   `return JOANNA.id` (`src/lib/voice-catalog.ts:317-320`) and `id: "polly-neural-joanna"` (`:62`).
   Section 02 asserted this from a comment; it is now read from source.
 - **A bare `GET /api/mcp/mcp` returns 405, not 200.** This index recorded the cron as probing that
-  endpoint "expecting 200" and left the real GET behaviour unexercised; it was in fact a standing false
-  negative — the blanket `!== 200` gate failed `mcp_get` on **every** run, so a genuine MCP outage was
-  indistinguishable from it. **Fixed:** expectations are now per-check, with `mcp_get: 405` in
-  `EXPECTED_STATUS_OVERRIDES` (`src/lib/health-expectations.ts:30-32`), applied via
-  `isExpectedStatus` at `src/app/api/cron/health-check/route.ts:83`; the probed row itself is
+  endpoint "expecting 200" and left the real GET behaviour unexercised. A later reading called that a
+  standing false *negative* — the blanket `!== 200` gate failing `mcp_get` on every run. **That was
+  backwards, and the correction is the more interesting bug.** The cron derived its base from
+  `VERCEL_URL`, the per-**deployment** host, which this project's deployment protection 302s to Vercel
+  SSO; `fetch` follows redirects by default, so the probe read **200 with ~478 KB of
+  `vercel.com/login` HTML**. `mcp_get` was therefore **falsely PASSING** — it never saw a 405 to fail
+  on — and so were 10 others: **11 of the 13 checks scored the login page as healthy**. Only
+  `github_stats_api` and `resume_json_api` failed, and only because `res.json()` threw on the login
+  HTML rather than because the status was wrong; the two
+  `llms*.txt` body-length checks passed too, since 478 KB clears their 1000-char floor. The cron was
+  scoring an auth wall as a healthy app. **Fixed on two axes.** (1) The base now comes from
+  `probeBase()`, which prefers `VERCEL_PROJECT_PRODUCTION_URL` — the production alias, exempt from
+  protection — over `VERCEL_URL` (`src/lib/health-expectations.ts:51-59`); the route no longer reads
+  `VERCEL_URL` at all, and `health-expectations.test.ts:140-146` fails if it does again. `probe()`
+  also sets `redirect: "manual"` (`src/app/api/cron/health-check/route.ts:78`) and fails **any** 3xx,
+  naming Vercel SSO when the `location` matches (`:86-98`), so a redirect can never be silently
+  followed to a healthy-looking 200. (2) Expectations are per-check, with `mcp_get: 405` in
+  `EXPECTED_STATUS_OVERRIDES` (`health-expectations.ts:30-32`), applied via
+  `isExpectedStatus` at `src/app/api/cron/health-check/route.ts:103`; the probed row itself is
   `route.ts:61`. The 405 is mcp-handler's own unconditional JSON-RPC reply on the Streamable-HTTP
   endpoint — verified live, alongside `GET /api/mcp/sse → 404` and a POSTed `initialize → 200` — so it
   still proves the route is mounted and the handler is alive; the reasoning and the upgrade caveat are
   at `health-expectations.ts:1-29`, guarded behaviourally by `src/lib/health-expectations.test.ts`
-  (`:22` the 405 expectation, `:68` the mcp-handler version pin, `:80` the "405 branch is still
-  unconditional" check). The old `EXPECTED_STATUS` map and its source-grep guard
+  (`:28` the 405 expectation, `:73` the `probeBase` alias-over-deployment suite, `:161` the
+  mcp-handler version pin, `:173` the "405 branch is still unconditional" check). Note the route's own
+  comment at `route.ts:99-100` still repeats the old "failed on every single run" reading — the code is
+  right, that one comment is not. The old `EXPECTED_STATUS` map and its source-grep guard
   `expected-status.test.ts` are **deleted**, and the caveat comment no longer points at the dead file:
   it now names `health-expectations.test.ts` as what pins the mcp-handler version and asserts the GET
   branch is still unconditional (`health-expectations.ts:26`). An earlier reading of this index
@@ -732,7 +752,7 @@ afterwards; those entries record the outcome rather than the original open quest
 - **Whether `SECURITY_ALERTS_TOKEN` is configured** (not inspectable from the working tree), so whether
   `ci.yml`'s `security-alerts` job reports anything today is unknown.
 - **Whether the E2E CI job is a required check** on `develop`/`main` — the job exists
-  (`ci.yml:55-92`) but branch-protection settings are not in the repo.
+  (`ci.yml:68-105`) but branch-protection settings are not in the repo.
 - **Whether Vercel sets HSTS by platform default** (`next.config.ts:73-74`) — asserted in a comment, not
   verifiable from this repo.
 - **Whether the Vercel build shell sets `NODE_ENV=production`** (the stated reason for

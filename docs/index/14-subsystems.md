@@ -564,7 +564,7 @@ and `CLAUDE.md:293` both say 9, and the hand-written `TOOLS` table on `/mcp` lis
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
 | 5 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:35-45`) is still a hand-maintained duplicate, but it is now **enforced** rather than trusted — the comment at `:32-34` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
 | 6 | `src/lib/llms-txt.ts:65` | Advertises the server to agents. Fixed on this branch: it now publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`). |
-| 7 | `src/app/api/cron/health-check/route.ts:61` | Probes `/api/mcp/mcp` as a P2 check. Fixed on this branch: the expected status is per-check (`:81`, gated at `:83`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30`). |
+| 7 | `src/app/api/cron/health-check/route.ts:61` | Probes `/api/mcp/mcp` as a P2 check. Fixed on this branch: the expected status is per-check (`:101`, gated at `:103`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30`). |
 
 ### Entry point
 
@@ -674,7 +674,7 @@ CLIENT SIDE
 
 Any `/api/*` request wrapped in `withTrace` (chat, tts, tts-google, transcribe, error); any browser error
 or unhandled rejection; the five cron routes that write their own `anvilry:*:latest` snapshots
-(`health-check/route.ts:191` · `eval/route.ts:148` · `github-sync/route.ts:55` · `seo-audit/route.ts:68` ·
+(`health-check/route.ts:218` · `eval/route.ts:148` · `github-sync/route.ts:55` · `seo-audit/route.ts:68` ·
 `content-audit/route.ts:45`).
 
 ### Exit point

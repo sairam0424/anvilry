@@ -26,7 +26,7 @@ version: v3.4.2
 - **`env: { NODE_ENV: "test" }`** (`vitest.config.ts:26`). Reason recorded in the config comment (`vitest.config.ts:19-25`): Vitest only defaults `NODE_ENV=test` when it is *unset*, but the Vercel build shell sets `NODE_ENV=production`; React would then load its production bundle, which strips `act`, and every `renderHook`/`render` DOM test would die with "React.act is not a function" and fail the deploy. Setting it in config is deterministic and scoped to the Vitest worker only — the separate `next build` process still runs in production mode.
 - **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:43-53`).
 - **Playwright** (`playwright.config.ts`): `testDir: "./e2e"`, `fullyParallel: true`, `forbidOnly: !!CI`, `retries: CI ? 2 : 0`, `workers: CI ? 1 : undefined`, `reporter: "html"`, `use.baseURL: "http://localhost:3000"`, `trace`/`video`: `"on-first-retry"`. One project only: `chromium` / `devices["Desktop Chrome"]` (`playwright.config.ts:15-20`). `webServer: { command: "pnpm start", url: "http://localhost:3000", reuseExistingServer: !process.env.CI, timeout: 120_000, stdout: "ignore", stderr: "pipe" }` (`playwright.config.ts:33-40`) — the comment at `playwright.config.ts:23-32` records why it was added: a stale server on :3000 silently made Playwright test an older build, producing 5 phantom "failures" during a release audit.
-- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test`; job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `security-alerts` is `continue-on-error: true` (`ci.yml:126`) and always exits 0 by design (`ci.yml:102-178` — the last job in the file).
+- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test`; job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `security-alerts` is `continue-on-error: true` (`ci.yml:139`) and always exits 0 by design (`ci.yml:115-191` — the last job in the file).
 
 ## At a glance
 
@@ -244,7 +244,7 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Playwright config for the `e2e/` suite.
 - **Exports:** `default` (config object).
 - **Reads / depends on:** `@playwright/test`; env `CI`; a listening server at `http://localhost:3000`.
-- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:15-16`); CI `e2e` job (`.github/workflows/ci.yml:91-92`).
+- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:15-16`); CI `e2e` job (`.github/workflows/ci.yml:104-105`).
 - **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:88-89`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
 - **Gotchas / invariants:** the long comment at `:23-32` records the failure mode being guarded: with no `webServer`, a stale process on :3000 made Playwright test an older build and produce phantom failures. `retries: 2` in CI means flaky specs can pass on retry with trace/video captured only `on-first-retry`.
 

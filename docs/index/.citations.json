@@ -68,34 +68,67 @@
       ],
       "preview": "ci:"
     },
-    ".github/workflows/ci.yml:102": {
+    ".github/workflows/ci.yml:100": {
+      "fp": "4fa4722aa999",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "# webServer runs `pnpm start`, which needs a production build present."
+    },
+    ".github/workflows/ci.yml:101": {
+      "fp": "67734fc49fb2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- name: Build"
+    },
+    ".github/workflows/ci.yml:104": {
+      "fp": "022ae3ac4600",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "- name: Run E2E"
+    },
+    ".github/workflows/ci.yml:106": {
+      "fp": "e3b0c44298fc",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": ""
+    },
+    ".github/workflows/ci.yml:113": {
+      "fp": "464235042cb0",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "retention-days: 7"
+    },
+    ".github/workflows/ci.yml:115": {
       "fp": "e42850b6d618",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "security-alerts:"
     },
-    ".github/workflows/ci.yml:106": {
+    ".github/workflows/ci.yml:119": {
       "fp": "65e75314491a",
       "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "# NON-BLOCKING BY DESIGN (continue-on-error). Its job is VISIBILITY, not enforcement."
     },
-    ".github/workflows/ci.yml:113": {
+    ".github/workflows/ci.yml:126": {
       "fp": "33a0d6eceae4",
       "citedBy": [
-        "11-config-build-ci-infra.md",
         "14b-subsystems.md"
       ],
       "preview": "# IMPORTANT TOKEN LIMITATION: the default GITHUB_TOKEN CANNOT read the Dependabot alerts API,"
     },
-    ".github/workflows/ci.yml:126": {
+    ".github/workflows/ci.yml:139": {
       "fp": "9ff6534d73ee",
       "citedBy": [
-        "10-tests-and-quality-gates.md"
+        "10-tests-and-quality-gates.md",
+        "14b-subsystems.md"
       ],
       "preview": "continue-on-error: true"
     },
@@ -134,6 +167,34 @@
       "preview": "- name: Test"
     },
     ".github/workflows/ci.yml:55": {
+      "fp": "e81c6a318125",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "# Deliberately a CI step and NOT part of `pnpm build`."
+    },
+    ".github/workflows/ci.yml:59": {
+      "fp": "e26fba10484d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# `pnpm build` chains — so a stale INDEX would have failed the VERCEL PRODUCTION BUILD."
+    },
+    ".github/workflows/ci.yml:60": {
+      "fp": "bd3e6c3a27ce",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "# Documentation freshness must gate a merge, never a deploy: otherwise a stale doc blocks"
+    },
+    ".github/workflows/ci.yml:65": {
+      "fp": "9f17367f9681",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "- name: Codebase index citations"
+    },
+    ".github/workflows/ci.yml:68": {
       "fp": "7af4bc963258",
       "citedBy": [
         "14b-subsystems.md",
@@ -141,42 +202,19 @@
       ],
       "preview": "e2e:"
     },
-    ".github/workflows/ci.yml:59": {
-      "fp": "0b4dc9913985",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "# Wired in deliberately: `pnpm e2e` was referenced by NO workflow, so the suite rotted"
-    },
-    ".github/workflows/ci.yml:60": {
-      "fp": "4ed40cf9ef7a",
+    ".github/workflows/ci.yml:88": {
+      "fp": "4d508ac82804",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
-      "preview": "# unnoticed until 5 of 19 tests were failing on selectors that could never match. A gate that"
+      "preview": "with:"
     },
-    ".github/workflows/ci.yml:82": {
+    ".github/workflows/ci.yml:95": {
       "fp": "511dd611707c",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "# Pin the browser download to the installed @playwright/test version. A version/browser"
-    },
-    ".github/workflows/ci.yml:88": {
-      "fp": "67734fc49fb2",
-      "citedBy": [
-        "10-tests-and-quality-gates.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "- name: Build"
-    },
-    ".github/workflows/ci.yml:91": {
-      "fp": "022ae3ac4600",
-      "citedBy": [
-        "10-tests-and-quality-gates.md"
-      ],
-      "preview": "- name: Run E2E"
     },
     ".github/workflows/dependency-review.yml:27": {
       "fp": "fe04789876fa",
@@ -576,35 +614,58 @@
       ],
       "preview": "* Hourly GitHub stats cache warm. Fetches /api/github/stats with cache:no-store"
     },
-    "src/app/api/cron/health-check/route.ts:160": {
+    "src/app/api/cron/health-check/route.ts:100": {
+      "fp": "a261cbe213be",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// mcp_get expects 405."
+    },
+    "src/app/api/cron/health-check/route.ts:103": {
+      "fp": "4f46089503ef",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// in production, because the probe was pointed at the SSO-protected per-deployment host and"
+    },
+    "src/app/api/cron/health-check/route.ts:152": {
+      "fp": "2c3ae9bc1cef",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const authHeader = req.headers.get(\"authorization\");"
+    },
+    "src/app/api/cron/health-check/route.ts:178": {
       "fp": "e3b0c44298fc",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ""
     },
-    "src/app/api/cron/health-check/route.ts:174": {
-      "fp": "df3982fd6101",
+    "src/app/api/cron/health-check/route.ts:192": {
+      "fp": "e3b0c44298fc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
-      "preview": "};"
+      "preview": ""
     },
     "src/app/api/cron/health-check/route.ts:61": {
-      "fp": "77df11cf06e7",
+      "fp": "2bd2fe6450dc",
       "citedBy": [
         "02-api-routes.md",
         "14-subsystems.md"
       ],
-      "preview": "{ name: \"llms_txt\",         path: \"/llms.txt\",        criticality: \"P2\", timeout:  8_000 },"
+      "preview": "{ name: \"mcp_get\",          path: \"/api/mcp/mcp\",     criticality: \"P2\", timeout:  8_000 },"
     },
-    "src/app/api/cron/health-check/route.ts:83": {
-      "fp": "15704260999c",
+    "src/app/api/cron/health-check/route.ts:78": {
+      "fp": "d238a686cfca",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Extra validation per check type"
+      "preview": "redirect: \"manual\","
     },
     "src/app/api/cron/seo-audit/route.ts:47": {
       "fp": "85545c58fb43",
@@ -739,14 +800,14 @@
       "preview": "const isNotFound = !!data && typeof data === \"object\" && \"notFound\" in data;"
     },
     "src/app/api/mcp/[transport]/route.ts:22": {
-      "fp": "75a6e94df79c",
+      "fp": "19bf68ac4af2",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "* Portfolio MCP server — exposes the real content layer as 7 read-only tools so a"
+      "preview": "* Portfolio MCP server — exposes the real content layer as 9 read-only tools so a"
     },
     "src/app/api/mcp/[transport]/route.ts:30": {
       "fp": "abd9c5281100",
@@ -880,12 +941,12 @@
       "preview": "import { redis } from \"@/lib/redis\";"
     },
     "src/app/api/visit/route.ts:25": {
-      "fp": "d10b36aa74a5",
+      "fp": "a3e15e396e9c",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "}"
+      "preview": "function clientIp(req: Request): string {"
     },
     "src/app/api/visit/route.ts:3": {
       "fp": "ee19a3b132a4",
@@ -895,25 +956,25 @@
       "preview": "import { Ratelimit } from \"@upstash/ratelimit\";"
     },
     "src/app/api/visit/route.ts:34": {
-      "fp": "4728b6206643",
+      "fp": "9491d12b819d",
       "citedBy": [
         "14-subsystems.md"
       ],
-      "preview": ": null;"
+      "preview": "if (xff) return xff.split(\",\").pop()!.trim();"
     },
     "src/app/api/visit/route.ts:38": {
-      "fp": "e3b0c44298fc",
+      "fp": "d2269dd5d199",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": ""
+      "preview": "const limiter = redis"
     },
     "src/app/api/visit/route.ts:54": {
-      "fp": "e3b0c44298fc",
+      "fp": "86398be1ff4a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": ""
+      "preview": "if (!success) {"
     },
     "src/app/articles/[slug]/opengraph-image.tsx:15": {
       "fp": "329ab2f477b4",
@@ -1299,6 +1360,22 @@
       ],
       "preview": "{OPEN_TO_WORK && <OpenToWorkBanner />}"
     },
+    "src/app/manifest.test.ts:12": {
+      "fp": "e51410cd2b16",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "* NOTE ON ARMING: `screenshots` is currently absent (it declared two files that did not exist)."
+    },
+    "src/app/manifest.test.ts:66": {
+      "fp": "c49d93298026",
+      "citedBy": [
+        "01-routes-pages.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "it(\"declares no screenshots — the two it used to declare had no files behind them\", () => {"
+    },
     "src/app/manifest.ts:14": {
       "fp": "b124def0af2c",
       "citedBy": [
@@ -1307,16 +1384,16 @@
       "preview": "icons: ["
     },
     "src/app/manifest.ts:19": {
-      "fp": "85e146f88083",
+      "fp": "5f9a71bbeb8b",
       "citedBy": [
         "01-routes-pages.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "screenshots: ["
+      "preview": "// NOTE: no `screenshots` key. It previously declared /static/screenshot-desktop.png and"
     },
     "src/app/mcp/page.tsx:35": {
-      "fp": "e0814a66fe65",
+      "fp": "272296ea19e0",
       "citedBy": [
         "02-api-routes.md",
         "03-lib-content-data.md",
@@ -1326,7 +1403,22 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "[\"get_project\", \"One project's detail by slug\"],"
+      "preview": "const TOOLS = ["
+    },
+    "src/app/mcp/tools-documented.test.ts:76": {
+      "fp": "fabbf3837f3f",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "it(\"documents no tool the route does not register\", () => {"
+    },
+    "src/app/mcp/tools-documented.test.ts:81": {
+      "fp": "ab498aed852c",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"documents every tool the route registers\", () => {"
     },
     "src/app/not-found.tsx:21": {
       "fp": "466a89f53465",
@@ -3351,11 +3443,11 @@
       "preview": "const ROW1_GROUPS = [\"Languages\", \"GenAI\", \"Backend & Distributed\"];"
     },
     "src/components/game/terminal/boot-banner.ts:38": {
-      "fp": "cce21b883388",
+      "fp": "432f0d1fe46a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": ".map((m) => `${m.value} ${m.label.replace(\"daily users\", \"users\").replace(\"open-source repos\", \"OSS "
+      "preview": "const metricsShort = impactMetrics"
     },
     "src/components/game/terminal/commands.ts:101": {
       "fp": "96797e16e40c",
@@ -4257,34 +4349,34 @@
       "preview": "// Client-only, lazily loaded — Three.js never enters the critical path / SSR."
     },
     "src/components/hero-graph/index.tsx:13": {
-      "fp": "c29fbb7dae5d",
+      "fp": "270ddb4e9017",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "const HeroGraphScene = GRAPH_PHYSICS"
+      "preview": "// plain sinusoidal offsets in useFrame (see its docblock). `@react-three/rapier` is declared in"
     },
     "src/components/hero-graph/index.tsx:15": {
-      "fp": "78b14cb317cd",
+      "fp": "c29fbb7dae5d",
       "citedBy": [
         "07-components-3d.md",
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md"
       ],
-      "preview": ": dynamic(() => import(\"./scene\"), { ssr: false });"
+      "preview": "const HeroGraphScene = GRAPH_PHYSICS"
     },
     "src/components/hero-graph/index.tsx:16": {
-      "fp": "e3b0c44298fc",
+      "fp": "2000a543e5ea",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": ""
+      "preview": "? dynamic(() => import(\"./scene-physics\").then((m) => m.HeroGraphScenePhysics), { ssr: false })"
     },
     "src/components/hero-graph/index.tsx:17": {
-      "fp": "8d64a30d9de1",
+      "fp": "78b14cb317cd",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "/**"
+      "preview": ": dynamic(() => import(\"./scene\"), { ssr: false });"
     },
     "src/components/hero-graph/index.tsx:3": {
       "fp": "871d856a4eab",
@@ -4294,12 +4386,12 @@
       "preview": "import dynamic from \"next/dynamic\";"
     },
     "src/components/hero-graph/index.tsx:34": {
-      "fp": "fc4c1868f34c",
+      "fp": "703a10ad75f6",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "return ("
+      "preview": "const showWebGL = isDesktop && !reduced && view === \"classic\";"
     },
     "src/components/hero-graph/index.tsx:8": {
       "fp": "4944a7b4e0c6",
@@ -4427,11 +4519,11 @@
       "preview": "import { HeroGraphInner } from \"./scene\";"
     },
     "src/components/hero-graph/scene.tsx:106": {
-      "fp": "1f1cf13d1bdf",
+      "fp": "2631aee3d17f",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "<Edges />"
+      "preview": "<group ref={group} rotation={[0.15, -0.3, 0]}>"
     },
     "src/components/hero-graph/scene.tsx:11": {
       "fp": "3e71c27e92d8",
@@ -4440,36 +4532,37 @@
       ],
       "preview": "* Shared pointer state, updated from a window listener. The canvas itself has"
     },
-    "src/components/hero-graph/scene.tsx:116": {
-      "fp": "5d1f878926a7",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "frameloop=\"demand\""
-    },
     "src/components/hero-graph/scene.tsx:117": {
-      "fp": "d20a39db3df8",
+      "fp": "5d1f878926a7",
       "citedBy": [
         "07-components-3d.md",
         "14b-subsystems.md"
       ],
-      "preview": "// offsetSize fixes the \"canvas stuck at 300x150\" race when the ResizeObserver"
+      "preview": "frameloop=\"demand\""
     },
     "src/components/hero-graph/scene.tsx:118": {
-      "fp": "431e6f5d5d95",
+      "fp": "d20a39db3df8",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "// reports 0 on first measure inside an absolutely-positioned parent."
+      "preview": "// offsetSize fixes the \"canvas stuck at 300x150\" race when the ResizeObserver"
     },
     "src/components/hero-graph/scene.tsx:120": {
+      "fp": "43e6ed116039",
+      "citedBy": [
+        "07-components-3d.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "resize={{ offsetSize: true }}"
+    },
+    "src/components/hero-graph/scene.tsx:121": {
       "fp": "1074bbd95b73",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "camera={{ position: [0, 0, 7], fov: 45 }}"
     },
-    "src/components/hero-graph/scene.tsx:121": {
+    "src/components/hero-graph/scene.tsx:122": {
       "fp": "1db069acbcab",
       "citedBy": [
         "07-components-3d.md",
@@ -4477,26 +4570,19 @@
       ],
       "preview": "dpr={[1, 1.75]}"
     },
-    "src/components/hero-graph/scene.tsx:122": {
+    "src/components/hero-graph/scene.tsx:123": {
       "fp": "c7fb0de59078",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "gl={{ antialias: true, alpha: true, powerPreference: \"high-performance\" }}"
     },
-    "src/components/hero-graph/scene.tsx:123": {
+    "src/components/hero-graph/scene.tsx:124": {
       "fp": "e650a0d720d5",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "style={{ pointerEvents: \"none\", width: \"100%\", height: \"100%\" }}"
-    },
-    "src/components/hero-graph/scene.tsx:124": {
-      "fp": "62b67e1f685b",
-      "citedBy": [
-        "07-components-3d.md"
-      ],
-      "preview": ">"
     },
     "src/components/hero-graph/scene.tsx:15": {
       "fp": "1bd18caed7c9",
@@ -4507,27 +4593,27 @@
       "preview": "const ptr = { x: 0, y: 0 };"
     },
     "src/components/hero-graph/scene.tsx:17": {
-      "fp": "0ea96ecb5b27",
+      "fp": "072c39c4fc4b",
       "citedBy": [
         "07-components-3d.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "/** All 10 nodes as ONE InstancedMesh — single draw call (research-verified). */"
+      "preview": "/** Every node as ONE InstancedMesh — single draw call (research-verified). Count is taken"
     },
     "src/components/hero-graph/scene.tsx:19": {
-      "fp": "28bdf404bbac",
+      "fp": "db799d7c9f99",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "const mesh = useRef<THREE.InstancedMesh>(null!);"
+      "preview": "function Nodes() {"
     },
     "src/components/hero-graph/scene.tsx:27": {
-      "fp": "040ab06efc3a",
+      "fp": "f28ea927c74f",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "graphNodes.forEach((n, i) => {"
+      "preview": "useEffect(() => {"
     },
     "src/components/hero-graph/scene.tsx:4": {
       "fp": "7b5316a6ebb1",
@@ -4538,33 +4624,27 @@
       "preview": "import { Canvas, useThree, useFrame, THREE } from \"@/lib/r3f\";"
     },
     "src/components/hero-graph/scene.tsx:40": {
-      "fp": "fd7b1687b858",
+      "fp": "35646dc1d148",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "geo.dispose();"
+      "preview": "useEffect(() => () => {"
     },
-    "src/components/hero-graph/scene.tsx:44": {
+    "src/components/hero-graph/scene.tsx:45": {
       "fp": "5b056619cc36",
       "citedBy": [
-        "14b-subsystems.md"
+        "07-components-3d.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "return <instancedMesh ref={mesh} args={[geo, mat, graphNodes.length]} />;"
     },
-    "src/components/hero-graph/scene.tsx:45": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "07-components-3d.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
     "src/components/hero-graph/scene.tsx:49": {
-      "fp": "31432341f4c5",
+      "fp": "467fc2d4c7ca",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "const geometry = useMemo(() => {"
+      "preview": "function Edges() {"
     },
     "src/components/hero-graph/scene.tsx:5": {
       "fp": "b9a5c65a62e1",
@@ -4574,18 +4654,18 @@
       "preview": "import { graphNodes, graphEdges, kindColor } from \"@/lib/graph-data\";"
     },
     "src/components/hero-graph/scene.tsx:63": {
-      "fp": "fc4c1868f34c",
+      "fp": "b83124c3b801",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "return ("
+      "preview": "useEffect(() => () => geometry.dispose(), [geometry]);"
     },
     "src/components/hero-graph/scene.tsx:66": {
-      "fp": "561ee4c7e314",
+      "fp": "cde59e263df1",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "</lineSegments>"
+      "preview": "<lineBasicMaterial color=\"#3a4258\" transparent opacity={0.7} toneMapped={false} />"
     },
     "src/components/hero-graph/scene.tsx:7": {
       "fp": "690e3e224d1d",
@@ -4596,11 +4676,11 @@
       "preview": "const SCALE = 1.6;"
     },
     "src/components/hero-graph/scene.tsx:72": {
-      "fp": "4370064197b7",
+      "fp": "4a1eac499bf3",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "const { invalidate } = useThree();"
+      "preview": "function Rig({ group }: { group: React.RefObject<THREE.Group | null> }) {"
     },
     "src/components/hero-graph/scene.tsx:8": {
       "fp": "94846916cb17",
@@ -4610,41 +4690,35 @@
       "preview": "const idx = Object.fromEntries(graphNodes.map((n, i) => [n.id, i]));"
     },
     "src/components/hero-graph/scene.tsx:83": {
-      "fp": "6ebbbb1c9c80",
+      "fp": "9082381d8c7a",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "g.rotation.x += dx * 0.05;"
+      "preview": "/* eslint-disable react-hooks/immutability */"
     },
-    "src/components/hero-graph/scene.tsx:86": {
+    "src/components/hero-graph/scene.tsx:87": {
       "fp": "970262f315ea",
       "citedBy": [
-        "14b-subsystems.md"
+        "07-components-3d.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "if (Math.abs(dx) > 0.0006 || Math.abs(dy) > 0.0006) invalidate();"
     },
-    "src/components/hero-graph/scene.tsx:87": {
-      "fp": "29576b54e255",
-      "citedBy": [
-        "07-components-3d.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "});"
-    },
     "src/components/hero-graph/scene.tsx:93": {
-      "fp": "860481617154",
+      "fp": "44092fe3ee20",
       "citedBy": [
         "07-components-3d.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "const group = useRef<THREE.Group>(null);"
+      "preview": "export function Graph() {"
     },
     "src/components/hero-graph/scene.tsx:97": {
-      "fp": "29ef0c02f0b1",
+      "fp": "77483978811f",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "ptr.x = (e.clientX / window.innerWidth) * 2 - 1;"
+      "preview": "const onMove = (e: PointerEvent) => {"
     },
     "src/components/home/achievements.tsx:11": {
       "fp": "d4e8ce588756",
@@ -5514,55 +5588,55 @@
       "preview": "import { getProject, getWork } from \"@/lib/content\";"
     },
     "src/lib/agent-trace.ts:114": {
-      "fp": "87a7065e6836",
+      "fp": "8d64a30d9de1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "06-components-game-terminal.md",
         "10-tests-and-quality-gates.md"
       ],
-      "preview": "* the personal-content eggs) — so the scaffolding can ship without exposing un-reviewed"
+      "preview": "/**"
     },
     "src/lib/agent-trace.ts:118": {
-      "fp": "8a2754897ac0",
+      "fp": "2c73036a5779",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "s.steps.every((step) => !step.action.includes(PLACEHOLDER_SENTINEL) && !step.output.includes(PLACEHO"
+      "preview": "* prose, and lights up the moment Sairam replaces the drafts. NOT a hard build failure."
     },
     "src/lib/agent-trace.ts:120": {
-      "fp": "e3b0c44298fc",
+      "fp": "a6ab1fe42a89",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "06-components-game-terminal.md"
       ],
-      "preview": ""
+      "preview": "export const traceApproved: boolean = scenarios.every((s) =>"
     },
     "src/lib/agent-trace.ts:13": {
-      "fp": "1e433b414772",
+      "fp": "e58b351e6247",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "10-tests-and-quality-gates.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "* ║  A build-time test (agent-trace.test.ts) BLOCKS shipping while the sentinel    ║"
+      "preview": "* ║  agent-trace.test.ts asserts the gate AGREES WITH REALITY (sentinel present    ║"
     },
     "src/lib/agent-trace.ts:22": {
-      "fp": "62602839696f",
+      "fp": "a1ec165be9c6",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "06-components-game-terminal.md",
         "10-tests-and-quality-gates.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "export type AgentName = \"Researcher\" | \"Synthesizer\" | \"Presenter\";"
+      "preview": "export const PLACEHOLDER_SENTINEL = \"[DRAFT — owner to approve]\";"
     },
     "src/lib/agent-trace.ts:27": {
-      "fp": "540a49aefdd3",
+      "fp": "cc570f4d95a6",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "Presenter: { label: \"Presenter\", role: \"frames it for the reader\", color: \"var(--green)\" },"
+      "preview": "export const AGENTS: Record<AgentName, { label: string; role: string; color: string }> = {"
     },
     "src/lib/agent-trace.ts:3": {
       "fp": "8d64a30d9de1",
@@ -5572,32 +5646,32 @@
       "preview": "/**"
     },
     "src/lib/agent-trace.ts:41": {
-      "fp": "e3b0c44298fc",
+      "fp": "fa7c1597821a",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": ""
+      "preview": "/** Reveal delay in ms (coordination feel: ~400–1200/step, total < 8000). */"
     },
     "src/lib/agent-trace.ts:52": {
-      "fp": "a6cae024a606",
+      "fp": "f128ce53238e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "question: \"How did you scale AAVA Code past its single-agent ceiling?\","
+      "preview": "export const scenarios: Scenario[] = ["
     },
     "src/lib/agent-trace.ts:59": {
-      "fp": "9e5aa1021713",
+      "fp": "9f5a48bbabb1",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
-      "preview": "ms: 600,"
+      "preview": "action: `${PLACEHOLDER_SENTINEL} Searched the project corpus for multi-agent orchestration work`,"
     },
     "src/lib/agent-trace.ts:61": {
-      "fp": "021fb596db81",
+      "fp": "8e6ec68488ef",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
-      "preview": "{"
+      "preview": "refs: [\"aava-code\", \"mindforge\"],"
     },
     "src/lib/article-grouping.ts:1": {
       "fp": "73b117d45b50",
@@ -5695,6 +5769,14 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// diagram paths are public assets, e.g. \"/static/foo.svg\" → public/static/foo.svg"
+    },
+    "src/lib/client-ip-consistency.test.ts:140": {
+      "fp": "e5c85e20e895",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"takes the LAST x-forwarded-for segment, never the first\", () => {"
     },
     "src/lib/content.ts:1": {
       "fp": "8d64a30d9de1",
@@ -6056,14 +6138,14 @@
       "preview": "const projectGroupOrder = ["
     },
     "src/lib/game-model.ts:19": {
-      "fp": "25c394a4c58d",
+      "fp": "6067c0d3ed95",
       "citedBy": [
         "03-lib-content-data.md",
         "09-content-and-schemas.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "* LAUNCH BLOCKER this fixes: 3 of the 10 graph node ids do NOT equal their content"
+      "preview": "* LAUNCH BLOCKER this fixes: 3 of the 16 graph node ids do NOT equal their content"
     },
     "src/lib/game-model.ts:20": {
       "fp": "34a737a99d76",
@@ -6198,7 +6280,7 @@
       "preview": "/**"
     },
     "src/lib/graph-data.ts:18": {
-      "fp": "c75c342fc011",
+      "fp": "5ab004a1f564",
       "citedBy": [
         "07-components-3d.md",
         "09-content-and-schemas.md",
@@ -6207,40 +6289,149 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "// Flagship work (center mass) — Ascendion systems"
+      "preview": "export const graphNodes: GraphNode[] = ["
     },
     "src/lib/graph-data.ts:3": {
-      "fp": "f791e96a70af",
+      "fp": "113b373915a5",
       "citedBy": [
         "03-lib-content-data.md",
         "07-components-3d.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "* Nodes = the 5 flagship work systems + 8 OSS repos; edges = real lineage"
+      "preview": "* Nodes = every flagship work system + every OSS repo (see `graphNodes` below for the count —"
     },
     "src/lib/graph-data.ts:37": {
-      "fp": "ee532f3da752",
+      "fp": "5d67285fa5d5",
       "citedBy": [
         "07-components-3d.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "{ id: \"tombstone\", label: \"Tombstone\", kind: \"tool\", pos: [-1.7, -0.7, 0.9] },"
+      "preview": "// Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 u"
     },
     "src/lib/graph-data.ts:6": {
-      "fp": "ed9623369ff0",
+      "fp": "e33979960cb5",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "*/"
+      "preview": "* Positions are deterministic (no Math.random) so SSR/build stays stable."
     },
     "src/lib/graph-data.ts:72": {
-      "fp": "cf00871a5ecc",
+      "fp": "6c0c2a225a75",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
-      "preview": "work: \"#38e1ff\", // accent cyan — the hero systems"
+      "preview": "export const kindColor: Record<GraphNode[\"kind\"], string> = {"
+    },
+    "src/lib/health-expectations.test.ts:140": {
+      "fp": "2b7cd572d676",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "it(\"resolves its base through probeBase, not VERCEL_URL directly\", () => {"
+    },
+    "src/lib/health-expectations.test.ts:161": {
+      "fp": "2babf1e3ce48",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"pins the mcp-handler version the 405 was observed from\", () => {"
+    },
+    "src/lib/health-expectations.test.ts:64": {
+      "fp": "32732eb6509d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* This is the bug that made the whole mcp_get story wrong. Vercel deployment protection is enabled"
+    },
+    "src/lib/health-expectations.ts:1": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/health-expectations.ts:18": {
+      "fp": "8eeccab632e6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Why 405 counts as healthy: it is mcp-handler's own JSON-RPC response, so it proves the route"
+    },
+    "src/lib/health-expectations.ts:21": {
+      "fp": "96e767a00128",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* means something is genuinely wrong. Under the previous blanket `!== 200` gate this check failed"
+    },
+    "src/lib/health-expectations.ts:24": {
+      "fp": "100cff87db60",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* CAVEAT: the 405 is mcp-handler's behaviour, not ours. A future major version could answer GET"
+    },
+    "src/lib/health-expectations.ts:26": {
+      "fp": "75abb5766b98",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "* `health-expectations.test.ts` pins the installed mcp-handler version and asserts its GET branch"
+    },
+    "src/lib/health-expectations.ts:30": {
+      "fp": "d33ef735140c",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const EXPECTED_STATUS_OVERRIDES: Readonly<Record<string, number>> = Object.freeze({"
+    },
+    "src/lib/health-expectations.ts:34": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/health-expectations.ts:37": {
+      "fp": "e615c12187ac",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* MUST be the production alias, NOT `VERCEL_URL`. `VERCEL_URL` is the per-DEPLOYMENT hostname, and"
+    },
+    "src/lib/health-expectations.ts:51": {
+      "fp": "f85bb8f7d53d",
+      "citedBy": [
+        "02-api-routes.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function probeBase(): string {"
+    },
+    "src/lib/health-expectations.ts:52": {
+      "fp": "6d5fc7a422ab",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL;"
+    },
+    "src/lib/health-expectations.ts:56": {
+      "fp": "451f451a10c8",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const deployment = process.env.VERCEL_URL;"
+    },
+    "src/lib/health-expectations.ts:8": {
+      "fp": "21eda8de795d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* `mcp_get` expects **405**. The cron probes /api/mcp/mcp with a plain GET, and mcp-handler"
     },
     "src/lib/highlight-store.ts:40": {
       "fp": "178679d99016",
@@ -6765,6 +6956,20 @@
       ],
       "preview": "return Boolean(process.env.ANTHROPIC_API_KEY);"
     },
+    "src/lib/llms-txt.test.ts:22": {
+      "fp": "345cfcff7a93",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "expect(line).toContain(\"/api/mcp/mcp\");"
+    },
+    "src/lib/llms-txt.test.ts:25": {
+      "fp": "09108de3970f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"never mentions /api/mcp/sse anywhere — the route 404s that path on purpose\", () => {"
+    },
     "src/lib/llms-txt.ts:12": {
       "fp": "11c93aa6278f",
       "citedBy": [
@@ -6782,13 +6987,13 @@
       "preview": "const href = g.canonical.linkedNote"
     },
     "src/lib/llms-txt.ts:65": {
-      "fp": "a79fb6235c94",
+      "fp": "20d0bc3fe923",
       "citedBy": [
         "03-lib-content-data.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "- MCP server (for AI agents): ${BASE}/api/mcp/sse"
+      "preview": "- MCP server (for AI agents): ${BASE}/api/mcp/mcp"
     },
     "src/lib/llms-txt.ts:69": {
       "fp": "22009a2ce176",

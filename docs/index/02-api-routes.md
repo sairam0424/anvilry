@@ -83,7 +83,7 @@ when Upstash env is unset or errors (`src/lib/rate-limit.ts:73`, `:79-82`).
 | POST | `/api/visit` | `api/visit/route.ts` | nodejs | none | yes — **own** limiter `slidingWindow(1,"30 m")`, prefix `anvilry:visit` (:38-45) | none | none | Upstash `anvilry:visits:total` / `:daily` | none |
 | GET | `/api/github/stats` | `api/github/stats/route.ts` | nodejs | none | no | none | segment `revalidate` removed (:3-7); 1h cadence preserved at fetch level (`next.revalidate: 3600`, :31, plus `src/lib/github.ts:101`) | GitHub REST (`api.github.com`) | none |
 | GET | `/api/resume.json` | `api/resume.json/route.ts` | nodejs | none | no | none | none set | none | none |
-| GET | `/api/cron/health-check` | `api/cron/health-check/route.ts` | nodejs | `25` (:4) | no | `Bearer ${CRON_SECRET}`, fail-closed (:126-130) | each probe uses `cache: "no-store"` (:74) | 13 own endpoints; Upstash (`anvilry:health:latest`, alert key) | `console.error("[health-check] …")` when status ≠ pass (:204) |
+| GET | `/api/cron/health-check` | `api/cron/health-check/route.ts` | nodejs | `25` (:4) | no | `Bearer ${CRON_SECRET}`, fail-closed (:146-150) | each probe uses `cache: "no-store"` + `redirect: "manual"` (:74, :78) | 13 own endpoints; Upstash (`anvilry:health:latest`, alert key) | `console.error("[health-check] …")` when status ≠ pass (:222) |
 | GET, POST | `/api/cron/eval` | `api/cron/eval/route.ts` | nodejs | `60` (:3) | no | `Bearer ${CRON_SECRET}`, fail-closed (:98-102) | none | own `/api/chat` ×12 → Bedrock; Upstash `anvilry:eval:latest` `ex: 8*24*3600` (:148) | none directly (each inner `/api/chat` call emits its own spans) |
 | GET | `/api/cron/github-sync` | `api/cron/github-sync/route.ts` | nodejs | `30` (:3) | no | `Bearer ${CRON_SECRET}` (:18-22) | internal fetch `cache: "no-store"` (:41) | own `/api/github/stats`; Upstash `anvilry:github:stats:latest` `ex: 5400` (:55) | none |
 | GET | `/api/cron/seo-audit` | `api/cron/seo-audit/route.ts` | nodejs | `60` (:4) | no | `Bearer ${CRON_SECRET}` (:16-20) | none | own `/sitemap.xml`, `/llms.txt`, `/robots.txt`, `/feed.xml` (:26-31); Upstash `ex: 7*24*3600` | none |
@@ -187,7 +187,7 @@ when Upstash env is unset or errors (`src/lib/rate-limit.ts:73`, `:79-82`).
 - **Reads / depends on:** `@/lib/github` (`getRepoFeed`). Env: `GITHUB_TOKEN` (:19).
 - **Consumed by:** `src/components/github-stats-strip.tsx:35`; `src/app/api/chat/route.ts:77`; `src/app/api/cron/github-sync/route.ts:40`; probed as `github_stats_api` by `health-check/route.ts:60`.
 - **Behaviour notes:** the user fetch hardcodes `https://api.github.com/users/sairam0424` (:29) with `next: { revalidate: 3600 }` (:31) and swallows failures to `null` (:33-34). Fully fail-open: `totalStars`/`totalForks` reduce over whatever repos came back, `mostRecentPush` is `null` on an empty feed (:49-55), `followers` defaults to `0`, `publicRepos` falls back to `repos.length` (:63-66).
-- **Gotchas / invariants:** `export const revalidate = 3600` was **removed** for `cacheComponents`; the 1-hour cadence now lives only in the two fetch-level `next: { revalidate: 3600 }` options (`:31` and `src/lib/github.ts:101`) — deleting either silently changes the GitHub polling cadence (:3-7). `health-check` treats `repoCount === 0` as a `warn`, which is the canary for a missing/rate-limited token (`health-check/route.ts:93-99`).
+- **Gotchas / invariants:** `export const revalidate = 3600` was **removed** for `cacheComponents`; the 1-hour cadence now lives only in the two fetch-level `next: { revalidate: 3600 }` options (`:31` and `src/lib/github.ts:101`) — deleting either silently changes the GitHub polling cadence (:3-7). `health-check` treats `repoCount === 0` as a `warn`, which is the canary for a missing/rate-limited token (`health-check/route.ts:113-119`).
 
 ### `src/app/api/cron/*` — the CRON_SECRET check
 All five cron routes implement the **identical** three-line guard. Verbatim:
@@ -200,13 +200,19 @@ if (!secret || authHeader !== `Bearer ${secret}`) {
 }
 ```
 
-Locations: `eval/route.ts:98-102`, `health-check/route.ts:126-130`, `github-sync/route.ts:18-22`,
+Locations: `eval/route.ts:98-102`, `health-check/route.ts:146-150`, `github-sync/route.ts:18-22`,
 `seo-audit/route.ts:16-20`, `content-audit/route.ts:19-23`. Properties, exactly as implemented:
 **fail-closed** — an unset `CRON_SECRET` yields 401 rather than open access (`eval/route.ts:14` states
 this explicitly); the header name is read lower-case (`"authorization"`); the comparison is a plain
 non-constant-time `!==` against the literal `` `Bearer ${secret}` `` (no scheme-case tolerance, no
-trimming, no `x-vercel-*` alternative). All five derive their base URL the same way:
-`process.env.VERCEL_URL ? \`https://${VERCEL_URL}\` : "http://localhost:3000"`.
+trimming, no `x-vercel-*` alternative). Base-URL derivation, by contrast, is **not** uniform:
+`eval/route.ts:104-106`, `github-sync/route.ts:34-36` and `seo-audit/route.ts:22-24` each inline
+`process.env.VERCEL_URL ? \`https://${VERCEL_URL}\` : "http://localhost:3000"`; `content-audit` makes
+zero network calls and needs no base at all; and `health-check` no longer reads `VERCEL_URL` directly —
+it calls `probeBase()` from `@/lib/health-expectations` (`health-check/route.ts:152`,
+`src/lib/health-expectations.ts:51-58`), which prefers `VERCEL_PROJECT_PRODUCTION_URL` and falls back
+to `VERCEL_URL` only as a last resort. See the health-check section below for why that distinction is
+load-bearing.
 
 Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 `/api/cron/health-check` `0 5 * * *`; `/api/cron/eval` `0 9 * * 1`; `/api/cron/github-sync` `0 8 * * *`;
@@ -219,8 +225,9 @@ Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 
 #### `src/app/api/cron/health-check/route.ts`
 - **Exports:** `maxDuration` (`= 25`, :4); `GET`.
-- **Behaviour notes:** `CHECKS` is 13 entries with per-check `criticality` (`P1`/`P2`/`P3`) and per-check `timeout` (10s / 8s) (:54-68), probed with `Promise.all` (:139). The pass/fail gate is **not** a blanket HTTP 200 — it delegates to `isExpectedStatus(check.name, http_status)` / `expectedStatus(check.name)` from `@/lib/health-expectations` (:2, :81-83), which is what lets `mcp_get` expect its by-design 405. Extra validation on top: `github_stats_api` warns when `repoCount` is not a number or is `0` (:93-99); `llms_txt`/`llms_full_txt` **fail** when the body is `< 1000` chars — the empty-corpus canary (:102-109); `resume_json_api` fails when `json.basics` is missing (:111-117). Top status: `fail` if any P1 failed, else `warn` if any check failed **or warned**, else `pass` (:164-168). Alerting: on a `pass → fail` transition it sets `anvilry:health:alert:active` with `{ nx: true, ex: 90_000 }` — `nx` suppresses alert storms — and `del`s it on recovery (:185-197). Result stored at `anvilry:health:latest` with `ex: 90_000` (25h) so a missed run self-expires (:200).
-- **Gotchas / invariants:** `p2_pass` is computed and reported but does **not** feed `topStatus` (which already covers P2 via `failedNames`) (:160-168). The previous-state read tolerates both a raw object and a JSON string from Upstash (:189).
+- **Behaviour notes:** `CHECKS` is 13 entries with per-check `criticality` (`P1`/`P2`/`P3`) and per-check `timeout` (10s / 8s) (:54-68), probed with `Promise.all` (:157) against `probeBase()` (:152). The pass/fail gate is **not** a blanket HTTP 200 — it delegates to `isExpectedStatus(check.name, http_status)` / `expectedStatus(check.name)` from `@/lib/health-expectations` (:2, :101-103), which is what lets `mcp_get` expect its by-design 405. Extra validation on top: `github_stats_api` warns when `repoCount` is not a number or is `0` (:113-119); `llms_txt`/`llms_full_txt` **fail** when the body is `< 1000` chars — the empty-corpus canary (:122-128); `resume_json_api` fails when `json.basics` is missing (:131-136). Top status: `fail` if any P1 failed, else `warn` if any check failed **or warned**, else `pass` (:182-186). Alerting: on a `pass → fail` transition it sets `anvilry:health:alert:active` with `{ nx: true, ex: 90_000 }` — `nx` suppresses alert storms — and `del`s it on recovery (:203-215). Result stored at `anvilry:health:latest` with `ex: 90_000` (25h) so a missed run self-expires (:218).
+- **The SSO-wall defect — was live, now FIXED.** `probe()` used to build its base from `process.env.VERCEL_URL`, the per-*deployment* host, which is covered by Vercel deployment protection on this project (only the production alias is exempt). Because `fetch` follows redirects by default, each probe was walked from a 302 to `vercel.com/login` and recorded **200 with ~478KB of login HTML** — so 11 of 13 checks were scoring an auth wall as *healthy*, and `mcp_get` in particular was **falsely passing**, not failing. `llms_txt`/`llms_full_txt` even satisfied their `> 1000` bytes body assertion on the login page. The residual `warn` came from `github_stats_api` and `resume_json_api`, whose `res.json()` throws on HTML. Current state: the base comes from `probeBase()` (`src/lib/health-expectations.ts:51-58`), which prefers `VERCEL_PROJECT_PRODUCTION_URL` and only falls back to `VERCEL_URL`; `probe()` sets `redirect: "manual"` (:78) and **fails** any 3xx, naming Vercel SSO when `location` matches `vercel.com/(sso-api|login)` so a responder reads "auth wall" instead of a bare status code (:86-98). The rationale is recorded at `src/lib/health-expectations.ts:34-50` with the measured `curl` output.
+- **Gotchas / invariants:** `p2_pass` is computed and reported but does **not** feed `topStatus` (which already covers P2 via `failedNames`) (:178-186). The previous-state read tolerates both a raw object and a JSON string from Upstash (:207). Expecting `mcp_get`'s 405 is only safe *because* the base is now the production alias — against a protected host that answers 200 from a login page, the 405 expectation converts a false pass into a permanent false `fail` with the maximally misleading `expected 405, got 200`.
 
 #### `src/app/api/cron/github-sync/route.ts`
 - **Exports:** `maxDuration` (`= 30`, :3); `GET`.

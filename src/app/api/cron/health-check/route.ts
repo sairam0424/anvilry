@@ -66,6 +66,22 @@ const CHECKS = [
   { name: "resume_json_api",  path: "/api/resume.json", criticality: "P3", timeout:  8_000 },
 ] as const;
 
+/**
+ * Per-check expected HTTP status. Anything absent here expects 200.
+ *
+ * `mcp_get` expects **405**: Streamable-HTTP MCP answers a plain GET with
+ * `405 {"jsonrpc":"2.0","error":{"code":-32000,"message":"Method not allowed."}}` by design —
+ * the legacy SSE transport (which is what GET is for) is disabled in
+ * src/app/api/mcp/[transport]/route.ts. Verified against production.
+ *
+ * That 405 comes from mcp-handler itself (node_modules/mcp-handler/dist/index.js:376), so it
+ * still proves the route is mounted and the handler is alive — which is all this P2 check needs.
+ * Under the previous blanket `!== 200` gate the check failed on EVERY cron run, which meant a
+ * genuine MCP outage was indistinguishable from the permanent false negative, and every run
+ * reported top-level "warn". A 404/500 here now means something is actually wrong.
+ */
+const EXPECTED_STATUS: Record<string, number> = { mcp_get: 405 };
+
 async function probe(base: string, check: (typeof CHECKS)[number]): Promise<CheckResult> {
   const t0 = performance.now();
   try {
@@ -75,9 +91,15 @@ async function probe(base: string, check: (typeof CHECKS)[number]): Promise<Chec
     });
     const latency_ms = Math.round(performance.now() - t0);
     const http_status = res.status;
+    const expected = EXPECTED_STATUS[check.name] ?? 200;
 
-    if (http_status !== 200) {
-      return { status: "fail", http_status, latency_ms };
+    if (http_status !== expected) {
+      return {
+        status: "fail",
+        http_status,
+        latency_ms,
+        ...(expected !== 200 && { detail: `expected ${expected}, got ${http_status}` }),
+      };
     }
 
     // Extra validation per check type

@@ -7,7 +7,7 @@ A recruiter-facing engineering portfolio built as a **beast with four switchable
 - **🗂 Classic** — a fast, static (SSG) portfolio. The SEO-indexed default and the recruiter-in-a-hurry path.
 - **🎮 Play** — an explorable **WebGL "Build Graph"**: every node is a real project/work system that opens its actual card. Accessible DOM-first index as the mobile / reduced-motion / no-JS fallback.
 - **💬 Chat** — an **AI concierge console**: a RAG-grounded, first-person chatbot over the real résumé, with streaming markdown answers and generative project/work cards. Optional **voice** — push-to-talk mic input, read-aloud answers, and a hands-free two-way "talk mode" (all opt-in, free, browser-native).
-- **⌨️ Developer** — a focused, full-page **keyboard-native terminal** over the same content: ~16 commands (`whoami`, `ls work`, `cat <slug>`, `grep`, `open <slug>`, `tree`, …) with history, autocomplete, a boot banner, theme cycling, and a fullscreen overlay. Reachable from the nav switcher, ⌘K, the `developer` command, or `?view=developer`.
+- **⌨️ Developer** — a focused, full-page **keyboard-native terminal** over the same content: 31 commands (`whoami`, `ls work`, `cat <slug>`, `grep`, `open <slug>`, `tree`, …) with history, autocomplete, a boot banner, theme cycling, and a fullscreen overlay. Reachable from the nav switcher, ⌘K, the `developer` command, or `?view=developer`.
 
 All four render from **one content layer** — zero duplication, zero fabrication. The honest contribution register (*Co-built / Architected / Owned / Led*) is preserved everywhere, and every metric traces to a source file.
 

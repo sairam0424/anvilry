@@ -10,12 +10,15 @@ import { getProject, getWork } from "@/lib/content";
  * ║  Sairam must author/approve every line, confirm each `refs` slug is the right  ║
  * ║  real system, and replace the PLACEHOLDER_SENTINEL prose below.                ║
  * ║                                                                                ║
- * ║  A build-time test (agent-trace.test.ts) BLOCKS shipping while the sentinel    ║
- * ║  string is still present, and asserts every ref slug resolves to real content. ║
+ * ║  agent-trace.test.ts asserts the gate AGREES WITH REALITY (sentinel present    ║
+ * ║  <=> not approved) and that every ref slug resolves to real content. It does   ║
+ * ║  NOT block the build: while the sentinel remains, traceApproved is false and   ║
+ * ║  glass-box-demo.tsx renders NOTHING, so drafts never reach a visitor.          ║
  * ╚══════════════════════════════════════════════════════════════════════════════╝
  */
 
-/** Sentinel that marks un-reviewed placeholder prose. The test fails while it remains. */
+/** Sentinel that marks un-reviewed placeholder prose. While it remains, `traceApproved` is
+ *  false and the demo renders dark — the test checks that correspondence, it does not fail. */
 export const PLACEHOLDER_SENTINEL = "[DRAFT — owner to approve]";
 
 /** The fixed cast — a small, closed set keeps the zero-fab surface tight. */

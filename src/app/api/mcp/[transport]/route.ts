@@ -19,7 +19,7 @@ function wrap(data: unknown) {
 }
 
 /**
- * Portfolio MCP server — exposes the real content layer as 7 read-only tools so a
+ * Portfolio MCP server — exposes the real content layer as 9 read-only tools so a
  * recruiter/engineer can attach it to Claude Desktop / Cursor and "ask their own AI
  * about Sairam". All logic lives in the pure, unit-tested @/lib/mcp-tools (single
  * source — can't drift/fabricate); this route is thin wiring. Public endpoint

@@ -16,10 +16,10 @@ export type ContentKind = "work" | "project";
 /**
  * Maps each hero-graph node id to the real content item it represents.
  *
- * LAUNCH BLOCKER this fixes: 3 of the 10 graph node ids do NOT equal their content
+ * LAUNCH BLOCKER this fixes: 3 of the 16 graph node ids do NOT equal their content
  * slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→
  * `not-humans-lab`. Without this map, "click a node → open its card" would 404 for
- * 30% of the graph (including the flagship AAVA work item). The node's visual `kind`
+ * those three (including the flagship AAVA work item). The node's visual `kind`
  * (work|agent|engine|tool, for color) is also collapsed here to the CONTENT kind
  * (work|project) so resolveNode knows which collection to look in.
  *

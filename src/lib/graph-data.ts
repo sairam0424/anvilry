@@ -1,6 +1,7 @@
 /**
  * Knowledge-graph data for the hero WebGL scene.
- * Nodes = the 5 flagship work systems + 8 OSS repos; edges = real lineage
+ * Nodes = every flagship work system + every OSS repo (see `graphNodes` below for the count —
+ * game-model.ts asserts a bijection with real content, so it moves with the content); edges = real lineage
  * (shared themes / build-on relationships from the workspace CLAUDE.md).
  * Positions are deterministic (no Math.random) so SSR/build stays stable.
  */

@@ -4,6 +4,110 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] — 2026-08-21
+
+**Minor** — a correctness pass, not a feature release, but it changes behaviour so it is not a patch.
+
+**Six live defects** found by indexing the tree at v3.4.2, each verified against production or
+source before being fixed, plus the documentation corrections that make the repo's own claims match
+its code, a per-file codebase index, and the pnpm-settings migration that stops pnpm 11 silently
+dropping v3.4.2's security overrides.
+
+Behaviour changes to be aware of: two **public artifacts** change (`llms.txt`,
+`manifest.webmanifest`), **cron alerting semantics** change, and `/api/visit`'s client-IP
+resolution changes. Details below.
+
+### Fixed
+- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the
+  route sets `disableSse: true`, so that path 404s (verified live). The live endpoint is
+  `/api/mcp/mcp`. The one file whose purpose is telling AI agents where the MCP server lives was
+  pointing them at nothing. **Public artifact change.**
+- **PWA manifest declared two screenshots that 404.** `/static/screenshot-{desktop,mobile}.png`
+  with an empty `public/static/`. `screenshots` is optional in the manifest spec, so the entries
+  are removed rather than faked. **Public artifact change.**
+- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`
+  were live and callable but absent from the only page an integrator reads. Now guarded by
+  set-equality against the route's `registerTool` calls, so the build fails if they drift.
+- **The health-check cron never reached the app at all.** It probed
+  `https://${VERCEL_URL}` — the *per-deployment* host — and this project has Vercel deployment
+  protection enabled for everything except custom domains. That host `302`s to Vercel SSO, and
+  because `fetch` follows redirects by default the probe read **200 with ~478 KB of
+  `vercel.com/login` HTML**. Measured: the deployment host redirects to `vercel.com/login`, while
+  the `anvilry.vercel.app` alias returns the real `405`.
+
+  Consequences, all now fixed:
+  - **11 of 13 checks were scoring an auth wall as healthy.** `llms_txt` and `llms_full_txt` even
+    passed their ">1000 bytes" body assertion — on the login page.
+  - `mcp_get` was **falsely passing**, not failing. The standing `warn` came from
+    `github_stats_api` and `resume_json_api`, whose `res.json()` throws on HTML.
+  - Probing now resolves through `probeBase()`, which prefers
+    `VERCEL_PROJECT_PRODUCTION_URL` (the production alias — the same variable Next uses for
+    `getProductionDeploymentUrl()`) and only falls back to `VERCEL_URL`.
+  - `probe()` sets `redirect: "manual"` and fails any `3xx`, naming Vercel SSO explicitly when it
+    sees one. An auth wall can no longer masquerade as a healthy 200.
+- **`mcp_get` expected the wrong status.** A plain GET on the Streamable HTTP endpoint answers 405
+  unconditionally (mcp-handler's first branch — *not* a consequence of this project's
+  `disableSse`). Expected status is now per-check via `@/lib/health-expectations`.
+  **Changes cron alerting semantics** — the first post-deploy run reports real results for the
+  first time, so a `warn` that appears then is pre-existing truth surfacing, not a regression.
+- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the
+  first segment (attacker-controlled) where `rate-limit.ts` and `with-trace.ts` take the last, and
+  carried a comment asserting the wrong behaviour was correct. Not exploitable in production —
+  the visitor counter is flag-off by default and the handler short-circuits on absent Redis before
+  `clientIp` runs, and both copies read the unspoofable `x-vercel-forwarded-for` first — so this
+  is a latent fallback inconsistency, not a live bypass.
+
+### Changed
+- Corrected documentation that contradicted the code: the `View` union has **six** members (not
+  four); the terminal has **31** commands (not "~16"); no API route exports `runtime` and
+  `maxDuration` is per-route (not a uniform 30s); five crons are scheduled (not one); the base URL
+  is hardcoded in **19 files / 25 occurrences** (not four); `pnpm search-index` does not exist
+  (only `make search-index`); `DEPLOY.md` had both Bedrock and Anthropic model chains **inverted**
+  (both are Sonnet-primary). Also corrected two `CLAUDE.md` claims about test guards that do not
+  guard what they say.
+- Corrected in-code comments that misdescribed their own code, including a banner claiming a test
+  "BLOCKS shipping" that the same file elsewhere admits is "NOT a hard build failure", and
+  `@react-three/rapier` described as loaded when it is imported nowhere.
+
+### Added
+- Behavioural guards for each fix: MCP tool-documentation set equality, manifest asset resolution,
+  `clientIp` cross-copy consistency (semantic allowlist, not a syntax pattern), health-check status
+  expectations, and `llms.txt` endpoint/transport coupling. Each mutation-tested.
+- `.gitignore` coverage for agent-tooling state (~5.9 MB, previously untracked *and* unignored).
+- **A per-file codebase index** at `docs/index/` — 17 files covering all 393 manifest paths with
+  zero gaps: a consolidated all-routes table, ten cross-cutting subsystem flow maps, an
+  "if you change X, start at Y" cheat sheet, and an invariants/deploy-blocker ledger.
+  Carries a documented limitation: 2,184 of its citations are context-relative and cannot be
+  machine-verified, so it should be regenerated in one pass at a future release rather than patched.
+- **Citation enforcement for that index.** `scripts/check-index-citations.mjs` fingerprints every
+  resolvable `path:line` citation and re-verifies it, naming the file, the recorded line, the
+  current line, and which index page cites it on drift. Wired as its own CI step — deliberately
+  **not** part of `pnpm build`, so a stale document can never block a production deploy.
+- **Node version pin:** `.nvmrc` (22) and `engines.node` (`>=22 <23`), matching the CI pin. Without
+  it, a contributor on Node 26 got 9 failing tests and a red `pnpm build` with no explanation —
+  Node exposes a native `localStorage` that is unavailable without `--localstorage-file`, and it
+  collides with vitest's happy-dom global injection.
+
+### Security
+- **pnpm settings moved to `pnpm-workspace.yaml`.** pnpm v11 no longer reads the `pnpm` field of
+  `package.json`, which is where v3.4.2's ten security `overrides` lived. Nothing was broken yet —
+  the lockfile encoded them and CI pins pnpm 10 — but one `pnpm install` on pnpm 11 would have
+  regenerated `pnpm-lock.yaml` without the `overrides:` block and silently reverted that security
+  release, signalled only by a warning line that reads like boilerplate.
+
+  Both pnpm 10 and 11 read the new location. Verified by regenerating the lockfile with each
+  (**byte-identical** to the previous lockfile both times) and confirming all ten pins are applied
+  in the resolved graph, not merely declared: `hono` 4.13.2 · `@hono/node-server` 1.19.17 ·
+  `ip-address` 10.5.0 · `fast-uri` 3.1.5 · `js-yaml` 4.3.1 · `postcss` 8.5.23/8.5.26 · `sharp`
+  0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9.
+
+### Removed
+- `@react-three/rapier` and `@react-three/offscreen` — declared dependencies with **zero imports**
+  anywhere in `src/`. Deferred until the overrides migration made lockfile regeneration safe.
+  Measured impact: 3 packages removed, 0 added, 1 version change
+  (`@dimforge/rapier3d-compat` 0.19.2 → 0.12.0 — correct, since `@types/three` requires 0.12.0 and
+  was the only remaining consumer).
+
 ## [3.4.2] — 2026-08-15
 
 **Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them

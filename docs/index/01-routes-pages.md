@@ -3,12 +3,12 @@ kind: doc
 title: Routes & Pages (App Router UI surface)
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # Routes & Pages (App Router UI surface)
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** every file under `src/app/**` that is NOT under `src/app/api/**` and is NOT a `route.ts`.
 Concretely: `src/app/{layout,page,error,global-error,not-found,opengraph-image,icon,apple-icon,manifest,robots,sitemap}.*`,

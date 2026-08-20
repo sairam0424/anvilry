@@ -246,9 +246,9 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 - Lazy-imported — NOT in the LCP critical path
 - `src/lib/r3f.ts` is a single barrel for the whole R3F/three surface — it is load-bearing for keeping three.js to **one** copy in the bundle; import R3F/three through it, never directly
 
-**Two declared dependencies are not actually used** (`package.json`, but zero imports in `src/`):
-- `@react-three/offscreen` — no worker/OffscreenCanvas anywhere; the "worker offload" this file previously claimed does not exist.
-- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain sinusoidal `useFrame` maths (`scene-physics.tsx:12-16,:42-44`), not a physics engine. The flag and filename are historical.
+**Two dependencies were declared but never imported — both removed in v3.5.0:**
+- `@react-three/offscreen` — no worker/OffscreenCanvas ever existed; the "worker offload" this file previously claimed was never real. The CSP still carries `worker-src 'self' blob:` (`next.config.ts`) for a worker that was never there.
+- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain sinusoidal `useFrame` maths (`scene-physics.tsx:12-16,:42-44`), not a physics engine. **The flag and filename remain and are historical** — the flag still works, it just never involved a physics engine.
 
 ### Rate Limiting & Telemetry
 

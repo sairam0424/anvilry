@@ -3,12 +3,12 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 > Continues [`14-subsystems.md`](./14-subsystems.md), which maps subsystems 1–6 (content pipeline · view
 > system · chat/LLM · voice · MCP · telemetry).
 
@@ -298,7 +298,7 @@ Four independent canvases exist; at most one hero canvas and one orb canvas are 
 
 ```
 GATE (evaluated in a client component, before any import resolves)
-  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:34
+  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:35
   hero avatar:  heroMode === "avatar" && isDesktop && !reduced && view === "classic"
                                                                   hero-avatar/index.tsx:54,:56
   build graph:  isDesktop && !reduced && webglOk && !webglFailed && !talkOpen      game/build-graph.tsx:50
@@ -307,7 +307,7 @@ GATE (evaluated in a client component, before any import resolves)
         │  false on ANY term → CSS glow fallback / 2D canvas orb / DOM index; no WebGL at all
         ▼
 LAZY BOUNDARY   next/dynamic(..., { ssr: false })
-  hero-graph/index.tsx:15-17   → ./scene  OR  ./scene-physics   (target fixed at module eval, :8)
+  hero-graph/index.tsx:16-18   → ./scene  OR  ./scene-physics   (target fixed at module eval, :8)
   hero-avatar/index.tsx:10-13  → ./avatar-scene
   game/build-graph.tsx:16      → ./build-graph-scene
   chat/voice-orb.tsx:11-16     → ./voice-orb-3d
@@ -381,7 +381,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Decision | Value | Cite |
 |---|---|---|
 | DPR clamp | `[1, 1.75]` on all hero/graph canvases | `scene.tsx:122`, `scene-physics.tsx:23`, `avatar-scene.tsx:25`, `build-graph-scene.tsx:154`; voice orb `voice-orb-3d.tsx:310` |
-| Mobile cutoff | `(min-width: 768px)` — the whole WebGL layer is skipped below it | `hero-graph/index.tsx:31`, `hero-avatar/index.tsx:46`, `build-graph.tsx:28` |
+| Mobile cutoff | `(min-width: 768px)` — the whole WebGL layer is skipped below it | `hero-graph/index.tsx:32`, `hero-avatar/index.tsx:46`, `build-graph.tsx:28` |
 | Draw-call batching (hero) | one `instancedMesh` for all nodes, one `lineSegments` for all edges | `scene.tsx:45,65-67` |
 | Demand-loop settle | re-`invalidate()` only while `\|delta\| > 0.0006` | `scene.tsx:87` |
 | Resize race fix | `resize={{ offsetSize: true }}` — fixes "canvas stuck at 300×150" when the ResizeObserver reports 0 on first measure | `scene.tsx:120` (rationale in the comment at `:118-119`) |
@@ -390,14 +390,14 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages | `domains/performance/README.md:62-66` |
 | Asset budget | `MAX_BYTES = 1.5 * 1024 * 1024`; current asset 1,105,768 B | `src/lib/avatar-glb.test.ts:21,58-61` |
 | LOD | **none exists** — no `<Detailed>`, no `THREE.LOD`, no distance swap. The only quality knobs are the dpr clamp and the 768 px cutoff. | verified absence, section 07 |
-| Worker offload | **not present in source.** `@react-three/offscreen` is declared (`package.json:27`) but imported by no file in `src/`. `CLAUDE.md:250` now says the same ("no worker/OffscreenCanvas anywhere") — it previously claimed worker offload existed. | section 07, section 13 |
-| Physics engine | **not present in source.** `@react-three/rapier` (`package.json:29`) is imported by no file; `scene-physics.tsx:12-16` states "No RigidBody / Rapier needed for this effect". The mount-side comment agrees now too: `hero-graph/index.tsx:12-13` says "despite the flag name, there is no physics engine involved" — it used to read as though the flag loaded Rapier, which is the reading this index carried. | section 07, section 13 |
+| Worker offload | **not present in source.** `@react-three/offscreen` was declared but imported by no file in `src/`, and was **removed from `package.json` in v3.5.0**. `CLAUDE.md:250` says the same ("no worker/OffscreenCanvas anywhere") — it previously claimed worker offload existed. | section 07, section 13 |
+| Physics engine | **not present in source.** `@react-three/rapier` was imported by no file and was **removed from `package.json` in v3.5.0**; `scene-physics.tsx:12-13` states "No RigidBody / Rapier needed for this effect". The mount-side comment agrees now too: `hero-graph/index.tsx:12` says "despite the flag name, there is no physics engine involved" — it used to read as though the flag loaded Rapier, which is the reading this index carried. That comment now carries its own drift, one revision behind the removal: `hero-graph/index.tsx:13-14` still says rapier "is declared in package.json but imported nowhere in src/". | section 07, section 13 |
 
 ### The reduced-motion path
 
 | Surface | Behaviour under `prefers-reduced-motion: reduce` |
 |---|---|
-| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:34,42-43`) |
+| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:35,42-43`) |
 | Hero avatar | Never mounts; `GlowFallback` duplicates those same two circles so switching hero modes causes no layout shift (`hero-avatar/index.tsx:16-26`) |
 | Build graph | Never mounts; `GraphIndex` (the accessible DOM-first list) is the whole experience (`build-graph.tsx:50`) |
 | Voice orb | 3D skipped; `VoiceOrbCanvas` draws **one static ring** and returns early with no rAF loop (`voice-orb-canvas.tsx:54-63`) |
@@ -410,7 +410,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 
 | Failure | Mechanism |
 |---|---|
-| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:34`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
+| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:35`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
 | Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-graph/index.tsx` and `hero-avatar/index.tsx` neither probe nor (for the graph) wrap. |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:87`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
@@ -480,7 +480,7 @@ POST-BUILD, MANUAL, NOT WIRED
 
 | # | File | Exact role |
 |---|---|---|
-| 1 | `package.json:5-17` | 11 scripts. `predev` = bare `velite`; `build` = the three-step chain (`:8`); `clean` deletes `.velite` (`:14`). |
+| 1 | `package.json:8-20` | 11 scripts. `predev` = bare `velite` (`:9`); `build` = the three-step chain (`:11`); `clean` deletes `.velite` (`:17`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc`. |
 | 2 | `velite.config.ts` | Content compile step 1. |
 | 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer`. |
@@ -489,7 +489,7 @@ POST-BUILD, MANUAL, NOT WIRED
 | 7 | `vercel.json:3-7` | The five cron schedules — the file's only key. |
 | 8 | `Makefile` | 36 targets: `pr`/`pr-prod`, `deploy-preview`/`deploy-prod`/`rollback`, `logs`/`logs-llm`/`logs-flags`, `trace`, `health`, `admin`, `env-check`/`env-setup`/`env-vercel`, `flags-show`, four `new-*` scaffolds, `search-index`. |
 | 9 | `.github/dependabot.yml` | Weekly, `target-branch: develop`, 6 first-match-wins groups, 3 `ignore` rules. |
-| 10 | `package.json:78-89` + `pnpm-lock.yaml:7-17` | The 10 security overrides. |
+| 10 | `pnpm-workspace.yaml:18-28` + `pnpm-lock.yaml:7-17` | The 10 security overrides. **No longer in `package.json`** — the whole `pnpm` field (overrides, `onlyBuiltDependencies`, `ignoredBuiltDependencies`) moved to `pnpm-workspace.yaml` in v3.5.0 because pnpm 11 stopped reading that field, which had silently disarmed the v3.4.2 overrides on any pnpm-11 install (rationale at `pnpm-workspace.yaml:1-12`). |
 
 ### Entry point
 
@@ -503,7 +503,7 @@ schedules and a `[config]` cold-start log line per server process.
 
 ### Tests as a gate — what that actually means
 
-`pnpm build` is `velite --clean && vitest run && next build` (`package.json:8`). The `&&` chain is the
+`pnpm build` is `velite --clean && vitest run && next build` (`package.json:11`). The `&&` chain is the
 gate: a failing Vitest assertion aborts before `next build`, so every one of the 65 test files is a deploy
 blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
@@ -538,7 +538,7 @@ branch, merged from `develop` only (Vercel Production). `make pr` opens feature 
 `make pr-prod` opens `develop` → `main`. Two consequences recorded in the repo: `codeql.yml` runs on
 `develop` pushes/PRs + a weekly cron but **not** on `main`; and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:59-61`).
+(`CHANGELOG.md:160-161`).
 
 ### The Pagefind search-index step
 
@@ -567,10 +567,10 @@ does not gate the route — only the nav link and the sitemap entry.
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:16-24` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
 | `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:126-135`). |
-| The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:28`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:27-29`). |
+| The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:30`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:131-133`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
-| `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4033`) against a declared `^0.185.1` — one minor of headroom. |
+| `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4003`) against a declared `^0.185.1` — one minor of headroom. |
 
 ### Flags / env that alter it
 
@@ -579,8 +579,12 @@ guard, `next.config.ts:13-14`), `CI` (`playwright.config.ts:6-8,36`), `NODE_ENV`
 the Vitest worker), `NEXT_PUBLIC_BUILD_YEAR` (written by the config), `VERCEL_URL`/
 `VERCEL_PROJECT_PRODUCTION_URL` (the alias the health cron must probe, `health-expectations.ts:51-59`)/
 `VERCEL_ENV`/`VERCEL_REGION`/`VERCEL_GIT_COMMIT_SHA`/`NEXT_RUNTIME` (platform-set), `CRON_SECRET` (whether the five
-schedules do anything), `SECURITY_ALERTS_TOKEN` (repo secret). Note: no `engines`, no `packageManager`,
-no `.nvmrc`, no `.npmrc` — CI runs Node 22 + pnpm 10 while the gitignored `.vercel/project.json` records
+schedules do anything), `SECURITY_ALERTS_TOKEN` (repo secret). Note on version pinning: as of v3.5.0
+`engines.node` is `">=22 <23"` (`package.json:5-7`) and `.nvmrc` holds the single line `22` — both now
+exist (same fact as the scripts row above). Still absent: **no `packageManager`** and **no `.npmrc`**.
+The `packageManager` omission is deliberate — commit `ceae0d1` records that adding it would make every
+local command resolve a specific pnpm through corepack, judged a separate workflow decision rather than
+part of that fix. CI runs Node 22 + pnpm 10 while the gitignored `.vercel/project.json` records
 `"nodeVersion": "24.x"` for production.
 
 ---
@@ -651,15 +655,15 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Migrate a flag to runtime toggling | `src/lib/flags.ts:17-29` | Also declare it in `src/app/.well-known/vercel/flags/route.ts:11-22`; requires `FLAG_DRIVER=vercel` + `FLAGS_SECRET`. `FLAG_DRIVER` is captured at module load (`:13`). |
 | Gate which views exist in a build | `src/lib/enabled-views.ts:20-40` | Unset ⇒ all on; empty string ⇒ all optional off. `classic` and `resume` cannot be disabled. |
 | Change a 3D scene | `src/components/hero-graph/scene.tsx` · `hero-avatar/avatar-scene.tsx` · `game/build-graph-scene.tsx` · `chat/voice-orb-3d.tsx` | Import from `@/lib/r3f`, never directly (`scene-physics.tsx:4-6` is the one exception). On a demand frameloop something must call `invalidate()`. |
-| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:34` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
+| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:35` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
 | Swap the avatar model | `public/avatar/sairam.glb` + `src/components/hero-avatar/avatar-mesh.tsx:10,27,54` (path in 3 places) | `src/lib/avatar-glb.test.ts` blocks the build on size (<1.5 MB), glTF 2.0, meshopt+quantization+WebP, named bones, and the current **zero** morph targets (`:132-157`). |
 | Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:105` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
-| Change build ordering or add a build step | `package.json:8` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`). |
+| Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`). |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:100-102`). E2E does not block `pnpm build`. |
 | Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:325` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
 | Regenerate the search index | `Makefile:64-66` (`make search-index`) | Must run **after** `make build`; `pnpm search-index` does not exist. Output goes to the untracked `public/pagefind/`. |
-| Add or bump a dependency | `package.json:19-72` | Respect the exact pins (`next`/`eslint-config-next` 16.3.0, `react`/`react-dom` 19.2.8, `@modelcontextprotocol/sdk` 1.26.0, `@react-three/postprocessing` 3.0.4), the `three < 0.186.0` ceiling from `postprocessing`, and the 10 `pnpm.overrides`. |
+| Add or bump a dependency | `package.json:21-74` (33 prod + 17 dev) | Respect the exact pins (`next`/`eslint-config-next` 16.3.0, `react`/`react-dom` 19.2.8, `@modelcontextprotocol/sdk` 1.26.0, `@react-three/postprocessing` 3.0.4), the `three < 0.186.0` ceiling from `postprocessing`, and the 10 overrides — which now live in `pnpm-workspace.yaml:18-28`, **not** a `pnpm` field in `package.json`. |
 | Add a Dependabot hold | `.github/dependabot.yml` | It is read from the **default branch only** — on any other branch it is inert. `ignore` entries accept a version-scoped `versions: ["x.y.z"]` form as well as a bare package name. |
 | Replay one request end to end | `make trace TRACE_ID=…` → `scripts/replay-trace.mjs` | The id comes from the `x-anvilry-trace-id` response header (`with-trace.ts:207`). Needs both Upstash vars; window is 7 days. |
 | Audit which env vars are set | `make env-check` / `make flags-show` | Both read the **process** environment, not `.env.local`, so they under-report locally (`Makefile:288-314,154-180`). |
@@ -675,8 +679,9 @@ than here.
 
 **Resolved**
 
-The first two were resolved while writing this section. The rest were resolved by the fix branch
-afterwards; those entries record the outcome rather than the original open question.
+The first two were resolved while writing this section. The rest were resolved afterwards — by the fix
+branch, or (for the last entry) by the v3.5.0 dependency removals; those entries record the outcome rather
+than the original open question.
 
 - `budget.tick` has **no producer** in `src/` — declared at `src/lib/telemetry/schema.ts:44`, asserted at
   `schema.test.ts:150`, consumed at `src/app/admin/telemetry/page.tsx:376`, and emitted nowhere
@@ -720,6 +725,16 @@ afterwards; those entries record the outcome rather than the original open quest
   `src/app/mcp/page.tsx` still exports no segment config and a grep for `force-static` across `src/`
   still returns nothing (re-verified), and `CLAUDE.md:130` now documents the route as "no segment
   config" instead of `(force-static)`.
+- **Whether `@react-three/offscreen` and `@react-three/rapier` were retained intentionally** — answered by
+  deletion. Neither was imported anywhere in the repo, and **both were removed from `package.json` in
+  v3.5.0** (prod dependency count 35 → 33). `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md:5,7,9` is
+  the origin of the rapier install and never said why it stayed after the physics variant shipped without
+  it; the answer is that it should not have. The two absence observations this index recorded still hold and
+  are now permanent rather than provisional: there is no worker/OffscreenCanvas path
+  (see [§ Perf decisions](#perf-decisions-concretely)), and `NEXT_PUBLIC_GRAPH_PHYSICS` gates a sinusoidal
+  drift variant, not a physics engine. Two artefacts outlive the packages and are **not** cleaned up:
+  the CSP still carries `worker-src 'self' blob:` (`next.config.ts:68`) for a worker that never existed,
+  and the mount-side comment at `hero-graph/index.tsx:13-14` still describes rapier as declared-but-unused.
 
 **Still open**
 
@@ -743,9 +758,6 @@ afterwards; those entries record the outcome rather than the original open quest
 - **Whether `/articles/<slug>` routes that `redirect()` emit a prerendered page artifact.** Several slugs
   present in `generateStaticParams` have an `opengraph-image` manifest entry but no page entry — consistent
   with the redirect path, not proven.
-- **Whether `@react-three/offscreen` and `@react-three/rapier` are retained intentionally.** Neither is
-  imported anywhere in the repo. `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` is the origin of the
-  rapier install but does not say why it stayed after the physics variant shipped without it.
 - **Whether the CSP was ever actually deployed as `Content-Security-Policy-Report-Only`,** and the contents
   of the Playwright zero-violation sweep referenced at `next.config.ts:84-88`. No such audit script or spec
   was located in `e2e/`.
@@ -770,7 +782,7 @@ afterwards; those entries record the outcome rather than the original open quest
   post-bump.
 - **Whether migrating `zod` from `^3.25.76` to v4 breaks the raw-shape schema handoff** to `mcp-handler`'s
   `registerTool` (`src/lib/mcp-tools.ts:29-36`). Both constraining peers already permit v4
-  (`pnpm-lock.yaml:920`), but nothing in the repo exercises v4.
+  (`pnpm-lock.yaml:911`), but nothing in the repo exercises v4.
 - **Whether `next build` still uses webpack by default in Next 16** —
   `.github/workflows/bundle-analysis.yml:54-56` asserts it; recorded as the repo's own claim.
 - **Whether `eslint.config.mjs`'s `globalIgnores` replaces or merges with `eslint-config-next`'s built-in

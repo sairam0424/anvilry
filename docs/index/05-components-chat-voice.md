@@ -3,12 +3,12 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 39
@@ -395,7 +395,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Exports:** `VoicePickerProps` (type), `VoicePicker` (component). Internal: `VoiceCard`, `DescriptorGrid`, `GenderColumns`, `ColumnSection`, `PickerBody`, `accentLabel`, `engineLabel`.
 - **Reads / depends on:** `CURATED_VOICES`, `EXTENDED_VOICES`, `getVoiceById`, `VoiceEntry` (`@/lib/voice-catalog`); `VOICE_PICKER_MODE` (`@/lib/voice-picker-mode`); `useSpeechSynthesis`; `applePremiumIsMissing`, `getVoicesRaceHardened`.
 - **Consumed by:** `talk-mode.tsx:19` (`mode="dialog"`), `voice-settings-dialog.tsx:7` (`mode="inline"`), `command-palette.tsx:47` (rendered at :516).
-- **Behaviour notes:** Layout is `GenderColumns` when `VOICE_PICKER_MODE === "gender"`, else `DescriptorGrid` (:342); the mode comes from `NEXT_PUBLIC_VOICE_PICKER_MODE` (default `"descriptor"`, `voice-picker-mode.ts:19-25`). One TTS hook instance flips engine + voiceId via state, and `speak()` is deferred with `queueMicrotask` so the hook has re-rendered on the new engine (:294-296, :335-338). A second tap on the previewing card is Stop (:322-326). `previewingId` clears 250 ms after `isSpeaking` drops, to avoid flicker between sentences (:304-310). `getVoicesRaceHardened()` populates `browserVoices`, which drives the per-card Apple-Premium download hint (:276-284, :184). Overflow "More voices…" is a nested Radix Dialog at `z-[60]` over the parent's `z-50` (:361-407).
+- **Behaviour notes:** Layout is `GenderColumns` when `VOICE_PICKER_MODE === "gender"`, else `DescriptorGrid` (:342); the mode comes from `NEXT_PUBLIC_VOICE_PICKER_MODE` (default `"descriptor"` at `voice-picker-mode.ts:18`, env read at `:20`, resolved at `:22`). One TTS hook instance flips engine + voiceId via state, and `speak()` is deferred with `queueMicrotask` so the hook has re-rendered on the new engine (:294-296, :335-338). A second tap on the previewing card is Stop (:322-326). `previewingId` clears 250 ms after `isSpeaking` drops, to avoid flicker between sentences (:304-310). `getVoicesRaceHardened()` populates `browserVoices`, which drives the per-card Apple-Premium download hint (:276-284, :184). Overflow "More voices…" is a nested Radix Dialog at `z-[60]` over the parent's `z-50` (:361-407).
 - **Gotchas / invariants:** Preview is cancelled on unmount via a `ttsRef` snapshot taken in an effect (:312-318) so a half-played preview never leaks into the chat session. In `dialog` mode `onCloseAutoFocus` restores focus to `getOpener()` (:429-435).
 
 ### `chat/voice-settings-dialog.tsx`

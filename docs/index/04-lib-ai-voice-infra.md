@@ -3,12 +3,12 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/lib/llm.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,
@@ -151,7 +151,7 @@ The load-bearing reason (llm.ts:149-157): streaming errors surface *inside* the 
 - **Consumed by:** `src/components/game/glass-box-demo.tsx:8` (`AGENTS`, `scenarios`, `traceApproved`, `linkForSlug`); `src/components/game/use-trace-runner.ts:4` (`Scenario` type only).
 - **Behaviour notes:** `traceApproved` is computed at module load — true only when no step's `action` or `output` contains `PLACEHOLDER_SENTINEL` (agent-trace.ts:120-122). Every step in the shipped file still carries the sentinel, so `traceApproved` is currently **false** and the demo renders dark. Agent colors are CSS custom properties (`var(--accent)`, `var(--violet)`, `var(--green)`), not hex. `AGENTS` colors and `ms` reveal delays (550–900) are the coordination-feel budget documented as ~400–1200/step, total < 8000 (agent-trace.ts:41).
 - **Gotchas / invariants:** `agent-trace.test.ts` (4 tests) is the zero-fabrication gate: every `refs` slug must resolve to real content (`agent-trace.test.ts:20-28`), and the approval flag must agree with reality — `expect(traceApproved).toBe(!hasSentinel)` (`agent-trace.test.ts:56`), an assertion that passes in **both** states. Referenced slugs across scenarios: `aava-code`, `mindforge`, `pensieve`.
-  **Stale claim, corrected on this branch:** this entry previously said "CLAUDE.md:309 states it blocks shipping while the sentinel is present … the dark render is the soft gate; the test is the hard one". Both halves were wrong, and the citation was stale (`CLAUDE.md:309` is now a blank line just after the Bedrock env-var block). The test does **not** block shipping — it is a consistency check — and the dark render is the *only* gate. The error originated in this file's own header banner, which claimed the test "BLOCKS shipping" while the `traceApproved` docblock said the opposite. Both sides now agree: the banner reads "It does **NOT** block the build: while the sentinel remains, traceApproved is false and glass-box-demo.tsx renders NOTHING, so drafts never reach a visitor" (agent-trace.ts:13-16), the docblock still says "NOT a hard build failure" (agent-trace.ts:114-119, phrase at :118), and `CLAUDE.md:359` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check." Behaviour is unchanged: the sentinel is still present, so `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo ships dark and nothing is blocked.
+  **Stale claim, corrected on this branch:** this entry previously said "CLAUDE.md line 309 states it blocks shipping while the sentinel is present … the dark render is the soft gate; the test is the hard one". Both halves were wrong, and the line number was stale — the v3.5.0 rewrite moved the Testing Notes section down, so line 309 is now a blank line just after the Bedrock env-var block, and the live claim sits at `CLAUDE.md:359`. The test does **not** block shipping — it is a consistency check — and the dark render is the *only* gate. The error originated in this file's own header banner, which claimed the test "BLOCKS shipping" while the `traceApproved` docblock said the opposite. Both sides now agree: the banner reads "It does **NOT** block the build: while the sentinel remains, traceApproved is false and glass-box-demo.tsx renders NOTHING, so drafts never reach a visitor" (agent-trace.ts:13-16), the docblock still says "NOT a hard build failure" (agent-trace.ts:114-119, phrase at :118), and `CLAUDE.md:359` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check." Behaviour is unchanged: the sentinel is still present, so `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo ships dark and nothing is blocked.
 
 ### `src/lib/voice-catalog.ts`
 

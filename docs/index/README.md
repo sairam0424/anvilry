@@ -1,28 +1,31 @@
 ---
 kind: doc
-title: Anvilry v3.4.2 — Codebase Index
+title: Anvilry v3.5.0 — Codebase Index
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
-# Anvilry v3.4.2 — Codebase Index
+# Anvilry v3.5.0 — Codebase Index
 
 **Anvilry** is a personal portfolio and AI-powered developer showcase: one Next.js App Router app that
 serves multiple client-switchable experiences from a single URL, grounded on one MDX content source that
 also feeds a chatbot, an MCP server, a 3D knowledge graph, a keyboard terminal, and a machine-readable
 résumé.
 
-**Version:** `3.4.2` (`package.json:3`) — a security-only release (23 Dependabot advisories across 10
-packages, `CHANGELOG.md:7-57`).
+**Version:** `3.5.0` (`package.json:3`) — a **correctness** release, not a security one: six live
+defects fixed, the repo's own doc claims reconciled with its code, this per-file index, and the
+pnpm-settings migration that stops pnpm 11 silently dropping v3.4.2's ten security overrides
+(`CHANGELOG.md:7-109`).
 
 **Stack:** Next.js 16.3.0 (App Router, `cacheComponents: true`) · React 19.2.8 · TypeScript 5.9 (strict) ·
 Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) · AWS Bedrock / Anthropic SDK ·
 Upstash Redis (rate limit + telemetry) · React Three Fiber + three.js 0.185 · Vitest 4 + Playwright 1.61 ·
 deployed on Vercel.
 
-**This index describes the tree at v3.4.2 on branch `release/v3.4.2`** (HEAD `a848117`). It is
-version-pinned: every `path:line` citation is against that commit.
+**This index describes the tree at v3.5.0.** The release merge is `00e38a2` on `origin/main`; the
+working tree is `develop`, which carries only later Dependabot bumps on top of it. It is
+version-pinned: every `path:line` citation is against that tree.
 
 ---
 
@@ -31,7 +34,7 @@ version-pinned: every `path:line` citation is against that commit.
 | | |
 |---|---|
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
-| **Version** | `3.4.2` — security-only release (`package.json:3`) |
+| **Version** | `3.5.0` — correctness release (`package.json:3`) |
 | **Scale** | 416 files indexed · 279 `.ts`/`.tsx` in `src/` totalling 32,253 lines · 37 content files · 59 route-defining files |
 | **Subsystems** | content pipeline · view system · chat/LLM · voice · MCP (9 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:183`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
@@ -43,7 +46,7 @@ version-pinned: every `path:line` citation is against that commit.
 
 ## By the numbers
 
-Measured from the working tree at `release/v3.4.2`.
+Measured from the working tree at v3.5.0 on `develop`.
 
 Where a row once recorded a doc-vs-code drift that has since been closed, the old claim is **struck
 through** and marked *corrected on this branch* — same convention as
@@ -63,8 +66,8 @@ corrected text.
 | `e2e/` | 2 files / 259 lines | `find e2e -type f` |
 | App Router route-defining files | **59** — 15 `page.tsx`, 26 `route.ts`, 5 `layout.tsx`, 5 `opengraph-image.tsx`, 8 special (`error`, `global-error`, `not-found`, `icon`, `apple-icon`, `manifest`, `robots`, `sitemap`) | `find src/app -name …` |
 | Test / spec files | 65 — 63 under `src/` (of which 24 are `*.dom.test.*`) + 2 Playwright specs | `find src -name '*.test.*'`, `find e2e -name '*.spec.ts'` |
-| Dependencies | **35 prod + 17 dev**, plus 10 `pnpm.overrides` and 1 `onlyBuiltDependencies` | `package.json` (see [13](./13-dependencies-and-versions.md)) |
-| npm scripts | 11 (no `search-index` — see [11](./11-config-build-ci-infra.md)) | `package.json:5-17` |
+| Dependencies | **33 prod + 17 dev** (was 35 prod at v3.4.2 — v3.5.0 removed `@react-three/offscreen` and `@react-three/rapier`, both declared but never imported), plus 10 `overrides` and 1 `onlyBuiltDependencies`. **There is no `pnpm` field in `package.json`:** v3.5.0 moved every pnpm setting to `pnpm-workspace.yaml`, because pnpm 11 stopped reading that field and would have silently dropped the ten security overrides | `package.json:22-54` (prod), `:57-73` (dev); `pnpm-workspace.yaml:18-28` (overrides), `:32-33` (`onlyBuiltDependencies`) — see [13](./13-dependencies-and-versions.md) |
+| npm scripts | 11 (no `search-index` — see [11](./11-config-build-ci-infra.md)) | `package.json:8-19` — the block starts at `:8`, not `:5`, since `engines` was inserted at `:5-7` |
 | Content items | 5 work · 11 projects · 5 notes · 15 articles (14 non-draft) | `.velite/*.json`, section [09](./09-content-and-schemas.md) |
 | 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects; count it from the arrays — the file's header docblock no longer hardcodes a node count (it now says "every flagship work system + every OSS repo … see `graphNodes` below for the count") | `src/lib/graph-data.ts:18-41` (nodes), `:43-70` (edges); de-numbered docblock `:3-4` |
 | MCP tools | **9** registered. ~~"docs still say 7"~~ — **corrected on this branch:** the route docblock now says "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), the public table lists all 9 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`:202`, `:293`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:30-117` |
@@ -72,11 +75,12 @@ corrected text.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
-| CHANGELOG version tags | 17 (no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md` |
+| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:7` is the newest; `grep -c '^## \[' CHANGELOG.md` |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
-dependency counts are **35 + 17** (not 39 + 18 — already flagged in section
-[13](./13-dependencies-and-versions.md)'s "Declared counts (verified, not from the brief)" note), and
+dependency counts were **35 + 17** at v3.4.2 (not the brief's 39 + 18 — already flagged in section
+[13](./13-dependencies-and-versions.md)'s "Declared counts (verified, not from the brief)" note) and
+are **33 + 17** here, since v3.5.0 removed the two never-imported R3F packages, and
 route-defining files are **59** (not 55). The 13 declared "Files indexed" headers sum to **474**, which matches
 the **474** `## Coverage` bullets exactly, while the union is **419** distinct paths. The surplus of **55**
 occurrences comes from **54** paths that are deliberately indexed by more than one section — 53 of them twice,
@@ -350,7 +354,9 @@ the union of the `## Coverage` lists in sections 01–13, summarised in [§ By t
 
 ## Provenance
 
-**Generated:** 2026-08-20, against `release/v3.4.2` at commit `a848117`.
+**Generated:** 2026-08-20, against `release/v3.4.2` at commit `a848117`. **Re-pinned 2026-08-21 to
+v3.5.0** — release merge `00e38a2` on `origin/main`, working tree `develop`. The re-pin corrected
+citations and counts against the new tree; it was not a full regeneration.
 
 **Method.** Thirteen per-area indexers ran in parallel, each assigned a disjoint slice of the tree and each
 required to read every file it claimed before writing about it, to cite `path:line`, to describe only the
@@ -377,9 +383,13 @@ index. Every behavioural claim is read from source, not observed at runtime. Bun
 figures are the repo's own recorded measurements (`next.config.ts:133-144`,
 `domains/performance/README.md:62-66`), not reproduced here.
 
-**Staleness is enforced, not trusted.** Every `path:line` citation in this directory is
-fingerprinted into `.citations.json` (699 of them), and `scripts/check-index-citations.mjs`
-re-checks them. `src/lib/index-citations.test.ts` runs that check, and `vitest run` is chained into
+**Staleness is enforced, not trusted.** Every fully-qualified `path:line` citation in this directory
+is fingerprinted into `.citations.json` — **1,406** of them when v3.5.0 widened the checker's
+coverage from 1,086, because it used to skip every root-level file and so left 613 citations into
+`package.json`, `pnpm-lock.yaml`, `CHANGELOG.md`, `CLAUDE.md` and the configs unchecked behind a
+green summary. Run the script for the live count; it moves with every re-fingerprint.
+`scripts/check-index-citations.mjs` re-checks those fingerprints and additionally rejects any citation
+landing on a blank line. `src/lib/index-citations.test.ts` runs that check, and `vitest run` is chained into
 `pnpm build` — so a citation that no longer points at what it described **fails the build**, naming
 the file, the old line, the new line, and which index file cites it.
 
@@ -393,9 +403,9 @@ that decays invisibly — a reader cannot tell a live citation from a dead one. 
 guard existed: one unrelated 530-line change invalidated **33 of 699** citations with no signal at
 all. Now that shows up as a red build with the exact list.
 
-**Regenerate when:** this index is **pinned to commit `a848117`** (released as v3.4.2 — note that
-`develop` may still show an earlier `package.json` version until it is fast-forwarded). Counts and
-render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
+**Regenerate when:** this index is **pinned to v3.5.0** — release merge `00e38a2` on `origin/main`,
+with `develop` carrying only later Dependabot bumps on top, so `package.json:3` reads `3.5.0` on
+both. Counts and render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
 sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all
 seventeen, then `--write` the fingerprints. Between releases the working tree is authoritative for
 anything newer — and the citation check tells you exactly where the index has fallen behind.

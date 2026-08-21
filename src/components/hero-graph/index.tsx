@@ -10,8 +10,9 @@ const GRAPH_PHYSICS = process.env.NEXT_PUBLIC_GRAPH_PHYSICS === "true";
 // Client-only, lazily loaded — Three.js never enters the critical path / SSR.
 // When NEXT_PUBLIC_GRAPH_PHYSICS=true a drift variant is loaded instead of the static scene.
 // NOTE: despite the flag name, there is no physics engine involved — scene-physics.tsx applies
-// plain sinusoidal offsets in useFrame (see its docblock). `@react-three/rapier` is declared in
-// package.json but imported nowhere in src/; the flag and filename are historical.
+// plain sinusoidal offsets in useFrame (see its docblock). `@react-three/rapier` was declared in
+// package.json but imported nowhere, and was removed in v3.5.0; the flag and filename are
+// historical residue of a plan that never shipped.
 const HeroGraphScene = GRAPH_PHYSICS
   ? dynamic(() => import("./scene-physics").then((m) => m.HeroGraphScenePhysics), { ssr: false })
   : dynamic(() => import("./scene"), { ssr: false });

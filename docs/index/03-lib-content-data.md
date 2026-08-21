@@ -3,12 +3,12 @@ kind: doc
 title: lib — Content, Data Derivation & Domain Model
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # lib — Content, Data Derivation & Domain Model
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/lib/*.ts` (top level only), content/data/domain half — `content.ts`, `corpus.ts`, `game-model.ts`, `graph-data.ts`, `article-grouping.ts`, `llms-txt.ts`, `profile.ts`, `personal.ts`, `testimonials.ts`, `resume-json.ts`, `mcp-tools.ts`, `discovery-store.ts`, `enabled-views.ts`, `flags.ts`, `writing-flags.ts`, `github.ts`, `utils.ts`, `highlight-store.ts`. Excludes `*.test.ts` and the AI/voice/infra half (`llm*.ts`, `agent-trace.ts`, `voice-*`, `rate-limit.ts`, `redis.ts`, `admin-auth.ts`, `r3f.ts`, `use-*.ts`, `telemetry/`, `scroll/`).
 **Files indexed:** 18
@@ -123,7 +123,7 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 
 **The "7 tools" drift is fixed on this branch — do not go looking for it.** `list_all_content` and `get_content_item` were added after the original seven (`route.ts` registrations after `get_resume_variant`), and the prose count lagged behind in the docs, the route docblock and the public tools table. Every one of those now says 9 — and the two sites this index used to cite were each wrong in a second way as well:
 
-- `CLAUDE.md` says **9 tools** with all nine rows (`CLAUDE.md:202`) and its Key Files row says "MCP server (9 read-only tools)" (`CLAUDE.md:293`). An earlier reading of this index cited `CLAUDE.md:181` — that line is blank; every `CLAUDE.md` line number shifted when the file was rewritten on this branch.
+- `CLAUDE.md` says **9 tools** and the table under it carries all nine rows (`CLAUDE.md:202-214` — the claim at :202, the rows at :206-214), and its Key Files row says "MCP server (9 read-only tools)" (`CLAUDE.md:293`). An earlier reading of this index cited line 181 of the pre-v3.5.0 `CLAUDE.md`; in the current file that line is blank, because the v3.5.0 rewrite shifted every `CLAUDE.md` line number.
 - the `mcp-tools.ts` docblock (`mcp-tools.ts:5-13`) **never carried a tool count at all** — it states the single-source and professional-only boundaries only, so there is nothing there to drift. The count that *was* stale lived in the route docblock, which now reads "9 read-only tools" (`route.ts:22`).
 - the public documentation table `src/app/mcp/page.tsx:35-45` lists all nine, and is now enforced rather than trusted: `src/app/mcp/tools-documented.test.ts` asserts the documented set and the route's `registerTool` calls are the same set — documents-nothing-extra (`:76`), documents-everything (`:81`), identical counts (`:90`) — plus a regex-drop guard so an extraction failure cannot make the comparison vacuous (`:61`). `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build.
 
@@ -252,7 +252,7 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 ### `src/lib/flags.ts`
 - **Role:** The dual-driver resolver for the single flag migrated to the Vercel Flags SDK.
 - **Exports:** `getDiscoveryBadgesEnabled(): Promise<boolean>` (`:41`).
-- **Reads / depends on:** `flag` from `flags/next` (`flags@^4.2.0`), env `FLAG_DRIVER`, `NEXT_PUBLIC_DISCOVERY_BADGES`, and `FLAGS_SECRET` (read only to log its presence, `:51`).
+- **Reads / depends on:** `flag` from `flags/next` (`flags@^4.3.0`), env `FLAG_DRIVER`, `NEXT_PUBLIC_DISCOVERY_BADGES`, and `FLAGS_SECRET` (read only to log its presence, `:51`).
 - **Consumed by:** `src/app/layout.tsx:19` — awaited at `layout.tsx:66`.
 - **Behaviour notes / gotchas:** See the flag table above. Documented contract: call only from a Server Component or Route Handler, never a client component (`:33-34`). The SDK checks the override cookie **before** invoking `decide()`, which is why `decide: () => false` does not defeat dashboard overrides (`:25-28`). Both paths log exactly one `[flags]` JSON line — grep handle documented as `vercel logs | grep '\[flags\]'` (`:36-39`). The module docblock states that **all other** beast-mode flags remain plain `NEXT_PUBLIC_` reads in their own files (`:7-8`). No dedicated test file.
 

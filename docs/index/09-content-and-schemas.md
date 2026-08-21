@@ -3,12 +3,12 @@ kind: doc
 title: Content Corpus & Velite Schemas
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # Content Corpus & Velite Schemas
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (11), `content/notes/*.{md,mdx}` (5) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
 **Files indexed:** 38
@@ -172,7 +172,7 @@ see "Cross-references" for the three live violations.
 
 ### Work — 5 files, `content/work/*.mdx`
 
-`register` strings are reproduced **verbatim**; `CLAUDE.md:298` and `ARCHITECTURE.md:95` declare
+`register` strings are reproduced **verbatim**; `CLAUDE.md:347` and `ARCHITECTURE.md:95` declare
 this field the canonical contribution-attribution source.
 
 | slug | name / title | role | `register` (verbatim) | order | metrics (value ▸ label) | tech |
@@ -421,7 +421,7 @@ handled at `src/app/articles/[slug]/page.tsx:25` and `:65-66`: it is dropped fro
   - Adding a required field to Work or Project fails the Velite build for *every existing file*
     at once; that is why all the hiring-manager depth fields at `:49-52` are `.optional()`.
   - `register` (`:42`) is required by Zod and is the only schema-level enforcement of the
-    "never fabricate ownership" rule (`CLAUDE.md:298`, `ARCHITECTURE.md:95`). Making it optional
+    "never fabricate ownership" rule (`CLAUDE.md:347`, `ARCHITECTURE.md:95`). Making it optional
     would silently drop attribution from the corpus (`src/lib/corpus.ts:17`) and the résumé
     (`src/lib/resume-json.ts:30`).
   - `diagramAlt` (`:52`) is *not* conditionally required in Zod — the a11y guarantee lives only

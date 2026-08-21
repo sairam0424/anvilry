@@ -3,12 +3,12 @@ kind: doc
 title: API Routes, Machine-Readable Endpoints & Instrumentation
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # API Routes, Machine-Readable Endpoints & Instrumentation
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/app/api/**`, `src/app/.well-known/vercel/flags/route.ts`, `src/app/feed.xml/route.ts`,
 `src/app/llms.txt/route.ts`, `src/app/llms-full.txt/route.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`,

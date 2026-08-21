@@ -3,12 +3,12 @@ kind: doc
 title: Components — Gamified View & Developer Terminal
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.5.0
 ---
 
 # Components — Gamified View & Developer Terminal
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/game/**` (incl. `src/components/game/terminal/**`), excluding `*.test.*` / `*.dom.test.*`
 **Files indexed:** 23

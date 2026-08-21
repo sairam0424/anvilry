@@ -42,7 +42,7 @@ carried-forward ledger for both parts.
 chat/LLM request path · voice pipeline · MCP server · telemetry & observability.
 **Synthesized from** sections [01](./01-routes-pages.md)–[13](./13-dependencies-and-versions.md) (each cites
 its own reads), plus one direct read recorded inline: a `force-static` grep across `src/` (returns nothing —
-and `CLAUDE.md:139` now documents `/mcp` as "no segment config", so the mismatch this index recorded against
+and `CLAUDE.md:140` now documents `/mcp` as "no segment config", so the mismatch this index recorded against
 that line is gone). Subsystem 10's bundle-gate correction adds three more direct reads, all recorded where
 they are used: `node_modules/next/dist/lib/bundler.js:142-144`,
 `node_modules/next/dist/build/index.js:2843-2844`, and one read-only run of `scripts/bundle-budget.mjs`
@@ -467,7 +467,8 @@ CI  .github/workflows/ci.yml   — 4 jobs, NO `needs:`, all parallel
    job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:202,254)
   - bundle-analysis.yml: DELETED on this branch. 222 runs, 211 green, ZERO artifacts — it never
     measured anything; the `Bundle budget` step above replaces it (§ The bundle budget gate)
-  + codeql.yml (develop + weekly cron 35 1 * * 1) — note: does NOT run on main
+  + codeql.yml (develop AND main, + weekly cron 35 1 * * 1) — main added so a hotfix
+                                     pushed straight to main cannot deploy unscanned
   + dependency-review.yml (PRs → develop/main): fail-on-severity high, fail-on-scopes runtime
         │
         ▼  PR: feature → develop  (make pr)      Vercel PREVIEW deploy
@@ -602,7 +603,8 @@ non-Turbopack bundler (`node_modules/next/dist/cli/next-build.js:57-58`). Nothin
 `develop` is the integration branch (all feature work targets it; Vercel Preview). `main` is the release
 branch, merged from `develop` only (Vercel Production). `make pr` opens feature → `develop`;
 `make pr-prod` opens `develop` → `main`. Two consequences recorded in the repo: `codeql.yml` runs on
-`develop` pushes/PRs + a weekly cron but **not** on `main`; and Dependabot reads `dependabot.yml` from the
+`develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
+would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
 (`CHANGELOG.md:252-253`).
 
@@ -669,7 +671,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 |---|---|
 | Project group names (3 copies) | `velite.config.ts:4-8` · `src/lib/content.ts:30-34` · `src/lib/game-model.ts:177-181` |
 | Graph node ↔ content slug | `src/lib/graph-data.ts:18-41` (`graphNodes`, 16 entries) · `src/lib/game-model.ts:28-50` · gate `src/lib/game-model.test.ts:55-58` |
-| Base URL `https://anvilry.vercel.app` (**18 non-test files / 24 occurrences**; `CLAUDE.md:334` now says **19 / 25**, counting `src/lib/mcp-tools.test.ts:69`, and no longer says "four") | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,101,125,131,160,168,214` (7 of the 24, one of them inside FAQ prose at `:214`) |
+| Base URL `https://anvilry.vercel.app` (**18 non-test files / 24 occurrences**; `CLAUDE.md:335` now says **19 / 25**, counting `src/lib/mcp-tools.test.ts:69`, and no longer says "four") | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,101,125,131,160,168,214` (7 of the 24, one of them inside FAQ prose at `:214`) |
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:33` · `src/instrumentation-client.ts` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
 | Telemetry kind union | `src/lib/telemetry/schema.ts:37-45` · the `/admin/telemetry` kind filter · `scripts/replay-trace.mjs:47-55` |
@@ -711,7 +713,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change voice defaults or add a persisted setting | `src/lib/voice-settings-context.tsx:77-88` (`DEFAULTS`) + `:92-158` (`parse`) | Every capability must stay default-OFF; `voice-settings-context.test.ts` asserts it. `parse` must never throw. |
 | Add a voice surface | `src/components/chat/voice-surface-mutex.ts:23` (`VoiceSurfaceId`) | Create a store that calls `registerVoiceSurface` at module scope and `claimVoiceSurface` at the top of `open*()`; then route to it from `header-orb-trigger.tsx:69-78`. |
 | Change how the mic opens | `src/components/chat/use-speech-recognition.ts:161-164` | `continuous = false` is load-bearing for the whole half-duplex loop (`use-voice-session.ts:26-31`). `mic-button.tsx:60-63` is the consent gate. |
-| Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:35-45`. The count drift is **fixed**: the page listed 7 while the route registered 9 (`list_all_content` and `get_content_item` were live but undocumented); the page now documents all nine, and `route.ts:22` + `CLAUDE.md:211,302` say 9 too. It is now enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (`:25-40`), so it cannot silently drift again. Never import `personal.ts` (`mcp-tools.test.ts:22`). |
+| Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:35-45`. The count drift is **fixed**: the page listed 7 while the route registered 9 (`list_all_content` and `get_content_item` were live but undocumented); the page now documents all nine, and `route.ts:22` + `CLAUDE.md:212,303` say 9 too. It is now enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (`:25-40`), so it cannot silently drift again. Never import `personal.ts` (`mcp-tools.test.ts:22`). |
 | Change the MCP not-found contract | `src/lib/mcp-tools.ts:42-48` | `route.ts:13` keys `isError` on the literal `notFound` property; renaming it turns errors into successes. |
 | Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-45` | Then the `/admin/telemetry` kind filter and `scripts/replay-trace.mjs:47-55` (hardcoded `KINDS`). `schema.test.ts:150` pins the 7-kind union. |
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:83-106` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
@@ -719,7 +721,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:449-459`; every fetch helper must stay fail-soft (`:22-38,203-212`). Warn thresholds are inline magic numbers (`:545,567,689,708,718-719`). |
 | Change `/admin` auth | `src/proxy.ts:22-79` | `src/lib/admin-auth.ts` is the unwired Node twin — keep them in agreement or `/admin` can pass one and fail the other (`proxy.ts:11-20`). The page itself checks nothing. |
 | Add an authenticated route | `src/proxy.ts:22-24` (`config.matcher`) | Currently exactly `["/admin/:path*"]`. |
-| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:155-156` now lists all five and records that they are all fail-closed; it previously listed one. |
+| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:156-157` now lists all five and records that they are all fail-closed; it previously listed one. |
 | Change the CSP or a security header | `next.config.ts:37-95` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41`. HSTS is deliberately absent. |
 | Change rate limits | `src/lib/rate-limit.ts:22-25` | One budget shared by chat, tts, tts-google, transcribe, error. `/api/visit` has its own (`api/visit/route.ts:27-34`). Both fail-open paths are deliberate (`:73,79-82`). |
 | Add a build-time feature flag | `src/lib/writing-flags.ts` (or a component-local read) | Match the `=== "true"` convention (only `ARTICLES_ENABLED` is `!== "false"`). Read it **inside** a function body if a test needs `vi.stubEnv`. Then `.env.example`, `docs/configuration.md`, and `Makefile:154-180` (`flags-show`). |
@@ -728,12 +730,12 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change a 3D scene | `src/components/hero-graph/scene.tsx` · `hero-avatar/avatar-scene.tsx` · `game/build-graph-scene.tsx` · `chat/voice-orb-3d.tsx` | Import from `@/lib/r3f`, never directly (`scene-physics.tsx:4-6` is the one exception). On a demand frameloop something must call `invalidate()`. |
 | Change when 3D mounts at all | `src/components/hero-graph/index.tsx:35` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
 | Swap the avatar model | `public/avatar/sairam.glb` + `src/components/hero-avatar/avatar-mesh.tsx:10,27,54` (path in 3 places) | `src/lib/avatar-glb.test.ts` blocks the build on size (<1.5 MB), glTF 2.0, meshopt+quantization+WebP, named bones, and the current **zero** morph targets (`:132-157`). |
-| Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:114` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
+| Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:115` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
 | Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`), as is the bundle budget (`ci.yml:115-116`). Do **not** add `--webpack` to `build`: it silently stops `.next/diagnostics/route-bundle-stats.json` being written and the budget gate then fails by design (`scripts/bundle-budget.mjs:75`). |
 | Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:50` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:42-43`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:100-102`). E2E does not block `pnpm build`. |
-| Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:334` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
+| Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:335` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
 | Regenerate the search index | `Makefile:64-66` (`make search-index`) | Must run **after** `make build`; `pnpm search-index` does not exist. Output goes to the untracked `public/pagefind/`. |
 | Add or bump a dependency | `package.json:23-74` (33 prod + 17 dev) | Respect the exact pins (`next`/`eslint-config-next` 16.3.0, `react`/`react-dom` 19.2.8, `@modelcontextprotocol/sdk` 1.26.0, `@react-three/postprocessing` 3.0.4), the `three < 0.186.0` ceiling from `postprocessing`, and the 10 overrides — which now live in `pnpm-workspace.yaml:18-28`, **not** a `pnpm` field in `package.json`. |
 | Add a Dependabot hold | `.github/dependabot.yml` | It is read from the **default branch only** — on any other branch it is inert. `ignore` entries accept a version-scoped `versions: ["x.y.z"]` form as well as a bare package name. |
@@ -795,7 +797,7 @@ than the original open question.
   recorded that comment as still naming `expected-status.test.ts` — that dangling reference is gone.
 - **`/mcp` as `(force-static)`** — the documentation/source mismatch this index recorded is gone.
   `src/app/mcp/page.tsx` still exports no segment config and a grep for `force-static` across `src/`
-  still returns nothing (re-verified), and `CLAUDE.md:139` now documents the route as "no segment
+  still returns nothing (re-verified), and `CLAUDE.md:140` now documents the route as "no segment
   config" instead of `(force-static)`.
 - **Whether `next build` still uses webpack by default in Next 16 — it does NOT, and the claim this index
   carried was FALSE.** It is **Turbopack**. The claim's only source was the now-deleted
@@ -895,7 +897,7 @@ than the original open question.
   `home/resume-view.tsx:12-14` "ViewEscapeHatch auto-rendered by view-router";
   `anvil-core-surface.tsx:20-22` "~200px reactive orb"; `easter-eggs.tsx:57-66` "once per session";
   `use-trace-runner.ts:69-70` "Reset when the scenario changes";
-  `CLAUDE.md:248`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);
+  `CLAUDE.md:249`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);
   `ARCHITECTURE.md:99` listing `EXTENDED_THINKING` among `NEXT_PUBLIC_*` flags.
 - **Four stale-comment items previously listed above are now FIXED** by the comment sweep on the fix
   branch, and are dropped from the carried-forward list rather than renumbered: `graph-data.ts:3` no

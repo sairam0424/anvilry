@@ -554,8 +554,8 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 
 Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9** — and as of this
 branch every copy of that count agrees. The 7-vs-9 drift this index originally recorded is **fixed**: the
-route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:211`
-and `CLAUDE.md:302` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
+route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:212`
+and `CLAUDE.md:303` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
 (`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
 `src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
 (`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:455-456` records the

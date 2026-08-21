@@ -283,7 +283,7 @@ the slug up via `getWork`/`getProject`, returning `null` when absent, and `hrefF
 (`:74-76`) returns the Velite-derived `item.url`.
 
 **The three intentional node-id / slug mismatches** (comment at `src/lib/game-model.ts:16-27`,
-also recorded in `CLAUDE.md:315`):
+also recorded in `CLAUDE.md:316`):
 
 | Graph node id | Content slug | Kind | Cite |
 |---|---|---|---|
@@ -296,7 +296,7 @@ reads "3 of the **16** graph node ids" — the stale `10` this index previously 
 been **fixed**, so the comment agrees with the 16 entries that `graphNodes`
 (`src/lib/graph-data.ts:18-41`) and `NODE_CONTENT` (`src/lib/game-model.ts:28-50`) each hold
 today. The bijection is guarded at build time by `src/lib/game-model.test.ts`
-(`CLAUDE.md:315`, `ARCHITECTURE.md:96` — "it blocks deploys if orphaned").
+(`CLAUDE.md:316`, `ARCHITECTURE.md:96` — "it blocks deploys if orphaned").
 
 `aava-code` is also hard-referenced outside the graph: `src/lib/agent-trace.ts:61` and `:75`
 (`refs: ["aava-code", "mindforge"]`, `refs: ["aava-code"]`), the terminal's sample output comment
@@ -441,7 +441,7 @@ handled at `src/app/articles/[slug]/page.tsx:43` and `:65-66`: it is dropped fro
   containers — valid MDX, invalid plain Markdown — so they are silently stripped from the rendered
   output rather than displayed. `content/notes/how-dns-works.mdx` is `.mdx` too but contains zero
   such constructs (verified by grep), so its extension is stylistic.
-- **Gotchas / invariants:** `CLAUDE.md:170` states "`.md` files come from the Inkforge pipeline
+- **Gotchas / invariants:** `CLAUDE.md:171` states "`.md` files come from the Inkforge pipeline
   and carry extended frontmatter … Hand-written `.mdx` notes omit these fields". That mapping does
   not hold in the current corpus: both `.mdx` notes carry `generatedBy: inkforge` and the full
   extended field set. Extension is therefore **not** a reliable proxy for provenance — use

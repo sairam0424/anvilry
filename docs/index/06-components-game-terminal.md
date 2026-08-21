@@ -192,7 +192,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 - **Reads / depends on:** `motion/react` `useReducedMotion`, `@/lib/use-media-query` (`useMediaQuery`, `useWebGLSupported`), `@/lib/game-model` `questNodes`, `game/dossier-card`, `game/webgl-boundary`, and three voice stores: `chat/talk-overlay-store` `useTalkModeOpen`, `chat/anvil-inline-store` `useInlineVoiceOpen`, `chat/anvil-core-store` `useCoreVoiceOpen`. Lazily imports `./build-graph-scene` with `{ ssr: false }` (`:16`).
 - **Consumed by:** `game/game-view.tsx:7`.
 - **Behaviour notes:** The whole component returns `null` unless every condition passes: `isDesktop && !reduced && webglOk && !webglFailed && !talkOpen` (`:50`). `webglOk` comes from a **proactive** canvas probe because R3F's context failure is an async rejection an error boundary cannot catch (`:46-48`). `webglFailed` is set by `WebGLBoundary`'s `onFail` (`:43`). `talkOpen` ORs all three voice stores (`:38`) so only one live WebGL context exists at a time. Media query is `(min-width: 768px)` (`:28`); the canvas wrapper is `h-[26rem]` inside an `absolute inset-0` child so R3F's ResizeObserver measures a definite box (`:57-59`).
-- **Gotchas / invariants:** Selecting a node stores only the id; `selected` is re-derived via `questNodes.find(n => n.id === selectedId)` (`:44`) — the ids are **graph node ids**, which are not always content slugs (`aava`, `grpc`, `nhl` per `CLAUDE.md:315`). The outer wrapper is also `hidden sm:block` (`:53`) on top of the JS media-query gate.
+- **Gotchas / invariants:** Selecting a node stores only the id; `selected` is re-derived via `questNodes.find(n => n.id === selectedId)` (`:44`) — the ids are **graph node ids**, which are not always content slugs (`aava`, `grpc`, `nhl` per `CLAUDE.md:316`). The outer wrapper is also `hidden sm:block` (`:53`) on top of the JS media-query gate.
 
 ### `src/components/game/build-graph-scene.tsx`
 - **Role:** The actual React Three Fiber canvas for the interactive graph.
@@ -313,6 +313,6 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 
 ## UNVERIFIED
 
-- The claim in `CLAUDE.md:113` / `ARCHITECTURE.md:74` that the terminal has "~16 commands" does not match the registry, which holds **31** entries (27 visible). The docs figure appears stale; the registry at `commands.ts:503-508` is authoritative.
+- The claim in `CLAUDE.md:114` / `ARCHITECTURE.md:74` that the terminal has "~16 commands" does not match the registry, which holds **31** entries (27 visible). The docs figure appears stale; the registry at `commands.ts:503-508` is authoritative.
 - `easter-eggs.tsx:57-66` describes the console greeting as "once per session", but the guard is a module-level `let` (`:31`) with no storage — I could not find any session-persistence mechanism, so the effective scope is per module instance.
 - Whether `NEXT_PUBLIC_SKILL_TREE` / `NEXT_PUBLIC_RESUME_VARIANTS` are set in any deployed Vercel environment — only the local `.env.example` (commented out) and `Makefile` defaults (`false`) were inspected.

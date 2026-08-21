@@ -91,7 +91,8 @@ make resume-list / resume-open   # manage PDFs in public/resume/
 
 **CI pipeline (`.github/workflows/`) — three workflows:**
 - `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm test`. Generates `.velite/` before typecheck and vitest — this mirrors the production build order and is required because `.velite/` is gitignored. Its `e2e` job also runs the **bundle budget** gate (`.github/workflows/ci.yml:110-111` → `scripts/bundle-budget.mjs`) immediately after its existing Build step, so it rides on that build rather than adding a second one.
-- `codeql.yml` — static JavaScript/TypeScript analysis on `develop` PRs + weekly.
+- `codeql.yml` — static JavaScript/TypeScript analysis on `develop` **and `main`** pushes/PRs + weekly.
+  `main` is listed on purpose: a hotfix pushed straight to it used to deploy with no analysis.
 - `dependency-review.yml` — dependency security check on PRs.
 
 **Bundle budget gate.** `scripts/bundle-budget.mjs` reads `.next/diagnostics/route-bundle-stats.json` — written by `next build` with no flag, but **only under Turbopack** — and asserts two things: every route's first-load JS stays under `MAX_FIRST_LOAD_BYTES` (`scripts/bundle-budget.mjs:45`; largest today is `/` at 1,220,794 B, so ~5% headroom), and three.js stays **off** the first-load critical path (marker-based on `WebGLRenderer`, `scripts/bundle-budget.mjs:57`). A missing or malformed artifact exits 1 by design. The CI step deliberately carries **no** `continue-on-error` and **no** `if-no-files-found` — unmeasurable must mean red.

@@ -11,11 +11,30 @@
 #
 name: "CodeQL Advanced"
 
+# `main` IS LISTED DELIBERATELY, even though it looks redundant.
+#
+# These triggers used to name `develop` only. In the normal flow that reads like full coverage —
+# everything reaches production via develop -> main, and CodeQL had already scanned the code on
+# develop. But two paths reach production WITHOUT ever being scanned:
+#   1. a hotfix committed or pushed straight to `main`
+#   2. a PR opened from a feature branch directly into `main`
+# Either one deploys to production with no analysis until the weekly cron happens to run, which is
+# up to 7 days later.
+#
+# The cost of listing `main` is one duplicate scan per release (the same commits are analysed again
+# when they land on main). That is cheap. The cost of omitting it is an unscanned hotfix, which is
+# exactly the kind of change most likely to be written under pressure.
+#
+# This is the third instance of one pattern found in this repo: a check that exists, looks like
+# coverage, and structurally misses the path that matters — CI pinned pnpm 10 so pnpm 11 was never
+# exercised, `Bundle size` was green for 222 runs while measuring nothing, and CodeQL covered
+# develop but not main. The useful question is not "does this check run?" but "WHICH PATHS REACH
+# PRODUCTION WITHOUT IT?"
 on:
   push:
-    branches: [ "develop" ]
+    branches: [ "develop", "main" ]
   pull_request:
-    branches: [ "develop" ]
+    branches: [ "develop", "main" ]
   schedule:
     - cron: '35 1 * * 1'
 

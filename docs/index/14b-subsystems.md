@@ -145,7 +145,7 @@ the current total with `today: 0` rather than a 429 (`:44-49`).
 | **Model output → card tokens** | Locked `[a-z0-9-]+` slug charset; resolution against the build-time Velite allowlist; unresolved tokens **dropped**, never echoed | `src/components/chat/parse-cards.ts:33,54-68`; gate `parse-cards.test.ts:55-75` |
 | **Model output → markdown** | react-markdown vdom (never `dangerouslySetInnerHTML`) + `skipHtml` + default `urlTransform` + `rehype-sanitize` as defense-in-depth | `src/components/chat/markdown-message.tsx:10-16,88-93` |
 | **Telemetry egress** | `redact()` on `message` and `stack` before `emit()`; salted 16-hex IP/UA hashes; transcript text and prompt text never emitted | `src/lib/telemetry/schema.ts:101-128`; `api/error/route.ts:145-166`; `api/transcribe/route.ts:105-112` |
-| **External redirect** | `/articles/<slug>` redirects only after asserting an `https://` or `http://` prefix, else `notFound()` — the open-redirect guard | `src/app/articles/[slug]/page.tsx:59-63` |
+| **External redirect** | `/articles/<slug>` redirects only after asserting an `https://` or `http://` prefix, else `notFound()` — the open-redirect guard | `src/app/articles/[slug]/page.tsx:77-81` |
 | **JSON-LD** | `safeJsonLd` = `JSON.stringify(data).replace(/<\//g, "<\\/")`, because `JSON.stringify` alone does not escape `</script>` | `src/components/json-ld.tsx:4-10` |
 | **Voice engine params** | `validateVoiceForEngine` rejects unknown ids, engine mismatches, and tier disagreements server-side; no `tier` field is accepted from the client | `src/lib/voice-catalog.ts:350-367`; `api/tts/route.ts:92-97` |
 | **Analytics** | `commandEventName` returns the registered command word or the literal `"unknown"` — never raw input or args | `src/components/game/terminal/commands.ts:535-538` |
@@ -538,7 +538,7 @@ branch, merged from `develop` only (Vercel Production). `make pr` opens feature 
 `make pr-prod` opens `develop` → `main`. Two consequences recorded in the repo: `codeql.yml` runs on
 `develop` pushes/PRs + a weekly cron but **not** on `main`; and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:194-195`).
+(`CHANGELOG.md:215-216`).
 
 ### The Pagefind search-index step
 
@@ -564,11 +564,11 @@ does not gate the route — only the nav link and the sitemap entry.
 | Dev server dies with "Can't resolve './projects.json'" | Passing `--clean` to Velite in dev, or setting `clean: true` in `velite.config.ts:125`. |
 | Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:107` → `site-footer.tsx:171`) and `/admin/telemetry`'s `export const instant = false` (`:11`) **plus** `await connection()` (`:434`) — the comment at `:428-433` records that `instant=false` alone does **not** clear it. |
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true`. The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. |
-| Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:16-24` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
+| Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:34-42` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
 | `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:175-184`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:30`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:165-167`). |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:186-188`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
 | `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4003`) against a declared `^0.185.1` — one minor of headroom. |
 
@@ -606,7 +606,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Nav height `3.5rem` / `h-14` | `src/components/site-nav.tsx:42` · `src/components/ui/skeleton.tsx` (`SkeletonViewTransition`) · `chat-view.tsx:43-48` · `developer-view.tsx:32` · `globals.css:58-65` (`scroll-padding-top`) |
 | View-transition names | `view-router.tsx:56` · `site-nav.tsx:40` · `globals.css:270-289` |
 | Résumé variant labels | `src/lib/profile.ts:77-81` · `src/lib/mcp-tools.ts:20-26` (`ROLE_TO_LABEL`) · `public/resume/*.pdf` filenames |
-| Article `source` enum | `velite.config.ts:102` · `src/components/platform-badge.tsx:13-23` · `src/app/articles/page.tsx:25-32` (`SOURCE_LABELS`) · `articles/[slug]/opengraph-image.tsx:8-13` |
+| Article `source` enum | `velite.config.ts:102` · `src/components/platform-badge.tsx:13-23` · `src/app/articles/page.tsx:25-32` (`SOURCE_LABELS`) · `articles/[slug]/opengraph-image.tsx:19-26`. **All four are now keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind: `devto` and `hashnode` were missing, so **9 of 15 article OG cards rendered the generic `> article`**. Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
 | Terminal command visibility filter | `src/components/game/terminal/commands.ts:525-527` (`COMMAND_NAMES`) · `terminal.tsx:17-19` (independent re-filter for the fuzzy dropdown) |
 | Terminal input selector | `terminal.tsx:254` (`aria-label="Terminal command input"`) · `terminal-overlay.tsx:39-41` (queries that exact string) |
 | CSP `frame-ancestors` string | `next.config.ts:41` (the literal) · `:204-207` (the replace that depends on it) |

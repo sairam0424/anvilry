@@ -335,7 +335,7 @@ reinforced in the chat system prompt at `src/app/api/chat/route.ts:114`.
 The printed `/resume` page (`src/app/resume/page.tsx`) does **not** import `@/lib/content`
 directly (verified by grep) — it is tab/PDF-driven; `register` reaches recruiters through
 `resume-json.ts` and through the `/work` pages (`src/app/work/page.tsx:53`,
-`src/app/work/[slug]/page.tsx:57`, and the OG image at
+`src/app/work/[slug]/page.tsx:75`, and the OG image at
 `src/app/work/[slug]/opengraph-image.tsx:21`).
 
 ### 4. Home page featured lists
@@ -371,7 +371,7 @@ across `src/**/*.test.ts*` finds no test referencing `linkedNote`. The consumers
 unconditionally — `src/components/article-card.tsx:18`
 (`if (a.linkedNote) return { href: \`/notes/${a.linkedNote}\` … }`),
 `src/components/article-group-card.tsx:21-22`, `src/app/articles/page.tsx:152-153`, and the
-`redirect()` at `src/app/articles/[slug]/page.tsx:53-54` — all gated on `NOTES_ENABLED`.
+`redirect()` at `src/app/articles/[slug]/page.tsx:71-72` — all gated on `NOTES_ENABLED`.
 Because `NOTES_ENABLED` defaults to **false** (`src/lib/writing-flags.ts:22-23`), those three
 cards currently fall back to `externalUrl`, which all three have; the dangling links only become
 reachable once `NEXT_PUBLIC_NOTES_ENABLED=true`. `src/lib/llms-txt.ts:27-28` builds the same
@@ -384,7 +384,7 @@ reachable once `NEXT_PUBLIC_NOTES_ENABLED=true`. `src/lib/llms-txt.ts:27-28` bui
 → `/notes/how-dns-works`) and as `content/articles/how-dns-works.mdx` (group `article`,
 → `/articles/how-dns-works`). The article is `source: native` with a `linkedNote` pointing at
 its own name and no `externalUrl`, which makes it the "notes-only article" case explicitly
-handled at `src/app/articles/[slug]/page.tsx:25` and `:65-66`: it is dropped from
+handled at `src/app/articles/[slug]/page.tsx:43` and `:65-66`: it is dropped from
 `generateStaticParams` and returns nothing when `NOTES_ENABLED` is false.
 
 ## Detail

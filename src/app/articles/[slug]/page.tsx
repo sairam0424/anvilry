@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import type { ArticleSource } from "@/components/platform-badge";
 import { allArticles, getArticle } from "@/lib/content";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
@@ -11,10 +12,27 @@ import { profile } from "@/lib/profile";
 
 const BASE = "https://anvilry.vercel.app";
 
-const SOURCE_LABELS: Record<string, string> = {
+/**
+ * The FOURTH copy of the article-source label map, and the last one still untyped. Keyed by
+ * `ArticleSource` so a new Velite `source` member cannot be added without updating it — the same
+ * fix applied to `opengraph-image.tsx`, where a `Record<string, string>` had silently drifted two
+ * members behind and mislabelled 8 of 14 OG cards.
+ *
+ * Title Case here (`"Dev.to"`), lowercase in the OG card (`"> dev.to"`) — two deliberate registers.
+ * `SOURCE_CONFIG` in `platform-badge.tsx` and `SOURCE_LABELS` in `articles/page.tsx` are the other
+ * two Title Case copies; keep all three in step.
+ *
+ * `devto`/`hashnode` were missing here too. Currently unreachable rather than broken: `:59` redirects
+ * every non-native article that has an `externalUrl`, and all 13 published external articles have
+ * one. But `velite.config.ts:103` declares `externalUrl` `.optional()` — "required for non-native"
+ * is a comment, not a constraint — so one omission would fall through and render a raw `devto`.
+ */
+const SOURCE_LABELS: Record<ArticleSource, string> = {
   medium:   "Medium",
   substack: "Substack",
   linkedin: "LinkedIn",
+  devto:    "Dev.to",
+  hashnode: "Hashnode",
   native:   "Essay",
 };
 

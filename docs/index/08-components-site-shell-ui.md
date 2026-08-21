@@ -245,7 +245,7 @@ Two named transition groups exist in the tree:
 - **Role:** Top-of-viewport scroll progress bar.
 - **Exports:** `ReadingProgress` (no props).
 - **Reads / depends on:** `motion/react` `useScroll` + `useReducedMotion` (Motion's own, not `@/lib/use-reduced-motion`).
-- **Consumed by:** `src/app/notes/[slug]/page.tsx:68` only.
+- **Consumed by:** `src/app/notes/[slug]/page.tsx:86` only.
 - **Behaviour notes:** Returns `null` under reduced motion (`:15`). Drives `scaleX` from `scrollYProgress` on a `fixed … h-[2px] origin-left` bar — compositor-only, zero React re-renders (`:6-9`, `:18-22`). `aria-hidden="true"`.
 
 ### `src/components/copy-button.tsx`

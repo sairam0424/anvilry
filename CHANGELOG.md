@@ -27,6 +27,27 @@ On `develop`, not yet released, so it carries no version of its own. No runtime 
 
   **Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it installs*.
 
+- **8 of 14 article OG cards rendered the generic `> article` label**, and two more label maps could
+  drift the same way. `SOURCE_LABEL` in `articles/[slug]/opengraph-image.tsx:19-26` and `SOURCE_LABELS`
+  in `articles/[slug]/page.tsx:14-30` were both `Record<string, string>` and had drifted two members
+  behind `velite.config.ts:102`'s `source` enum: `devto` (7 published) and `hashnode` (1 published)
+  fell through the `??` fallback. Both are now keyed by `ArticleSource`, making an omission a `tsc`
+  error — verified, not assumed: widening the Velite enum alone yields `TS7053`/`TS2741` and exit 2,
+  because `.velite/index.d.ts` derives `Article` from `typeof import("../velite.config.ts")`, so the
+  enum edit alone changes the type with no `pnpm content` step. The two sibling maps
+  (`platform-badge.tsx:13`, `articles/page.tsx:25`) were already `Record<ArticleSource, …>`, which is
+  exactly why tsc caught drift there and structurally could not in these two.
+  **No test added — the key type is the guard.**
+
+  **Scope, stated honestly:** `articles/[slug]/page.tsx:59` redirects every non-native article that has
+  an `externalUrl`, and all 13 published external articles have one — so those pages return 307 and an
+  unfurler following the redirect gets the *publisher's* card, not ours. The one article that serves our
+  og tags (`how-dns-works`, native) was already labelled correctly. The corrected pixels are reachable
+  at `/articles/<slug>/opengraph-image`, which is prerendered for all 14. **This is a correctness and
+  drift-proofing fix, not a visible-regression fix.** `page.tsx`'s gap is likewise latent rather than
+  live: `velite.config.ts:103` declares `externalUrl` `.optional()` ("required for non-native" is a
+  comment, not a constraint), so one omission would fall through `:59` and render a raw `devto`.
+
 ### Added
 - **`ci.yml` job `install-pnpm-11`** (`ci.yml:115-162`) — the only job running a pnpm other than the
   pinned 10. Installs cold, fails on `git diff --exit-code` so a silent write to a tracked file is

@@ -16,7 +16,7 @@ résumé.
 **Version:** `3.5.0` (`package.json:3`) — a **correctness** release, not a security one: six live
 defects fixed, the repo's own doc claims reconciled with its code, this per-file index, and the
 pnpm-settings migration that stops pnpm 11 silently dropping v3.4.2's ten security overrides
-(`CHANGELOG.md:41-143`).
+(`CHANGELOG.md:62-164`).
 
 **Stack:** Next.js 16.3.0 (App Router, `cacheComponents: true`) · React 19.2.8 · TypeScript 5.9 (strict) ·
 Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) · AWS Bedrock / Anthropic SDK ·
@@ -75,7 +75,7 @@ corrected text.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
-| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:41` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
+| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:62` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
 dependency counts were **35 + 17** at v3.4.2 (not the brief's 39 + 18 — already flagged in section

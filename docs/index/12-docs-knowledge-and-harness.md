@@ -23,7 +23,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 
 | File | Role | Key exports / anchors |
 |---|---|---|
-| `README.md` | Public-facing project pitch: "a beast with **four switchable experiences** over one canonical content source" (`README.md:5`) — marketing framing, not the store shape; the `View` union has **six** members and "four-view" describes only the default server-rendered pill set (`CLAUDE.md:98`). Plus highlights, stack table, develop/content/chat/voice/deploy quickstarts. Its terminal-command count was corrected to **31** on this branch (`README.md:10`). | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
+| `README.md` | Public-facing project pitch: "a beast with **four switchable experiences** over one canonical content source" (`README.md:5`) — marketing framing, not the store shape; the `View` union has **six** members and "four-view" describes only the default server-rendered pill set (`CLAUDE.md:107`). Plus highlights, stack table, develop/content/chat/voice/deploy quickstarts. Its terminal-command count was corrected to **31** on this branch (`README.md:10`). | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
 | `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line was corrected on this branch — it used to say "4-view system"; it now records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`). | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 5-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. | (no headings beyond the single H1) |
@@ -59,7 +59,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `domains/README.md` | Schema README for the `domain` kind: what a loop is, the domain README template, the Timeline-as-run-log rule, "don't create domains by hand — run `/new-loop`". | §Domain README template, §Anvilry Domains |
 | `domains/content/README.md` | Content-freshness loop charter (`status: active`, `cadence: weekly`). 5 backlog items, 3 metrics, 1 Timeline entry. | §Current focus, §Backlog, §Metrics, §Timeline |
 | `domains/seo/README.md` | Discoverability loop charter (weekly). Contains the 2026-08-12 correction removing llms.txt as an organic-reach mechanism, and a "no separate GEO/AEO discipline" ruling. | §llms.txt correction, §No separate GEO/AEO, §Backlog, §Timeline |
-| `domains/performance/README.md` | Web-vitals loop charter (`cadence: on-pr`). The richest domain file: closed cacheComponents + R3F tracks, 4 silent-failure regression guards, 3 known constraints, verified-current CWV facts. | §Current focus, §Regression guards, §Known constraints, §Verified-current facts, §Timeline |
+| `domains/performance/README.md` | Web-vitals loop charter (`cadence: on-pr`). The richest domain file, and **rewritten on this branch** when `bundle-analysis.yml` was deleted: closed cacheComponents + R3F tracks, **5** regression guards — the first now **✅ ENFORCED** in CI via `scripts/bundle-budget.mjs`, the other four still silent — **4** known constraints (two of them marked RESOLVED), a §Metrics section that now splits "what actually ships" from webpack "module attribution", verified-current CWV facts. | §Current focus, §Regression guards, §Metrics, §Known constraints, §Verified-current facts, §Timeline |
 | `signals/README.md` | Schema README for the `signal` kind: frontmatter (`category`, `frequency`, `sources[]`, `domain[]`, `status`), `frequency` = Timeline-entry count, Anvilry signal domains. | §Frontmatter, §Body, §Naming, §Anvilry Signal Domains |
 | `.claude/skills/dev-local/SKILL.md` | Anvilry-specific dev-stack launcher skill: port map, prerequisites, `up`/`verify`/`content`/`test`/`build` command blocks. `user_invocable: true`. | frontmatter `name: dev-local`, §Commands, §Notes |
 | `.claude/skills/e2e-setup/SKILL.md` | Generic skill for standing up a trustworthy E2E gate: where it lives, the 4-step recipe, trust practices, failure triage, external-service sandbox rules. | frontmatter `name: e2e-setup`, §The recipe, §Practices, §When a test fails |
@@ -89,7 +89,8 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 version marker is the better freshness cue. Both are given.
 
 The mtimes below were read at `release/v3.4.2`. The correctness pass on this branch rewrote
-`CLAUDE.md`, `ARCHITECTURE.md`, `DEPLOY.md`, `README.md`, `CHANGELOG.md` and `docs/README.md`, so those six
+`CLAUDE.md`, `ARCHITECTURE.md`, `DEPLOY.md`, `README.md`, `CHANGELOG.md` and `docs/README.md`, and the
+bundle-guard change then rewrote `CLAUDE.md` again and `domains/performance/README.md`, so those **seven**
 rows' mtimes are now newer than listed — and their *content* is what §Doc-vs-code drift below describes as
 corrected. The version markers are unchanged.
 
@@ -114,12 +115,12 @@ corrected. The version markers are unchanged.
 | `domains/README.md` | schema readme | The `domain` frontmatter + README template | mtime 28 Jun |
 | `domains/content/README.md` | loop charter | Content-freshness goal, backlog, metrics | Timeline ends 2026-06-24; mtime 28 Jun |
 | `domains/seo/README.md` | loop charter | SEO goal + the llms.txt and GEO/AEO rulings | Timeline ends 2026-08-12; mtime 15 Aug |
-| `domains/performance/README.md` | loop charter | Bundle/CWV baselines, regression guards, tooling constraints | Timeline ends 2026-08-15; mtime 15 Aug |
+| `domains/performance/README.md` | loop charter | Bundle/CWV baselines, regression guards (one now CI-enforced), tooling constraints | Timeline ends 2026-08-21; rewritten on this branch; mtime 21 Aug |
 | `signals/README.md` | schema readme | The `signal` frontmatter + dedup/frequency rule | mtime 28 Jun; **zero signal files exist** |
 | `.claude/skills/*/SKILL.md` (5) | agent skills | Their own trigger phrases + procedures | all mtime 28 Jun |
 | `.claude/skills/new-loop/references/*` (4) | skill templates | The generic KB substrate `new-loop` copies in | all mtime 28 Jun |
 | `.claude/workflows/ship-change.js` | workflow script | Phase order + per-phase agent prompts/schemas | mtime 28 Jun |
-| `.claude/proven-config.json` + `.proven-config-version` | tool state | Ruflo champion retrieval policy | mtime 20 Aug (newest in scope) |
+| `.claude/proven-config.json` + `.proven-config-version` | tool state | Ruflo champion retrieval policy | mtime 20 Aug — no longer the newest in scope; this branch's `CLAUDE.md` + `domains/performance/README.md` rewrites are 21 Aug |
 | `../PLAN.md`, `../RESEARCH.md` | pre-build artifacts | The original brief + its verified research basis | mtime 11 Jun; both predate the shipped stack |
 | `../.aava/*`, `../.claude-flow/*` | third-party tool state | Aava/Ruflo agent scaffolding — no app coupling | `.aava` generated 24 Jun; `.claude-flow` 20 Aug |
 
@@ -168,7 +169,7 @@ stopped reading `package.json`'s `pnpm` field, so v3.4.2's ten security `overrid
 ignored; the `pnpm` field is now **gone** from `package.json`), a `.nvmrc` of `22` with `engines.node` pinned
 to `">=22 <23"` (`CHANGELOG.md:141`, `package.json:5-7`), and the removal of `@react-three/rapier` +
 `@react-three/offscreen` (`CHANGELOG.md:160-164`: 3 packages removed, 0 added, and one version change —
-`@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:31`, `^0.185.4`) was its
+`@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:32`, `^0.185.4`) was its
 only remaining consumer). Dependency counts are now **33 prod / 17 dev**, down from 35 / 17.
 
 **What v3.4.2 shipped** (`CHANGELOG.md:166-216`): a
@@ -212,9 +213,24 @@ Timeline entries (`signals/README.md:36`).
 |---|---|---|---|
 | `content` | Keep the portfolio content fresh, consistent, and discoverable | `weekly` | MDX files + Velite output |
 | `seo` | Maximize organic reach via llms.txt, structured data, sitemap, canonical URLs | `weekly` | Vercel Analytics + Google Search Console |
-| `performance` | Keep Core Web Vitals green; catch bundle regressions before they ship | `on PR` (frontmatter: `cadence: on-pr`) | `pnpm build` bundle analysis + web-vitals |
+| `performance` | Keep Core Web Vitals green; catch bundle regressions before they ship | `on PR` (frontmatter: `cadence: on-pr`) | ~~`pnpm build` bundle analysis~~ + web-vitals — **corrected on this branch**, see the note below: the collector is now `.next/diagnostics/route-bundle-stats.json` |
 
-Two structural facts a maintainer should know:
+**The `performance` row's Collector is the one thing in this table that changed on this branch — and its
+Goal became true for the first time.** The wording above is quoted from its two sources, which both still
+say "`pnpm build` bundle analysis" (`ARCHITECTURE.md:57`, `domains/README.md:59`). That used to mean
+`@next/bundle-analyzer` driven by `.github/workflows/bundle-analysis.yml`, a workflow that produced **zero
+artifacts across its entire 221-run life** — so nothing was ever caught "before it ships". That workflow is
+**deleted**. The collector is now `.next/diagnostics/route-bundle-stats.json`, which a bare `next build`
+writes with no flag but **only under Turbopack**, read by `scripts/bundle-budget.mjs` in the "Bundle budget"
+step of `ci.yml`'s existing `e2e` job (`.github/workflows/ci.yml:110-111`) — placed immediately after that
+job's Build step so it rides the build that already happens rather than adding a second one. It carries no
+`continue-on-error` and no `if-no-files-found`, and a missing or malformed artifact exits 1 by design.
+`cadence: on-pr` is now honest too: `ci.yml` triggers on every push and on PRs into `develop`/`main`
+(`.github/workflows/ci.yml:3-7`). `@next/bundle-analyzer` survives as a **local attribution tool only** —
+`pnpm analyze` (`package.json:12`), which needs an explicit `--webpack` precisely because a bare
+`next build` is Turbopack and the analyzer is webpack-only.
+
+Three structural facts a maintainer should know (this line said "two" while listing three — recounted):
 
 - **`signals/` is empty; `docs/` no longer is.** `signals/` contains only its schema README (zero signal
   files). ~~`docs/README.md` lists "*(none yet — add docs here as they accumulate)*"~~ — **corrected on this
@@ -231,12 +247,24 @@ Two structural facts a maintainer should know:
   (10.5% of AI fetches, Claude-Code ranked #2). It also flags an **unresolved** question: the per-route
   `.md` endpoints are ordinary crawlable documents, so `/work/[slug].md` vs `/work/[slug]` duplicate content
   is open (`domains/seo/README.md:45-47`).
-- **`domains/performance/README.md` is the closest thing to a live perf contract.** Lines 62-66 pin the
-  current baseline — "exactly 1 three.js copy, 1248 KB total across R3F chunks, 113/113 static pages" — and
-  warn that `grep -l "react-three" | wc -l` returns 5 (chunks *referencing* R3F) which is **not** the copy
-  count; the copy count is `grep -l "WebGLRenderer" | wc -l`, which must be 1. Lines 48-61 list four
-  regression guards that all fail *silently*, including "`src/lib/r3f.ts` is load-bearing … do not delete it
-  on the theory that '16.3 handles this now'".
+- **`domains/performance/README.md` stopped being only a *documented* perf contract on this branch — one of
+  its guards is now executable.** Its §Regression guards list grew to five, and the new first bullet is
+  marked **✅ ENFORCED** (`domains/performance/README.md:60-73`): `.github/workflows/ci.yml:110-111` runs
+  `node scripts/bundle-budget.mjs`, which fails the job if either any route's
+  `firstLoadUncompressedJsBytes` exceeds 1,285,000 B (`scripts/bundle-budget.mjs:45`; largest today is `/`
+  at 1,220,794 B, ~5% headroom) or the `WebGLRenderer` marker (`scripts/bundle-budget.mjs:57`) turns up in
+  any route's first-load chunk set — today it sits in exactly one 897,249 B chunk, present in 0 of 16
+  routes. The remaining **four** guards still fail *silently*, including "`src/lib/r3f.ts` is load-bearing …
+  do not delete it on the theory that '16.3 handles this now'" (`domains/performance/README.md:78-80`) —
+  and the enforced guard explicitly does **not** cover a duplicate `three` copy that stays off the critical
+  path, which remains a manual grep. `domains/performance/README.md:84-95` still pins the baseline —
+  "exactly 1 three.js copy, 1248 KB total across R3F chunks, 113/113 static pages" — and now records the
+  attribution fix that matters most: **every KB figure in that section is a Turbopack measurement**, so the
+  876 KB single-chunk three.js number was never a webpack number and the invariant stands unchanged. The
+  same bullet also tightened its own grep, because the loose form misreads in both directions:
+  `grep -lE "react-three|THREE\." | wc -l` returns 5 (chunks *referencing* R3F, **not** the copy count)
+  while the narrower `grep -l "react-three"` returns 2 and would read as a phantom regression; the copy
+  count is `grep -l "WebGLRenderer" | wc -l`, which must be 1.
 
 ## Agent harness
 
@@ -300,7 +328,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    `src/lib/llm.ts:32-34` (`BEDROCK_CHAIN`) and `src/lib/llm.ts:38` (`ANTHROPIC_CHAIN` =
    `["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"]`). The same edit added a standing rule at
    `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is authoritative
-   if this table ever disagrees with it" — with the source citations inline. `CLAUDE.md:191` and
+   if this table ever disagrees with it" — with the source citations inline. `CLAUDE.md:200` and
    `docs/configuration.md:43-46` always stated the correct order. No test guards this; the anchor is the
    pointer at `DEPLOY.md:102-103`. (`CHANGELOG.md:540-542` records fixing the same inversion once already,
    in a `streamWithFallback` docblock at v1.8.0 — so this is the second recurrence, which is why the
@@ -310,42 +338,42 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    (7 read-only tools)" in the Key Files table. `src/app/api/mcp/[transport]/route.ts` calls
    `server.registerTool` **nine** times — the seven plus `list_all_content` (`:98-99`) and
    `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions. Current state: the
-   prose says **9 tools** with all nine tabled (`CLAUDE.md:202`), the Key Files row says "MCP server (9
-   read-only tools)" (`CLAUDE.md:293`), the route's own docblock says "9 read-only tools"
+   prose says **9 tools** with all nine tabled (`CLAUDE.md:211`), the Key Files row says "MCP server (9
+   read-only tools)" (`CLAUDE.md:302`), the route's own docblock says "9 read-only tools"
    (`src/app/api/mcp/[transport]/route.ts:22`), and the public `/mcp` page tables all nine
    (`src/app/mcp/page.tsx:35-45`). **Guard:** `src/app/mcp/tools-documented.test.ts` asserts set equality
    between the page's `TOOLS` rows and the route's `registerTool` calls (`:92`, with the missing names in the
    failure message at `:85`); `vitest run` is chained into `pnpm build`, so adding a tool without
-   documenting it fails the build. `CLAUDE.md:216-220` records that this is why the count is safe to quote.
+   documenting it fails the build. `CLAUDE.md:225-229` records that this is why the count is safe to quote.
    `CHANGELOG.md:419` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:83-85` records this doc fix
    landing in v3.5.0.
 3. ~~**"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**~~ —
    **corrected on this branch.** `CLAUDE.md` now leads the section with "**Runtime & duration — do not add
    `export const runtime`.** No route exports `runtime` anywhere in `src/`" and states that `maxDuration` is
-   "**per-route, not a uniform 30s**" (`CLAUDE.md:152`), followed by the real per-route table
-   (`CLAUDE.md:154-162`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
+   "**per-route, not a uniform 30s**" (`CLAUDE.md:170`), followed by the real per-route table
+   (`CLAUDE.md:163-180`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
    25 for `cron/health-check`, 20 `transcribe`, 15 `tts`/`tts-google`, 5 `error`, none for
    `visit`/`github/stats`/`md/*`/`resume.json`). The only `runtime` string left in `src/` is the comment
    noting its removal (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:288-290`
    (13 `runtime` exports deleted for Cache Components).
 4. ~~**`pnpm search-index` does not exist.**~~ — **corrected on this branch.** `CLAUDE.md` used to list
-   `pnpm search-index` under "After build". `package.json:8-20` has no `search-index` script; the target is
+   `pnpm search-index` under "After build". `package.json:8-22` has no `search-index` script; the target is
    `make search-index` (`Makefile:65-66`, which runs
-   `pnpm pagefind --site .next/server/app --output-path public/pagefind`). Current state: `CLAUDE.md:32`
+   `pnpm pagefind --site .next/server/app --output-path public/pagefind`). Current state: `CLAUDE.md:38`
    carries the explicit warning "**NOTE:** this is a Makefile target only — there is NO `pnpm search-index`
-   script" immediately above the `make search-index` line at `:33`. `docs/configuration.md:132` always said
+   script" immediately above the `make search-index` line at `CLAUDE.md:39`. `docs/configuration.md:132` always said
    `make search-index`.
 5. **Velite does not run in watch mode during `pnpm dev`.** *(Still live.)* `CLAUDE.md:14` ("starts Velite
    watch + Next.js dev"), `README.md:45` ("Velite runs in watch mode via predev") and
    `.claude/skills/dev-local/SKILL.md:29` ("This runs `velite --watch & next dev`") all claim a watcher.
    `package.json:9-10` is `"predev": "velite"` (one-shot) + `"dev": "next dev"` — no `--watch` anywhere.
-   `CLAUDE.md:178` separately and correctly describes `predev` as running "Velite synchronously before
+   `CLAUDE.md:187` separately and correctly describes `predev` as running "Velite synchronously before
    `next dev` starts", and `.claude/skills/dev-local/SKILL.md:30-31` says the same two lines later — so each
    of the two files contradicts itself. The correctness pass on this branch did **not** touch this one.
 6. ~~**The route tree in `CLAUDE.md` lists one cron route; there are five.**~~ — **corrected on this branch.**
-   The tree used to show only `/api/cron/eval` and to omit the `.md` handlers. Current state: `CLAUDE.md:146`
-   is `└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}` with `CLAUDE.md:147` recording
-   "5 crons, ALL fail-closed on CRON_SECRET (`vercel.json:3-7`)", and `CLAUDE.md:145` lists
+   The tree used to show only `/api/cron/eval` and to omit the `.md` handlers. Current state: `CLAUDE.md:155`
+   is `└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}` with `CLAUDE.md:156` recording
+   "5 crons, ALL fail-closed on CRON_SECRET (`vercel.json:3-7`)", and `CLAUDE.md:163` lists
    `/api/md/{articles,notes,projects,work}/[slug]   raw-markdown passthrough (4 handlers)`. Both now match
    `src/app/api/cron/` (`content-audit`, `eval`, `github-sync`, `health-check`, `seo-audit`) and the four
    `src/app/api/md/*/[slug]/route.ts` files.
@@ -364,7 +392,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    ls, cat, tree, grep, find, top, stats, stack, awards, summary, career, about, resume, open, contact,
    email, social, chat, theme, classic, developer, cd, clear, sudo`) plus 4 hidden eggs (`secret, personal,
    uses, now`) that are dispatchable but filtered out of `COMMAND_NAMES` (`:525-527`). Current state:
-   `CLAUDE.md:105` = "Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs)",
+   `CLAUDE.md:114` = "Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs)",
    `ARCHITECTURE.md:74` = "Developer terminal view (31 commands, combobox)", `README.md:10` = "31 commands".
    No test guards the count; re-derive it from `commands.ts:503-508` if it looks stale again.
 10. ~~**`docs/README.md` still claims there are no docs.**~~ — **corrected on this branch.** It used to say
@@ -372,19 +400,25 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
     (`docs/README.md:36-43`) listing `configuration.md`, `index/` ("Per-file/per-route codebase index,
     version-pinned. Start at `index/README.md`"), `superpowers/plans/` (14) and `superpowers/specs/` (5).
     `docs/index/` itself holds 17 markdown files — this index.
-11. **`CLAUDE.md`'s CI description omits two jobs.** *(Still live.)* `CLAUDE.md:87` describes `ci.yml` as
-    "lint → typecheck (`tsc --noEmit`) → `pnpm test`". `.github/workflows/ci.yml` defines three jobs:
-    `ci:` (`:10`), `e2e:` "E2E (Playwright)" (`:55-56`) running `pnpm e2e` (`:92`), and `security-alerts:`
-    (`:102`) — both added in v3.4.2 per `CHANGELOG.md:201-205`.
+11. **`CLAUDE.md`'s CI description omits two of `ci.yml`'s four jobs.** *(Still live — but re-measured on
+    this branch, because the previous wording's job count and every line number in it were stale.)*
+    `CLAUDE.md:93` still describes `ci.yml` as "lint → typecheck (`tsc --noEmit`) → `pnpm test`", now
+    followed by a sentence about the `e2e` job's bundle-budget step. `.github/workflows/ci.yml` defines
+    **four** jobs: `ci:` (`:10`), `e2e:` "E2E (Playwright)" (`:68-69`) running the new "Bundle budget" step
+    (`:110-111`) and then `pnpm e2e` (`:114`), `install-pnpm-11:` (`:124`), and `security-alerts:` (`:173`).
+    `e2e` and `security-alerts` were added in v3.4.2 (`CHANGELOG.md:201-205`); `install-pnpm-11` is newer and
+    still sits in the live `[Unreleased]` section (`CHANGELOG.md:52`). The **workflow** count in
+    `CLAUDE.md:92` is now correct — "three workflows", since `bundle-analysis.yml` was deleted on this
+    branch — so only the job list inside `ci.yml` is stale.
 12. **`DEPLOY.md`'s build command drops the test step.** *(Still live.)* `DEPLOY.md:20` — "Build command:
     `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
     `"build": "velite --clean && vitest run && next build"`. `README.md:46` and `CLAUDE.md:16-17` both state
-    the three-step form, and `CLAUDE.md:362` relies on it ("a failing test blocks deployment"). Note this
+    the three-step form, and `CLAUDE.md:371` relies on it ("a failing test blocks deployment"). Note this
     branch *did* rewrite `DEPLOY.md` (§3 model chains, §4 base-URL count) without touching `:20`.
 13. **Plan-vs-shipped, flags package (informational, plan is dated).** *(Still live.)*
     `docs/superpowers/plans/2026-06-18-vercel-flags-sdk.md:51,76` prescribes `pnpm add @vercel/flags` and
     `import { flag } from "@vercel/flags/next"`. The shipped code is `import { flag } from "flags/next"`
-    (`src/lib/flags.ts:10`) with `"flags": "^4.3.0"` in `package.json:39` — the renamed package.
+    (`src/lib/flags.ts:10`) with `"flags": "^4.3.0"` in `package.json:40` — the renamed package.
     `docs/configuration.md:215-223` documents `FLAG_DRIVER`/`FLAGS`/`FLAGS_SECRET` without naming a package,
     so it is not itself wrong.
 14. **Template-vs-instantiation, LOG ordering.** *(Still live.)* `.claude/skills/new-loop/references/LOG.md:4` seeds

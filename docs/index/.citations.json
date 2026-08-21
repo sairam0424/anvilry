@@ -287,63 +287,6 @@
       ],
       "preview": "- [ ] No changes to `content/`, `src/lib/profile.ts`, or `public/resume/` (content is not open for c"
     },
-    ".github/workflows/bundle-analysis.yml:50": {
-      "fp": "57127a4b6fe4",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "- name: Generate Velite content types"
-    },
-    ".github/workflows/bundle-analysis.yml:51": {
-      "fp": "b48b87a66eee",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "run: pnpm content"
-    },
-    ".github/workflows/bundle-analysis.yml:54": {
-      "fp": "c0750c4f21f2",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "# opt-in via --turbopack flag, dev-only). withBundleAnalyzer hooks"
-    },
-    ".github/workflows/bundle-analysis.yml:56": {
-      "fp": "2577ba57990f",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "- name: Build with bundle analysis"
-    },
-    ".github/workflows/bundle-analysis.yml:57": {
-      "fp": "8db700617f19",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "env:"
-    },
-    ".github/workflows/bundle-analysis.yml:58": {
-      "fp": "964adb2cf256",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "ANALYZE: \"true\""
-    },
-    ".github/workflows/bundle-analysis.yml:59": {
-      "fp": "2ea64d4fd08b",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "run: npx next build"
-    },
     ".github/workflows/ci.yml:10": {
       "fp": "17f613ed4649",
       "citedBy": [
@@ -361,7 +304,8 @@
     ".github/workflows/ci.yml:101": {
       "fp": "67734fc49fb2",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- name: Build"
@@ -369,71 +313,113 @@
     ".github/workflows/ci.yml:102": {
       "fp": "e625233a3481",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
-        "14b-subsystems.md"
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "run: pnpm build"
     },
     ".github/workflows/ci.yml:104": {
+      "fp": "9badc7666849",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "# Rides on the build above rather than adding a second one. `pnpm build` ends in a bare"
+    },
+    ".github/workflows/ci.yml:108": {
+      "fp": "30e6af5d5594",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# this step REPLACES bundle-analysis.yml, which was green with zero artifacts across all 222 of its "
+    },
+    ".github/workflows/ci.yml:109": {
+      "fp": "a3208e9ec78b",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "# precisely because those two settings made it unfailable. Unmeasurable must mean red."
+    },
+    ".github/workflows/ci.yml:110": {
+      "fp": "ffe43b691b97",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "- name: Bundle budget"
+    },
+    ".github/workflows/ci.yml:111": {
+      "fp": "08c803865b93",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "run: node scripts/bundle-budget.mjs"
+    },
+    ".github/workflows/ci.yml:113": {
       "fp": "022ae3ac4600",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "- name: Run E2E"
     },
-    ".github/workflows/ci.yml:105": {
+    ".github/workflows/ci.yml:114": {
       "fp": "cbd6b4ed0b92",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "10-tests-and-quality-gates.md"
       ],
       "preview": "run: pnpm e2e"
     },
-    ".github/workflows/ci.yml:113": {
+    ".github/workflows/ci.yml:122": {
       "fp": "464235042cb0",
       "citedBy": [
+        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "retention-days: 7"
     },
-    ".github/workflows/ci.yml:115": {
+    ".github/workflows/ci.yml:124": {
       "fp": "c067fcccba23",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "install-pnpm-11:"
     },
-    ".github/workflows/ci.yml:162": {
+    ".github/workflows/ci.yml:148": {
+      "fp": "0255a5d666cd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "version: 11"
+    },
+    ".github/workflows/ci.yml:171": {
       "fp": "ecaee25006b7",
       "citedBy": [
-        "10-tests-and-quality-gates.md"
+        "10-tests-and-quality-gates.md",
+        "11-config-build-ci-infra.md"
       ],
       "preview": "run: npx vitest run src/lib/pnpm-build-allowlist-consistency.test.ts"
     },
-    ".github/workflows/ci.yml:164": {
+    ".github/workflows/ci.yml:173": {
       "fp": "e42850b6d618",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "security-alerts:"
     },
-    ".github/workflows/ci.yml:168": {
-      "fp": "65e75314491a",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "# NON-BLOCKING BY DESIGN (continue-on-error). Its job is VISIBILITY, not enforcement."
-    },
-    ".github/workflows/ci.yml:175": {
-      "fp": "33a0d6eceae4",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "# IMPORTANT TOKEN LIMITATION: the default GITHUB_TOKEN CANNOT read the Dependabot alerts API,"
-    },
-    ".github/workflows/ci.yml:184": {
+    ".github/workflows/ci.yml:193": {
       "fp": "95dd14469c16",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -441,19 +427,19 @@
       ],
       "preview": "# misleading green tick."
     },
-    ".github/workflows/ci.yml:188": {
+    ".github/workflows/ci.yml:197": {
       "fp": "9ff6534d73ee",
       "citedBy": [
         "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "continue-on-error: true"
     },
     ".github/workflows/ci.yml:22": {
       "fp": "c8c82d24e074",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -466,7 +452,7 @@
       ],
       "preview": "- name: Setup Node.js 22"
     },
-    ".github/workflows/ci.yml:240": {
+    ".github/workflows/ci.yml:249": {
       "fp": "a7e3c0126445",
       "citedBy": [
         "10-tests-and-quality-gates.md"
@@ -482,10 +468,23 @@
       ],
       "preview": "node-version: 22"
     },
+    ".github/workflows/ci.yml:3": {
+      "fp": "fc8135fd1264",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "on:"
+    },
+    ".github/workflows/ci.yml:31": {
+      "fp": "6cf3838f75f9",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "uses: actions/cache@v4"
+    },
     ".github/workflows/ci.yml:43": {
       "fp": "57127a4b6fe4",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md"
@@ -535,7 +534,6 @@
     ".github/workflows/ci.yml:53": {
       "fp": "0642c7a328e7",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -544,7 +542,6 @@
     ".github/workflows/ci.yml:55": {
       "fp": "e81c6a318125",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "14b-subsystems.md"
       ],
@@ -553,13 +550,22 @@
     ".github/workflows/ci.yml:61": {
       "fp": "e740f23fb438",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "14b-subsystems.md"
       ],
       "preview": "# shipping a hotfix. Here it fails the PR, which is the right level."
     },
+    ".github/workflows/ci.yml:62": {
+      "fp": "334359b90efe",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "#"
+    },
     ".github/workflows/ci.yml:64": {
       "fp": "822de5242395",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md"
       ],
       "preview": "# file cites it. Re-fingerprint with: node scripts/check-index-citations.mjs --write"
@@ -567,7 +573,6 @@
     ".github/workflows/ci.yml:65": {
       "fp": "9f17367f9681",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "14b-subsystems.md"
       ],
@@ -576,7 +581,6 @@
     ".github/workflows/ci.yml:66": {
       "fp": "79aa5a68b011",
       "citedBy": [
-        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "14b-subsystems.md"
       ],
@@ -590,6 +594,13 @@
       ],
       "preview": "e2e:"
     },
+    ".github/workflows/ci.yml:7": {
+      "fp": "d9abde41f6b5",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "branches: [develop, main]"
+    },
     ".github/workflows/ci.yml:72": {
       "fp": "0b4dc9913985",
       "citedBy": [
@@ -597,19 +608,27 @@
       ],
       "preview": "# Wired in deliberately: `pnpm e2e` was referenced by NO workflow, so the suite rotted"
     },
-    ".github/workflows/ci.yml:73": {
-      "fp": "4ed40cf9ef7a",
+    ".github/workflows/ci.yml:74": {
+      "fp": "f471ab7d13d1",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
-      "preview": "# unnoticed until 5 of 19 tests were failing on selectors that could never match. A gate that"
+      "preview": "# nobody runs provides zero signal. playwright.config.ts now carries a `webServer` block, so"
     },
     ".github/workflows/ci.yml:75": {
       "fp": "e7860490ab61",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md"
       ],
       "preview": "# this job needs no manual server step."
+    },
+    ".github/workflows/ci.yml:82": {
+      "fp": "e96dc3756a2b",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5"
     },
     ".github/workflows/ci.yml:95": {
       "fp": "511dd611707c",
@@ -1257,6 +1276,13 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
+    "CHANGELOG.md:52": {
+      "fp": "60a1484488f8",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "- **`ci.yml` job `install-pnpm-11`** (`ci.yml:115-162`) — the only job running a pnpm other than the"
+    },
     "CHANGELOG.md:540": {
       "fp": "5bd4b1b4d54d",
       "citedBy": [
@@ -1332,14 +1358,23 @@
       ],
       "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
     },
-    "CLAUDE.md:104": {
+    "CLAUDE.md:107": {
+      "fp": "639464d8ad68",
+      "citedBy": [
+        "01-routes-pages.md",
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "The entire site is one Next.js App Router app that presents client-side switchable experiences from "
+    },
+    "CLAUDE.md:113": {
       "fp": "b97a0f4dbf4b",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "| `chat` | yes | AI chatbot grounded on the MDX content corpus |"
     },
-    "CLAUDE.md:105": {
+    "CLAUDE.md:114": {
       "fp": "f203233fd199",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1349,14 +1384,14 @@
       ],
       "preview": "| `developer` | yes | Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs) |"
     },
-    "CLAUDE.md:107": {
+    "CLAUDE.md:116": {
       "fp": "f75163019f47",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "| `resume` | never | Recruiter view. Reached via Cmd+K → \"Recruiter view\" (`command-palette.tsx:179`"
     },
-    "CLAUDE.md:130": {
+    "CLAUDE.md:139": {
       "fp": "f92c2d25aac6",
       "citedBy": [
         "01-routes-pages.md",
@@ -1374,22 +1409,7 @@
       ],
       "preview": "pnpm dev                   # starts Velite watch + Next.js dev @ localhost:3000"
     },
-    "CLAUDE.md:140": {
-      "fp": "025d2b9dd71b",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "├── /api/tts-google              Google Cloud TTS caching; rate-limited"
-    },
-    "CLAUDE.md:145": {
-      "fp": "fb715058a7bc",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "├── /api/md/{articles,notes,projects,work}/[slug]   raw-markdown passthrough (4 handlers)"
-    },
-    "CLAUDE.md:146": {
+    "CLAUDE.md:155": {
       "fp": "9391f0d5c017",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1398,7 +1418,7 @@
       ],
       "preview": "└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}"
     },
-    "CLAUDE.md:147": {
+    "CLAUDE.md:156": {
       "fp": "5a76314364b1",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1406,21 +1426,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "5 crons, ALL fail-closed on CRON_SECRET (vercel.json:3-7)"
-    },
-    "CLAUDE.md:152": {
-      "fp": "c2805b8874da",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "**Runtime & duration — do not add `export const runtime`.** No route exports `runtime` anywhere in `"
-    },
-    "CLAUDE.md:154": {
-      "fp": "831df832feb9",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "| maxDuration | Routes |"
     },
     "CLAUDE.md:16": {
       "fp": "9f886b4dfc00",
@@ -1430,19 +1435,19 @@
       "preview": "# Build (Velite + tests + Next.js, in that order)"
     },
     "CLAUDE.md:161": {
-      "fp": "d0873ab77974",
+      "fp": "c2805b8874da",
       "citedBy": [
-        "09-content-and-schemas.md"
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "| 5 | `error` |"
+      "preview": "**Runtime & duration — do not add `export const runtime`.** No route exports `runtime` anywhere in `"
     },
-    "CLAUDE.md:162": {
-      "fp": "1e2bf072d739",
+    "CLAUDE.md:163": {
+      "fp": "831df832feb9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "| — | `visit`, `github/stats`, `md/*`, `resume.json` (no export) |"
+      "preview": "| maxDuration | Routes |"
     },
     "CLAUDE.md:17": {
       "fp": "702e948d947e",
@@ -1451,46 +1456,61 @@
       ],
       "preview": "pnpm build"
     },
-    "CLAUDE.md:178": {
-      "fp": "9b30313ff2e6",
+    "CLAUDE.md:170": {
+      "fp": "d0873ab77974",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "| 5 | `error` |"
+    },
+    "CLAUDE.md:180": {
+      "fp": "be066bd581c1",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "→ .velite/ (TypeScript + JSON)"
+    },
+    "CLAUDE.md:187": {
+      "fp": "792eaf3de086",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean`"
     },
-    "CLAUDE.md:180": {
+    "CLAUDE.md:189": {
       "fp": "299bac69006b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Notes accept both `.md` and `.mdx`** — the Velite schema makes the extended Inkforge frontmatter ("
     },
-    "CLAUDE.md:182": {
+    "CLAUDE.md:191": {
       "fp": "13630c5e52f0",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "Note that **the extension does not indicate provenance**: at v3.4.2 all five notes carry `generatedB"
     },
-    "CLAUDE.md:191": {
+    "CLAUDE.md:200": {
       "fp": "3ca8f93456bf",
       "citedBy": [
-        "11-config-build-ci-infra.md",
         "12-docs-knowledge-and-harness.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **Bedrock model chain:** `us.anthropic.claude-sonnet-4-6` → `us.anthropic.claude-opus-4-6-v1` → `u"
     },
-    "CLAUDE.md:196": {
+    "CLAUDE.md:205": {
       "fp": "f0939a55d0ca",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). No vector DB at this"
     },
-    "CLAUDE.md:202": {
+    "CLAUDE.md:211": {
       "fp": "5501fe766197",
       "citedBy": [
         "02-api-routes.md",
@@ -1499,18 +1519,26 @@
         "13-dependencies-and-versions.md",
         "14-subsystems.md",
         "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "15-invariants-and-gotchas.md",
+        "README.md"
       ],
       "preview": "**9 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
-    "CLAUDE.md:214": {
+    "CLAUDE.md:221": {
+      "fp": "4b0919c1a2a3",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "| `get_resume_variant` | Role-targeted PDF URL (`master \\| backend \\| fullstack \\| frontend \\| genai"
+    },
+    "CLAUDE.md:223": {
       "fp": "a963a866b8ce",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "| `get_content_item` | One content item by `type` (`work \\| project \\| article \\| note`) and slug |"
     },
-    "CLAUDE.md:216": {
+    "CLAUDE.md:225": {
       "fp": "7e50950d4c69",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1518,7 +1546,7 @@
       ],
       "preview": "`src/app/mcp/page.tsx:35-45` renders the public `TOOLS` table — the documentation contract for"
     },
-    "CLAUDE.md:220": {
+    "CLAUDE.md:229": {
       "fp": "9ff4fe09e9b4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1526,7 +1554,7 @@
       ],
       "preview": "with the missing names in the message. So the count above is safe to quote."
     },
-    "CLAUDE.md:239": {
+    "CLAUDE.md:248": {
       "fp": "aba2e1c109bf",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -1535,7 +1563,7 @@
       ],
       "preview": "- Settings live in `src/lib/voice-settings.ts`; the full voice reference is `VOICE.md`"
     },
-    "CLAUDE.md:249": {
+    "CLAUDE.md:258": {
       "fp": "11dac942c0f3",
       "citedBy": [
         "07-components-3d.md",
@@ -1544,16 +1572,15 @@
       ],
       "preview": "**Two dependencies were declared but never imported — both removed in v3.5.0:**"
     },
-    "CLAUDE.md:250": {
+    "CLAUDE.md:259": {
       "fp": "7256a02fd068",
       "citedBy": [
         "07-components-3d.md",
-        "13-dependencies-and-versions.md",
         "14b-subsystems.md"
       ],
       "preview": "- `@react-three/offscreen` — no worker/OffscreenCanvas ever existed; the \"worker offload\" this file "
     },
-    "CLAUDE.md:251": {
+    "CLAUDE.md:260": {
       "fp": "2e118d6bb121",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -1561,21 +1588,14 @@
       ],
       "preview": "- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain"
     },
-    "CLAUDE.md:290": {
-      "fp": "1eb2552cd915",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "| `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |"
-    },
-    "CLAUDE.md:292": {
+    "CLAUDE.md:301": {
       "fp": "9dc619ab6356",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "| `src/app/api/chat/route.ts` | LLM streaming endpoint |"
     },
-    "CLAUDE.md:293": {
+    "CLAUDE.md:302": {
       "fp": "99f0ee3478c9",
       "citedBy": [
         "02-api-routes.md",
@@ -1587,7 +1607,7 @@
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (9 read-only tools) |"
     },
-    "CLAUDE.md:306": {
+    "CLAUDE.md:315": {
       "fp": "1ee7b642247c",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -1595,38 +1615,29 @@
       ],
       "preview": "BEDROCK_SECRET_ACCESS_KEY=<base64 or raw>"
     },
-    "CLAUDE.md:307": {
+    "CLAUDE.md:316": {
       "fp": "b0d730c76c06",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "BEDROCK_REGION=us-east-1"
     },
-    "CLAUDE.md:31": {
-      "fp": "232bafbce325",
+    "CLAUDE.md:327": {
+      "fp": "72c8a1d7e1bf",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "11-config-build-ci-infra.md"
       ],
-      "preview": "# After build: generate Pagefind search index"
+      "preview": "CRON_SECRET=...                       # /api/cron/eval protection"
     },
-    "CLAUDE.md:32": {
-      "fp": "00b27ec06b8a",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "12-docs-knowledge-and-harness.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "# NOTE: this is a Makefile target only — there is NO `pnpm search-index` script."
-    },
-    "CLAUDE.md:323": {
+    "CLAUDE.md:332": {
       "fp": "b934a36f8b73",
       "citedBy": [
+        "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:325": {
+    "CLAUDE.md:334": {
       "fp": "6bfaa1fa9cbe",
       "citedBy": [
         "01-routes-pages.md",
@@ -1637,7 +1648,7 @@
       ],
       "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded in **19 files / 25 occurrences**, not f"
     },
-    "CLAUDE.md:328": {
+    "CLAUDE.md:337": {
       "fp": "c735d50e05ad",
       "citedBy": [
         "01-routes-pages.md",
@@ -1645,16 +1656,7 @@
       ],
       "preview": "grep -rn 'anvilry\\.vercel\\.app' src Makefile"
     },
-    "CLAUDE.md:33": {
-      "fp": "9fb56e98cd0d",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "make search-index          # == pnpm pagefind --site .next/server/app --output-path public/pagefind"
-    },
-    "CLAUDE.md:333": {
+    "CLAUDE.md:342": {
       "fp": "dffce71fb498",
       "citedBy": [
         "01-routes-pages.md",
@@ -1662,14 +1664,14 @@
       ],
       "preview": "`src/components/json-ld.tsx` alone has **7** (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_UR"
     },
-    "CLAUDE.md:335": {
+    "CLAUDE.md:344": {
       "fp": "b724f72d31e9",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "- `src/app/`: `layout.tsx`, `sitemap.ts`, `robots.ts`, `mcp/page.tsx`, `opengraph-image.tsx`, `feed."
     },
-    "CLAUDE.md:341": {
+    "CLAUDE.md:350": {
       "fp": "2327d8ef5423",
       "citedBy": [
         "01-routes-pages.md",
@@ -1677,23 +1679,7 @@
       ],
       "preview": "Run the grep rather than trusting this list — it is the only thing that cannot go stale."
     },
-    "CLAUDE.md:347": {
-      "fp": "bec37aff7c53",
-      "citedBy": [
-        "01-routes-pages.md",
-        "09-content-and-schemas.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "Every content file must reflect honest contribution registers. The `register` field on Work items (e"
-    },
-    "CLAUDE.md:353": {
-      "fp": "8df27e647b20",
-      "citedBy": [
-        "10-tests-and-quality-gates.md"
-      ],
-      "preview": "## Testing Notes"
-    },
-    "CLAUDE.md:355": {
+    "CLAUDE.md:364": {
       "fp": "838312356162",
       "citedBy": [
         "01-routes-pages.md",
@@ -1702,15 +1688,17 @@
       ],
       "preview": "- `game-model.test.ts` asserts a bijection between graph nodes and content items — it **blocks deplo"
     },
-    "CLAUDE.md:356": {
+    "CLAUDE.md:365": {
       "fp": "327a95588243",
       "citedBy": [
+        "01-routes-pages.md",
+        "09-content-and-schemas.md",
         "10-tests-and-quality-gates.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **The prompt-injection / XSS guard is `src/components/chat/parse-cards.test.ts`** — do not weaken "
     },
-    "CLAUDE.md:357": {
+    "CLAUDE.md:366": {
       "fp": "a0e770a8ba4f",
       "citedBy": [
         "10-tests-and-quality-gates.md",
@@ -1718,7 +1706,7 @@
       ],
       "preview": "(`src/components/ask-portfolio.dom.test.tsx` — note the `.tsx` extension — is **not** this guard. It"
     },
-    "CLAUDE.md:358": {
+    "CLAUDE.md:367": {
       "fp": "d194d114bc4a",
       "citedBy": [
         "01-routes-pages.md",
@@ -1726,7 +1714,7 @@
       ],
       "preview": "- `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `i"
     },
-    "CLAUDE.md:359": {
+    "CLAUDE.md:368": {
       "fp": "319cc9eb1d74",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -1737,14 +1725,21 @@
       ],
       "preview": "- `agent-trace.test.ts` does **not** block shipping — it is a *consistency* check. The assertion is "
     },
-    "CLAUDE.md:361": {
+    "CLAUDE.md:37": {
+      "fp": "232bafbce325",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "# After build: generate Pagefind search index"
+    },
+    "CLAUDE.md:370": {
       "fp": "ecfa947602f6",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "- **Vitest runs two projects:** `node` (default, all `*.test.ts` except `*.dom.test.*`) and `dom` (h"
     },
-    "CLAUDE.md:362": {
+    "CLAUDE.md:371": {
       "fp": "0d4e29e72035",
       "citedBy": [
         "10-tests-and-quality-gates.md",
@@ -1753,29 +1748,48 @@
       ],
       "preview": "- Tests run as part of `pnpm build` — a failing test blocks deployment."
     },
-    "CLAUDE.md:87": {
-      "fp": "d3a1e1c8b565",
+    "CLAUDE.md:38": {
+      "fp": "00b27ec06b8a",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# NOTE: this is a Makefile target only — there is NO `pnpm search-index` script."
+    },
+    "CLAUDE.md:39": {
+      "fp": "9fb56e98cd0d",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "make search-index          # == pnpm pagefind --site .next/server/app --output-path public/pagefind"
+    },
+    "CLAUDE.md:92": {
+      "fp": "1d422edb72de",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "**CI pipeline (`.github/workflows/`) — three workflows:**"
+    },
+    "CLAUDE.md:93": {
+      "fp": "1f1cd4e7af47",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm"
     },
-    "CLAUDE.md:96": {
-      "fp": "e296469e17a1",
+    "CLAUDE.md:99": {
+      "fp": "8ee699235e16",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "### The View System"
-    },
-    "CLAUDE.md:98": {
-      "fp": "639464d8ad68",
-      "citedBy": [
-        "01-routes-pages.md",
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "The entire site is one Next.js App Router app that presents client-side switchable experiences from "
+      "preview": "**`bundle-analysis.yml` is DELETED — do not re-add it.** It was green and empty for its entire life:"
     },
     "content/projects/grpc-microservices.mdx:3": {
       "fp": "d25a6a52f41a",
@@ -1985,23 +1999,64 @@
       ],
       "preview": "**Goal:** Add `@react-three/rapier` physics to the 3D graph view — nodes spring on hover, idle drift"
     },
-    "domains/performance/README.md:62": {
+    "domains/performance/README.md:60": {
+      "fp": "d95115d9278b",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "- **✅ ENFORCED: per-route first-load budget + three.js-stays-lazy.** `.github/workflows/ci.yml:110-1"
+    },
+    "domains/performance/README.md:73": {
+      "fp": "a44652fac8b8",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "remains the manual grep below."
+    },
+    "domains/performance/README.md:78": {
+      "fp": "3064720b894f",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "- **`src/lib/r3f.ts` is load-bearing.** The barrel gives the bundler one module-graph node for the"
+    },
+    "domains/performance/README.md:80": {
+      "fp": "79509bf2b7f3",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "theory that \"16.3 handles this now\" — that combination was never tested."
+    },
+    "domains/performance/README.md:84": {
       "fp": "947ff0b10a81",
       "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md",
+        "12-docs-knowledge-and-harness.md",
         "README.md"
       ],
       "preview": "- **CURRENT BASELINE (integrated, post-#121/#123/#124, measured with production hero defaults):"
     },
-    "domains/performance/README.md:66": {
-      "fp": "1a7c2818bc6d",
+    "domains/performance/README.md:85": {
+      "fp": "3c37122052bd",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "exactly 1 three.js copy, 1248 KB total across R3F chunks, 113/113 static pages.** Use these"
+    },
+    "domains/performance/README.md:91": {
+      "fp": "2ec6c20735de",
       "citedBy": [
         "14b-subsystems.md",
-        "15-invariants-and-gotchas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "`grep -l \"WebGLRenderer\" | wc -l`, which must be 1."
+    },
+    "domains/performance/README.md:95": {
+      "fp": "9e04e94f781d",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
         "README.md"
       ],
-      "preview": "the copy count. The copy count is `grep -l \"WebGLRenderer\" | wc -l`, which must be 1."
+      "preview": "`next.config.ts:127-149`), which the CI gate re-verifies every run."
     },
     "domains/README.md:55": {
       "fp": "38fb971dca1f",
@@ -2393,6 +2448,15 @@
       ],
       "preview": "env: { NEXT_PUBLIC_BUILD_YEAR: String(new Date().getFullYear()) },"
     },
+    "next.config.ts:11": {
+      "fp": "fbff7e3b4edf",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// (running it here races webpack and can wipe .velite mid-compile)."
+    },
     "next.config.ts:12": {
       "fp": "70b1c14e8735",
       "citedBy": [
@@ -2414,9 +2478,27 @@
     "next.config.ts:127": {
       "fp": "96ff89f1f54a",
       "citedBy": [
-        "07-components-3d.md"
+        "07-components-3d.md",
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "// NOTE: three, @react-three/fiber, @react-three/drei are intentionally excluded."
+    },
+    "next.config.ts:128": {
+      "fp": "321e1dd3b38e",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// The C-3 investigation (commit 6246ed9) confirmed this flag does NOT collapse"
+    },
+    "next.config.ts:129": {
+      "fp": "7db6b0882b3a",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "// the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit"
     },
     "next.config.ts:13": {
       "fp": "ad6acfc26580",
@@ -2439,6 +2521,7 @@
       "fp": "5bb64e6ed6c9",
       "citedBy": [
         "07-components-3d.md",
+        "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md",
         "README.md"
@@ -2454,10 +2537,25 @@
       ],
       "preview": "process.env.VELITE_STARTED = \"1\";"
     },
+    "next.config.ts:140": {
+      "fp": "1778e12340fa",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Confirmed by symbol count, not just chunk count: the three.js core symbol"
+    },
+    "next.config.ts:142": {
+      "fp": "754de2565bb4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// 876 KB chunk). Two chunks still *reference* react-three, but only one carries the core."
+    },
     "next.config.ts:144": {
       "fp": "8224c40a98aa",
       "citedBy": [
         "07-components-3d.md",
+        "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md",
         "README.md"
@@ -2483,6 +2581,8 @@
       "fp": "a1bf1391f1bf",
       "citedBy": [
         "07-components-3d.md",
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -2551,13 +2651,6 @@
         "14b-subsystems.md"
       ],
       "preview": "// so the browser allows anvilry.vercel.app to embed its own PDF inside the page."
-    },
-    "next.config.ts:2": {
-      "fp": "7fbf155f817b",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "import { createRequire } from \"module\";"
     },
     "next.config.ts:20": {
       "fp": "80835d5a206a",
@@ -2660,7 +2753,10 @@
     "next.config.ts:5": {
       "fp": "8c1af9646a03",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "const withBundleAnalyzer = require(\"@next/bundle-analyzer\")({"
     },
@@ -2694,7 +2790,8 @@
       "fp": "d56704ae0932",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "enabled: process.env.ANALYZE === \"true\","
     },
@@ -2741,6 +2838,8 @@
     "next.config.ts:7": {
       "fp": "29576b54e255",
       "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
@@ -2875,29 +2974,41 @@
       ],
       "preview": "\"build\": \"velite --clean && vitest run && next build\","
     },
-    "package.json:14": {
+    "package.json:12": {
+      "fp": "64b4db5be764",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "\"analyze\": \"velite --clean && ANALYZE=true next build --webpack\","
+    },
+    "package.json:15": {
       "fp": "7da79dd35521",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "\"test\": \"vitest run\","
     },
-    "package.json:15": {
+    "package.json:16": {
       "fp": "e47a8dda287d",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "\"test:watch\": \"vitest\","
     },
-    "package.json:16": {
+    "package.json:17": {
       "fp": "7b84969d6206",
       "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "14-subsystems.md"
       ],
       "preview": "\"content\": \"velite --clean\","
     },
-    "package.json:17": {
+    "package.json:18": {
       "fp": "e3030bd94a14",
       "citedBy": [
         "14-subsystems.md",
@@ -2905,46 +3016,47 @@
       ],
       "preview": "\"clean\": \"rm -rf .next .turbo node_modules/.cache .velite\","
     },
-    "package.json:18": {
+    "package.json:19": {
       "fp": "a92611f17c5e",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "\"e2e\": \"playwright test\","
     },
-    "package.json:19": {
+    "package.json:20": {
       "fp": "e762e8f6c0a5",
       "citedBy": [
         "10-tests-and-quality-gates.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "\"e2e:ui\": \"playwright test --ui\""
     },
-    "package.json:20": {
+    "package.json:21": {
       "fp": "e52a1813c460",
       "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "14b-subsystems.md"
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "},"
     },
-    "package.json:21": {
+    "package.json:22": {
       "fp": "f7eebadd079d",
       "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md"
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
       ],
       "preview": "\"dependencies\": {"
     },
-    "package.json:22": {
+    "package.json:23": {
       "fp": "38ab0f4d31d0",
       "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
         "README.md"
       ],
       "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.32.1\","
     },
-    "package.json:26": {
+    "package.json:27": {
       "fp": "dbc78eb9df14",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -2964,30 +3076,23 @@
       ],
       "preview": "\"version\": \"3.5.0\","
     },
-    "package.json:30": {
-      "fp": "7226f0006f50",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "\"@react-three/postprocessing\": \"3.0.4\","
-    },
-    "package.json:31": {
+    "package.json:32": {
       "fp": "5ba15150b96c",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
+        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"@types/three\": \"^0.185.4\","
     },
-    "package.json:39": {
+    "package.json:40": {
       "fp": "16f452215b4e",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "\"flags\": \"^4.3.0\","
     },
-    "package.json:44": {
+    "package.json:45": {
       "fp": "42a512bca14f",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -3005,14 +3110,14 @@
       ],
       "preview": "\"engines\": {"
     },
-    "package.json:52": {
+    "package.json:53": {
       "fp": "76e49fe1d3c2",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"three\": \"^0.185.1\","
     },
-    "package.json:54": {
+    "package.json:55": {
       "fp": "c1f65a407a13",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -3020,6 +3125,16 @@
         "README.md"
       ],
       "preview": "\"zod\": \"^3.25.76\""
+    },
+    "package.json:58": {
+      "fp": "c31a6b34c567",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"@next/bundle-analyzer\": \"^16.3.0\","
     },
     "package.json:7": {
       "fp": "e52a1813c460",
@@ -3032,17 +3147,17 @@
       ],
       "preview": "},"
     },
-    "package.json:73": {
+    "package.json:74": {
       "fp": "8bca20bc375b",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "14b-subsystems.md"
       ],
       "preview": "\"web-vitals\": \"^6.1.1\""
     },
-    "package.json:74": {
+    "package.json:75": {
       "fp": "d10b36aa74a5",
       "citedBy": [
-        "14b-subsystems.md"
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
@@ -3499,6 +3614,137 @@
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "A recruiter-facing engineering portfolio built as a **beast with four switchable experiences over on"
+    },
+    "scripts/bundle-budget.mjs:119": {
+      "fp": "4972006691a5",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const eager = criticalPath.filter((p) => readFileSync(p, \"utf8\").includes(LAZY_MARKER));"
+    },
+    "scripts/bundle-budget.mjs:124": {
+      "fp": "7d42bd00550b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "`${bytes} B: ${eager.join(\", \")}. It must stay behind next/dynamic(..., { ssr: false }) — ` +"
+    },
+    "scripts/bundle-budget.mjs:127": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "scripts/bundle-budget.mjs:25": {
+      "fp": "54b2ca56bfe9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* A MISSING OR MALFORMED MEASUREMENT EXITS 1. That is the entire point: the predecessor's defining"
+    },
+    "scripts/bundle-budget.mjs:26": {
+      "fp": "43a86421f4ba",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* flaw was reporting success while measuring nothing, so \"I could not measure\" must be RED."
+    },
+    "scripts/bundle-budget.mjs:42": {
+      "fp": "ea966bfa6b76",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,"
+    },
+    "scripts/bundle-budget.mjs:43": {
+      "fp": "7f696bb77759",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* the same discipline next.config.ts:127-149 already uses for the three.js chunk."
+    },
+    "scripts/bundle-budget.mjs:45": {
+      "fp": "477b80a28b0d",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const MAX_FIRST_LOAD_BYTES = 1_285_000;"
+    },
+    "scripts/bundle-budget.mjs:47": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "/**"
+    },
+    "scripts/bundle-budget.mjs:49": {
+      "fp": "a68790d8f072",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "* exactly ONE chunk — verified here at 897,249 B (876.2 KiB), and present in 0 of the 16 routes'"
+    },
+    "scripts/bundle-budget.mjs:52": {
+      "fp": "a6969bfaf2d2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* This is the assertion a total-bytes guard CANNOT make. An eager `import * as THREE` in a shell"
+    },
+    "scripts/bundle-budget.mjs:55": {
+      "fp": "050dba7b0b94",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* size-based so it names the actual cause in the failure message."
+    },
+    "scripts/bundle-budget.mjs:57": {
+      "fp": "e8e8b7f16174",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "const LAZY_MARKER = \"WebGLRenderer\";"
+    },
+    "scripts/bundle-budget.mjs:6": {
+      "fp": "42c5501835ea",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* That workflow was green and empty for all 222 of its runs and produced ZERO artifacts, ever. Three"
+    },
+    "scripts/bundle-budget.mjs:68": {
+      "fp": "3c5aad8f9c19",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "fail("
+    },
+    "scripts/bundle-budget.mjs:70": {
+      "fp": "cfed8c9cec7e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "\"Either `next build` did not run, or it ran with --webpack, which never emits this file.\","
+    },
+    "scripts/bundle-budget.mjs:72": {
+      "fp": "9d8b2b5670d1",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ");"
     },
     "scripts/replay-trace.mjs:108": {
       "fp": "f43e124ed95c",

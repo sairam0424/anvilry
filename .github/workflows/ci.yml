@@ -101,6 +101,15 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Rides on the build above rather than adding a second one. `pnpm build` ends in a bare
+      # `next build` => Turbopack => it writes .next/diagnostics/route-bundle-stats.json, which is
+      # the only per-route first-load artifact Next 16 emits (the `size`/`First Load JS` build-table
+      # columns were removed in 16). No continue-on-error and no if-no-files-found here on purpose:
+      # this step REPLACES bundle-analysis.yml, which was green with zero artifacts across all 222 of its runs
+      # precisely because those two settings made it unfailable. Unmeasurable must mean red.
+      - name: Bundle budget
+        run: node scripts/bundle-budget.mjs
+
       - name: Run E2E
         run: pnpm e2e
 

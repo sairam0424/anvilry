@@ -172,7 +172,7 @@ see "Cross-references" for the three live violations.
 
 ### Work — 5 files, `content/work/*.mdx`
 
-`register` strings are reproduced **verbatim**; `CLAUDE.md:347` and `ARCHITECTURE.md:95` declare
+`register` strings are reproduced **verbatim**; `CLAUDE.md:365` and `ARCHITECTURE.md:95` declare
 this field the canonical contribution-attribution source.
 
 | slug | name / title | role | `register` (verbatim) | order | metrics (value ▸ label) | tech |
@@ -283,7 +283,7 @@ the slug up via `getWork`/`getProject`, returning `null` when absent, and `hrefF
 (`:74-76`) returns the Velite-derived `item.url`.
 
 **The three intentional node-id / slug mismatches** (comment at `src/lib/game-model.ts:16-27`,
-also recorded in `CLAUDE.md:306`):
+also recorded in `CLAUDE.md:315`):
 
 | Graph node id | Content slug | Kind | Cite |
 |---|---|---|---|
@@ -296,7 +296,7 @@ reads "3 of the **16** graph node ids" — the stale `10` this index previously 
 been **fixed**, so the comment agrees with the 16 entries that `graphNodes`
 (`src/lib/graph-data.ts:18-41`) and `NODE_CONTENT` (`src/lib/game-model.ts:28-50`) each hold
 today. The bijection is guarded at build time by `src/lib/game-model.test.ts`
-(`CLAUDE.md:306`, `ARCHITECTURE.md:96` — "it blocks deploys if orphaned").
+(`CLAUDE.md:315`, `ARCHITECTURE.md:96` — "it blocks deploys if orphaned").
 
 `aava-code` is also hard-referenced outside the graph: `src/lib/agent-trace.ts:61` and `:75`
 (`refs: ["aava-code", "mindforge"]`, `refs: ["aava-code"]`), the terminal's sample output comment
@@ -421,7 +421,7 @@ handled at `src/app/articles/[slug]/page.tsx:43` and `:65-66`: it is dropped fro
   - Adding a required field to Work or Project fails the Velite build for *every existing file*
     at once; that is why all the hiring-manager depth fields at `:49-52` are `.optional()`.
   - `register` (`:42`) is required by Zod and is the only schema-level enforcement of the
-    "never fabricate ownership" rule (`CLAUDE.md:347`, `ARCHITECTURE.md:95`). Making it optional
+    "never fabricate ownership" rule (`CLAUDE.md:365`, `ARCHITECTURE.md:95`). Making it optional
     would silently drop attribution from the corpus (`src/lib/corpus.ts:17`) and the résumé
     (`src/lib/resume-json.ts:30`).
   - `diagramAlt` (`:52`) is *not* conditionally required in Zod — the a11y guarantee lives only
@@ -441,7 +441,7 @@ handled at `src/app/articles/[slug]/page.tsx:43` and `:65-66`: it is dropped fro
   containers — valid MDX, invalid plain Markdown — so they are silently stripped from the rendered
   output rather than displayed. `content/notes/how-dns-works.mdx` is `.mdx` too but contains zero
   such constructs (verified by grep), so its extension is stylistic.
-- **Gotchas / invariants:** `CLAUDE.md:161` states "`.md` files come from the Inkforge pipeline
+- **Gotchas / invariants:** `CLAUDE.md:170` states "`.md` files come from the Inkforge pipeline
   and carry extended frontmatter … Hand-written `.mdx` notes omit these fields". That mapping does
   not hold in the current corpus: both `.mdx` notes carry `generatedBy: inkforge` and the full
   extended field set. Extension is therefore **not** a reliable proxy for provenance — use

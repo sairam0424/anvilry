@@ -4,6 +4,40 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+On `develop`, not yet released, so it carries no version of its own. No runtime behaviour change.
+
+### Fixed
+- **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning with the current
+  default pnpm could not install the repo — and pnpm 11 also **rewrote the tracked
+  `pnpm-workspace.yaml`**, seeding `allowBuilds` with the placeholder `set this to true or false`
+  (written BY the failing run, not the cause of it):
+  `[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2`.
+
+  pnpm 11 **removed** `onlyBuiltDependencies` / `ignoredBuiltDependencies` in favour of the boolean
+  `allowBuilds` map (pnpm.io/settings/build); it does not consult them and prints no warning. Do not
+  cite `pnpm config get onlyBuiltDependencies` as evidence that it does — `pnpm config get` echoes
+  ANY key present in the file, including one that does not exist.
+
+  Measured on a one-install-script fixture, `allowBuilds` alone and no legacy keys: **11.17.0 ok ·
+  10.34.5 ok · 10.28.0 ok · 10.27.1 EXIT 1**. CI pins `version: 10` → latest-10 (10.34.5), so the
+  legacy lists are dead config for CI and survive only for pnpm <=10.27. Fixed at
+  `pnpm-workspace.yaml:55-58`; both majors install clean, lockfile byte-identical.
+
+  **Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it installs*.
+
+### Added
+- **`ci.yml` job `install-pnpm-11`** (`ci.yml:115-162`) — the only job running a pnpm other than the
+  pinned 10. Installs cold, fails on `git diff --exit-code` so a silent write to a tracked file is
+  itself a build failure, then runs the guard below.
+- **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — two assertions: the spellings agree, and
+  **every dependency declaring an install script has an explicit boolean**. The second reads the
+  resolved tree, closing the gap the first is blind to. Mutation-verified 8/8.
+
+### Changed
+- Index sections 10, 11, 12, 13 and 15 updated; citation coverage 2,112 → 2,117, all verified.
+
 ## [3.5.0] — 2026-08-21
 
 **Minor** — a correctness pass, not a feature release, but it changes behaviour so it is not a patch.

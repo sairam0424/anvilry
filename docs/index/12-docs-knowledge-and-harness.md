@@ -27,7 +27,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
 | `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line was corrected on this branch — it used to say "4-view system"; it now records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`). | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 5-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. | (no headings beyond the single H1) |
-| `CHANGELOG.md` | Keep-a-Changelog release history, **18** released version entries, newest first. There is no `[Unreleased]` section any more — the correctness pass that used to sit there was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:7-109`). | `[3.5.0]`, `[3.4.2]` … `[1.0.0]`, link-ref footer |
+| `CHANGELOG.md` | Keep-a-Changelog release history, **18** released version entries, newest first, plus a live `[Unreleased]` section (`CHANGELOG.md:7`) holding the pnpm 11 `allowBuilds` fix. The previous `[Unreleased]` block was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:41-143`). | `[3.5.0]`, `[3.4.2]` … `[1.0.0]`, link-ref footer |
 | `LOG.md` | Append-only activity journal, newest first, with a strict entry grammar, tag vocabulary, and grep/awk retrieval recipes. | §Entry grammar, §Tags, §Retrieval recipes, 3 entries |
 | `VOICE.md` | Canonical voice-layer reference (940 lines): architecture, 4 opt-in features, settings/flag tables, env+IAM+cost, privacy & a11y model, developer notes, v1.7 voice picker. | §1 Overview, §2 Features, §3 Flags/Settings, §4 Env/IAM/Cost, §5 Privacy & A11y, §6 Dev Notes, §7 Voice picker |
 | `TELEMETRY.md` | Canonical observability reference (v1.8 header): dual-sink pipeline, `TelemetryEvent` schema, 7 span kinds, trace-ID correlation, PII policy, admin dashboard, replay CLI, debugging cookbook, file map. | §1–§9 |
@@ -42,7 +42,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `docs/superpowers/plans/2026-06-23-c1-directional-transitions.md` | Plan: stamp `data-view-dir` on `<html>` before `startViewTransition`; directional slide keyframes in `globals.css`. 2 files, 3 tasks. | Tasks 1–3 |
 | `docs/superpowers/plans/2026-06-23-c2-motion-audit.md` | Plan: audit the 140 KB `motion/react` bundle; replace `useReducedMotion` in shared primitives with a native hook. 3 tasks. | Tasks 1–3 |
 | `docs/superpowers/plans/2026-06-23-c3-r3f-chunk-dedup.md` | Plan: collapse the twin 876 KB R3F chunks — Option A `optimizePackageImports`, Option B `src/lib/r3f.ts` barrel. 4 tasks. | Tasks 1–4 |
-| `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` | Plan: add `@react-three/rapier` physics behind `NEXT_PUBLIC_GRAPH_PHYSICS`, via a separate `scene-physics.tsx`. 4 tasks. Unchanged history, and still accurate *about the plan* — but note the outcome: the dependency was installed, `scene-physics.tsx` shipped as plain sinusoidal `useFrame` maths instead, rapier was never imported, and the package was **removed in v3.5.0** (`CHANGELOG.md:105-109`). The flag and filename are the only residue. | Tasks 1–4 |
+| `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` | Plan: add `@react-three/rapier` physics behind `NEXT_PUBLIC_GRAPH_PHYSICS`, via a separate `scene-physics.tsx`. 4 tasks. Unchanged history, and still accurate *about the plan* — but note the outcome: the dependency was installed, `scene-physics.tsx` shipped as plain sinusoidal `useFrame` maths instead, rapier was never imported, and the package was **removed in v3.5.0** (`CHANGELOG.md:139-143`). The flag and filename are the only residue. | Tasks 1–4 |
 | `docs/superpowers/plans/2026-06-23-v2.3.0-ai-transparency.md` | 1034-line plan: Anthropic extended thinking — `THINKING_SENTINEL`, server-buffered `thinking_delta`, `reasoning` in the trace frame, `ThinkingBlock` UI. 6 tasks. | Tasks 1–6, §Self-Review |
 | `docs/superpowers/plans/2026-06-23-v2.4.0-performance-ppr.md` | Plan: enable `cacheComponents: true` and migrate 5 page/special routes; 9 API routes explicitly untouched. 7 tasks. | Tasks 1–7 |
 | `docs/superpowers/plans/2026-06-23-v2.6.0-a11y-bundle.md` | Plan: fix WCAG 4.1.2 on the terminal input (`role="combobox"` + always-rendered listbox) + a read-only bundle audit. 3 tasks. | Tasks 1–3 |
@@ -99,7 +99,7 @@ corrected. The version markers are unchanged.
 | `CLAUDE.md` | agent brief | Command surface, branch/CI model, key-files map, testing invariants, skills index | mtime 15 Aug |
 | `ARCHITECTURE.md` | ADR (`kind: architecture`, `status: adopted`) | The knowledge-base model (kinds, domains, invariants) — **not** app architecture | in-doc `**Version:** v1.0.0 — bootstrapped 2026-06-24`; mtime 28 Jun |
 | `AGENTS.md` | agent rule block | Only the "this is not the Next.js you know" warning | mtime 11 Jun (oldest file in scope) |
-| `CHANGELOG.md` | release log | Per-release narrative; 18 tags | latest entry `[3.5.0] — 2026-08-21` (`CHANGELOG.md:7`); rewritten in v3.5.0 |
+| `CHANGELOG.md` | release log | Per-release narrative; 18 tags | latest entry `[3.5.0] — 2026-08-21` (`CHANGELOG.md:41`); rewritten in v3.5.0 |
 | `LOG.md` | activity journal | Finished-work feed + its own entry grammar | newest entry 2026-08-15; mtime 15 Aug |
 | `VOICE.md` | feature reference | Voice architecture, settings keys, IAM, privacy/a11y model, voice catalog | in-doc `v1.7 update` banner; mtime 28 Jun |
 | `TELEMETRY.md` | feature reference | Span kinds, PII policy, dashboard tiles, replay CLI | in-doc title `(v1.8)`; mtime 28 Jun |
@@ -125,11 +125,19 @@ corrected. The version markers are unchanged.
 
 ## Version history
 
-Read in full from `CHANGELOG.md`. **18 released version tags** are present. The `[Unreleased]` section that
-used to hold the correctness pass is gone — it was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:7-109`),
-covering six live defects and the documentation corrections listed in §Doc-vs-code drift. Every
-`CHANGELOG.md` line number below the 3.5.0 entry therefore shifted **+56** relative to the v3.4.2 index;
-the citations here have been re-derived. Note the gap: no `2.x` entry and no
+Read in full from `CHANGELOG.md`. **18 released version tags** are present, plus a live `[Unreleased]`
+section at `CHANGELOG.md:7`. The previous `[Unreleased]` block was cut as `[3.5.0] — 2026-08-21`
+(`CHANGELOG.md:41-143`), covering six live defects and the documentation corrections listed in
+§Doc-vs-code drift; the current one holds the pnpm 11 `allowBuilds` fix, which is deliberately
+unversioned. **Count version tags with `grep -c '^## \[[0-9]'` (18) — a bare `grep -c '^## \['`
+returns 19, because it also matches `[Unreleased]`.**
+
+**Do not trust a stated line-shift here; re-derive it.** Prepending a release entry moves every line
+below it, and the offset compounds across releases — `## [3.4.2]` has sat at line 7, then 111, then
+145 across three index generations. A previous version of this paragraph carried a `+56` that could
+not be reproduced from any two of those. The reliable check is
+`node scripts/check-index-citations.mjs`, which fingerprints each cited line's content; the arithmetic
+is not documentation, it is a stale intermediate. Note the gap: no `2.x` entry and no
 `3.1.x`–`3.3.x` entry exists at all — `LOG.md:33` records that the 3.4.0 entry was "added after a
 **13-release gap**", so the changelog is not a complete release ledger.
 
@@ -154,16 +162,16 @@ the citations here have been re-derived. Note the gap: no `2.x` entry and no
 | 1.1.0 (2026-06-14) | Developer Mode view (full-page keyboard-native terminal) + autoscroll engine fix. |
 | 1.0.0 (2026-06-13) | Initial public portfolio: four switchable views over one content source + the Bedrock "Ask my portfolio" chat. |
 
-**Current version:** `3.5.0` (`package.json:3`). **What v3.5.0 shipped** (`CHANGELOG.md:7-109`): the six
-defect fixes tabled above, the pnpm-settings migration to `pnpm-workspace.yaml` (`CHANGELOG.md:92` — pnpm 11
+**Current version:** `3.5.0` (`package.json:3`). **What v3.5.0 shipped** (`CHANGELOG.md:41-143`): the six
+defect fixes tabled above, the pnpm-settings migration to `pnpm-workspace.yaml` (`CHANGELOG.md:126` — pnpm 11
 stopped reading `package.json`'s `pnpm` field, so v3.4.2's ten security `overrides` were being silently
 ignored; the `pnpm` field is now **gone** from `package.json`), a `.nvmrc` of `22` with `engines.node` pinned
-to `">=22 <23"` (`CHANGELOG.md:86`, `package.json:5-7`), and the removal of `@react-three/rapier` +
-`@react-three/offscreen` (`CHANGELOG.md:105-109`: 3 packages removed, 0 added, and one version change —
+to `">=22 <23"` (`CHANGELOG.md:120`, `package.json:5-7`), and the removal of `@react-three/rapier` +
+`@react-three/offscreen` (`CHANGELOG.md:139-143`: 3 packages removed, 0 added, and one version change —
 `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:31`, `^0.185.4`) was its
 only remaining consumer). Dependency counts are now **33 prod / 17 dev**, down from 35 / 17.
 
-**What v3.4.2 shipped** (`CHANGELOG.md:111-161`): a
+**What v3.4.2 shipped** (`CHANGELOG.md:145-195`): a
 security-only promotion of fixes that had sat on `develop` while production served vulnerable versions —
 `pdfjs-dist` 6.0.227→6.2.108 (high, reachable via `file-picker-button.tsx`'s `await import("pdfjs-dist")`),
 `ip-address` 10.2.0→10.5.0 (high, SSRF via `mcp-handler` → MCP SDK → `express-rate-limit`), `hono`
@@ -294,7 +302,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is authoritative
    if this table ever disagrees with it" — with the source citations inline. `CLAUDE.md:191` and
    `docs/configuration.md:43-46` always stated the correct order. No test guards this; the anchor is the
-   pointer at `DEPLOY.md:102-103`. (`CHANGELOG.md:485-487` records fixing the same inversion once already,
+   pointer at `DEPLOY.md:102-103`. (`CHANGELOG.md:519-521` records fixing the same inversion once already,
    in a `streamWithFallback` docblock at v1.8.0 — so this is the second recurrence, which is why the
    authoritative-source note was added rather than just the numbers.)
 2. ~~**MCP tool count is 9, not 7.**~~ — **corrected on this branch, and guarded.** `CLAUDE.md` used to say
@@ -309,7 +317,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    between the page's `TOOLS` rows and the route's `registerTool` calls (`:92`, with the missing names in the
    failure message at `:85`); `vitest run` is chained into `pnpm build`, so adding a tool without
    documenting it fails the build. `CLAUDE.md:216-220` records that this is why the count is safe to quote.
-   `CHANGELOG.md:364` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:28-30` records this doc fix
+   `CHANGELOG.md:398` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:62-64` records this doc fix
    landing in v3.5.0.
 3. ~~**"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**~~ —
    **corrected on this branch.** `CLAUDE.md` now leads the section with "**Runtime & duration — do not add
@@ -318,7 +326,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    (`CLAUDE.md:154-162`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
    25 for `cron/health-check`, 20 `transcribe`, 15 `tts`/`tts-google`, 5 `error`, none for
    `visit`/`github/stats`/`md/*`/`resume.json`). The only `runtime` string left in `src/` is the comment
-   noting its removal (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:233-235`
+   noting its removal (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:267-269`
    (13 `runtime` exports deleted for Cache Components).
 4. ~~**`pnpm search-index` does not exist.**~~ — **corrected on this branch.** `CLAUDE.md` used to list
    `pnpm search-index` under "After build". `package.json:8-20` has no `search-index` script; the target is
@@ -367,7 +375,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
 11. **`CLAUDE.md`'s CI description omits two jobs.** *(Still live.)* `CLAUDE.md:87` describes `ci.yml` as
     "lint → typecheck (`tsc --noEmit`) → `pnpm test`". `.github/workflows/ci.yml` defines three jobs:
     `ci:` (`:10`), `e2e:` "E2E (Playwright)" (`:55-56`) running `pnpm e2e` (`:92`), and `security-alerts:`
-    (`:102`) — both added in v3.4.2 per `CHANGELOG.md:146-150`.
+    (`:102`) — both added in v3.4.2 per `CHANGELOG.md:180-184`.
 12. **`DEPLOY.md`'s build command drops the test step.** *(Still live.)* `DEPLOY.md:20` — "Build command:
     `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
     `"build": "velite --clean && vitest run && next build"`. `README.md:46` and `CLAUDE.md:16-17` both state
@@ -386,7 +394,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
 15. **Version-marker skew (not a code contradiction, but a freshness trap).** *(Still live.)*
     `ARCHITECTURE.md:8` is stamped "`**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24`" while the
     project is at `3.5.0`; the marker versions the knowledge-base model, not the app. Likewise
-    `CHANGELOG.md:767-775` has link references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after — now
+    `CHANGELOG.md:801-809` has link references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after — now
     including `[3.5.0]` — have no link-ref footer entry.
 
 ## Coverage

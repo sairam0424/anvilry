@@ -28,11 +28,31 @@ overrides:
   body-parser: ^2.3.0
 
 # --- Build scripts ---------------------------------------------------------------------------
-# Only these packages may run install lifecycle scripts.
-onlyBuiltDependencies:
+# THE ALLOWLIST IS SPELLED TWICE. `allowBuilds` is the one that matters; the two lists below are
+# legacy. They are kept in sync anyway, and a test enforces that — see the pointer under the map.
+#
+# pnpm 11 REMOVED onlyBuiltDependencies / ignoredBuiltDependencies (pnpm.io/settings/build). It does
+# not consult them for build approval and prints no warning; `ignoredBuiltDependencies` appears
+# nowhere in the pnpm 11 binary. Beware the tempting non-evidence: `pnpm config get
+# onlyBuiltDependencies` echoes ANY key present in this file, including one that does not exist.
+#
+# Measured on a one-install-script fixture with `allowBuilds` alone and NO legacy keys:
+#   pnpm 11.17.0 ok · 10.34.5 ok · 10.28.0 ok · 10.27.1 EXIT 1, binary not built
+# So the lists are dead config for CI (`version: 10` resolves to latest-10 = 10.34.5) and survive
+# only for pnpm <=10.27. Without `allowBuilds`, pnpm 11 exits 1 and seeds a `set this to true or
+# false` placeholder into this tracked file — written BY the failing run, not the cause of it.
+onlyBuiltDependencies: # legacy; honoured only by pnpm <=10.27
   - esbuild
 
 # Explicitly denied, so pnpm stops prompting about them.
-ignoredBuiltDependencies:
+ignoredBuiltDependencies: # legacy; honoured only by pnpm <=10.27
   - sharp
   - unrs-resolver
+
+# The live setting, honoured by pnpm >=10.28 and 11. Booleans only — never the placeholder string
+# pnpm writes here itself. Every dependency declaring an install script must appear here explicitly;
+# src/lib/pnpm-build-allowlist-consistency.test.ts derives that set from the resolved tree.
+allowBuilds:
+  esbuild: true
+  sharp: false
+  unrs-resolver: false

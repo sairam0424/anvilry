@@ -3,12 +3,12 @@ kind: doc
 title: Components — Gamified View & Developer Terminal
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.6.0
 ---
 
 # Components — Gamified View & Developer Terminal
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/game/**` (incl. `src/components/game/terminal/**`), excluding `*.test.*` / `*.dom.test.*`
 **Files indexed:** 23
@@ -192,7 +192,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 - **Reads / depends on:** `motion/react` `useReducedMotion`, `@/lib/use-media-query` (`useMediaQuery`, `useWebGLSupported`), `@/lib/game-model` `questNodes`, `game/dossier-card`, `game/webgl-boundary`, and three voice stores: `chat/talk-overlay-store` `useTalkModeOpen`, `chat/anvil-inline-store` `useInlineVoiceOpen`, `chat/anvil-core-store` `useCoreVoiceOpen`. Lazily imports `./build-graph-scene` with `{ ssr: false }` (`:16`).
 - **Consumed by:** `game/game-view.tsx:7`.
 - **Behaviour notes:** The whole component returns `null` unless every condition passes: `isDesktop && !reduced && webglOk && !webglFailed && !talkOpen` (`:50`). `webglOk` comes from a **proactive** canvas probe because R3F's context failure is an async rejection an error boundary cannot catch (`:46-48`). `webglFailed` is set by `WebGLBoundary`'s `onFail` (`:43`). `talkOpen` ORs all three voice stores (`:38`) so only one live WebGL context exists at a time. Media query is `(min-width: 768px)` (`:28`); the canvas wrapper is `h-[26rem]` inside an `absolute inset-0` child so R3F's ResizeObserver measures a definite box (`:57-59`).
-- **Gotchas / invariants:** Selecting a node stores only the id; `selected` is re-derived via `questNodes.find(n => n.id === selectedId)` (`:44`) — the ids are **graph node ids**, which are not always content slugs (`aava`, `grpc`, `nhl` per `CLAUDE.md:306`). The outer wrapper is also `hidden sm:block` (`:53`) on top of the JS media-query gate.
+- **Gotchas / invariants:** Selecting a node stores only the id; `selected` is re-derived via `questNodes.find(n => n.id === selectedId)` (`:44`) — the ids are **graph node ids**, which are not always content slugs (`aava`, `grpc`, `nhl` per `CLAUDE.md:315`). The outer wrapper is also `hidden sm:block` (`:53`) on top of the JS media-query gate.
 
 ### `src/components/game/build-graph-scene.tsx`
 - **Role:** The actual React Three Fiber canvas for the interactive graph.
@@ -252,7 +252,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 - **Reads / depends on:** `@/lib/agent-trace` (`AGENTS`, `scenarios`, `traceApproved`, `linkForSlug`), `game/use-trace-runner`, `@/lib/use-mounted` `useMounted`, `motion/react` `useReducedMotion`, `lucide-react` (`Play`, `RotateCcw`).
 - **Consumed by:** `game/game-view.tsx:8`.
 - **Behaviour notes:** `useTraceRunner(scenario, !!reduced || !mounted)` — reduced-motion **or** pre-hydration means instant full reveal (`:27`). Esc resets, with the listener attached only while `status !== "idle"` (`:29-37`). Scenario selection is a native `<select>` whose `onChange` calls `reset()` before switching index (`:58-60`). A `sr-only` `aria-live="polite" aria-atomic="true"` div carries `liveMessage` (`:91-93`). Steps render as an `<ol>` sliced to `revealedCount` (`:96`), each with the agent's `label`/`role`/`color` from `AGENTS` and the step's `ms` (`:100-109`). `step.refs` slugs render as links only when `linkForSlug(slug)` is non-null (`:114-124`) — the zero-fabrication guard.
-- **PLACEHOLDER_SENTINEL gate:** `if (!traceApproved) return null;` at `:40` — placed **after** all hooks so hook order stays stable. `traceApproved` is computed in `src/lib/agent-trace.ts:120-122` as "no step's `action` or `output` contains `PLACEHOLDER_SENTINEL`", where `PLACEHOLDER_SENTINEL = "[DRAFT — owner to approve]"` (`agent-trace.ts:22`). **At v3.4.2 every scripted step still carries the sentinel** (`agent-trace.ts:59-101`), so `traceApproved === false` and this component renders nothing in production. **Correction (this index previously called `agent-trace.test.ts` a "deploy-blocking guard" — that was never true and the source now says so outright):** the test is a *consistency* check, not a ship gate. Its single assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:51-56`), which passes in **both** states, so it can never fail the build; the docblock over `traceApproved` says "NOT a hard build failure" (`agent-trace.ts:114-119`) and the file's header banner now agrees ("It does NOT block the build" — `agent-trace.ts:3-18`). See `CLAUDE.md:359`. The real protection is that `traceApproved === false` makes this component render nothing, so un-reviewed prose ships dark rather than being blocked.
+- **PLACEHOLDER_SENTINEL gate:** `if (!traceApproved) return null;` at `:40` — placed **after** all hooks so hook order stays stable. `traceApproved` is computed in `src/lib/agent-trace.ts:120-122` as "no step's `action` or `output` contains `PLACEHOLDER_SENTINEL`", where `PLACEHOLDER_SENTINEL = "[DRAFT — owner to approve]"` (`agent-trace.ts:22`). **At v3.4.2 every scripted step still carries the sentinel** (`agent-trace.ts:59-101`), so `traceApproved === false` and this component renders nothing in production. **Correction (this index previously called `agent-trace.test.ts` a "deploy-blocking guard" — that was never true and the source now says so outright):** the test is a *consistency* check, not a ship gate. Its single assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:51-56`), which passes in **both** states, so it can never fail the build; the docblock over `traceApproved` says "NOT a hard build failure" (`agent-trace.ts:114-119`) and the file's header banner now agrees ("It does NOT block the build" — `agent-trace.ts:3-18`). See `CLAUDE.md:368`. The real protection is that `traceApproved === false` makes this component render nothing, so un-reviewed prose ships dark rather than being blocked.
 - **Gotchas / invariants:** Removing/renaming the sentinel in `agent-trace.ts` immediately ships the demo — that string is the shipping switch, not a lint marker.
 
 ### `src/components/game/use-trace-runner.ts`
@@ -313,6 +313,6 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 
 ## UNVERIFIED
 
-- The claim in `CLAUDE.md:104` / `ARCHITECTURE.md:74` that the terminal has "~16 commands" does not match the registry, which holds **31** entries (27 visible). The docs figure appears stale; the registry at `commands.ts:503-508` is authoritative.
+- The claim in `CLAUDE.md:113` / `ARCHITECTURE.md:74` that the terminal has "~16 commands" does not match the registry, which holds **31** entries (27 visible). The docs figure appears stale; the registry at `commands.ts:503-508` is authoritative.
 - `easter-eggs.tsx:57-66` describes the console greeting as "once per session", but the guard is a module-level `let` (`:31`) with no storage — I could not find any session-persistence mechanism, so the effective scope is per module instance.
 - Whether `NEXT_PUBLIC_SKILL_TREE` / `NEXT_PUBLIC_RESUME_VARIANTS` are set in any deployed Vercel environment — only the local `.env.example` (commented out) and `Makefile` defaults (`false`) were inspected.

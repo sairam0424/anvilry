@@ -4,6 +4,98 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] — 2026-08-21
+
+**Minor** — a correctness and CI-integrity pass. Not a feature release, but **OG image output changes** for `devto`/`hashnode` articles, which makes it a public-artifact change rather than a patch (the same reasoning as 3.5.0).
+
+### Fixed
+- **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning with the current
+  default pnpm could not install the repo — and pnpm 11 also **rewrote the tracked
+  `pnpm-workspace.yaml`**, seeding `allowBuilds` with the placeholder `set this to true or false`
+  (written BY the failing run, not the cause of it):
+  `[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2`.
+
+  pnpm 11 **removed** `onlyBuiltDependencies` / `ignoredBuiltDependencies` in favour of the boolean
+  `allowBuilds` map (pnpm.io/settings/build); it does not consult them and prints no warning. Do not
+  cite `pnpm config get onlyBuiltDependencies` as evidence that it does — `pnpm config get` echoes
+  ANY key present in the file, including one that does not exist.
+
+  Measured on a one-install-script fixture, `allowBuilds` alone and no legacy keys: **11.17.0 ok ·
+  10.34.5 ok · 10.28.0 ok · 10.27.1 EXIT 1**. CI pins `version: 10` → latest-10 (10.34.5), so the
+  legacy lists are dead config for CI and survive only for pnpm <=10.27. Fixed at
+  `pnpm-workspace.yaml:55-58`; both majors install clean, lockfile byte-identical.
+
+  **Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it installs*.
+
+- **8 of 14 article OG cards rendered the generic `> article` label**, and two more label maps could
+  drift the same way. `SOURCE_LABEL` in `articles/[slug]/opengraph-image.tsx:19-26` and `SOURCE_LABELS`
+  in `articles/[slug]/page.tsx:14-30` were both `Record<string, string>` and had drifted two members
+  behind `velite.config.ts:102`'s `source` enum: `devto` (7 published) and `hashnode` (1 published)
+  fell through the `??` fallback. Both are now keyed by `ArticleSource`, making an omission a `tsc`
+  error — verified, not assumed: widening the Velite enum alone yields `TS7053`/`TS2741` and exit 2,
+  because `.velite/index.d.ts` derives `Article` from `typeof import("../velite.config.ts")`, so the
+  enum edit alone changes the type with no `pnpm content` step. The two sibling maps
+  (`platform-badge.tsx:13`, `articles/page.tsx:25`) were already `Record<ArticleSource, …>`, which is
+  exactly why tsc caught drift there and structurally could not in these two.
+  **No test added — the key type is the guard.**
+
+  **Scope, stated honestly — no article page serves our own og tags today.** `articles/[slug]/page.tsx:59`
+  redirects every non-native article that has an `externalUrl`, and all 13 published external articles
+  have one, so those return 307 and an unfurler following the redirect gets the *publisher's* card. The
+  only remaining article, `how-dns-works` (native), returns **404** in production — it is notes-only and
+  `NOTES_ENABLED` is false — so it serves no og tags either. Verified live against
+  `https://anvilry.vercel.app`. The corrected pixels are reachable at `/articles/<slug>/opengraph-image`,
+  which is prerendered for all 14. **This is a correctness and drift-proofing fix with no
+  currently-visible surface.** `page.tsx`'s gap is likewise latent rather than live:
+  `velite.config.ts:103` declares `externalUrl` `.optional()` ("required for non-native" is a comment,
+  not a constraint), so one omission would fall through `:59` and render a raw `devto`.
+
+### Added
+- **`ci.yml` job `install-pnpm-11`** (`ci.yml:124-171`) — the only job running a pnpm other than the
+  pinned 10. Installs cold, fails on `git diff --exit-code` so a silent write to a tracked file is
+  itself a build failure, then runs the guard below.
+- **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — two assertions: the spellings agree, and
+  **every dependency declaring an install script has an explicit boolean**. The second reads the
+  resolved tree, closing the gap the first is blind to. Mutation-verified 8/8.
+- **`scripts/bundle-budget.mjs` + a `Bundle budget` step** in the `e2e` job, replacing the workflow
+  removed below. Reads `.next/diagnostics/route-bundle-stats.json`, which `next build` emits with no
+  flag but **only under Turbopack** — so it measures what ships. Asserts (a) every route's first-load JS
+  stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a
+  byte-total guard structurally cannot check: an eager `import * as THREE` moves ~876 KB onto every
+  route while total emitted bytes barely move. A missing or malformed artifact **exits 1** by design.
+  Mutation-verified 8/8; confirmed live in CI at 62,695 B headroom. Cross-OS variance measured, not
+  assumed: macOS 1,220,794 B vs ubuntu-latest 1,222,305 B for `/` — 0.12% against 5% headroom.
+- **`pnpm analyze`** (`velite --clean && ANALYZE=true next build --webpack`) — keeps
+  `@next/bundle-analyzer` usable as a *local* module-attribution tool. It requires the explicit
+  `--webpack` flag, and a `--webpack` build does not emit `route-bundle-stats.json`, so the budget gate
+  correctly fails on one and names `--webpack` as the cause.
+
+### Removed
+- **`.github/workflows/bundle-analysis.yml`, retiring the `Bundle size` status check.** It ran **222
+  times — 211 green, 11 red — and produced ZERO artifacts, ever.** Three independent causes, each
+  sufficient: Turbopack is the Next 16 default so the webpack-only `@next/bundle-analyzer` no-opped
+  (the workflow's own comment claimed the opposite); `nextjs-bundle-analysis` (last published 2023)
+  reads the Pages-Router `build-manifest.json.pages`, which is `{"/_app": []}` here, so even fully
+  wired it reports `{"raw":0,"gzip":0}`; and the `report` step that writes `__bundle_analysis.json` was
+  never in the workflow, nor was a `nextBundleAnalysis` block ever in `package.json`.
+
+  Precisely: it was **not** unfailable outright — install and build failures did go red, which is 9 of
+  those 11. What it could never do was fail on a bundle *size*, because there was no threshold, and
+  `if-no-files-found: warn` plus `continue-on-error: true` let a missing measurement pass silently.
+  `main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate
+  anyone depended on is removed.
+
+### Changed
+- Index sections 10, 11, 12, 13, 14, 14b, 15 and README updated across two passes. Citation coverage is
+  2,148 verified — but note that figure is **green by construction**: `.citations.json` is regenerated
+  in the same commit as the prose it validates, so a clean run is not independent evidence the prose is
+  right. The script says as much itself.
+
+### Dependencies
+- `flags` `4.2.0 → 4.3.0` (#140) — minor; also drops an unsatisfiable `@sveltejs/kit` optional peer that caused `ERESOLVE` noise.
+- `@upstash/redis` `1.38.0 → 1.38.2` — patch.
+- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`, `onCLS`) are unchanged in v6; the breaking changes are types and defaults. Dynamically imported from `src/instrumentation-client.ts`, so it reaches the browser despite being a devDependency.
+
 ## [3.5.0] — 2026-08-21
 
 **Minor** — a correctness pass, not a feature release, but it changes behaviour so it is not a patch.

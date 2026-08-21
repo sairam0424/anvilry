@@ -3,12 +3,12 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.6.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`.
 **Files indexed:** 38
@@ -183,7 +183,7 @@ Two named transition groups exist in the tree:
 - **Reads / depends on:** `@/lib/profile` (`profile`, `skills`), `@/lib/personal` `now`.
 - **Consumed by:** `src/app/layout.tsx` (Person, WebSite, Faq), `src/app/projects/[slug]/page.tsx`, `src/app/articles/[slug]/page.tsx`, `src/app/notes/[slug]/page.tsx`, `src/app/work/[slug]/page.tsx`, `src/app/about/page.tsx`.
 - **Behaviour notes:** Every block emits through `safeJsonLd`, which is `JSON.stringify(data).replace(/<\//g, "<\\/")` (`:8-10`) — `JSON.stringify` alone does not escape `</script>`, which would break out of the script tag (`:4-7`). `isOpenToWork` is derived from `now.focus.some((f) => /open to (new )?roles?/i.test(f))` (`:16`) and conditionally adds a `seeks: { @type: "Demand" }` property (`:38`) — removing the "open to new roles" line from `personal.ts` drops the schema signal automatically. `PROGRAMMING_LANGUAGES` is a 19-member allowlist (`:73-76`); a `tech` entry outside it becomes a keyword rather than a `programmingLanguage` (`:93`, `:102-103`). `CreativeWorkJsonLd` deliberately omits `aggregateRating` (Google's self-serving-review policy, `:141-142`).
-- **Gotchas / invariants:** The base URL `https://anvilry.vercel.app` is hardcoded in **seven** places here (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_URL`, `:214`) — `:214` sits inside FAQ answer prose, so a find-and-replace on the `BASE_URL` constant misses it. `CLAUDE.md:292` lists this file as one of exactly four that must be edited when pointing a custom domain at the deployment; the authoritative repo-wide count lives in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url). The `FaqJsonLd` answers embed real metrics and product names as literal strings (`:176-217`).
+- **Gotchas / invariants:** The base URL `https://anvilry.vercel.app` is hardcoded in **seven** places here (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_URL`, `:214`) — `:214` sits inside FAQ answer prose, so a find-and-replace on the `BASE_URL` constant misses it. `CLAUDE.md:301` lists this file as one of exactly four that must be edited when pointing a custom domain at the deployment; the authoritative repo-wide count lives in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url). The `FaqJsonLd` answers embed real metrics and product names as literal strings (`:176-217`).
 
 ### `src/components/article-group-card.tsx`
 - **Role:** Card for a deduplicated article group (same essay across platforms).
@@ -245,7 +245,7 @@ Two named transition groups exist in the tree:
 - **Role:** Top-of-viewport scroll progress bar.
 - **Exports:** `ReadingProgress` (no props).
 - **Reads / depends on:** `motion/react` `useScroll` + `useReducedMotion` (Motion's own, not `@/lib/use-reduced-motion`).
-- **Consumed by:** `src/app/notes/[slug]/page.tsx:68` only.
+- **Consumed by:** `src/app/notes/[slug]/page.tsx:86` only.
 - **Behaviour notes:** Returns `null` under reduced motion (`:15`). Drives `scaleX` from `scrollYProgress` on a `fixed … h-[2px] origin-left` bar — compositor-only, zero React re-renders (`:6-9`, `:18-22`). `aria-hidden="true"`.
 
 ### `src/components/copy-button.tsx`

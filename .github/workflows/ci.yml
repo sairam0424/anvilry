@@ -101,6 +101,20 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Rides on the build above rather than adding a second one. `pnpm build` ends in a bare
+      # `next build` => Turbopack => it writes .next/diagnostics/route-bundle-stats.json, which is
+      # the only per-route first-load artifact Next 16 emits (the `size`/`First Load JS` build-table
+      # columns were removed in 16).
+      #
+      # No continue-on-error and no if-no-files-found here on purpose. This step REPLACES
+      # bundle-analysis.yml, which ran 222 times — 211 green, 11 red — and produced ZERO artifacts,
+      # ever. Be precise about why: its install/build failures DID go red (that is 9 of the 11), so it
+      # was not unfailable outright. What it could never do was fail on a bundle SIZE, because it had
+      # no threshold, and `if-no-files-found: warn` on the upload plus continue-on-error on the
+      # compare meant a missing measurement passed silently. Unmeasurable must mean red.
+      - name: Bundle budget
+        run: node scripts/bundle-budget.mjs
+
       - name: Run E2E
         run: pnpm e2e
 
@@ -111,6 +125,55 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  install-pnpm-11:
+    name: Install on pnpm 11
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # WHY THIS JOB EXISTS
+    # The `ci` job above pins `version: 10`, which is correct — but it means no green run has ever
+    # exercised the pnpm the rest of the world actually installs. `npm i -g pnpm` resolves to 11.
+    #
+    # That gap shipped a real defect: pnpm 11 removed `onlyBuiltDependencies` /
+    # `ignoredBuiltDependencies` in favour of the boolean `allowBuilds` map, so
+    # `pnpm install --frozen-lockfile` exited 1 for every contributor on the default pnpm while CI
+    # stayed green, AND pnpm 11 silently rewrote the tracked pnpm-workspace.yaml with a
+    # `set this to true or false` placeholder. Nothing in the repo could have caught it: "CI passes"
+    # and "the repo installs" were different claims and only the first was being checked.
+    #
+    # This job checks the second claim. Keep it as its own job, not a step in `ci` — it must run a
+    # different pnpm major, and it must be allowed to fail loudly without masking lint/type/test.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm 11
+        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+        with:
+          version: 11
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No cache: a cold resolve is the point. A warm store could mask a resolution failure.
+      - name: Install with the lockfile frozen
+        run: pnpm install --frozen-lockfile
+
+      # pnpm 11 seeds `allowBuilds` into pnpm-workspace.yaml when it is missing or incomplete. That
+      # write is the signature of the bug even on runs where the install itself exits 0, so treat any
+      # modification to a tracked file as a failure and print the diff.
+      - name: Fail if pnpm 11 modified a tracked file
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::pnpm 11 modified a tracked file during install (see diff above)."
+            echo "::error::Most likely pnpm-workspace.yaml gained an allowBuilds placeholder."
+            exit 1
+          fi
+
+      - name: Confirm the build-script allowlist covers the resolved tree
+        run: npx vitest run src/lib/pnpm-build-allowlist-consistency.test.ts
 
   security-alerts:
     name: Security alerts (report)

@@ -3,34 +3,36 @@ kind: doc
 title: Tests, E2E & Quality Gates
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.6.0
 ---
 
 # Tests, E2E & Quality Gates
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/**/*.test.{ts,tsx}`, `src/**/*.dom.test.{ts,tsx}`, `e2e/resume.spec.ts`, `e2e/views.spec.ts`, `vitest.config.ts`, `playwright.config.ts`
-**Files indexed:** 67 (65 test/spec files + 2 configs)
+**Files indexed:** 73 (71 test/spec files + 2 configs) — 69 under `src/` (`find src -name '*.test.*'`) plus the 2 Playwright specs under `e2e/`. v3.6.0 added `src/lib/pnpm-build-allowlist-consistency.test.ts`, which runs inside `pnpm build` and is therefore a deploy blocker. v3.5.0 added five suites (`health-expectations`, `client-ip-consistency`, `manifest`, `mcp/tools-documented`, `llms-txt`) and deleted one (`src/lib/index-citations.test.ts` — the citation check is now a CI step, see **CI jobs** below).
 
 ## Runner topology (facts first)
 
-- `pnpm build` = `velite --clean && vitest run && next build` (`package.json:8`). **A failing Vitest assertion aborts the build before `next build` runs — so every test in this file is a deploy blocker on the Vercel build path.**
-- `pnpm test` = `vitest run`; `pnpm test:watch` = `vitest` (`package.json:11-12`).
-- `pnpm e2e` = `playwright test`; `pnpm e2e:ui` = `playwright test --ui` (`package.json:15-16`).
+- `pnpm build` = `velite --clean && vitest run && next build` (`package.json:11`). **A failing Vitest assertion aborts the build before `next build` runs — so every test in this file is a deploy blocker on the Vercel build path.**
+- `pnpm test` = `vitest run`; `pnpm test:watch` = `vitest` (`package.json:15-16`).
+- `pnpm e2e` = `playwright test`; `pnpm e2e:ui` = `playwright test --ui` (`package.json:19-20`).
 - **Two Vitest projects** (`vitest.config.ts:27-45`):
   - `node` — `environment: "node"`; include `["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"]`; exclude `["**/*.dom.test.{ts,tsx}", "**/node_modules/**"]` (`vitest.config.ts:30-35`). The exclude is load-bearing: `src/x.dom.test.ts` also matches `src/**/*.test.ts`, so without it every DOM suite would run twice — once without happy-dom globals.
   - `dom` — `environment: "happy-dom"`; include `["src/**/*.dom.test.{ts,tsx}", "tests/**/*.dom.test.{ts,tsx}"]` (`vitest.config.ts:38-43`). No explicit `exclude` — it relies on Vitest's default node_modules exclusion.
   - `tests/` does not exist in the repo; both include globs carry a `tests/**` arm that currently matches nothing.
   - `resolve: { tsconfigPaths: true }` (`vitest.config.ts:17`) is what lets tests import the real `@/*` modules and the generated `.velite` output rather than re-implementations.
 - **`env: { NODE_ENV: "test" }`** (`vitest.config.ts:26`). Reason recorded in the config comment (`vitest.config.ts:19-25`): Vitest only defaults `NODE_ENV=test` when it is *unset*, but the Vercel build shell sets `NODE_ENV=production`; React would then load its production bundle, which strips `act`, and every `renderHook`/`render` DOM test would die with "React.act is not a function" and fail the deploy. Setting it in config is deterministic and scoped to the Vitest worker only — the separate `next build` process still runs in production mode.
-- **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:43-53`).
+- **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:52-62`).
 - **Playwright** (`playwright.config.ts`): `testDir: "./e2e"`, `fullyParallel: true`, `forbidOnly: !!CI`, `retries: CI ? 2 : 0`, `workers: CI ? 1 : undefined`, `reporter: "html"`, `use.baseURL: "http://localhost:3000"`, `trace`/`video`: `"on-first-retry"`. One project only: `chromium` / `devices["Desktop Chrome"]` (`playwright.config.ts:15-20`). `webServer: { command: "pnpm start", url: "http://localhost:3000", reuseExistingServer: !process.env.CI, timeout: 120_000, stdout: "ignore", stderr: "pipe" }` (`playwright.config.ts:33-40`) — the comment at `playwright.config.ts:23-32` records why it was added: a stale server on :3000 silently made Playwright test an older build, producing 5 phantom "failures" during a release audit.
-- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test`; job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `security-alerts` is `continue-on-error: true` (`ci.yml:139`) and always exits 0 by design (`ci.yml:115-191` — the last job in the file).
+- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → `node scripts/check-index-citations.mjs` (`ci.yml:74-75`); job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `install-pnpm-11` (`ci.yml:129-176`) is the **only job that runs a pnpm other than the pinned 10**; job `security-alerts` is `continue-on-error: true` (`ci.yml:202`) and always exits 0 by design (`ci.yml:178-254` — the last job in the file).
+- **`install-pnpm-11` exists because "CI passes" and "the repo installs" are different claims.** Every other job pins `version: 10` (`ci.yml:31`, `:84`), so no green run had ever exercised the pnpm a contributor actually gets — `npm i -g pnpm` resolves to 11. That gap shipped a defect: pnpm 11 removed `onlyBuiltDependencies`/`ignoredBuiltDependencies` in favour of the boolean `allowBuilds` map, so `pnpm install --frozen-lockfile` exited 1 for every pnpm 11 user while CI stayed green, **and pnpm 11 rewrote the tracked `pnpm-workspace.yaml`** with a `set this to true or false` placeholder. The job installs cold (no store cache — a warm store can mask a resolution failure), then fails on `git diff --exit-code` so that silent write to a tracked file is itself a build failure, then runs the allowlist guard. It is a separate job rather than a step in `ci` because it must run a different pnpm major and must fail without masking lint/type/test.
+- **The codebase-index citation check is NOT a Vitest suite.** It was briefly `src/lib/index-citations.test.ts`, which put it inside `vitest run` and therefore inside `pnpm build` — a stale doc would have failed the Vercel production build. That file is **deleted**; the check is now the CI-only step above, deliberately (`ci.yml:64-75` records the reasoning: documentation freshness gates a merge, never a deploy). It is therefore the one quality gate in this file that is *not* a deploy blocker.
 
 ## At a glance
 
-Terse index of all 67 files in scope, in the same order as [Coverage](#coverage). The Guard matrix below carries the full assertion detail.
+Terse index of all 73 files in scope, in the same order as [Coverage](#coverage). The Guard matrix below carries the full assertion detail.
 
 | File | Role | Key exports/assertions |
 |---|---|---|
@@ -43,6 +45,9 @@ Terse index of all 67 files in scope, in the same order as [Coverage](#coverage)
 | `src/app/api/tts-google/route.test.ts` | Google TTS route contract | 503 without key; 400/413 rejections; base64 → `audio/mpeg`; 502 on bad upstream |
 | `src/app/api/tts/cache.test.ts` | Polly TTS audio cache keying + tier gate | Key varies by voice AND tier; LRU bump; `CACHE_MAX = 100`; `ALLOWED_TIERS` |
 | `src/app/layout.hydration-proof.dom.test.tsx` | Documentation lock for `suppressHydrationWarning` (not a product test) | With prop React is silent; without it, mismatch logged |
+| `src/lib/pnpm-build-allowlist-consistency.test.ts` | pnpm build-script allowlist ⇄ the resolved dependency tree (new in v3.6.0) | `allowBuilds` booleans match the pnpm 10 lists; no value is pnpm's placeholder string; **every dep declaring an install script has an explicit boolean** (reads `node_modules/.pnpm`, so it catches a NEW dep, which the file-only assertions cannot) |
+| `src/app/manifest.test.ts` | Web app manifest asset resolver + declared-asset existence (new in v3.5.0) | `/icon`→`src/app/icon.tsx`, else `public/<src>`; every icon src resolves; `screenshots` absent by design |
+| `src/app/mcp/tools-documented.test.ts` | `/mcp` docs table ⇄ route `registerTool` set (new in v3.5.0) | Documented set === registered set; call-count cross-check catches regex drops |
 | `src/components/ask-portfolio.dom.test.tsx` | Phase 0 unification contract for the ask widget | Streams via shared `useChat` transport → `/api/chat`; surfaces the 503 copy |
 | `src/components/chat/anvil-inline-panel.dom.test.tsx` | Non-modal inline disclosure a11y | `role="region"`; `aria-expanded`/`aria-controls`; outside pointerdown closes + restores focus |
 | `src/components/chat/markdown-message.test.ts` | Streaming markdown delimiter balancer | `closeOpenMarkdown` never mangles complete markdown; idempotent; explicitly not an XSS test |
@@ -81,12 +86,15 @@ Terse index of all 67 files in scope, in the same order as [Coverage](#coverage)
 | `src/lib/agent-trace.test.ts` | Glass-box demo scaffolding | Refs resolve; ≥2 scenarios; known agents; <8000ms/scenario; `traceApproved === !hasSentinel` (consistency, not ship block) |
 | `src/lib/avatar-glb.test.ts` | Binary-asset invariant guard for `public/avatar/sairam.glb` | glTF 2.0; <1.5 MB; meshopt/quantization/WebP extensions; bones present; zero morph targets |
 | `src/lib/case-study-depth.test.ts` | Work optional-field depth gate | `diagram` ⇒ non-empty `diagramAlt` + asset on disk; constraints/tradeoffs >20 chars, not TODO |
+| `src/lib/client-ip-consistency.test.ts` | Cross-copy security contract for the duplicated `clientIp` helper (new in v3.5.0) | 3 known copies, discovered not assumed; `x-vercel-forwarded-for` first; **last** XFF segment; asserts comment-stripped source |
 | `src/lib/corpus.test.ts` | Chat grounding corpus shape | Always carries profile name + `## Production Work` + `## Skills`; `## Personal` present IFF populated |
 | `src/lib/game-model.test.ts` | Graph↔content bijection (the headline deploy gate) | Forward/reverse coverage, count identity, href shape, once-only grouping, dossier facts are real metrics |
 | `src/lib/github.test.ts` | GitHub feed fail-open | `REPO_ALLOWLIST` unique + 2 named extras; failure → `[]`; newest-push sort; `Bearer` only with token |
+| `src/lib/health-expectations.test.ts` | Behavioural gate for the health-check cron's expected-status logic (new in v3.5.0) | Default 200; `mcp_get` 405; overrides frozen + exactly one key; `probeBase` alias precedence; `redirect: "manual"`; pins `mcp-handler` 1.1.x |
 | `src/lib/llm-sdk-mode.test.ts` | SDK-mode flag default (one-shot smoke) | Default `"anthropic-bedrock"`; read-once stability |
 | `src/lib/llm-trace.test.ts` | Trace wire-protocol constants | `TRACE_DELIMITER` U+001E; `THINKING_SENTINEL`/`THINKING_END`; `TraceFrame` has no `reasoning` |
 | `src/lib/llm.test.ts` | Largest suite (563 lines): `streamWithFallback` telemetry, fallback invariant, thinking protocol | snake_case usage keys pinned; `emittedAny` invariant; model IDs pinned; no `reasoning` in trace frame |
+| `src/lib/llms-txt.test.ts` | Advertised MCP endpoint in `llms.txt` (new in v3.5.0) | `- MCP server (for AI agents):` line carries `/api/mcp/mcp`; never `/api/mcp/sse`; pins the route's `disableSse: true` |
 | `src/lib/mcp-tools.test.ts` | MCP tool surface | No `personal.ts` leak; counts equal content counts; fail-closed `notFound` + `valid[]`; every RESUME PDF exists |
 | `src/lib/notes.test.ts` | Notes access layer | `hasNotes` mirrors count; no drafts; newest-first; parseable dates |
 | `src/lib/personal.test.ts` | Personal content shape | Arrays + `now`; `hasPersonalContent`/`hasNow` are exact IFFs |
@@ -114,6 +122,11 @@ Terse index of all 67 files in scope, in the same order as [Coverage](#coverage)
 | `src/components/ask-portfolio.dom.test.tsx` | `ask-portfolio.tsx` | Widget streams through the shared `useChat` transport, POSTs to `/api/chat`; surfaces the 503 message | Deploy blocker. The widget regresses to a private fetch loop | dom |
 | `src/lib/corpus.test.ts` | `corpus.ts`, `personal.ts`, `profile.ts` | Corpus always carries profile name + `## Production Work` + `## Skills`; `## Personal` present IFF personal.ts populated | Deploy blocker. Chat grounding loses the professional record or leaks an empty Personal section | node |
 | `src/lib/mcp-tools.test.ts` | `mcp-tools.ts` | No personal.ts leak; list counts equal content counts; fail-closed `notFound` + `valid[]`; every `RESUME_ROLES` PDF exists on disk | Deploy blocker. MCP fabricates or leaks personal data | node |
+| `src/app/mcp/tools-documented.test.ts` | `src/app/mcp/page.tsx` `TOOLS` table vs `src/app/api/mcp/[transport]/route.ts` `registerTool` calls | Documented set === registered set (sorted, order not asserted); a `registerTool` call-count cross-check so a regex miss fails loudly instead of reading as "already documented" (`:61`); counts safe to quote (`:90`) | Deploy blocker. The route registered 9 while the public page listed 7 — `list_all_content` and `get_content_item` were live but undiscoverable | node |
+| `src/lib/llms-txt.test.ts` | `llms-txt.ts` `buildLlmsTxt` | The `- MCP server (for AI agents):` line advertises `/api/mcp/mcp`; `/api/mcp/sse` appears nowhere; the route's `disableSse: true` is re-read so re-enabling SSE forces a revisit rather than silent divergence | Deploy blocker. Every agent reading `llms.txt` is sent to a transport the route 404s on purpose | node |
+| `src/lib/client-ip-consistency.test.ts` | the deliberately duplicated `clientIp` in `src/lib/rate-limit.ts`, `src/lib/telemetry/with-trace.ts`, `src/app/api/visit/route.ts` | Discovers every `clientIp` definition under `src/` and fails on an unlisted copy (`:101`); each copy reads `x-vercel-forwarded-for` **before** `x-forwarded-for` (`:131`), takes the **last** XFF segment (`:140`), and falls back `x-real-ip` → constant, never `undefined` (`:154`). Every assertion runs on comment-stripped source — the first version matched the explanatory comment and could not fail | Deploy blocker. `/api/visit` had already drifted to the attacker-controlled **first** segment, which lets a client rotate spoofed headers to bypass its own rate limit | node |
+| `src/lib/health-expectations.test.ts` | `health-expectations.ts` (extracted from `api/cron/health-check/route.ts`) | `expectedStatus` defaults to 200 for every unknown check and 405 for `mcp_get`; `EXPECTED_STATUS_OVERRIDES` has exactly one key and is frozen; `probeBase` prefers the production alias over the per-deployment host and only falls back to localhost off-platform; probe uses `redirect: "manual"` and treats any 3xx as failure, naming Vercel SSO; pins `mcp-handler` to `1.1.x` and confirms the 405 branch is still unconditional in the installed package (`:160-184`) | Deploy blocker. The cron reports green while the site is behind an SSO redirect, or the 405 expectation silently outlives the dependency it was derived from. Replaces a source-grep guard that five different reintroductions of the original bug all passed | node |
+| `src/app/manifest.test.ts` | `src/app/manifest.ts` | The resolver itself is unit-tested against synthetic inputs (`/icon` → `src/app/icon.tsx`, otherwise `public/<src>`); every declared icon src resolves on disk; `screenshots` is asserted **absent** because the two it used to declare had no files behind them (`:66`), with a latch that arms on re-add (`:74`) | Deploy blocker. The install UI references 404ing assets. Note the walk-only form of this test would assert nothing today — hence the explicit-shape + resolver-unit split | node |
 | `src/lib/content`-backed: `notes.test.ts` | `content.ts` notes | `hasNotes` mirrors count; no drafts; newest-first; parseable dates | Deploy blocker. Dead nav link or unsorted feed | node |
 | `src/lib/case-study-depth.test.ts` | `content.ts` Work optional fields | `diagram` ⇒ non-empty `diagramAlt`; diagram asset exists under `public/`; constraints/tradeoffs >20 chars and not TODO/TBD/lorem | Deploy blocker on new content. Broken image or a11y gap | node |
 | `src/lib/personal.test.ts` | `personal.ts` | Shape (arrays + `now`); `hasPersonalContent`/`hasNow` are exact IFFs | Deploy blocker. Reveal surfaces could show placeholders | node |
@@ -174,10 +187,10 @@ Terse index of all 67 files in scope, in the same order as [Coverage](#coverage)
 
 ## The four load-bearing gates — verified against source
 
-CLAUDE.md's "Testing Notes" section (`CLAUDE.md:353-362`) names four gates. Verified one by one:
+CLAUDE.md's "Testing Notes" section (`CLAUDE.md:362-373`) names four gates. Verified one by one:
 
 ### 1. `game-model.test.ts` bijection — **CLAUDE.md is correct**
-`CLAUDE.md:355`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
+`CLAUDE.md:364`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
 
 Confirmed. Seven forward/reverse coverage assertions plus an explicit count identity:
 - forward: every `graphNodes` id is a key of `NODE_CONTENT` (`game-model.test.ts:22-25`), resolves via `resolveNode` (`:27-32`), and points at a slug present in `allWork`/`allProjects` (`:34-40`);
@@ -189,7 +202,7 @@ Confirmed. Seven forward/reverse coverage assertions plus an explicit count iden
 The three intentional node-id≠slug exceptions CLAUDE.md lists are real, but they live in the source, not the test: `aava → aava-code` (`src/lib/game-model.ts:31`), `grpc → grpc-microservices` (`:42`), `nhl → not-humans-lab` (`:45`), documented at `src/lib/game-model.ts:20`.
 
 ### 2. Injection/XSS guard location — **CLAUDE.md was wrong on both counts; now corrected**
-CLAUDE.md used to say "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these." Both halves of that were wrong, and both are now fixed: `CLAUDE.md:356` names `src/components/chat/parse-cards.test.ts` as the prompt-injection / XSS guard, and `CLAUDE.md:357` records that `src/components/ask-portfolio.dom.test.tsx` "has exactly two tests" and "contains zero injection or XSS assertions."
+CLAUDE.md used to say "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these." Both halves of that were wrong, and both are now fixed: `CLAUDE.md:365` names `src/components/chat/parse-cards.test.ts` as the prompt-injection / XSS guard, and `CLAUDE.md:366` records that `src/components/ask-portfolio.dom.test.tsx` "has exactly two tests" and "contains zero injection or XSS assertions."
 
 The two errors, for the record:
 1. **Wrong filename.** There is no `ask-portfolio.dom.test.ts`. The file is `src/components/ask-portfolio.dom.test.tsx`.
@@ -202,14 +215,14 @@ Where the guards actually live:
 Net: the guard exists and is a deploy blocker; CLAUDE.md now points at the right file.
 
 ### 3. `llm.test.ts` snake_case usage-field pin — **CLAUDE.md is correct**
-`CLAUDE.md:358`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
+`CLAUDE.md:367`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
 
 Confirmed, and it is a dedicated test, not incidental: "uses snake_case keys verbatim (regression guard against a silent SDK swap)" (`llm.test.ts:220-250`). It asserts `Object.keys(usage)` contains `["input_tokens", "cache_read_input_tokens", "output_tokens"]` (`:244-246`) and then explicitly forbids the camelCase forms: `expect(usage).not.toHaveProperty("inputTokens")` and `not.toHaveProperty("cacheReadInputTokens")` (`:248-249`). The file header records the reason: Bedrock Converse uses camelCase but `@anthropic-ai/bedrock-sdk` uses snake_case, so an SDK swap would silently zero the dashboard's cache-hit tile (`llm.test.ts:14-18`).
 
 Two adjacent tests pin the full usage capture: `message_start` + `message_delta` extraction of `{input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens}` (`:114-181`) and a warm-cache turn where `cache_read_input_tokens === 4096` / `cache_creation_input_tokens === 0` (`:183-218`).
 
 ### 4. `agent-trace.test.ts` `PLACEHOLDER_SENTINEL` gate — **not a ship block, and CLAUDE.md now says so**
-CLAUDE.md used to claim the test "**blocks shipping**" the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contained `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). That claim has been corrected: `CLAUDE.md:359` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check."
+CLAUDE.md used to claim the test "**blocks shipping**" the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contained `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). That claim has been corrected: `CLAUDE.md:368` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check."
 
 What the test actually does (`agent-trace.test.ts:51-57`):
 
@@ -236,7 +249,7 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Defines the single Vitest config with two named projects and the forced test `NODE_ENV`.
 - **Exports:** `default` (config object from `defineConfig`).
 - **Reads / depends on:** `vitest/config`; implicitly `tsconfig.json` paths via `resolve.tsconfigPaths` (`:17`).
-- **Consumed by:** `pnpm test`, `pnpm test:watch`, and the `vitest run` step inside `pnpm build` (`package.json:8,11,12`); CI `Test` step (`.github/workflows/ci.yml:52-53`).
+- **Consumed by:** `pnpm test`, `pnpm test:watch`, and the `vitest run` step inside `pnpm build` (`package.json:11,16,17`); CI `Test` step (`.github/workflows/ci.yml:61-62`).
 - **Behaviour notes:** `env: { NODE_ENV: "test" }` (`:26`) is scoped to the Vitest worker; the sibling `next build` process is unaffected. Projects use `extends: true` so both inherit the root `resolve`/`env`.
 - **Gotchas / invariants:** (a) removing `exclude: ["**/*.dom.test.{ts,tsx}", ...]` from the `node` project (`:34`) makes every DOM suite run twice, once without happy-dom; (b) removing `env.NODE_ENV` breaks the whole `dom` project on Vercel (React prod bundle has no `act`) — the failure surfaces as "React.act is not a function", documented at `:19-25`; (c) the `tests/**` include arms match nothing today.
 
@@ -244,8 +257,8 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Playwright config for the `e2e/` suite.
 - **Exports:** `default` (config object).
 - **Reads / depends on:** `@playwright/test`; env `CI`; a listening server at `http://localhost:3000`.
-- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:15-16`); CI `e2e` job (`.github/workflows/ci.yml:104-105`).
-- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:88-89`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
+- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:19-20`); CI `e2e` job (`.github/workflows/ci.yml:118-119`).
+- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:115-116`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
 - **Gotchas / invariants:** the long comment at `:23-32` records the failure mode being guarded: with no `webServer`, a stale process on :3000 made Playwright test an older build and produce phantom failures. `retries: 2` in CI means flaky specs can pass on retry with trace/video captured only `on-first-retry`.
 
 ### `src/lib/llm.test.ts` (563 lines — largest suite)
@@ -320,6 +333,8 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - `src/app/api/tts-google/route.test.ts`
 - `src/app/api/tts/cache.test.ts`
 - `src/app/layout.hydration-proof.dom.test.tsx`
+- `src/app/manifest.test.ts`
+- `src/app/mcp/tools-documented.test.ts`
 - `src/components/ask-portfolio.dom.test.tsx`
 - `src/components/chat/anvil-inline-panel.dom.test.tsx`
 - `src/components/chat/markdown-message.test.ts`
@@ -358,12 +373,15 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - `src/lib/agent-trace.test.ts`
 - `src/lib/avatar-glb.test.ts`
 - `src/lib/case-study-depth.test.ts`
+- `src/lib/client-ip-consistency.test.ts`
 - `src/lib/corpus.test.ts`
 - `src/lib/game-model.test.ts`
 - `src/lib/github.test.ts`
+- `src/lib/health-expectations.test.ts`
 - `src/lib/llm-sdk-mode.test.ts`
 - `src/lib/llm-trace.test.ts`
 - `src/lib/llm.test.ts`
+- `src/lib/llms-txt.test.ts`
 - `src/lib/mcp-tools.test.ts`
 - `src/lib/notes.test.ts`
 - `src/lib/personal.test.ts`
@@ -383,5 +401,5 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 
 - I did not execute `pnpm test`, `pnpm build`, or `pnpm e2e`. Every claim above is read from source. Actual pass/fail state, real coverage percentages, and runtime durations are unconfirmed.
 - The `dom` Vitest project declares no `exclude` (`vitest.config.ts:38-43`); I assume it relies on Vitest 4's default `node_modules` exclusion but did not confirm that default empirically.
-- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:60`) against the current specs.
+- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:82`) against the current specs.
 - Whether the Vercel production build actually sets `NODE_ENV=production` in the build shell (the stated reason for `env.NODE_ENV` in `vitest.config.ts:19-25`) is taken from that comment, not independently verified.

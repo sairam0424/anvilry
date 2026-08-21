@@ -1,14 +1,27 @@
 import { ImageResponse } from "next/og";
+import type { ArticleSource } from "@/components/platform-badge";
 import { allArticles, getArticle } from "@/lib/content";
 import { profile } from "@/lib/profile";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const SOURCE_LABEL: Record<string, string> = {
+/**
+ * MUST be keyed by ArticleSource, not string. This map was `Record<string, string>` and had drifted
+ * two members behind `velite.config.ts`'s `source` enum: `devto` and `hashnode` were missing, so
+ * **8 of 14 published articles** rendered the generic `> article` fallback on their OG card. The two sibling
+ * copies (`platform-badge.tsx`, `articles/page.tsx`) are keyed by `ArticleSource`, which is why tsc
+ * catches an omission there and structurally could not here.
+ *
+ * With the exact key type, adding a source to the Velite enum without adding it here is a
+ * type error. Do not widen this back to `string`.
+ */
+const SOURCE_LABEL: Record<ArticleSource, string> = {
   medium:   "> medium",
   substack: "> substack",
   linkedin: "> linkedin",
+  devto:    "> dev.to",
+  hashnode: "> hashnode",
   native:   "> article",
 };
 

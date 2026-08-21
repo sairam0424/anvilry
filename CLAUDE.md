@@ -16,6 +16,12 @@ pnpm dev                   # starts Velite watch + Next.js dev @ localhost:3000
 # Build (Velite + tests + Next.js, in that order)
 pnpm build
 
+# Bundle attribution — LOCAL tool only, never in CI. `--webpack` is REQUIRED: a bare `next build`
+# is Turbopack, which @next/bundle-analyzer cannot hook. Writes .next/analyze/{client,edge,nodejs}.html.
+# NOTE: a --webpack build does NOT emit .next/diagnostics/route-bundle-stats.json, so
+# `node scripts/bundle-budget.mjs` correctly fails after this — re-run `pnpm build` before the gate.
+pnpm analyze               # velite --clean && ANALYZE=true next build --webpack
+
 # Testing
 pnpm test                  # vitest run once
 pnpm test:watch            # vitest interactive watch mode
@@ -83,11 +89,14 @@ make resume-list / resume-open   # manage PDFs in public/resume/
 - `develop` — integration branch; all feature work targets this; Vercel Preview deploys
 - `main` — production release branch; merged from `develop` only; Vercel Production deploys
 
-**CI pipeline (`.github/workflows/`):**
-- `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm test`. Generates `.velite/` before typecheck and vitest — this mirrors the production build order and is required because `.velite/` is gitignored.
-- `bundle-analysis.yml` — runs on `develop`/`main` and their PRs; posts bundle-diff comment.
+**CI pipeline (`.github/workflows/`) — three workflows:**
+- `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm test`. Generates `.velite/` before typecheck and vitest — this mirrors the production build order and is required because `.velite/` is gitignored. Its `e2e` job also runs the **bundle budget** gate (`.github/workflows/ci.yml:110-111` → `scripts/bundle-budget.mjs`) immediately after its existing Build step, so it rides on that build rather than adding a second one.
 - `codeql.yml` — static JavaScript/TypeScript analysis on `develop` PRs + weekly.
 - `dependency-review.yml` — dependency security check on PRs.
+
+**Bundle budget gate.** `scripts/bundle-budget.mjs` reads `.next/diagnostics/route-bundle-stats.json` — written by `next build` with no flag, but **only under Turbopack** — and asserts two things: every route's first-load JS stays under `MAX_FIRST_LOAD_BYTES` (`scripts/bundle-budget.mjs:45`; largest today is `/` at 1,220,794 B, so ~5% headroom), and three.js stays **off** the first-load critical path (marker-based on `WebGLRenderer`, `scripts/bundle-budget.mjs:57`). A missing or malformed artifact exits 1 by design. The CI step deliberately carries **no** `continue-on-error` and **no** `if-no-files-found` — unmeasurable must mean red.
+
+**`bundle-analysis.yml` is DELETED — do not re-add it.** It was green and empty for its entire life: 222 runs, 211 green, zero artifacts across the 25 most recent. Three independent causes, each sufficient. (1) `next build` in Next 16 is **Turbopack**, not webpack (`node_modules/next/dist/lib/bundler.js:142-144` — "The default is turbopack when nothing is configured" — sets `TURBOPACK='auto'`), and `@next/bundle-analyzer` is webpack-only: it prints "not compatible with Turbopack builds, no report will be generated" and returns a config whose `.webpack` is undefined, so the `ANALYZE=true` build produced nothing. The workflow's own comment asserted the opposite; that assertion was **false**. (2) The `nextjs-bundle-analysis` compare step (last published 2023) reads the Pages-Router `build-manifest.json.pages`, which is `{"/_app": []}` in this App Router app — even fully wired it emits `{"raw":0,"gzip":0}`, i.e. "this PR introduced no changes to the JavaScript bundle" on every PR forever. (3) `if-no-files-found: warn` plus `continue-on-error: true` made both failures invisible. `develop` is not branch-protected, so nothing required it.
 
 ---
 
@@ -175,7 +184,7 @@ content/{work,projects,notes,articles}/*.mdx
 
 No view owns its own copy of content. Every view derives from the same Velite output. The `game-model.ts` derivation layer builds the 3D graph; `corpus.ts` builds the chatbot grounding document. A build-time bijection test (`game-model.test.ts`) fails the deploy if any graph node is orphaned from real content.
 
-**Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean` in dev mode or you'll get a race where webpack tries to resolve a momentarily deleted `.velite/projects.json`. The `build` script passes `--clean` explicitly for a pristine production build.
+**Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean` in dev mode or you'll get a race where Turbopack tries to resolve a momentarily deleted `.velite/projects.json`. The `build` script passes `--clean` explicitly for a pristine production build.
 
 **Notes accept both `.md` and `.mdx`** — the Velite schema makes the extended Inkforge frontmatter (`tone`, `format`, `length`, `wordCount`, `readingTime`, `generatedBy`, `platforms`) optional, so a hand-written note that omits those fields still compiles.
 
@@ -244,11 +253,11 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 - `frameloop="demand"` — no perpetual render loop at idle
 - Instanced meshes (one draw call for all nodes)
 - Lazy-imported — NOT in the LCP critical path
-- `src/lib/r3f.ts` is a single barrel for the whole R3F/three surface — it is load-bearing for keeping three.js to **one** copy in the bundle; import R3F/three through it, never directly
+- `src/lib/r3f.ts` is a single barrel for the whole R3F/three surface — it is load-bearing for keeping three.js to **one** copy in the bundle; import R3F/three through it, never directly. The single-copy measurement in `next.config.ts:127-149` (876 KB) is a genuine **Turbopack** measurement — 897,249 B exactly (`scripts/bundle-budget.mjs:48-50`); only the old attribution to webpack was wrong. CI now asserts it stays lazy: `scripts/bundle-budget.mjs` fails if `WebGLRenderer` appears in any route's first-load chunk set
 
-**Two declared dependencies are not actually used** (`package.json`, but zero imports in `src/`):
-- `@react-three/offscreen` — no worker/OffscreenCanvas anywhere; the "worker offload" this file previously claimed does not exist.
-- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain sinusoidal `useFrame` maths (`scene-physics.tsx:12-16,:42-44`), not a physics engine. The flag and filename are historical.
+**Two dependencies were declared but never imported — both removed in v3.5.0:**
+- `@react-three/offscreen` — no worker/OffscreenCanvas ever existed; the "worker offload" this file previously claimed was never real. The CSP still carries `worker-src 'self' blob:` (`next.config.ts`) for a worker that was never there.
+- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain sinusoidal `useFrame` maths (`scene-physics.tsx:12-16,:42-44`), not a physics engine. **The flag and filename remain and are historical** — the flag still works, it just never involved a physics engine.
 
 ### Rate Limiting & Telemetry
 
@@ -288,7 +297,7 @@ Key flags: `NEXT_PUBLIC_DISCOVERY_BADGES`, `NEXT_PUBLIC_OPEN_TO_WORK`, `NEXT_PUB
 | `src/lib/flags.ts` | Feature flag resolver (build-time env vs. Vercel Flags SDK runtime) |
 | `src/proxy.ts` | Edge-runtime HTTP Basic Auth for /admin/* (SubtleCrypto) |
 | `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |
-| `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags |
+| `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags; `:5-7` wraps the export in `@next/bundle-analyzer` — inert unless `pnpm analyze` (`ANALYZE=true` + `--webpack`), do not delete as dead code |
 | `src/app/api/chat/route.ts` | LLM streaming endpoint |
 | `src/app/api/mcp/[transport]/route.ts` | MCP server (9 read-only tools) |
 | `src/instrumentation.ts` | Next.js instrumentation hook (config snapshot on cold start) |
@@ -401,6 +410,6 @@ Already bootstrapped at the repo root:
 - `docs/` — durable knowledge: decisions, analyses, learnings
 - `domains/content/` — content freshness loop (MDX quality, metrics completeness)
 - `domains/seo/` — discoverability loop (llms.txt, structured data, sitemap)
-- `domains/performance/` — web vitals loop (bundle analysis, LCP, R3F chunk tracking)
+- `domains/performance/` — web vitals loop (CI bundle budget, local `pnpm analyze` attribution, LCP, R3F chunk tracking)
 
 Add new loops with `/new-loop`. Append to `LOG.md` after any significant work session.

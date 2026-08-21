@@ -3,12 +3,12 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.4.2
+version: v3.6.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.4.2 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 39
@@ -143,7 +143,7 @@ Three independent layers, all in scope, all fail-closed:
 - Card tokens never reach the markdown renderer: `parseCards()` extracts them first and only `type:"text"`
   segments are passed to `MarkdownMessage` (`chat-messages.tsx:532-548`, `ask-portfolio.tsx:155-170`).
 - `parse-cards.test.ts` is the pinned contract ("a hostile model turn can neither inject markup nor conjure
-  a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md:307` names
+  a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md:316` names
   `ask-portfolio.dom.test` as the streamed-markdown injection/XSS guard and says not to weaken it.
 - The spoken/caption path has its own stripper: `toCaptionText()` runs `parseCards` then removes markdown
   markers **and** a dangling unclosed `[[card:` fragment mid-stream (`use-voice-session.ts:48-63`), so a
@@ -395,7 +395,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Exports:** `VoicePickerProps` (type), `VoicePicker` (component). Internal: `VoiceCard`, `DescriptorGrid`, `GenderColumns`, `ColumnSection`, `PickerBody`, `accentLabel`, `engineLabel`.
 - **Reads / depends on:** `CURATED_VOICES`, `EXTENDED_VOICES`, `getVoiceById`, `VoiceEntry` (`@/lib/voice-catalog`); `VOICE_PICKER_MODE` (`@/lib/voice-picker-mode`); `useSpeechSynthesis`; `applePremiumIsMissing`, `getVoicesRaceHardened`.
 - **Consumed by:** `talk-mode.tsx:19` (`mode="dialog"`), `voice-settings-dialog.tsx:7` (`mode="inline"`), `command-palette.tsx:47` (rendered at :516).
-- **Behaviour notes:** Layout is `GenderColumns` when `VOICE_PICKER_MODE === "gender"`, else `DescriptorGrid` (:342); the mode comes from `NEXT_PUBLIC_VOICE_PICKER_MODE` (default `"descriptor"`, `voice-picker-mode.ts:19-25`). One TTS hook instance flips engine + voiceId via state, and `speak()` is deferred with `queueMicrotask` so the hook has re-rendered on the new engine (:294-296, :335-338). A second tap on the previewing card is Stop (:322-326). `previewingId` clears 250 ms after `isSpeaking` drops, to avoid flicker between sentences (:304-310). `getVoicesRaceHardened()` populates `browserVoices`, which drives the per-card Apple-Premium download hint (:276-284, :184). Overflow "More voices…" is a nested Radix Dialog at `z-[60]` over the parent's `z-50` (:361-407).
+- **Behaviour notes:** Layout is `GenderColumns` when `VOICE_PICKER_MODE === "gender"`, else `DescriptorGrid` (:342); the mode comes from `NEXT_PUBLIC_VOICE_PICKER_MODE` (default `"descriptor"` at `voice-picker-mode.ts:18`, env read at `:20`, resolved at `:22`). One TTS hook instance flips engine + voiceId via state, and `speak()` is deferred with `queueMicrotask` so the hook has re-rendered on the new engine (:294-296, :335-338). A second tap on the previewing card is Stop (:322-326). `previewingId` clears 250 ms after `isSpeaking` drops, to avoid flicker between sentences (:304-310). `getVoicesRaceHardened()` populates `browserVoices`, which drives the per-card Apple-Premium download hint (:276-284, :184). Overflow "More voices…" is a nested Radix Dialog at `z-[60]` over the parent's `z-50` (:361-407).
 - **Gotchas / invariants:** Preview is cancelled on unmount via a `ttsRef` snapshot taken in an effect (:312-318) so a half-played preview never leaks into the chat session. In `dialog` mode `onCloseAutoFocus` restores focus to `getOpener()` (:429-435).
 
 ### `chat/voice-settings-dialog.tsx`
@@ -452,7 +452,7 @@ See **Store & hook map** above. All three are structurally identical: module `op
   - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:64-67).
   - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:155-170). An empty assistant message shows "Thinking…" only while streaming (:144-152).
   - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:15-20).
-- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:199). The widget does **not** render attachments, thinking blocks, model badges, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins that the widget rides the shared `useChat` stream and surfaces the 503 message; `CLAUDE.md:307` marks these guards as not-to-be-weakened.
+- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:199). The widget does **not** render attachments, thinking blocks, model badges, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins that the widget rides the shared `useChat` stream and surfaces the 503 message; `CLAUDE.md:316` marks these guards as not-to-be-weakened.
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
 - **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:100`, :112-114).

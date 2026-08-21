@@ -187,10 +187,10 @@ Terse index of all 73 files in scope, in the same order as [Coverage](#coverage)
 
 ## The four load-bearing gates — verified against source
 
-CLAUDE.md's "Testing Notes" section (`CLAUDE.md:362-373`) names four gates. Verified one by one:
+CLAUDE.md's "Testing Notes" section (`CLAUDE.md:363-374`) names four gates. Verified one by one:
 
 ### 1. `game-model.test.ts` bijection — **CLAUDE.md is correct**
-`CLAUDE.md:364`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
+`CLAUDE.md:365`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
 
 Confirmed. Seven forward/reverse coverage assertions plus an explicit count identity:
 - forward: every `graphNodes` id is a key of `NODE_CONTENT` (`game-model.test.ts:22-25`), resolves via `resolveNode` (`:27-32`), and points at a slug present in `allWork`/`allProjects` (`:34-40`);

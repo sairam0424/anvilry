@@ -4,6 +4,40 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+On `develop`, not yet released, so it carries no version of its own. No runtime behaviour change — it fixes a `pnpm install` failure that CI could not see.
+
+### Fixed
+- **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning the repo with the
+  current default pnpm could not install it. pnpm 11 replaced the list-based
+  `onlyBuiltDependencies` / `ignoredBuiltDependencies` with a boolean `allowBuilds` map. It still
+  *reads* the old keys, but `allowBuilds` takes precedence — and when `allowBuilds` is absent pnpm 11
+  **writes it into the tracked `pnpm-workspace.yaml` itself**, seeded with the literal placeholder
+  `set this to true or false`. That string is neither `true` nor `false`, so every listed package was
+  treated as denied and the install aborted with
+  `[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2`.
+
+  Measured: **exit 1 on pnpm 11.17.0** from a clean clone (and it dirtied a tracked file), **exit 0
+  on pnpm 10.34.5**. Fixed by declaring `allowBuilds` explicitly with real booleans
+  (`pnpm-workspace.yaml:52-55`); both majors now install clean, lockfile byte-identical.
+
+  **This is the same blind spot as v3.5.0's `pnpm`-field migration, one key later.** CI pins pnpm 10,
+  so no green run could ever have surfaced it — *CI passes* and *the repo installs* are different
+  claims, and only the first was being checked.
+
+### Added
+- **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — the build-script allowlist is now spelled
+  twice, once per pnpm major, and a `# keep in sync` comment enforces nothing. This pins that the
+  `allowBuilds` booleans match the pnpm 10 lists exactly, that no value is pnpm's placeholder string,
+  and that nothing is both allowed and denied. Parses comment-stripped so it cannot match its own
+  prose. Mutation-verified: all five ways of reintroducing the bug are killed.
+
+### Changed
+- Index sections 11, 13 and 15 document `allowBuilds`, the deliberate two-major duplication, and why
+  CI was structurally unable to catch this. Four citations re-pointed after the config edit shifted
+  them; citation coverage 2,112 → 2,114, all verified.
+
 ## [3.5.0] — 2026-08-21
 
 **Minor** — a correctness pass, not a feature release, but it changes behaviour so it is not a patch.

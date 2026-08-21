@@ -28,11 +28,28 @@ overrides:
   body-parser: ^2.3.0
 
 # --- Build scripts ---------------------------------------------------------------------------
-# Only these packages may run install lifecycle scripts.
-onlyBuiltDependencies:
+# THE SAME ALLOWLIST IS SPELLED TWICE ON PURPOSE — once per pnpm major. Keep them in sync.
+#
+# pnpm 11 replaced the two list-based keys below with the single boolean map `allowBuilds`. It
+# still *reads* the old keys (`pnpm config get onlyBuiltDependencies` returns ["esbuild"]) but
+# `allowBuilds` wins, and when `allowBuilds` is absent pnpm 11 SEEDS IT INTO THIS FILE with the
+# literal placeholder `set this to true or false`. That string is neither true nor false, so every
+# package is treated as denied and `pnpm install --frozen-lockfile` exits 1:
+#
+#   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2
+#
+# Measured: pnpm 11.17.0 exit 1 on a clean clone (and it dirtied this tracked file); pnpm 10.34.5
+# exit 0. CI pins pnpm 10 so CI was always green — the breakage was invisible here and only hit
+# contributors on the current default pnpm. Deleting the pnpm 10 keys would break CI, so both stay.
+onlyBuiltDependencies: # pnpm 10
   - esbuild
 
 # Explicitly denied, so pnpm stops prompting about them.
-ignoredBuiltDependencies:
+ignoredBuiltDependencies: # pnpm 10
   - sharp
   - unrs-resolver
+
+allowBuilds: # pnpm 11 — booleans, NOT the placeholder strings pnpm writes here itself
+  esbuild: true
+  sharp: false
+  unrs-resolver: false

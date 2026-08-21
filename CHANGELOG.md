@@ -6,37 +6,37 @@ All notable changes to Anvilry are documented here. The format follows
 
 ## [Unreleased]
 
-On `develop`, not yet released, so it carries no version of its own. No runtime behaviour change — it fixes a `pnpm install` failure that CI could not see.
+On `develop`, not yet released, so it carries no version of its own. No runtime behaviour change.
 
 ### Fixed
-- **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning the repo with the
-  current default pnpm could not install it. pnpm 11 replaced the list-based
-  `onlyBuiltDependencies` / `ignoredBuiltDependencies` with a boolean `allowBuilds` map. It still
-  *reads* the old keys, but `allowBuilds` takes precedence — and when `allowBuilds` is absent pnpm 11
-  **writes it into the tracked `pnpm-workspace.yaml` itself**, seeded with the literal placeholder
-  `set this to true or false`. That string is neither `true` nor `false`, so every listed package was
-  treated as denied and the install aborted with
+- **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning with the current
+  default pnpm could not install the repo — and pnpm 11 also **rewrote the tracked
+  `pnpm-workspace.yaml`**, seeding `allowBuilds` with the placeholder `set this to true or false`
+  (written BY the failing run, not the cause of it):
   `[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2`.
 
-  Measured: **exit 1 on pnpm 11.17.0** from a clean clone (and it dirtied a tracked file), **exit 0
-  on pnpm 10.34.5**. Fixed by declaring `allowBuilds` explicitly with real booleans
-  (`pnpm-workspace.yaml:52-55`); both majors now install clean, lockfile byte-identical.
+  pnpm 11 **removed** `onlyBuiltDependencies` / `ignoredBuiltDependencies` in favour of the boolean
+  `allowBuilds` map (pnpm.io/settings/build); it does not consult them and prints no warning. Do not
+  cite `pnpm config get onlyBuiltDependencies` as evidence that it does — `pnpm config get` echoes
+  ANY key present in the file, including one that does not exist.
 
-  **This is the same blind spot as v3.5.0's `pnpm`-field migration, one key later.** CI pins pnpm 10,
-  so no green run could ever have surfaced it — *CI passes* and *the repo installs* are different
-  claims, and only the first was being checked.
+  Measured on a one-install-script fixture, `allowBuilds` alone and no legacy keys: **11.17.0 ok ·
+  10.34.5 ok · 10.28.0 ok · 10.27.1 EXIT 1**. CI pins `version: 10` → latest-10 (10.34.5), so the
+  legacy lists are dead config for CI and survive only for pnpm <=10.27. Fixed at
+  `pnpm-workspace.yaml:55-58`; both majors install clean, lockfile byte-identical.
+
+  **Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it installs*.
 
 ### Added
-- **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — the build-script allowlist is now spelled
-  twice, once per pnpm major, and a `# keep in sync` comment enforces nothing. This pins that the
-  `allowBuilds` booleans match the pnpm 10 lists exactly, that no value is pnpm's placeholder string,
-  and that nothing is both allowed and denied. Parses comment-stripped so it cannot match its own
-  prose. Mutation-verified: all five ways of reintroducing the bug are killed.
+- **`ci.yml` job `install-pnpm-11`** (`ci.yml:115-162`) — the only job running a pnpm other than the
+  pinned 10. Installs cold, fails on `git diff --exit-code` so a silent write to a tracked file is
+  itself a build failure, then runs the guard below.
+- **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — two assertions: the spellings agree, and
+  **every dependency declaring an install script has an explicit boolean**. The second reads the
+  resolved tree, closing the gap the first is blind to. Mutation-verified 8/8.
 
 ### Changed
-- Index sections 11, 13 and 15 document `allowBuilds`, the deliberate two-major duplication, and why
-  CI was structurally unable to catch this. Four citations re-pointed after the config edit shifted
-  them; citation coverage 2,112 → 2,114, all verified.
+- Index sections 10, 11, 12, 13 and 15 updated; citation coverage 2,112 → 2,117, all verified.
 
 ## [3.5.0] — 2026-08-21
 

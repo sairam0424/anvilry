@@ -1,36 +1,44 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * The pnpm build-script allowlist is spelled TWICE in pnpm-workspace.yaml, once per pnpm major:
+ * The pnpm build-script allowlist is spelled TWICE in pnpm-workspace.yaml:
  *
- *   onlyBuiltDependencies / ignoredBuiltDependencies   (lists)    <- pnpm 10, what CI pins
- *   allowBuilds                                        (booleans) <- pnpm 11, the default today
- *
- * That duplication is deliberate and is the one place in this repo where DRY is the wrong answer:
- * CI pins pnpm 10 (.github/workflows/ci.yml) while a contributor's `pnpm install` resolves to
- * pnpm 11, so deleting either spelling breaks one of them. But deliberate duplication drifts
- * unless something enforces it, and a `# keep these in sync` comment enforces nothing.
+ *   onlyBuiltDependencies / ignoredBuiltDependencies   (lists)    <- legacy, pnpm <=10.27 only
+ *   allowBuilds                                        (booleans) <- live, pnpm >=10.28 and 11
  *
  * WHY THIS GUARD EARNS ITS KEEP
- * pnpm 11 reads the pnpm 10 keys but `allowBuilds` wins, and when `allowBuilds` is ABSENT pnpm 11
- * writes it into the tracked file itself, seeded with the literal placeholder string
- * `set this to true or false`. That is neither `true` nor `false`, so every listed package counts
- * as denied and the install aborts:
+ * Without `allowBuilds`, `pnpm install --frozen-lockfile` exits 1 on pnpm 11 and seeds a
+ * `set this to true or false` placeholder into the tracked workspace file:
  *
  *   [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.25.12, unrs-resolver@1.12.2
  *
- * Measured before the fix: `pnpm install --frozen-lockfile` exit 1 on pnpm 11.17.0 from a clean
- * clone, exit 0 on pnpm 10.34.5. CI pins pnpm 10, so NO GREEN RUN COULD EVER HAVE SURFACED IT —
- * it reached only contributors on the current default pnpm. That is the failure mode this guard
- * exists for: a break that is invisible to CI by construction.
+ * Measured on a one-install-script fixture, `allowBuilds` alone and no legacy keys:
+ * pnpm 11.17.0 ok · 10.34.5 ok · 10.28.0 ok · 10.27.1 EXIT 1. CI pins `version: 10`, which resolves
+ * to latest-10 (10.34.5), so THE LEGACY LISTS ARE DEAD CONFIG FOR CI and the pnpm 11 break was
+ * invisible to every green run. That is the failure mode this guard exists for.
  *
- * IMPORTANT: parsing strips `#` comments FIRST. The keys carry inline comments (`# pnpm 10`) and
- * the header block quotes the placeholder string verbatim, so any assertion run against raw text
- * would match prose instead of config — the exact defect that made an earlier version of
+ * Do NOT justify the duplication with "deleting the lists would break CI" — that was measured and
+ * is false. They survive only for pnpm <=10.27. Equally, do not cite `pnpm config get
+ * onlyBuiltDependencies` as proof pnpm 11 honours the key: `pnpm config get` echoes ANY key present
+ * in the file, including one that does not exist, so it is not evidence of anything.
+ *
+ * TWO INDEPENDENT ASSERTIONS, because the first one alone could not catch a recurrence:
+ *   1. the two spellings agree with each other  (file-only; catches hand-editing drift)
+ *   2. every dependency that declares an install script appears in `allowBuilds` with an explicit
+ *      boolean  (reads the RESOLVED TREE; catches the far likelier case — a new dependency arrives,
+ *      nobody adds it, CI on pnpm 10 warns-and-passes while pnpm 11 exits 1)
+ * Assertion 1 has exactly one input, the workspace file, so it can never see a new dependency.
+ * That gap is what assertion 2 closes, and it is how this bug would otherwise have recurred.
+ *
+ * IMPORTANT: parsing strips `#` comments FIRST. The keys carry inline comments and the docblock
+ * above quotes the placeholder string verbatim, so any assertion run against raw text would match
+ * prose instead of config — the defect that made an earlier version of
  * client-ip-consistency.test.ts unable to fail. Strip, then assert.
  */
 const WORKSPACE = "pnpm-workspace.yaml";
+const PNPM_STORE = "node_modules/.pnpm";
 
 /** A comment-stripped view: `#` to end-of-line removed, blank lines kept so structure survives. */
 function stripComments(src: string): string[] {
@@ -71,6 +79,39 @@ function mapEntries(lines: string[], key: string): Array<[string, string]> {
     });
 }
 
+/**
+ * Every package name in the resolved tree that declares a preinstall/install/postinstall script.
+ *
+ * Reads node_modules/.pnpm rather than pnpm-lock.yaml because the lockfile does not record scripts.
+ * Returns NAMES only (no versions) so it can be compared against allowBuilds keys.
+ */
+function packagesWithInstallScripts(): string[] {
+  const found = new Set<string>();
+  for (const entry of readdirSync(PNPM_STORE)) {
+    const scope = join(PNPM_STORE, entry, "node_modules");
+    if (!existsSync(scope)) continue;
+    for (const name of readdirSync(scope)) {
+      // Scoped packages nest one level deeper: @scope/pkg
+      const candidates = name.startsWith("@")
+        ? readdirSync(join(scope, name)).map((sub) => `${name}/${sub}`)
+        : [name];
+      for (const pkg of candidates) {
+        const manifest = join(scope, pkg, "package.json");
+        if (!existsSync(manifest)) continue;
+        try {
+          const { name: declared, scripts } = JSON.parse(readFileSync(manifest, "utf8"));
+          if (scripts?.preinstall || scripts?.install || scripts?.postinstall) {
+            found.add(declared ?? pkg);
+          }
+        } catch {
+          // An unparseable manifest in the store is not this test's concern.
+        }
+      }
+    }
+  }
+  return [...found].sort();
+}
+
 describe("pnpm build-script allowlist stays consistent across pnpm majors", () => {
   const lines = stripComments(readFileSync(WORKSPACE, "utf8"));
   const allowBuilds = mapEntries(lines, "allowBuilds");
@@ -104,5 +145,35 @@ describe("pnpm build-script allowlist stays consistent across pnpm majors", () =
   it("never lists a package as both allowed and denied", () => {
     const overlap = onlyBuilt.filter((p) => ignoredBuilt.includes(p));
     expect(overlap).toEqual([]);
+  });
+
+  /**
+   * The assertion that actually prevents a recurrence. Everything above reads only the workspace
+   * file, so it is blind to the dependency graph: add a package with an install script, change
+   * nothing else, and all of it still passes while pnpm 11 exits 1.
+   *
+   * A package pnpm has never been told about is "unreviewed", and pnpm 11 treats unreviewed as
+   * fatal. So the requirement is not "is it allowed" but "has a human made an explicit call" —
+   * `true` and `false` are both fine, absent is not.
+   */
+  it("has an explicit decision for every dependency that declares an install script", () => {
+    // A vacuous pass here would be worse than no test: if the tree is missing, say so and fail.
+    expect(
+      existsSync(PNPM_STORE),
+      `${PNPM_STORE} is missing — run pnpm install before the suite. Skipping silently would let an ` +
+        "unreviewed install script through, which is the whole bug this guards.",
+    ).toBe(true);
+
+    const decided = new Set(allowBuilds.map(([k]) => k));
+    const undecided = packagesWithInstallScripts().filter((p) => !decided.has(p));
+
+    expect(
+      undecided,
+      `these dependencies declare an install lifecycle script but have no entry in allowBuilds:\n` +
+        `  ${undecided.join("\n  ")}\n` +
+        "pnpm 11 fails the install for unreviewed build scripts, and CI (pnpm 10) only warns — so " +
+        "this passes CI and breaks every contributor. Add each with an explicit true or false, and " +
+        "mirror it into the legacy lists above.",
+    ).toEqual([]);
   });
 });

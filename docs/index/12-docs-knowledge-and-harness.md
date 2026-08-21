@@ -27,7 +27,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
 | `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line was corrected on this branch — it used to say "4-view system"; it now records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`). | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 5-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. | (no headings beyond the single H1) |
-| `CHANGELOG.md` | Keep-a-Changelog release history, **18** released version entries, newest first. There is no `[Unreleased]` section any more — the correctness pass that used to sit there was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:41-143`). | `[3.5.0]`, `[3.4.2]` … `[1.0.0]`, link-ref footer |
+| `CHANGELOG.md` | Keep-a-Changelog release history, **18** released version entries, newest first, plus a live `[Unreleased]` section (`CHANGELOG.md:7`) holding the pnpm 11 `allowBuilds` fix. The previous `[Unreleased]` block was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:41-143`). | `[3.5.0]`, `[3.4.2]` … `[1.0.0]`, link-ref footer |
 | `LOG.md` | Append-only activity journal, newest first, with a strict entry grammar, tag vocabulary, and grep/awk retrieval recipes. | §Entry grammar, §Tags, §Retrieval recipes, 3 entries |
 | `VOICE.md` | Canonical voice-layer reference (940 lines): architecture, 4 opt-in features, settings/flag tables, env+IAM+cost, privacy & a11y model, developer notes, v1.7 voice picker. | §1 Overview, §2 Features, §3 Flags/Settings, §4 Env/IAM/Cost, §5 Privacy & A11y, §6 Dev Notes, §7 Voice picker |
 | `TELEMETRY.md` | Canonical observability reference (v1.8 header): dual-sink pipeline, `TelemetryEvent` schema, 7 span kinds, trace-ID correlation, PII policy, admin dashboard, replay CLI, debugging cookbook, file map. | §1–§9 |
@@ -125,11 +125,19 @@ corrected. The version markers are unchanged.
 
 ## Version history
 
-Read in full from `CHANGELOG.md`. **18 released version tags** are present. The `[Unreleased]` section that
-used to hold the correctness pass is gone — it was cut as `[3.5.0] — 2026-08-21` (`CHANGELOG.md:41-143`),
-covering six live defects and the documentation corrections listed in §Doc-vs-code drift. Every
-`CHANGELOG.md` line number below the 3.5.0 entry therefore shifted **+56** relative to the v3.4.2 index;
-the citations here have been re-derived. Note the gap: no `2.x` entry and no
+Read in full from `CHANGELOG.md`. **18 released version tags** are present, plus a live `[Unreleased]`
+section at `CHANGELOG.md:7`. The previous `[Unreleased]` block was cut as `[3.5.0] — 2026-08-21`
+(`CHANGELOG.md:41-143`), covering six live defects and the documentation corrections listed in
+§Doc-vs-code drift; the current one holds the pnpm 11 `allowBuilds` fix, which is deliberately
+unversioned. **Count version tags with `grep -c '^## \[[0-9]'` (18) — a bare `grep -c '^## \['`
+returns 19, because it also matches `[Unreleased]`.**
+
+**Do not trust a stated line-shift here; re-derive it.** Prepending a release entry moves every line
+below it, and the offset compounds across releases — `## [3.4.2]` has sat at line 7, then 111, then
+145 across three index generations. A previous version of this paragraph carried a `+56` that could
+not be reproduced from any two of those. The reliable check is
+`node scripts/check-index-citations.mjs`, which fingerprints each cited line's content; the arithmetic
+is not documentation, it is a stale intermediate. Note the gap: no `2.x` entry and no
 `3.1.x`–`3.3.x` entry exists at all — `LOG.md:33` records that the 3.4.0 entry was "added after a
 **13-release gap**", so the changelog is not a complete release ledger.
 

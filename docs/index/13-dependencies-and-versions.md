@@ -23,7 +23,7 @@ version: v3.5.0
 |---|---|---|
 | `package.json` | Manifest: 11 scripts, 33 prod deps, 17 dev deps, `engines.node` (`">=22 <23"`, `package.json:5-7`). **No `pnpm` field** — its `overrides` and `onlyBuiltDependencies` moved to `pnpm-workspace.yaml` in v3.5.0 | n/a (JSON) |
 | `pnpm-lock.yaml` | lockfileVersion 9.0; `overrides:` block mirrored at `:7-17`; resolved versions for every importer | n/a |
-| `pnpm-workspace.yaml` | **The single source of truth for every pnpm setting since v3.5.0:** `overrides` (10, `:18-28`), `onlyBuiltDependencies: [esbuild]` (`:32-33`), `ignoredBuiltDependencies: [sharp, unrs-resolver]` (`:36-38`). Its own header (`:1-12`) records why — pnpm 11 stops reading `package.json`'s `pnpm` field | n/a |
+| `pnpm-workspace.yaml` | **The single source of truth for every pnpm setting since v3.5.0:** `overrides` (10, `:18-28`), `onlyBuiltDependencies: [esbuild]` (`:44-45`), `ignoredBuiltDependencies: [sharp, unrs-resolver]` (`:48-50`), `allowBuilds` (`:55-58`). Its own header (`:1-12`) records why — pnpm 11 stops reading `package.json`'s `pnpm` field | n/a |
 | `.nvmrc` | Single line `22` — pins the local/contributor Node major to the CI pin and to `engines.node` | n/a |
 | `next.config.ts` | Loads `@next/bundle-analyzer` via `createRequire`; dev-only `import("velite")` watcher; CSP; `optimizePackageImports: ["lucide-react","motion"]`; `cacheComponents: true` | `default` (wrapped `NextConfig`) |
 | `vitest.config.ts` | Vitest 4 two-project config (`node` / `dom`), `resolve.tsconfigPaths`, forces `NODE_ENV=test` | `default` (config) |
@@ -178,7 +178,7 @@ The removal was deliberately deferred until the `overrides` migration made lockf
 
 `[sharp, unrs-resolver]` — the inverse list; these two natives are installed *without* running their build scripts. `sharp@0.35.3` is pulled by both `next@16.3.0` (optional dep, `pnpm-lock.yaml:9015`) and `velite@0.4.0` (`:9997`); `unrs-resolver@1.12.2` comes from `eslint-import-resolver-typescript@3.10.1` (`:7561,7570`). This is the one block that always lived in `pnpm-workspace.yaml` — introduced in the repo's initial commit (`git log -S ignoredBuiltDependencies` → `ee0fc1e Initial commit from Create Next App`), which is also why the file already existed for the other two to move into.
 
-### `allowBuilds` (`pnpm-workspace.yaml:52-55`) — pnpm 11's replacement for both lists above
+### `allowBuilds` (`pnpm-workspace.yaml:55-58`) — pnpm 11's replacement for both lists above
 
 `{esbuild: true, sharp: false, unrs-resolver: false}` — a boolean map that supersedes the two list-based keys. **The allowlist is deliberately spelled twice, once per pnpm major**, because CI pins pnpm 10 (`.github/workflows/ci.yml`) while `pnpm install` on a contributor machine resolves to pnpm 11; dropping either spelling breaks one of them. The two must be kept in sync, which is the one place in this repo where duplication is the correct answer.
 

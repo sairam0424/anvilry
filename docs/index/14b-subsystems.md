@@ -446,7 +446,7 @@ DEVELOPER
                     process.argv includes "dev", guarded once by VELITE_STARTED
         │
         ▼  git push (any branch)
-CI  .github/workflows/ci.yml   — 3 jobs, NO `needs:`, all parallel
+CI  .github/workflows/ci.yml   — 4 jobs, NO `needs:`, all parallel
    job `ci`   : pnpm install → pnpm content → pnpm lint → npx tsc --noEmit → pnpm test
                              → node scripts/check-index-citations.mjs   (ci.yml:65-66)
                 ↑ the ONLY place lint and tsc run; neither is in pnpm build
@@ -455,7 +455,7 @@ CI  .github/workflows/ci.yml   — 3 jobs, NO `needs:`, all parallel
    job `e2e`  : pnpm install → playwright install --with-deps chromium → pnpm build → pnpm e2e
                 ↑ pnpm build re-runs vitest, so tests execute TWICE per CI run
                 ↑ playwright.config.ts webServer runs `pnpm start`, which needs a prior build
-   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:139,191)
+   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:188,240)
   + bundle-analysis.yml (develop/main + PRs): pnpm content → ANALYZE=true npx next build
   + codeql.yml (develop + weekly cron 35 1 * * 1) — note: does NOT run on main
   + dependency-review.yml (PRs → develop/main): fail-on-severity high, fail-on-scopes runtime
@@ -566,7 +566,7 @@ does not gate the route — only the nav link and the sitemap entry.
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true`. The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. |
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:16-24` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
-| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:126-135`). |
+| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:175-184`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:30`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
 | eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:165-167`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |

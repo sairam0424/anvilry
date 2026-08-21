@@ -398,20 +398,34 @@
       "preview": "retention-days: 7"
     },
     ".github/workflows/ci.yml:115": {
+      "fp": "c067fcccba23",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "install-pnpm-11:"
+    },
+    ".github/workflows/ci.yml:162": {
+      "fp": "ecaee25006b7",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "run: npx vitest run src/lib/pnpm-build-allowlist-consistency.test.ts"
+    },
+    ".github/workflows/ci.yml:164": {
       "fp": "e42850b6d618",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "security-alerts:"
     },
-    ".github/workflows/ci.yml:119": {
+    ".github/workflows/ci.yml:168": {
       "fp": "65e75314491a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "# NON-BLOCKING BY DESIGN (continue-on-error). Its job is VISIBILITY, not enforcement."
     },
-    ".github/workflows/ci.yml:126": {
+    ".github/workflows/ci.yml:175": {
       "fp": "33a0d6eceae4",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -419,7 +433,7 @@
       ],
       "preview": "# IMPORTANT TOKEN LIMITATION: the default GITHUB_TOKEN CANNOT read the Dependabot alerts API,"
     },
-    ".github/workflows/ci.yml:135": {
+    ".github/workflows/ci.yml:184": {
       "fp": "95dd14469c16",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -427,7 +441,7 @@
       ],
       "preview": "# misleading green tick."
     },
-    ".github/workflows/ci.yml:139": {
+    ".github/workflows/ci.yml:188": {
       "fp": "9ff6534d73ee",
       "citedBy": [
         "10-tests-and-quality-gates.md",
@@ -436,16 +450,10 @@
       ],
       "preview": "continue-on-error: true"
     },
-    ".github/workflows/ci.yml:191": {
-      "fp": "a7e3c0126445",
-      "citedBy": [
-        "10-tests-and-quality-gates.md"
-      ],
-      "preview": "# Deliberately exits 0 — see the comment on this job."
-    },
     ".github/workflows/ci.yml:22": {
       "fp": "c8c82d24e074",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -457,6 +465,13 @@
         "11-config-build-ci-infra.md"
       ],
       "preview": "- name: Setup Node.js 22"
+    },
+    ".github/workflows/ci.yml:240": {
+      "fp": "a7e3c0126445",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "# Deliberately exits 0 — see the comment on this job."
     },
     ".github/workflows/ci.yml:27": {
       "fp": "d862eb11525b",
@@ -1279,6 +1294,13 @@
         "14-subsystems.md"
       ],
       "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
+    },
+    "CHANGELOG.md:7": {
+      "fp": "1da42e1a6a94",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "## [Unreleased]"
     },
     "CHANGELOG.md:801": {
       "fp": "5ca93d9cf04d",
@@ -3390,13 +3412,13 @@
       "preview": "body-parser: ^2.3.0"
     },
     "pnpm-workspace.yaml:44": {
-      "fp": "390ed0661a42",
+      "fp": "66249ff325d0",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "onlyBuiltDependencies: # pnpm 10"
+      "preview": "onlyBuiltDependencies: # legacy; honoured only by pnpm <=10.27"
     },
     "pnpm-workspace.yaml:45": {
       "fp": "bf287bb6a0de",
@@ -3408,13 +3430,13 @@
       "preview": "- esbuild"
     },
     "pnpm-workspace.yaml:48": {
-      "fp": "df2e75cac938",
+      "fp": "60ebc5e7eaad",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "ignoredBuiltDependencies: # pnpm 10"
+      "preview": "ignoredBuiltDependencies: # legacy; honoured only by pnpm <=10.27"
     },
     "pnpm-workspace.yaml:50": {
       "fp": "8c7e603eb043",
@@ -3425,15 +3447,15 @@
       ],
       "preview": "- unrs-resolver"
     },
-    "pnpm-workspace.yaml:52": {
-      "fp": "927e8b004914",
+    "pnpm-workspace.yaml:55": {
+      "fp": "2b528cdd5c56",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md"
       ],
-      "preview": "allowBuilds: # pnpm 11 — booleans, NOT the placeholder strings pnpm writes here itself"
+      "preview": "allowBuilds:"
     },
-    "pnpm-workspace.yaml:55": {
+    "pnpm-workspace.yaml:58": {
       "fp": "2a8ea6d24bf6",
       "citedBy": [
         "11-config-build-ci-infra.md",

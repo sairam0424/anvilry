@@ -66,7 +66,7 @@ corrected text.
 | `e2e/` | 2 files / 259 lines | `find e2e -type f` |
 | App Router route-defining files | **59** — 15 `page.tsx`, 26 `route.ts`, 5 `layout.tsx`, 5 `opengraph-image.tsx`, 8 special (`error`, `global-error`, `not-found`, `icon`, `apple-icon`, `manifest`, `robots`, `sitemap`) | `find src/app -name …` |
 | Test / spec files | 65 — 63 under `src/` (of which 24 are `*.dom.test.*`) + 2 Playwright specs | `find src -name '*.test.*'`, `find e2e -name '*.spec.ts'` |
-| Dependencies | **33 prod + 17 dev** (was 35 prod at v3.4.2 — v3.5.0 removed `@react-three/offscreen` and `@react-three/rapier`, both declared but never imported), plus 10 `overrides` and 1 `onlyBuiltDependencies`. **There is no `pnpm` field in `package.json`:** v3.5.0 moved every pnpm setting to `pnpm-workspace.yaml`, because pnpm 11 stopped reading that field and would have silently dropped the ten security overrides | `package.json:22-54` (prod), `:57-73` (dev); `pnpm-workspace.yaml:18-28` (overrides), `:32-33` (`onlyBuiltDependencies`) — see [13](./13-dependencies-and-versions.md) |
+| Dependencies | **33 prod + 17 dev** (was 35 prod at v3.4.2 — v3.5.0 removed `@react-three/offscreen` and `@react-three/rapier`, both declared but never imported), plus 10 `overrides`, 1 `onlyBuiltDependencies`, and a 3-entry `allowBuilds` map. **There is no `pnpm` field in `package.json`:** v3.5.0 moved every pnpm setting to `pnpm-workspace.yaml`, because pnpm 11 stopped reading that field and would have silently dropped the ten security overrides | `package.json:22-54` (prod), `:57-73` (dev); `pnpm-workspace.yaml:18-28` (overrides), `:44-45` (`onlyBuiltDependencies`), `:55-58` (`allowBuilds`) — see [13](./13-dependencies-and-versions.md) |
 | npm scripts | 11 (no `search-index` — see [11](./11-config-build-ci-infra.md)) | `package.json:8-19` — the block starts at `:8`, not `:5`, since `engines` was inserted at `:5-7` |
 | Content items | 5 work · 11 projects · 5 notes · 15 articles (14 non-draft) | `.velite/*.json`, section [09](./09-content-and-schemas.md) |
 | 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects; count it from the arrays — the file's header docblock no longer hardcodes a node count (it now says "every flagship work system + every OSS repo … see `graphNodes` below for the count") | `src/lib/graph-data.ts:18-41` (nodes), `:43-70` (edges); de-numbered docblock `:3-4` |
@@ -75,7 +75,7 @@ corrected text.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
-| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:41` is the newest; `grep -c '^## \[' CHANGELOG.md` |
+| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:41` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
 dependency counts were **35 + 17** at v3.4.2 (not the brief's 39 + 18 — already flagged in section

@@ -68,7 +68,7 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   in any route's first-load chunk set — today it sits in exactly one chunk, **897,249 B**, present in
   **0 of 16** routes' first-load sets. A missing or malformed artifact **exits 1 by design**: "I could
   not measure" must be RED, which is exactly what the deleted `bundle-analysis.yml` got wrong for its
-  entire 221-run life. There is deliberately no `continue-on-error` and no `if-no-files-found` — do not
+  entire 222-run life (211 green, 11 red). There is deliberately no `continue-on-error` and no `if-no-files-found` — do not
   add them. **This does NOT catch a duplicate `three` copy that stays off the critical path** — that
   remains the manual grep below.
 - **R3F dedup depends on ONE resolved `three` version.** After any `three`/fiber/drei bump:

@@ -39,14 +39,16 @@ All notable changes to Anvilry are documented here. The format follows
   exactly why tsc caught drift there and structurally could not in these two.
   **No test added — the key type is the guard.**
 
-  **Scope, stated honestly:** `articles/[slug]/page.tsx:59` redirects every non-native article that has
-  an `externalUrl`, and all 13 published external articles have one — so those pages return 307 and an
-  unfurler following the redirect gets the *publisher's* card, not ours. The one article that serves our
-  og tags (`how-dns-works`, native) was already labelled correctly. The corrected pixels are reachable
-  at `/articles/<slug>/opengraph-image`, which is prerendered for all 14. **This is a correctness and
-  drift-proofing fix, not a visible-regression fix.** `page.tsx`'s gap is likewise latent rather than
-  live: `velite.config.ts:103` declares `externalUrl` `.optional()` ("required for non-native" is a
-  comment, not a constraint), so one omission would fall through `:59` and render a raw `devto`.
+  **Scope, stated honestly — no article page serves our own og tags today.** `articles/[slug]/page.tsx:59`
+  redirects every non-native article that has an `externalUrl`, and all 13 published external articles
+  have one, so those return 307 and an unfurler following the redirect gets the *publisher's* card. The
+  only remaining article, `how-dns-works` (native), returns **404** in production — it is notes-only and
+  `NOTES_ENABLED` is false — so it serves no og tags either. Verified live against
+  `https://anvilry.vercel.app`. The corrected pixels are reachable at `/articles/<slug>/opengraph-image`,
+  which is prerendered for all 14. **This is a correctness and drift-proofing fix with no
+  currently-visible surface.** `page.tsx`'s gap is likewise latent rather than live:
+  `velite.config.ts:103` declares `externalUrl` `.optional()` ("required for non-native" is a comment,
+  not a constraint), so one omission would fall through `:59` and render a raw `devto`.
 
 ### Added
 - **`ci.yml` job `install-pnpm-11`** (`ci.yml:124-171`) — the only job running a pnpm other than the
@@ -55,9 +57,39 @@ All notable changes to Anvilry are documented here. The format follows
 - **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — two assertions: the spellings agree, and
   **every dependency declaring an install script has an explicit boolean**. The second reads the
   resolved tree, closing the gap the first is blind to. Mutation-verified 8/8.
+- **`scripts/bundle-budget.mjs` + a `Bundle budget` step** in the `e2e` job, replacing the workflow
+  removed below. Reads `.next/diagnostics/route-bundle-stats.json`, which `next build` emits with no
+  flag but **only under Turbopack** — so it measures what ships. Asserts (a) every route's first-load JS
+  stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a
+  byte-total guard structurally cannot check: an eager `import * as THREE` moves ~876 KB onto every
+  route while total emitted bytes barely move. A missing or malformed artifact **exits 1** by design.
+  Mutation-verified 8/8; confirmed live in CI at 62,695 B headroom. Cross-OS variance measured, not
+  assumed: macOS 1,220,794 B vs ubuntu-latest 1,222,305 B for `/` — 0.12% against 5% headroom.
+- **`pnpm analyze`** (`velite --clean && ANALYZE=true next build --webpack`) — keeps
+  `@next/bundle-analyzer` usable as a *local* module-attribution tool. It requires the explicit
+  `--webpack` flag, and a `--webpack` build does not emit `route-bundle-stats.json`, so the budget gate
+  correctly fails on one and names `--webpack` as the cause.
+
+### Removed
+- **`.github/workflows/bundle-analysis.yml`, retiring the `Bundle size` status check.** It ran **222
+  times — 211 green, 11 red — and produced ZERO artifacts, ever.** Three independent causes, each
+  sufficient: Turbopack is the Next 16 default so the webpack-only `@next/bundle-analyzer` no-opped
+  (the workflow's own comment claimed the opposite); `nextjs-bundle-analysis` (last published 2023)
+  reads the Pages-Router `build-manifest.json.pages`, which is `{"/_app": []}` here, so even fully
+  wired it reports `{"raw":0,"gzip":0}`; and the `report` step that writes `__bundle_analysis.json` was
+  never in the workflow, nor was a `nextBundleAnalysis` block ever in `package.json`.
+
+  Precisely: it was **not** unfailable outright — install and build failures did go red, which is 9 of
+  those 11. What it could never do was fail on a bundle *size*, because there was no threshold, and
+  `if-no-files-found: warn` plus `continue-on-error: true` let a missing measurement pass silently.
+  `main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate
+  anyone depended on is removed.
 
 ### Changed
-- Index sections 10, 11, 12, 13, 14, 14b, 15 and README updated across two passes; citation coverage 2,112 → 2,148, all verified.
+- Index sections 10, 11, 12, 13, 14, 14b, 15 and README updated across two passes. Citation coverage is
+  2,148 verified — but note that figure is **green by construction**: `.citations.json` is regenerated
+  in the same commit as the prose it validates, so a clean run is not independent evidence the prose is
+  right. The script says as much itself.
 
 ### Dependencies
 - `flags` `4.2.0 → 4.3.0` (#140) — minor; also drops an unsatisfiable `@sveltejs/kit` optional peer that caused `ERESOLVE` noise.

@@ -104,9 +104,14 @@ jobs:
       # Rides on the build above rather than adding a second one. `pnpm build` ends in a bare
       # `next build` => Turbopack => it writes .next/diagnostics/route-bundle-stats.json, which is
       # the only per-route first-load artifact Next 16 emits (the `size`/`First Load JS` build-table
-      # columns were removed in 16). No continue-on-error and no if-no-files-found here on purpose:
-      # this step REPLACES bundle-analysis.yml, which was green with zero artifacts across all 222 of its runs
-      # precisely because those two settings made it unfailable. Unmeasurable must mean red.
+      # columns were removed in 16).
+      #
+      # No continue-on-error and no if-no-files-found here on purpose. This step REPLACES
+      # bundle-analysis.yml, which ran 222 times — 211 green, 11 red — and produced ZERO artifacts,
+      # ever. Be precise about why: its install/build failures DID go red (that is 9 of the 11), so it
+      # was not unfailable outright. What it could never do was fail on a bundle SIZE, because it had
+      # no threshold, and `if-no-files-found: warn` on the upload plus continue-on-error on the
+      # compare meant a missing measurement passed silently. Unmeasurable must mean red.
       - name: Bundle budget
         run: node scripts/bundle-budget.mjs
 

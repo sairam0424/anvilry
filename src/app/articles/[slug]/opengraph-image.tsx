@@ -9,7 +9,7 @@ export const contentType = "image/png";
 /**
  * MUST be keyed by ArticleSource, not string. This map was `Record<string, string>` and had drifted
  * two members behind `velite.config.ts`'s `source` enum: `devto` and `hashnode` were missing, so
- * **9 of 15 articles** rendered the generic `> article` fallback on their OG card. The two sibling
+ * **8 of 14 published articles** rendered the generic `> article` fallback on their OG card. The two sibling
  * copies (`platform-badge.tsx`, `articles/page.tsx`) are keyed by `ArticleSource`, which is why tsc
  * catches an omission there and structurally could not here.
  *

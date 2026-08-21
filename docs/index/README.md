@@ -1,12 +1,12 @@
 ---
 kind: doc
-title: Anvilry v3.5.0 — Codebase Index
+title: Anvilry v3.6.0 — Codebase Index
 domain: [content]
 status: current
 version: v3.6.0
 ---
 
-# Anvilry v3.5.0 — Codebase Index
+# Anvilry v3.6.0 — Codebase Index
 
 **Anvilry** is a personal portfolio and AI-powered developer showcase: one Next.js App Router app that
 serves multiple client-switchable experiences from a single URL, grounded on one MDX content source that
@@ -15,17 +15,19 @@ résumé.
 
 **Version:** `3.6.0` (`package.json:3`) — a **correctness and CI-integrity** release: the pnpm 11
 install failure CI could not see, four article source-label maps made type-enforced, a bundle gate
-that can actually fail replacing one that was green and empty for all 222 of its runs
-(`CHANGELOG.md:67-169`).
+that can actually fail replacing one that ran 222 times (211 green, 11 red) and produced zero artifacts, ever
+(`CHANGELOG.md:7-97`).
 
 **Stack:** Next.js 16.3.0 (App Router, `cacheComponents: true`) · React 19.2.8 · TypeScript 5.9 (strict) ·
 Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) · AWS Bedrock / Anthropic SDK ·
 Upstash Redis (rate limit + telemetry) · React Three Fiber + three.js 0.185 · Vitest 4 + Playwright 1.61 ·
 deployed on Vercel.
 
-**This index describes the tree at v3.5.0.** The release merge is `00e38a2` on `origin/main`; the
-working tree is `develop`, which carries only later Dependabot bumps on top of it. It is
-version-pinned: every `path:line` citation is against that tree.
+**This index describes the tree at v3.6.0**, specifically `release/v3.6.0` @ `c734c14` — not `main`
+and not `develop`. Of the 14 commits `main..develop`, only 3 are Dependabot bumps; the other 11 are
+the pnpm-11 install fix, the article source-label fix, the bundle gate and two docs passes. Every
+`path:line` citation is against `c734c14`, which matters because files cited here (e.g.
+`scripts/bundle-budget.mjs`) do not exist on `main` at all.
 
 ---
 
@@ -75,7 +77,7 @@ corrected text.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
-| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:67` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
+| CHANGELOG version tags | 19 (was 18 before `3.6.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:7` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 19 — there is no live `[Unreleased]` section |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
 dependency counts were **35 + 17** at v3.4.2 (not the brief's 39 + 18 — already flagged in section
@@ -384,7 +386,7 @@ executed for this index. Every behavioural claim is read from source, not observ
 and chunk-count figures are the repo's own recorded measurements (`next.config.ts:133-144`,
 `domains/performance/README.md:84-95`), not reproduced here — and both are **Turbopack** measurements,
 since a bare `next build` in Next 16 is Turbopack, not webpack. The per-route half of them is no longer
-trust-only: `scripts/bundle-budget.mjs` re-asserts it on every CI run (`.github/workflows/ci.yml:110-111`).
+trust-only: `scripts/bundle-budget.mjs` re-asserts it on every CI run (`.github/workflows/ci.yml:115-116`).
 
 **Staleness is enforced, not trusted.** Every fully-qualified `path:line` citation in this directory
 is fingerprinted into `.citations.json` — **1,406** of them when v3.5.0 widened the checker's
@@ -406,7 +408,7 @@ that decays invisibly — a reader cannot tell a live citation from a dead one. 
 guard existed: one unrelated 530-line change invalidated **33 of 699** citations with no signal at
 all. Now that shows up as a red build with the exact list.
 
-**Regenerate when:** this index is **pinned to v3.6.0** — cut from `develop` at `f86a0b2`, so
+**Regenerate when:** this index is **pinned to v3.6.0** — cut from `release/v3.6.0` at `c734c14`, so
 `package.json:3` reads `3.6.0`. Note this pin is a *re-pin*, not a regeneration: the frontmatter and
 banners were bumped and the changed areas reconciled, but the counts below were measured at v3.5.0. Counts and render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
 sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all

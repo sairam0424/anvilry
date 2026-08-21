@@ -11,7 +11,7 @@ version: v3.6.0
 > Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/**/*.test.{ts,tsx}`, `src/**/*.dom.test.{ts,tsx}`, `e2e/resume.spec.ts`, `e2e/views.spec.ts`, `vitest.config.ts`, `playwright.config.ts`
-**Files indexed:** 72 (70 test/spec files + 2 configs) — 68 under `src/` (`find src -name '*.test.*'`) plus the 2 Playwright specs under `e2e/`. v3.5.0 added five suites (`health-expectations`, `client-ip-consistency`, `manifest`, `mcp/tools-documented`, `llms-txt`) and deleted one (`src/lib/index-citations.test.ts` — the citation check is now a CI step, see **CI jobs** below).
+**Files indexed:** 73 (71 test/spec files + 2 configs) — 69 under `src/` (`find src -name '*.test.*'`) plus the 2 Playwright specs under `e2e/`. v3.6.0 added `src/lib/pnpm-build-allowlist-consistency.test.ts`, which runs inside `pnpm build` and is therefore a deploy blocker. v3.5.0 added five suites (`health-expectations`, `client-ip-consistency`, `manifest`, `mcp/tools-documented`, `llms-txt`) and deleted one (`src/lib/index-citations.test.ts` — the citation check is now a CI step, see **CI jobs** below).
 
 ## Runner topology (facts first)
 
@@ -26,13 +26,13 @@ version: v3.6.0
 - **`env: { NODE_ENV: "test" }`** (`vitest.config.ts:26`). Reason recorded in the config comment (`vitest.config.ts:19-25`): Vitest only defaults `NODE_ENV=test` when it is *unset*, but the Vercel build shell sets `NODE_ENV=production`; React would then load its production bundle, which strips `act`, and every `renderHook`/`render` DOM test would die with "React.act is not a function" and fail the deploy. Setting it in config is deterministic and scoped to the Vitest worker only — the separate `next build` process still runs in production mode.
 - **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:52-62`).
 - **Playwright** (`playwright.config.ts`): `testDir: "./e2e"`, `fullyParallel: true`, `forbidOnly: !!CI`, `retries: CI ? 2 : 0`, `workers: CI ? 1 : undefined`, `reporter: "html"`, `use.baseURL: "http://localhost:3000"`, `trace`/`video`: `"on-first-retry"`. One project only: `chromium` / `devices["Desktop Chrome"]` (`playwright.config.ts:15-20`). `webServer: { command: "pnpm start", url: "http://localhost:3000", reuseExistingServer: !process.env.CI, timeout: 120_000, stdout: "ignore", stderr: "pipe" }` (`playwright.config.ts:33-40`) — the comment at `playwright.config.ts:23-32` records why it was added: a stale server on :3000 silently made Playwright test an older build, producing 5 phantom "failures" during a release audit.
-- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → `node scripts/check-index-citations.mjs` (`ci.yml:74-75`); job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `install-pnpm-11` (`ci.yml:124-171`) is the **only job that runs a pnpm other than the pinned 10**; job `security-alerts` is `continue-on-error: true` (`ci.yml:197`) and always exits 0 by design (`ci.yml:173-249` — the last job in the file).
+- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → `node scripts/check-index-citations.mjs` (`ci.yml:74-75`); job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `install-pnpm-11` (`ci.yml:129-176`) is the **only job that runs a pnpm other than the pinned 10**; job `security-alerts` is `continue-on-error: true` (`ci.yml:202`) and always exits 0 by design (`ci.yml:178-254` — the last job in the file).
 - **`install-pnpm-11` exists because "CI passes" and "the repo installs" are different claims.** Every other job pins `version: 10` (`ci.yml:31`, `:84`), so no green run had ever exercised the pnpm a contributor actually gets — `npm i -g pnpm` resolves to 11. That gap shipped a defect: pnpm 11 removed `onlyBuiltDependencies`/`ignoredBuiltDependencies` in favour of the boolean `allowBuilds` map, so `pnpm install --frozen-lockfile` exited 1 for every pnpm 11 user while CI stayed green, **and pnpm 11 rewrote the tracked `pnpm-workspace.yaml`** with a `set this to true or false` placeholder. The job installs cold (no store cache — a warm store can mask a resolution failure), then fails on `git diff --exit-code` so that silent write to a tracked file is itself a build failure, then runs the allowlist guard. It is a separate job rather than a step in `ci` because it must run a different pnpm major and must fail without masking lint/type/test.
 - **The codebase-index citation check is NOT a Vitest suite.** It was briefly `src/lib/index-citations.test.ts`, which put it inside `vitest run` and therefore inside `pnpm build` — a stale doc would have failed the Vercel production build. That file is **deleted**; the check is now the CI-only step above, deliberately (`ci.yml:64-75` records the reasoning: documentation freshness gates a merge, never a deploy). It is therefore the one quality gate in this file that is *not* a deploy blocker.
 
 ## At a glance
 
-Terse index of all 72 files in scope, in the same order as [Coverage](#coverage). The Guard matrix below carries the full assertion detail.
+Terse index of all 73 files in scope, in the same order as [Coverage](#coverage). The Guard matrix below carries the full assertion detail.
 
 | File | Role | Key exports/assertions |
 |---|---|---|
@@ -45,6 +45,7 @@ Terse index of all 72 files in scope, in the same order as [Coverage](#coverage)
 | `src/app/api/tts-google/route.test.ts` | Google TTS route contract | 503 without key; 400/413 rejections; base64 → `audio/mpeg`; 502 on bad upstream |
 | `src/app/api/tts/cache.test.ts` | Polly TTS audio cache keying + tier gate | Key varies by voice AND tier; LRU bump; `CACHE_MAX = 100`; `ALLOWED_TIERS` |
 | `src/app/layout.hydration-proof.dom.test.tsx` | Documentation lock for `suppressHydrationWarning` (not a product test) | With prop React is silent; without it, mismatch logged |
+| `src/lib/pnpm-build-allowlist-consistency.test.ts` | pnpm build-script allowlist ⇄ the resolved dependency tree (new in v3.6.0) | `allowBuilds` booleans match the pnpm 10 lists; no value is pnpm's placeholder string; **every dep declaring an install script has an explicit boolean** (reads `node_modules/.pnpm`, so it catches a NEW dep, which the file-only assertions cannot) |
 | `src/app/manifest.test.ts` | Web app manifest asset resolver + declared-asset existence (new in v3.5.0) | `/icon`→`src/app/icon.tsx`, else `public/<src>`; every icon src resolves; `screenshots` absent by design |
 | `src/app/mcp/tools-documented.test.ts` | `/mcp` docs table ⇄ route `registerTool` set (new in v3.5.0) | Documented set === registered set; call-count cross-check catches regex drops |
 | `src/components/ask-portfolio.dom.test.tsx` | Phase 0 unification contract for the ask widget | Streams via shared `useChat` transport → `/api/chat`; surfaces the 503 copy |
@@ -186,7 +187,7 @@ Terse index of all 72 files in scope, in the same order as [Coverage](#coverage)
 
 ## The four load-bearing gates — verified against source
 
-CLAUDE.md's "Testing Notes" section (`CLAUDE.md:371-371`) names four gates. Verified one by one:
+CLAUDE.md's "Testing Notes" section (`CLAUDE.md:362-373`) names four gates. Verified one by one:
 
 ### 1. `game-model.test.ts` bijection — **CLAUDE.md is correct**
 `CLAUDE.md:364`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
@@ -256,8 +257,8 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Playwright config for the `e2e/` suite.
 - **Exports:** `default` (config object).
 - **Reads / depends on:** `@playwright/test`; env `CI`; a listening server at `http://localhost:3000`.
-- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:19-20`); CI `e2e` job (`.github/workflows/ci.yml:113-114`).
-- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:110-111`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
+- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:19-20`); CI `e2e` job (`.github/workflows/ci.yml:118-119`).
+- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:115-116`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
 - **Gotchas / invariants:** the long comment at `:23-32` records the failure mode being guarded: with no `webServer`, a stale process on :3000 made Playwright test an older build and produce phantom failures. `retries: 2` in CI means flaky specs can pass on retry with trace/video captured only `on-first-retry`.
 
 ### `src/lib/llm.test.ts` (563 lines — largest suite)

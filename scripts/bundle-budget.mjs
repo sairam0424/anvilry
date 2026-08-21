@@ -3,8 +3,12 @@
  * Bundle budget gate — reads the artifact the SHIPPING bundler already emits.
  *
  * WHY THIS REPLACED .github/workflows/bundle-analysis.yml
- * That workflow was green and empty for all 222 of its runs and produced ZERO artifacts, ever. Three
- * independent reasons, each sufficient:
+ * That workflow ran 222 times — 211 green, 11 red — and produced ZERO artifacts, ever.
+ *
+ * Be precise about the failure mode, because the loose version ("it was unfailable") is wrong and
+ * weakens the argument: its install/build failures DID go red, which is 9 of those 11. What it could
+ * never do was fail on a bundle SIZE — there was no threshold — and a MISSING measurement passed
+ * silently. Three independent reasons, each sufficient:
  *   1. `next build` is Turbopack in Next 16 (node_modules/next/dist/lib/bundler.js:142-144 sets
  *      TURBOPACK='auto' "when nothing is configured"), and @next/bundle-analyzer is webpack-only —
  *      it prints "not compatible with Turbopack builds, no report will be generated" and returns a
@@ -13,7 +17,8 @@
  *      `build-manifest.json.pages`, which is `{"/_app": []}` in this App Router app, so even fully
  *      wired it reports `{"raw":0,"gzip":0}` — it would post "no changes to the JavaScript bundle"
  *      on every PR forever, which is worse than silence because it manufactures false safety.
- *   3. `if-no-files-found: warn` plus `continue-on-error: true` made every failure invisible.
+ *   3. `if-no-files-found: warn` on the upload plus `continue-on-error: true` on the compare made
+ *      every MEASUREMENT failure invisible (install/build failures still went red).
  *
  * WHY THIS FILE IS DIFFERENT
  * `.next/diagnostics/route-bundle-stats.json` is written by `next build` with NO flag and NO second
@@ -36,8 +41,8 @@ const MIN_ROUTES = 16;
 
 /**
  * Ceiling, not a baseline. Largest today is `/` at 1,220,794 B, so this is ~5% headroom — enough to
- * absorb chunk-boundary jitter and any cross-OS variance (this is measured on macOS locally and
- * ubuntu-latest in CI, and byte-exact determinism between them is NOT verified).
+ * absorb chunk-boundary jitter and cross-OS variance. That variance is now MEASURED, not assumed:
+ * macOS 1,220,794 B vs ubuntu-latest 1,222,305 B for `/` — 0.12% against 5% headroom.
  *
  * Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,
  * the same discipline next.config.ts:127-149 already uses for the three.js chunk.

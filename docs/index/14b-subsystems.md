@@ -391,7 +391,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Chunk dedup | the `src/lib/r3f.ts` barrel; `three`/`fiber`/`drei` deliberately **excluded** from `optimizePackageImports` (which is `["lucide-react","motion"]`) | `next.config.ts:126-131,146-150` |
 | Recorded chunk measurement | 16.2.9: 2036 KB / 5 chunks (two 876 KB copies) → 16.3.0: 1160 KB / 4 chunks (one copy), −876 KB | `next.config.ts:133-144` |
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages | `domains/performance/README.md:85-91` |
-| Enforced in CI as of this branch | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B) must appear in **zero** routes' first-load sets, and no route may exceed 1,285,000 B of first-load JS. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:45,57,119`; step at `.github/workflows/ci.yml:110-111`; § 10 The bundle budget gate |
+| Enforced in CI as of this branch | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B) must appear in **zero** routes' first-load sets, and no route may exceed 1,285,000 B of first-load JS. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:50,62,124`; step at `.github/workflows/ci.yml:115-116`; § 10 The bundle budget gate |
 | Asset budget | `MAX_BYTES = 1.5 * 1024 * 1024`; current asset 1,105,768 B | `src/lib/avatar-glb.test.ts:21,58-61` |
 | LOD | **none exists** — no `<Detailed>`, no `THREE.LOD`, no distance swap. The only quality knobs are the dpr clamp and the 768 px cutoff. | verified absence, section 07 |
 | Worker offload | **not present in source.** `@react-three/offscreen` was declared but imported by no file in `src/`, and was **removed from `package.json` in v3.5.0**. `CLAUDE.md:259` says the same ("no worker/OffscreenCanvas anywhere") — it previously claimed worker offload existed. | section 07, section 13 |
@@ -419,7 +419,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:87`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
 | Twin three.js chunks return (−876 KB lost) | Deleting `src/lib/r3f.ts`, or re-adding `three`/`@react-three/*` to `optimizePackageImports` (`next.config.ts:146-149`). **Still unguarded by CI:** `scripts/bundle-budget.mjs` asserts three.js stays *off the first-load critical path*, not that only one copy exists — two lazy copies change no route's first-load bytes and pass the gate. The barrel is the only defence. |
-| three.js dragged onto the first-load critical path (+876 KB on every route) | An eager `import * as THREE` (or an R3F import outside a `next/dynamic(..., { ssr: false })` boundary) in anything a route renders on first load. **This one is guarded:** the `Bundle budget` step fails the `e2e` job, naming the offending chunks (`scripts/bundle-budget.mjs:119-124`, step at `ci.yml:110-111`). |
+| three.js dragged onto the first-load critical path (+876 KB on every route) | An eager `import * as THREE` (or an R3F import outside a `next/dynamic(..., { ssr: false })` boundary) in anything a route renders on first load. **This one is guarded:** the `Bundle budget` step fails the `e2e` job, naming the offending chunks (`scripts/bundle-budget.mjs:124-129`, step at `ci.yml:115-116`). |
 | Node unit tests fail `ECONNREFUSED` | Importing `avatar-mesh.tsx` from a node test — `useGLTF.preload` at module scope fires a real fetch. This is why `resolveRig` lives in `rig.ts` (`rig.ts:19-22`). |
 | Avatar loads but never moves | Renaming a bone: `resolveRig` matches lowercased substrings `head`/`neck`/`chest`\|`spine1`/`spine`-not-`spine1` (`rig.ts:43-52`). No error anywhere. Pinned by `avatar-glb.test.ts:98-129`. |
 | Eye gaze silently inert (**current state**) | `rig.morph` requires a `SkinnedMesh` whose name contains `"head"` **and** has a `morphTargetDictionary` (`rig.ts:57-63`). `sairam.glb` is an Avaturn export (`avaturn_body`, `avaturn_hair_0`, …) with **zero** morph targets, so all 8 ARKit `setMorph()` calls are skipped. Asserted deliberately at `avatar-glb.test.ts:132-157`; shipping a blendshape avatar requires flipping `:148` to `toBeGreaterThan(0)` or the build fails. |
@@ -458,13 +458,13 @@ CI  .github/workflows/ci.yml   — 4 jobs, NO `needs:`, all parallel
                 ↑ the index-citation check is deliberately a CI step and NOT in `pnpm build`, so a
                   stale doc fails the PR instead of blocking a production deploy (ci.yml:55-61)
    job `e2e`  : pnpm install → playwright install --with-deps chromium → pnpm build
-                             → node scripts/bundle-budget.mjs (ci.yml:110-111) → pnpm e2e
+                             → node scripts/bundle-budget.mjs (ci.yml:115-116) → pnpm e2e
                 ↑ pnpm build re-runs vitest, so tests execute TWICE per CI run
                 ↑ playwright.config.ts webServer runs `pnpm start`, which needs a prior build
                 ↑ the budget rides on THAT build — no second compile. It reads
                   .next/diagnostics/route-bundle-stats.json, which only Turbopack writes.
                   NO continue-on-error: unmeasurable is red (§ The bundle budget gate)
-   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:197,249)
+   job `security-alerts` : continue-on-error: true; exits 0 either way (ci.yml:202,254)
   - bundle-analysis.yml: DELETED on this branch. 222 runs, 211 green, ZERO artifacts — it never
     measured anything; the `Bundle budget` step above replaces it (§ The bundle budget gate)
   + codeql.yml (develop + weekly cron 35 1 * * 1) — note: does NOT run on main
@@ -533,7 +533,7 @@ blocker on the Vercel build path. Concretely, these invariants block a deploy:
   `xff.split(",").pop()!.trim()` (`:34`) — the divergence this index used to record there is gone.
 - SSR-is-always-Classic — `src/components/view-context.test.ts:30-34`
 
-**Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:68-122`).
+**Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:68-127`).
 `agent-trace.test.ts` is a **consistency** check, not a ship block: `expect(traceApproved).toBe(!hasSentinel)`
 (`src/lib/agent-trace.test.ts:56`) passes in both states. The sentinel is currently present, so
 `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo is
@@ -547,7 +547,7 @@ while the sentinel remains (`src/lib/agent-trace.ts:13-16`), which agrees with t
 ### The bundle budget gate — what replaced `bundle-analysis.yml`
 
 `.github/workflows/bundle-analysis.yml` is **deleted on this branch**. A `Bundle budget` step inside the
-existing `e2e` job took over (`ci.yml:110-111` → `scripts/bundle-budget.mjs`), riding on the `pnpm build`
+existing `e2e` job took over (`ci.yml:115-116` → `scripts/bundle-budget.mjs`), riding on the `pnpm build`
 at `ci.yml:101-102`, so CI still compiles exactly once.
 
 **Why the old workflow was deleted rather than repaired.** Its run history (`gh run list`, not inspectable
@@ -569,14 +569,14 @@ Records are `{ route, firstLoadUncompressedJsBytes, firstLoadChunkPaths }`; 16 r
 
 | Assertion | Value | Cite |
 |---|---|---|
-| Per-route first-load ceiling | 1,285,000 B — ~5% headroom over today's largest, `/` at 1,220,794 B | `scripts/bundle-budget.mjs:45` |
+| Per-route first-load ceiling | 1,285,000 B — ~5% headroom over today's largest, `/` at 1,220,794 B | `scripts/bundle-budget.mjs:50` |
 | Route-count floor | 16; fewer means the artifact's shape changed and the gate is lying about coverage | `:35` |
 | three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:133-144` — and it appears in **0** of the 16 routes' first-load sets | `:57` (marker), `:119` (check) |
 | Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:110` |
 | Missing or malformed artifact ⇒ exit 1 | by design; the predecessor's defining flaw was reporting success while measuring nothing | `:25-26`, `:66`, `:75`, `:81` |
 
 **What it deliberately does not do.** No `continue-on-error`, no `if-no-files-found` — the two settings
-that made the predecessor unfailable; the rationale is recorded inline at `ci.yml:104-109`. It also does
+that made the predecessor unfailable; the rationale is recorded inline at `ci.yml:109-114`. It also does
 **not** assert total emitted bytes, so a three.js *twin-chunk* return (two copies, both still lazy) passes
 it untouched — that regression is still guarded only by the barrel, per the twin-chunk row in § 9's
 failure table. And like the index-citation check it is a **merge** gate, not a **deploy** gate: Vercel runs
@@ -604,7 +604,7 @@ branch, merged from `develop` only (Vercel Production). `make pr` opens feature 
 `make pr-prod` opens `develop` → `main`. Two consequences recorded in the repo: `codeql.yml` runs on
 `develop` pushes/PRs + a weekly cron but **not** on `main`; and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:220-221`).
+(`CHANGELOG.md:252-253`).
 
 ### The Pagefind search-index step
 
@@ -632,12 +632,12 @@ does not gate the route — only the nav link and the sitemap entry.
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true`. The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. |
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:34-42` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders those routes as 404s via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
-| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:193-193`). |
-| **CI red immediately after the build step**, "cannot read .next/diagnostics/route-bundle-stats.json" | Only Turbopack writes that artifact (`node_modules/next/dist/build/index.js:2843-2844`), so any build that opted into webpack — `pnpm analyze`, or a `--webpack` flag added to `pnpm build` — leaves the gate nothing to read. It exits 1 and names `--webpack` (`scripts/bundle-budget.mjs:70`). This is the intended behaviour, not a false positive: unmeasurable must be red. |
-| First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:110-111`). Raising `MAX_FIRST_LOAD_BYTES` (`:45`) is allowed but must be its own commit quoting measured before/after bytes (`:42-43`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:52-55`). |
-| A bundle regression ships green again | Re-adding `continue-on-error` / `if-no-files-found` to the budget step, which is exactly how `bundle-analysis.yml` stayed green and empty for all 222 of its runs (`ci.yml:104-109`). |
+| `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:198-198`). |
+| **CI red immediately after the build step**, "cannot read .next/diagnostics/route-bundle-stats.json" | Only Turbopack writes that artifact (`node_modules/next/dist/build/index.js:2843-2844`), so any build that opted into webpack — `pnpm analyze`, or a `--webpack` flag added to `pnpm build` — leaves the gate nothing to read. It exits 1 and names `--webpack` (`scripts/bundle-budget.mjs:75`). This is the intended behaviour, not a false positive: unmeasurable must be red. |
+| First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:115-116`). Raising `MAX_FIRST_LOAD_BYTES` (`:45`) is allowed but must be its own commit quoting measured before/after bytes (`:42-43`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:52-55`). |
+| A bundle regression ships green again | Re-adding `continue-on-error` / `if-no-files-found` to the budget step, which is exactly how `bundle-analysis.yml` ran 222 times (211 green, 11 red) and produced zero artifacts, ever (`ci.yml:109-114`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:32`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:191-193`). |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:223-225`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
 | `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4003`) against a declared `^0.185.1` — one minor of headroom. |
 
@@ -729,8 +729,8 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change when 3D mounts at all | `src/components/hero-graph/index.tsx:35` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
 | Swap the avatar model | `public/avatar/sairam.glb` + `src/components/hero-avatar/avatar-mesh.tsx:10,27,54` (path in 3 places) | `src/lib/avatar-glb.test.ts` blocks the build on size (<1.5 MB), glTF 2.0, meshopt+quantization+WebP, named bones, and the current **zero** morph targets (`:132-157`). |
 | Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:114` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
-| Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`), as is the bundle budget (`ci.yml:110-111`). Do **not** add `--webpack` to `build`: it silently stops `.next/diagnostics/route-bundle-stats.json` being written and the budget gate then fails by design (`scripts/bundle-budget.mjs:70`). |
-| Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:45` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:42-43`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
+| Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`), as is the bundle budget (`ci.yml:115-116`). Do **not** add `--webpack` to `build`: it silently stops `.next/diagnostics/route-bundle-stats.json` being written and the budget gate then fails by design (`scripts/bundle-budget.mjs:75`). |
+| Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:50` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:42-43`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:100-102`). E2E does not block `pnpm build`. |
 | Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:334` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
@@ -812,7 +812,7 @@ than the original open question.
   Turbopack (`node_modules/next/dist/build/index.js:2843-2844`). **What does not change:** the 876 KB
   single-chunk three.js result at `next.config.ts:133-144` was always a **Turbopack** measurement — its
   own text says the flag "does NOT collapse the R3F twin-chunk in Turbopack" (`:128-129`) — and
-  `scripts/bundle-budget.mjs:49` re-measures the same chunk at 897,249 B. That invariant and
+  `scripts/bundle-budget.mjs:54` re-measures the same chunk at 897,249 B. That invariant and
   `src/lib/r3f.ts`'s load-bearing role both stand; only the bundler attribution was wrong.
 - **Whether `@react-three/offscreen` and `@react-three/rapier` were retained intentionally** — answered by
   deletion. Neither was imported anywhere in the repo, and **both were removed from `package.json` in
@@ -853,7 +853,7 @@ than the original open question.
 - **Whether `SECURITY_ALERTS_TOKEN` is configured** (not inspectable from the working tree), so whether
   `ci.yml`'s `security-alerts` job reports anything today is unknown.
 - **Whether the E2E CI job is a required check** on `develop`/`main` — the job exists
-  (`ci.yml:68-122`) but branch-protection settings are not in the repo. Partially answered on this branch:
+  (`ci.yml:68-127`) but branch-protection settings are not in the repo. Partially answered on this branch:
   `develop` is **not** branch-protected, which is what made deleting `bundle-analysis.yml` safe.
 - **Whether Vercel sets HSTS by platform default** (`next.config.ts:73-74`) — asserted in a comment, not
   verifiable from this repo.
@@ -882,7 +882,7 @@ than the original open question.
   per-route artifact in CI (16 routes, largest `/` at 1,220,794 B, three.js in 0 of them) — but that gate
   reports first-load bytes and chunk paths, not which module put them there, so *why* a boundary falls
   where it does is still inference. The three.js single-chunk figure is now measured twice over:
-  `next.config.ts:133-144`'s recorded build and `scripts/bundle-budget.mjs:49`'s 897,249 B.
+  `next.config.ts:133-144`'s recorded build and `scripts/bundle-budget.mjs:54`'s 897,249 B.
 - **No command was executed for either part of this synthesis** beyond four read-only greps/`sed` reads
   (`budget.tick` sites, `getDefaultVoiceId`, `force-static`, and the two source excerpts quoted in
   [`14-subsystems.md`](./14-subsystems.md)) — plus, in this branch's bundle-gate correction, one read-only

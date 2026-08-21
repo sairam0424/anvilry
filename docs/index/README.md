@@ -3,7 +3,7 @@ kind: doc
 title: Anvilry v3.5.0 — Codebase Index
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Anvilry v3.5.0 — Codebase Index
@@ -13,10 +13,10 @@ serves multiple client-switchable experiences from a single URL, grounded on one
 also feeds a chatbot, an MCP server, a 3D knowledge graph, a keyboard terminal, and a machine-readable
 résumé.
 
-**Version:** `3.5.0` (`package.json:3`) — a **correctness** release, not a security one: six live
-defects fixed, the repo's own doc claims reconciled with its code, this per-file index, and the
-pnpm-settings migration that stops pnpm 11 silently dropping v3.4.2's ten security overrides
-(`CHANGELOG.md:62-164`).
+**Version:** `3.6.0` (`package.json:3`) — a **correctness and CI-integrity** release: the pnpm 11
+install failure CI could not see, four article source-label maps made type-enforced, a bundle gate
+that can actually fail replacing one that was green and empty for all 222 of its runs
+(`CHANGELOG.md:67-169`).
 
 **Stack:** Next.js 16.3.0 (App Router, `cacheComponents: true`) · React 19.2.8 · TypeScript 5.9 (strict) ·
 Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) · AWS Bedrock / Anthropic SDK ·
@@ -34,7 +34,7 @@ version-pinned: every `path:line` citation is against that tree.
 | | |
 |---|---|
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
-| **Version** | `3.5.0` — correctness release (`package.json:3`) |
+| **Version** | `3.6.0` — correctness + CI-integrity release (`package.json:3`) |
 | **Scale** | 416 files indexed · 279 `.ts`/`.tsx` in `src/` totalling 32,253 lines · 37 content files · 59 route-defining files |
 | **Subsystems** | content pipeline · view system · chat/LLM · voice · MCP (9 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:183`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
@@ -75,7 +75,7 @@ corrected text.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
-| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:62` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
+| CHANGELOG version tags | 18 (was 17 before `3.5.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:67` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md` (a bare `^## \[` returns 19 — it matches `[Unreleased]` too) |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
 dependency counts were **35 + 17** at v3.4.2 (not the brief's 39 + 18 — already flagged in section
@@ -406,9 +406,9 @@ that decays invisibly — a reader cannot tell a live citation from a dead one. 
 guard existed: one unrelated 530-line change invalidated **33 of 699** citations with no signal at
 all. Now that shows up as a red build with the exact list.
 
-**Regenerate when:** this index is **pinned to v3.5.0** — release merge `00e38a2` on `origin/main`,
-with `develop` carrying only later Dependabot bumps on top, so `package.json:3` reads `3.5.0` on
-both. Counts and render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
+**Regenerate when:** this index is **pinned to v3.6.0** — cut from `develop` at `f86a0b2`, so
+`package.json:3` reads `3.6.0`. Note this pin is a *re-pin*, not a regeneration: the frontmatter and
+banners were bumped and the changed areas reconciled, but the counts below were measured at v3.5.0. Counts and render-mode values are anchored to that tree. On the next release, regenerate the thirteen area
 sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all
 seventeen, then `--write` the fingerprints. Between releases the working tree is authoritative for
 anything newer — and the citation check tells you exactly where the index has fallen behind.

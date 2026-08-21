@@ -3,12 +3,12 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/lib/llm.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,

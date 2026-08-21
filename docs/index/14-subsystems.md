@@ -3,12 +3,12 @@ kind: doc
 title: Cross-cutting subsystem maps (part 1 of 2)
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Cross-cutting subsystem maps — part 1 of 2
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 > Continued in [`14b-subsystems.md`](./14b-subsystems.md) — subsystems 7–10, the cross-subsystem coupling
 > table, the entry-point cheat sheet, and the UNVERIFIED ledger for both parts.
 
@@ -558,8 +558,8 @@ route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]
 and `CLAUDE.md:302` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
 (`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
 `src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
-(`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:418-419` records the
-7 → 9 growth) and the docs caught up here (`CHANGELOG.md:83-85`).
+(`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:423-424` records the
+7 → 9 growth) and the docs caught up here (`CHANGELOG.md:88-90`).
 
 ### Participating files, in flow order
 
@@ -608,7 +608,7 @@ silent success.
 | `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:6-8`). |
 | `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:20-26`) hardcodes the exact strings, including `"Sairam Resume"` and hyphenated `"Full-Stack"`. `mcp-tools.test.ts:65` asserts every role resolves to a PDF that exists on disk. |
 | Tool list drifts from content | `mcp-tools.test.ts:36` asserts `list_projects`/`list_work` cover the whole content layer. |
-| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:65` used to do exactly that; **fixed on this branch** — it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:76-79`), and `src/lib/llms-txt.test.ts:22,25-26` pins both the live path and the absence of `/api/mcp/sse`. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:65` used to do exactly that; **fixed on this branch** — it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:81-84`), and `src/lib/llms-txt.test.ts:22,25-26` pins both the live path and the absence of `/api/mcp/sse`. |
 | `/mcp` docs drift | `src/app/mcp/page.tsx:35-45` is still hand-maintained, but **no longer unguarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
 
 ### Flags / env that alter it
@@ -705,7 +705,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Failure | Mechanism |
 |---|---|
 | Every error double-beacons | Renaming `DEDUPE_FLAG = "__anvilry_error_recently__"` in one of its three homes: `src/app/error.tsx:39`, `src/app/global-error.tsx:33`, `src/instrumentation-client.ts` (100 ms window). |
-| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies now take the last: `src/lib/rate-limit.ts:57`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it is **fixed on this branch** (`CHANGELOG.md:108-113`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
+| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies now take the last: `src/lib/rate-limit.ts:57`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it is **fixed on this branch** (`CHANGELOG.md:113-118`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
 | Secrets in the trace log | A producer emitting without `redact()` first — `emit` does none (`emit.ts:30-35`). `src/app/api/error/route.test.ts:218-255` pins redact-before-emit. `componentStack` is deliberately **not** redacted (React-internal, `api/error/route.ts:145-166`). |
 | Retention stops trimming | The trim is piggybacked on writes (`emit.ts:74`), so a kind that stops receiving events is never trimmed again. |
 | Telemetry failure becomes request failure | Removing a `.catch()` from either Redis promise, or awaiting `emit` (it returns `void` by design, `emit.ts:30-35`). |

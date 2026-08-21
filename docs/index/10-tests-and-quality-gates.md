@@ -3,12 +3,12 @@ kind: doc
 title: Tests, E2E & Quality Gates
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Tests, E2E & Quality Gates
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/**/*.test.{ts,tsx}`, `src/**/*.dom.test.{ts,tsx}`, `e2e/resume.spec.ts`, `e2e/views.spec.ts`, `vitest.config.ts`, `playwright.config.ts`
 **Files indexed:** 72 (70 test/spec files + 2 configs) — 68 under `src/` (`find src -name '*.test.*'`) plus the 2 Playwright specs under `e2e/`. v3.5.0 added five suites (`health-expectations`, `client-ip-consistency`, `manifest`, `mcp/tools-documented`, `llms-txt`) and deleted one (`src/lib/index-citations.test.ts` — the citation check is now a CI step, see **CI jobs** below).

@@ -3,12 +3,12 @@ kind: doc
 title: Components — 3D / WebGL (R3F hero graph & avatar)
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Components — 3D / WebGL (R3F hero graph & avatar)
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:**
 - `src/components/hero-avatar/**` (non-test files)
@@ -60,7 +60,7 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 | Chunk dedup barrel | `src/lib/r3f.ts:1-27`, `next.config.ts:127-149` | all R3F consumers import from the barrel so the bundler sees one module-graph node |
 | Error containment | `hero-avatar/index.tsx:59-61` | `<WebGLBoundary>` wraps the lazy avatar scene. **The hero graph is NOT wrapped** — see gotchas. |
 
-**Offscreen / worker offload — never present in source; dependency removed in v3.5.0.** `@react-three/offscreen` was declared as a dependency at v3.4.2 but no file under `src/` ever imported it, and `CLAUDE.md` claimed "`@react-three/offscreen` for worker offload" as a 3D-graph decision on the strength of that declaration alone. The package was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:159-164`), so there is no declaration left to cite; a grep for `offscreen`/`Offscreen` across `src/` returns no matches. The load-bearing leftover: CSP still allows `worker-src 'self' blob:` (`next.config.ts:68`) for a worker the hero subsystem never created — the directive outlived the dependency. Note that `CLAUDE.md:258-259` still frames `@react-three/offscreen` as a *declared* dependency with zero imports; that framing is itself now stale (it is not declared at all).
+**Offscreen / worker offload — never present in source; dependency removed in v3.5.0.** `@react-three/offscreen` was declared as a dependency at v3.4.2 but no file under `src/` ever imported it, and `CLAUDE.md` claimed "`@react-three/offscreen` for worker offload" as a 3D-graph decision on the strength of that declaration alone. The package was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:164-169`), so there is no declaration left to cite; a grep for `offscreen`/`Offscreen` across `src/` returns no matches. The load-bearing leftover: CSP still allows `worker-src 'self' blob:` (`next.config.ts:68`) for a worker the hero subsystem never created — the directive outlived the dependency. Note that `CLAUDE.md:258-259` still frames `@react-three/offscreen` as a *declared* dependency with zero imports; that framing is itself now stale (it is not declared at all).
 
 **Post-processing / effects — none in this subsystem.** `EffectComposer`, `Bloom`, `Vignette`, `Noise`, `ChromaticAberration` are re-exported by the barrel (`src/lib/r3f.ts:27`) but the only consumer is `src/components/chat/voice-orb-3d.tsx:4` (gated by `NEXT_PUBLIC_ORB_POSTPROCESSING`, per its comment at line 297). Neither hero-graph nor hero-avatar mounts any effect pass.
 
@@ -70,7 +70,7 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 |---|---|---|
 | `NEXT_PUBLIC_HERO_MODE` | `src/components/home/hero.tsx:16` and `src/components/hero-avatar/index.tsx:50` | `"avatar"` → `<HeroAvatar />`; anything else (default) → `<HeroGraph />` (`hero.tsx:21`). `HeroAvatar` independently re-checks and returns `null` when `!== "avatar"` (`index.tsx:54`). |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `src/components/hero-avatar/index.tsx:51` | `"hero-side"` (default via `?? "hero-side"`), `"hero-split"`, `"hero-top"` — three different wrapper layouts (lines 65, 85, 102). |
-| `NEXT_PUBLIC_GRAPH_PHYSICS` | `src/components/hero-graph/index.tsx:8` (**module scope**) | `"true"` → import `./scene-physics`; otherwise `./scene`. No physics engine is involved either way — `index.tsx:12-14` states that outright. That same comment adds that `@react-three/rapier` "is declared in package.json but imported nowhere in `src/`": the second half still holds, the first no longer does — the package was **removed in v3.5.0** (`CHANGELOG.md:159-164`), so the comment at `index.tsx:13-14` is now stale while the flag itself survives unchanged. |
+| `NEXT_PUBLIC_GRAPH_PHYSICS` | `src/components/hero-graph/index.tsx:8` (**module scope**) | `"true"` → import `./scene-physics`; otherwise `./scene`. No physics engine is involved either way — `index.tsx:12-14` states that outright. That same comment adds that `@react-three/rapier` "is declared in package.json but imported nowhere in `src/`": the second half still holds, the first no longer does — the package was **removed in v3.5.0** (`CHANGELOG.md:164-169`), so the comment at `index.tsx:13-14` is now stale while the flag itself survives unchanged. |
 
 There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_PHYSICS` is the only "physics" switch, and no effects flag applies here.
 
@@ -110,7 +110,7 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 - **Consumed by:** `src/components/hero-graph/index.tsx:17` only.
 - **Behaviour notes:** `frameloop="always"` (`scene-physics.tsx:20`) — no `invalidate()` calls anywhere in this file, because none are needed. `DriftWrapper` sets (never accumulates) `position.x = sin(t*0.4)*0.08`, `position.y = cos(t*0.25)*0.06`, `position.z = sin(t*0.3+1)*0.04` from `clock.elapsedTime` (`scene-physics.tsx:42-44`); the comment at lines 43-44 states position is SET so it stays bounded. Under reduced motion the `useFrame` callback returns early (`scene-physics.tsx:38`) leaving the group at the origin.
 - **Gotchas / invariants:**
-  - **Despite the filename and the flag name, there is no physics engine here.** The header comment (`scene-physics.tsx:10-16`) states "No RigidBody / Rapier needed for this effect". `@react-three/rapier` was a declared dependency at v3.4.2 but was imported by **no** file in `src/`; it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:159-164`). The only `Rapier` matches left in the tree are prose comments (`scene-physics.tsx:12`, `hero-graph/index.tsx:13`).
+  - **Despite the filename and the flag name, there is no physics engine here.** The header comment (`scene-physics.tsx:10-16`) states "No RigidBody / Rapier needed for this effect". `@react-three/rapier` was a declared dependency at v3.4.2 but was imported by **no** file in `src/`; it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:164-169`). The only `Rapier` matches left in the tree are prose comments (`scene-physics.tsx:12`, `hero-graph/index.tsx:13`).
   - This is the **only** file in the 3D subsystem that bypasses `@/lib/r3f` (`scene-physics.tsx:4-6`). The barrel's whole purpose (`src/lib/r3f.ts:5-8`) is that every R3F consumer route through one module-graph node; a direct `@react-three/fiber` + `three` import here is exactly the pattern the barrel exists to prevent. Because this variant is flag-off by default it is not in the default production graph.
   - Reduced motion is handled *inside* the frame callback, not at the Canvas level — so with the flag on and reduced-motion set, the canvas still renders continuously (`frameloop="always"`), it just renders a static scene. The upstream gate in `hero-graph/index.tsx:35` normally prevents this from ever mounting under reduced motion.
 
@@ -253,8 +253,8 @@ Present in scope directories but excluded as tests (see Scope note): `src/compon
 
 Both of the unused-dependency questions this section raised at v3.4.2 are now answered: the dependencies were not being kept for a future variant, they were dead, and they are gone.
 
-- **`@react-three/offscreen` — was declared but imported nowhere; removed in v3.5.0** (`CHANGELOG.md:159-164`). At v3.4.2, `CLAUDE.md` listed "`@react-three/offscreen` for worker offload" as a hero-graph decision, but no worker, `OffscreenCanvas`, or `<Canvas worker=…>` usage ever existed in this subsystem and a grep for `offscreen`/`Offscreen` across `src/` still returns no matches. The observation that outlived the package: the CSP `worker-src 'self' blob:` directive (`next.config.ts:68`) is still in place for a worker that was never there.
-- **`@react-three/rapier` — was declared but imported nowhere; removed in v3.5.0** (`CHANGELOG.md:159-164`). The only textual matches were and remain prose comments (`scene-physics.tsx:12`, `hero-graph/index.tsx:13`). Removal also dropped `@dimforge/rapier3d-compat` from 0.19.2 to 0.12.0 only, leaving `@types/three` as its sole consumer (`CHANGELOG.md:162-164`). Note the comment at `hero-graph/index.tsx:13-14` still says the package "is declared in package.json" — stale as of v3.5.0.
+- **`@react-three/offscreen` — was declared but imported nowhere; removed in v3.5.0** (`CHANGELOG.md:164-169`). At v3.4.2, `CLAUDE.md` listed "`@react-three/offscreen` for worker offload" as a hero-graph decision, but no worker, `OffscreenCanvas`, or `<Canvas worker=…>` usage ever existed in this subsystem and a grep for `offscreen`/`Offscreen` across `src/` still returns no matches. The observation that outlived the package: the CSP `worker-src 'self' blob:` directive (`next.config.ts:68`) is still in place for a worker that was never there.
+- **`@react-three/rapier` — was declared but imported nowhere; removed in v3.5.0** (`CHANGELOG.md:164-169`). The only textual matches were and remain prose comments (`scene-physics.tsx:12`, `hero-graph/index.tsx:13`). Removal also dropped `@dimforge/rapier3d-compat` from 0.19.2 to 0.12.0 only, leaving `@types/three` as its sole consumer (`CHANGELOG.md:167-169`). Note the comment at `hero-graph/index.tsx:13-14` still says the package "is declared in package.json" — stale as of v3.5.0.
 - **The `NEXT_PUBLIC_GRAPH_PHYSICS` flag and `scene-physics.tsx` are unchanged**, so the "despite the name, no physics engine" observation above stands on its own merits; only the dependency status changed.
 
 ## UNVERIFIED

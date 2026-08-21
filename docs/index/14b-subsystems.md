@@ -3,12 +3,12 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 > Continues [`14-subsystems.md`](./14-subsystems.md), which maps subsystems 1–6 (content pipeline · view
 > system · chat/LLM · voice · MCP · telemetry).
 
@@ -604,7 +604,7 @@ branch, merged from `develop` only (Vercel Production). `make pr` opens feature 
 `make pr-prod` opens `develop` → `main`. Two consequences recorded in the repo: `codeql.yml` runs on
 `develop` pushes/PRs + a weekly cron but **not** on `main`; and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:215-216`).
+(`CHANGELOG.md:220-221`).
 
 ### The Pagefind search-index step
 
@@ -637,7 +637,7 @@ does not gate the route — only the nav link and the sitemap entry.
 | First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:110-111`). Raising `MAX_FIRST_LOAD_BYTES` (`:45`) is allowed but must be its own commit quoting measured before/after bytes (`:42-43`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:52-55`). |
 | A bundle regression ships green again | Re-adding `continue-on-error` / `if-no-files-found` to the budget step, which is exactly how `bundle-analysis.yml` stayed green and empty for all 222 of its runs (`ci.yml:104-109`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:32`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:186-188`). |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:191-193`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
 | `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4003`) against a declared `^0.185.1` — one minor of headroom. |
 

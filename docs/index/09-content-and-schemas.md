@@ -3,12 +3,12 @@ kind: doc
 title: Content Corpus & Velite Schemas
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Content Corpus & Velite Schemas
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (11), `content/notes/*.{md,mdx}` (5) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
 **Files indexed:** 38

@@ -4,9 +4,9 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.6.0] — 2026-08-21
 
-On `develop`, not yet released, so it carries no version of its own. No runtime behaviour change.
+**Minor** — a correctness and CI-integrity pass. Not a feature release, but **OG image output changes** for `devto`/`hashnode` articles, which makes it a public-artifact change rather than a patch (the same reasoning as 3.5.0).
 
 ### Fixed
 - **`pnpm install --frozen-lockfile` exited 1 on pnpm 11**, so anyone cloning with the current
@@ -49,7 +49,7 @@ On `develop`, not yet released, so it carries no version of its own. No runtime 
   comment, not a constraint), so one omission would fall through `:59` and render a raw `devto`.
 
 ### Added
-- **`ci.yml` job `install-pnpm-11`** (`ci.yml:115-162`) — the only job running a pnpm other than the
+- **`ci.yml` job `install-pnpm-11`** (`ci.yml:124-171`) — the only job running a pnpm other than the
   pinned 10. Installs cold, fails on `git diff --exit-code` so a silent write to a tracked file is
   itself a build failure, then runs the guard below.
 - **`src/lib/pnpm-build-allowlist-consistency.test.ts`** — two assertions: the spellings agree, and
@@ -57,7 +57,12 @@ On `develop`, not yet released, so it carries no version of its own. No runtime 
   resolved tree, closing the gap the first is blind to. Mutation-verified 8/8.
 
 ### Changed
-- Index sections 10, 11, 12, 13 and 15 updated; citation coverage 2,112 → 2,117, all verified.
+- Index sections 10, 11, 12, 13, 14, 14b, 15 and README updated across two passes; citation coverage 2,112 → 2,148, all verified.
+
+### Dependencies
+- `flags` `4.2.0 → 4.3.0` (#140) — minor; also drops an unsatisfiable `@sveltejs/kit` optional peer that caused `ERESOLVE` noise.
+- `@upstash/redis` `1.38.0 → 1.38.2` — patch.
+- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`, `onCLS`) are unchanged in v6; the breaking changes are types and defaults. Dynamically imported from `src/instrumentation-client.ts`, so it reaches the browser despite being a devDependency.
 
 ## [3.5.0] — 2026-08-21
 

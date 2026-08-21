@@ -3,12 +3,12 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`.
 **Files indexed:** 38

@@ -3,12 +3,12 @@ kind: doc
 title: lib — Content, Data Derivation & Domain Model
 domain: [content]
 status: current
-version: v3.5.0
+version: v3.6.0
 ---
 
 # lib — Content, Data Derivation & Domain Model
 
-> Part of the Anvilry v3.5.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.6.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
 **Scope:** `src/lib/*.ts` (top level only), content/data/domain half — `content.ts`, `corpus.ts`, `game-model.ts`, `graph-data.ts`, `article-grouping.ts`, `llms-txt.ts`, `profile.ts`, `personal.ts`, `testimonials.ts`, `resume-json.ts`, `mcp-tools.ts`, `discovery-store.ts`, `enabled-views.ts`, `flags.ts`, `writing-flags.ts`, `github.ts`, `utils.ts`, `highlight-store.ts`. Excludes `*.test.ts` and the AI/voice/infra half (`llm*.ts`, `agent-trace.ts`, `voice-*`, `rate-limit.ts`, `redis.ts`, `admin-auth.ts`, `r3f.ts`, `use-*.ts`, `telemetry/`, `scroll/`).
 **Files indexed:** 18

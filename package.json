@@ -9,6 +9,7 @@
     "predev": "velite",
     "dev": "next dev",
     "build": "velite --clean && vitest run && next build",
+    "analyze": "velite --clean && ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

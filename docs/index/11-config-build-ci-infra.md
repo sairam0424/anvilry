@@ -12,20 +12,23 @@ version: v3.5.0
 
 **Scope:** `package.json`, `.nvmrc`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
 `postcss.config.mjs`, `pnpm-workspace.yaml`, `vercel.json`, `Makefile`, `next-env.d.ts`, `.gitignore`,
-`.env.example`, `scripts/replay-trace.mjs`, `.github/**` (4 workflows, dependabot, PR + issue templates,
-CONTRIBUTING), `public/**` (asset tree), plus the untracked agent-tooling root artifacts `ruvector.db`,
-`agentdb.rvf`, `agentdb.rvf.lock`, `.swarm/`, `.claude-flow/` (**gitignored as of v3.5.0** — they were
-untracked *and* un-ignored at v3.4.2).
+`.env.example`, `scripts/replay-trace.mjs`, `scripts/bundle-budget.mjs`, `.github/**` (**3** workflows,
+dependabot, PR + issue templates, CONTRIBUTING), `public/**` (asset tree), plus the untracked agent-tooling
+root artifacts `ruvector.db`, `agentdb.rvf`, `agentdb.rvf.lock`, `.swarm/`, `.claude-flow/` (**gitignored as
+of v3.5.0** — they were untracked *and* un-ignored at v3.4.2).
 **Files indexed:** 38 (21 config/CI files + 11 tracked public assets + the empty `public/static/` dir
-+ 5 untracked agent-tooling artifacts)
++ 5 untracked agent-tooling artifacts). The total is unchanged from v3.5.0 but the composition is not:
+`.github/workflows/bundle-analysis.yml` was **deleted** and `scripts/bundle-budget.mjs` added in its place,
+so the workflow count dropped 4 → 3 (`ls .github/workflows/` → `ci.yml`, `codeql.yml`,
+`dependency-review.yml`) while the config/CI count stayed at 21.
 
 ## At a glance
 
 | File | Role | Key exports |
 |---|---|---|
-| `package.json` | name `anvilry`, version `3.5.0`, `private: true`, `engines.node: ">=22 <23"`. 11 scripts, 33 deps, 17 devDeps. **Carries no `pnpm` field any more** — `overrides` and `onlyBuiltDependencies` moved to `pnpm-workspace.yaml` in v3.5.0, joining the `ignoredBuiltDependencies` already there | n/a (JSON) |
+| `package.json` | name `anvilry`, version `3.5.0`, `private: true`, `engines.node: ">=22 <23"`. 12 scripts (`analyze` is the newest), 33 deps, 17 devDeps. **Carries no `pnpm` field any more** — `overrides` and `onlyBuiltDependencies` moved to `pnpm-workspace.yaml` in v3.5.0, joining the `ignoredBuiltDependencies` already there | n/a (JSON) |
 | `.nvmrc` | Single line, `22`. Added in v3.5.0 alongside `engines.node` so local Node matches the CI pin (`.github/workflows/ci.yml:24-27`) | n/a |
-| `next.config.ts` | Next config: enforced CSP + 4 security headers, per-route `/resume` CSP override, 4 `.md` rewrites, `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper | `default` — `withBundleAnalyzer(nextConfig)` |
+| `next.config.ts` | Next config: enforced CSP + 4 security headers, per-route `/resume` CSP override, 4 `.md` rewrites, `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper (**local-only now** — inert unless `pnpm analyze` supplies both `ANALYZE=true` *and* `--webpack`) | `default` — `withBundleAnalyzer(nextConfig)` |
 | `tsconfig.json` | `strict`, `noEmit`, `moduleResolution: "bundler"`, `target: ES2017`, `@/*` → `./src/*`, `next` TS plugin | n/a (JSON) |
 | `eslint.config.mjs` | Flat config: `eslint-config-next/core-web-vitals` + `/typescript`, then re-declares default ignores plus `.vercel/ .velite/ scratch-pad/ public/static/ scripts/` | `default` — `eslintConfig` |
 | `postcss.config.mjs` | Single plugin `@tailwindcss/postcss` (Tailwind v4, no `autoprefixer`, no `tailwind.config`) | `default` — `config` |
@@ -36,8 +39,8 @@ untracked *and* un-ignored at v3.4.2).
 | `.gitignore` | 62 lines. Ignores `.env*` except `.env.example`, `.velite`, `.next`, `next-env.d.ts`, `*.tsbuildinfo`, `.vercel`, `scratch-pad/`, `test-results/`, `playwright-report/`, `.gstack/`, plus (new in v3.5.0) the agent-tooling block `ruvector.db` / `agentdb.rvf` / `agentdb.rvf.*` / `.swarm/` / `.claude-flow/` (`:55-62`) | n/a |
 | `.env.example` | 203-line annotated env template — the only committed env file; documents ~38 vars with rationale | n/a |
 | `scripts/replay-trace.mjs` | Node CLI: reads 7 telemetry span kinds from Upstash Redis, filters by `traceId`, prints a chronological waterfall | n/a (top-level script) |
-| `.github/workflows/ci.yml` | 4 jobs: `ci` (lint/tsc/test **+ codebase-index citation check**), `e2e` (Playwright, build + run), `security-alerts` (non-blocking Dependabot report) | n/a |
-| `.github/workflows/bundle-analysis.yml` | webpack `ANALYZE=true` build, uploads `.next/analyze/`, posts PR size-diff comment | n/a |
+| `scripts/bundle-budget.mjs` | **New.** The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (Turbopack-only, no flag) and asserts a per-route first-load JS ceiling **plus** that three.js stays off the first-load critical path. Exits 1 when it cannot measure | n/a (top-level script) |
+| `.github/workflows/ci.yml` | 4 jobs: `ci` (lint/tsc/test **+ codebase-index citation check**), `e2e` (Playwright, build → **bundle budget** → run), `install-pnpm-11` (cold `--frozen-lockfile` install on the *other* pnpm major), `security-alerts` (non-blocking Dependabot report) | n/a |
 | `.github/workflows/codeql.yml` | CodeQL Advanced, `javascript-typescript`, `build-mode: none`, weekly cron `35 1 * * 1` | n/a |
 | `.github/workflows/dependency-review.yml` | `actions/dependency-review-action@v4`, `fail-on-severity: high`, `fail-on-scopes: runtime` | n/a |
 | `.github/dependabot.yml` | Weekly npm updates → `develop`, 6 groups, 3 `ignore` entries with root-cause comments | n/a |
@@ -86,12 +89,13 @@ approximate and re-measure rather than citing them.
 |---|---|---|---|
 | `predev` | `velite` | Auto-runs before `dev` | pnpm lifecycle hook. Runs **without** `--clean` on purpose — see gotchas |
 | `dev` | `next dev` | Local development @ :3000 | Velite *also* starts in watch mode from inside `next.config.ts:12-16` when `process.argv` contains `"dev"` |
-| `build` | `velite --clean && vitest run && next build` | Production build (Vercel runs this) | **Order is load-bearing — see below** |
+| `build` | `velite --clean && vitest run && next build` | Production build (Vercel runs this). The bare `next build` is a **Turbopack** build, which is what writes `.next/diagnostics/route-bundle-stats.json` | **Order is load-bearing — see below** |
+| `analyze` | `velite --clean && ANALYZE=true next build --webpack` | **Local bundle attribution only** — writes the treemap HTML to `.next/analyze/`. Never runs in CI | `--webpack` is mandatory, not stylistic: without it the build is Turbopack and `@next/bundle-analyzer` produces nothing. Conversely a `--webpack` build emits **no** `route-bundle-stats.json`, so `pnpm build` must be re-run before the bundle-budget gate — see below |
 | `start` | `next start` | Serve a built app; also what Playwright's `webServer` runs (`playwright.config.ts:34`) | Requires a prior `pnpm build` |
 | `lint` | `eslint` | Lint (no `--fix`, no path arg — flat config resolves the target set) | Not part of `build`; CI-only gate (`ci.yml:46-47`) |
 | `test` | `vitest run` | One-shot test run (both `node` + `dom` projects) | Needs `.velite/` present first |
 | `test:watch` | `vitest` | Interactive TDD | — |
-| `content` | `velite --clean` | Force-regenerate `.velite/` when watch misses an MDX change | Also the exact command CI uses to materialize gitignored types (`ci.yml:44`, `bundle-analysis.yml:51`) |
+| `content` | `velite --clean` | Force-regenerate `.velite/` when watch misses an MDX change | Also the exact command CI uses to materialize gitignored types — now in **one** place only (`ci.yml:44`), since `bundle-analysis.yml` was the other caller and is deleted |
 | `clean` | `rm -rf .next .turbo node_modules/.cache .velite` | Nuke all build artifacts | After this, `pnpm content` is mandatory before `test`/`tsc` |
 | `e2e` | `playwright test` | Playwright suite (`e2e/`) | `playwright.config.ts` carries a `webServer` block, so no manual server step; needs a build for `pnpm start` |
 | `e2e:ui` | `playwright test --ui` | Interactive Playwright | — |
@@ -113,10 +117,35 @@ approximate and re-measure rather than citing them.
 where Vercel's build shell exports `NODE_ENV=production` — which would load React's production bundle, strip
 `act`, and fail every DOM test.
 
-**Not in `package.json`:** there is **no `search-index` script**. `CLAUDE.md:32` documents `pnpm search-index`,
+**`build` and `analyze` run two different bundlers, and that is the whole design.** A bare `next build` in
+Next 16 is **Turbopack** — `node_modules/next/dist/lib/bundler.js:142-144` comments that "the default is
+turbopack when nothing is configured" and sets `process.env.TURBOPACK='auto'`. `@next/bundle-analyzer` is
+webpack-only, and it **short-circuits on sight of that variable**: `node_modules/@next/bundle-analyzer/index.js:7`
+tests `if (process.env.TURBOPACK)`, warns *"not compatible with Turbopack builds, no report will be generated"*
+(`:9`), and returns the config **unmodified** (`:14`) — never reaching the `webpack(config, options)` hook at
+`:20` that installs the plugin. Its own warning text names the remedy: "To run this analysis pass the
+`--webpack` flag to `next build`" (`:12`). So `ANALYZE=true` on a bare build is a **no-op**, which is why
+`analyze` passes `--webpack` explicitly. The two builds produce disjoint artifacts and neither substitutes for
+the other:
+
+| Command | Bundler | Emits | Consumed by |
+|---|---|---|---|
+| `pnpm build` | Turbopack | `.next/diagnostics/route-bundle-stats.json` (no flag needed) | `scripts/bundle-budget.mjs`, the CI gate |
+| `pnpm analyze` | webpack (`--webpack`) | `.next/analyze/{client,edge,nodejs}.html` — the three `reportFilename` values at `node_modules/@next/bundle-analyzer/index.js:27-31` | a human, locally |
+
+The deliberate consequence: running the gate straight after `pnpm analyze` **fails**, because a `--webpack`
+build never writes `route-bundle-stats.json` — and the script's error message names `--webpack` as the likely
+cause (`scripts/bundle-budget.mjs:68-72`). Re-run `pnpm build` before the gate.
+
+Every citation in this paragraph points into `node_modules/`, so all of them are version-bound and **not**
+machine-checked by `scripts/check-index-citations.mjs` (its `CITABLE` prefixes stop at first-party source).
+Re-verify them after any Next or analyzer upgrade.
+
+**Not in `package.json`:** there is **no `search-index` script**. `CLAUDE.md:38` documents `pnpm search-index`,
 but the only Pagefind entry point is the Makefile target (`Makefile:64-66`). Likewise `lint` and `tsc --noEmit`
-are **not** part of `pnpm build` — they run only in CI. There is also no `packageManager` field; the pnpm major
-is pinned only by CI (`pnpm/action-setup` `version: 10`, `.github/workflows/ci.yml:22`, `:84`).
+are **not** part of `pnpm build` — they run only in CI, as does the bundle-budget gate. There is also no
+`packageManager` field; the pnpm major is pinned only by CI — `pnpm/action-setup` `version: 10` in the `ci` and
+`e2e` jobs (`.github/workflows/ci.yml:22`, `:84`) and `version: 11` in `install-pnpm-11` (`:148`).
 
 **Node version is pinned, and the pin is load-bearing (new in v3.5.0).** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }` and `.nvmrc:1` is `22` — deliberately a *ceiling*, not just a floor, and matched
@@ -257,7 +286,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `BEDROCK_SECRET_ACCESS_KEY` | Yes for chat | `src/lib/llm.ts:80` | Bedrock creds | Same base64/raw handling |
 | `BEDROCK_SESSION_TOKEN` | No | `src/lib/llm.ts:81-82` | Temporary STS creds only | `.env.example:13` |
 | `BEDROCK_REGION` | No (default `us-east-1`) | `src/lib/llm.ts:87` | Bedrock region | **Use this, never `AWS_REGION`** — see the corruption note below |
-| `AWS_REGION` | No | `src/lib/llm.ts:87` (2nd fallback); `src/instrumentation.ts:43` (region label) | Legacy region fallback | **CORRUPTION:** `AWS_REGION` is a reserved var on Vercel/Lambda and was observed in production as `"s-east-1"` — the leading `u` stripped (`.env.example:14-16`, `CLAUDE.md:290`). Resolution order is `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"`, so a corrupted `AWS_REGION` is only reached when `BEDROCK_REGION` is unset. **`.env.example:18` nonetheless sets `AWS_REGION=us-east-1` uncommented**, directly under its own warning |
+| `AWS_REGION` | No | `src/lib/llm.ts:87` (2nd fallback); `src/instrumentation.ts:43` (region label) | Legacy region fallback | **CORRUPTION:** `AWS_REGION` is a reserved var on Vercel/Lambda and was observed in production as `"s-east-1"` — the leading `u` stripped (`.env.example:14-16`, `CLAUDE.md:332`). Resolution order is `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"`, so a corrupted `AWS_REGION` is only reached when `BEDROCK_REGION` is unset. **`.env.example:18` nonetheless sets `AWS_REGION=us-east-1` uncommented**, directly under its own warning |
 | `ANTHROPIC_API_KEY` | Only when `LLM_PROVIDER=anthropic` | `src/lib/llm.ts:97` | Direct Anthropic API key | `.env.example:22` (commented) |
 | `UPSTASH_REDIS_REST_URL` | No | `src/lib/redis.ts:26`; `scripts/replay-trace.mjs:27` | Redis singleton for rate-limit + telemetry + admin | **Fails open:** unset → limiter is a no-op and chat still works (`.env.example:26-28`). `src/lib/rate-limit.ts:41` logs a warning when unset *and* `NODE_ENV === "production"` |
 | `UPSTASH_REDIS_REST_TOKEN` | No | `src/lib/redis.ts:27`; `scripts/replay-trace.mjs:28` | Redis auth | Both must be set together; `replay-trace.mjs:30-37` hard-exits(1) if either is missing |
@@ -310,7 +339,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_RUNTIME` | Platform | `src/instrumentation.ts:35` | `"edge"` → `register()` returns early (Edge has no access to the secrets) | — |
 | `NODE_ENV` | Platform/tooling | `src/instrumentation.ts:42,92`; `src/lib/rate-limit.ts:41` | Env tier | Forced to `"test"` for the vitest worker (`vitest.config.ts:26`) |
 | `CI` | Platform | `playwright.config.ts:6,7,8,36` | `forbidOnly`, `retries: 2`, `workers: 1`, `reuseExistingServer: false` | — |
-| `ANALYZE` | Tooling | `next.config.ts:6` | `"true"` enables `@next/bundle-analyzer` | Set by `bundle-analysis.yml:58` |
+| `ANALYZE` | Tooling | `next.config.ts:6` | `"true"` enables `@next/bundle-analyzer` | **No workflow sets this any more.** Its only setter is the local `analyze` script (`package.json:12`) — `bundle-analysis.yml`, which used to set it in CI, is deleted. **`ANALYZE=true` alone does nothing:** the analyzer is webpack-only, so the same command must also pass `--webpack` or the build is Turbopack and no report is written |
 | `VELITE_STARTED` | Internal | `next.config.ts:13-14` | Re-entrancy guard so the dev Velite watcher starts exactly once | Written by the config itself, never by a user |
 
 ## CI pipelines
@@ -318,15 +347,58 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | Workflow | Triggers | Jobs / steps | What it blocks |
 |---|---|---|---|
 | `ci.yml` — **CI** | `push` on `branches: ["**"]` (every branch); `pull_request` → `develop`, `main` | **`ci`** (`ubuntu-latest`, 15 min): checkout → `pnpm/action-setup@8912a91…` v6.0.5, version 10 → `setup-node@v4` Node 22 (`cache: pnpm`) → restore `~/.local/share/pnpm/store` keyed on `hashFiles('**/pnpm-lock.yaml')` → `pnpm install` → **`pnpm content`** → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → **`node scripts/check-index-citations.mjs`** (new in v3.5.0, `ci.yml:65-66`) | Merges into `develop`/`main`. This is the **only** place `lint`, `tsc --noEmit` and the index-citation check run — none of the three is in `pnpm build` |
-| | | **`e2e`** (20 min): checkout → pnpm/Node 22 → `pnpm install` → `pnpm exec playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e` → on failure upload `playwright-report/` (7-day retention). Comment (`ci.yml:72-75`) records that `pnpm e2e` was previously referenced by **no** workflow, so the suite rotted until 5 of 19 tests failed on selectors that could never match | Same. Note `pnpm build` here re-runs vitest, so the test suite executes twice per CI run |
-| | | **`security-alerts`** (5 min, `continue-on-error: true`, `permissions: contents: read`): one step reading the Dependabot alerts API with `secrets.SECURITY_ALERTS_TOKEN`, writing a severity table + affected-package list to `$GITHUB_STEP_SUMMARY` | **Nothing — non-blocking by design** (`ci.yml:188`). Without the secret it prints setup instructions and `exit 0`. Documented token limitation: the default `GITHUB_TOKEN` **cannot** read that endpoint even with `security-events: read` — the restriction is on the token *type*, and a fine-grained PAT with `Dependabot alerts: Read-only` is required (`ci.yml:175-184`) |
-| `bundle-analysis.yml` — **Bundle Analysis** | `push` → `develop`, `main`; `pull_request` → `develop`, `main` | `analyze` (20 min): checkout → pnpm/Node 22 → restore pnpm store **and** `.next/cache` → `pnpm install` → `pnpm content` → `ANALYZE=true npx next build` → upload `.next/analyze/` as `bundle-${{ github.sha }}` (`if-no-files-found: warn`) → (PRs only) `dawidd6/action-download-artifact@v8` for the base SHA → `npx -p nextjs-bundle-analysis compare` | Nothing — both PR-comparison steps are `continue-on-error: true`. `:53-55` records that `next build` uses **webpack** by default in Next 16 (Turbopack is opt-in, dev-only), which is what `withBundleAnalyzer` hooks into |
+| | | **`e2e`** (20 min): checkout → pnpm/Node 22 → `pnpm install` → `pnpm exec playwright install --with-deps chromium` → `pnpm build` → **`node scripts/bundle-budget.mjs`** (`ci.yml:110-111`, new) → `pnpm e2e` → on failure upload `playwright-report/` (7-day retention). Comment (`ci.yml:72-75`) records that `pnpm e2e` was previously referenced by **no** workflow, so the suite rotted until 5 of 19 tests failed on selectors that could never match | Same. Two notes: `pnpm build` here re-runs vitest, so the test suite executes twice per CI run; and the bundle-budget gate deliberately **rides on that same build** rather than adding a second one, which is why it lives in `e2e` and not `ci` |
+| | | **`install-pnpm-11`** (10 min): checkout → `pnpm/action-setup` **version 11** (`ci.yml:148`) → Node 22, **no store cache** (a cold resolve is the point) → `pnpm install --frozen-lockfile` → `git diff --exit-code` → `npx vitest run src/lib/pnpm-build-allowlist-consistency.test.ts` (`ci.yml:171`) | Merges. The only job that runs a pnpm other than the pinned 10 — see [10 § install-pnpm-11](./10-tests-and-quality-gates.md) for the defect that motivated it and the pnpm settings section below for the `allowBuilds` mechanics |
+| | | **`security-alerts`** (5 min, `continue-on-error: true`, `permissions: contents: read`): one step reading the Dependabot alerts API with `secrets.SECURITY_ALERTS_TOKEN`, writing a severity table + affected-package list to `$GITHUB_STEP_SUMMARY` | **Nothing — non-blocking by design** (`ci.yml:197`). Without the secret it prints setup instructions and `exit 0`. Documented token limitation: the default `GITHUB_TOKEN` **cannot** read that endpoint even with `security-events: read` — the restriction is on the token *type*, and a fine-grained PAT with `Dependabot alerts: Read-only` is required (`ci.yml:193-193`) |
 | `codeql.yml` — **CodeQL Advanced** | `push` → `develop`; `pull_request` → `develop`; `schedule: '35 1 * * 1'` (weekly, Mondays 01:35 UTC) | `analyze` matrix, one entry: `language: javascript-typescript`, `build-mode: none`. `permissions: security-events: write, packages: read, actions: read, contents: read`. `github/codeql-action/init@v4` → conditional manual-build step (inert, `build-mode != manual`) → `analyze@v4` with `category: "/language:javascript-typescript"` | Code-scanning alerts on `develop`. `fail-fast: false`. Note it does **not** run on `main` pushes/PRs |
 | `dependency-review.yml` — **Dependency Review** | `pull_request` → `develop`, `main` | `dependency-review` (5 min): checkout → `actions/dependency-review-action@v4` with `fail-on-severity: high`, `fail-on-scopes: runtime`, `comment-summary-in-pr: always`. Workflow-level `permissions: contents: read, pull-requests: write` | PRs introducing **high/critical** CVEs in **runtime**-scoped deps. Low/moderate are warnings; dev-only packages (vitest, eslint) are exempt by scope (`:27-29`) |
 
-**Cross-cutting CI invariant:** both `ci.yml:43-44` and `bundle-analysis.yml:50-51` run `pnpm content` before
-anything that compiles, with the comment "`.velite/` is gitignored — must be generated before tsc or vitest
-runs. Mirrors the production build order". Deleting that step breaks every downstream step at module resolution.
+**Cross-cutting CI invariant:** `ci.yml:43-44` runs `pnpm content` before anything that compiles, with the
+comment "`.velite/` is gitignored — must be generated before tsc or vitest runs. Mirrors the production build
+order". Deleting that step breaks every downstream step at module resolution. This used to be a *cross-cutting*
+invariant spelled in two workflows — `bundle-analysis.yml` carried the same step — and the second copy went
+with that file, so the `ci` job is now the only place it appears. (The `e2e` and `install-pnpm-11` jobs do not
+need it: `e2e` gets `.velite/` from `pnpm build`, whose first link is `velite --clean`, and `install-pnpm-11`
+never compiles anything.)
+
+**The "Bundle budget" step (`ci.yml:110-111`) — what replaced `bundle-analysis.yml`.** It runs
+`node scripts/bundle-budget.mjs` inside the **existing** `e2e` job, immediately after that job's `Build` step,
+so it consumes the build that already happens rather than paying for a second one. Its 6-line comment
+(`ci.yml:104-109`) records the two settings it deliberately does **not** carry — `continue-on-error` and
+`if-no-files-found` — because those are precisely what made its predecessor unfailable. The design rule is one
+sentence: *unmeasurable must mean red.* Full mechanics in the `scripts/bundle-budget.mjs` entry under
+**§ Detail** below (deliberately a plain pointer, not an anchor link — see UNVERIFIED on fragile fragments).
+
+**`bundle-analysis.yml` is DELETED — and the reason is a case study in a gate that cannot fail.** It ran
+**222 times, 211 green, 11 red, and produced ZERO artifacts** — verified across the 25 most recent runs, every
+one reporting `total_count: 0` from the artifacts API (older runs cannot be distinguished from expired ones —
+see UNVERIFIED). It was green and empty for its entire life. Three independent causes, each on its own
+sufficient:
+
+1. **The build it ran produced nothing to upload.** `ANALYZE=true npx next build` is a **Turbopack** build in
+   Next 16, and `@next/bundle-analyzer` is webpack-only — see the two-bundler note in the npm-scripts section
+   above for the mechanism and the `node_modules` citations. No `--webpack`, no report.
+2. **The `compare` step could never have worked even so.** `nextjs-bundle-analysis` is stuck at `0.5.0`, last
+   published 2023-04-13 (`npm view nextjs-bundle-analysis time.modified`), and reads the **Pages-Router**
+   `build-manifest.json.pages`, which in this App Router app is `{"/_app": []}`.
+   Fully wired it emits `{"raw":0,"gzip":0}` — i.e. it would have posted *"This PR introduced no changes to the
+   JavaScript bundle"* on every PR forever. That is worse than silence, because silence does not manufacture
+   confidence. Two further nails: the workflow never ran the `report` step that writes `__bundle_analysis.json`,
+   and `package.json` has no `nextBundleAnalysis` config block, both of which the compare step requires.
+3. **Every failure was suppressed.** `if-no-files-found: warn` on the upload plus `continue-on-error: true` on
+   both PR-comparison steps meant nothing it did could ever turn a check red.
+
+**`develop` is not branch-protected** (`gh api repos/:owner/:repo/branches/develop` → `"protected": false`),
+**so no required check broke when it went.** The run counts above are a live
+counter read from the Actions API at deletion time, not a stable fact — treat them the way this page treats the
+agent-tooling byte sizes, and re-read rather than re-quote.
+
+**Correction carried forward:** the deleted workflow's own comment asserted that "`next build` uses webpack by
+default in Next 16 (Turbopack is opt-in, dev-only)". That was **false**, and because this index sourced the
+claim to that comment, the error propagated into the index. The three.js single-chunk / 876 KB numbers in
+`next.config.ts:127-149` are genuine **Turbopack** measurements — `next.config.ts:129` says "in Turbopack"
+outright, and the chunk was re-confirmed at 897,249 B while wiring the new gate. So that invariant and
+`src/lib/r3f.ts`'s load-bearing role both **stand**; only the bundler attribution was ever wrong.
 
 **The "Codebase index citations" step (`ci.yml:65-66`, new in v3.5.0)** runs
 `node scripts/check-index-citations.mjs`, which re-fingerprints every machine-resolvable `path:line` citation in
@@ -432,9 +504,10 @@ high severity", `:113-114`). The lockfile mirrors these ranges verbatim at `pnpm
 
 Root cause for needing overrides at all: "Six were transitive and lockfile-pinned, so `pnpm update` could not
 move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which is why Dependabot reported
-`security_update_not_possible`" (`CHANGELOG.md:196-198`). `package.json:26` does indeed pin
+`security_update_not_possible`" (`CHANGELOG.md:196-198`). `package.json:27` does indeed pin
 `"@modelcontextprotocol/sdk": "1.26.0"` with no range operator. `pdfjs-dist` was fixable by a direct bump
-(`^6.2.108`, `package.json:44`) rather than an override.
+(`^6.2.108`, `package.json:45`) rather than an override. (Both citations moved down one line when the `analyze`
+script was added at `package.json:12` — see the `package.json` gotchas below.)
 
 ## Detail
 
@@ -444,13 +517,18 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
 - **Exports:** `default` — `withBundleAnalyzer(nextConfig)` (`:232`).
 - **Reads / depends on:** `@next/bundle-analyzer` via `createRequire(import.meta.url)` (`:4-7`, because the file
   is ESM), dynamic `import("velite")` (`:15`), env `ANALYZE`; writes env `NEXT_PUBLIC_BUILD_YEAR` and
-  `VELITE_STARTED`.
+  `VELITE_STARTED`. The analyzer wrapper and the `ANALYZE` read both **survive** the deletion of
+  `bundle-analysis.yml` — the dependency is still a devDependency (`package.json:58`) and `:232` still wraps the
+  config — but they are now reachable only from the local `pnpm analyze` script, and only because that script
+  also passes `--webpack`. On every other build the wrapper is a pass-through.
 - **Consumed by:** the Next.js CLI (`next dev`, `next build`). Not imported by any `src/` module.
 - **Behaviour notes:**
   - **Dev-only Velite watcher** (`:12-16`): `isDev = process.argv.includes("dev")`; guarded by `VELITE_STARTED`
     so it fires once. Started with `{ watch: true, clean: false }` — the comment states that running Velite
     here during `build` "races webpack and can wipe `.velite` mid-compile", which is why the build script owns
-    the `--clean` run.
+    the `--clean` run. **The race is real; the bundler name in that comment is not** — `next build` is Turbopack
+    (`node_modules/next/dist/lib/bundler.js:142-144`), so read "webpack" as "the bundler". Quoted verbatim here
+    because it is still the source text at `next.config.ts:11`; the reasoning is unaffected.
   - **`turbopack: { root: __dirname }`** (`:99`) — pins the workspace root "(multiple lockfiles exist on the
     machine)".
   - **`experimental.inlineCss: true`** (`:112`) — inlines critical CSS to remove a render-blocking stylesheet
@@ -459,7 +537,10 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
   - **`experimental.optimizePackageImports: ["lucide-react", "motion"]`** (`:150`) — `three`,
     `@react-three/fiber`, `@react-three/drei` are **deliberately excluded**: investigation C-3 (commit
     `6246ed9`) showed the flag does not collapse the R3F twin-chunk under Turbopack; the `src/lib/r3f.ts`
-    barrel (commit `f7c5110`) is the live fix (`:126-131`).
+    barrel (commit `f7c5110`) is the live fix (`:126-131`). The wider comment block (`:127-149`) records the
+    single-copy outcome — `WebGLRenderer` in exactly **one** chunk — and that outcome now has a **CI gate**:
+    `scripts/bundle-budget.mjs:57` asserts it by marker, so re-adding an eager `three` import fails a check
+    instead of quietly doubling the critical path.
   - **`experimental.cacheComponents: true`** (`:183`) — supersedes `experimental.ppr` / `experimental_ppr` /
     `dynamicIO` / `useCache`. The comment records the migration as **26 segment configs across 22 files**
     (measured, not estimated — enabling the flag failed with exactly `26 errors`): 13× `runtime` deleted (nodejs
@@ -493,16 +574,24 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
 - **Role:** Package manifest, script surface, dependency set, and the Node-version pin. **No longer the
   security-override layer** — as of v3.5.0 that is `pnpm-workspace.yaml`.
 - **Reads / depends on:** n/a (declarative).
-- **Behaviour notes:** `private: true` (`:4`) — never published. `engines.node` `">=22 <23"` (`:5-7`). 33
-  `dependencies` (`:21-55`) and 17 `devDependencies` (`:56-74`). Runtime pins worth knowing:
-  `next 16.3.0` and `eslint-config-next 16.3.0` are **exact** (no caret) (`:43`, `:66`); `react`/`react-dom` are
-  exact `19.2.8` (`:46-47`); `@modelcontextprotocol/sdk` exact `1.26.0` (`:26`);
-  `@react-three/postprocessing` exact `3.0.4` (`:30`, matching the Dependabot ignore). `zod` is `^3.25.76` —
-  v3, not v4 (`:54`). `web-vitals` `^6.1.1` is a **dev**Dependency (`:73`), not a prod one.
+- **Behaviour notes:** `private: true` (`:4`) — never published. `engines.node` `">=22 <23"` (`:5-7`). 12 scripts
+  (`:8-21`), 33 `dependencies` (`:22-56`) and 17 `devDependencies` (`:57-75`). Runtime pins worth knowing:
+  `next 16.3.0` and `eslint-config-next 16.3.0` are **exact** (no caret) (`:44`, `:67`); `react`/`react-dom` are
+  exact `19.2.8` (`:47-48`); `@modelcontextprotocol/sdk` exact `1.26.0` (`:27`);
+  `@react-three/postprocessing` exact `3.0.4` (`:31`, matching the Dependabot ignore). `zod` is `^3.25.76` —
+  v3, not v4 (`:55`). `web-vitals` `^6.1.1` is a **dev**Dependency (`:74`), not a prod one, and so is
+  `@next/bundle-analyzer` `^16.3.0` (`:58`) — which **stays** even though no workflow uses it any more, because
+  the local `analyze` script (`:12`) still does.
 - **Gotchas / invariants:**
-  - **Every `package.json:NN` citation in the wider index was invalidated by v3.5.0** — removing the `pnpm` field
-    (12 lines) and two dependencies shifted the file. `scripts/check-index-citations.mjs` cannot catch this:
-    root-level paths are outside its `CITABLE` prefix set, so `package.json` citations are unverified by CI.
+  - **Every `package.json:NN` citation in the wider index has now been invalidated twice.** v3.5.0 removed the
+    `pnpm` field (12 lines) and two dependencies; adding the `analyze` script (`:12`) then shifted everything
+    below line 11 down by exactly **one** more line. `scripts/check-index-citations.mjs` cannot catch either
+    shift: root-level paths are outside its `CITABLE` prefix set, so `package.json` citations are unverified by
+    CI and must be re-read by hand after any edit to this file.
+  - **Do not drop `@next/bundle-analyzer` as dead weight.** It looks unreferenced now that
+    `bundle-analysis.yml` is gone, but `next.config.ts:5-7` still wraps the exported config with it and
+    `pnpm analyze` is the local attribution tool. Removing it breaks `next.config.ts` at require time for
+    *every* build, not just analyzed ones.
   - The `build` chain's `&&` sequencing is the deploy gate. Reordering it, or splitting the steps into
     independent commands, removes the "failing test blocks deployment" property.
   - **Do not re-add a `pnpm` field.** pnpm 11 silently ignores it, which would put the 10 security overrides back
@@ -548,13 +637,60 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
   `"[object Object]"` and throw `SyntaxError`, silently dropping every event. Do not reintroduce a parse. The
   `KINDS` array is hardcoded, so a new span kind added to `src/lib/telemetry/` is invisible here until listed.
 
+### `scripts/bundle-budget.mjs`
+- **Role:** The repo's bundle-size gate, and the direct replacement for `.github/workflows/bundle-analysis.yml`.
+  Asserts two things about the build that is *actually shipping*: a per-route first-load JS ceiling, and that
+  three.js stays **off** the first-load critical path.
+- **Exports:** none — top-level script with side effects (`node scripts/bundle-budget.mjs`, run after
+  `next build` / `pnpm build`, `:28`).
+- **Reads / depends on:** only `node:fs` (`:30`) and `.next/diagnostics/route-bundle-stats.json` (`:32`). No
+  dependencies, no network, no second build.
+- **Consumed by:** the `Bundle budget` step of `ci.yml`'s `e2e` job (`.github/workflows/ci.yml:110-111`). Not
+  imported by any module; excluded from linting (`eslint.config.mjs:20` ignores `scripts/**`).
+- **Why this artifact:** `next build` writes `route-bundle-stats.json` with **no flag**, but **only under
+  Turbopack** — the header records that Next gates `writeRouteBundleStats` on `bundler === Bundler.Turbopack`
+  (`:19-23`). Since `pnpm build` ends in a bare (therefore Turbopack) `next build`, the file measures exactly
+  what ships. Measured on this tree: **16 route records**, keys `route` / `firstLoadUncompressedJsBytes` /
+  `firstLoadChunkPaths`; largest first-load is `/` at **1,220,794 B**, and the on-disk sum of that route's
+  `firstLoadChunkPaths` is *also* 1,220,794 B — so the number is a measurement, not a model.
+- **The two assertions:**
+  - **First-load ceiling** `MAX_FIRST_LOAD_BYTES = 1_285_000` (`:45`) — a ceiling with ~5% headroom over today's
+    largest route, not a baseline. Its docblock (`:37-44`) states the tolerance rationale explicitly: chunk-boundary
+    jitter, plus the fact that byte-exact determinism between macOS (local) and `ubuntu-latest` (CI) is **not**
+    verified. Raising it is expected — in its own commit, quoting measured before/after bytes.
+  - **three.js stays lazy**, checked by marker `LAZY_MARKER = "WebGLRenderer"` (`:57`) rather than by size. The
+    docblock (`:47-56`) explains why a total-bytes guard cannot make this assertion: an eager
+    `import * as THREE` in a shell component moves ~876 KB onto every route's critical path while total emitted
+    bytes barely move — the bytes were always shipped, they just stopped being deferred. Currently exactly **one**
+    chunk contains the marker, at **897,249 B** (876.2 KiB, matching `next.config.ts:127-149`), and it appears in
+    **0** of the 16 routes' first-load sets. The failure message names `next/dynamic(…, { ssr: false })`,
+    `next.config.ts:127-149` and `src/lib/r3f.ts` (`:122-126`).
+- **Gotchas / invariants:**
+  - **A missing or malformed artifact EXITS 1 — that is the feature, not an oversight.** The predecessor's
+    defining flaw was reporting success while measuring nothing, so "I could not measure" must be red. Four
+    separate `fail()` paths enforce it: unreadable/unparseable JSON (`:64-73`), fewer than `MIN_ROUTES = 16`
+    records (`:35`, `:75-80`), missing expected keys (`:81-86`), and first-load chunk paths that do not exist on
+    disk (`:110-117`).
+  - **Do not add `continue-on-error` to the CI step**, and do not add `if-no-files-found`-style leniency. The
+    script's own closing message says so (`:132-135`), and the step's comment (`ci.yml:104-109`) records that
+    those two settings are exactly why 222 runs of `bundle-analysis.yml` were green while uploading nothing.
+  - **`pnpm analyze` breaks it, by design.** A `--webpack` build emits no `route-bundle-stats.json`, so the gate
+    fails after one — with a message naming `--webpack` as the likely cause (`:68-72`). Re-run `pnpm build`.
+  - `MIN_ROUTES` is a **format tripwire, not a route-count assertion.** Its comment says fewer records means
+    "Next changed the artifact's shape and this gate is lying" (`:34`), and the failure text says to fix the
+    script rather than lower the constant (`:78`). Adding routes only ever raises the real count; a *drop* means
+    the diagnostics contract moved. Same for the key check at `:81` — an upgrade that renames
+    `firstLoadUncompressedJsBytes` turns the gate red rather than vacuously green.
+
 ### `.github/workflows/ci.yml`
-- **Role:** The merge gate — lint/typecheck/test, the codebase-index citation check, Playwright E2E, and a
-  non-blocking security report.
-- **Behaviour notes:** All three jobs run in parallel (no `needs:`). `pnpm/action-setup` is pinned by commit SHA
-  `8912a9102ac27614460f54aedde9e1e7f9aec20d` (v6.0.5) in both jobs (`:20`, `:82`) — the only SHA-pinned action
-  in the repo; the rest use floating major tags. The `ci` and `e2e` jobs both pin `node-version: 22` (`:27`,
-  `:89`) — `security-alerts` needs no Node at all — which
+- **Role:** The merge gate — lint/typecheck/test, the codebase-index citation check, Playwright E2E, the
+  **bundle budget**, a cold pnpm-11 install check, and a non-blocking security report. Since
+  `bundle-analysis.yml` was deleted it is also the repo's **only** build-running workflow, so it is now the only
+  place a bundle regression can be caught.
+- **Behaviour notes:** All four jobs run in parallel (no `needs:`). `pnpm/action-setup` is pinned by commit SHA
+  `8912a9102ac27614460f54aedde9e1e7f9aec20d` (v6.0.5) in all three jobs that use it (`:20`, `:82`, `:146`) — the
+  only SHA-pinned action in the repo; the rest use floating major tags. `ci`, `e2e` and `install-pnpm-11` all pin
+  `node-version: 22` (`:27`, `:89`, `:153`) — `security-alerts` needs no Node at all — which
   `.nvmrc` and `engines.node` now mirror. Playwright browsers are installed with
   `pnpm exec playwright install --with-deps chromium` specifically to pin the download to the installed
   `@playwright/test` version, because a mismatch fails with `Executable doesn't exist at
@@ -562,10 +698,15 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
 - **Gotchas / invariants:**
   - The `e2e` job's `pnpm build` step re-runs `vitest run` (it is inside the build chain), so tests execute
     twice per CI run — once in `ci`, once inside `e2e`.
+  - **The `Bundle budget` step (`:110-111`) depends on step *order* inside `e2e`, not just on membership.** It
+    reads `.next/diagnostics/route-bundle-stats.json`, so it must sit after `Build` (`:101-102`) and it must not
+    be moved into `ci`, which never builds. It has **no `continue-on-error`** and the job does not upload the
+    artifact anywhere, deliberately: the check is the output. Adding `--webpack` to the build would silently
+    starve it — and then correctly fail it.
   - The `ci` job declares **no `permissions:` block**, so it inherits the repository default.
   - `security-alerts` will always show green whether or not `SECURITY_ALERTS_TOKEN` exists; the comment states
     the promotion criteria explicitly: "drop `continue-on-error`, exit 1 on high/critical … once a token is
-    wired AND the existing backlog is at zero" (`:137-138`).
+    wired AND the existing backlog is at zero" (`:195-196`).
   - The `Codebase index citations` step (`:65-66`) must stay **out** of `pnpm build`. Its comment (`:55-64`)
     records that it was briefly inside `vitest run`, where a stale doc would have failed the production build.
     Moving it back re-couples documentation freshness to deploys.
@@ -578,7 +719,7 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
 - **Gotchas / invariants:** No `buildCommand`, `framework`, `regions`, or `functions` keys — build behaviour is
   entirely Vercel's Next.js auto-detection plus `package.json`'s `build` script. Every cron target is
   fail-closed on `CRON_SECRET`, so with that secret unset all five schedules fire and immediately 401.
-  `CLAUDE.md:140` lists only `/api/cron/eval`; the other four are equally live here.
+  `CLAUDE.md:327` lists only `/api/cron/eval`; the other four are equally live here.
 
 ### `public/avatar/sairam.glb`
 - **Role:** The hero avatar 3D model, loaded when `NEXT_PUBLIC_HERO_MODE` selects the avatar treatment.
@@ -606,7 +747,7 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
   Whether all five or only `resumeVariants[0]` render is gated by `NEXT_PUBLIC_RESUME_VARIANTS`
   (`src/app/resume/page.tsx:24`, `src/components/home/resume-view.tsx:42`,
   `src/components/command-palette.tsx:219`, `src/components/game/terminal/commands.ts:206`). The MCP
-  `get_resume_variant` tool exposes the same set (`CLAUDE.md:191`).
+  `get_resume_variant` tool exposes the same set (`CLAUDE.md:221`).
 - **Gotchas / invariants:** Filenames are hardcoded strings in `src/lib/profile.ts` — renaming a PDF produces a
   404 with no type error. `/resume` is the one route with a relaxed `frame-ancestors 'self'` CSP so the PDF can
   be iframed (`next.config.ts:193-210`). `.github/CONTRIBUTING.md:19` declares `public/resume/` closed to
@@ -627,8 +768,8 @@ move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which i
 - `.gitignore`
 - `.env.example`
 - `scripts/replay-trace.mjs`
+- `scripts/bundle-budget.mjs`
 - `.github/workflows/ci.yml`
-- `.github/workflows/bundle-analysis.yml`
 - `.github/workflows/codeql.yml`
 - `.github/workflows/dependency-review.yml`
 - `.github/dependabot.yml`
@@ -680,6 +821,15 @@ test setup; the `NODE_ENV: "test"` pin at `:26` is what keeps `pnpm build` from 
   but no such audit script or spec exists in `e2e/` that I located.
 - Whether the repo secret `SECURITY_ALERTS_TOKEN` is currently configured (not inspectable from the working
   tree), so whether the `security-alerts` job reports anything today is unknown.
+- **Whether `MAX_FIRST_LOAD_BYTES = 1_285_000` (`scripts/bundle-budget.mjs:45`) has enough headroom for CI
+  specifically.** Every byte count on this page was measured on macOS locally; the gate also runs on
+  `ubuntu-latest`, and the script's own docblock states that byte-exact determinism between the two is **not**
+  verified (`:39-40`). The ~5% margin is a judgement call sized for chunk-boundary jitter, not a measured
+  cross-OS delta. The first CI run of the gate is the experiment.
+- **Whether `bundle-analysis.yml` ever produced an artifact earlier in its life.** Zero artifacts is verified for
+  the 25 most recent runs only (artifacts API, `total_count: 0` for each); GitHub expires artifacts, so older runs
+  cannot be distinguished from "expired". The three structural causes are independently sufficient regardless, but
+  "zero artifacts across all 222 runs" is an inference, not a measurement.
 - The claim that Vercel sets HSTS by default (`next.config.ts:73-74`) — asserted in the comment, not verifiable
   from this repo.
 - What generates or populates `public/static/`. It is empty and untracked; the only references are

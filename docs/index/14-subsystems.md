@@ -101,9 +101,9 @@ handlers, and `command-palette.tsx` (~44 non-test importers in total, per sectio
 ### Entry point
 
 Editing/adding a file under `content/`, then any Velite invocation: `predev` (`package.json:9`, bare
-`velite`, no `--clean`), `pnpm content` (`package.json:16`, `velite --clean`), the `build` chain
-(`package.json:11`), or the dev-only watcher started from inside `next.config.ts:12-16` when
-`process.argv` contains `"dev"`.
+`velite`, no `--clean`), `pnpm content` (`package.json:17`, `velite --clean`), the `build` chain
+(`package.json:11`), the local-only `pnpm analyze` (`package.json:12`, also `velite --clean`), or the
+dev-only watcher started from inside `next.config.ts:12-16` when `process.argv` contains `"dev"`.
 
 ### Exit point
 
@@ -119,11 +119,18 @@ dossiers; the terminal's `ls`/`cat`/`tree`/`grep` output.
    (`package.json:11`).
 2. **`vitest run` sits in the middle so a failing test aborts the deploy** — the `&&` is the gate.
 3. **CI mirrors this order:** `pnpm content` runs before `pnpm lint`, `npx tsc --noEmit`, and `pnpm test`
-   (`.github/workflows/ci.yml:43-53`), and again in `bundle-analysis.yml:50-51`.
+   (`.github/workflows/ci.yml:43-53`). That is now the **only** standalone Velite step in CI — the
+   second copy lived in `bundle-analysis.yml`, which is **deleted on this branch**; the `e2e` job gets
+   `.velite/` from the `velite --clean` inside `pnpm build` (`ci.yml:101-102`).
 4. **`predev` deliberately omits `--clean`** and `velite.config.ts:125` sets `clean: false`, because
-   `--clean` in dev races webpack into "Can't resolve './projects.json'" (`velite.config.ts:121-124`).
-   Production purity comes from the explicit `--clean` in the `build`/`content` scripts.
-5. **`pnpm clean`** (`package.json:17`) deletes `.velite`, so `pnpm content` is mandatory afterwards.
+   `--clean` in dev deletes `.velite/*.json` mid-session and the bundler then fails "Can't resolve
+   './projects.json'" (`velite.config.ts:121-124`). The comment's "webpack" is historical wording: in
+   Next 16 `next dev` resolves its bundler through the same default as `next build`
+   (`node_modules/next/dist/cli/next-dev.js:173` → `node_modules/next/dist/lib/bundler.js:142-144`), so
+   the bundler being raced today is Turbopack. The race mechanism — a file vanishing mid-compile — is
+   bundler-agnostic. Production purity comes from the explicit `--clean` in the `build`/`content`
+   scripts.
+5. **`pnpm clean`** (`package.json:18`) deletes `.velite`, so `pnpm content` is mandatory afterwards.
 
 ### Failure modes
 
@@ -547,8 +554,8 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 
 Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9** — and as of this
 branch every copy of that count agrees. The 7-vs-9 drift this index originally recorded is **fixed**: the
-route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:202`
-and `CLAUDE.md:293` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
+route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:211`
+and `CLAUDE.md:302` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
 (`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
 `src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
 (`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:418-419` records the
@@ -607,7 +614,7 @@ silent success.
 ### Flags / env that alter it
 
 **None.** No flag gates this route, no rate limit applies, no auth. Its only environmental coupling is the
-`@modelcontextprotocol/sdk` exact pin `1.26.0` (`package.json:26`), which is `mcp-handler@1.1.0`'s literal
+`@modelcontextprotocol/sdk` exact pin `1.26.0` (`package.json:27`), which is `mcp-handler@1.1.0`'s literal
 peer requirement (`pnpm-lock.yaml:3579-3580`) and the direct cause of the `security_update_not_possible`
 Dependabot state that forced the ten `overrides` — which as of v3.5.0 live in
 `pnpm-workspace.yaml:18-28`, **not** in package.json's `pnpm` field (pnpm 11 stopped reading it).

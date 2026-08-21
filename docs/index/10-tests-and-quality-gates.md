@@ -16,19 +16,19 @@ version: v3.5.0
 ## Runner topology (facts first)
 
 - `pnpm build` = `velite --clean && vitest run && next build` (`package.json:11`). **A failing Vitest assertion aborts the build before `next build` runs — so every test in this file is a deploy blocker on the Vercel build path.**
-- `pnpm test` = `vitest run`; `pnpm test:watch` = `vitest` (`package.json:14-15`).
-- `pnpm e2e` = `playwright test`; `pnpm e2e:ui` = `playwright test --ui` (`package.json:18-19`).
+- `pnpm test` = `vitest run`; `pnpm test:watch` = `vitest` (`package.json:15-16`).
+- `pnpm e2e` = `playwright test`; `pnpm e2e:ui` = `playwright test --ui` (`package.json:19-20`).
 - **Two Vitest projects** (`vitest.config.ts:27-45`):
   - `node` — `environment: "node"`; include `["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"]`; exclude `["**/*.dom.test.{ts,tsx}", "**/node_modules/**"]` (`vitest.config.ts:30-35`). The exclude is load-bearing: `src/x.dom.test.ts` also matches `src/**/*.test.ts`, so without it every DOM suite would run twice — once without happy-dom globals.
   - `dom` — `environment: "happy-dom"`; include `["src/**/*.dom.test.{ts,tsx}", "tests/**/*.dom.test.{ts,tsx}"]` (`vitest.config.ts:38-43`). No explicit `exclude` — it relies on Vitest's default node_modules exclusion.
   - `tests/` does not exist in the repo; both include globs carry a `tests/**` arm that currently matches nothing.
   - `resolve: { tsconfigPaths: true }` (`vitest.config.ts:17`) is what lets tests import the real `@/*` modules and the generated `.velite` output rather than re-implementations.
 - **`env: { NODE_ENV: "test" }`** (`vitest.config.ts:26`). Reason recorded in the config comment (`vitest.config.ts:19-25`): Vitest only defaults `NODE_ENV=test` when it is *unset*, but the Vercel build shell sets `NODE_ENV=production`; React would then load its production bundle, which strips `act`, and every `renderHook`/`render` DOM test would die with "React.act is not a function" and fail the deploy. Setting it in config is deterministic and scoped to the Vitest worker only — the separate `next build` process still runs in production mode.
-- **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:43-53`).
+- **`.velite/` is gitignored but required.** Many node-project tests import `@/lib/content` (which reads `.velite`), so CI generates it first: `pnpm content` runs before lint/typecheck/test (`.github/workflows/ci.yml:52-62`).
 - **Playwright** (`playwright.config.ts`): `testDir: "./e2e"`, `fullyParallel: true`, `forbidOnly: !!CI`, `retries: CI ? 2 : 0`, `workers: CI ? 1 : undefined`, `reporter: "html"`, `use.baseURL: "http://localhost:3000"`, `trace`/`video`: `"on-first-retry"`. One project only: `chromium` / `devices["Desktop Chrome"]` (`playwright.config.ts:15-20`). `webServer: { command: "pnpm start", url: "http://localhost:3000", reuseExistingServer: !process.env.CI, timeout: 120_000, stdout: "ignore", stderr: "pipe" }` (`playwright.config.ts:33-40`) — the comment at `playwright.config.ts:23-32` records why it was added: a stale server on :3000 silently made Playwright test an older build, producing 5 phantom "failures" during a release audit.
-- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → `node scripts/check-index-citations.mjs` (`ci.yml:65-66`); job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `install-pnpm-11` (`ci.yml:115-162`) is the **only job that runs a pnpm other than the pinned 10**; job `security-alerts` is `continue-on-error: true` (`ci.yml:188`) and always exits 0 by design (`ci.yml:164-240` — the last job in the file).
-- **`install-pnpm-11` exists because "CI passes" and "the repo installs" are different claims.** Every other job pins `version: 10` (`ci.yml:22`, `:84`), so no green run had ever exercised the pnpm a contributor actually gets — `npm i -g pnpm` resolves to 11. That gap shipped a defect: pnpm 11 removed `onlyBuiltDependencies`/`ignoredBuiltDependencies` in favour of the boolean `allowBuilds` map, so `pnpm install --frozen-lockfile` exited 1 for every pnpm 11 user while CI stayed green, **and pnpm 11 rewrote the tracked `pnpm-workspace.yaml`** with a `set this to true or false` placeholder. The job installs cold (no store cache — a warm store can mask a resolution failure), then fails on `git diff --exit-code` so that silent write to a tracked file is itself a build failure, then runs the allowlist guard. It is a separate job rather than a step in `ci` because it must run a different pnpm major and must fail without masking lint/type/test.
-- **The codebase-index citation check is NOT a Vitest suite.** It was briefly `src/lib/index-citations.test.ts`, which put it inside `vitest run` and therefore inside `pnpm build` — a stale doc would have failed the Vercel production build. That file is **deleted**; the check is now the CI-only step above, deliberately (`ci.yml:55-66` records the reasoning: documentation freshness gates a merge, never a deploy). It is therefore the one quality gate in this file that is *not* a deploy blocker.
+- **CI jobs** (`.github/workflows/ci.yml`): job `ci` = install → `pnpm content` → `pnpm lint` → `npx tsc --noEmit` → `pnpm test` → `node scripts/check-index-citations.mjs` (`ci.yml:74-75`); job `e2e` = install → `playwright install --with-deps chromium` → `pnpm build` → `pnpm e2e`, uploading `playwright-report/` on failure; job `install-pnpm-11` (`ci.yml:124-171`) is the **only job that runs a pnpm other than the pinned 10**; job `security-alerts` is `continue-on-error: true` (`ci.yml:197`) and always exits 0 by design (`ci.yml:173-249` — the last job in the file).
+- **`install-pnpm-11` exists because "CI passes" and "the repo installs" are different claims.** Every other job pins `version: 10` (`ci.yml:31`, `:84`), so no green run had ever exercised the pnpm a contributor actually gets — `npm i -g pnpm` resolves to 11. That gap shipped a defect: pnpm 11 removed `onlyBuiltDependencies`/`ignoredBuiltDependencies` in favour of the boolean `allowBuilds` map, so `pnpm install --frozen-lockfile` exited 1 for every pnpm 11 user while CI stayed green, **and pnpm 11 rewrote the tracked `pnpm-workspace.yaml`** with a `set this to true or false` placeholder. The job installs cold (no store cache — a warm store can mask a resolution failure), then fails on `git diff --exit-code` so that silent write to a tracked file is itself a build failure, then runs the allowlist guard. It is a separate job rather than a step in `ci` because it must run a different pnpm major and must fail without masking lint/type/test.
+- **The codebase-index citation check is NOT a Vitest suite.** It was briefly `src/lib/index-citations.test.ts`, which put it inside `vitest run` and therefore inside `pnpm build` — a stale doc would have failed the Vercel production build. That file is **deleted**; the check is now the CI-only step above, deliberately (`ci.yml:64-75` records the reasoning: documentation freshness gates a merge, never a deploy). It is therefore the one quality gate in this file that is *not* a deploy blocker.
 
 ## At a glance
 
@@ -186,10 +186,10 @@ Terse index of all 72 files in scope, in the same order as [Coverage](#coverage)
 
 ## The four load-bearing gates — verified against source
 
-CLAUDE.md's "Testing Notes" section (`CLAUDE.md:353-362`) names four gates. Verified one by one:
+CLAUDE.md's "Testing Notes" section (`CLAUDE.md:371-371`) names four gates. Verified one by one:
 
 ### 1. `game-model.test.ts` bijection — **CLAUDE.md is correct**
-`CLAUDE.md:355`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
+`CLAUDE.md:364`: "asserts a bijection between graph nodes and content items — it **blocks deploys** if orphaned."
 
 Confirmed. Seven forward/reverse coverage assertions plus an explicit count identity:
 - forward: every `graphNodes` id is a key of `NODE_CONTENT` (`game-model.test.ts:22-25`), resolves via `resolveNode` (`:27-32`), and points at a slug present in `allWork`/`allProjects` (`:34-40`);
@@ -201,7 +201,7 @@ Confirmed. Seven forward/reverse coverage assertions plus an explicit count iden
 The three intentional node-id≠slug exceptions CLAUDE.md lists are real, but they live in the source, not the test: `aava → aava-code` (`src/lib/game-model.ts:31`), `grpc → grpc-microservices` (`:42`), `nhl → not-humans-lab` (`:45`), documented at `src/lib/game-model.ts:20`.
 
 ### 2. Injection/XSS guard location — **CLAUDE.md was wrong on both counts; now corrected**
-CLAUDE.md used to say "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these." Both halves of that were wrong, and both are now fixed: `CLAUDE.md:356` names `src/components/chat/parse-cards.test.ts` as the prompt-injection / XSS guard, and `CLAUDE.md:357` records that `src/components/ask-portfolio.dom.test.tsx` "has exactly two tests" and "contains zero injection or XSS assertions."
+CLAUDE.md used to say "`ask-portfolio.dom.test.ts` covers prompt injection and XSS guards on streamed markdown — do not weaken or skip these." Both halves of that were wrong, and both are now fixed: `CLAUDE.md:365` names `src/components/chat/parse-cards.test.ts` as the prompt-injection / XSS guard, and `CLAUDE.md:366` records that `src/components/ask-portfolio.dom.test.tsx` "has exactly two tests" and "contains zero injection or XSS assertions."
 
 The two errors, for the record:
 1. **Wrong filename.** There is no `ask-portfolio.dom.test.ts`. The file is `src/components/ask-portfolio.dom.test.tsx`.
@@ -214,14 +214,14 @@ Where the guards actually live:
 Net: the guard exists and is a deploy blocker; CLAUDE.md now points at the right file.
 
 ### 3. `llm.test.ts` snake_case usage-field pin — **CLAUDE.md is correct**
-`CLAUDE.md:358`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
+`CLAUDE.md:367`: "pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`)."
 
 Confirmed, and it is a dedicated test, not incidental: "uses snake_case keys verbatim (regression guard against a silent SDK swap)" (`llm.test.ts:220-250`). It asserts `Object.keys(usage)` contains `["input_tokens", "cache_read_input_tokens", "output_tokens"]` (`:244-246`) and then explicitly forbids the camelCase forms: `expect(usage).not.toHaveProperty("inputTokens")` and `not.toHaveProperty("cacheReadInputTokens")` (`:248-249`). The file header records the reason: Bedrock Converse uses camelCase but `@anthropic-ai/bedrock-sdk` uses snake_case, so an SDK swap would silently zero the dashboard's cache-hit tile (`llm.test.ts:14-18`).
 
 Two adjacent tests pin the full usage capture: `message_start` + `message_delta` extraction of `{input_tokens, cache_creation_input_tokens, cache_read_input_tokens, output_tokens}` (`:114-181`) and a warm-cache turn where `cache_read_input_tokens === 4096` / `cache_creation_input_tokens === 0` (`:183-218`).
 
 ### 4. `agent-trace.test.ts` `PLACEHOLDER_SENTINEL` gate — **not a ship block, and CLAUDE.md now says so**
-CLAUDE.md used to claim the test "**blocks shipping**" the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contained `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). That claim has been corrected: `CLAUDE.md:359` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check."
+CLAUDE.md used to claim the test "**blocks shipping**" the glass-box multi-agent demo while any step in `src/lib/agent-trace.ts` still contained `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`). That claim has been corrected: `CLAUDE.md:368` now reads "`agent-trace.test.ts` does **not** block shipping — it is a *consistency* check."
 
 What the test actually does (`agent-trace.test.ts:51-57`):
 
@@ -248,7 +248,7 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Defines the single Vitest config with two named projects and the forced test `NODE_ENV`.
 - **Exports:** `default` (config object from `defineConfig`).
 - **Reads / depends on:** `vitest/config`; implicitly `tsconfig.json` paths via `resolve.tsconfigPaths` (`:17`).
-- **Consumed by:** `pnpm test`, `pnpm test:watch`, and the `vitest run` step inside `pnpm build` (`package.json:11,14,15`); CI `Test` step (`.github/workflows/ci.yml:52-53`).
+- **Consumed by:** `pnpm test`, `pnpm test:watch`, and the `vitest run` step inside `pnpm build` (`package.json:11,16,17`); CI `Test` step (`.github/workflows/ci.yml:61-62`).
 - **Behaviour notes:** `env: { NODE_ENV: "test" }` (`:26`) is scoped to the Vitest worker; the sibling `next build` process is unaffected. Projects use `extends: true` so both inherit the root `resolve`/`env`.
 - **Gotchas / invariants:** (a) removing `exclude: ["**/*.dom.test.{ts,tsx}", ...]` from the `node` project (`:34`) makes every DOM suite run twice, once without happy-dom; (b) removing `env.NODE_ENV` breaks the whole `dom` project on Vercel (React prod bundle has no `act`) — the failure surfaces as "React.act is not a function", documented at `:19-25`; (c) the `tests/**` include arms match nothing today.
 
@@ -256,8 +256,8 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 - **Role:** Playwright config for the `e2e/` suite.
 - **Exports:** `default` (config object).
 - **Reads / depends on:** `@playwright/test`; env `CI`; a listening server at `http://localhost:3000`.
-- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:18-19`); CI `e2e` job (`.github/workflows/ci.yml:104-105`).
-- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:101-102`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
+- **Consumed by:** `pnpm e2e` / `pnpm e2e:ui` (`package.json:19-20`); CI `e2e` job (`.github/workflows/ci.yml:113-114`).
+- **Behaviour notes:** Single `chromium` project (`:16-19`). `webServer.command` is `pnpm start` — **a production build must already exist**, which is why CI runs `pnpm build` first (`ci.yml:110-111`). `reuseExistingServer: !process.env.CI` keeps a local `pnpm dev`/`pnpm start` usable; CI always starts fresh.
 - **Gotchas / invariants:** the long comment at `:23-32` records the failure mode being guarded: with no `webServer`, a stale process on :3000 made Playwright test an older build and produce phantom failures. `retries: 2` in CI means flaky specs can pass on retry with trace/video captured only `on-first-retry`.
 
 ### `src/lib/llm.test.ts` (563 lines — largest suite)
@@ -400,5 +400,5 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 
 - I did not execute `pnpm test`, `pnpm build`, or `pnpm e2e`. Every claim above is read from source. Actual pass/fail state, real coverage percentages, and runtime durations are unconfirmed.
 - The `dom` Vitest project declares no `exclude` (`vitest.config.ts:38-43`); I assume it relies on Vitest 4's default `node_modules` exclusion but did not confirm that default empirically.
-- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:73`) against the current specs.
+- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:82`) against the current specs.
 - Whether the Vercel production build actually sets `NODE_ENV=production` in the build shell (the stated reason for `env.NODE_ENV` in `vitest.config.ts:19-25`) is taken from that comment, not independently verified.

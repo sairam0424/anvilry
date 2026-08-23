@@ -219,7 +219,7 @@ The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). 
 | `list_work` | All case studies |
 | `get_work` | Single case study by slug |
 | `search_experience` | Keyword search across work, projects, skills |
-| `get_resume_variant` | Role-targeted PDF URL (`master \| backend \| fullstack \| frontend \| genai`) |
+| `get_resume_variant` | The canonical résumé PDF URL (`master`) |
 | `list_all_content` | Flat list of every work item, project, article and note — slug, name, summary, URL |
 | `get_content_item` | One content item by `type` (`work \| project \| article \| note`) and slug |
 

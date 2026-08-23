@@ -90,7 +90,7 @@ const handler = createMcpHandler(
       {
         title: "Get résumé variant",
         description:
-          "A role-targeted résumé PDF URL (master, backend, fullstack, frontend, genai).",
+          "The canonical résumé PDF URL — the only role is 'master'.",
         inputSchema: T.resumeRoleSchema,
       },
       async ({ role }) => wrap(T.getResumeVariantData(role)),

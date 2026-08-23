@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { COMMANDS, runCommand, COMMAND_NAMES, commandEventName } from "./commands";
 import { allWork, allProjects } from "@/lib/content";
-import { profile, skills, achievements, impactMetrics, resumeVariants } from "@/lib/profile";
+import { profile, skills, achievements, impactMetrics } from "@/lib/profile";
 import { personal, now, hasPersonalContent } from "@/lib/personal";
 
 /**
@@ -176,19 +176,6 @@ describe("terminal command registry", () => {
     expect(runCommand("resume").lines.length).toBeGreaterThan(1);
     expect(runCommand("resume sairam").nav?.type).toBe("external");
     expect(runCommand("resume nope").lines.some((l) => l.kind === "err")).toBe(true);
-  });
-
-  it("resume <substring> is first-wins on label .includes() (resume f -> Full-Stack, flag ON)", () => {
-    // Stub the flag ON so all 5 variants are visible — tests multi-variant matching.
-    // Order: Sairam Resume, Backend, Full-Stack, Frontend, GenAI.
-    // Neither "sairam resume" nor "backend" contain 'f', so first match is Full-Stack.
-    vi.stubEnv("NEXT_PUBLIC_RESUME_VARIANTS", "true");
-    try {
-      const fullStack = resumeVariants.find((r) => r.label === "Full-Stack");
-      expect(runCommand("resume f").nav).toEqual({ type: "external", href: fullStack!.file });
-    } finally {
-      vi.unstubAllEnvs();
-    }
   });
 
   it("resume <substring> errors on unknown variant when flag OFF (only master visible)", () => {

@@ -48,11 +48,7 @@ so the workflow count dropped 4 → 3 (`ls .github/workflows/` → `ci.yml`, `co
 | `.github/ISSUE_TEMPLATE/bug_report.yml` | GitHub Forms bug report: URL, affected view (multi-select), repro, expected/actual, browser, OS | n/a |
 | `.github/CONTRIBUTING.md` | Contribution policy: bugs + a11y welcome; content/`profile.ts`/`public/resume` PRs closed | n/a |
 | `public/avatar/sairam.glb` | 1,105,768-byte glTF 2.0 binary, AVATURN export. Hero avatar; pinned by an invariant test | n/a (binary) |
-| `public/resume/Sairam_Resume_MX_E.pdf` | Master resume variant (`master`), 92,816 B | n/a |
-| `public/resume/Sairam_Resume_MX_BE.pdf` | Backend variant, 89,886 B | n/a |
-| `public/resume/Sairam_Resume_MX_FS.pdf` | Full-stack variant, 89,035 B | n/a |
-| `public/resume/Sairam_Resume_MX_FE.pdf` | Frontend variant, 89,203 B | n/a |
-| `public/resume/Sairam_Resume_MX_GAI.pdf` | GenAI variant, 90,221 B | n/a |
+| `public/resume/Sairam_Resume_MX_E.pdf` | The canonical résumé (`master`), 30,831 B | n/a |
 | `public/file.svg` | create-next-app scaffold SVG — **no referrer anywhere in the repo** (grep-verified) | n/a |
 | `public/globe.svg` | create-next-app scaffold SVG — unreferenced | n/a |
 | `public/next.svg` | create-next-app scaffold SVG — unreferenced | n/a |
@@ -740,7 +736,7 @@ script was added at `package.json:12` — see the `package.json` gotchas below.)
 
 ### `public/resume/*.pdf`
 - **Role:** The 5 role-targeted resume variants served as static assets.
-- **Consumed by:** `src/lib/profile.ts:77-81` maps each file to a label + tag:
+- **Consumed by:** `src/lib/profile.ts:77` maps each file to a label + tag:
   `Sairam_Resume_MX_E.pdf` → "Sairam Resume" / "Backend & GenAI",
   `_BE` → "Backend" / "Distributed Systems", `_FS` → "Full-Stack" / "GenAI Platforms",
   `_FE` → "Frontend" / "GenAI Platforms", `_GAI` → "GenAI" / "LLM Systems".
@@ -778,10 +774,6 @@ script was added at `package.json:12` — see the `package.json` gotchas below.)
 - `.github/CONTRIBUTING.md`
 - `public/avatar/sairam.glb`
 - `public/resume/Sairam_Resume_MX_E.pdf`
-- `public/resume/Sairam_Resume_MX_BE.pdf`
-- `public/resume/Sairam_Resume_MX_FS.pdf`
-- `public/resume/Sairam_Resume_MX_FE.pdf`
-- `public/resume/Sairam_Resume_MX_GAI.pdf`
 - `public/file.svg`
 - `public/globe.svg`
 - `public/next.svg`

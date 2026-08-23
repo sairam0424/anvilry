@@ -72,11 +72,7 @@ export const achievements = [
   { title: "Mentored 250–300 students", detail: "Data Structures & Algorithms" },
 ];
 
-/** The 5 role-targeted résumé variants (PDFs live in /public/resume). */
+/** The single canonical résumé PDF (lives in /public/resume). */
 export const resumeVariants = [
   { label: "Sairam Resume", file: "/resume/Sairam_Resume_MX_E.pdf", tag: "Backend & GenAI" },
-  { label: "Backend", file: "/resume/Sairam_Resume_MX_BE.pdf", tag: "Distributed Systems" },
-  { label: "Full-Stack", file: "/resume/Sairam_Resume_MX_FS.pdf", tag: "GenAI Platforms" },
-  { label: "Frontend", file: "/resume/Sairam_Resume_MX_FE.pdf", tag: "GenAI Platforms" },
-  { label: "GenAI", file: "/resume/Sairam_Resume_MX_GAI.pdf", tag: "LLM Systems" },
 ];

@@ -13,16 +13,16 @@ import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
  */
 const BASE = "https://anvilry.vercel.app";
 
-export const RESUME_ROLES = ["master", "backend", "fullstack", "frontend", "genai"] as const;
+export const RESUME_ROLES = ["master"] as const;
 export type ResumeRole = (typeof RESUME_ROLES)[number];
 
 // Map the public role keyword -> the real resumeVariants label (single source).
 const ROLE_TO_LABEL: Record<ResumeRole, string> = {
   master: "Sairam Resume",
-  backend: "Backend",
-  fullstack: "Full-Stack",
-  frontend: "Frontend",
-  genai: "GenAI",
+  // Role-targeted variants were retired: only the canonical résumé is published. Re-adding a
+  // role needs three edits or get_resume_variant returns notFound — the keyword in
+  // RESUME_ROLES above, its exact resumeVariants[].label here, and the PDF in public/resume/.
+  // Never publish more than one label for the same employer and dates.
 };
 
 // Zod input schemas (raw-shape form for mcp-handler's registerTool).

@@ -23,7 +23,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 
 | File | Role | Key exports / anchors |
 |---|---|---|
-| `README.md` | Public-facing project pitch: "a beast with **four switchable experiences** over one canonical content source" (`README.md:5`) — marketing framing, not the store shape; the `View` union has **six** members and "four-view" describes only the default server-rendered pill set (`CLAUDE.md:107`). Plus highlights, stack table, develop/content/chat/voice/deploy quickstarts. Its terminal-command count was corrected to **31** on this branch (`README.md:10`). | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
+| `README.md` | Public-facing project pitch: "a beast with **four switchable experiences** over one canonical content source" (`README.md:5`) — marketing framing, not the store shape; the `View` union has **six** members and "four-view" describes only the default server-rendered pill set (`CLAUDE.md:108`). Plus highlights, stack table, develop/content/chat/voice/deploy quickstarts. Its terminal-command count was corrected to **31** on this branch (`README.md:10`). | §Highlights, §Stack, §Develop, §Chatbot configuration, §Voice, §Deploy |
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
 | `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line was corrected on this branch — it used to say "4-view system"; it now records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`). | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 5-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. | (no headings beyond the single H1) |
@@ -338,20 +338,20 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    (7 read-only tools)" in the Key Files table. `src/app/api/mcp/[transport]/route.ts` calls
    `server.registerTool` **nine** times — the seven plus `list_all_content` (`:98-99`) and
    `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions. Current state: the
-   prose says **9 tools** with all nine tabled (`CLAUDE.md:211`), the Key Files row says "MCP server (9
-   read-only tools)" (`CLAUDE.md:302`), the route's own docblock says "9 read-only tools"
+   prose says **9 tools** with all nine tabled (`CLAUDE.md:212`), the Key Files row says "MCP server (9
+   read-only tools)" (`CLAUDE.md:303`), the route's own docblock says "9 read-only tools"
    (`src/app/api/mcp/[transport]/route.ts:22`), and the public `/mcp` page tables all nine
    (`src/app/mcp/page.tsx:35-45`). **Guard:** `src/app/mcp/tools-documented.test.ts` asserts set equality
    between the page's `TOOLS` rows and the route's `registerTool` calls (`:92`, with the missing names in the
    failure message at `:85`); `vitest run` is chained into `pnpm build`, so adding a tool without
-   documenting it fails the build. `CLAUDE.md:225-229` records that this is why the count is safe to quote.
+   documenting it fails the build. `CLAUDE.md:226-230` records that this is why the count is safe to quote.
    `CHANGELOG.md:456` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:120-122` records this doc fix
    landing in v3.5.0.
 3. ~~**"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**~~ —
    **corrected on this branch.** `CLAUDE.md` now leads the section with "**Runtime & duration — do not add
    `export const runtime`.** No route exports `runtime` anywhere in `src/`" and states that `maxDuration` is
-   "**per-route, not a uniform 30s**" (`CLAUDE.md:170`), followed by the real per-route table
-   (`CLAUDE.md:163-180`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
+   "**per-route, not a uniform 30s**" (`CLAUDE.md:171`), followed by the real per-route table
+   (`CLAUDE.md:164-181`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for `chat`/`mcp`/`cron/github-sync`,
    25 for `cron/health-check`, 20 `transcribe`, 15 `tts`/`tts-google`, 5 `error`, none for
    `visit`/`github/stats`/`md/*`/`resume.json`). The only `runtime` string left in `src/` is the comment
    noting its removal (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:325-327`
@@ -367,13 +367,13 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    watch + Next.js dev"), `README.md:45` ("Velite runs in watch mode via predev") and
    `.claude/skills/dev-local/SKILL.md:29` ("This runs `velite --watch & next dev`") all claim a watcher.
    `package.json:9-10` is `"predev": "velite"` (one-shot) + `"dev": "next dev"` — no `--watch` anywhere.
-   `CLAUDE.md:187` separately and correctly describes `predev` as running "Velite synchronously before
+   `CLAUDE.md:188` separately and correctly describes `predev` as running "Velite synchronously before
    `next dev` starts", and `.claude/skills/dev-local/SKILL.md:30-31` says the same two lines later — so each
    of the two files contradicts itself. The correctness pass on this branch did **not** touch this one.
 6. ~~**The route tree in `CLAUDE.md` lists one cron route; there are five.**~~ — **corrected on this branch.**
-   The tree used to show only `/api/cron/eval` and to omit the `.md` handlers. Current state: `CLAUDE.md:155`
-   is `└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}` with `CLAUDE.md:156` recording
-   "5 crons, ALL fail-closed on CRON_SECRET (`vercel.json:3-7`)", and `CLAUDE.md:163` lists
+   The tree used to show only `/api/cron/eval` and to omit the `.md` handlers. Current state: `CLAUDE.md:156`
+   is `└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}` with `CLAUDE.md:157` recording
+   "5 crons, ALL fail-closed on CRON_SECRET (`vercel.json:3-7`)", and `CLAUDE.md:164` lists
    `/api/md/{articles,notes,projects,work}/[slug]   raw-markdown passthrough (4 handlers)`. Both now match
    `src/app/api/cron/` (`content-audit`, `eval`, `github-sync`, `health-check`, `seo-audit`) and the four
    `src/app/api/md/*/[slug]/route.ts` files.
@@ -392,7 +392,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    ls, cat, tree, grep, find, top, stats, stack, awards, summary, career, about, resume, open, contact,
    email, social, chat, theme, classic, developer, cd, clear, sudo`) plus 4 hidden eggs (`secret, personal,
    uses, now`) that are dispatchable but filtered out of `COMMAND_NAMES` (`:525-527`). Current state:
-   `CLAUDE.md:114` = "Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs)",
+   `CLAUDE.md:115` = "Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs)",
    `ARCHITECTURE.md:74` = "Developer terminal view (31 commands, combobox)", `README.md:10` = "31 commands".
    No test guards the count; re-derive it from `commands.ts:503-508` if it looks stale again.
 10. ~~**`docs/README.md` still claims there are no docs.**~~ — **corrected on this branch.** It used to say
@@ -413,7 +413,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
 12. **`DEPLOY.md`'s build command drops the test step.** *(Still live.)* `DEPLOY.md:20` — "Build command:
     `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
     `"build": "velite --clean && vitest run && next build"`. `README.md:46` and `CLAUDE.md:16-17` both state
-    the three-step form, and `CLAUDE.md:371` relies on it ("a failing test blocks deployment"). Note this
+    the three-step form, and `CLAUDE.md:372` relies on it ("a failing test blocks deployment"). Note this
     branch *did* rewrite `DEPLOY.md` (§3 model chains, §4 base-URL count) without touching `:20`.
 13. **Plan-vs-shipped, flags package (informational, plan is dated).** *(Still live.)*
     `docs/superpowers/plans/2026-06-18-vercel-flags-sdk.md:51,76` prescribes `pnpm add @vercel/flags` and

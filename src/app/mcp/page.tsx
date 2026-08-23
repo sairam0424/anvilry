@@ -39,7 +39,7 @@ const TOOLS = [
   ["list_work", "Production work case studies"],
   ["get_work", "One case study's detail by slug"],
   ["search_experience", "Keyword search across work, projects, skills"],
-  ["get_resume_variant", "A role-targeted résumé PDF URL"],
+  ["get_resume_variant", "The canonical résumé PDF URL"],
   ["list_all_content", "Every work item, project, article and note — slug, name, summary, URL"],
   ["get_content_item", "One content item by type (work, project, article, note) and slug"],
 ];

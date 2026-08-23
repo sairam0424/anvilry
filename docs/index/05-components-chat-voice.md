@@ -143,7 +143,7 @@ Three independent layers, all in scope, all fail-closed:
 - Card tokens never reach the markdown renderer: `parseCards()` extracts them first and only `type:"text"`
   segments are passed to `MarkdownMessage` (`chat-messages.tsx:532-548`, `ask-portfolio.tsx:155-170`).
 - `parse-cards.test.ts` is the pinned contract ("a hostile model turn can neither inject markup nor conjure
-  a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md:316` names
+  a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md:317` names
   `ask-portfolio.dom.test` as the streamed-markdown injection/XSS guard and says not to weaken it.
 - The spoken/caption path has its own stripper: `toCaptionText()` runs `parseCards` then removes markdown
   markers **and** a dangling unclosed `[[card:` fragment mid-stream (`use-voice-session.ts:48-63`), so a
@@ -452,7 +452,7 @@ See **Store & hook map** above. All three are structurally identical: module `op
   - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:64-67).
   - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:155-170). An empty assistant message shows "Thinking…" only while streaming (:144-152).
   - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:15-20).
-- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:199). The widget does **not** render attachments, thinking blocks, model badges, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins that the widget rides the shared `useChat` stream and surfaces the 503 message; `CLAUDE.md:316` marks these guards as not-to-be-weakened.
+- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:199). The widget does **not** render attachments, thinking blocks, model badges, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins that the widget rides the shared `useChat` stream and surfaces the 503 message; `CLAUDE.md:317` marks these guards as not-to-be-weakened.
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
 - **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:100`, :112-114).

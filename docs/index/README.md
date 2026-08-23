@@ -72,8 +72,8 @@ corrected text.
 | npm scripts | **12** — the previous 11 plus `analyze`, added on this branch when `bundle-analysis.yml` was deleted. `analyze` is `velite --clean && ANALYZE=true next build --webpack`; the `--webpack` flag is **mandatory**, because a bare `next build` in Next 16 is Turbopack and `@next/bundle-analyzer` is webpack-only. Still no `search-index` — see [11](./11-config-build-ci-infra.md) | `package.json:8-22` — the block starts at `:8`, not `:5`, since `engines` was inserted at `:5-7`; `analyze` is `package.json:12` |
 | Content items | 5 work · 11 projects · 5 notes · 15 articles (14 non-draft) | `.velite/*.json`, section [09](./09-content-and-schemas.md) |
 | 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects; count it from the arrays — the file's header docblock no longer hardcodes a node count (it now says "every flagship work system + every OSS repo … see `graphNodes` below for the count") | `src/lib/graph-data.ts:18-41` (nodes), `:43-70` (edges); de-numbered docblock `:3-4` |
-| MCP tools | **9** registered. ~~"docs still say 7"~~ — **corrected on this branch:** the route docblock now says "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), the public table lists all 9 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`CLAUDE.md:211`, `:302`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:30-117` |
-| Terminal commands | **31** — 27 visible + 4 hidden eggs. ~~"docs still say roughly 16"~~ — **corrected on this branch:** `CLAUDE.md:114` and `ARCHITECTURE.md:74` both say 31 now | `src/components/game/terminal/commands.ts:503-508` |
+| MCP tools | **9** registered. ~~"docs still say 7"~~ — **corrected on this branch:** the route docblock now says "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), the public table lists all 9 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`CLAUDE.md:212`, `:302`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:30-117` |
+| Terminal commands | **31** — 27 visible + 4 hidden eggs. ~~"docs still say roughly 16"~~ — **corrected on this branch:** `CLAUDE.md:115` and `ARCHITECTURE.md:74` both say 31 now | `src/components/game/terminal/commands.ts:503-508` |
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
@@ -240,7 +240,7 @@ every route handler runs on Next's default Node.js runtime; `src/proxy.ts` is th
 |---|---|---|---|
 | `/` | page | `src/app/page.tsx` | PARTIALLY_STATIC, `compute:"static"`; the only `ViewRouter` mount |
 | `/about` | page | `src/app/about/page.tsx` | PARTIALLY_STATIC, static |
-| `/mcp` | page | `src/app/mcp/page.tsx` | PARTIALLY_STATIC, static; exports **no** segment config — `CLAUDE.md:139` now says the same ("no segment config"), so this is no longer a doc contradiction |
+| `/mcp` | page | `src/app/mcp/page.tsx` | PARTIALLY_STATIC, static; exports **no** segment config — `CLAUDE.md:140` now says the same ("no segment config"), so this is no longer a doc contradiction |
 | `/resume` | page | `src/app/resume/page.tsx` + `resume/layout.tsx` | PARTIALLY_STATIC, static; page is `"use client"`; relaxed `frame-ancestors 'self'` CSP |
 | `/search` | page | `src/app/search/page.tsx` + `search/layout.tsx` | PARTIALLY_STATIC, static; `"use client"`; injects `/pagefind/*` at runtime |
 | `/stats` | page | `src/app/stats/page.tsx` + `stats/layout.tsx` | PARTIALLY_STATIC, static; **not** flag-gated (`STATS_ENABLED` only hides the nav link) |
@@ -371,7 +371,7 @@ across two files to stay inside the per-file size budget) and
 This front door is the third synthesis pass.
 
 **Adversarial verification.** Load-bearing claims were re-read against source rather than inherited: the
-four gates `CLAUDE.md:364-368` names were each checked line by line (two were misstated at the time of
+four gates `CLAUDE.md:365-368` names were each checked line by line (two were misstated at the time of
 indexing, and **both have since been corrected in `CLAUDE.md` on this branch**), the
 `emittedAny` fallback condition, the card-token regex, the `getServerSnapshot` contract, the
 `CRON_SECRET` guard and the base-URL occurrence list were all quoted verbatim from source, and

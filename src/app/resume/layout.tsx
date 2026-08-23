@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { profile } from "@/lib/profile";
 
-const description = `Download ${profile.name}'s résumé — role-targeted variants for Backend, GenAI, and Full-Stack.`;
+const description = `Download ${profile.name}'s résumé — engineering experience, projects, and skills.`;
 
 export const metadata: Metadata = {
   title: "Résumé",

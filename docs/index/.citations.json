@@ -644,6 +644,20 @@
       ],
       "preview": "run: pnpm exec playwright install --with-deps chromium"
     },
+    ".github/workflows/codeql.yml:33": {
+      "fp": "fc8135fd1264",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "on:"
+    },
+    ".github/workflows/codeql.yml:39": {
+      "fp": "b1fd36969997",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "- cron: '35 1 * * 1'"
+    },
     ".github/workflows/dependency-review.yml:27": {
       "fp": "fe04789876fa",
       "citedBy": [
@@ -1389,7 +1403,14 @@
       ],
       "preview": "## [3.5.0] — 2026-08-21"
     },
-    "CLAUDE.md:107": {
+    "CLAUDE.md:100": {
+      "fp": "8ee699235e16",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "**`bundle-analysis.yml` is DELETED — do not re-add it.** It was green and empty for its entire life:"
+    },
+    "CLAUDE.md:108": {
       "fp": "639464d8ad68",
       "citedBy": [
         "01-routes-pages.md",
@@ -1398,14 +1419,14 @@
       ],
       "preview": "The entire site is one Next.js App Router app that presents client-side switchable experiences from "
     },
-    "CLAUDE.md:113": {
+    "CLAUDE.md:114": {
       "fp": "b97a0f4dbf4b",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "| `chat` | yes | AI chatbot grounded on the MDX content corpus |"
     },
-    "CLAUDE.md:114": {
+    "CLAUDE.md:115": {
       "fp": "f203233fd199",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1416,21 +1437,11 @@
       "preview": "| `developer` | yes | Keyboard-driven terminal with **31** commands (27 visible + 4 hidden eggs) |"
     },
     "CLAUDE.md:116": {
-      "fp": "f75163019f47",
+      "fp": "8d5426dded52",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "| `resume` | never | Recruiter view. Reached via Cmd+K → \"Recruiter view\" (`command-palette.tsx:179`"
-    },
-    "CLAUDE.md:139": {
-      "fp": "f92c2d25aac6",
-      "citedBy": [
-        "01-routes-pages.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
-      ],
-      "preview": "├── /mcp                         MCP server documentation (no segment config — see note below)"
+      "preview": "| `voice` | desktop only, post-hydration | Optional full-page two-way talk surface; normally unused "
     },
     "CLAUDE.md:14": {
       "fp": "9fce4322e1c9",
@@ -1440,7 +1451,17 @@
       ],
       "preview": "pnpm dev                   # starts Velite watch + Next.js dev @ localhost:3000"
     },
-    "CLAUDE.md:155": {
+    "CLAUDE.md:140": {
+      "fp": "f92c2d25aac6",
+      "citedBy": [
+        "01-routes-pages.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "├── /mcp                         MCP server documentation (no segment config — see note below)"
+    },
+    "CLAUDE.md:156": {
       "fp": "9391f0d5c017",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1449,7 +1470,7 @@
       ],
       "preview": "└── /api/cron/{eval,health-check,github-sync,seo-audit,content-audit}"
     },
-    "CLAUDE.md:156": {
+    "CLAUDE.md:157": {
       "fp": "5a76314364b1",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1465,14 +1486,14 @@
       ],
       "preview": "# Build (Velite + tests + Next.js, in that order)"
     },
-    "CLAUDE.md:161": {
+    "CLAUDE.md:162": {
       "fp": "c2805b8874da",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Runtime & duration — do not add `export const runtime`.** No route exports `runtime` anywhere in `"
     },
-    "CLAUDE.md:163": {
+    "CLAUDE.md:164": {
       "fp": "831df832feb9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1487,7 +1508,7 @@
       ],
       "preview": "pnpm build"
     },
-    "CLAUDE.md:170": {
+    "CLAUDE.md:171": {
       "fp": "d0873ab77974",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -1495,7 +1516,7 @@
       ],
       "preview": "| 5 | `error` |"
     },
-    "CLAUDE.md:180": {
+    "CLAUDE.md:181": {
       "fp": "be066bd581c1",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1503,7 +1524,7 @@
       ],
       "preview": "→ .velite/ (TypeScript + JSON)"
     },
-    "CLAUDE.md:187": {
+    "CLAUDE.md:188": {
       "fp": "792eaf3de086",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1511,14 +1532,14 @@
       ],
       "preview": "**Velite quirk:** `predev` runs Velite synchronously before `next dev` starts; do not pass `--clean`"
     },
-    "CLAUDE.md:189": {
+    "CLAUDE.md:190": {
       "fp": "299bac69006b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Notes accept both `.md` and `.mdx`** — the Velite schema makes the extended Inkforge frontmatter ("
     },
-    "CLAUDE.md:191": {
+    "CLAUDE.md:192": {
       "fp": "13630c5e52f0",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -1526,22 +1547,22 @@
       "preview": "Note that **the extension does not indicate provenance**: at v3.4.2 all five notes carry `generatedB"
     },
     "CLAUDE.md:200": {
-      "fp": "3ca8f93456bf",
+      "fp": "bcd5f08adfc1",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "- **Bedrock model chain:** `us.anthropic.claude-sonnet-4-6` → `us.anthropic.claude-opus-4-6-v1` → `u"
+      "preview": "- **Provider toggle:** `LLM_PROVIDER=bedrock` (default) or `LLM_PROVIDER=anthropic` (direct API)."
     },
-    "CLAUDE.md:205": {
+    "CLAUDE.md:206": {
       "fp": "f0939a55d0ca",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). No vector DB at this"
     },
-    "CLAUDE.md:211": {
+    "CLAUDE.md:212": {
       "fp": "5501fe766197",
       "citedBy": [
         "02-api-routes.md",
@@ -1556,20 +1577,20 @@
       "preview": "**9 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
     "CLAUDE.md:221": {
-      "fp": "4b0919c1a2a3",
+      "fp": "86cf5b5f3fb0",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
-      "preview": "| `get_resume_variant` | Role-targeted PDF URL (`master \\| backend \\| fullstack \\| frontend \\| genai"
+      "preview": "| `search_experience` | Keyword search across work, projects, skills |"
     },
-    "CLAUDE.md:223": {
+    "CLAUDE.md:224": {
       "fp": "a963a866b8ce",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "| `get_content_item` | One content item by `type` (`work \\| project \\| article \\| note`) and slug |"
     },
-    "CLAUDE.md:225": {
+    "CLAUDE.md:226": {
       "fp": "7e50950d4c69",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1577,7 +1598,7 @@
       ],
       "preview": "`src/app/mcp/page.tsx:35-45` renders the public `TOOLS` table — the documentation contract for"
     },
-    "CLAUDE.md:229": {
+    "CLAUDE.md:230": {
       "fp": "9ff4fe09e9b4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1585,7 +1606,7 @@
       ],
       "preview": "with the missing names in the message. So the count above is safe to quote."
     },
-    "CLAUDE.md:248": {
+    "CLAUDE.md:249": {
       "fp": "aba2e1c109bf",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -1594,39 +1615,32 @@
       ],
       "preview": "- Settings live in `src/lib/voice-settings.ts`; the full voice reference is `VOICE.md`"
     },
-    "CLAUDE.md:258": {
+    "CLAUDE.md:259": {
       "fp": "11dac942c0f3",
       "citedBy": [
         "07-components-3d.md",
         "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "**Two dependencies were declared but never imported — both removed in v3.5.0:**"
     },
-    "CLAUDE.md:259": {
-      "fp": "7256a02fd068",
-      "citedBy": [
-        "07-components-3d.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "- `@react-three/offscreen` — no worker/OffscreenCanvas ever existed; the \"worker offload\" this file "
-    },
     "CLAUDE.md:260": {
-      "fp": "2e118d6bb121",
+      "fp": "7256a02fd068",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "- `@react-three/rapier` — `NEXT_PUBLIC_GRAPH_PHYSICS=true` loads `scene-physics.tsx`, which is plain"
+      "preview": "- `@react-three/offscreen` — no worker/OffscreenCanvas ever existed; the \"worker offload\" this file "
     },
-    "CLAUDE.md:301": {
+    "CLAUDE.md:302": {
       "fp": "9dc619ab6356",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "| `src/app/api/chat/route.ts` | LLM streaming endpoint |"
     },
-    "CLAUDE.md:302": {
+    "CLAUDE.md:303": {
       "fp": "99f0ee3478c9",
       "citedBy": [
         "02-api-routes.md",
@@ -1638,7 +1652,7 @@
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (9 read-only tools) |"
     },
-    "CLAUDE.md:315": {
+    "CLAUDE.md:316": {
       "fp": "1ee7b642247c",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -1646,21 +1660,21 @@
       ],
       "preview": "BEDROCK_SECRET_ACCESS_KEY=<base64 or raw>"
     },
-    "CLAUDE.md:316": {
+    "CLAUDE.md:317": {
       "fp": "b0d730c76c06",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "BEDROCK_REGION=us-east-1"
     },
-    "CLAUDE.md:327": {
+    "CLAUDE.md:328": {
       "fp": "72c8a1d7e1bf",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "CRON_SECRET=...                       # /api/cron/eval protection"
     },
-    "CLAUDE.md:332": {
+    "CLAUDE.md:333": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1668,7 +1682,7 @@
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:334": {
+    "CLAUDE.md:335": {
       "fp": "6bfaa1fa9cbe",
       "citedBy": [
         "01-routes-pages.md",
@@ -1679,7 +1693,7 @@
       ],
       "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded in **19 files / 25 occurrences**, not f"
     },
-    "CLAUDE.md:337": {
+    "CLAUDE.md:338": {
       "fp": "c735d50e05ad",
       "citedBy": [
         "01-routes-pages.md",
@@ -1687,7 +1701,7 @@
       ],
       "preview": "grep -rn 'anvilry\\.vercel\\.app' src Makefile"
     },
-    "CLAUDE.md:342": {
+    "CLAUDE.md:343": {
       "fp": "dffce71fb498",
       "citedBy": [
         "01-routes-pages.md",
@@ -1695,14 +1709,14 @@
       ],
       "preview": "`src/components/json-ld.tsx` alone has **7** (`:29`, `:101`, `:125`, `:131`, `:160`, `:168` `BASE_UR"
     },
-    "CLAUDE.md:344": {
+    "CLAUDE.md:345": {
       "fp": "b724f72d31e9",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "- `src/app/`: `layout.tsx`, `sitemap.ts`, `robots.ts`, `mcp/page.tsx`, `opengraph-image.tsx`, `feed."
     },
-    "CLAUDE.md:350": {
+    "CLAUDE.md:351": {
       "fp": "2327d8ef5423",
       "citedBy": [
         "01-routes-pages.md",
@@ -1710,50 +1724,42 @@
       ],
       "preview": "Run the grep rather than trusting this list — it is the only thing that cannot go stale."
     },
-    "CLAUDE.md:362": {
+    "CLAUDE.md:363": {
       "fp": "8df27e647b20",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "## Testing Notes"
     },
-    "CLAUDE.md:364": {
+    "CLAUDE.md:365": {
       "fp": "838312356162",
       "citedBy": [
         "01-routes-pages.md",
+        "09-content-and-schemas.md",
         "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md",
         "README.md"
       ],
       "preview": "- `game-model.test.ts` asserts a bijection between graph nodes and content items — it **blocks deplo"
     },
-    "CLAUDE.md:365": {
+    "CLAUDE.md:366": {
       "fp": "327a95588243",
       "citedBy": [
-        "01-routes-pages.md",
-        "09-content-and-schemas.md",
         "10-tests-and-quality-gates.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **The prompt-injection / XSS guard is `src/components/chat/parse-cards.test.ts`** — do not weaken "
     },
-    "CLAUDE.md:366": {
-      "fp": "a0e770a8ba4f",
-      "citedBy": [
-        "10-tests-and-quality-gates.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "(`src/components/ask-portfolio.dom.test.tsx` — note the `.tsx` extension — is **not** this guard. It"
-    },
     "CLAUDE.md:367": {
-      "fp": "d194d114bc4a",
+      "fp": "a0e770a8ba4f",
       "citedBy": [
         "01-routes-pages.md",
         "10-tests-and-quality-gates.md"
       ],
-      "preview": "- `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `i"
+      "preview": "(`src/components/ask-portfolio.dom.test.tsx` — note the `.tsx` extension — is **not** this guard. It"
     },
     "CLAUDE.md:368": {
-      "fp": "319cc9eb1d74",
+      "fp": "d194d114bc4a",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "06-components-game-terminal.md",
@@ -1761,7 +1767,7 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "- `agent-trace.test.ts` does **not** block shipping — it is a *consistency* check. The assertion is "
+      "preview": "- `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `i"
     },
     "CLAUDE.md:37": {
       "fp": "232bafbce325",
@@ -1771,13 +1777,13 @@
       "preview": "# After build: generate Pagefind search index"
     },
     "CLAUDE.md:370": {
-      "fp": "ecfa947602f6",
+      "fp": "0482dc345902",
       "citedBy": [
         "01-routes-pages.md"
       ],
-      "preview": "- **Vitest runs two projects:** `node` (default, all `*.test.ts` except `*.dom.test.*`) and `dom` (h"
+      "preview": "What actually happens: `PLACEHOLDER_SENTINEL` (`\"[DRAFT — owner to approve]\"`) is currently present,"
     },
-    "CLAUDE.md:371": {
+    "CLAUDE.md:372": {
       "fp": "0d4e29e72035",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1785,7 +1791,7 @@
       ],
       "preview": "- Tests run as part of `pnpm build` — a failing test blocks deployment."
     },
-    "CLAUDE.md:373": {
+    "CLAUDE.md:374": {
       "fp": "cb3f91d54eee",
       "citedBy": [
         "10-tests-and-quality-gates.md"
@@ -1827,13 +1833,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- `ci.yml` — runs on every push + PRs to `develop`/`main`: lint → typecheck (`tsc --noEmit`) → `pnpm"
-    },
-    "CLAUDE.md:99": {
-      "fp": "8ee699235e16",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "**`bundle-analysis.yml` is DELETED — do not re-add it.** It was green and empty for its entire life:"
     },
     "content/projects/grpc-microservices.mdx:3": {
       "fp": "d25a6a52f41a",
@@ -14572,15 +14571,7 @@
       ],
       "preview": "{ label: \"Sairam Resume\", file: \"/resume/Sairam_Resume_MX_E.pdf\", tag: \"Backend & GenAI\" },"
     },
-    "src/lib/profile.ts:81": {
-      "fp": "9a600626c7f7",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "{ label: \"GenAI\", file: \"/resume/Sairam_Resume_MX_GAI.pdf\", tag: \"LLM Systems\" },"
-    },
-    "src/lib/profile.ts:82": {
+    "src/lib/profile.ts:78": {
       "fp": "358ba3f22237",
       "citedBy": [
         "01-routes-pages.md",

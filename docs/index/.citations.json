@@ -14571,15 +14571,7 @@
       ],
       "preview": "{ label: \"Sairam Resume\", file: \"/resume/Sairam_Resume_MX_E.pdf\", tag: \"Backend & GenAI\" },"
     },
-    "src/lib/profile.ts:81": {
-      "fp": "9a600626c7f7",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "{ label: \"GenAI\", file: \"/resume/Sairam_Resume_MX_GAI.pdf\", tag: \"LLM Systems\" },"
-    },
-    "src/lib/profile.ts:82": {
+    "src/lib/profile.ts:78": {
       "fp": "358ba3f22237",
       "citedBy": [
         "01-routes-pages.md",

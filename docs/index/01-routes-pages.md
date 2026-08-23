@@ -175,7 +175,7 @@ Build-artifact values below were read from the local `.next/prerender-manifest.j
 ### `src/app/resume/page.tsx`
 - **Role:** `/resume` — a client page with a segmented PDF/Web toggle, an iframe PDF preview with shimmer skeleton, and a flag-gated `<details>` list of role-targeted variants.
 - **Exports:** default `ResumePage` (`"use client"`).
-- **Behaviour notes:** `master = resumeVariants[0]` and `otherVariants = resumeVariants.slice(1)` are module-scope (`:16-17`); `profile.ts:76-82` defines 5 variants (master + Backend, Full-Stack, Frontend, GenAI). `showVariants` is read **inside the function body**, not at module scope, explicitly so `vi.stubEnv` works in tests (`:23-24`). The `"web"` tab renders `ResumeViewInline` — the *Inline* variant exists specifically to avoid nesting two `<main>` landmarks (`src/components/home/resume-view.tsx:255`).
+- **Behaviour notes:** `master = resumeVariants[0]` and `otherVariants = resumeVariants.slice(1)` are module-scope (`:16-17`); `profile.ts:76-78` defines the single canonical variant. `showVariants` is read **inside the function body**, not at module scope, explicitly so `vi.stubEnv` works in tests (`:23-24`). The `"web"` tab renders `ResumeViewInline` — the *Inline* variant exists specifically to avoid nesting two `<main>` landmarks (`src/components/home/resume-view.tsx:255`).
 - **Gotchas / invariants:** the PDF `<iframe src={master.file}>` (`:119-127`) only works because `next.config.ts:216-217` applies a `frame-ancestors`-relaxed `resumeHeaders` CSP override to `/resume` and `/resume/:path*`. `e2e/resume.spec.ts` covers both flag states of `NEXT_PUBLIC_RESUME_VARIANTS`.
 
 ### `src/app/search/page.tsx`

@@ -4,7 +4,7 @@ name: Trelix
 tagline: Offline code intelligence engine — Tree-sitter indexing, hybrid BM25+vector+graph search.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/trelix
-commits: 501
+commits: 1192
 tech: [Python, tree-sitter, sqlite-vec, SQLite, BM25, FastAPI, LiteLLM, networkx, Qdrant, LanceDB, PyInstaller, Pydantic]
 pinned: true
 pinRank: 5
@@ -25,3 +25,30 @@ The engine combines three parallel retrieval legs — **semantic embeddings** (v
 - **MCP server** — integrates natively with Claude Code, Cursor, Windsurf, LangChain, LlamaIndex
 
 > 929 unit tests + 16 integration tests, 75% coverage gate enforced. First stable release v1.0.0.
+
+## Architecture
+
+trelix runs as a single Python service around one SQLite file, in four layers:
+
+- **Indexer** — tree-sitter parses each file; an LLM summarizes each chunk (contextual chunking) before embedding; a call-graph builder tags edges with `callee_type_hint`.
+- **Storage** — `.trelix/index.db` holds sqlite-vec's HNSW index, FTS5 BM25, and the call-graph table in one file; Qdrant/LanceDB are optional swaps.
+- **Retrieval fan-out** — up to 7 legs (vector, BM25, grep, file-summary, graph-search, SPLADE-Code sparse, sub-chunk) merge via RRF (`k=60`), deduplicated on file path + symbol ID.
+- **Planner + synthesizer** — the 3-tier planner decides how much fan-out a query needs; GraphRAG map-reduce handles oversized results.
+
+## How It Works
+
+1. A save triggers the watcher (500ms debounce); tree-sitter re-parses the file.
+2. Each chunk gets an LLM summary before embedding — the 67% retrieval-failure cut behind contextual chunking.
+3. Chunk, embedding, FTS5 tokens, and call edges land in `.trelix/index.db`.
+4. A query hits the 3-tier planner: tier 1 answers direct lookups with no retrieval; tier 2 routes single-intent queries into 1 of 8 intent types; tier 3 has an LLM decompose first.
+5. Tiers 2 and 3 trigger up to 7 legs of fan-out (fewer by default — the extra legs are config-gated), fused by RRF and deduplicated on file path + symbol ID.
+6. Call-graph expansion walks 1 hop for most single-intent types — `feature_flow` is the exception, walking 2 hops despite the traversal code's own warning against it.
+7. Oversized results synthesize in batches via GraphRAG map-reduce; the LLM answers from real code paths, not a keyword list.
+
+## Key Decisions
+
+- **7-leg fan-out over a simpler pipeline, despite the cost.** No single tool combines all 7 legs, and RRF rewards agreement across them — but a full fan-out costs 50-500ms per query versus under 1ms for a tier-1 hit. The 3-tier planner exists to keep most queries out of that expensive path.
+- **"Beast-mode" features (FLARE, HyDE, multi-query expansion) ship opt-in.** Each is a real LLM cost — stacking HyDE and multi-query expansion runs N+2 chat calls (4 at default N=2). Docs recommend one flag at a time, not all on a slow backend.
+- **Call-graph depth caps at 1 hop for most single-intent queries, with one deliberate exception.** The traversal code warns against depth=2 for tier 2 to keep latency predictable, but `feature_flow` overrides that guidance — a "how does X flow" question needs the extra hop to be useful at all.
+
+A note on the numbers above: the frontmatter's 1,467 unit tests and the pull-quote's 929 unit + 16 integration disagree, and neither matches the repo today. 1,467 is CHANGELOG.md's exact v2.4.0 figure; 929/16 appears nowhere in the CHANGELOG, git history, or CI config. Live against HEAD (v3.2.5): **4,353 unit tests, 81 integration**, up from 1,643 at v2.9.0. The coverage gate moved too, from 75% (v1.0.0) to 79% today.

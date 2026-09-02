@@ -11,8 +11,8 @@ import { Reveal } from "@/components/ui/reveal";
 // build-time Velite import `allNotes`, so there is nothing to revalidate against. Fully static.
 
 export const metadata: Metadata = {
-  title: "Notes",
-  description: "Engineering notes & writing.",
+  title: "Writing",
+  description: "Long-form engineering writing.",
   alternates: { canonical: "/notes" },
 };
 
@@ -25,8 +25,8 @@ export default function NotesPage() {
   return (
     <main className="flex-1">
       <Section
-        label={`// engineering notes — ${allNotes.length} note${allNotes.length !== 1 ? "s" : ""}`}
-        title="Notes"
+        label={`// engineering writing — ${allNotes.length} piece${allNotes.length !== 1 ? "s" : ""}`}
+        title="Writing"
         titleAs="h1"
       >
         <div className="grid gap-5 sm:grid-cols-2">

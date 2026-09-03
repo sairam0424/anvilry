@@ -76,6 +76,12 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // No OAuth popups or cross-origin postMessage flows on this auth-less site, so
+  // same-origin isolation costs nothing. External links already open with
+  // noopener,noreferrer (command-palette, article cards), so they never relied on
+  // window.opener access that COOP would otherwise take away.
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
   // Voice requests the mic — scope it to same-origin and deny camera/geo/etc.
   {
     key: "Permissions-Policy",

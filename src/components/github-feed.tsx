@@ -1,5 +1,5 @@
 import { Star, GitFork } from "lucide-react";
-import type { GithubRepo } from "@/lib/github";
+import { pushedAgo, type GithubRepo } from "@/lib/github";
 
 /**
  * First-party GitHub repo feed (server-rendered from getRepoFeed()). Replaces the
@@ -9,20 +9,6 @@ import type { GithubRepo } from "@/lib/github";
  * Empty-safe: with no resolved repos (token unset + all private, or rate-limited at
  * build) the whole section renders nothing — never an error or an empty shell.
  */
-
-const RELATIVE = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
-/** "3 days ago" from an ISO timestamp; "" if unparseable (hidden). */
-function pushedAgo(iso: string): string {
-  if (!iso) return "";
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diffDays = Math.round((then - Date.now()) / 86_400_000);
-  if (diffDays <= -365) return RELATIVE.format(Math.round(diffDays / 365), "year");
-  if (diffDays <= -30) return RELATIVE.format(Math.round(diffDays / 30), "month");
-  if (diffDays <= -7) return RELATIVE.format(Math.round(diffDays / 7), "week");
-  return RELATIVE.format(diffDays, "day");
-}
 
 export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
   if (repos.length === 0) return null;
@@ -40,7 +26,9 @@ export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
               className="card-surface flex h-full flex-col gap-2 p-4 transition-colors"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="font-mono text-sm font-medium text-fg">{r.name}</span>
+                <span className="font-mono text-sm font-medium text-fg">
+                  {r.name}
+                </span>
                 <span className="flex items-center gap-3 font-mono text-xs text-fg-muted">
                   <span className="inline-flex items-center gap-1">
                     <Star size={12} aria-hidden="true" />
@@ -55,12 +43,17 @@ export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
                 </span>
               </div>
               {r.description && (
-                <p className="line-clamp-2 text-sm text-fg-muted">{r.description}</p>
+                <p className="line-clamp-2 text-sm text-fg-muted">
+                  {r.description}
+                </p>
               )}
               <div className="mt-auto flex items-center gap-3 pt-1 font-mono text-[11px] text-fg-muted">
                 {r.language && (
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
+                    <span
+                      className="size-2 rounded-full bg-accent"
+                      aria-hidden="true"
+                    />
                     {r.language}
                   </span>
                 )}

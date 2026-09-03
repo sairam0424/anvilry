@@ -216,7 +216,7 @@ Two named transition groups exist in the tree:
 - **Exports:** `ArticleSource` (type union: `medium | substack | linkedin | devto | hashnode | native`), `PlatformBadge` — props `{ source: ArticleSource }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `article-card.tsx`, `article-group-card.tsx`; the type is also referenced by `src/lib/article-grouping.ts`.
 - **Behaviour notes:** `SOURCE_CONFIG` hardcodes brand hex per platform with 0.08 bg / 0.2 border alpha (`:13-23`); `native` is labelled **"Essay"** with the accent cyan `#38e1ff`. Unknown sources fall back to `native` via `?? SOURCE_CONFIG.native` (`:26`).
-- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:102`).
+- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:109`).
 
 ### `src/components/github-feed.tsx`
 - **Role:** Server-rendered first-party GitHub repo grid.

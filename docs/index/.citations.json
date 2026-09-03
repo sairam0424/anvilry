@@ -3085,13 +3085,13 @@
       "preview": "\"dependencies\": {"
     },
     "package.json:23": {
-      "fp": "38ab0f4d31d0",
+      "fp": "7b39505492fd",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "README.md"
       ],
-      "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.32.1\","
+      "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.33.3\","
     },
     "package.json:27": {
       "fp": "dbc78eb9df14",
@@ -3164,14 +3164,14 @@
       "preview": "\"zod\": \"^3.25.76\""
     },
     "package.json:58": {
-      "fp": "c31a6b34c567",
+      "fp": "00eb105e188a",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"@next/bundle-analyzer\": \"^16.3.0\","
+      "preview": "\"@next/bundle-analyzer\": \"^16.3.3\","
     },
     "package.json:7": {
       "fp": "e52a1813c460",

@@ -17,7 +17,7 @@ const master = resumeVariants[0];
 const otherVariants = resumeVariants.slice(1);
 
 export default function ResumePage() {
-  const [tab, setTab] = useState<ResumeTab>("pdf");
+  const [tab, setTab] = useState<ResumeTab>("web");
   const [pdfLoading, setPdfLoading] = useState(true);
 
   // Read flag inside function body — NOT at module scope — so vi.stubEnv works in tests.
@@ -29,7 +29,8 @@ export default function ResumePage() {
       <Section label="// résumé" title="Sairam Resume" titleAs="h1">
         <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
           <p className="max-w-2xl text-fg-muted">
-            One verified engineering record — view as a formatted web résumé or preview the PDF.
+            One verified engineering record — view as a formatted web résumé or
+            preview the PDF.
           </p>
 
           {/* Segmented PDF / Web toggle — matches ViewSwitcher pill pattern */}
@@ -60,7 +61,11 @@ export default function ResumePage() {
                       layoutId="resume-tab-pill"
                       aria-hidden="true"
                       className="absolute inset-0 z-0 rounded-full bg-accent"
-                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 420,
+                        damping: 34,
+                      }}
                     />
                   )}
                   <span className="relative z-10 inline-flex items-center gap-1.5">
@@ -85,11 +90,13 @@ export default function ResumePage() {
             transition={{ duration: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
           >
             {/* ── Master PDF preview ──────────────────────────────────────── */}
-            <Section label="// preview" title="">
+            {/* pt-0: the header Section above already contributes its own py-20/24
+                bottom padding; stacking this Section's matching top padding on top of
+                that left ~190px of dead space between the toggle row and this label. */}
+            <Section label="// preview" title="" className="pt-0 sm:pt-0">
               <div className="mb-4 flex items-center justify-between">
                 <p className="font-mono text-xs text-fg-subtle">
-                  Viewing:{" "}
-                  <span className="text-accent">{master.label}</span>
+                  Viewing: <span className="text-accent">{master.label}</span>
                   <span className="ml-2 text-fg-subtle/60">{master.tag}</span>
                 </p>
                 <a
@@ -130,7 +137,7 @@ export default function ResumePage() {
 
             {/* ── Role-targeted variants — only rendered when flag is ON ──── */}
             {showVariants && (
-              <Section label="// variants" title="">
+              <Section label="// variants" title="" className="pt-0 sm:pt-0">
                 <details className="group">
                   <summary className="flex cursor-pointer list-none items-center gap-2 text-sm text-fg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                     <ChevronRight
@@ -151,9 +158,15 @@ export default function ResumePage() {
                         className="card-surface flex items-center justify-between p-4"
                       >
                         <div className="flex items-center gap-3">
-                          <FileText size={18} className="shrink-0 text-fg-subtle" aria-hidden="true" />
+                          <FileText
+                            size={18}
+                            className="shrink-0 text-fg-subtle"
+                            aria-hidden="true"
+                          />
                           <div>
-                            <p className="text-sm font-medium text-fg">{v.label}</p>
+                            <p className="text-sm font-medium text-fg">
+                              {v.label}
+                            </p>
                             <p className="text-xs text-fg-subtle">{v.tag}</p>
                           </div>
                         </div>

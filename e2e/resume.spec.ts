@@ -9,29 +9,33 @@ import { test, expect } from "@playwright/test";
  */
 
 test.describe("/resume page — flag OFF (default)", () => {
-  test("loads with h1 'Sairam Resume' and PDF tab active", async ({ page }) => {
+  test("loads with h1 'Sairam Resume' and Web tab active", async ({ page }) => {
     await page.goto("/resume");
 
-    await expect(page.getByRole("heading", { name: "Sairam Resume", level: 1 })).toBeVisible();
-
-    // PDF button is the active tab
-    const pdfButton = page.getByRole("button", { name: "PDF résumé" });
-    await expect(pdfButton).toBeVisible();
-    await expect(pdfButton).toHaveAttribute("aria-pressed", "true");
-
-    // Web button is inactive
-    await expect(page.getByRole("button", { name: "Web résumé" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-
-    // Master PDF iframe is present
     await expect(
-      page.locator('iframe[title="Sairam Resume résumé preview"]'),
-    ).toBeAttached();
+      page.getByRole("heading", { name: "Sairam Resume", level: 1 }),
+    ).toBeVisible();
+
+    // Web button is the active tab (readable + indexable beats an inline PDF by default)
+    const webButton = page.getByRole("button", { name: "Web résumé" });
+    await expect(webButton).toBeVisible();
+    await expect(webButton).toHaveAttribute("aria-pressed", "true");
+
+    // PDF button is inactive
+    await expect(
+      page.getByRole("button", { name: "PDF résumé" }),
+    ).toHaveAttribute("aria-pressed", "false");
+
+    // Inline HTML résumé is present; PDF iframe is not (AnimatePresence unmounts the PDF tab tree)
+    await expect(
+      page.getByRole("heading", { name: "Sairam Ugge" }),
+    ).toBeVisible();
+    await expect(page.locator("iframe")).not.toBeAttached();
   });
 
-  test("variants section is absent from DOM when flag is OFF", async ({ page }) => {
+  test("variants section is absent from DOM when flag is OFF", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     // The entire Section "// variants" must not be rendered
@@ -39,50 +43,64 @@ test.describe("/resume page — flag OFF (default)", () => {
     await expect(page.getByText("Role-targeted variants")).not.toBeVisible();
   });
 
-  test("switches to Web view and shows inline HTML résumé", async ({ page }) => {
+  test("switches to Web view and shows inline HTML résumé", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     await page.getByRole("button", { name: "Web résumé" }).click();
 
     // Web button becomes active
-    await expect(page.getByRole("button", { name: "Web résumé" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await expect(
+      page.getByRole("button", { name: "Web résumé" }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     // Inline HTML résumé shows the owner's real name
-    await expect(page.getByRole("heading", { name: "Sairam Ugge" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sairam Ugge" }),
+    ).toBeVisible();
 
     // iframe is removed from DOM (AnimatePresence unmounts the PDF tab tree)
     await expect(page.locator("iframe")).not.toBeAttached();
   });
 
-  test("Web view PDF downloads section shows only master pill (flag OFF)", async ({ page }) => {
+  test("Web view PDF downloads section shows only master pill (flag OFF)", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     await page.getByRole("button", { name: "Web résumé" }).click();
-    await expect(page.getByRole("heading", { name: "Sairam Ugge" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sairam Ugge" }),
+    ).toBeVisible();
 
     // Only the master pill link is present
-    await expect(page.getByRole("link", { name: /Sairam Resume/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Sairam Resume/ }),
+    ).toBeVisible();
 
     // Role-targeted variant pills must not exist in DOM at all (never rendered, not just hidden)
-    await expect(page.getByRole("link", { name: /Backend/ })).not.toBeAttached();
-    await expect(page.getByRole("link", { name: /Full-Stack/ })).not.toBeAttached();
+    await expect(
+      page.getByRole("link", { name: /Backend/ }),
+    ).not.toBeAttached();
+    await expect(
+      page.getByRole("link", { name: /Full-Stack/ }),
+    ).not.toBeAttached();
   });
 
   test("returns to PDF view when PDF tab is re-clicked", async ({ page }) => {
     await page.goto("/resume");
 
     await page.getByRole("button", { name: "Web résumé" }).click();
-    await expect(page.getByRole("heading", { name: "Sairam Ugge" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sairam Ugge" }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "PDF résumé" }).click();
 
-    await expect(page.getByRole("button", { name: "PDF résumé" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await expect(
+      page.getByRole("button", { name: "PDF résumé" }),
+    ).toHaveAttribute("aria-pressed", "true");
     await expect(
       page.locator('iframe[title="Sairam Resume résumé preview"]'),
     ).toBeAttached();
@@ -101,7 +119,9 @@ test.describe("/resume page — flag ON (NEXT_PUBLIC_RESUME_VARIANTS=true)", () 
     "Requires NEXT_PUBLIC_RESUME_VARIANTS=true — see comment above",
   );
 
-  test("variants section is present and collapsed by default", async ({ page }) => {
+  test("variants section is present and collapsed by default", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     const details = page.locator("details");
@@ -110,24 +130,40 @@ test.describe("/resume page — flag ON (NEXT_PUBLIC_RESUME_VARIANTS=true)", () 
     await expect(page.getByText("Role-targeted variants")).toBeVisible();
   });
 
-  test("expanding variants disclosure shows 4 role-targeted cards", async ({ page }) => {
+  test("expanding variants disclosure shows 4 role-targeted cards", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     await page.locator("summary").click();
 
-    await expect(page.getByRole("link", { name: "Download Backend résumé" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Download Full-Stack résumé" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Download Frontend résumé" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Download GenAI résumé" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download Backend résumé" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download Full-Stack résumé" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download Frontend résumé" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download GenAI résumé" }),
+    ).toBeVisible();
   });
 
-  test("Web view PDF downloads shows all 5 pills when flag is ON", async ({ page }) => {
+  test("Web view PDF downloads shows all 5 pills when flag is ON", async ({
+    page,
+  }) => {
     await page.goto("/resume");
 
     await page.getByRole("button", { name: "Web résumé" }).click();
-    await expect(page.getByRole("heading", { name: "Sairam Ugge" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sairam Ugge" }),
+    ).toBeVisible();
 
-    await expect(page.getByRole("link", { name: /Sairam Resume/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Sairam Resume/ }),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Backend/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Full-Stack/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /Frontend/ })).toBeVisible();

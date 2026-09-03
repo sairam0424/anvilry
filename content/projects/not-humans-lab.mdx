@@ -1,23 +1,45 @@
 ---
 slug: not-humans-lab
 name: Not-Humans-Lab
-tagline: Federated AI-infrastructure workspace.
+tagline: Governance layer over three personal sub-projects.
 group: Tooling & Lab
 repo: https://github.com/sairam0424/not-humans-lab
-commits: 289
-tech: [TypeScript, Python, Go, Temporal, Qdrant]
+commits: 2
+tech: [TypeScript, "Node.js", Astro, Markdown]
 pinned: false
 featured: false
 order: 6
-excerpt: A polyglot monorepo federating four independent AI-infra sub-projects, each with its own toolchain — Turborepo + Temporal + FastAPI + Go + Qdrant.
+excerpt: A documentation-and-governance layer with no shared code — three independent sub-projects (daily-dose, nh-deck, nh-skills) each keep their own toolchain, standardized only by ADRs, Conventional Commits, and mandatory PR review.
 ---
 
-**Not-Humans-Lab** is a thin root workspace that federates four independent AI-infrastructure sub-projects (SkillStack, Deep-Research, Agent-Hub, rate-limit-observatory) — each retaining its own toolchain rather than a single shared build graph.
+**Not-Humans-Lab** is a documentation-and-governance layer over three independent, personal sub-projects — **daily-dose** (an AI-curated arXiv + Hacker News digest), **nh-deck** (a local-first Markdown/HTML presentation CLI), and **nh-skills** (a personal collection of AI-agent Skills) — each keeping its own toolchain rather than folding into shared build tooling.
 
-It is polyglot by design: a **Turborepo + pnpm** workspace with Next.js apps, Python services on **uv + Temporal** (durable workflow orchestration) + FastAPI, Go services, and a **Qdrant** vector store. Root tooling standardizes commit hygiene (Commitizen, commitlint, Husky) across the heterogeneous sub-projects.
+It's deliberately code-light at the root: no scaffolded `package.json`, no shared build graph, no CI runner. What's centralized instead is governance — Apache-2.0 licensing, a trunk-based Conventional-Commits branch strategy, and Michael Nygard-style Architecture Decision Records for any choice that cuts across sub-projects.
 
-- Federates 4 AI-infra sub-projects
-- Temporal durable workflows · Qdrant vectors
-- Polyglot: TypeScript · Python · Go
+- Governance layer over 3 personal sub-projects: daily-dose · nh-deck · nh-skills
+- No shared build tooling by design (YAGNI) — each sub-project keeps its own toolchain
+- ADRs + Conventional Commits + mandatory PR review, even solo
 
-> 289 commits.
+> 2 commits — a brand-new umbrella, still finding its shape.
+
+## Architecture
+
+The real workspace has no code to architect — it's a documentation-and-governance layer over three independent sub-projects, each living outside this repo. CLAUDE.md states it outright: no build/test/lint tooling here, no scaffolded `package.json`. What the repo actually federates is:
+
+- **daily-dose** — an AI-curated arXiv + Hacker News digest, built on Astro + TypeScript/Node.
+- **nh-deck** — a local-first Markdown/HTML presentation CLI (TypeScript/Node, Commander.js, marked, puppeteer-core/chrome-launcher, Vitest).
+- **nh-skills** — a personal collection of AI-agent Skills: pure Markdown/YAML plus one Node validator script.
+
+There is deliberately no shared build graph, package manager, or CI runner at the root — tech.md is explicit that "no monorepo tooling [is] adopted at this level." The only things standardized centrally are the license (Apache-2.0, chosen for its patent grant) and a trunk-based, Conventional-Commits branch strategy. The architecture doc is capped at C4 Level 1 — three boxes, one relationship: nh-skills' still-unbuilt "blog-to-deck" skill that would eventually invoke nh-deck.
+
+## How It Works
+
+With no runtime, "how it works" here means how a decision gets made and stays made. Architecture-level choices go through Michael Nygard-style Architecture Decision Records under `docs/adr/` — sequentially numbered, never edited after acceptance, only superseded by a later ADR (ADR-0001, accepted 2026-09-02, formalizes the practice itself). Decisions scoped to a single sub-project stay in that sub-project's own file; `decisions.md` at the root is reserved for choices that cut across two or more of daily-dose, nh-deck, and nh-skills. Two dated, cross-cutting agent-behavior learnings are logged in `agent_learning.md`: parallel docs-writing and code-writing agents given the same prose spec independently invented different, non-matching directory structures across all three sub-projects (nh-deck's docs described `src/commands/`, `src/render/`, `src/server/`, `src/export/` subdirectories, while the real code stayed flat — `src/render.ts`, `src/server.ts`, `src/pdfExport.ts`); and a machine-global ConfigProtection hook blocks any write to a new sub-project's `tsconfig.json` without an explicit per-path exception.
+
+## Key Decisions
+
+**No shared build tooling, over a Turborepo/pnpm umbrella.** Each sub-project keeps its own toolchain instead of folding into shared build tooling — framed as YAGNI ("each project's toolchain is small enough on its own... shared tooling would add coordination cost without a proven need"). The cost: the architecture doc's own Risks section admits the layout is "unvalidated against real code," and the system-level tech-stack research pass meant to back this call came back as a placeholder/error — thinner-evidenced than the three project-level stack decisions it sits alongside.
+
+**Numbered ADRs, over commit-message-driven history.** Cross-cutting decisions get a Nygard-style ADR instead of living only in commit messages or PR threads, at the cost of "a small amount of process overhead per significant decision" and a standing risk that the practice quietly lapses back into chat-only decisions if nobody keeps writing them.
+
+**Mandatory PR review, over direct commits — even solo.** `main` is protected: no force-push, no direct commits, a PR required even when the maintainer is the only contributor. There's no team to review for; the stated purpose is a single self-imposed checkpoint against agent output, deliberately removing the option to bypass CI "just this once."

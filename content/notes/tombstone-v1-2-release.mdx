@@ -1,0 +1,88 @@
+---
+slug: tombstone-v1-2-release
+title: "We Shipped Tombstone v1.0. Then We Found Nine Bugs That Would Have Paged Us at 2am."
+date: 2026-07-05
+summary: "What happened when we pressure-tested Tombstone v1.0 against production reality: a kill switch silently returning 400, approval endpoints wired to routes never registered, a scheduler that could double-fire. Nine bugs. Nine fixes. Here's the post-mortem."
+tags: ["devops", "open-source", "system-design", "go", "feature-flags", "incident-response"]
+draft: false
+tone: senior
+format: narrative
+length: comprehensive
+category: incident-response
+readingTime: 9
+platforms: []
+---
+
+## Why We Pressure-Tested v1.0 Before Anyone Else Touched It
+
+Tombstone exists to prevent the next Knight Capital — a system whose entire premise is that a feature flag change should never be able to silently detonate in production without an audit trail, a rollback path, and a human who can act on both in seconds. Shipping v1.0.0 with that premise unverified would have been the exact failure mode the project was built to eliminate.
+
+So instead of waiting for the first real incident to find our bugs for us, we deliberately went looking for them: ran the kill switch under a simulated outage, exercised the four-eyes approval flow end-to-end, deployed onto a fresh environment the way an actual self-hoster would, and pointed our own load-shedding middleware at the very health probes that are supposed to keep the cluster alive. Eight days after v1.0.0, on 2026-07-05, we shipped v1.2.0 and v1.2.1 back to back. Nine bugs. Nine fixes. All under GitHub issue #74.
+
+None of these were exotic. Every one of them was the kind of bug that looks completely fine in a demo and only shows up once something is under real load, running on real infrastructure, being operated by someone who isn't the person who wrote the code.
+
+## The Scheduler That Could Double-Fire
+
+The first one we found wasn't even in the "nine" — it surfaced a day earlier, while stress-testing horizontal scaling for v1.2.0. Tombstone lets you schedule a flag change for a future timestamp: an engineer authors it, a second engineer approves it, and the system executes it later, unattended. That's exactly the kind of write path where "unattended" and "runs on more than one replica" is a dangerous combination.
+
+Our scheduler polled for due changes and executed them. Scale to two replicas, and both instances can poll the same due row in the same window and both try to execute it. We caught it in a replica-scaling test, not in production — but the failure mode is precisely the kind of double-fire that would have looked like a flaky flag evaluation to anyone downstream, with no obvious cause.
+
+The fix was a single SQL clause doing the actual work: `SELECT FOR UPDATE SKIP LOCKED`. One replica locks the due row and executes it; every other replica polling the same table skips straight past a locked row instead of blocking or racing it. We layered retry/backoff on top — up to three attempts, exponential from one minute to four — so a transient failure doesn't strand a scheduled change in limbo, but the concurrency-safety property is the row lock, not the retry logic.
+
+**The DLQ was silently dropping poison messages.** The same stress pass turned up a second concurrency problem, this time in event delivery rather than scheduling. gateway and the intelligence service both consume flag-change events off Redis Streams, and a message that a consumer repeatedly fails to process — a poison message — was simply lost once retries ran out. Nobody was notified; the stream just moved on without it. We added a dead-letter queue: failed deliveries stay in the Pending Entries List, get reclaimed by a 15-second sweep (`XPENDING` + `XCLAIM`), and after three delivery attempts route to a `<stream>:dlq` key instead of vanishing, with an auth-guarded endpoint to replay them manually once the underlying cause is fixed. For a system whose entire pitch is "you can trust the audit trail," a message that silently disappears from the delivery pipeline is the same category of failure as an audit entry that never got written — it just happens one layer further downstream.
+
+**Retried writes could double-count in the audit log.** Idempotency was the third thing this pass forced us to confront. `CreateFlag`, `UpdateEnvironment`, and `KillSwitch` are exactly the endpoints a retrying client — a flaky network, a well-meaning script, an on-call engineer double-clicking a kill switch button under stress — is most likely to call twice. Without protection, a retried request doesn't just re-run the handler; it writes a *second* audit row for what looks like one logical action, which corrupts the very audit trail the retry was trying to complete safely. We added an opt-in `Idempotency-Key` header, scoped to `(actor, idempotency_key, endpoint)` specifically so one caller's replay key can never collide with a different caller's, and a replayed request now returns the stored response from the first attempt instead of re-invoking the handler or touching the audit log again.
+
+Both of those shipped in v1.2.0, alongside the scheduler fix, before we'd even finished the pass that found the nine bugs below — all filed under a single issue, #74.
+
+## The Silent-Failure Cluster: When "Success" Was a Lie
+
+Three of the nine shared the same shape: the system reported success while the operation had actually failed, which is worse than an honest error, because nobody goes looking for a problem that claims not to exist.
+
+**The Slack kill switch always returned 400.** Our on-call runbook's primary incident-response path — hit the kill switch from Slack — sent `environment` as a URL query parameter. The handler read it from the JSON body. Every single invocation returned HTTP 400. In a real incident, an on-call engineer typing `/tombstone kill payments-checkout` would have gotten a failure response on the exact path the whole system exists to make reliable.
+
+**The Datadog auto kill switch reported success while getting rejected.** Datadog can be configured to trigger a kill switch automatically when a monitor fires. The integration's `postKillSwitch` call sent no `Authorization` header at all. flag-api correctly rejected every call with HTTP 401 — and the integration layer logged that as a successful kill switch anyway, because nothing was actually checking the response status.
+
+```json
+// what the integration logged
+{ "event": "auto_kill_switch", "status": "success", "flag": "payments-checkout" }
+
+// what flag-api actually returned
+{ "status": 401, "error": "missing bearer token" }
+```
+
+Two systems, two completely different beliefs about whether the kill switch had fired, and no alert bridging that gap.
+
+**The audit log's `actor` field was always `"unknown"`.** `auth.go` and `flags.go` used different Go context-key types to carry the authenticated actor's identity through the request. A type mismatch at the context-key level means a lookup silently misses instead of erroring — the field doesn't blow up, it just quietly resolves to nothing. Every audit entry, going back to whenever this shipped, recorded a change happened but not who made it. For a system whose entire value proposition is a trustworthy audit trail, that's not a cosmetic bug.
+
+The common thread across all three: each one degrades a *safety* mechanism specifically, not a feature. A broken button is annoying. A kill switch that reports success while silently failing is the failure mode Tombstone was built to prevent, happening inside Tombstone itself.
+
+## The Wiring Gap: Built, Tested, Never Connected
+
+The four-eyes approval workflow — list pending changes, approve, reject — was fully implemented. The handlers existed, the logic was correct, and as far as we could tell nothing in the code itself was wrong. The three routes were simply never registered in `flag-api/cmd/main.go`. They were unreachable, full stop, not through any request-time failure but because nothing ever wired them into the router at startup.
+
+This is the specific failure mode integration tests exist to catch and unit tests structurally cannot: every individual handler could have 100% passing unit test coverage and this bug would still ship, because the bug isn't in any function's behavior — it's in the absence of a single line connecting the function to a route. A unit test that calls the handler function directly, in-process, never touches the router at all, so it can pass forever while the route it's supposedly testing remains completely unreachable from outside the binary. The only test that catches this is one that actually issues an HTTP request against the running service and expects a real response — which is exactly why we found it by driving the feature end-to-end the way a real approver would, clicking through the same paths a genuine four-eyes review requires, rather than trusting that green unit tests meant the feature was live.
+
+## Infrastructure Bugs That Only Show Up Under Load
+
+Two more bugs shared a different pattern: they were invisible in a local `make dev` loop and only appeared once we deployed the way a real self-hoster deploys.
+
+**Fresh deployments crashed with a missing table.** `make migrate` applied `schema.sql` — the baseline — but not the incremental migration files layered on top of it. On any environment that had been running since before those migrations existed, the tables were already there and nobody noticed. On a genuinely fresh deployment, the very first write hit `relation "scheduled_changes" does not exist` and crashed. This is a bug that is structurally invisible to anyone testing against a long-lived dev database and structurally guaranteed to hit every brand-new self-hosted install.
+
+**Kubernetes was starving our own services of traffic.** We'd shipped rate limiting and adaptive load shedding to protect flag-api and evaluator from getting overwhelmed. Neither middleware had `/readyz` in its exempt-paths list. Under sustained load, the rate limiter and load shedder started returning 429s and 503s *to Kubernetes' own readiness probe*, which then concluded the pod wasn't ready and pulled it from service — precisely the traffic-shedding behavior we'd built to protect the service, now aimed at the health check that was supposed to keep it alive. The fix is one line per middleware — add `/readyz` to the exempt list — but finding it required actually generating sustained load against a real cluster, not a local dev loop that never gets busy enough to trip the limiter.
+
+## Cleaning Up What CI Was Hiding
+
+The last three were about the test suite itself no longer being honest about what it verified.
+
+CI's test steps used `|| true`, which meant a failing test logged red text and then exited zero — the pipeline was green regardless of whether tests actually passed. We removed it. That's not a fix to application code; it's a fix to whether any of the *other* fixes in this release could have been caught by CI in the first place, and a tacit admission that some of the eight bugs above should have been caught earlier and weren't, because the safety net had a hole in it.
+
+Two smaller items closed out the same cleanup pass: the intelligence service's async test suite was missing `pytest-asyncio`, so `async def` tests weren't actually executing as async tests at all; and an unused `pyod>=0.9.0` dependency was blocking `uv sync` on Python 3.12, which meant contributors on a current Python version couldn't even get a working install to run the (now-honest) test suite against.
+
+## Nine Bugs, Nine Fixes, One Lesson
+
+Line up the full set from this release and the pattern is obvious in hindsight, even though none of it was obvious going in. A scheduler that could double-fire across replicas. A dead-letter queue that didn't exist yet, so poison messages just disappeared. Retried writes that could double-count in the audit log. A kill switch that 400s. An auto-kill-switch that 401s and calls it success anyway. An audit log that forgets who acted. An approval workflow that was fully built but never plugged into the router. A fresh install that can't even boot. Health checks starved by the very middleware meant to protect them. A CI pipeline that would have stayed green through every one of the above.
+
+Group them by cause rather than by symptom and there are really only two categories: bugs that only exist once you scale past a single instance or a single request (the scheduler, the DLQ, idempotency — all concurrency and distributed-systems failure modes that a single-replica local dev loop cannot produce), and bugs that only exist once you stop being the person who already knows the code (the wiring gap, the silent failures, the CI gap — all failure modes that only surface when someone drives the system the way an actual operator would, not the way its author already knows to use it). Every single one was invisible in the ten-minute demo path. Every single one is exactly what you'd hit the first time this ran for real, under real load, operated by someone other than the person who wrote it — which, for a self-hosted platform whose users are by definition not its author, is the only scenario that actually matters.
+
+That's the real argument for pressure-testing your own safety system before anyone else trusts it with theirs. Tombstone's whole reason to exist is that Knight Capital had no system tracking whether a "successful" flag flip was actually successful, and no tombstoned key to stop a dead flag from being silently reactivated nine years later. Shipping v1.0 with our own kill switch silently returning 400, or our own audit log silently forgetting who acted, would have been the same category of failure, just smaller in blast radius — and this time, caught before it mattered instead of at 2am during someone else's incident.

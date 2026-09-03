@@ -4,7 +4,7 @@ name: CommandVault
 tagline: Universal AI command manager.
 group: Tooling & Lab
 repo: https://github.com/sairam0424/CommandVault
-commits: 139
+commits: 140
 tech: [TypeScript, "VS Code Extension", CLI, SQLite]
 pinned: false
 featured: false
@@ -14,10 +14,34 @@ excerpt: Indexes 350+ slash commands, skills, agents, and plugins across Claude 
 
 **CommandVault** indexes the **350+ slash commands, skills, agents, plugins, rules, and hooks** scattered across Claude Code, Cursor, Copilot, Windsurf, and Aider into a single searchable vault.
 
-Built as a pnpm + Turborepo monorepo with three packages: a **core engine** (parsers for all six entry types, a three-tier search stack of Fuse.js fuzzy + MiniSearch indexed + SQLite FTS5 full-text with weighted ranking, an LRU cache, and a Chokidar file watcher), an **18-command Commander.js CLI**, and a **VS Code extension** with a TreeView sidebar and React stats webview. SQLite persistence handles favorites, usage, tags, and versioned schema migrations, with FTS5 token sanitization and SSRF protection on remote sync.
+Built as a pnpm + Turborepo monorepo with three packages: a **core engine** (parsers for all six entry types, a three-tier search stack of Fuse.js fuzzy + MiniSearch indexed + SQLite FTS5 full-text with weighted ranking, an LRU cache, and a Chokidar file watcher), a **20-command Commander.js CLI**, and a **VS Code extension** with a TreeView sidebar and React stats webview. SQLite persistence handles favorites, usage, tags, and versioned schema migrations, with FTS5 token sanitization and SSRF protection on remote sync.
 
 - **Three-tier search:** fuzzy + indexed + FTS5
-- VS Code extension · 18-command CLI · core engine
+- VS Code extension · 20-command CLI · core engine
 - 6 AI-assistant formats unified
 
-> 139 commits.
+> 140 commits.
+
+## Architecture
+
+Three packages wired by `turbo.json`'s build graph: **`@commandvault/core`** builds first, then **`@commandvault/cli`** and **`commandvault-ai`** (the VS Code extension) build in parallel against it. Core owns persistence, parsing, and search.
+
+Persistence runs through a shared `DatabaseAdapter` interface: **better-sqlite3** (native, WAL-mode) is preferred, but `database-factory.ts` falls back to **sql.js** (pure WASM) when native bindings aren't available — the case inside the VS Code extension, since Electron's bundled Node breaks native-module ABI compatibility. Parsing is 13 files under `parsers/`: the live file-watch flow routes to six format parsers (skill, agent, command, plugin, rule, hook); a seventh, multi-agent parser (Cursor/Copilot/Windsurf/Aider/Continue) also lives in the registry but isn't wired into that same watch path. A Chokidar watcher in `vault.ts` debounces filesystem events before any of it runs.
+
+## How It Works
+
+1. A file changes on disk; `vault.ts` holds the event behind a hard-coded 500ms debounce so a burst of saves collapses into one re-parse.
+2. The path router matches the file to one of the six format parsers wired into the watcher and produces a typed vault entry.
+3. The entry writes through the active `DatabaseAdapter` into SQLite, which persists favorites, usage counts, tags, and the entry's full content — untruncated, since an earlier 2000-char cap on this tier was deliberately removed.
+4. The same entry is pushed into Fuse.js and MiniSearch, both of which truncate content to 500 characters before indexing.
+5. A search query hits whichever tier is active — Fuse.js, MiniSearch, or FTS5, selected by an explicit `tier` option or the `minisearch` default — and scores its hits with the same formula: 55% text relevance, 20% usage frequency, 15% recency, 10% favorite boost. The three tiers are swappable strategies, not a concurrent fan-out.
+6. The CLI and VS Code extension both read this through core's public API — one prints to the terminal, the other renders it in a TreeView sidebar and stats webview.
+7. `vault sync` and `vault import <url>` share the same `importFromUrl()` path, where outbound URLs pass through `validateUrl()` — it blocks private/internal hostnames and re-checks IPv4-mapped-IPv6 addresses after stripping the mapping, closing a bypass a naive hostname check would miss. `vault registry`'s own remote fetch is a separate code path that doesn't go through this guard.
+
+## Key Decisions
+
+**Two SQLite engines instead of one.** better-sqlite3 gives native speed for the CLI; sql.js gives a pure-WASM fallback for the extension, which can't ship a native module across Electron's ABI. The cost is real — two adapters must stay behaviorally identical and both get tested — paid so the extension isn't a degraded second product.
+
+**A fixed 500ms debounce, not per-event parsing.** Every save waits up to half a second before the vault reflects it, even an isolated change — a latency floor accepted so bulk operations like a branch checkout don't trigger a parse storm.
+
+**500-character truncation in the two fast search tiers, full content in the slow one.** Fuse.js and MiniSearch cap indexed content at 500 characters; FTS5 stores everything, after an earlier 2000-char cap on that tier was explicitly removed. The fast tiers trade match depth for speed — a match buried deep in a long file only ever surfaces through FTS5.

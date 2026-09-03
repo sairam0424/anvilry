@@ -1,0 +1,146 @@
+---
+slug: trelix-code-intelligence-engine
+title: "I Built trelix Because I Was Tired of Grepping My Way Through Codebases"
+date: 2026-07-05
+summary: "How I built trelix — a zero-infra code intelligence engine that indexes any repo with Tree-sitter, runs 7-leg RRF retrieval, and answers questions about your codebase offline. From four hours of archaeology to a query that returns in 200ms."
+tags: ["python", "open-source", "ai", "code-search", "developer-tools", "mcp"]
+draft: false
+tone: senior
+format: narrative
+length: comprehensive
+category: developer-tools
+readingTime: 9
+platforms: []
+---
+
+## Four Hours of Archaeology
+
+I spent most of a day on a new team grepping through 80,000 lines of code trying to find where authentication worked. Four hours. Three teammates interrupted. Twelve dead ends across files I didn't understand. The code itself was fine — well-written, reasonably organized, not a mess by any objective measure. The tooling was the problem. I was using grep to answer a question that was never a text-search problem in the first place.
+
+Code has structure that grep is structurally blind to: call edges, import chains, type hierarchies, AST relationships. When you ask "how does authentication work?", the honest answer isn't a file, or even a handful of files — it's a traversal of a graph, starting from a semantic entry point and following edges until you've collected the relevant context. Grep finds strings. It has no model of the graph at all.
+
+That day stuck with me, mostly because it wasn't a one-off. I kept hitting the same pattern on different teams, different codebases, different languages. Joining something new, or coming back to a project after six months away, meant the first few days were archaeology — tracing calls by hand, reconstructing context that should have been queryable from the start.
+
+trelix is the tool I built to stop doing that. It's an open-source code intelligence engine that indexes any repository with Tree-sitter, embeds every symbol, and answers natural-language questions using hybrid BM25 + vector + call-graph search. It runs offline, needs no API key, and requires zero infrastructure beyond a single file:
+
+```bash
+pip install "trelix[local]"
+trelix index ./my-repo
+trelix ask ./my-repo "how does the authentication middleware work?"
+```
+
+## What trelix Actually Indexes
+
+Editors, grep, ctags, and language servers were all designed for *writing* code, not for understanding it at scale. They're excellent at navigating to a known destination and poor at answering questions like "how does the request lifecycle work end-to-end?" when you don't already know where to look.
+
+Vector search closes part of that gap — semantic similarity gets you nearer to the right files without knowing the exact tokens — but pure vector search still misses structural relationships. It has no idea that `UserRepository.get_by_token()` is always called by `AuthMiddleware.verify()`, which is in turn called by every protected route handler. That's call-graph knowledge, not embedding knowledge, and the two aren't substitutes for each other. trelix uses both, deliberately, rather than treating one as good enough.
+
+Everything lands in a single SQLite file, `.trelix/index.db`. That file contains every symbol extracted via Tree-sitter — functions, classes, methods, their bodies and line spans — plus call edges and import edges between symbols and files, and a hybrid search index combining `sqlite-vec` HNSW vectors with FTS5 BM25. One file. No sidecar services to keep alive.
+
+Since v2.1.0, that index also carries a Code Property Graph — a structure that unifies the AST, the control-flow relationships, and the call/import edges into one traversable NetworkX graph rather than three separate representations you'd have to cross-reference by hand. The value of collapsing them into a single graph is that a query like "what's the blast radius of changing this function's signature" is a graph traversal — walk outward from the changed symbol along call edges — instead of a manual exercise in opening call sites one at a time and hoping you didn't miss one. That's the same shape of problem as the original grep story, just one level more structural: even once you know *where* a symbol is, understanding everything that depends on it is still a graph question, not a text-search question.
+
+## The 3-Tier Query Router
+
+A query like `trelix ask ./repo "explain how authentication works"` doesn't hit the same retrieval path every time. It goes through a 3-tier adaptive router:
+
+**Tier 1 (Direct)** handles simple factual patterns — "what is X," "define X" — by skipping retrieval entirely and answering straight from the LLM. No unnecessary round-trip for a question that doesn't need one.
+
+**Tier 2 (8-intent)** covers most real code queries. The router classifies intent into one of eight categories — symbol lookup, feature flow, dependency map, blast radius, and so on — and runs the retrieval strategy that actually matches that category, instead of running every strategy every time.
+
+**Tier 3 (Multi-step)** is for the hard questions — "walk me through the request lifecycle end-to-end" — where a single retrieval pass can't cover the ground. The router decomposes the question into two or three sub-queries, runs each independently, and merges the results.
+
+Whatever legs are active for a given query, their results get fused via Reciprocal Rank Fusion (k=60) before assembly into the context window for LLM synthesis. RRF is deliberately boring here — it's a well-understood, parameter-light way to combine ranked lists from retrieval methods that disagree with each other about what "relevant" means, without needing to hand-tune a weighting scheme per query type.
+
+## The Four-Phase Indexing Pipeline
+
+Building the index itself runs in four phases, and the fourth one is where the real engineering happened.
+
+**Phase 1 (Parse)** walks every file with Tree-sitter and extracts symbols with their source, line spans, and AST structure, in parallel via a `ThreadPoolExecutor`.
+
+**Phase 2 (Write)** persists symbols and chunks to SQLite and resolves cross-file `parent_id` relationships.
+
+**Phase 3 (Embed)** embeds every chunk asynchronously in batches of four concurrent calls. With the local provider (`sentence-transformers`, no API key required), this stage runs entirely offline.
+
+**Phase 4 (Resolve)** is where cross-file call edges get resolved, and it's the phase I rewrote most. My first version used name-only matching — `login()` in file A calls `login()` in file B, purely by string equality. That produced a dense, noisy graph with something like 40% false-positive edges, because plenty of codebases have multiple unrelated functions named the same thing. The fix was a 3-priority resolution strategy: try the qualified name first (most precise, lowest recall), then fall back to type-hint-plus-name (moderate precision), then name-only as the last resort. That cut false positives significantly while still holding up on codebases that don't carry full type annotations.
+
+I expected the embedding and retrieval architecture to be the hardest part of building this. It wasn't. The call-graph resolver was the more representative example of what actually ate the time — and the broader lesson underneath it was that structural metadata (the call graph, the import graph, type hierarchy) turned out to matter more than the semantic embeddings alone. Semantic similarity gets you to the right neighborhood. Graph traversal is what gets you to the right answer.
+
+## Zero Infrastructure by Design
+
+Most code intelligence tools ask you to run a vector database, a relational database, and often a separate API server — a lot of infrastructure to maintain for what is fundamentally a local developer tool. trelix's default is a single SQLite file, using `sqlite-vec` for HNSW vector search and FTS5 for BM25. Zero external infrastructure. It works on a laptop with no internet connection.
+
+That was a deliberate decision, not a limitation I haven't gotten around to fixing. When a codebase actually outgrows SQLite, the backend is swappable:
+
+```bash
+# Default (sqlite) — up to ~100k chunks
+trelix index ./my-repo
+
+# LanceDB — 100k+ chunks, 3-5x faster vector insert on ARM/Apple Silicon
+TRELIX_STORE_BACKEND=lance trelix index ./my-repo
+
+# Qdrant — 500k+ chunks, multi-repo shared collections
+TRELIX_STORE_BACKEND=qdrant trelix index ./my-repo
+```
+
+Most codebases, and most developers, will never need to switch off the default. The point of exposing the switch at all is that scaling shouldn't require re-architecting the tool from underneath you.
+
+## Seven Retrieval Legs
+
+The default configuration — BM25, vector, grep, and call graph — handles most questions well on its own. But trelix has five additional retrieval legs you can turn on when you need higher recall or more sophisticated query handling.
+
+**Leg 5: File-summary semantic search** is RAPTOR-style (arXiv:2401.18059). At index time, trelix generates LLM summaries of every file and embeds those summaries separately. This surface is particularly good for "explain this codebase" or "what files deal with payment processing?" — questions where the right answer lives at the file level, not the symbol level.
+
+**Leg 6: SPLADE-Code** is a sparse-plus-dense hybrid via learned sparse retrieval. SPLADE encodes queries into sparse, high-dimensional token vectors, expanding vocabulary beyond exact matches in a way that complements both BM25 and dense vector search rather than duplicating either.
+
+**Leg 7: Multi-granularity** indexes code at both block and statement level simultaneously. Some queries are better answered by a full function body; others by a single statement. Carrying both granularities in the index improves recall on precise questions that would otherwise get buried inside a larger chunk.
+
+On top of the seven legs, there are query-side enhancements layered in: HyDE generates a hypothetical code answer to use as the ANN query vector, which improves recall on abstract questions; FLARE does confidence-gated re-retrieval, re-querying when synthesis spans show uncertainty instead of committing to a shaky first answer; and, since v2.2.0, an agentic ReAct loop runs multi-turn retrieve → observe → re-retrieve with self-correction for the queries that need it. That last one matters most for exactly the Tier 3 multi-step queries — a question decomposed into sub-queries can still come back with a sub-answer that doesn't actually resolve the sub-question it was meant to answer, and the agentic loop is what lets trelix notice that and re-retrieve instead of synthesizing a final answer on top of a gap it never caught.
+
+```bash
+# Enable everything
+TRELIX_RETRIEVAL_AGENTIC=true \
+TRELIX_GRAPH_SEARCH_ENABLED=true \
+TRELIX_RETRIEVAL_FILE_SUMMARY_LEG=true \
+TRELIX_RETRIEVAL_HYDE_FALLBACK=true \
+TRELIX_RETRIEVAL_FLARE=true \
+TRELIX_RETRIEVAL_SPARSE=true \
+TRELIX_CHUNKER_MULTI_GRANULARITY=true \
+trelix ask ./my-repo "explain the full request lifecycle"
+```
+
+## What This Actually Looks Like in Practice
+
+Go back to the afternoon that started this. If I'd had trelix pointed at that 80,000-line codebase, the workflow wouldn't have been four hours of grep and interrupting three teammates — it would have been indexing once (a few minutes, one-time cost, Phase 1 through Phase 4 running through the pipeline above) and then asking directly:
+
+```bash
+trelix ask ./that-repo "how does the authentication middleware work?"
+```
+
+That query lands in Tier 2 of the router — it's a feature-flow question, one of the eight intent categories — so it doesn't skip straight to the LLM (Tier 1) and it doesn't need multi-step decomposition (Tier 3). It runs the feature-flow retrieval strategy: start from whatever symbol most plausibly matches "authentication middleware," pull in its call graph neighborhood, and let BM25 and vector search each contribute candidates from a different angle. The point of RRF fusion is that BM25 and vector search fail differently — BM25 misses things phrased differently than the query, vector search misses exact-match technical terms it hasn't seen enough of — so fusing their ranked lists recovers cases where either one alone would have missed the right chunk. The answer that comes back isn't a list of grep hits to manually correlate; it's already assembled from the call graph, the relevant symbol bodies, and (once beast mode is on) the SPLADE and file-summary legs' contributions, synthesized into an actual explanation with the traversal already done.
+
+That's the difference the tool is meant to make: not "search runs faster," but "the graph traversal that used to be manual archaeology is now the thing being automated," which is a different kind of speedup than a faster grep would ever give you.
+
+## The Features I'm Most Proud Of
+
+**GitHub PR review**, shipped in v2.4.0, has become one of the most-used features. `trelix review --pr owner/repo#42` fetches the PR diff from GitHub, retrieves codebase context for each changed hunk, runs an LLM review, and can post findings back as a single batched review comment with `--post-comments`. The insight underneath it is simple: reviewing a diff without understanding the surrounding codebase is like proofreading a sentence you've never read in context.
+
+**Federated search** lets `trelix search-all "query"` fan out across every registered repo in parallel via a `ThreadPoolExecutor` and RRF-merge the results. `trelix watch-all` runs a single `watchfiles.awatch()` call across all registered repos at once, and a TTL cache on the `FederatedRetriever` gives roughly a 90% hit rate for typical debugging-session query patterns, where the same handful of questions get asked repeatedly in slightly different phrasing.
+
+**MCP integration** means one command puts trelix inside Claude Code, Cursor, Windsurf, and Continue.dev:
+
+```bash
+pip install trelix-mcp
+claude mcp add trelix -- trelix-mcp
+```
+
+From there it's just: *"index my repo at /path/to/repo, then find how authentication works."*
+
+## What Surprised Me, What I'm Still Uncertain About
+
+The 3-tier router works well on everything I've tested it against. I'm less confident about it on very large codebases — millions of lines — where graph traversal gets expensive. The current implementation caps BFS depth at 2, which is usually the right call but occasionally misses a connection that's three hops away. I'm still working out the right heuristics for adaptive depth rather than a fixed cap.
+
+I'm also still calibrating the GraphRAG map-reduce threshold. The current default — activate above 20 results or 8k tokens — is conservative. For some query types it kicks in too eagerly; for others, not eagerly enough. It's the retrieval parameter I'm watching most closely in practice, and I expect it to move.
+
+Everything is MIT licensed, on PyPI, and at `github.com/sairam0424/trelix`, with the full beast-mode activation block documented in the README if you want all seven retrieval legs at once.
+
+If you've ever burned an afternoon on archaeology in a codebase you didn't write, that's exactly the problem this was built to remove.

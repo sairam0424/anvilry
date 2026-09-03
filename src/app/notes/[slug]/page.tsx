@@ -71,7 +71,7 @@ export default async function NotePage({
           href="/notes"
           className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent"
         >
-          <ArrowLeft size={15} /> Notes
+          <ArrowLeft size={15} /> Writing
         </Link>
         <Reveal>
           <header className="mt-6 border-b border-border pb-8">
@@ -113,7 +113,7 @@ export default async function NotePage({
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: BASE },
-          { name: "Notes", url: `${BASE}/notes` },
+          { name: "Writing", url: `${BASE}/notes` },
           { name: note.title, url: `${BASE}${note.url}` },
         ]}
       />

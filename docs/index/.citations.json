@@ -440,6 +440,7 @@
     ".github/workflows/ci.yml:22": {
       "fp": "c8c82d24e074",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -474,13 +475,6 @@
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "on:"
-    },
-    ".github/workflows/ci.yml:31": {
-      "fp": "6cf3838f75f9",
-      "citedBy": [
-        "10-tests-and-quality-gates.md"
-      ],
-      "preview": "uses: actions/cache@v4"
     },
     ".github/workflows/ci.yml:43": {
       "fp": "57127a4b6fe4",
@@ -15715,13 +15709,14 @@
       "preview": "process.env.NEXT_PUBLIC_ARTICLES_ENABLED !== \"false\";"
     },
     "src/lib/writing-flags.ts:22": {
-      "fp": "a157b1e1389e",
+      "fp": "b1c2b3d4dce9",
       "citedBy": [
         "03-lib-content-data.md",
         "09-content-and-schemas.md",
+        "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "export const NOTES_ENABLED ="
+      "preview": "export const NOTES_ENABLED = process.env.NEXT_PUBLIC_NOTES_ENABLED === \"true\";"
     },
     "src/lib/writing-flags.ts:23": {
       "fp": "ac59d3c345ce",

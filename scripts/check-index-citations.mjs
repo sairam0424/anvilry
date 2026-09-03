@@ -96,8 +96,20 @@ const CITABLE = {
  * FIRST so `docs/README.md:29` matches as a path rather than partially as bare `README.md`, and the
  * root branch carries a lookbehind so `some/dir/package.json:5` cannot match as a root file.
  */
+/**
+ * Escapes every regex metacharacter — backslash first — so a literal string can be embedded
+ * safely inside a RegExp source. The prior version only escaped `.` via
+ * `f.replace(/[.]/g, "\\.")`, which is an incomplete sanitizer (CodeQL js/incomplete-sanitization):
+ * it never escapes `\` itself, so any entry containing a backslash, or any of `*+?^${}()|[]`,
+ * would flow into CITATION_RE unescaped and change what the alternation matches instead of being
+ * treated as a literal filename.
+ */
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 const ROOT_ALT = [...CITABLE_ROOT_FILES]
-  .map((f) => f.replace(/[.]/g, "\\."))
+  .map((f) => escapeRegExp(f))
   .sort((a, b) => b.length - a.length) // longest-first so e.g. .env.example wins over .env
   .join("|");
 

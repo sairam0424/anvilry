@@ -31,6 +31,17 @@ overrides:
   brace-expansion@>=3: ^5.0.7
   sharp: ^0.35.0
   body-parser: ^2.3.0
+  # GHSA-covered crash/prototype-write + OOM (Dependabot #54/#55), transitive via
+  # next -> styled-jsx and eslint-config-next -> @babel/core. Exact, not caret, same
+  # minimumReleaseAge reasoning as fast-uri above: 4.28.8 (2026-08-08) is aged; bump
+  # deliberately, don't let it float to whatever's newest at install time.
+  browserslist: 4.28.8
+  # GHSA-covered DoS + array-limit bypass (Dependabot #53/#56), transitive via
+  # body-parser -> express -> @modelcontextprotocol/sdk. 6.16.0 (2026-08-29) is the
+  # only patched version so far -- newer than the usual aged-pin comfort margin, but
+  # there's no older patched release to fall back to. If pnpm 11's release-age gate
+  # rejects it, that's the CI signal to wait and retry, not a reason to skip the fix.
+  qs: 6.16.0
 
 # --- Build scripts ---------------------------------------------------------------------------
 # THE ALLOWLIST IS SPELLED TWICE. `allowBuilds` is the one that matters; the two lists below are

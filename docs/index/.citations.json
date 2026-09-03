@@ -3170,14 +3170,14 @@
       "preview": "\"zod\": \"^3.25.76\""
     },
     "package.json:58": {
-      "fp": "c31a6b34c567",
+      "fp": "00eb105e188a",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"@next/bundle-analyzer\": \"^16.3.0\","
+      "preview": "\"@next/bundle-analyzer\": \"^16.3.3\","
     },
     "package.json:7": {
       "fp": "e52a1813c460",

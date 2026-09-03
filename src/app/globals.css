@@ -62,6 +62,13 @@ html {
      otherwise cover a focused in-page anchor target. Pad the scroll position so the
      focused element lands below the header. */
   scroll-padding-top: 3.5rem;
+  /* Defensive backstop: an un-contained overflowing descendant anywhere in the tree
+     (e.g. a shrink-to-fit row wider than the viewport) would otherwise widen the whole
+     document and cause page-level horizontal scroll/drag on mobile. Any element that
+     genuinely needs horizontal scroll must opt in locally with its own overflow-x-auto
+     container (see the articles filter bar) — this rule only clips the leak, it never
+     hides content that has its own scroll container. */
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -181,6 +188,10 @@ body {
   background: var(--bg-base);
   color: var(--fg);
   font-family: var(--font-sans);
+  /* Same backstop as html above — some mobile WebKit builds still rubber-band the body's
+     own scrollable overflow even when the html root is clipped. Belt-and-suspenders only;
+     the fix is containing overflow at its source (see the articles filter bar). */
+  overflow-x: hidden;
   /* faint technical grid + radial accent wash */
   background-image:
     radial-gradient(60rem 40rem at 75% -10%, color-mix(in oklab, var(--violet) 9%, transparent), transparent 70%),

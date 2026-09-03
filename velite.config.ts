@@ -19,6 +19,11 @@ const projects = defineCollection({
       group: themeGroup,
       repo: s.string().url(),
       commits: s.number().optional(),
+      // Real GitHub repo creation date + SPDX license ID, verified against the GitHub API
+      // per-repo. Omitted (not fabricated) for repos that are private (404 unauthenticated)
+      // or have no license file — see SoftwareSourceCodeJsonLd's handling of both.
+      dateCreated: s.isodate().optional(),
+      license: s.string().optional(),
       tech: s.array(s.string()),
       pinned: s.boolean().default(false),
       pinRank: s.number().optional(),
@@ -72,7 +77,9 @@ const notes = defineCollection({
       draft: s.boolean().default(false),
       // Inkforge generation metadata (optional — hand-written notes omit these)
       tone: s.enum(["beginner", "intermediate", "senior"]).optional(),
-      format: s.enum(["tutorial", "narrative", "explainer", "opinion", "showcase"]).optional(),
+      format: s
+        .enum(["tutorial", "narrative", "explainer", "opinion", "showcase"])
+        .optional(),
       length: s.enum(["thread", "short", "medium", "comprehensive"]).optional(),
       wordCount: s.number().optional(),
       readingTime: s.number().optional(),
@@ -99,7 +106,14 @@ const articles = defineCollection({
       title: s.string(),
       date: s.isodate(),
       summary: s.string(),
-      source: s.enum(["medium", "substack", "linkedin", "devto", "hashnode", "native"]),
+      source: s.enum([
+        "medium",
+        "substack",
+        "linkedin",
+        "devto",
+        "hashnode",
+        "native",
+      ]),
       externalUrl: s.string().url().optional(), // required for non-native; omit for native
       canonicalUrl: s.string().url().optional(), // SEO: where the canonical version lives
       linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, no duplicate content

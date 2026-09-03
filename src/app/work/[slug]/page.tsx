@@ -36,11 +36,19 @@ export async function generateMetadata({
       title: `${work.name} — ${profile.name}`,
       description: work.summary,
     },
-    twitter: { card: "summary_large_image", title: `${work.name} — ${profile.name}`, description: work.summary },
+    twitter: {
+      card: "summary_large_image",
+      title: `${work.name} — ${profile.name}`,
+      description: work.summary,
+    },
   };
 }
 
-export default async function WorkPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function WorkPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const work = getWork(slug);
   if (!work) notFound();
@@ -48,20 +56,27 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
   return (
     <main className="flex-1">
       <article className="mx-auto w-full max-w-3xl px-6 py-16">
-        <Link href="/work" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent">
+        <Link
+          href="/work"
+          className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-accent"
+        >
           <ArrowLeft size={15} /> Work
         </Link>
 
         <Reveal>
           <header className="mt-6 border-b border-border pb-8">
             <p className="mono-label">{work.register}</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{work.name}</h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+              {work.name}
+            </h1>
             <p className="mt-2 text-fg-muted">{work.role}</p>
 
             <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-4">
               {work.metrics.map((m) => (
                 <div key={m.label}>
-                  <dt className="text-2xl font-semibold text-accent">{m.value}</dt>
+                  <dt className="text-2xl font-semibold text-accent">
+                    {m.value}
+                  </dt>
                   <dd className="text-xs text-fg-subtle">{m.label}</dd>
                 </div>
               ))}
@@ -69,7 +84,10 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
 
             <div className="mt-6 flex flex-wrap gap-1.5">
               {work.tech.map((t) => (
-                <span key={t} className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted">
+                <span
+                  key={t}
+                  className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted"
+                >
                   {t}
                 </span>
               ))}
@@ -133,6 +151,7 @@ export default async function WorkPage({ params }: { params: Promise<{ slug: str
         description={work.summary}
         url={`${BASE}${work.url}`}
         keywords={work.tech}
+        image={`${BASE}${work.url}/opengraph-image`}
       />
     </main>
   );

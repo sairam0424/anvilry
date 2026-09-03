@@ -35,7 +35,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  // Notes — only when both flag AND content exist.
+  // Notes — only when both flag AND content exist. `date` is a real per-note isodate
+  // field (velite.config.ts), so lastModified here is accurate, not fabricated.
   const noteRoutes =
     NOTES_ENABLED && allNotes.length
       ? [
@@ -43,11 +44,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
             url: `${base}/notes`,
             changeFrequency: "weekly" as const,
             priority: 0.6,
+            // Index page reflects the newest note — allNotes is sorted newest-first.
+            lastModified: new Date(allNotes[0].date),
           },
           ...allNotes.map((n) => ({
             url: `${base}${n.url}`,
             changeFrequency: "monthly" as const,
             priority: 0.5,
+            lastModified: new Date(n.date),
           })),
         ]
       : [];
@@ -55,22 +59,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Articles — only when both flag AND content exist. Same guard as
   // generateStaticParams in articles/[slug]/page.tsx: a notes-only article
   // (linkedNote set, no externalUrl) 404s while NOTES_ENABLED is false, so
-  // it must not be listed as an indexable URL in that state either.
+  // it must not be listed as an indexable URL in that state either. `date`
+  // is a real per-article isodate field, not a build-time stamp.
+  const indexableArticles = allArticles.filter(
+    (a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED),
+  );
   const articleRoutes =
-    ARTICLES_ENABLED && allArticles.length
+    ARTICLES_ENABLED && indexableArticles.length
       ? [
           {
             url: `${base}/articles`,
             changeFrequency: "weekly" as const,
             priority: 0.6,
+            // Index page reflects the newest INDEXABLE article -- indexableArticles
+            // preserves allArticles' newest-first order, just with 404 candidates removed.
+            lastModified: new Date(indexableArticles[0].date),
           },
-          ...allArticles
-            .filter((a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED))
-            .map((a) => ({
-              url: `${base}${a.url}`,
-              changeFrequency: "monthly" as const,
-              priority: 0.5,
-            })),
+          ...indexableArticles.map((a) => ({
+            url: `${base}${a.url}`,
+            changeFrequency: "monthly" as const,
+            priority: 0.5,
+            lastModified: new Date(a.date),
+          })),
         ]
       : [];
 

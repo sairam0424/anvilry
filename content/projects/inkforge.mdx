@@ -5,12 +5,12 @@ tagline: Notes, topics, or code → published technical articles.
 group: Tooling & Lab
 repo: https://github.com/sairam0424/Inkforge
 commits: 89
-tech: [TypeScript, Node.js, Next.js, Turborepo, Bedrock, BM25, Playwright, Commander, Vitest]
+tech: [TypeScript, Node.js, Next.js, Turborepo, Bedrock, BM25, Commander, Vitest]
 pinned: true
 pinRank: 7
 featured: true
 order: 7
-excerpt: STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to, Hashnode, and a Playwright-rendered LinkedIn carousel.
+excerpt: STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to and Hashnode, plus a markdown render-spec for a manual LinkedIn carousel handoff.
 ---
 
 **Inkforge** is personal publishing infrastructure — a CLI + web UI that turns scattered notes, topics, or code directories into polished technical articles and publishes them to Dev.to, Hashnode, and LinkedIn without leaving the terminal.
@@ -20,9 +20,36 @@ The core is a **STORM two-stage pipeline**: first an explicit outline artifact i
 - **STORM pipeline with explicit outlines** — sections drafted independently, no context explosion; 4096-token budget with JSON truncation repair
 - **BM25 in-memory RAG** — zero external service; scales to thousands of personal notes; 95% of semantic search quality at 10% of the cost
 - **Dual output sinks** — primary `.md` files for portability; optional Anvilry `.mdx` mirror for Velite
-- **Playwright-based asset rendering** — pixel-perfect 1400×787px cover images and 15-slide LinkedIn carousels (2× pixel density); never macOS `qlmanage`
+- **Asset spec, not asset rendering** — writes a markdown render-spec (cover dimensions, carousel slide count and copy); a human or agent renders the actual images by hand, nothing in the CLI touches pixels
 - **Platform publishers** — Dev.to REST API v1 (canonical_url), Hashnode GraphQL v2 (originalArticleURL), cross-posting without SEO duplicate penalties
 - **Streaming web UI** — SSE event stream from CLI pipeline into browser; section-by-section live preview at `/generate`
 - **Content-as-committed-data** — generated articles gitignored; published tracking committed as source of truth
 
 > 11/11 tests passing. Built the Tombstone launch article (3,531 words) from incident notes in one command. Ships as `@inkforge/cli`.
+
+## Architecture
+
+Inkforge is a **pnpm monorepo**: `packages/core` holds the pipeline, RAG layer, LLM abstraction, and publishers; `packages/cli` is the Commander entry point. Both are versioned at 0.1.1; root sits at 0.1.2, private, with no `publishConfig` — it runs from a git clone, not npm.
+
+The **LLM layer** defaults to AWS Bedrock with a two-model fallback chain — Sonnet 4.6, then Haiku 4.5 — plus an `LLM_PROVIDER=anthropic` toggle. Opus 4.6 is deliberately excluded.
+
+The **publisher layer** has two real implementations: a working Dev.to REST client, and a Hashnode GraphQL client that now throws a deprecation error. LinkedIn isn't a third publisher — there's no `linkedin.ts`; `publish` only recognizes `--platform devto|hashnode`. LinkedIn ships via a markdown render-spec instead, followed by hand outside the CLI. Two test files — ingestion, RAG chunker — back the 11/11 badge; not the publishers or LLM layer.
+
+## How It Works
+
+1. **Input** — notes dump, topic, or code directory.
+2. **RAG surfacing** (notes-dump only) — BM25 surfaces the top-5 chunks into the outline prompt.
+3. **Outline generation** — one LLM call builds the section tree and word budgets via the Bedrock fallback chain.
+4. **Section drafting** — each section drafted independently with context chaining, streamed over SSE into `/generate`.
+5. **Humanization pass** — one pass adds voice and transitions.
+6. **Asset spec, not asset rendering** — Inkforge writes a markdown render-spec (cover dimensions, carousel slide count and copy) rather than rendering anything itself; a human or agent follows that spec by hand to produce the actual images.
+7. **Publish** — Dev.to pushes automatically; Hashnode throws its deprecation error; LinkedIn's PDF is uploaded by hand.
+8. **Tracking** — the article stays local and gitignored; only the `content/published/<platform>/<slug>.md` record is committed. The same pipeline has since generated Trelix and Tombstone launches too.
+
+## Key Decisions
+
+Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6 on purpose — Opus needs separate per-account Bedrock enablement, and I chose zero extra AWS config over deeper resilience. Fallback eligibility is narrow too — only connection errors, 429/404/5xx, and IAM-deny 403s trigger it; a bad-credentials 403 doesn't, since a new model won't fix that.
+
+I kept Hashnode's client despite its now-decommissioned API, and never built a real publisher for LinkedIn at all — different reasons, same effect. Hashnode fails loudly with a documented manual-paste workflow instead of a silent no-op; LinkedIn never had an API to integrate, so the render-spec-plus-human-upload path was the honest choice from day one, not a fallback. The cost: "publish without leaving the terminal" holds for Dev.to alone.
+
+Generated articles never get committed; only the tracking record does. That keeps the repo's diff history clean, but the article text isn't recoverable from git if local `content/` is lost — only proof it was published survives.

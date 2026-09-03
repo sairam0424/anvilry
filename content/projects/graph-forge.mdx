@@ -4,7 +4,7 @@ name: Graph-Forge
 tagline: AI-native distributed code-intelligence platform.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/Graph-Forge
-commits: 555
+commits: 612
 tech: [Go, Python, gRPC, Neo4j, Chroma, Kafka, "Next.js"]
 pinned: true
 pinRank: 2
@@ -22,4 +22,25 @@ It runs as **~19 polyglot microservices** (Go + Python) communicating over gRPC 
 - Tree-sitter polyglot parsing · Kafka ingestion · RAG over large repos
 - Full observability stack + Kubernetes substrate
 
-> The portfolio's strongest distributed-systems credential. 555 commits.
+> The portfolio's strongest distributed-systems credential. 612 commits.
+
+## Architecture
+
+Of the ~19 service directories in the repo, fifteen are real, implemented services split across two languages: nine in Go (`gateway`, `auth`, `graph`, `knowledge-graph`, `repository`, `multi-repo-engine`, `patch-generator`, `git-provider`, `architecture-engine`) and six in Python (`ai-rag`, `indexing`, `agent-swarm`, `agent-runtime`, `ai-learning`, `plugin-runtime`). The rest are placeholders that don't count toward that total: `vector`, `search-aggregator`, and `webhook` each contain only a `go.mod`/`go.sum` with zero source files, and `ai` is code folded into `ai-rag`'s own Docker build rather than a standalone service. A separate `workers/` tier — `ingestion-worker`, `migration-runner`, `patch-validator`, `cross-repo-analyzer` — runs alongside the real fifteen but outside the count.
+
+The Go side is a genuine multi-module workspace, not a monolith wearing a `go.work` badge: the workspace file lists all 17 Go modules under Go 1.26.1, and there is deliberately no root `go.mod`. Every service owns its own module, and container images build with `GOWORK=off` — each image resolves its own dependency graph instead of leaning on workspace-wide resolution, which matters once 9 services are shipping and deploying independently.
+
+Zero-trust here isn't a slide. Istio enforces cluster-wide **STRICT mTLS** over Envoy sidecars on every pod-to-pod call, OPA Gatekeeper enforces Restricted Pod Security at the cluster level, and tenant isolation itself is handled a layer up: every Neo4j node carries `organization_id`/`repo_id` properties, Chroma collections are namespaced per org/repo, and the gateway's `TenantInterceptor` middleware fails closed — a request missing tenant context gets a 401 unless a dev-only `ALLOW_ANON_TENANT` flag is deliberately set.
+
+## How It Works
+
+1. **Ingest.** Kafka-driven ingestion feeds Tree-sitter AST parsing across the polyglot codebase; the parsed structure lands in Neo4j as the knowledge graph, while `indexing` chunks and embeds the same code into Chroma.
+2. **Retrieve.** `ai-rag` answers a query by fusing two retrieval legs with Reciprocal Rank Fusion (`core/fusion.py`): BM25 lexical search and Chroma vector search. An optional HyDE query-rewrite leg (`core/query_transform.py`) is off by default; a cross-encoder reranker (`core/reranker.py`) is on by default.
+3. **Route the model call.** LLM calls go through a `FallbackLLMProvider` that tries Bedrock first and falls back to a local Ollama model, walking a chain from `claude-opus-4-6` down to `sonnet-4-6` and `haiku-4-5` as needed.
+4. **Delegate to the swarm for anything that mutates code.** `agent-swarm` is a separate, durable LangGraph orchestrator: a Redis checkpointer persists state per thread/mission so a run resumes exactly where it left off, a Planner node fans out parallel tasks via LangGraph's `Send` API, and an `interrupt_before` node gates any code-mutating task behind explicit human approval before it executes.
+
+## Key Decisions
+
+- **Chose a parser-built context header over an LLM-generated one, despite losing retrieval precision.** Anthropic-style "Contextual Retrieval" — an LLM writes a situating blurb per chunk at index time — would have coupled the otherwise LLM-free, Kafka-driven indexing pipeline to Bedrock's uptime, rate limits, and per-chunk cost. I kept indexing pure and cheap: a parser-built header plus query-time Neo4j neighborhood recovers most of the same signal without ever calling an LLM during ingest.
+- **Chose Bedrock-primary with automatic Ollama fallback, and left a known gap in it rather than hide it.** The fallback keeps the whole platform functional — and free — with zero cloud credentials configured. The cost: the swarm binds tools via LangGraph's `bind_tools`, so the fallback model has to be tool-capable too. If Bedrock goes down and the fallback model (the Compose default is `qwen2.5-coder:7b`) can't actually call tools, tool calls silently no-op instead of erroring. That gap is documented in the repo, not papered over.
+- **Chose architectural breadth over test coverage.** Nineteen services, a durable HITL multi-agent swarm, Istio-enforced zero-trust, and hybrid RRF retrieval shipped before a single Go unit test did. The project's own tech-debt tracker rates "Go services: no unit tests, only compile checks" as a HIGH-priority gap against its own documented 80%-coverage standard — an honest trade I'm now closing on two unmerged branches (`feat/test-suite-go-services`, `feat/test-suite-python-services`) rather than one I'm pretending isn't there.

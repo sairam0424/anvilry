@@ -4,7 +4,7 @@ name: ag-bash
 tagline: AI-native bash interpreter, in TypeScript.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/ag-bash
-commits: 392
+commits: 449
 tech: [TypeScript, WebAssembly, MCP, Tree-sitter, pnpm]
 pinned: true
 pinRank: 4
@@ -21,4 +21,23 @@ It parses shell syntax with a **Tree-sitter WASM grammar** and executes against 
 - Tree-sitter WASM parser · WASM language runtimes
 - MCP server · fork-speculation · self-healing
 
-> Systems + security breadth. 392 commits, 5 CI gates.
+> Systems + security breadth. 449 commits, 5 CI gates.
+
+## Architecture
+
+Three packages ship from one pnpm monorepo at a synchronized version (currently 6.0.4): **`@ag-bash/bash`** (the core interpreter and its `ExecutionPipeline`), **`@ag-bash/mcp-server`** (a standalone MCP server exposing **70 tools** over stdio, published to the MCP Registry as `io.github.sairam0424/ag-bash`), and **`@ag-bash/agent-bridge`** (the terminal UI bridge). Everything is TypeScript end to end — there is no Rust or native binding anywhere in the tree; the Tree-sitter grammar itself compiles to WASM rather than linking a native parser. The one binary the repo can't express in source is `vendor/cpython-emscripten/python.wasm`, the CPython WASM runtime, tracked via Git LFS — any CI job touching Python or the WASM suite has to check out with `lfs: true` or it runs against a 132-byte pointer file instead of the real interpreter.
+
+## How It Works
+
+1. A script string hits the **Tree-sitter WASM grammar**, which parses it into an AST — no shelling out to the host `/bin/sh` at any point.
+2. `ASTCache` keys the parsed result with a 64-bit FNV-1a hash so a repeated script skips re-parsing entirely.
+3. The AST flows through **`ExecutionPipeline`** — the sole execution path since v6.0.0, when a 200+ line legacy inline `exec()` code path was deleted outright. One stage, `DestructiveStage`, walks the AST looking for `rm -rf /`, fork bombs, `$IFS` obfuscation, and decode-pipe-to-shell patterns.
+4. Execution itself dispatches in-process to the matching **WASM runtime** — CPython, QuickJS, or SQLite3 — sandboxed away from the host shell.
+5. Output streams back live through `execStream()`, and `bash.fork()` / `bash.speculate()` can run N candidate command sequences concurrently and keep only the winner.
+6. The MCP server and agent-bridge sit on top of this same pipeline, exposing it to agents over stdio or a terminal UI respectively.
+
+## Key Decisions
+
+- **FNV-1a over SHA-256 for the AST cache key** — a non-cryptographic hash gives roughly 10x faster key generation and works in the browser, at the cost of weaker collision resistance; the project's own architecture notes defend it only as "sufficient distribution for realistic script populations," not a formal guarantee.
+- **`DestructiveStage` defaults to `warn`, not `block`** — a detected `rm -rf /` or fork bomb surfaces as an Observation rather than a refusal, trading hard-stop safety for agent throughput. Callers who want the refusal have to opt in explicitly with `destructivePolicy: 'block'`.
+- **Node floor of >=20.6.0 despite full ESM-hook sandbox hardening needing >=23.5** — chose broad compatibility over guaranteeing the complete hardening story on the officially supported minimum runtime.

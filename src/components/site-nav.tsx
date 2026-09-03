@@ -6,7 +6,12 @@ import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes, hasArticles } from "@/lib/content";
-import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "@/lib/writing-flags";
+import {
+  ARTICLES_ENABLED,
+  NOTES_ENABLED,
+  STATS_ENABLED,
+  SEARCH_ENABLED,
+} from "@/lib/writing-flags";
 import { ViewSwitcher } from "@/components/view-switcher";
 import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
@@ -15,8 +20,10 @@ import { MobileNav } from "@/components/mobile-nav";
 const navLinks = [
   { href: "/work", label: "Work" },
   { href: "/projects", label: "Projects" },
-  ...(ARTICLES_ENABLED && hasArticles ? [{ href: "/articles", label: "Articles" }] : []),
-  ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Notes" }] : []),
+  ...(ARTICLES_ENABLED && hasArticles
+    ? [{ href: "/articles", label: "Articles" }]
+    : []),
+  ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Writing" }] : []),
   { href: "/about", label: "About" },
   { href: "/resume", label: "Résumé" },
   ...(STATS_ENABLED ? [{ href: "/stats", label: "Stats" }] : []),
@@ -40,7 +47,10 @@ export function SiteNav() {
       style={{ viewTransitionName: "site-header" }}
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6">
-        <Link href="/" className="shrink-0 font-mono text-sm font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="shrink-0 font-mono text-sm font-semibold tracking-tight"
+        >
           <span className="text-accent">~/</span>sairam
         </Link>
 
@@ -94,7 +104,11 @@ export function SiteNav() {
           >
             <Linkedin size={18} />
           </a>
-          <Link href="/resume" aria-label="Résumé" className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <Link
+            href="/resume"
+            aria-label="Résumé"
+            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
             <FileText size={18} />
           </Link>
         </div>

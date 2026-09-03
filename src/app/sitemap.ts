@@ -56,19 +56,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ]
       : [];
 
-  // Articles — only when both flag AND content exist. Same rationale as notes: `date`
+  // Articles — only when both flag AND content exist. Same guard as
+  // generateStaticParams in articles/[slug]/page.tsx: a notes-only article
+  // (linkedNote set, no externalUrl) 404s while NOTES_ENABLED is false, so
+  // it must not be listed as an indexable URL in that state either. `date`
   // is a real per-article isodate field, not a build-time stamp.
+  const indexableArticles = allArticles.filter(
+    (a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED),
+  );
   const articleRoutes =
-    ARTICLES_ENABLED && allArticles.length
+    ARTICLES_ENABLED && indexableArticles.length
       ? [
           {
             url: `${base}/articles`,
             changeFrequency: "weekly" as const,
             priority: 0.6,
-            // Index page reflects the newest article — allArticles is sorted newest-first.
-            lastModified: new Date(allArticles[0].date),
+            // Index page reflects the newest INDEXABLE article -- indexableArticles
+            // preserves allArticles' newest-first order, just with 404 candidates removed.
+            lastModified: new Date(indexableArticles[0].date),
           },
-          ...allArticles.map((a) => ({
+          ...indexableArticles.map((a) => ({
             url: `${base}${a.url}`,
             changeFrequency: "monthly" as const,
             priority: 0.5,

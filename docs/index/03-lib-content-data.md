@@ -97,15 +97,15 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 | Flag | Export | Default | Predicate | Cite |
 |---|---|---|---|---|
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **`true`** | `!== "false"` (opt-**out**) | `writing-flags.ts:19-20` |
-| `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:22-23` |
-| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | `false` | `=== "true"` | `writing-flags.ts:25-26` |
-| `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:30-31` |
-| `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:33-34` |
-| `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:38-39` |
-| `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | `INKFORGE_ARTICLES_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:43-44` |
-| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | `GITHUB_STATS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:48-49` |
-| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | `ARTICLE_DEDUP_KEY` | `"linkedNote"` | `raw === "canonicalUrl" ? "canonicalUrl" : "linkedNote"` (enum, not boolean) | `writing-flags.ts:72-74` |
-| `NEXT_PUBLIC_CHROME_TTS_BANNER` | `CHROME_TTS_BANNER_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:86-87` |
+| `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:22` |
+| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | `false` | `=== "true"` | `writing-flags.ts:24` |
+| `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:38` |
+| `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:40` |
+| `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:44-45` |
+| `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | `INKFORGE_ARTICLES_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:49-50` |
+| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | `GITHUB_STATS_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:54-55` |
+| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | `ARTICLE_DEDUP_KEY` | `"linkedNote"` | `raw === "canonicalUrl" ? "canonicalUrl" : "linkedNote"` (enum, not boolean) | `writing-flags.ts:78-80` |
+| `NEXT_PUBLIC_CHROME_TTS_BANNER` | `CHROME_TTS_BANNER_ENABLED` | `false` | `=== "true"` | `writing-flags.ts:92-93` |
 
 `ARTICLES_ENABLED` is the only inverted one — it is on unless explicitly set to the string `"false"` (`writing-flags.ts:20`).
 
@@ -216,7 +216,7 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 - **Reads / depends on:** nothing.
 - **Consumed by:** `src/components/home/testimonials.tsx`, `src/lib/corpus.ts`.
 - **Behaviour notes:** `testimonials` is an empty array at this version (`:26`), so `hasTestimonials === false` (`:29`) and both the homepage strip and the corpus `## Recommendations` section are omitted.
-- **Gotchas / invariants:** `sourceUrl` is a **required** field on the type and is documented as the anti-fabrication guarantee — an entry without a real public permalink is invalid (`:8-12`, `:22-23`). `src/lib/testimonials.test.ts:14` asserts every present entry has a real source URL plus all required fields, so adding a quote without a link fails the build. Note the homepage section is *also* behind `TESTIMONIALS_ENABLED` (`writing-flags.ts:38-39`), i.e. two independent gates.
+- **Gotchas / invariants:** `sourceUrl` is a **required** field on the type and is documented as the anti-fabrication guarantee — an entry without a real public permalink is invalid (`:8-12`, `:22-23`). `src/lib/testimonials.test.ts:14` asserts every present entry has a real source URL plus all required fields, so adding a quote without a link fails the build. Note the homepage section is *also* behind `TESTIMONIALS_ENABLED` (`writing-flags.ts:44-45`), i.e. two independent gates.
 
 ### `src/lib/resume-json.ts`
 - **Role:** Builds the machine-readable JSON Resume payload.

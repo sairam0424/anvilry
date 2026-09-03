@@ -299,15 +299,15 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_BUILD_YEAR` | Set by build | written `next.config.ts:107`; read `src/components/site-footer.tsx:171` (`?? "2026"`) | Stable footer copyright year | Exists because under `cacheComponents`, `new Date()` during render fails the prerender and cannot be deferred with `instant = false` (`next.config.ts:101-106`) |
 | `NEXT_PUBLIC_DISCOVERY_BADGES` | No (default off) | `src/lib/flags.ts:58,65` | ★ N/5 discovery badge | The only flag routed through the two-driver resolver |
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | No (**default TRUE**) | `src/lib/writing-flags.ts:20` | `/articles` route + nav + sitemap + RSS | Inverted polarity: `!== "false"` |
-| `NEXT_PUBLIC_NOTES_ENABLED` | No (default false) | `src/lib/writing-flags.ts:23` | `/notes` section | `=== "true"` opt-in |
-| `NEXT_PUBLIC_OPEN_TO_WORK` | No (default false) | `src/lib/writing-flags.ts:26` | "Open to work" banner | — |
-| `NEXT_PUBLIC_STATS_ENABLED` | No | `src/lib/writing-flags.ts:31` | `/stats` in nav | — |
-| `NEXT_PUBLIC_SEARCH_ENABLED` | No | `src/lib/writing-flags.ts:34` | `/search` in nav | Pairs with `make search-index` |
-| `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | No | `src/lib/writing-flags.ts:39` | Recommendations section | — |
-| `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | No | `src/lib/writing-flags.ts:44` | Inkforge-pipeline articles | Undocumented in `.env.example` |
-| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | No | `src/lib/writing-flags.ts:49` | Homepage GitHub stats strip | — |
-| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | No (default `linkedNote`) | `src/lib/writing-flags.ts:72` | Cross-platform article dedup key; alt value `canonicalUrl` | `.env.example:187-192` |
-| `NEXT_PUBLIC_CHROME_TTS_BANNER` | No | `src/lib/writing-flags.ts:87` | Chrome TTS bug warning in talk mode | Default off — Chrome fixed the `paused_` guard bug (`.env.example:185`) |
+| `NEXT_PUBLIC_NOTES_ENABLED` | No (default false) | `src/lib/writing-flags.ts:22` | `/notes` section | `=== "true"` opt-in |
+| `NEXT_PUBLIC_OPEN_TO_WORK` | No (default false) | `src/lib/writing-flags.ts:24` | "Open to work" banner | — |
+| `NEXT_PUBLIC_STATS_ENABLED` | No | `src/lib/writing-flags.ts:38` | `/stats` in nav | — |
+| `NEXT_PUBLIC_SEARCH_ENABLED` | No | `src/lib/writing-flags.ts:40` | `/search` in nav | Pairs with `make search-index` |
+| `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | No | `src/lib/writing-flags.ts:45` | Recommendations section | — |
+| `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | No | `src/lib/writing-flags.ts:50` | Inkforge-pipeline articles | Undocumented in `.env.example` |
+| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | No | `src/lib/writing-flags.ts:55` | Homepage GitHub stats strip | — |
+| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | No (default `linkedNote`) | `src/lib/writing-flags.ts:78` | Cross-platform article dedup key; alt value `canonicalUrl` | `.env.example:187-192` |
+| `NEXT_PUBLIC_CHROME_TTS_BANNER` | No | `src/lib/writing-flags.ts:93` | Chrome TTS bug warning in talk mode | Default off — Chrome fixed the `paused_` guard bug (`.env.example:185`) |
 | `NEXT_PUBLIC_ENABLED_VIEWS` | No (unset = all) | `src/lib/enabled-views.ts:23` | CSV of views beyond Classic | **Empty string ≠ unset**: `""` means Classic-only, unset means all (`.env.example:60-67`) |
 | `NEXT_PUBLIC_ANVIL_ORB_MODE` | No (default `inplace`) | `src/components/chat/header-orb-trigger.tsx:35` | `inplace` \| `modal` \| `off` | — |
 | `NEXT_PUBLIC_ENABLE_ANVIL_ORB` | No (legacy) | `src/components/chat/header-orb-trigger.tsx:37` | `"false"` maps to `off` | Legacy alias retained for back-compat (`.env.example:57-58`) |

@@ -309,7 +309,7 @@ Two named transition groups exist in the tree:
 - **Reads / depends on:** `@/lib/use-reduced-motion`, `@/lib/utils` `cn`, `lucide-react` `FileText`.
 - **Consumed by:** `src/app/resume/page.tsx`, `ask-portfolio.tsx`, `github-stats-strip.tsx`, `view-router.tsx`, `chat/chat-messages.tsx`.
 - **Behaviour notes:** `Skeleton` applies `skeleton-shimmer rounded-md` and is `aria-hidden="true"` — decorative, so only the enclosing `role="status"` container is announced (`:7-17`); `.skeleton-shimmer` is defined at `src/app/globals.css:357-381`. `SkeletonStatCard` mirrors `GithubStatsStrip`'s `StatCard`; `SkeletonCard` mirrors the `card-surface` article/note/project shape; `SkeletonIframe` is absolutely positioned for the résumé PDF `h-[80vh]` frame; `SkeletonMarkdownLine` is 3 lines for streamed markdown. `SkeletonViewTransition` is `h-[calc(100dvh-3.5rem)]` (nav height subtracted), `role="status"`, with a pulsing orb ring that drops `animate-pulse` under reduced motion (`:102-126`).
-- **Gotchas / invariants:** `SkeletonViewTransition`'s `3.5rem` must track the `h-14` nav row in `site-nav.tsx:42`.
+- **Gotchas / invariants:** `SkeletonViewTransition`'s `3.5rem` must track the `h-14` nav row in `site-nav.tsx:57`.
 
 ### `src/components/ui/ink-transition.tsx`
 - **Role:** Opt-in WebGL2 ink-burn overlay for view switches.

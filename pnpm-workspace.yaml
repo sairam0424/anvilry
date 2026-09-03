@@ -19,7 +19,12 @@ overrides:
   hono: ^4.12.34
   '@hono/node-server': ^1.19.15
   ip-address: ^10.3.1
-  fast-uri: ^3.1.5
+  # Exact, not ^3.1.6: pnpm 11's default minimumReleaseAge check rejects a lockfile entry
+  # resolved to a version published too recently (caught 3.1.7, published <24h before a CI
+  # run, on the "Install on pnpm 11" job). 3.1.6 (2026-08-23) has aged past that; a caret
+  # range would just re-resolve to whatever is newest at install time and fail again the
+  # next time a patch lands. Bump deliberately when a NEWER patched version is needed.
+  fast-uri: 3.1.6
   js-yaml: ^4.3.1
   postcss: ^8.5.23
   brace-expansion@1: ^1.1.16

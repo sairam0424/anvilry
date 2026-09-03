@@ -109,12 +109,18 @@ export function SoftwareSourceCodeJsonLd({
   url,
   codeRepository,
   tech,
+  dateCreated,
+  license,
 }: {
   name: string;
   description: string;
   url: string;
   codeRepository: string;
   tech: string[];
+  /** Real GitHub repo creation date (ISO date) — omit rather than guess for private repos. */
+  dateCreated?: string;
+  /** SPDX license ID — omit rather than guess for repos with no license file. */
+  license?: string;
 }) {
   const languages = tech.filter((t) => PROGRAMMING_LANGUAGES.has(t));
   const data = {
@@ -131,6 +137,8 @@ export function SoftwareSourceCodeJsonLd({
     },
     ...(languages.length > 0 && { programmingLanguage: languages }),
     keywords: tech.join(", "),
+    ...(dateCreated && { dateCreated }),
+    ...(license && { license: `https://spdx.org/licenses/${license}.html` }),
   };
   return (
     <script
@@ -171,11 +179,14 @@ export function CreativeWorkJsonLd({
   description,
   url,
   keywords,
+  image,
 }: {
   name: string;
   description: string;
   url: string;
   keywords: string[];
+  /** Absolute URL to the page's opengraph-image route. */
+  image?: string;
 }) {
   const data = {
     "@context": "https://schema.org",
@@ -189,6 +200,7 @@ export function CreativeWorkJsonLd({
       url: "https://anvilry.vercel.app",
     },
     keywords: keywords.join(", "),
+    ...(image && { image }),
   };
   return (
     <script

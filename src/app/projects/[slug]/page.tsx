@@ -8,11 +8,12 @@ import {
   History,
 } from "lucide-react";
 import { Github } from "@/components/icons";
-import { allProjects, getProject } from "@/lib/content";
+import { allProjects, getProject, getArticle } from "@/lib/content";
 import { profile } from "@/lib/profile";
 import { fetchRepo, pushedAgo } from "@/lib/github";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
+import { RelatedWriting } from "@/components/related-writing";
 import {
   SoftwareSourceCodeJsonLd,
   BreadcrumbJsonLd,
@@ -78,6 +79,10 @@ export default async function ProjectPage({
   const repoName = project.repo.split("/").filter(Boolean).pop() ?? "";
   const repo = await fetchRepo(profile.githubUser, repoName);
   const updatedAgo = repo ? pushedAgo(repo.pushedAt) : "";
+
+  const relatedArticles = (project.relatedArticles ?? [])
+    .map((articleSlug) => getArticle(articleSlug))
+    .filter((a): a is NonNullable<typeof a> => a != null);
 
   return (
     <main className="flex-1">
@@ -155,6 +160,8 @@ export default async function ProjectPage({
         <div className="prose-portfolio mt-8">
           <MDXContent code={project.body} />
         </div>
+
+        <RelatedWriting articles={relatedArticles} />
       </article>
 
       <SoftwareSourceCodeJsonLd

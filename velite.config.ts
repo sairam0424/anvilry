@@ -24,6 +24,10 @@ const projects = defineCollection({
       // or have no license file — see SoftwareSourceCodeJsonLd's handling of both.
       dateCreated: s.isodate().optional(),
       license: s.string().optional(),
+      // Article slugs (content/articles/*.mdx) documenting this project. Resolved to
+      // /notes/[slug] when the article has a linkedNote (NOTES_ENABLED-gated, same
+      // rule as ArticleGroupCard), else to the article's own page/external URL.
+      relatedArticles: s.array(s.string()).optional(),
       tech: s.array(s.string()),
       pinned: s.boolean().default(false),
       pinRank: s.number().optional(),

@@ -40,14 +40,18 @@ const STATS = ".next/diagnostics/route-bundle-stats.json";
 const MIN_ROUTES = 16;
 
 /**
- * Ceiling, not a baseline. Largest today is `/` at 1,220,794 B, so this is ~5% headroom — enough to
- * absorb chunk-boundary jitter and cross-OS variance. That variance is now MEASURED, not assumed:
- * macOS 1,220,794 B vs ubuntu-latest 1,222,305 B for `/` — 0.12% against 5% headroom.
+ * Ceiling, not a baseline. Largest today is `/` at 1,286,760 B (was 1,220,794 B before the
+ * theme toggle + hero name line — both above-the-fold, immediately-interactive UI that can't
+ * be deferred the way the Tooltip rollout was; see tooltip.tsx's dynamic-import comment for
+ * the piece that WAS deferred instead of raising this number). ~3,240 B / 0.25% headroom above
+ * today's measurement, intentionally tighter than the previous ~5% — enough to absorb
+ * chunk-boundary jitter and cross-OS variance (previously measured: macOS vs ubuntu-latest
+ * differed by 1,511 B for a smaller total), not meant to invite further slack accumulation.
  *
  * Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,
  * the same discipline next.config.ts:127-149 already uses for the three.js chunk.
  */
-const MAX_FIRST_LOAD_BYTES = 1_285_000;
+const MAX_FIRST_LOAD_BYTES = 1_290_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies

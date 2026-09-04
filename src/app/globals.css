@@ -6,6 +6,8 @@
   echoing the ContextOS/Graph-Forge dashboards. WCAG AA verified on bg-base.
 */
 :root {
+  color-scheme: dark;
+
   /* surfaces */
   --bg-base: #07080d;        /* page background */
   --bg-surface: #0d0f17;     /* cards */
@@ -28,6 +30,31 @@
   /* effects */
   --glow-accent: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
                  0 0 24px -4px color-mix(in oklab, var(--accent) 45%, transparent);
+}
+
+/*
+  Light theme override — applied via `document.documentElement.dataset.theme`
+  (src/lib/theme-context.tsx), toggled by <ThemeToggle> in site-nav.tsx/mobile-nav.tsx.
+  Re-declares every custom property from :root above so @theme inline's Tailwind
+  mapping needs zero utility-class changes anywhere else in the app.
+
+  OPEN RISK (not resolved by this change — flag in the PR): unlike the dark palette
+  above, whose per-color contrast ratios are documented from direct verification,
+  these light-mode values were chosen from standard accessible Tailwind-scale
+  anchors (cyan-700 / violet-600 / green-700 / amber-700 range) but have NOT been run
+  through an actual contrast checker against #f7f8fb / #ffffff. Verify before
+  shipping — --green is the highest-risk hue for small text. --glow-accent needs no
+  explicit override here (it resolves from whichever --accent is active via
+  color-mix()), but the body gradient wash and skeleton shimmer were designed
+  against the dark values and should be spot-checked visually under light mode.
+*/
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-base: #f7f8fb; --bg-surface: #ffffff; --bg-elevated: #eef1f6;
+  --border: #dde1ea; --border-strong: #c7ccd9;
+  --fg: #12141c; --fg-muted: #4b5164; --fg-subtle: #6b7184;
+  --accent: #0e7490; --accent-strong: #0b5b73; --violet: #7c3aed;
+  --green: #15803d; --amber: #b45309;
 }
 
 @theme inline {

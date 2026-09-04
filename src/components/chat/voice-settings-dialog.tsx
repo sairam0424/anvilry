@@ -5,6 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
 import { VoicePicker } from "@/components/chat/voice-picker";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   DEFAULTS,
   DEFAULT_VOICE_CHARACTER,
@@ -246,12 +247,14 @@ export function VoiceSettingsDialog({
                   Defaults are free.
                 </Dialog.Description>
               </div>
-              <Dialog.Close
-                className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                aria-label="Close voice settings"
-              >
-                <X size={16} aria-hidden="true" />
-              </Dialog.Close>
+              <Tooltip content="Close">
+                <Dialog.Close
+                  className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  aria-label="Close voice settings"
+                >
+                  <X size={16} aria-hidden="true" />
+                </Dialog.Close>
+              </Tooltip>
             </header>
 
             {/* Voice section — picker grid embedded inline. */}

@@ -76,7 +76,7 @@ corrected text.
 | Terminal commands | **31** — 27 visible + 4 hidden eggs. ~~"docs still say roughly 16"~~ — **corrected on this branch:** `CLAUDE.md:115` and `ARCHITECTURE.md:74` both say 31 now | `src/components/game/terminal/commands.ts:503-508` |
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
-| `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-26`; `src/components/view-switcher.tsx:16-21`, `:32-33`, `:38` |
+| `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-34`; `src/components/view-switcher.tsx:17-22`, `:32-33`, `:38` |
 | CHANGELOG version tags | 19 (was 18 before `3.6.0`; still no `2.x`, no `3.1`–`3.3`) | `CHANGELOG.md:7` is the newest; `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 19 — there is no live `[Unreleased]` section |
 
 Two figures differ from the numbers quoted in the indexing brief and were corrected by re-measurement:
@@ -212,14 +212,14 @@ WebGL context (`src/components/view-router.tsx:9-24`, `:58-69`).
 
 Two further members exist in the same union. `voice` (`src/components/chat/anvil-view.tsx`) **is** a
 switcher pill on desktop, but only after hydration: `OPTIONS` holds just the four above
-(`src/components/view-switcher.tsx:16-21`) and `VOICE_OPTION` is appended when
+(`src/components/view-switcher.tsx:17-22`) and `VOICE_OPTION` is appended when
 `mounted && !compact && isViewEnabled("voice")` (`:38`). Since an unset `NEXT_PUBLIC_ENABLED_VIEWS`
 enables every optional view (`src/lib/enabled-views.ts:28`, with `voice` in `ALL_OPTIONAL` at `:21`), a
 **default build renders 4 pills on the server and 5 on desktop after hydration**; the compact (mobile)
 instance deliberately stays at 4 and routes voice through the header Anvil orb instead
 (`src/components/view-switcher.tsx:32-33`). `resume` (`src/components/home/resume-view.tsx`) is **never** a
 pill — it is reachable only via ⌘K "Recruiter view" or `?view=resume`. So `View` is a six-member union
-(`src/components/view-context.tsx:24-26`) and "four views" describes the server-rendered switcher, not the
+(`src/components/view-context.tsx:24-34`) and "four views" describes the server-rendered switcher, not the
 store — see [08 § Four-view state machine](./08-components-site-shell-ui.md#four-view-state-machine) for the full state machine and
 [15](./15-invariants-and-gotchas.md) for the doc-drift entry.
 

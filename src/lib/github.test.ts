@@ -106,7 +106,7 @@ describe("getRepoFeed (fail-open, render-only-what-resolves)", () => {
 
   it("does NOT send an Authorization header when GITHUB_TOKEN is unset", async () => {
     vi.stubEnv("GITHUB_TOKEN", "");
-    const spy = vi.fn(async (_url: string, _init?: RequestInit) => notFound());
+    const spy = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => notFound());
     vi.stubGlobal("fetch", spy);
     await getRepoFeed();
     const headers = (spy.mock.calls[0]?.[1]?.headers ?? {}) as Record<
@@ -118,7 +118,7 @@ describe("getRepoFeed (fail-open, render-only-what-resolves)", () => {
 
   it("sends a Bearer Authorization header when GITHUB_TOKEN is set", async () => {
     vi.stubEnv("GITHUB_TOKEN", "ghp_test123");
-    const spy = vi.fn(async (_url: string, _init?: RequestInit) => notFound());
+    const spy = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => notFound());
     vi.stubGlobal("fetch", spy);
     await getRepoFeed();
     const headers = (spy.mock.calls[0]?.[1]?.headers ?? {}) as Record<

@@ -251,7 +251,7 @@ Three structural facts a maintainer should know (this line said "two" while list
   its guards is now executable.** Its §Regression guards list grew to five, and the new first bullet is
   marked **✅ ENFORCED** (`domains/performance/README.md:60-73`): `.github/workflows/ci.yml:115-116` runs
   `node scripts/bundle-budget.mjs`, which fails the job if either any route's
-  `firstLoadUncompressedJsBytes` exceeds 1,285,000 B (`scripts/bundle-budget.mjs:50`; largest today is `/`
+  `firstLoadUncompressedJsBytes` exceeds 1,290,000 B (`scripts/bundle-budget.mjs:54`; largest today is `/`
   at 1,220,794 B, ~5% headroom) or the `WebGLRenderer` marker (`scripts/bundle-budget.mjs:62`) turns up in
   any route's first-load chunk set — today it sits in exactly one 897,249 B chunk, present in 0 of 16
   routes. The remaining **four** guards still fail *silently*, including "`src/lib/r3f.ts` is load-bearing …

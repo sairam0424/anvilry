@@ -40,14 +40,28 @@ const STATS = ".next/diagnostics/route-bundle-stats.json";
 const MIN_ROUTES = 16;
 
 /**
- * Ceiling, not a baseline. Largest today is `/` at 1,220,794 B, so this is ~5% headroom — enough to
- * absorb chunk-boundary jitter and cross-OS variance. That variance is now MEASURED, not assumed:
- * macOS 1,220,794 B vs ubuntu-latest 1,222,305 B for `/` — 0.12% against 5% headroom.
+ * Ceiling, not a baseline. Largest today is `/` at 1,322,132 B (was 1,220,794 B before the
+ * theme toggle, hero name line, and the Tooltip rollout on site-nav.tsx/mobile-nav.tsx --
+ * all three are global, in the root layout on every route, and all three are immediately
+ * interactive UI (a hover tooltip on a keyboard-focusable icon button included).
+ *
+ * A lazy/deferred Tooltip (dynamic-import the Radix module, render bare children until
+ * it resolves) WAS tried here first and reverted: swapping from a bare-children fallback
+ * to the Radix-wrapped tree changes the element type at that tree position, which forces
+ * React to unmount/remount the actual interactive child -- confirmed to break focus
+ * restoration after closing TerminalOverlay (an explicit WCAG 2.4.3 regression test) when
+ * the async resolution raced a real interaction. Correctness for keyboard/screen-reader
+ * focus wins over a ~35KB bundle-size optimization; see the commit that added and then
+ * reverted tooltip-radix.tsx for the measured failure.
+ *
+ * ~3,868 B / 0.3% headroom above today's measurement -- enough to absorb chunk-boundary
+ * jitter and cross-OS variance (previously measured: macOS vs ubuntu-latest differed by
+ * 1,511 B for a smaller total), not meant to invite further slack accumulation.
  *
  * Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,
  * the same discipline next.config.ts:127-149 already uses for the three.js chunk.
  */
-const MAX_FIRST_LOAD_BYTES = 1_285_000;
+const MAX_FIRST_LOAD_BYTES = 1_326_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies

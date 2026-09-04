@@ -28,7 +28,10 @@ const siteUrl = "https://anvilry.vercel.app";
 // Dark browser chrome (address bar / status bar) to match the site.
 export const viewport: Viewport = {
   themeColor: "#07080d",
-  colorScheme: "dark",
+  // "dark light" (not just "dark"): a browser UI hint only, not per-request state, so
+  // it can reflect that the site now supports both palettes even though metadata.ts's
+  // static theme_color/background_color stay pinned to dark (see theme-context.tsx).
+  colorScheme: "dark light",
   viewportFit: "cover",
 };
 
@@ -85,6 +88,19 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       suppressHydrationWarning
     >
       <head suppressHydrationWarning>
+        {/* No-flash theme script — first child, before any JSX-controlled content.
+            Applies a persisted "light"/"dark" choice to document.documentElement
+            BEFORE React hydrates, matching the technique next-themes uses internally.
+            `<html>` never carries `data-theme` as a React prop, so this imperative
+            write can never cause a hydration diff (same reasoning as
+            commitViewChange() imperatively setting `data-view-dir` today). See
+            src/lib/theme-context.tsx for the persisted store this mirrors. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var t=localStorage.getItem("anvilry:theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}})();',
+          }}
+        />
         <PersonJsonLd />
         <WebSiteJsonLd />
         <FaqJsonLd />

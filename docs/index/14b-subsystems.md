@@ -301,7 +301,7 @@ Four independent canvases exist; at most one hero canvas and one orb canvas are 
 
 ```
 GATE (evaluated in a client component, before any import resolves)
-  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:35
+  hero graph :  isDesktop(min-width:768px) && !reduced && view === "classic"       hero-graph/index.tsx:48
   hero avatar:  heroMode === "avatar" && isDesktop && !reduced && view === "classic"
                                                                   hero-avatar/index.tsx:54,:56
   build graph:  isDesktop && !reduced && webglOk && !webglFailed && !talkOpen      game/build-graph.tsx:50
@@ -391,7 +391,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 | Chunk dedup | the `src/lib/r3f.ts` barrel; `three`/`fiber`/`drei` deliberately **excluded** from `optimizePackageImports` (which is `["lucide-react","motion"]`) | `next.config.ts:126-131,146-150` |
 | Recorded chunk measurement | 16.2.9: 2036 KB / 5 chunks (two 876 KB copies) → 16.3.0: 1160 KB / 4 chunks (one copy), −876 KB | `next.config.ts:133-144` |
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages | `domains/performance/README.md:85-91` |
-| Enforced in CI as of this branch | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B) must appear in **zero** routes' first-load sets, and no route may exceed 1,285,000 B of first-load JS. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:50,62,124`; step at `.github/workflows/ci.yml:115-116`; § 10 The bundle budget gate |
+| Enforced in CI as of this branch | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B) must appear in **zero** routes' first-load sets, and no route may exceed 1,290,000 B of first-load JS. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:54,66,128`; step at `.github/workflows/ci.yml:115-116`; § 10 The bundle budget gate |
 | Asset budget | `MAX_BYTES = 1.5 * 1024 * 1024`; current asset 1,105,768 B | `src/lib/avatar-glb.test.ts:21,58-61` |
 | LOD | **none exists** — no `<Detailed>`, no `THREE.LOD`, no distance swap. The only quality knobs are the dpr clamp and the 768 px cutoff. | verified absence, section 07 |
 | Worker offload | **not present in source.** `@react-three/offscreen` was declared but imported by no file in `src/`, and was **removed from `package.json` in v3.5.0**. `CLAUDE.md:259` says the same ("no worker/OffscreenCanvas anywhere") — it previously claimed worker offload existed. | section 07, section 13 |
@@ -401,7 +401,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 
 | Surface | Behaviour under `prefers-reduced-motion: reduce` |
 |---|---|
-| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:35,42-43`) |
+| Hero graph | Never mounts; the two blurred CSS circles are the visual (`hero-graph/index.tsx:48,53-55`) |
 | Hero avatar | Never mounts; `GlowFallback` duplicates those same two circles so switching hero modes causes no layout shift (`hero-avatar/index.tsx:16-26`) |
 | Build graph | Never mounts; `GraphIndex` (the accessible DOM-first list) is the whole experience (`build-graph.tsx:50`) |
 | Voice orb | 3D skipped; `VoiceOrbCanvas` draws **one static ring** and returns early with no rAF loop (`voice-orb-canvas.tsx:54-63`) |
@@ -414,7 +414,7 @@ content is elsewhere (`GraphIndex` for the graph, the visible caption + live reg
 
 | Failure | Mechanism |
 |---|---|
-| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:35`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
+| Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:48`; the rationale is stated at `:21-23`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
 | Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-graph/index.tsx` and `hero-avatar/index.tsx` neither probe nor (for the graph) wrap. |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:87`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
@@ -570,7 +570,7 @@ Records are `{ route, firstLoadUncompressedJsBytes, firstLoadChunkPaths }`; 16 r
 
 | Assertion | Value | Cite |
 |---|---|---|
-| Per-route first-load ceiling | 1,285,000 B — ~5% headroom over today's largest, `/` at 1,220,794 B | `scripts/bundle-budget.mjs:50` |
+| Per-route first-load ceiling | 1,290,000 B — ~0.25% headroom over today's largest, `/` at 1,286,760 B | `scripts/bundle-budget.mjs:54` |
 | Route-count floor | 16; fewer means the artifact's shape changed and the gate is lying about coverage | `:35` |
 | three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:133-144` — and it appears in **0** of the 16 routes' first-load sets | `:57` (marker), `:119` (check) |
 | Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:110` |
@@ -636,7 +636,7 @@ does not gate the route — only the nav link and the sitemap entry.
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:101`, recorded at `:3-7`). |
 | `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:198-198`). |
 | **CI red immediately after the build step**, "cannot read .next/diagnostics/route-bundle-stats.json" | Only Turbopack writes that artifact (`node_modules/next/dist/build/index.js:2843-2844`), so any build that opted into webpack — `pnpm analyze`, or a `--webpack` flag added to `pnpm build` — leaves the gate nothing to read. It exits 1 and names `--webpack` (`scripts/bundle-budget.mjs:75`). This is the intended behaviour, not a false positive: unmeasurable must be red. |
-| First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:115-116`). Raising `MAX_FIRST_LOAD_BYTES` (`:45`) is allowed but must be its own commit quoting measured before/after bytes (`:42-43`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:52-55`). |
+| First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:115-116`). Raising `MAX_FIRST_LOAD_BYTES` (`:45`) is allowed but must be its own commit quoting measured before/after bytes (`:51-52`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:52-55`). |
 | A bundle regression ships green again | Re-adding `continue-on-error` / `if-no-files-found` to the budget step, which is exactly how `bundle-analysis.yml` ran 222 times (211 green, 11 red) and produced zero artifacts, ever (`ci.yml:109-114`). |
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:32`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
 | eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:223-225`). |
@@ -706,7 +706,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change the chat wire protocol | `src/lib/llm-trace.ts:23-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:60-116` parses it; `api/cron/eval/route.ts:95` duplicates `TRACE_DELIMITER` as a literal. |
 | Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:297-311`. Gate: `parse-cards.test.ts`. |
 | Change markdown rendering of assistant text | `src/components/chat/markdown-message.tsx:47-93` | Do not remove `skipHtml` or override `urlTransform` — that is the XSS posture (`:10-16`). |
-| Add or reorder a **view** | `src/components/view-context.tsx:24-37` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:58-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:16-28`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
+| Add or reorder a **view** | `src/components/view-context.tsx:24-37` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:58-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:17-29`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
 | Change the view-transition animation | `src/app/globals.css:257-299` | The named groups come from `view-router.tsx:56` and `site-nav.tsx:40`; direction from `view-context.tsx:133-136`. |
 | Change SSR/first-paint view behaviour | `src/components/view-context.tsx:64-65` | `getServerSnapshot` must stay `DEFAULT_VIEW` — `view-context.test.ts:30-34` is the guard. |
 | Add or change a voice engine | `src/lib/voice-catalog.ts` (add to `CURATED_VOICES`/`EXTENDED_VOICES`) | Three lookup Maps build at module load (`:298-312`); adding a voice anywhere else leaves it un-lookupable and un-allowlisted. Then `use-speech-synthesis.ts` and, for a new server engine, a new `api/tts-*` route + cache. |
@@ -728,11 +728,11 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Migrate a flag to runtime toggling | `src/lib/flags.ts:17-29` | Also declare it in `src/app/.well-known/vercel/flags/route.ts:11-22`; requires `FLAG_DRIVER=vercel` + `FLAGS_SECRET`. `FLAG_DRIVER` is captured at module load (`:13`). |
 | Gate which views exist in a build | `src/lib/enabled-views.ts:20-40` | Unset ⇒ all on; empty string ⇒ all optional off. `classic` and `resume` cannot be disabled. |
 | Change a 3D scene | `src/components/hero-graph/scene.tsx` · `hero-avatar/avatar-scene.tsx` · `game/build-graph-scene.tsx` · `chat/voice-orb-3d.tsx` | Import from `@/lib/r3f`, never directly (`scene-physics.tsx:4-6` is the one exception). On a demand frameloop something must call `invalidate()`. |
-| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:35` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
+| Change when 3D mounts at all | `src/components/hero-graph/index.tsx:48` · `hero-avatar/index.tsx:56` · `game/build-graph.tsx:50` · `chat/voice-orb.tsx:42` | All four gates include the desktop + reduced-motion terms; the hero gates also include `view === "classic"`. |
 | Swap the avatar model | `public/avatar/sairam.glb` + `src/components/hero-avatar/avatar-mesh.tsx:10,27,54` (path in 3 places) | `src/lib/avatar-glb.test.ts` blocks the build on size (<1.5 MB), glTF 2.0, meshopt+quantization+WebP, named bones, and the current **zero** morph targets (`:132-157`). |
 | Add a terminal command | `src/components/game/terminal/commands.ts:503-508` (registry) | 31 entries today (27 visible + 4 hidden) — `CLAUDE.md:115` and `ARCHITECTURE.md:74` now both say 31; the "~16" this index flagged in those two docs is fixed. Keep `COMMAND_NAMES` `!hidden`-filtered (`:525-527`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
 | Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate. `lint` and `tsc --noEmit` are CI-only (`ci.yml:46-50`), as is the bundle budget (`ci.yml:115-116`). Do **not** add `--webpack` to `build`: it silently stops `.next/diagnostics/route-bundle-stats.json` being written and the budget gate then fails by design (`scripts/bundle-budget.mjs:75`). |
-| Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:50` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:42-43`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
+| Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:54` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:51-52`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
 | Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:100-102`). E2E does not block `pnpm build`. |
 | Point a custom domain at the deployment | `src/app/layout.tsx:26` | Then the other **17 files** (24 occurrences in total, plus `src/lib/mcp-tools.test.ts:69` and the `next.config.ts:195` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority. `CLAUDE.md:335` now gives the full count (19 files / 25 occurrences, test included) instead of four. |
@@ -894,7 +894,7 @@ than the original open question.
 - **Stale-comment / doc-drift items carried forward** without further investigation (each cited in its
   originating section): the `highlight-store.ts:9-10` claim that `project-card.tsx` subscribes;
   `open-to-work-banner.tsx:6-8` "hidden via CSS (h-0)";
-  `home/resume-view.tsx:12-14` "ViewEscapeHatch auto-rendered by view-router";
+  `home/resume-view.tsx:14-16` "ViewEscapeHatch auto-rendered by view-router";
   `anvil-core-surface.tsx:20-22` "~200px reactive orb"; `easter-eggs.tsx:57-66` "once per session";
   `use-trace-runner.ts:69-70` "Reset when the scenario changes";
   `CLAUDE.md:249`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);

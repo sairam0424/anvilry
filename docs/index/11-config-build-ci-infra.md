@@ -650,7 +650,7 @@ script was added at `package.json:12` — see the `package.json` gotchas below.)
   `firstLoadChunkPaths`; largest first-load is `/` at **1,220,794 B**, and the on-disk sum of that route's
   `firstLoadChunkPaths` is *also* 1,220,794 B — so the number is a measurement, not a model.
 - **The two assertions:**
-  - **First-load ceiling** `MAX_FIRST_LOAD_BYTES = 1_285_000` (`:45`) — a ceiling with ~5% headroom over today's
+  - **First-load ceiling** `MAX_FIRST_LOAD_BYTES = 1_290_000` (`:45`) — a ceiling with ~5% headroom over today's
     largest route, not a baseline. Its docblock (`:37-44`) states the tolerance rationale explicitly: chunk-boundary
     jitter, plus the fact that byte-exact determinism between macOS (local) and `ubuntu-latest` (CI) is **not**
     verified. Raising it is expected — in its own commit, quoting measured before/after bytes.
@@ -813,7 +813,7 @@ test setup; the `NODE_ENV: "test"` pin at `:26` is what keeps `pnpm build` from 
   but no such audit script or spec exists in `e2e/` that I located.
 - Whether the repo secret `SECURITY_ALERTS_TOKEN` is currently configured (not inspectable from the working
   tree), so whether the `security-alerts` job reports anything today is unknown.
-- **Whether `MAX_FIRST_LOAD_BYTES = 1_285_000` (`scripts/bundle-budget.mjs:50`) has enough headroom for CI
+- **Whether `MAX_FIRST_LOAD_BYTES = 1_290_000` (`scripts/bundle-budget.mjs:54`) has enough headroom for CI
   specifically.** Every byte count on this page was measured on macOS locally; the gate also runs on
   `ubuntu-latest`, and the script's own docblock states that byte-exact determinism between the two is **not**
   verified (`:39-40`). The ~5% margin is a judgement call sized for chunk-boundary jitter, not a measured

@@ -3,6 +3,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { Terminal } from "./terminal";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * Fullscreen "beast mode" wrapper for the terminal. Radix Dialog gives us a focus
@@ -58,12 +59,14 @@ export function TerminalOverlay({
             A command-line interface to explore Sairam&apos;s work. Type &apos;help&apos; for commands, or press Escape to close.
           </Dialog.Description>
           <div className="relative">
-            <Dialog.Close
-              className="absolute -right-2 -top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-strong bg-bg-elevated text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              aria-label="Close terminal"
-            >
-              <X size={14} aria-hidden="true" />
-            </Dialog.Close>
+            <Tooltip content="Close terminal">
+              <Dialog.Close
+                className="absolute -right-2 -top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-strong bg-bg-elevated text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                aria-label="Close terminal"
+              >
+                <X size={14} aria-hidden="true" />
+              </Dialog.Close>
+            </Tooltip>
             <Terminal maxHeightClass="max-h-[70vh]" />
           </div>
         </Dialog.Content>

@@ -6,6 +6,7 @@ import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 import { useView } from "@/components/view-context";
 import { useChat } from "@/components/chat/use-chat";
+import { useChatA11y } from "@/components/chat/use-chat-a11y";
 import { MicButton } from "@/components/chat/mic-button";
 import { parseCards } from "@/components/chat/parse-cards";
 import { ChatCard } from "@/components/chat/chat-card";
@@ -47,6 +48,7 @@ function AskPortfolioWidget() {
   // hook as the full Chat view, so mic input + read-aloud (later phases) work in both
   // surfaces from one place. useChat also adds 429/abort handling the widget lacked.
   const { messages, send, isStreaming } = useChat();
+  const { liveMessage } = useChatA11y(messages, isStreaming);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpen = useRef(false);
 
@@ -100,6 +102,10 @@ function AskPortfolioWidget() {
               <X size={16} />
             </button>
           </header>
+
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {liveMessage}
+          </div>
 
           {/* relative wrapper anchors the floating JumpToLatest over the transcript. */}
           <div className="relative flex min-h-0 flex-1 flex-col">

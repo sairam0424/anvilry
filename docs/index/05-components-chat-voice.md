@@ -115,7 +115,7 @@ Three independent layers, all in scope, all fail-closed:
   - `card:project` → `getProject(slug)`; segment pushed **only if truthy** (`parse-cards.ts:54-56`).
   - `card:work` → `getWork(slug)`; same guard (:57-59).
   - `cmd:view` → allowed only if the slug is in `VIEWS` (:60-63); `VIEWS` is the exported readonly tuple
-    `["classic","gamified","chat","developer","voice","resume"]` (`view-context.tsx:26`, exported at :198).
+    `["classic","gamified","chat","developer","voice","resume"]` (`view-context.tsx:27`, exported at :198).
   - `cmd:highlight` → allowed only if `getProject(slug) || getWork(slug)` (:65-68).
 - `getProject` / `getWork` are `allProjects.find(...)` / `allWork.find(...)` over the Velite output
   (`src/lib/content.ts:43-44`, sourced from `.velite/projects.json` + `.velite/work.json`) — i.e. the

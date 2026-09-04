@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { unlock } from "@/lib/discovery-store";
 
 /**
@@ -21,9 +21,17 @@ import { unlock } from "@/lib/discovery-store";
  * optional full-page two-way talk surface (only offered when the visitor opts into the
  * "view" talk-surface — the default is a modal overlay, so VOICE is normally unused).
  */
-export type View = "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
+export type View =
+  "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice", "resume"] as const;
+const VIEWS: readonly View[] = [
+  "classic",
+  "gamified",
+  "chat",
+  "developer",
+  "voice",
+  "resume",
+] as const;
 const DEFAULT_VIEW: View = "classic";
 
 /** Nav order used to compute slide direction for view transitions. */
@@ -116,6 +124,28 @@ function commitViewChange() {
 }
 
 /**
+ * Bridge from the module-level store (below) to the App Router's client-side
+ * navigation, mirroring the pattern already used for `inkTransitionRef` in
+ * src/components/ui/ink-transition.tsx: a plain module `let` populated via a
+ * bare useEffect, so a non-React module function (setViewInternal) can reach
+ * a live router instance without needing React context.
+ */
+type RouterBridge = { push: (href: string) => void; pathname: string };
+let routerBridge: RouterBridge | null = null;
+
+function ViewRouterBridge() {
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    routerBridge = { push: router.push, pathname };
+    return () => {
+      routerBridge = null;
+    };
+  }, [router, pathname]);
+  return null;
+}
+
+/**
  * Set the active view and reflect it in the URL (?view=) without a navigation.
  *
  * Deliberately NO cookie/localStorage persistence: the owner's decision is
@@ -125,9 +155,35 @@ function commitViewChange() {
  */
 function setViewInternal(
   view: View,
-  { updateUrl = true, transition = true }: { updateUrl?: boolean; transition?: boolean } = {},
+  {
+    updateUrl = true,
+    transition = true,
+  }: { updateUrl?: boolean; transition?: boolean } = {},
 ) {
-  if (!isView(view) || view === current) return;
+  if (!isView(view)) return;
+
+  // Not on home: any view selection must navigate there, regardless of whether the
+  // store's `current` already matches — the module singleton persists across
+  // client-side nav, so "already current" doesn't mean "already visible." Skipped
+  // when updateUrl is false (the deep-link sync path in ViewQuerySync), which is
+  // already running ON `/` in response to a navigation that just happened.
+  //
+  // KNOWN NARROW RACE (accepted, not fixed): routerBridge.pathname comes from
+  // usePathname() inside a useEffect, so it is one render behind an in-flight
+  // router.push. Two view switches fired back-to-back, before that effect
+  // re-runs, can both read the pre-navigation pathname and both call push —
+  // an extra history entry, not a crash or lost state. A fix was attempted using
+  // window.location.pathname instead, but that decouples this check from the
+  // exact usePathname() reactivity view-context.dom.test.tsx's mocks rely on
+  // (and that real Next.js navigation timing was never independently verified
+  // against), so it was reverted rather than trade a tested narrow race for an
+  // unverified one.
+  if (updateUrl && routerBridge && routerBridge.pathname !== "/") {
+    routerBridge.push(view === DEFAULT_VIEW ? "/" : `/?view=${view}`);
+    return;
+  }
+
+  if (view === current) return;
   // Stamp direction on <html> so CSS keyframes pick the right slide direction.
   // Must happen before startViewTransition snapshots the DOM.
   if (typeof document !== "undefined" && transition) {
@@ -166,18 +222,24 @@ function ViewQuerySync() {
     const fromUrl = params.get("view");
     // Don't rewrite the URL we just read from, and don't cross-fade on first
     // paint — the deep-linked view should appear immediately, not animate in.
-    if (isView(fromUrl)) setViewInternal(fromUrl, { updateUrl: false, transition: false });
+    if (isView(fromUrl))
+      setViewInternal(fromUrl, { updateUrl: false, transition: false });
   }, [params]);
 
   return null;
 }
 
 export function ViewProvider({ children }: { children: ReactNode }) {
-  const view = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const view = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const setView = useCallback((v: View) => setViewInternal(v), []);
 
   return (
     <ViewContext.Provider value={{ view, setView }}>
+      <ViewRouterBridge />
       <Suspense fallback={null}>
         <ViewQuerySync />
       </Suspense>

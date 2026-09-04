@@ -3,10 +3,13 @@ import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/re
 import { AskPortfolio } from "./ask-portfolio";
 import { ViewProvider } from "@/components/view-context";
 
-// ViewProvider mounts ViewQuerySync, which reads useSearchParams() — null outside a
-// Next router. Provide an empty params object so the provider mounts as bare "/".
+// ViewProvider mounts ViewQuerySync (reads useSearchParams() — null outside a Next
+// router) and ViewRouterBridge (reads useRouter()/usePathname(), so setViewInternal
+// can navigate cross-route). Stub all three so the provider mounts as bare "/".
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/",
 }));
 
 /**

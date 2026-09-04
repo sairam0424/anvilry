@@ -1,7 +1,9 @@
+import type { ReactElement } from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, cleanup } from "@testing-library/react";
 import { VoicePicker } from "./voice-picker";
 import { CURATED_VOICES } from "@/lib/voice-catalog";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 /**
  * VoicePicker contract tests. Mock the TTS hook so the picker's preview button
@@ -11,7 +13,14 @@ import { CURATED_VOICES } from "@/lib/voice-catalog";
  * we'd need to vi.resetModules + import dynamically to flip it inside one test
  * run, so the layout-mode behavior is verified by the gender column resolver
  * in the catalog tests instead.
+ *
+ * VoicePicker renders a Tooltip (see src/components/ui/tooltip.tsx), which requires a
+ * TooltipProvider ancestor — production always has one via src/components/providers.tsx.
+ * `render` here wraps every call with that same provider so the tree matches production.
  */
+function render(ui: ReactElement) {
+  return rtlRender(ui, { wrapper: TooltipProvider });
+}
 
 const speak = vi.fn();
 const cancel = vi.fn();

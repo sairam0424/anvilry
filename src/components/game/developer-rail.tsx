@@ -3,6 +3,7 @@
 import { Download, Mail } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, impactMetrics, resumeVariants } from "@/lib/profile";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * The Developer view's recruiter rail — a quiet GUI sidebar beside the terminal on lg+
@@ -58,24 +59,28 @@ export function DeveloperRail() {
           >
             <Mail size={13} className="text-accent" aria-hidden="true" /> {profile.email}
           </a>
-          <a
-            href={profile.links.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub profile"
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <Github size={13} className="text-accent" /> github.com/{profile.githubUser}
-          </a>
-          <a
-            href={profile.links.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn profile"
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <Linkedin size={13} className="text-accent" /> linkedin.com/in/{profile.githubUser}
-          </a>
+          <Tooltip content="GitHub">
+            <a
+              href={profile.links.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub profile"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Github size={13} className="text-accent" /> github.com/{profile.githubUser}
+            </a>
+          </Tooltip>
+          <Tooltip content="LinkedIn">
+            <a
+              href={profile.links.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn profile"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Linkedin size={13} className="text-accent" /> linkedin.com/in/{profile.githubUser}
+            </a>
+          </Tooltip>
         </div>
       </div>
     </aside>

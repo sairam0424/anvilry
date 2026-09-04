@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { Mic, MicOff, Square } from "lucide-react";
 import { useStt } from "@/components/chat/use-stt";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * Push-to-talk mic for the chat composer. Progressive enhancement: renders ONLY when
@@ -104,35 +105,44 @@ export function MicButton({
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={onMicClick}
-        disabled={disabled}
-        aria-pressed={isListening}
-        aria-label={isListening ? "Stop listening" : "Ask by voice"}
-        aria-haspopup={!settings.micEnabled ? "dialog" : undefined}
-        title={error === "denied" ? "Microphone blocked — check browser permissions, or just type" : undefined}
-        className={`inline-flex items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base disabled:opacity-40 ${
-          compact ? "h-9 w-9 rounded-lg" : "h-11 w-11"
-        } ${
-          isListening
-            ? "border-accent bg-accent/15 text-accent"
-            : "border-border text-fg-muted hover:border-accent hover:text-fg"
-        }`}
+      <Tooltip
+        content={
+          error === "denied"
+            ? "Microphone blocked — check browser permissions, or just type"
+            : isListening
+              ? "Stop listening"
+              : "Ask by voice"
+        }
       >
-        {/* Pulsing dot + icon swap (NOT color-only) so the listening state is
-            perceivable without relying on hue — WCAG 1.4.1. */}
-        {isListening ? (
-          <span className="relative inline-flex">
-            <Square size={compact ? 13 : 15} className="fill-current" aria-hidden="true" />
-            <span className="absolute -right-1.5 -top-1.5 h-2 w-2 animate-pulse rounded-full bg-accent" />
-          </span>
-        ) : error === "denied" ? (
-          <MicOff size={compact ? 15 : 17} aria-hidden="true" />
-        ) : (
-          <Mic size={compact ? 15 : 17} aria-hidden="true" />
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={onMicClick}
+          disabled={disabled}
+          aria-pressed={isListening}
+          aria-label={isListening ? "Stop listening" : "Ask by voice"}
+          aria-haspopup={!settings.micEnabled ? "dialog" : undefined}
+          className={`inline-flex items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base disabled:opacity-40 ${
+            compact ? "h-9 w-9 rounded-lg" : "h-11 w-11"
+          } ${
+            isListening
+              ? "border-accent bg-accent/15 text-accent"
+              : "border-border text-fg-muted hover:border-accent hover:text-fg"
+          }`}
+        >
+          {/* Pulsing dot + icon swap (NOT color-only) so the listening state is
+              perceivable without relying on hue — WCAG 1.4.1. */}
+          {isListening ? (
+            <span className="relative inline-flex">
+              <Square size={compact ? 13 : 15} className="fill-current" aria-hidden="true" />
+              <span className="absolute -right-1.5 -top-1.5 h-2 w-2 animate-pulse rounded-full bg-accent" />
+            </span>
+          ) : error === "denied" ? (
+            <MicOff size={compact ? 15 : 17} aria-hidden="true" />
+          ) : (
+            <Mic size={compact ? 15 : 17} aria-hidden="true" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }

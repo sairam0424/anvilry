@@ -43,6 +43,16 @@ overrides:
   # rejects it, that's the CI signal to wait and retry, not a reason to skip the fix.
   qs: 6.16.0
 
+# Local patches applied via `pnpm patch` — see `patches/`. Kept separate from `overrides`
+# (version pins) since a patch edits a specific resolved version's own files, not which
+# version resolves.
+patchedDependencies:
+  # pmndrs/react-three-fiber#3754: connect() called addEventListener on a null/undefined
+  # target with no guard, unlike disconnect()'s matching check — crashes the hero graph's
+  # WebGL canvas on unmount/remount races. Fixed upstream is not yet released against
+  # 9.7.0; drop this patch when it is.
+  '@react-three/fiber@9.7.0': patches/@react-three__fiber@9.7.0.patch
+
 # --- Build scripts ---------------------------------------------------------------------------
 # THE ALLOWLIST IS SPELLED TWICE. `allowBuilds` is the one that matters; the two lists below are
 # legacy. They are kept in sync anyway, and a test enforces that — see the pointer under the map.

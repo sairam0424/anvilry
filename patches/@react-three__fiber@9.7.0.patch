@@ -1,0 +1,42 @@
+diff --git a/dist/events-156d8d12.esm.js b/dist/events-156d8d12.esm.js
+index 9681d0c62238d67f2d5ad389307dfd45ee8ba7ba..d1f6f64a1b25a9fb7ffee3fe17715530faf78dd4 100644
+--- a/dist/events-156d8d12.esm.js
++++ b/dist/events-156d8d12.esm.js
+@@ -16294,6 +16294,9 @@ function createPointerEvents(store) {
+       if ((_internal$lastEvent = internal.lastEvent) != null && _internal$lastEvent.current && events.handlers) events.handlers.onPointerMove(internal.lastEvent.current);
+     },
+     connect: target => {
++      // Patched (pnpm patch) — pmndrs/react-three-fiber#3754: connect() called addEventListener
++      // on a null/undefined target with no guard, unlike disconnect()'s matching check.
++      if (!target) return;
+       const {
+         set,
+         events
+diff --git a/dist/events-4c71f21f.cjs.prod.js b/dist/events-4c71f21f.cjs.prod.js
+index 65e702ef67d954387307b168529752690a586fd0..dce32d2103d9e189abdc9e033e76e5f7ad9200aa 100644
+--- a/dist/events-4c71f21f.cjs.prod.js
++++ b/dist/events-4c71f21f.cjs.prod.js
+@@ -8122,6 +8122,9 @@ function createPointerEvents(store) {
+       if ((_internal$lastEvent = internal.lastEvent) != null && _internal$lastEvent.current && events.handlers) events.handlers.onPointerMove(internal.lastEvent.current);
+     },
+     connect: target => {
++      // Patched (pnpm patch) — pmndrs/react-three-fiber#3754: connect() called addEventListener
++      // on a null/undefined target with no guard, unlike disconnect()'s matching check.
++      if (!target) return;
+       const {
+         set,
+         events
+diff --git a/dist/events-b1bdeb1a.cjs.dev.js b/dist/events-b1bdeb1a.cjs.dev.js
+index 7785529f79299cdefe706c0df1d5c756817ca274..eaf77c7782b882b041a6f1402a099a76f7a5eff2 100644
+--- a/dist/events-b1bdeb1a.cjs.dev.js
++++ b/dist/events-b1bdeb1a.cjs.dev.js
+@@ -16319,6 +16319,9 @@ function createPointerEvents(store) {
+       if ((_internal$lastEvent = internal.lastEvent) != null && _internal$lastEvent.current && events.handlers) events.handlers.onPointerMove(internal.lastEvent.current);
+     },
+     connect: target => {
++      // Patched (pnpm patch) — pmndrs/react-three-fiber#3754: connect() called addEventListener
++      // on a null/undefined target with no guard, unlike disconnect()'s matching check.
++      if (!target) return;
+       const {
+         set,
+         events

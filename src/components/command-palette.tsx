@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { TerminalSquare } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 // The palette's guts (cmdk, Radix dialog, voice picker/settings, and the
 // content-corpus-backed action lists) are ~140KB and only ever needed after
@@ -44,21 +45,27 @@ export function CommandPalette({
   return (
     <>
       {/* Trigger pill — bottom-right, terminal-styled */}
-      <button
-        ref={triggerRef}
-        onClick={() => {
-          setLoaded(true);
-          setOpen(true);
-        }}
-        aria-label="Open command palette"
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
-      >
-        <TerminalSquare size={14} className="text-accent" />
-        <span className="hidden sm:inline">Command</span>
-        <kbd className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px]">
-          ⌘K
-        </kbd>
-      </button>
+      <Tooltip content="Open command palette (⌘K)">
+        <button
+          ref={triggerRef}
+          onClick={() => {
+            setLoaded(true);
+            setOpen(true);
+          }}
+          aria-label="Open command palette"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
+        >
+          <TerminalSquare size={14} className="text-accent" />
+          <span className="hidden sm:inline">Command</span>
+          <kbd
+            aria-keyshortcuts="Meta+K"
+            aria-hidden="true"
+            className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px]"
+          >
+            ⌘K
+          </kbd>
+        </button>
+      </Tooltip>
 
       {/* Mounted once loaded and left mounted (never unmounted again) so its
           own open/close state, recents, and dialogs behave exactly as if it

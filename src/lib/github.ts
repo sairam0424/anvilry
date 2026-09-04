@@ -20,11 +20,12 @@ import { profile } from "@/lib/profile";
 const GITHUB_API = "https://api.github.com";
 
 /**
- * Repos shown in the feed. The 8 Velite-featured projects + two extras the owner
- * called out (Thunderboard-Labs, Shop.this). Private repos that 404 unauthenticated
- * (Agent-Forge, Graph-Forge, not-humans-lab) simply don't render until a token with
- * access is configured — by design (render only what resolves). Casing matches the
- * canonical GitHub repo name.
+ * Repos shown in the feed and eligible for the per-project "last updated" fetch.
+ * The 11 Velite-featured projects + two extras the owner called out (Thunderboard-Labs,
+ * Shop.this). Private repos that 404 unauthenticated (Agent-Forge, Graph-Forge) simply
+ * don't render until a token with access is configured — by design (render only what
+ * resolves; verified this session that not-humans-lab is no longer private and
+ * resolves fine unauthenticated). Casing matches the canonical GitHub repo name.
  */
 export const REPO_ALLOWLIST: readonly string[] = [
   "ag-bash",
@@ -33,10 +34,13 @@ export const REPO_ALLOWLIST: readonly string[] = [
   "ContextOS",
   "Graph-Forge",
   "gRPC-micro-services",
+  "Inkforge",
   "MindForge",
   "not-humans-lab",
   "Thunderboard-Labs",
   "Shop.this",
+  "Tombstone",
+  "trelix",
 ] as const;
 
 /** The slice of the GitHub repo payload we render — nothing more. */
@@ -61,8 +65,10 @@ type RawRepo = {
   pushed_at?: unknown;
 };
 
-const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-const str = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v : null);
+const num = (v: unknown): number =>
+  typeof v === "number" && Number.isFinite(v) ? v : 0;
+const str = (v: unknown): string | null =>
+  typeof v === "string" && v.trim() !== "" ? v : null;
 
 /** Normalize a raw GitHub repo into our render shape; null if it lacks essentials. */
 function normalize(name: string, raw: RawRepo): GithubRepo | null {
@@ -92,8 +98,15 @@ function headers(): HeadersInit {
   return h;
 }
 
-/** Fetch one repo; null on any non-200 / parse failure (fail-open per repo). */
-async function fetchRepo(owner: string, name: string): Promise<GithubRepo | null> {
+/**
+ * Fetch one repo; null on any non-200 / parse failure (fail-open per repo), or if
+ * `name` isn't on REPO_ALLOWLIST (same no-scraping guarantee as `getRepoFeed()`).
+ */
+export async function fetchRepo(
+  owner: string,
+  name: string,
+): Promise<GithubRepo | null> {
+  if (!REPO_ALLOWLIST.includes(name)) return null;
   try {
     const res = await fetch(`${GITHUB_API}/repos/${owner}/${name}`, {
       headers: headers(),
@@ -114,8 +127,26 @@ async function fetchRepo(owner: string, name: string): Promise<GithubRepo | null
  */
 export async function getRepoFeed(): Promise<GithubRepo[]> {
   const owner = profile.githubUser;
-  const results = await Promise.all(REPO_ALLOWLIST.map((name) => fetchRepo(owner, name)));
+  const results = await Promise.all(
+    REPO_ALLOWLIST.map((name) => fetchRepo(owner, name)),
+  );
   return results
     .filter((r): r is GithubRepo => r !== null)
     .sort((a, b) => (a.pushedAt < b.pushedAt ? 1 : -1));
+}
+
+const RELATIVE = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+/** "3 days ago" from an ISO timestamp; "" if unparseable (hidden). */
+export function pushedAgo(iso: string): string {
+  if (!iso) return "";
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const diffDays = Math.round((then - Date.now()) / 86_400_000);
+  if (diffDays <= -365)
+    return RELATIVE.format(Math.round(diffDays / 365), "year");
+  if (diffDays <= -30)
+    return RELATIVE.format(Math.round(diffDays / 30), "month");
+  if (diffDays <= -7) return RELATIVE.format(Math.round(diffDays / 7), "week");
+  return RELATIVE.format(diffDays, "day");
 }

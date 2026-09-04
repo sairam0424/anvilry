@@ -4,7 +4,9 @@ name: ContextOS
 tagline: Intelligence layer for autonomous AI agents.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/ContextOS
-commits: 175
+commits: 190
+dateCreated: 2026-03-30
+license: MIT
 tech: [TypeScript, SQLite, "Vector Search", MCP, React, "Three.js"]
 pinned: true
 pinRank: 5
@@ -21,4 +23,31 @@ The core wires multi-agent orchestration (TaskGraph DAG scheduler, SwarmOrchestr
 - Merkle audit logs · circuit breakers · DAG orchestration
 - `sqlite-vec` vector search · local embeddings
 
-> Clean, shipped, and complementary to Agent-Forge. 175 commits.
+> Clean, shipped, and complementary to Agent-Forge. 190 commits.
+
+## Architecture
+
+The repo is a **TypeScript monorepo** (Turborepo + npm workspaces, ESM-only) with four workspaces, all locked at **v1.13.2**: `@context-os/core`, `@context-os/cli`, `@context-os/mcp`, and a private `workspace-dashboard`.
+
+`@context-os/core`'s DI container (`src/container/`) is the spine everything else plugs into: `tokens.ts` defines ~45 typed Symbol keys and `defaults.ts` wires the default service graph, both inside `src/container/`; one level up, `src/factory.ts#createContextOS()` is the single public entry point that assembles the container. Beyond the orchestration/resilience primitives above, core also ships `cognitive/`, `governance/` (capability tokens, trust scoring, a policy engine), and `streaming/` subsystems, plus service modules for git-intelligence, graph-rag, temporal-graph, knowledge-graph, embedding, locking, mission, and repair.
+
+`@context-os/mcp` enforces its own security boundary: an **Allowed-Bucket whitelist**. Paths are canonicalized via `fs.realpathSync`/`path.resolve` — defeating symlink and traversal escapes — and must resolve inside one of 13 fixed buckets (`projects/`, `knowledge/`, `schemas/`, `archive/`, `log/`, `orgs/`, `root/`, `docs/`, `prompts/`, `daily/`, `packages/`, `workspace-cli/`, `workspace-dashboard/`); 7 of the 13 are read-only for agents. Every document crossing this boundary is Ajv-validated against six schemas: soul, context, decision, memory, mission, capabilities.
+
+## How It Works
+
+An agent talks to ContextOS over the MCP server's stdio or HTTP/SSE transport, which routes into core through `createContextOS()`'s DI graph.
+
+1. **Path resolution.** The file path is canonicalized and checked against the Allowed-Bucket whitelist — a rejected path never reaches governance or storage.
+2. **Governance & validation.** `governance/` checks the caller's capability token and trust score, then the document is Ajv-validated against its schema (soul, context, decision, memory, mission, or capabilities) — an unauthorized or malformed write never reaches shared state.
+3. **Orchestration.** For multi-agent work, TaskGraph and SwarmOrchestrator sequence the run; ConflictResolver settles competing writes.
+4. **Resilience.** Every write lands in the Merkle-linked audit log; the circuit breaker and CUSUM detector watch for cascade-preceding patterns and auto-quarantine before one happens.
+5. **Live repair.** The Sentinel watches the workspace via native fsevents and triggers immediate re-validation on change; a corrupted `context.md` or project file gets a Gemini 1.5 Pro repair from the Janitor Agent (v1.11.0), capped at three attempts per file.
+6. **Retrieval.** Queries are embedded locally (`@xenova/transformers`, 384-dim MiniLM) and matched via `sqlite-vec` in `better-sqlite3`. A degraded, keyword-only result now says so in-band — in `SearchResult.type`, CLI text, `--json` output, and the MCP tool response — instead of failing silently.
+
+## Key Decisions
+
+**Made the embedding provider optional, not bundled.** `@xenova/transformers` pulls in `onnxruntime-web` → `onnx-proto` → `protobufjs`, which carries a critical RCE advisory with no fix in any maintained ONNX package. Default install: 83 packages, zero known vulnerabilities. Opt into semantic search: 130 packages, 1 critical + 4 high advisories `npm audit fix` can't clear. Cost: an upgrade silently drops semantic search until the dependency returns — why degraded retrieval now surfaces across five output surfaces instead of failing quietly.
+
+**Hard-fixed the vector index at 384 dimensions** — the local MiniLM model's width — instead of auto-negotiating per provider. Gemini and Ollama report 768 dimensions, so enabling `GEMINI_API_KEY` or `OLLAMA_MODEL` deliberately throws at startup instead of silently writing mismatched-width vectors into the store. Cost: those "supported" providers don't work out of the box — using them means re-embedding the index or injecting a custom 384-dim provider.
+
+**Left git auto-commit off by default.** The architecture doc explains why: an agent-authored commit puts an unreviewed write into shared history — "and that is precisely how a corrupt write once reached this repository's history." With `CONTEXTOS_AUTO_COMMIT` unset, agent writes exist only as an audit-log row and an unreviewed diff until a human opts in — a real reviewability gap, traded against repeating the incident that caused it.

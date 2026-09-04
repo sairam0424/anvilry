@@ -4,7 +4,9 @@ name: MindForge
 tagline: Agentic-intelligence framework for Claude Code.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/MindForge
-commits: 1193
+commits: 1677
+dateCreated: 2026-03-19
+license: MIT
 tech: [Node.js, TypeScript, MCP, sql.js, WebSocket]
 pinned: true
 pinRank: 6
@@ -22,4 +24,23 @@ It exposes **174 slash commands, 154 specialized subagents, and 73 skills** plus
 - **Cost-aware routing** + audit/replay via hash-linked logs
 - Built on a pure Node.js + WASM runtime with a strict-TypeScript SDK
 
-> 1,193 commits — the most-invested project in the portfolio.
+> 1,677 commits — the most-invested project in the portfolio.
+
+## Architecture
+
+MindForge splits into four load-bearing subsystems. **Wave execution** (`bin/autonomous/wave-executor.js` + `bin/autonomous/dependency-dag.js`) topologically sorts tasks with Kahn's algorithm, detects cycles explicitly, and groups the result into waves bounded by a hand-rolled `Semaphore`. **Model routing** (`bin/models/model-router.js`) maps personas to model tiers — planner and security personas escalate to Opus, executor/reviewer/QA run on Sonnet, quick tasks run on Haiku — configurable via `MINDFORGE.md`; a separate `difficulty-scorer.js` computes a per-task difficulty score but runs in shadow mode, logging intended routing to stderr without touching the real model call. **Governance** (`bin/governance/audit-hash.js` + `audit-verifier.js`, paired with `bin/autonomous/audit-writer.js`) is a single canonical SHA-256 hasher shared by the writer and the verifier, chaining each audit entry to the one before it. **Persistence** splits in two: resumable session state (tasks, waves, audit pointers) lives in `.planning/HANDOFF.json` via `bin/autonomous/state-manager.js`, while a separate embedded `sql.js` (WASM SQLite) datastore (`celestial.db`) holds traces, remediations, skills, and knowledge — not task/wave resumability. **Streaming** is a WebSocket SDK (`sdk/src/events.ts`) that ships with zero runtime dependencies.
+
+## How It Works
+
+1. A task enters the engine and `dependency-dag.js` builds a DAG from its declared dependencies, topologically sorting it into waves — a circular dependency throws immediately instead of deadlocking silently.
+2. Within a wave, `wave-executor.js`'s Semaphore bounds how many tasks run concurrently, so parallelism is real but capped.
+3. Each task resolves its model tier through `model-router.js`'s persona map; when a caller passes a `taskContext`, `difficulty-scorer.js` also runs in shadow mode, computing what would route differently but never overriding the persona map's actual choice.
+4. As work completes, `bin/autonomous/audit-writer.js` appends an entry to the local audit log, hashing it against the previous entry's hash via `bin/governance/audit-hash.js` — a tamper-evident chain, though the log itself (`.planning/AUDIT.jsonl`) is gitignored, so it protects a local run rather than git history.
+5. State — tasks, waves, audit pointers — persists to `.planning/HANDOFF.json` via `state-manager.js`, so a session can resume after a crash.
+6. Progress and results stream out over `WebSocketEventStream` to any connected SDK client; `verify-audit.js` can independently replay the chain and fails closed the moment a hash breaks.
+
+## Key Decisions
+
+- **Advisory governance over fail-closed hooks.** Outside Claude Code's own hook channel, MindForge enforces policy by convention rather than by blocking — a trade its own README states outright, made against a fail-closed tail that was measured denying benign commands on a fresh clone.
+- **A single canonical version source over a "bump N files" heuristic.** `package.json` feeds a sync script and test gate fanning out across 16 channels — the SDK, the MCP server, three lockfiles, the Homebrew formula, the Dockerfile, the marketplace listing. The cost of skipping that gate already happened once: v11.9.2 shipped with the Homebrew formula and Dockerfile still pinned four releases behind.
+- **A zero-dependency SDK over a bundled WebSocket client.** Shipping `sdk/` with no runtime dependencies keeps it lean, but it means `WebSocketEventStream` can't function on Node 18 or 20 unless the caller manually installs and polyfills `ws` onto `globalThis` — a real enough gap that the code now throws a descriptive error instead of the bare `ReferenceError` it used to.

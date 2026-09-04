@@ -4,6 +4,7 @@ name: Order Processing System
 tagline: Distributed, event-driven gRPC microservices.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/gRPC-micro-services
+dateCreated: 2026-02-07
 tech: [Go, Python, gRPC, PostgreSQL, Kafka, etcd]
 pinned: true
 pinRank: 3
@@ -22,3 +23,32 @@ A production-grade, event-driven order-processing backend built as **polyglot Go
 - Full observability via Envoy L7
 
 > Senior-grade distributed-systems work without an LLM in the loop.
+
+## Architecture
+
+The system splits into two layers: an external REST gateway sitting behind an **Envoy L7 proxy**, and internal services that only ever speak gRPC to each other. The service layer is **polyglot Go + Python/FastAPI**.
+
+- **Envoy L7 proxy** — external entry point, fronting the REST gateway.
+- **Go and Python/FastAPI microservices** — internal, gRPC-to-gRPC.
+- **PostgreSQL** — system of record, with read replicas for scaled query traffic.
+- **Redis** — cache layer in front of hot read paths.
+- **etcd** — coordination substrate for leader election.
+- **Debezium**, tailing the Postgres write-ahead log, feeding the transactional outbox.
+- **OpenTelemetry / Prometheus / Grafana** — tracing, metrics, and dashboards wrapping every hop.
+
+## How It Works
+
+1. A request lands at the Envoy L7 proxy and is routed to the REST gateway.
+2. The gateway issues a gRPC call into the owning Go or Python service.
+3. For inventory, that service reserves stock inside a single **ACID** database transaction.
+4. Everything past that point runs as a **Saga**: the saga orchestrator sequences the remaining steps across services, compensating backwards if a later step fails, and each step writes its outbox row in the same local transaction as its business write, so the write to the database and the write announcing that write can never disagree.
+5. Debezium reads those outbox rows straight off the Postgres WAL rather than through a separate polling or dual-write path, and publishes them downstream.
+6. Consumers process each event idempotently, using idempotency keys to collapse duplicate redeliveries; anything that still fails goes to a Dead-Letter Queue instead of retrying forever or silently vanishing.
+7. Writes that require single-writer semantics only proceed once a service instance holds the etcd-elected leader lease, so two instances can't race on the same resource.
+8. Reads that aren't on the critical path get sent through metric-driven routing across PostgreSQL replicas, short-circuited by a Bloom filter before ever touching a replica, and served out of Redis when cached.
+
+## Key Decisions
+
+- **Saga orchestration, not Two-Phase Commit.** 2PC is the obvious alternative for cross-service atomicity, but it needs distributed locks held across every participant and a coordinator that becomes a single point of failure. Sagas avoid both, but the cost lands on the order flow's consistency model — it's eventually consistent, and correctness now depends on compensating transactions actually reversing partial work cleanly when a step fails midway.
+- **At-least-once-with-dedup, not real exactly-once.** The "exactly-once-ish" label above is intentionally hedged: a CDC outbox plus idempotency keys plus a DLQ is, underneath, an at-least-once delivery guarantee with deduplication bolted on — not the theoretically pure exactly-once semantics the name gestures at. Consumers have to be built idempotent by construction, in exchange for not needing a distributed transaction coordinator to get reliable delivery.
+- **etcd leader election over letting any instance write.** Single-writer coordination through etcd buys write-conflict and split-brain avoidance by construction, but it adds a new coordination dependency with its own failure modes — leader flapping or quorum loss becomes part of this system's failure surface. What happens to in-flight writes during a leader-election gap isn't something the current design spells out.

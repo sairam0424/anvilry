@@ -7,6 +7,8 @@ import { Terminal } from "@/components/game/terminal/terminal";
 import { TerminalOverlay } from "@/components/game/terminal/terminal-overlay";
 import { DeveloperRail } from "@/components/game/developer-rail";
 import { hasPersonalContent } from "@/lib/personal";
+import { OPEN_TO_WORK } from "@/lib/writing-flags";
+import { cn } from "@/lib/utils";
 
 /**
  * DEVELOPER view — a focused, full-page terminal destination. The keyboard-native CLI
@@ -28,8 +30,17 @@ export function DeveloperView() {
     // an ancestor is height-BOUNDED — with only min-height the chain grows past the
     // viewport and the document scrolls instead (same trap fixed on the chat view).
     // Mobile keeps min-h so a short terminal doesn't get awkwardly capped. dvh avoids
-    // the iOS Safari address-bar jump.
-    <main className="mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-6xl flex-col px-6 py-6 lg:h-[calc(100dvh-3.5rem)] lg:min-h-0">
+    // the iOS Safari address-bar jump. Also subtracts the OpenToWorkBanner's height when
+    // it's showing — see the identical comment in chat-view.tsx for why (both variants
+    // must be literal Tailwind class strings, not built via template interpolation).
+    <main
+      className={cn(
+        "mx-auto flex min-h-[calc(100vh-3.5rem)] w-full max-w-6xl flex-col px-6 py-6 lg:min-h-0",
+        OPEN_TO_WORK
+          ? "lg:h-[calc(100dvh-3.5rem-2.3125rem)]"
+          : "lg:h-[calc(100dvh-3.5rem)]",
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
         <ViewEscapeHatch />
         <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
@@ -39,14 +50,28 @@ export function DeveloperView() {
 
       {/* One concise heading (demoted) — the boot banner prints identity, so don't repeat. */}
       <header className="mt-6">
-        <h1 className="text-base font-semibold tracking-tight">Query my work via the CLI</h1>
+        <h1 className="text-base font-semibold tracking-tight">
+          Query my work via the CLI
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-fg-muted">
-          A keyboard-native terminal over the same verified projects and systems. Type{" "}
-          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">help</code>{" "}
+          A keyboard-native terminal over the same verified projects and
+          systems. Type{" "}
+          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">
+            help
+          </code>{" "}
           for commands, or try{" "}
-          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">summary</code>,{" "}
-          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">ls work</code>,{" "}
-          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">about</code>.
+          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">
+            summary
+          </code>
+          ,{" "}
+          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">
+            ls work
+          </code>
+          ,{" "}
+          <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-xs text-fg">
+            about
+          </code>
+          .
         </p>
         {/* A quiet nudge so a curious visitor can DISCOVER the eggs (the personal-reveal
             commands are hidden from help by design). Only shown when there's real
@@ -54,9 +79,13 @@ export function DeveloperView() {
             never distract the recruiter-in-a-hurry. */}
         {hasPersonalContent && (
           <p className="mt-2 font-mono text-xs text-fg-subtle">
-            psst — this terminal keeps a few secrets. <code className="text-fg-muted">help</code> is a
-            good start, and the Konami code (<span aria-hidden="true">↑↑↓↓←→←→ B A</span>
-            <span className="sr-only">up up down down left right left right B A</span>) works anywhere.
+            psst — this terminal keeps a few secrets.{" "}
+            <code className="text-fg-muted">help</code> is a good start, and the
+            Konami code (<span aria-hidden="true">↑↑↓↓←→←→ B A</span>
+            <span className="sr-only">
+              up up down down left right left right B A
+            </span>
+            ) works anywhere.
           </p>
         )}
       </header>
@@ -76,7 +105,11 @@ export function DeveloperView() {
             dropped at lg, where the shrinkable grid row governs height instead (keeping the
             floor there would re-trigger the overflow on short laptop viewports). */}
         <div className="flex min-h-[24rem] flex-1 flex-col lg:min-h-0">
-          <Terminal fill onMaximize={() => setTermMax(true)} maximizeRef={maximizeRef} />
+          <Terminal
+            fill
+            onMaximize={() => setTermMax(true)}
+            maximizeRef={maximizeRef}
+          />
         </div>
 
         {/* Recruiter rail — lg+ only; in DOM AFTER the terminal so the terminal stays the
@@ -88,7 +121,11 @@ export function DeveloperView() {
 
       {/* Fullscreen "beast mode" — focus-trapped, Esc closes, focus restored to the
           maximize button on close (WCAG 2.4.3). */}
-      <TerminalOverlay open={termMax} onOpenChange={setTermMax} triggerRef={maximizeRef} />
+      <TerminalOverlay
+        open={termMax}
+        onOpenChange={setTermMax}
+        triggerRef={maximizeRef}
+      />
     </main>
   );
 }

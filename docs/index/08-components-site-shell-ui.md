@@ -216,7 +216,7 @@ Two named transition groups exist in the tree:
 - **Exports:** `ArticleSource` (type union: `medium | substack | linkedin | devto | hashnode | native`), `PlatformBadge` — props `{ source: ArticleSource }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `article-card.tsx`, `article-group-card.tsx`; the type is also referenced by `src/lib/article-grouping.ts`.
 - **Behaviour notes:** `SOURCE_CONFIG` hardcodes brand hex per platform with 0.08 bg / 0.2 border alpha (`:13-23`); `native` is labelled **"Essay"** with the accent cyan `#38e1ff`. Unknown sources fall back to `native` via `?? SOURCE_CONFIG.native` (`:26`).
-- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:102`).
+- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:109`).
 
 ### `src/components/github-feed.tsx`
 - **Role:** Server-rendered first-party GitHub repo grid.
@@ -309,7 +309,7 @@ Two named transition groups exist in the tree:
 - **Reads / depends on:** `@/lib/use-reduced-motion`, `@/lib/utils` `cn`, `lucide-react` `FileText`.
 - **Consumed by:** `src/app/resume/page.tsx`, `ask-portfolio.tsx`, `github-stats-strip.tsx`, `view-router.tsx`, `chat/chat-messages.tsx`.
 - **Behaviour notes:** `Skeleton` applies `skeleton-shimmer rounded-md` and is `aria-hidden="true"` — decorative, so only the enclosing `role="status"` container is announced (`:7-17`); `.skeleton-shimmer` is defined at `src/app/globals.css:357-381`. `SkeletonStatCard` mirrors `GithubStatsStrip`'s `StatCard`; `SkeletonCard` mirrors the `card-surface` article/note/project shape; `SkeletonIframe` is absolutely positioned for the résumé PDF `h-[80vh]` frame; `SkeletonMarkdownLine` is 3 lines for streamed markdown. `SkeletonViewTransition` is `h-[calc(100dvh-3.5rem)]` (nav height subtracted), `role="status"`, with a pulsing orb ring that drops `animate-pulse` under reduced motion (`:102-126`).
-- **Gotchas / invariants:** `SkeletonViewTransition`'s `3.5rem` must track the `h-14` nav row in `site-nav.tsx:42`.
+- **Gotchas / invariants:** `SkeletonViewTransition`'s `3.5rem` must track the `h-14` nav row in `site-nav.tsx:57`.
 
 ### `src/components/ui/ink-transition.tsx`
 - **Role:** Opt-in WebGL2 ink-burn overlay for view switches.

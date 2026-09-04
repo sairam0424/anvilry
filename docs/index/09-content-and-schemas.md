@@ -237,7 +237,7 @@ hand-written notes in the corpus today.
 `content/notes/.gitkeep` is not empty: it holds one comment line —
 "`# Notes content lives here (MDX). Empty by design — the /notes section ships dark until real
 posts exist.`" That statement is now stale relative to the 5 shipped notes; the actual dark/live
-gate is `NOTES_ENABLED` (`src/lib/writing-flags.ts:22-23`, default **false** unless
+gate is `NOTES_ENABLED` (`src/lib/writing-flags.ts:22`, default **false** unless
 `NEXT_PUBLIC_NOTES_ENABLED === "true"`).
 
 ### Article — 15 files, `content/articles/*.mdx`
@@ -267,7 +267,7 @@ All `canonicalUrl` values are absolute `https://anvilry.vercel.app/notes/<note-s
 they point at the internal note, not at the external platform). Twelve of the 15 articles carry a
 `linkedNote`; the two `how-i-traced-…-medium` / `-substack` entries deliberately omit it and rely
 on `canonicalUrl` alone for grouping. Under the default dedup strategy
-`ARTICLE_DEDUP_KEY = "linkedNote"` (`src/lib/writing-flags.ts:73-74`), that means the medium and
+`ARTICLE_DEDUP_KEY = "linkedNote"` (`src/lib/writing-flags.ts:79-80`), that means the medium and
 substack twins of the browser-request article group by `canonicalUrl` while their devto/hashnode
 siblings group by `linkedNote` — see `src/lib/article-grouping.ts:23-45` for the fallback chain.
 
@@ -372,7 +372,7 @@ unconditionally — `src/components/article-card.tsx:18`
 (`if (a.linkedNote) return { href: \`/notes/${a.linkedNote}\` … }`),
 `src/components/article-group-card.tsx:21-22`, `src/app/articles/page.tsx:152-153`, and the
 `redirect()` at `src/app/articles/[slug]/page.tsx:71-72` — all gated on `NOTES_ENABLED`.
-Because `NOTES_ENABLED` defaults to **false** (`src/lib/writing-flags.ts:22-23`), those three
+Because `NOTES_ENABLED` defaults to **false** (`src/lib/writing-flags.ts:22`), those three
 cards currently fall back to `externalUrl`, which all three have; the dangling links only become
 reachable once `NEXT_PUBLIC_NOTES_ENABLED=true`. `src/lib/llms-txt.ts:27-28` builds the same
 `/notes/<linkedNote>` URL for the AI-discovery file.

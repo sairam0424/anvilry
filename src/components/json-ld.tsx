@@ -28,14 +28,16 @@ export function PersonJsonLd() {
     email: `mailto:${profile.email}`,
     url: "https://anvilry.vercel.app",
     worksFor: { "@type": "Organization", name: profile.company },
-    address: { "@type": "PostalAddress", addressLocality: profile.locationCity, addressCountry: profile.locationCountry },
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: profile.locationCity,
+      addressCountry: profile.locationCountry,
+    },
     sameAs: [profile.links.github, profile.links.linkedin],
     knowsAbout: skills.flatMap((s) => s.items),
-    skills: skills.flatMap((s) => s.items).map((item) => ({
-      "@type": "DefinedTerm",
-      name: item,
-    })),
-    ...(isOpenToWork && { seeks: { "@type": "Demand", name: "GenAI & Backend Engineering roles" } }),
+    ...(isOpenToWork && {
+      seeks: { "@type": "Demand", name: "GenAI & Backend Engineering roles" },
+    }),
   };
   return (
     <script
@@ -51,7 +53,11 @@ export function PersonJsonLd() {
  * breadcrumb SERP features and tells search the site hierarchy. `items` is an ordered
  * [label, url] list from the page root down to the current page.
  */
-export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string }[] }) {
+export function BreadcrumbJsonLd({
+  items,
+}: {
+  items: { name: string; url: string }[];
+}) {
   const data = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -63,7 +69,10 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string
     })),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+    />
   );
 }
 
@@ -71,8 +80,25 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; url: string
 // `programmingLanguage` ONLY if it's in this allowlist (everything else, e.g.
 // frameworks/protocols/tools, becomes a `keyword`). Keeps the schema honest.
 const PROGRAMMING_LANGUAGES = new Set([
-  "Python", "Go", "TypeScript", "JavaScript", "Rust", "Java", "Kotlin", "Ruby",
-  "C", "C++", "C#", "Swift", "PHP", "Scala", "Elixir", "Lua", "SQL", "Bash", "WebAssembly",
+  "Python",
+  "Go",
+  "TypeScript",
+  "JavaScript",
+  "Rust",
+  "Java",
+  "Kotlin",
+  "Ruby",
+  "C",
+  "C++",
+  "C#",
+  "Swift",
+  "PHP",
+  "Scala",
+  "Elixir",
+  "Lua",
+  "SQL",
+  "Bash",
+  "WebAssembly",
 ]);
 
 /** SoftwareSourceCode for an OSS project page — entity-graph + AI-recruiter parsing.
@@ -83,12 +109,18 @@ export function SoftwareSourceCodeJsonLd({
   url,
   codeRepository,
   tech,
+  dateCreated,
+  license,
 }: {
   name: string;
   description: string;
   url: string;
   codeRepository: string;
   tech: string[];
+  /** Real GitHub repo creation date (ISO date) — omit rather than guess for private repos. */
+  dateCreated?: string;
+  /** SPDX license ID — omit rather than guess for repos with no license file. */
+  license?: string;
 }) {
   const languages = tech.filter((t) => PROGRAMMING_LANGUAGES.has(t));
   const data = {
@@ -98,24 +130,31 @@ export function SoftwareSourceCodeJsonLd({
     description,
     url,
     codeRepository,
-    author: { "@type": "Person", name: profile.name, url: "https://anvilry.vercel.app" },
+    author: {
+      "@type": "Person",
+      name: profile.name,
+      url: "https://anvilry.vercel.app",
+    },
     ...(languages.length > 0 && { programmingLanguage: languages }),
     keywords: tech.join(", "),
+    ...(dateCreated && { dateCreated }),
+    ...(license && { license: `https://spdx.org/licenses/${license}.html` }),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+    />
   );
 }
 
 /**
- * WebSite schema with potentialAction SearchAction — makes the site eligible for
- * Google's sitelinks search box in SERPs (Cmd+K palette already handles the query;
- * the SearchAction just tells Google where to send it). Static RSC, zero runtime cost.
- *
- * The ?q= target doesn't need a real server-side handler — the Cmd+K palette intercepts
- * the param on mount via ViewQuerySync-style logic (future enhancement). Google's
- * SearchAction only fires when the user interacts with the sitelinks box; the main page
- * load is unaffected whether or not the ?q= is present.
+ * WebSite schema. No potentialAction/SearchAction: SEARCH_ENABLED defaults off and
+ * the Pagefind index isn't built as part of the normal deploy pipeline (needs a
+ * separate `make search-index` step), so there is no live, working search endpoint
+ * to point Google's sitelinks search box at today. Google also retired the
+ * sitelinks-search-box rich result regardless, so there's no SERP benefit either
+ * way. Re-add potentialAction pointing at /search if SEARCH_ENABLED ever ships live.
  */
 export function WebSiteJsonLd() {
   const data = {
@@ -124,17 +163,12 @@ export function WebSiteJsonLd() {
     name: `${profile.name} — Portfolio`,
     url: "https://anvilry.vercel.app",
     author: { "@type": "Person", name: profile.name },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: "https://anvilry.vercel.app/?q={search_term_string}",
-      },
-      "query-input": "required name=search_term_string",
-    },
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+    />
   );
 }
 
@@ -145,11 +179,14 @@ export function CreativeWorkJsonLd({
   description,
   url,
   keywords,
+  image,
 }: {
   name: string;
   description: string;
   url: string;
   keywords: string[];
+  /** Absolute URL to the page's opengraph-image route. */
+  image?: string;
 }) {
   const data = {
     "@context": "https://schema.org",
@@ -157,11 +194,19 @@ export function CreativeWorkJsonLd({
     name,
     description,
     url,
-    author: { "@type": "Person", name: profile.name, url: "https://anvilry.vercel.app" },
+    author: {
+      "@type": "Person",
+      name: profile.name,
+      url: "https://anvilry.vercel.app",
+    },
     keywords: keywords.join(", "),
+    ...(image && { image }),
   };
   return (
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }} />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+    />
   );
 }
 

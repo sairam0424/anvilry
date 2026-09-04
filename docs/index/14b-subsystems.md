@@ -226,7 +226,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **true** | `!== "false"` (the only opt-out) `:20` | `/articles` subtree via `articles/layout.tsx:12`; nav link; sitemap; `WritingPreview` |
 | `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | false | `=== "true"` `:23` | `/notes` via `notes/page.tsx:21`; `/notes/[slug]` via `notFound()` at `:51`; article `linkedNote` redirects; nav; sitemap |
 | `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:26` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:99`) |
-| `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | false | `:31` | **Nav + sitemap only** (`site-nav.tsx:22-23`, `sitemap.ts:50-56`) — `/stats` still renders and prerenders |
+| `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | false | `:31` | **Nav + sitemap only** (`site-nav.tsx:22-23`, `sitemap.ts:80-88`) — `/stats` still renders and prerenders |
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | false | `:34` | **Nav + sitemap only** — same as `/stats` |
 | `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | false | `:39` | `home/testimonials.tsx:13` (second gate is `hasTestimonials`) |
 | `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | `INKFORGE_ARTICLES_ENABLED` | false | `:44` | `articles/page.tsx` inkforge block |
@@ -255,7 +255,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
 | `NEXT_PUBLIC_404_ORB` | `not-found.tsx:34` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:94` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:15-17`) |
-| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette.tsx:219`, `game/terminal/commands.ts:206` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
+| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:206` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:16` (branched `:21`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:8` (**module scope**) | `./scene-physics` vs `./scene` |
@@ -287,7 +287,7 @@ settings (`scroll-flags.tsx:15`).
 | All optional views vanish | Setting `NEXT_PUBLIC_ENABLED_VIEWS=""` (empty ≠ unset, `enabled-views.ts:28`). |
 | A view silently disappears | A typo in the comma list — unknown entries are dropped by the `ALL_OPTIONAL.includes(v)` filter (`:33`). |
 | A section's default flips | Mixing the two polarity conventions: `ARTICLES_ENABLED` is `!== "false"`; every other boolean is `=== "true"`. |
-| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette.tsx:217-219`, `commands.ts:204-206`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
+| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette-content.tsx:325-327`, `commands.ts:204-206`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
 | Route renders despite its flag being off | `/stats` and `/search` are not route-gated — only unlinked and un-sitemapped. |
 | Discovery badge never appears | The flag is resolved server-side and threaded as a prop; `providers.tsx:57` is the gate, not the component. |
 
@@ -676,14 +676,14 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
 | Telemetry kind union | `src/lib/telemetry/schema.ts:37-45` · the `/admin/telemetry` kind filter · `scripts/replay-trace.mjs:47-55` |
 | Redis key literals | `src/app/admin/telemetry/page.tsx:25,217,251,254,257,260,265` · the five `api/cron/*` writers · `src/lib/telemetry/emit.ts:58` · `src/instrumentation.ts:95` |
-| Nav height `3.5rem` / `h-14` | `src/components/site-nav.tsx:42` · `src/components/ui/skeleton.tsx` (`SkeletonViewTransition`) · `chat-view.tsx:43-48` · `developer-view.tsx:32` · `globals.css:58-65` (`scroll-padding-top`) |
+| Nav height `3.5rem` / `h-14` | `src/components/site-nav.tsx:57` · `src/components/ui/skeleton.tsx` (`SkeletonViewTransition`) · `chat-view.tsx:52-60` · `developer-view.tsx:36` · `globals.css:58-65` (`scroll-padding-top`) |
 | View-transition names | `view-router.tsx:56` · `site-nav.tsx:40` · `globals.css:270-289` |
 | Résumé label | `src/lib/profile.ts:77` · `src/lib/mcp-tools.ts:20-26` (`ROLE_TO_LABEL`) · `public/resume/*.pdf` filenames |
-| Article `source` enum | `velite.config.ts:102` · `src/components/platform-badge.tsx:13-23` · `src/app/articles/page.tsx:25-32` (`SOURCE_LABELS`) · `articles/[slug]/opengraph-image.tsx:19-26`. **All four are now keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind: `devto` and `hashnode` were missing, so **9 of 15 article OG cards rendered the generic `> article`**. Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
+| Article `source` enum | `velite.config.ts:109` · `src/components/platform-badge.tsx:13-23` · `src/app/articles/page.tsx:25-32` (`SOURCE_LABELS`) · `articles/[slug]/opengraph-image.tsx:19-26`. **All four are now keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind: `devto` and `hashnode` were missing, so **9 of 15 article OG cards rendered the generic `> article`**. Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
 | Terminal command visibility filter | `src/components/game/terminal/commands.ts:525-527` (`COMMAND_NAMES`) · `terminal.tsx:17-19` (independent re-filter for the fuzzy dropdown) |
 | Terminal input selector | `terminal.tsx:254` (`aria-label="Terminal command input"`) · `terminal-overlay.tsx:39-41` (queries that exact string) |
 | CSP `frame-ancestors` string | `next.config.ts:41` (the literal) · `:204-207` (the replace that depends on it) |
-| Palette `value` pinning | `command-palette.tsx:213-215` (`copy-email`), `:323-324` (`voice-tts`), plus four other voice toggles — cmdk re-scores when a label mutates |
+| Palette `value` pinning | `command-palette-content.tsx:321-323` (`copy-email`), `:454-455` (`voice-tts`), plus four other voice toggles — cmdk re-scores when a label mutates |
 | `MDXContent` ↔ CSP | `src/components/mdx-content.tsx:14-17` · `next.config.ts:43-51` (`'unsafe-eval'`) |
 | `.md` passthrough (two implementations) | `next.config.ts:220-228` (4 rewrites → `/api/md/*`) · `src/app/<collection>/[slug].md/route.ts` (4 filesystem handlers). Byte-identical output; resolution order not exercised. |
 

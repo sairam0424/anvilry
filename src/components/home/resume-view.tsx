@@ -28,6 +28,7 @@
  */
 
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { allWork, allProjects } from "@/lib/content";
 import {
   profile,
@@ -38,7 +39,7 @@ import {
 } from "@/lib/profile";
 
 const WRAPPER_CLASS =
-  "bg-bg-base px-4 py-10 text-fg print:bg-white print:text-black sm:px-8";
+  "px-4 py-10 text-fg print:bg-white print:text-black sm:px-8";
 
 function ResumeContent() {
   // Read flag inside function body — module-scope const breaks vi.stubEnv in tests.
@@ -247,7 +248,7 @@ function ResumeContent() {
 /** Full-page view — used by view-router.tsx for the ?view=resume route. */
 export function ResumeView() {
   return (
-    <main className={`min-h-screen ${WRAPPER_CLASS}`}>
+    <main className={cn("min-h-screen bg-bg-base", WRAPPER_CLASS)}>
       <ResumeContent />
     </main>
   );
@@ -256,6 +257,12 @@ export function ResumeView() {
 /**
  * Inline variant — same inner content but wrapped in <div> instead of <main>.
  * Use inside src/app/resume/page.tsx to avoid nesting two <main> landmarks.
+ *
+ * Deliberately does NOT carry ResumeView's opaque bg-bg-base: this renders inside
+ * the styled /resume page's own <Section>s, which let the site-wide decorative
+ * grid background show through (same as the PDF tab next to it). The explicit
+ * background belongs only to the standalone ?view=resume page, which has no such
+ * surrounding chrome to blend with.
  */
 export function ResumeViewInline() {
   return (

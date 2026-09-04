@@ -509,7 +509,7 @@ cancels TTS (`use-voice-session.ts:238-244`).
 Build-time: `NEXT_PUBLIC_ANVIL_ORB_MODE` (`inplace \| modal \| off`, default `inplace`),
 `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (legacy `"false"` → `off`), `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE`
 (`core \| classic`) — all three at `header-orb-trigger.tsx:34-45`; `NEXT_PUBLIC_VOICE_PICKER_MODE`
-(`voice-picker-mode.ts:20`); `NEXT_PUBLIC_CHROME_TTS_BANNER` (`writing-flags.ts:87`, consumed at
+(`voice-picker-mode.ts:20`); `NEXT_PUBLIC_CHROME_TTS_BANNER` (`writing-flags.ts:93`, consumed at
 `talk-mode.tsx:348-350`); `NEXT_PUBLIC_VOICE_TEST_AUDIO` (`talk-mode.tsx:478`);
 `NEXT_PUBLIC_ORB_POSTPROCESSING` (`voice-orb-3d.tsx:300`, additionally gated on `getDeviceTier() === "high"`).
 Server: `GOOGLE_TTS_API_KEY` (`api/tts-google/route.ts:39` — unset ⇒ 503 ⇒ Google hidden), the Bedrock

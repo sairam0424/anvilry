@@ -440,6 +440,7 @@
     ".github/workflows/ci.yml:22": {
       "fp": "c8c82d24e074",
       "citedBy": [
+        "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -474,13 +475,6 @@
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "on:"
-    },
-    ".github/workflows/ci.yml:31": {
-      "fp": "6cf3838f75f9",
-      "citedBy": [
-        "10-tests-and-quality-gates.md"
-      ],
-      "preview": "uses: actions/cache@v4"
     },
     ".github/workflows/ci.yml:43": {
       "fp": "57127a4b6fe4",
@@ -3091,13 +3085,13 @@
       "preview": "\"dependencies\": {"
     },
     "package.json:23": {
-      "fp": "38ab0f4d31d0",
+      "fp": "7b39505492fd",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "README.md"
       ],
-      "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.32.1\","
+      "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.33.3\","
     },
     "package.json:27": {
       "fp": "dbc78eb9df14",
@@ -3170,14 +3164,14 @@
       "preview": "\"zod\": \"^3.25.76\""
     },
     "package.json:58": {
-      "fp": "c31a6b34c567",
+      "fp": "00eb105e188a",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"@next/bundle-analyzer\": \"^16.3.0\","
+      "preview": "\"@next/bundle-analyzer\": \"^16.3.3\","
     },
     "package.json:7": {
       "fp": "e52a1813c460",
@@ -15715,13 +15709,14 @@
       "preview": "process.env.NEXT_PUBLIC_ARTICLES_ENABLED !== \"false\";"
     },
     "src/lib/writing-flags.ts:22": {
-      "fp": "a157b1e1389e",
+      "fp": "b1c2b3d4dce9",
       "citedBy": [
         "03-lib-content-data.md",
         "09-content-and-schemas.md",
+        "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "export const NOTES_ENABLED ="
+      "preview": "export const NOTES_ENABLED = process.env.NEXT_PUBLIC_NOTES_ENABLED === \"true\";"
     },
     "src/lib/writing-flags.ts:23": {
       "fp": "ac59d3c345ce",

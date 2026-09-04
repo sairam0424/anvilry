@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { X, Sparkles } from "lucide-react";
 import { useView } from "@/components/view-context";
 
@@ -37,13 +37,29 @@ function useHintDismissed(): boolean {
 
 /**
  * One-time, non-blocking hint nudging first-time visitors toward the Play / Chat
- * views. Dismissible, never covers content, and shown ONLY in the classic view
- * (don't nag someone who already switched). The seen-flag is a UI flag in
- * localStorage, not the view state (which is intentionally never persisted).
+ * views. Dismissed permanently (not just hidden) on ANY of: the explicit close
+ * button, scrolling past the hero (signals the visitor has moved into content,
+ * where this fixed-position card risks overlapping it), or switching views once
+ * (they've found the switcher — no need to nag again on a later return to
+ * Classic). The seen-flag is a UI flag in localStorage, not the view state
+ * (which is intentionally never persisted).
  */
 export function ViewHint() {
   const { view } = useView();
   const dismissed = useHintDismissed();
+
+  useEffect(() => {
+    if (dismissed) return;
+    const onScroll = () => {
+      if (window.scrollY > 80) dismissHint();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [dismissed]);
+
+  useEffect(() => {
+    if (!dismissed && view !== "classic") dismissHint();
+  }, [dismissed, view]);
 
   if (dismissed || view !== "classic") return null;
 

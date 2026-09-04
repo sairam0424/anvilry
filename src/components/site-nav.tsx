@@ -10,6 +10,8 @@ import { ARTICLES_ENABLED, NOTES_ENABLED, STATS_ENABLED, SEARCH_ENABLED } from "
 import { ViewSwitcher } from "@/components/view-switcher";
 import { HeaderOrbTrigger } from "@/components/chat/header-orb-trigger";
 import { MobileNav } from "@/components/mobile-nav";
+import { Tooltip } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Content section links appear ONLY when both the feature flag AND content exist.
 const navLinks = [
@@ -44,7 +46,7 @@ export function SiteNav() {
           <span className="text-accent">~/</span>sairam
         </Link>
 
-        <div className="hidden items-center gap-6 sm:flex">
+        <div className="hidden items-center gap-6 lg:flex">
           {navLinks.map((l) => (
             <Link
               key={l.href}
@@ -63,10 +65,10 @@ export function SiteNav() {
         </div>
 
         {/* View switcher — full on desktop, compact icon pill on mobile (always visible). */}
-        <div className="hidden sm:block">
+        <div className="hidden lg:block">
           <ViewSwitcher />
         </div>
-        <div className="sm:hidden">
+        <div className="lg:hidden">
           <ViewSwitcher compact />
         </div>
 
@@ -75,28 +77,33 @@ export function SiteNav() {
         <HeaderOrbTrigger />
 
         {/* Desktop: social + résumé icons. Mobile: these move into the drawer. */}
-        <div className="hidden items-center gap-3 sm:flex">
-          <a
-            href={profile.links.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub"
-            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <Github size={18} />
-          </a>
-          <a
-            href={profile.links.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn"
-            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <Linkedin size={18} />
-          </a>
+        <div className="hidden items-center gap-3 lg:flex">
+          <Tooltip content="GitHub">
+            <a
+              href={profile.links.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Github size={18} />
+            </a>
+          </Tooltip>
+          <Tooltip content="LinkedIn">
+            <a
+              href={profile.links.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Linkedin size={18} />
+            </a>
+          </Tooltip>
           <Link href="/resume" aria-label="Résumé" className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
             <FileText size={18} />
           </Link>
+          <ThemeToggle />
         </div>
 
         {/* Mobile: hamburger opens the drawer with the full nav + social links. */}

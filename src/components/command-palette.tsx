@@ -9,6 +9,7 @@ import { Command } from "cmdk";
 // satisfy the a11y requirement (resolves the "DialogContent requires DialogTitle"
 // console error). Hidden via the existing sr-only class (no extra dep).
 import { Title as DialogTitle, Description as DialogDescription } from "@radix-ui/react-dialog";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   Home,
   FolderGit2,
@@ -118,7 +119,7 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
   useEffect(() => {
     if (open) {
       setRecent(loadRecent()); // eslint-disable-line react-hooks/set-state-in-effect
-      setSearch(""); // eslint-disable-line react-hooks/set-state-in-effect
+      setSearch("");
     }
   }, [open]);
 
@@ -442,16 +443,18 @@ export function CommandPalette({ discoveryBadgesEnabled }: CommandPaletteProps) 
   return (
     <>
       {/* Trigger pill — bottom-right, terminal-styled */}
-      <button
-        ref={triggerRef}
-        onClick={() => setOpen(true)}
-        aria-label="Open command palette"
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
-      >
-        <TerminalSquare size={14} className="text-accent" />
-        <span className="hidden sm:inline">Command</span>
-        <kbd className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px]">⌘K</kbd>
-      </button>
+      <Tooltip content="Open command palette (⌘K)">
+        <button
+          ref={triggerRef}
+          onClick={() => setOpen(true)}
+          aria-label="Open command palette"
+          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
+        >
+          <TerminalSquare size={14} className="text-accent" />
+          <span className="hidden sm:inline">Command</span>
+          <kbd aria-keyshortcuts="Meta+K" aria-hidden="true" className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+        </button>
+      </Tooltip>
 
       <Command.Dialog
         open={open}

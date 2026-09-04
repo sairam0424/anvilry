@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
+import { Tooltip } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type NavLink = { href: string; label: string };
 
@@ -57,18 +59,20 @@ export function MobileNav({ links }: { links: NavLink[] }) {
   }, [open]);
 
   return (
-    <div className="sm:hidden">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close menu" : "Open menu"}
-        aria-expanded={open}
-        aria-controls="mobile-nav-panel"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        {open ? <X size={20} /> : <Menu size={20} />}
-      </button>
+    <div className="lg:hidden">
+      <Tooltip content={open ? "Close menu" : "Open menu"}>
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          aria-controls="mobile-nav-panel"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          {open ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </Tooltip>
 
       {open && (
         <>
@@ -98,26 +102,31 @@ export function MobileNav({ links }: { links: NavLink[] }) {
               ))}
             </nav>
             <div className="mt-3 flex items-center gap-4 border-t border-border pt-3">
-              <a
-                href={profile.links.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                onClick={() => setOpen(false)}
-                className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <Github size={20} />
-              </a>
-              <a
-                href={profile.links.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                onClick={() => setOpen(false)}
-                className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              >
-                <Linkedin size={20} />
-              </a>
+              <Tooltip content="GitHub">
+                <a
+                  href={profile.links.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                  onClick={() => setOpen(false)}
+                  className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  <Github size={20} />
+                </a>
+              </Tooltip>
+              <Tooltip content="LinkedIn">
+                <a
+                  href={profile.links.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  onClick={() => setOpen(false)}
+                  className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  <Linkedin size={20} />
+                </a>
+              </Tooltip>
+              <ThemeToggle size={20} />
             </div>
           </div>
         </>

@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { flushSync } from "react-dom";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { unlock } from "@/lib/discovery-store";
 
 /**
@@ -116,6 +116,28 @@ function commitViewChange() {
 }
 
 /**
+ * Bridge from the module-level store (below) to the App Router's client-side
+ * navigation, mirroring the pattern already used for `inkTransitionRef` in
+ * src/components/ui/ink-transition.tsx: a plain module `let` populated via a
+ * bare useEffect, so a non-React module function (setViewInternal) can reach
+ * a live router instance without needing React context.
+ */
+type RouterBridge = { push: (href: string) => void; pathname: string };
+let routerBridge: RouterBridge | null = null;
+
+function ViewRouterBridge() {
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    routerBridge = { push: router.push, pathname };
+    return () => {
+      routerBridge = null;
+    };
+  }, [router, pathname]);
+  return null;
+}
+
+/**
  * Set the active view and reflect it in the URL (?view=) without a navigation.
  *
  * Deliberately NO cookie/localStorage persistence: the owner's decision is
@@ -127,7 +149,19 @@ function setViewInternal(
   view: View,
   { updateUrl = true, transition = true }: { updateUrl?: boolean; transition?: boolean } = {},
 ) {
-  if (!isView(view) || view === current) return;
+  if (!isView(view)) return;
+
+  // Not on home: any view selection must navigate there, regardless of whether the
+  // store's `current` already matches — the module singleton persists across
+  // client-side nav, so "already current" doesn't mean "already visible." Skipped
+  // when updateUrl is false (the deep-link sync path in ViewQuerySync), which is
+  // already running ON `/` in response to a navigation that just happened.
+  if (updateUrl && routerBridge && routerBridge.pathname !== "/") {
+    routerBridge.push(view === DEFAULT_VIEW ? "/" : `/?view=${view}`);
+    return;
+  }
+
+  if (view === current) return;
   // Stamp direction on <html> so CSS keyframes pick the right slide direction.
   // Must happen before startViewTransition snapshots the DOM.
   if (typeof document !== "undefined" && transition) {
@@ -178,6 +212,7 @@ export function ViewProvider({ children }: { children: ReactNode }) {
 
   return (
     <ViewContext.Provider value={{ view, setView }}>
+      <ViewRouterBridge />
       <Suspense fallback={null}>
         <ViewQuerySync />
       </Suspense>

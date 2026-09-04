@@ -5,6 +5,7 @@ import { MotionConfig } from "motion/react";
 import type { ReactNode } from "react";
 import { ViewProvider } from "@/components/view-context";
 import { ScrollFlagsSync } from "@/lib/scroll/scroll-flags";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // InkTransition renders a hidden <canvas> that fires the ink-burn WebGL shader on
 // view switches. Lazy-loaded so the WebGL2 init never blocks the critical path.
@@ -50,7 +51,9 @@ export function Providers({
   return (
     <MotionConfig reducedMotion="user">
       <ViewProvider>
-        <ScrollFlagsSync>{children}</ScrollFlagsSync>
+        <TooltipProvider>
+          <ScrollFlagsSync>{children}</ScrollFlagsSync>
+        </TooltipProvider>
         {/* Ink canvas — fixed overlay, hidden until a view switch fires */}
         <InkTransition />
         {/* Discovery badge — shows "★ N/5 discovered" when exploration milestones are unlocked */}

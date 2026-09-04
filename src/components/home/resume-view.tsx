@@ -8,9 +8,12 @@
  * All content derives from profile.ts — zero fabrication, honest contribution
  * register preserved.
  *
- * Activated via Cmd+K → "Recruiter View" or ?view=resume in the URL. The
- * ViewEscapeHatch component (auto-rendered by view-router for non-classic views)
- * provides the "back to classic" affordance at the top of the page.
+ * Activated via Cmd+K → "Recruiter View" or ?view=resume in the URL, from any
+ * route — off-home, view-context.tsx's setViewInternal navigates to `/?view=resume`
+ * rather than relying on a local param swap, so this view is reachable from
+ * /about, /work/[slug], etc., not just from `/`. The ViewEscapeHatch component
+ * (auto-rendered by view-router for non-classic views) provides the "back to
+ * classic" affordance at the top of the page.
  *
  * @media print: nav/footer hidden, colors forced to black-on-white via Tailwind's
  * print: variants, making Cmd+P produce a clean PDF without any extra tooling.

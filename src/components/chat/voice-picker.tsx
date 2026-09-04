@@ -16,6 +16,7 @@ import {
   applePremiumIsMissing,
   getVoicesRaceHardened,
 } from "@/components/chat/voice-pitfalls";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * Shared voice-picker UI. Mounted in three surfaces (talk-mode header, Cmd+K
@@ -88,29 +89,33 @@ function VoiceCard({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => onPick(entry.id)}
-          aria-pressed={isCurrent}
-          aria-label={`Pick voice ${entry.displayName}`}
-          className="flex flex-1 flex-col items-start gap-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface rounded-md"
-        >
-          <span className="text-sm font-medium text-fg">{entry.displayName}</span>
-          <span className="text-xs text-fg-muted">{entry.descriptor}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onPreview(entry)}
-          aria-pressed={isPreviewing}
-          aria-label={`Preview voice ${entry.displayName}`}
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface ${
-            isPreviewing
-              ? "border-accent bg-accent text-bg-base"
-              : "border-border-strong/60 bg-bg-base text-fg-muted hover:border-border-strong hover:text-fg"
-          }`}
-        >
-          <Volume2 size={14} aria-hidden="true" />
-        </button>
+        <Tooltip content={`Pick ${entry.displayName}`}>
+          <button
+            type="button"
+            onClick={() => onPick(entry.id)}
+            aria-pressed={isCurrent}
+            aria-label={`Pick voice ${entry.displayName}`}
+            className="flex flex-1 flex-col items-start gap-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface rounded-md"
+          >
+            <span className="text-sm font-medium text-fg">{entry.displayName}</span>
+            <span className="text-xs text-fg-muted">{entry.descriptor}</span>
+          </button>
+        </Tooltip>
+        <Tooltip content={`Preview ${entry.displayName}`}>
+          <button
+            type="button"
+            onClick={() => onPreview(entry)}
+            aria-pressed={isPreviewing}
+            aria-label={`Preview voice ${entry.displayName}`}
+            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface ${
+              isPreviewing
+                ? "border-accent bg-accent text-bg-base"
+                : "border-border-strong/60 bg-bg-base text-fg-muted hover:border-border-strong hover:text-fg"
+            }`}
+          >
+            <Volume2 size={14} aria-hidden="true" />
+          </button>
+        </Tooltip>
       </div>
       {/* Accent badge: e.g. "US · Polly Generative" — small contextual cue
           that doesn't compete with name + descriptor for attention. */}
@@ -383,12 +388,14 @@ function PickerBody({
                     browser-native premium voices.
                   </Dialog.Description>
                 </div>
-                <Dialog.Close
-                  className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  aria-label="Close more voices"
-                >
-                  <X size={16} aria-hidden="true" />
-                </Dialog.Close>
+                <Tooltip content="Close">
+                  <Dialog.Close
+                    className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    aria-label="Close more voices"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </Dialog.Close>
+                </Tooltip>
               </div>
               <DescriptorGrid
                 voices={EXTENDED_VOICES}
@@ -452,12 +459,14 @@ export function VoicePicker(props: VoicePickerProps) {
                     : "Pick a voice for read-aloud and talk mode."}
                 </Dialog.Description>
               </div>
-              <Dialog.Close
-                className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                aria-label="Close voice picker"
-              >
-                <X size={16} aria-hidden="true" />
-              </Dialog.Close>
+              <Tooltip content="Close">
+                <Dialog.Close
+                  className="-mr-1 -mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-fg-muted hover:bg-bg-elevated hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  aria-label="Close voice picker"
+                >
+                  <X size={16} aria-hidden="true" />
+                </Dialog.Close>
+              </Tooltip>
             </div>
             <PickerBody
               currentVoiceId={currentVoiceId}

@@ -63,6 +63,32 @@ test("chat view: typing a message and submitting works", async ({ page }) => {
   expect(body).toMatch(/Sairam|Ascendion|projects|isn't switched on yet|went wrong/i);
 });
 
+// ── Phase 3: cross-route view switching (view-context.tsx setViewInternal fix) ──
+
+test("switching views via ⌘K from a non-home route navigates home with ?view= applied", async ({ page }) => {
+  // Regression this guards: setViewInternal used to do `history.replaceState` on the
+  // CURRENT url only — never navigating — so a view switch triggered from any route
+  // other than "/" silently did nothing visible. The fix routes through a
+  // routerBridge and pushes to "/" (or "/?view=<view>") instead. SiteNav and
+  // CommandPalette live in the persistent layout.tsx, so the palette is reachable
+  // from every route, not just "/".
+  await page.goto("/about");
+  await expect(page.locator("main")).toBeVisible();
+
+  await page.keyboard.press("Meta+k");
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  // No search query needed — the full action list renders by default, and "Chat
+  // view" is the only option whose accessible name contains "chat".
+  await page.getByRole("option", { name: /chat view/i }).click();
+
+  // Real cross-route navigation, not a dead param rewrite on /about.
+  await expect(page).toHaveURL("/?view=chat");
+  // ...and a visible content swap, not just a URL change — the chat composer
+  // actually renders after the deep-linked view applies post-hydration.
+  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({ timeout: 15000 });
+});
+
 // ── Developer (terminal) view ─────────────────────────────────────────────────
 
 test("developer view switches and renders terminal", async ({ page }) => {

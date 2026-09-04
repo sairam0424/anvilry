@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * Small copy-to-clipboard button with an accessible, announced "Copied" state. Used on
@@ -21,18 +22,20 @@ export function CopyButton({ value, label = "Copy" }: { value: string; label?: s
   }, [value]);
 
   return (
-    <button
-      type="button"
-      onClick={onCopy}
-      aria-label={copied ? "Copied" : label}
-      className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-    >
-      {copied ? (
-        <Check size={13} className="text-green" aria-hidden="true" />
-      ) : (
-        <Copy size={13} aria-hidden="true" />
-      )}
-      <span aria-live="polite">{copied ? "Copied" : label}</span>
-    </button>
+    <Tooltip content={copied ? "Copied" : label}>
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label={copied ? "Copied" : label}
+        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        {copied ? (
+          <Check size={13} className="text-green" aria-hidden="true" />
+        ) : (
+          <Copy size={13} aria-hidden="true" />
+        )}
+        <span aria-live="polite">{copied ? "Copied" : label}</span>
+      </button>
+    </Tooltip>
   );
 }

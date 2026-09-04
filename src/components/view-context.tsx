@@ -21,9 +21,17 @@ import { unlock } from "@/lib/discovery-store";
  * optional full-page two-way talk surface (only offered when the visitor opts into the
  * "view" talk-surface — the default is a modal overlay, so VOICE is normally unused).
  */
-export type View = "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
+export type View =
+  "classic" | "gamified" | "chat" | "developer" | "voice" | "resume";
 
-const VIEWS: readonly View[] = ["classic", "gamified", "chat", "developer", "voice", "resume"] as const;
+const VIEWS: readonly View[] = [
+  "classic",
+  "gamified",
+  "chat",
+  "developer",
+  "voice",
+  "resume",
+] as const;
 const DEFAULT_VIEW: View = "classic";
 
 /** Nav order used to compute slide direction for view transitions. */
@@ -147,7 +155,10 @@ function ViewRouterBridge() {
  */
 function setViewInternal(
   view: View,
-  { updateUrl = true, transition = true }: { updateUrl?: boolean; transition?: boolean } = {},
+  {
+    updateUrl = true,
+    transition = true,
+  }: { updateUrl?: boolean; transition?: boolean } = {},
 ) {
   if (!isView(view)) return;
 
@@ -156,6 +167,17 @@ function setViewInternal(
   // client-side nav, so "already current" doesn't mean "already visible." Skipped
   // when updateUrl is false (the deep-link sync path in ViewQuerySync), which is
   // already running ON `/` in response to a navigation that just happened.
+  //
+  // KNOWN NARROW RACE (accepted, not fixed): routerBridge.pathname comes from
+  // usePathname() inside a useEffect, so it is one render behind an in-flight
+  // router.push. Two view switches fired back-to-back, before that effect
+  // re-runs, can both read the pre-navigation pathname and both call push —
+  // an extra history entry, not a crash or lost state. A fix was attempted using
+  // window.location.pathname instead, but that decouples this check from the
+  // exact usePathname() reactivity view-context.dom.test.tsx's mocks rely on
+  // (and that real Next.js navigation timing was never independently verified
+  // against), so it was reverted rather than trade a tested narrow race for an
+  // unverified one.
   if (updateUrl && routerBridge && routerBridge.pathname !== "/") {
     routerBridge.push(view === DEFAULT_VIEW ? "/" : `/?view=${view}`);
     return;
@@ -200,14 +222,19 @@ function ViewQuerySync() {
     const fromUrl = params.get("view");
     // Don't rewrite the URL we just read from, and don't cross-fade on first
     // paint — the deep-linked view should appear immediately, not animate in.
-    if (isView(fromUrl)) setViewInternal(fromUrl, { updateUrl: false, transition: false });
+    if (isView(fromUrl))
+      setViewInternal(fromUrl, { updateUrl: false, transition: false });
   }, [params]);
 
   return null;
 }
 
 export function ViewProvider({ children }: { children: ReactNode }) {
-  const view = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const view = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const setView = useCallback((v: View) => setViewInternal(v), []);
 
   return (

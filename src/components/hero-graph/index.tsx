@@ -16,7 +16,10 @@ const GRAPH_PHYSICS = process.env.NEXT_PUBLIC_GRAPH_PHYSICS === "true";
 // package.json but imported nowhere, and was removed in v3.5.0; the flag and filename are
 // historical residue of a plan that never shipped.
 const HeroGraphScene = GRAPH_PHYSICS
-  ? dynamic(() => import("./scene-physics").then((m) => m.HeroGraphScenePhysics), { ssr: false })
+  ? dynamic(
+      () => import("./scene-physics").then((m) => m.HeroGraphScenePhysics),
+      { ssr: false },
+    )
   : dynamic(() => import("./scene"), { ssr: false });
 
 /**
@@ -27,11 +30,23 @@ const HeroGraphScene = GRAPH_PHYSICS
  *  - not reduced-motion (verified useReducedMotion gate), AND
  *  - viewport is desktop-width (research: drop the WebGL layer on mobile), AND
  *  - WebGL is actually available (useWebGLSupported) and hasn't failed to mount
- *    this session (WebGLBoundary's onFail) — the Classic<->Gamified handoff above
- *    disposes one context and creates another in the same transition, which can
- *    fail transiently; mirrors build-graph.tsx's guard for the same failure class.
+ *    this session (WebGLBoundary's onFail) — mirrors build-graph.tsx's guard for
+ *    the same failure class (GPU-blocklisted, context limit hit, driver crash).
  * Otherwise renders a lightweight CSS fallback. Absolutely positioned behind the
  * hero text, so it can never block the static LCP.
+ *
+ * KNOWN GAP (pre-existing in WebGLBoundary, not introduced here): the Classic<->
+ * Gamified handoff disposes one WebGL context and creates another in the same
+ * transition, and that specific re-creation can fail transiently. If it fails
+ * SYNCHRONOUSLY (thrown during render), WebGLBoundary catches it and onFail runs.
+ * If it fails ASYNCHRONOUSLY — the failure mode use-media-query.ts's own comment
+ * documents for R3F context creation generally — componentDidCatch never fires,
+ * onFail never runs, and the canvas is left mounted broken instead of falling
+ * back. Fixing this for real means teaching WebGLBoundary about
+ * window.onunhandledrejection, which risks false-positiving on unrelated
+ * rejections elsewhere on the page (e.g. chat streaming) and is out of scope
+ * here — this component only brings hero-graph to build-graph.tsx's existing
+ * level of protection, not beyond it.
  */
 export function HeroGraph() {
   const reduced = useReducedMotion();
@@ -45,7 +60,8 @@ export function HeroGraph() {
   // handoff disposes one WebGL context and creates another in the same transition
   // (by design, see the docblock above) — this is the mount attempt that needs to
   // survive a failed/contended context creation instead of throwing uncaught.
-  const showWebGL = isDesktop && !reduced && webglOk && !webglFailed && view === "classic";
+  const showWebGL =
+    isDesktop && !reduced && webglOk && !webglFailed && view === "classic";
 
   return (
     <div

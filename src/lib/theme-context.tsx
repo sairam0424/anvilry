@@ -50,7 +50,11 @@ const emit = () => {
 function ensureHydrated(): void {
   if (hydrated || typeof window === "undefined") return;
   hydrated = true;
-  current = parse(window.localStorage.getItem(STORAGE_KEY));
+  try {
+    current = parse(window.localStorage.getItem(STORAGE_KEY));
+  } catch {
+    /* private mode / storage disabled — fall back to the default, same as apply()'s guard */
+  }
 }
 
 const subscribe = (onChange: () => void) => {
@@ -96,9 +100,16 @@ export function useTheme(): {
   setTheme: (next: Theme) => void;
   toggleTheme: () => void;
 } {
-  const theme = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
+  const theme = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
   const setTheme = useCallback((next: Theme) => apply(next), []);
-  const toggleTheme = useCallback(() => apply(current === "dark" ? "light" : "dark"), []);
+  const toggleTheme = useCallback(
+    () => apply(current === "dark" ? "light" : "dark"),
+    [],
+  );
   return { theme, setTheme, toggleTheme };
 }
 

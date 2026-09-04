@@ -118,13 +118,15 @@ export function SiteNav() {
               <Linkedin size={18} />
             </a>
           </Tooltip>
-          <Link
-            href="/resume"
-            aria-label="Résumé"
-            className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <FileText size={18} />
-          </Link>
+          <Tooltip content="Résumé">
+            <Link
+              href="/resume"
+              aria-label="Résumé"
+              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <FileText size={18} />
+            </Link>
+          </Tooltip>
           <ThemeToggle />
         </div>
 

@@ -185,21 +185,40 @@ html {
 }
 
 body {
-  background: var(--bg-base);
+  background-color: var(--bg-base);
   color: var(--fg);
   font-family: var(--font-sans);
   /* Same backstop as html above — some mobile WebKit builds still rubber-band the body's
      own scrollable overflow even when the html root is clipped. Belt-and-suspenders only;
      the fix is containing overflow at its source (see the articles filter bar). */
   overflow-x: hidden;
-  /* faint technical grid + radial accent wash */
+}
+
+/*
+ * Faint technical grid + radial accent wash, isolated into a `position: fixed`
+ * pseudo-element instead of `background-attachment: fixed` on body itself.
+ * Chromium fails to repaint a fixed-attachment background once ANY element on the
+ * page gets promoted to its own compositing layer (here: the sticky header's
+ * `backdrop-blur-md`) — past roughly one viewport of scroll, the pattern silently
+ * drops out entirely and never returns, on every page, not just long ones (verified
+ * on both /resume and /projects). `position: fixed` on a dedicated layer sidesteps
+ * that browser repaint path entirely; z-index: -1 keeps it behind all real content
+ * without needing `body` to be a positioning context (fixed is viewport-relative
+ * regardless of the ancestor chain, as long as nothing above it has its own
+ * transform/filter/will-change/contain — none of html/body do here).
+ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(60rem 40rem at 75% -10%, color-mix(in oklab, var(--violet) 9%, transparent), transparent 70%),
     radial-gradient(50rem 36rem at 5% 0%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 70%),
     linear-gradient(to right, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px),
     linear-gradient(to bottom, color-mix(in oklab, var(--border) 35%, transparent) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
-  background-attachment: fixed;
 }
 
 /* focus-visible: keyboard nav (a11y).

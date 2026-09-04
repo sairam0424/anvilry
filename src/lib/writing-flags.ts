@@ -19,19 +19,25 @@
 export const ARTICLES_ENABLED =
   process.env.NEXT_PUBLIC_ARTICLES_ENABLED !== "false";
 
-export const NOTES_ENABLED =
-  process.env.NEXT_PUBLIC_NOTES_ENABLED === "true";
+export const NOTES_ENABLED = process.env.NEXT_PUBLIC_NOTES_ENABLED === "true";
 
-export const OPEN_TO_WORK =
-  process.env.NEXT_PUBLIC_OPEN_TO_WORK === "true";
+export const OPEN_TO_WORK = process.env.NEXT_PUBLIC_OPEN_TO_WORK === "true";
+
+/**
+ * OpenToWorkBanner's rendered height (border-box): `py-2` (1rem) + `text-sm`'s 1.25rem
+ * line-height + the 1px `border-b` = 2.3125rem. The exact-height views (chat, developer)
+ * size their <main> as `100dvh` minus the sticky header's height — when this banner is
+ * also showing, it sits between the header and <main> too, so its height must be
+ * subtracted as well or the page is permanently ~37px taller than the viewport (a
+ * persistent forced scrollbar with nothing new to actually see by scrolling).
+ */
+export const OPEN_TO_WORK_BANNER_HEIGHT_REM = "2.3125rem";
 
 /** /stats page — aggregate open-source impact numbers.
  *  Default: false — enable when the page content is populated. */
-export const STATS_ENABLED =
-  process.env.NEXT_PUBLIC_STATS_ENABLED === "true";
+export const STATS_ENABLED = process.env.NEXT_PUBLIC_STATS_ENABLED === "true";
 
-export const SEARCH_ENABLED =
-  process.env.NEXT_PUBLIC_SEARCH_ENABLED === "true";
+export const SEARCH_ENABLED = process.env.NEXT_PUBLIC_SEARCH_ENABLED === "true";
 
 /** Recommendations / testimonials section on homepage.
  *  Default: false — hide until real LinkedIn recommendations are added. */

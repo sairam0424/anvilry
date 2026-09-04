@@ -43,7 +43,15 @@ export function SiteNav() {
 
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
+      // h-14 here (not just on the inner <nav>) so the header's TOTAL rendered height —
+      // border-box, including the 1px border-bottom — is exactly 3.5rem. Every "header is
+      // 3.5rem" assumption site-wide (scroll-padding-top in globals.css, the exact-height
+      // `h-[calc(100dvh-3.5rem)]` main on chat/developer views) was off by that 1px border,
+      // which never showed as visible content but did leave a permanent 1px document
+      // overflow — invisible on most setups, a permanent scrollbar track on macOS's
+      // "always show scrollbars" preference (verified: dev mode's <main> was exactly
+      // 1px taller than the viewport regardless of viewport size).
+      className="sticky top-0 z-40 h-14 border-b border-border/60 bg-bg-base/70 backdrop-blur-md"
       style={{ viewTransitionName: "site-header" }}
     >
       <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-3 px-6">

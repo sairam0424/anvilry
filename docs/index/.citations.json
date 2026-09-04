@@ -10347,13 +10347,6 @@
       ],
       "preview": "const HeroGraphScene = GRAPH_PHYSICS"
     },
-    "src/components/hero-graph/index.tsx:17": {
-      "fp": "2000a543e5ea",
-      "citedBy": [
-        "07-components-3d.md"
-      ],
-      "preview": "? dynamic(() => import(\"./scene-physics\").then((m) => m.HeroGraphScenePhysics), { ssr: false })"
-    },
     "src/components/hero-graph/index.tsx:18": {
       "fp": "78b14cb317cd",
       "citedBy": [
@@ -11576,27 +11569,6 @@
       ],
       "preview": "function ViewQuerySync() {"
     },
-    "src/components/view-context.tsx:169": {
-      "fp": "978cbff2d3c7",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "if (isView(fromUrl)) setViewInternal(fromUrl, { updateUrl: false, transition: false });"
-    },
-    "src/components/view-context.tsx:173": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
-    },
-    "src/components/view-context.tsx:176": {
-      "fp": "e31270de7bfc",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "const view = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);"
-    },
     "src/components/view-context.tsx:182": {
       "fp": "dffcc8d01178",
       "citedBy": [
@@ -11626,7 +11598,7 @@
       "preview": "export { VIEWS, DEFAULT_VIEW, isView, getServerSnapshot };"
     },
     "src/components/view-context.tsx:24": {
-      "fp": "f361cf1c4c36",
+      "fp": "e7d936a5fb1a",
       "citedBy": [
         "03-lib-content-data.md",
         "08-components-site-shell-ui.md",
@@ -11635,17 +11607,7 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "export type View = \"classic\" | \"gamified\" | \"chat\" | \"developer\" | \"voice\" | \"resume\";"
-    },
-    "src/components/view-context.tsx:26": {
-      "fp": "50ce46aa8f76",
-      "citedBy": [
-        "05-components-chat-voice.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
-      ],
-      "preview": "const VIEWS: readonly View[] = [\"classic\", \"gamified\", \"chat\", \"developer\", \"voice\", \"resume\"] as co"
+      "preview": "export type View ="
     },
     "src/components/view-context.tsx:37": {
       "fp": "df3982fd6101",
@@ -16389,6 +16351,44 @@
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "| `ttsEngine` | `\"browser\"` \\| `\"polly\"` | `\"browser\"` | TTS engine: free browser `speechSynthesis` "
+    },
+    "src/components/view-context.tsx:27": {
+      "fp": "95903639da15",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const VIEWS: readonly View[] = ["
+    },
+    "src/components/view-context.tsx:226": {
+      "fp": "bcef8e4fbb12",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "setViewInternal(fromUrl, { updateUrl: false, transition: false });"
+    },
+    "src/components/view-context.tsx:184": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/view-context.tsx:233": {
+      "fp": "3cd9700c869d",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const view = useSyncExternalStore("
+    },
+    "src/components/hero-graph/index.tsx:20": {
+      "fp": "912936fb7692",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "() => import(\"./scene-physics\").then((m) => m.HeroGraphScenePhysics),"
     }
   }
 }

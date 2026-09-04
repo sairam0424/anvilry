@@ -171,13 +171,13 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
                                                ▼
              <ViewQuerySync> (inside its own <Suspense fallback={null}>)
              useSearchParams() → effect → setViewInternal(fromUrl, {updateUrl:false, transition:false})
-                                               │  view-context.tsx:162-173, :181-183
+                                               │  view-context.tsx:218-230, :243-245
                                                ▼
    MODULE-LEVEL STORE (outside React):  let current  ·  listeners:Set  ·  emit()
                                         view-context.tsx:49, :50, :52
                                                │
                                     useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
-                                               │  view-context.tsx:176
+                                               │  view-context.tsx:233
                                                ▼
                         ViewProvider context { view, setView }  → useView()
                                                │
@@ -202,13 +202,13 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
 
 | # | File | Exact role |
 |---|---|---|
-| 1 | `src/components/view-context.tsx:24-26` | `View` is a **six**-member union — `classic \| gamified \| chat \| developer \| voice \| resume`; `VIEWS` mirrors it; `VIEW_ORDER` (`:30-37`) exists only to compute slide direction. |
+| 1 | `src/components/view-context.tsx:24-34` | `View` is a **six**-member union — `classic \| gamified \| chat \| developer \| voice \| resume`; `VIEWS` mirrors it; `VIEW_ORDER` (`:38-45`) exists only to compute slide direction. |
 | 2 | `src/components/view-context.tsx:49-59` | The store: `let current`, `listeners` Set, `emit()`, `subscribe`. |
 | 3 | `src/components/view-context.tsx:64-65` | `getClientSnapshot` returns live `current`; `getServerSnapshot` returns the literal `DEFAULT_VIEW`. |
 | 4 | `src/components/view-context.tsx:79-116` | `commitViewChange`: snap branch (reduced motion **or** no `startViewTransition`), ink branch (`NEXT_PUBLIC_INK_TRANSITION`), default branch. |
 | 5 | `src/components/view-context.tsx:133-145` | Stamps `document.documentElement.dataset.viewDir`, then `history.replaceState`. |
 | 6 | `src/components/view-context.tsx:139` | `unlock("view-switch")` — discovery badge #1. |
-| 7 | `src/components/view-context.tsx:162-173,181-183` | `ViewQuerySync` + its dedicated `<Suspense>` boundary. |
+| 7 | `src/components/view-context.tsx:218-230,243-245` | `ViewQuerySync` + its dedicated `<Suspense>` boundary. |
 | 8 | `src/components/providers.tsx:51-53` | `MotionConfig reducedMotion="user"` → `ViewProvider` → `ScrollFlagsSync`. |
 | 9 | `src/app/page.tsx:26-37` | Server-renders the Classic `<main>` and hands it to `ViewRouter` as `children`. |
 | 10 | `src/components/view-router.tsx:56-69` | The `viewTransitionName: "view-body"` wrapper + the six branches. |
@@ -251,7 +251,7 @@ views off**, distinguished by `raw === undefined || raw === null` (`src/lib/enab
 `NEXT_PUBLIC_INK_TRANSITION` selects the WebGL2 ink-burn commit path (`view-context.tsx:99`).
 `prefers-reduced-motion` (OS-level) forces the snap branch (`:80-92`) and is separately enforced in CSS
 (`globals.css:293-299`). No cookie, no localStorage — a bare `/` is always Classic by design
-(`view-context.tsx:140-147`).
+(`view-context.tsx:148-155`).
 
 ---
 

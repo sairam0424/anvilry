@@ -17,6 +17,7 @@ vi.mock("@/components/view-context", () => ({ useView: () => ({ view: "developer
 vi.mock("@vercel/analytics", () => ({ track: vi.fn() }));
 
 import { TerminalOverlay } from "./terminal-overlay";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -30,17 +31,21 @@ beforeEach(() => {
 });
 
 /** Harness mirroring how DeveloperView/GameView drive the overlay: an external trigger
- *  button + the controlled overlay, sharing a triggerRef. */
+ *  button + the controlled overlay, sharing a triggerRef. TerminalOverlay renders a
+ *  Tooltip (see src/components/ui/tooltip.tsx), which requires a TooltipProvider
+ *  ancestor — production always has one via src/components/providers.tsx. */
 function Harness() {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   return (
-    <div>
-      <button ref={triggerRef} onClick={() => setOpen(true)}>
-        Maximize terminal to fullscreen
-      </button>
-      <TerminalOverlay open={open} onOpenChange={setOpen} triggerRef={triggerRef} />
-    </div>
+    <TooltipProvider>
+      <div>
+        <button ref={triggerRef} onClick={() => setOpen(true)}>
+          Maximize terminal to fullscreen
+        </button>
+        <TerminalOverlay open={open} onOpenChange={setOpen} triggerRef={triggerRef} />
+      </div>
+    </TooltipProvider>
   );
 }
 

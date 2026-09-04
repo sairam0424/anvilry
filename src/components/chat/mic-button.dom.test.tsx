@@ -1,7 +1,9 @@
+import type { ReactElement } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import { MicButton } from "./mic-button";
 import { __resetVoiceSettingsForTest } from "@/lib/voice-settings-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 /**
  * The mic button is the user-facing privacy surface. Contract: (1) renders NOTHING
@@ -9,7 +11,14 @@ import { __resetVoiceSettingsForTest } from "@/lib/voice-settings-context";
  * shows the cloud-audio disclosure and does NOT open the mic until accepted; (3) once
  * accepted (persisted), later clicks start listening directly; (4) aria-pressed
  * reflects the listening state. Driven by a fake engine + stubbed getUserMedia.
+ *
+ * MicButton renders a Tooltip (see src/components/ui/tooltip.tsx), which requires a
+ * TooltipProvider ancestor — production always has one via src/components/providers.tsx.
+ * `render` here wraps every call with that same provider so the tree matches production.
  */
+function render(ui: ReactElement) {
+  return rtlRender(ui, { wrapper: TooltipProvider });
+}
 
 class FakeRecognition {
   lang = "";

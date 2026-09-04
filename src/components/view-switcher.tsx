@@ -6,6 +6,7 @@ import { useView, type View } from "@/components/view-context";
 import { useMounted } from "@/lib/use-mounted";
 import { isViewEnabled } from "@/lib/enabled-views";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/tooltip";
 
 /**
  * Segmented control to switch the top-level experience. Text-labelled (not
@@ -13,11 +14,11 @@ import { cn } from "@/lib/utils";
  * layoutId, which MotionConfig reducedMotion='user' auto-disables for users with
  * OS reduce-motion on. Used in the nav (full) and as a compact pill on mobile.
  */
-const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGrid }[] = [
-  { view: "classic", label: "Classic", short: "Classic", icon: LayoutGrid },
-  { view: "gamified", label: "Play", short: "Play", icon: Gamepad2 },
-  { view: "chat", label: "Chat", short: "Chat", icon: MessagesSquare },
-  { view: "developer", label: "Dev", short: "Dev", icon: TerminalSquare },
+const OPTIONS: { view: View; label: string; short: string; description: string; icon: typeof LayoutGrid }[] = [
+  { view: "classic", label: "Classic", short: "Classic", description: "Standard portfolio layout", icon: LayoutGrid },
+  { view: "gamified", label: "Play", short: "Play", description: "Explorable 3D build graph", icon: Gamepad2 },
+  { view: "chat", label: "Chat", short: "Chat", description: "RAG-grounded AI concierge", icon: MessagesSquare },
+  { view: "developer", label: "Dev", short: "Dev", description: "Keyboard-driven terminal", icon: TerminalSquare },
 ];
 
 // "Voice" is a first-class entry (the Anvil voice surface). It is appended only after
@@ -25,7 +26,13 @@ const OPTIONS: { view: View; label: string; short: string; icon: typeof LayoutGr
 // must render the 4-way control on the server, then upgrade to 5-way post-hydration, so
 // the SSR markup always matches (no mismatch). The `useMounted` gate is the hydration
 // contract; it is NOT a feature flag.
-const VOICE_OPTION = { view: "voice" as View, label: "Voice", short: "Voice", icon: AudioLines };
+const VOICE_OPTION = {
+  view: "voice" as View,
+  label: "Voice",
+  short: "Voice",
+  description: "Full-page two-way talk surface",
+  icon: AudioLines,
+};
 
 export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   const { view, setView } = useView();
@@ -54,35 +61,36 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
         const Icon = opt.icon;
         const active = view === opt.view;
         return (
-          <button
-            key={opt.view}
-            type="button"
-            onClick={() => setView(opt.view)}
-            aria-pressed={active}
-            aria-label={`${opt.label} view`}
-            className={cn(
-              "relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
-              active ? "text-bg-base" : "text-fg-muted hover:text-fg",
-            )}
-          >
-            {active && (
-              <motion.span
-                layoutId={layoutId}
-                aria-hidden="true"
-                className="absolute inset-0 z-0 rounded-full bg-accent"
-                transition={{ type: "spring", stiffness: 420, damping: 34 }}
-              />
-            )}
-            {/* Content sits ABOVE the pill via a positive z-index wrapper — never a
-                negative one (which could sink the pill behind the container bg and
-                render the active dark text dark-on-dark). */}
-            <span className="relative z-10 inline-flex items-center gap-1.5">
-              <Icon size={14} aria-hidden="true" />
-              {!compact && <span>{opt.label}</span>}
-              {compact && <span className="sr-only">{opt.label}</span>}
-            </span>
-          </button>
+          <Tooltip key={opt.view} content={opt.description}>
+            <button
+              type="button"
+              onClick={() => setView(opt.view)}
+              aria-pressed={active}
+              aria-label={`${opt.label} view`}
+              className={cn(
+                "relative inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
+                active ? "text-bg-base" : "text-fg-muted hover:text-fg",
+              )}
+            >
+              {active && (
+                <motion.span
+                  layoutId={layoutId}
+                  aria-hidden="true"
+                  className="absolute inset-0 z-0 rounded-full bg-accent"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
+              {/* Content sits ABOVE the pill via a positive z-index wrapper — never a
+                  negative one (which could sink the pill behind the container bg and
+                  render the active dark text dark-on-dark). */}
+              <span className="relative z-10 inline-flex items-center gap-1.5">
+                <Icon size={14} aria-hidden="true" />
+                {!compact && <span>{opt.label}</span>}
+                {compact && <span className="sr-only">{opt.label}</span>}
+              </span>
+            </button>
+          </Tooltip>
         );
       })}
     </div>

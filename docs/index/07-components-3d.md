@@ -56,7 +56,7 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 | Lazy import boundary — avatar | `src/components/hero-avatar/index.tsx:10-13` | `dynamic(() => import("./avatar-scene").then(m => ({ default: m.AvatarScene })), { ssr: false })` |
 | Mobile drop | `hero-graph/index.tsx:32,34`; `hero-avatar/index.tsx:46,56` | `useMediaQuery("(min-width: 768px)")` must be true; the whole WebGL layer is skipped below 768 px |
 | Reduced motion | `hero-graph/index.tsx:31,34`; `hero-avatar/index.tsx:45,56`; `scene-physics.tsx:34,38` | `useReducedMotion()` blocks mounting at both entry points; the physics variant additionally early-returns inside `useFrame` (so under reduced motion it still renders every frame, it just does not move) |
-| View-scoped mount | `hero-graph/index.tsx:35`; `hero-avatar/index.tsx:56` | `view === "classic"` — the hidden Classic page must not hold a live WebGL context while the gamified view uses one |
+| View-scoped mount | `hero-graph/index.tsx:48`; `hero-avatar/index.tsx:56` | `view === "classic"` — the hidden Classic page must not hold a live WebGL context while the gamified view uses one |
 | Chunk dedup barrel | `src/lib/r3f.ts:1-27`, `next.config.ts:127-149` | all R3F consumers import from the barrel so the bundler sees one module-graph node |
 | Error containment | `hero-avatar/index.tsx:59-61` | `<WebGLBoundary>` wraps the lazy avatar scene. **The hero graph is NOT wrapped** — see gotchas. |
 
@@ -107,12 +107,12 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 - **Role:** The `NEXT_PUBLIC_GRAPH_PHYSICS=true` variant of the hero graph — same inner graph, wrapped in a group that drifts sinusoidally on an always-on frameloop.
 - **Exports:** `HeroGraphScenePhysics` (component). `DriftWrapper` is module-private (`scene-physics.tsx:33`).
 - **Reads / depends on:** `@react-three/fiber` (`Canvas`, `useFrame`, type `RootState`) and `three` (`* as THREE`) **imported directly, not through the barrel** (`scene-physics.tsx:4-6`); `@/lib/use-reduced-motion`; `./scene` (`HeroGraphInner`).
-- **Consumed by:** `src/components/hero-graph/index.tsx:17` only.
+- **Consumed by:** `src/components/hero-graph/index.tsx:20` only.
 - **Behaviour notes:** `frameloop="always"` (`scene-physics.tsx:20`) — no `invalidate()` calls anywhere in this file, because none are needed. `DriftWrapper` sets (never accumulates) `position.x = sin(t*0.4)*0.08`, `position.y = cos(t*0.25)*0.06`, `position.z = sin(t*0.3+1)*0.04` from `clock.elapsedTime` (`scene-physics.tsx:42-44`); the comment at lines 43-44 states position is SET so it stays bounded. Under reduced motion the `useFrame` callback returns early (`scene-physics.tsx:38`) leaving the group at the origin.
 - **Gotchas / invariants:**
   - **Despite the filename and the flag name, there is no physics engine here.** The header comment (`scene-physics.tsx:10-16`) states "No RigidBody / Rapier needed for this effect". `@react-three/rapier` was a declared dependency at v3.4.2 but was imported by **no** file in `src/`; it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:164-201`). The only `Rapier` matches left in the tree are prose comments (`scene-physics.tsx:12`, `hero-graph/index.tsx:13`).
   - This is the **only** file in the 3D subsystem that bypasses `@/lib/r3f` (`scene-physics.tsx:4-6`). The barrel's whole purpose (`src/lib/r3f.ts:5-8`) is that every R3F consumer route through one module-graph node; a direct `@react-three/fiber` + `three` import here is exactly the pattern the barrel exists to prevent. Because this variant is flag-off by default it is not in the default production graph.
-  - Reduced motion is handled *inside* the frame callback, not at the Canvas level — so with the flag on and reduced-motion set, the canvas still renders continuously (`frameloop="always"`), it just renders a static scene. The upstream gate in `hero-graph/index.tsx:35` normally prevents this from ever mounting under reduced motion.
+  - Reduced motion is handled *inside* the frame callback, not at the Canvas level — so with the flag on and reduced-motion set, the canvas still renders continuously (`frameloop="always"`), it just renders a static scene. The upstream gate in `hero-graph/index.tsx:48` normally prevents this from ever mounting under reduced motion.
 
 ### `src/components/hero-avatar/index.tsx`
 - **Role:** Gate + layout host for the 3D avatar hero slot; returns `null` entirely unless the avatar hero mode is selected.

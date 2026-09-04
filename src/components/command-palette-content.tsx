@@ -611,7 +611,7 @@ export function CommandPaletteContent({
         open={open}
         onOpenChange={setOpen}
         label="Command palette"
-        className="fixed inset-0 z-50 flex items-start justify-center pt-[14vh]"
+        contentClassName="fixed inset-0 z-50 flex items-start justify-center pt-[14vh]"
       >
         {/* Accessible name + description for the underlying Radix DialogContent
             (visually hidden). Resolves the "DialogContent requires DialogTitle" a11y

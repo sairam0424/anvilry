@@ -15,7 +15,7 @@ export const profile = {
   locationCity: "Hyderabad",
   locationCountry: "IN",
   headline:
-    "GenAI & Backend Engineer building production multi-agent LLM systems and the event-driven backends behind them.",
+    "I build production multi-agent LLM systems and the event-driven backends behind them.",
   subhead:
     "I co-built Pensieve and architected the AAVA Code backend at Ascendion, and build open-source AI infrastructure in the open.",
   email: "uggesairam0000@gmail.com",
@@ -33,10 +33,10 @@ export const profile = {
  *  The repo count is DERIVED from the content layer (allProjects.length), not hand-typed,
  *  so it can never drift from the actual published projects — structurally pinning the
  *  one banner number the audit flagged as un-sourced. */
-export const impactMetrics: { value: string; label: string; sub: string }[] = [
-  { value: "2K+", label: "daily users", sub: "Pensieve" },
-  { value: "3K+", label: "daily users", sub: "AAVA Code · 5+ clients" },
-  { value: `${allProjects.length}`, label: "open-source repos", sub: "AI infrastructure" },
+export const impactMetrics: { value: string; label: string; sub: string; href: string }[] = [
+  { value: "2K+", label: "daily users", sub: "Pensieve", href: "/work/pensieve" },
+  { value: "3K+", label: "daily users", sub: "AAVA Code · 5+ clients", href: "/work/aava-code" },
+  { value: `${allProjects.length}`, label: "open-source repos", sub: "AI infrastructure", href: "/projects" },
 ];
 
 export const skills: { group: string; items: string[] }[] = [

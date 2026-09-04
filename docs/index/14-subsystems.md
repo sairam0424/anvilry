@@ -213,7 +213,7 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
 | 9 | `src/app/page.tsx:26-37` | Server-renders the Classic `<main>` and hands it to `ViewRouter` as `children`. |
 | 10 | `src/components/view-router.tsx:56-69` | The `viewTransitionName: "view-body"` wrapper + the six branches. |
 | 11 | `src/lib/enabled-views.ts:20-40` | `isViewEnabled()`; `classic` and `resume` are unconditionally true. |
-| 12 | `src/components/view-switcher.tsx:16-42` | 4 server-rendered pills; Voice appended only when `mounted && !compact && isViewEnabled("voice")` (`:38`). Per-instance `layoutId` (`:42`). |
+| 12 | `src/components/view-switcher.tsx:17-43` | 4 server-rendered pills; Voice appended only when `mounted && !compact && isViewEnabled("voice")` (`:38`). Per-instance `layoutId` (`:42`). |
 | 13 | `src/components/site-nav.tsx:40,66-71` | `viewTransitionName: "site-header"`; both switcher instances live in the DOM simultaneously. |
 | 14 | `src/app/globals.css:257-299` | The four slide keyframes, the `[data-view-dir]` selectors, the `site-header` `animation: none` pin, and the reduced-motion kill switch. |
 | 15 | `src/components/view-escape-hatch.tsx` | First focusable element of each non-classic view; imported by `chat-view`, `anvil-view`, `game-view`, `developer-view` — **not** by `view-router.tsx`. |
@@ -251,7 +251,7 @@ views off**, distinguished by `raw === undefined || raw === null` (`src/lib/enab
 `NEXT_PUBLIC_INK_TRANSITION` selects the WebGL2 ink-burn commit path (`view-context.tsx:99`).
 `prefers-reduced-motion` (OS-level) forces the snap branch (`:80-92`) and is separately enforced in CSS
 (`globals.css:293-299`). No cookie, no localStorage — a bare `/` is always Classic by design
-(`view-context.tsx:118-125`).
+(`view-context.tsx:140-147`).
 
 ---
 

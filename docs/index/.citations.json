@@ -1844,11 +1844,11 @@
       "preview": "repo: https://github.com/sairam0424/gRPC-micro-services"
     },
     "content/work/aava-code.mdx:31": {
-      "fp": "1196ebb6f643",
+      "fp": "903a8da3f92d",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
-      "preview": "> **Contribution:** Co-built the plugin; I majorly contributed to and architected the backend, and a"
+      "preview": "> **Contribution:** I co-built the plugin — majorly contributing to and architecting the backend, an"
     },
     "DEPLOY.md:101": {
       "fp": "09bee6664503",
@@ -11012,13 +11012,13 @@
       "preview": "* ViewEscapeHatch component (auto-rendered by view-router for non-classic views)"
     },
     "src/components/home/resume-view.tsx:14": {
-      "fp": "684888c0ebb1",
+      "fp": "8465f88344aa",
       "citedBy": [
         "08-components-site-shell-ui.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "*"
+      "preview": "* /about, /work/[slug], etc., not just from `/`. The ViewEscapeHatch component"
     },
     "src/components/home/resume-view.tsx:255": {
       "fp": "80537f6c17fe",
@@ -14501,19 +14501,19 @@
       "preview": "export const hasNow: boolean = now.updated !== \"\" && now.focus.length > 0;"
     },
     "src/lib/profile.ts:36": {
-      "fp": "10464a5be48c",
+      "fp": "f9e090188762",
       "citedBy": [
         "06-components-game-terminal.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "export const impactMetrics: { value: string; label: string; sub: string }[] = ["
+      "preview": "export const impactMetrics: { value: string; label: string; sub: string; href: string }[] = ["
     },
     "src/lib/profile.ts:39": {
-      "fp": "2374b8f68d95",
+      "fp": "31a4b5404ccc",
       "citedBy": [
         "03-lib-content-data.md"
       ],
-      "preview": "{ value: `${allProjects.length}`, label: \"open-source repos\", sub: \"AI infrastructure\" },"
+      "preview": "{ value: `${allProjects.length}`, label: \"open-source repos\", sub: \"AI infrastructure\", href: \"/proj"
     },
     "src/lib/profile.ts:40": {
       "fp": "358ba3f22237",

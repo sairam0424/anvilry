@@ -17,6 +17,10 @@ const VISIT_CACHE_KEY = "anvilry:visits:total";
  * localStorage fallback: seeds from cache on mount so repeat visitors see the last-known
  * count instantly, and so the badge shows a real number when Redis is unavailable (total=0).
  * Only a positive total from the API overwrites the cache — a 0 (Redis down) is ignored.
+ * If there is NO cache to fall back on (first-ever visit / cleared storage) and the fetch
+ * comes back with nothing usable (total 0/missing, or the request throws), `total` is
+ * explicitly set to 0 so the component falls through to hiding the badge instead of
+ * spinning on the skeleton forever.
  */
 function VisitorBadge() {
   // Always start with null — localStorage is browser-only and must not be read during SSR.
@@ -31,11 +35,15 @@ function VisitorBadge() {
     // it runs once on mount (client-only) and does not depend on any external
     // subscription — it is a one-time initialisation from a local store, which is
     // a documented exception to the set-state-in-effect heuristic.
+    let hasCachedValue = false;
     try {
       const cached = localStorage.getItem(VISIT_CACHE_KEY);
-      if (cached !== null) setTotal(Number(cached)); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: one-time localStorage seed on mount, no subscription
+      if (cached !== null) {
+        hasCachedValue = true;
+        setTotal(Number(cached)); // eslint-disable-line react-hooks/set-state-in-effect -- intentional: one-time localStorage seed on mount, no subscription
+      }
     } catch {
-      // localStorage unavailable — stay on null (skeleton shown)
+      // localStorage unavailable — stay on null (skeleton shown) until the fetch settles
     }
 
     fetch("/api/visit", { method: "POST" })
@@ -48,11 +56,20 @@ function VisitorBadge() {
           } catch {
             // localStorage blocked (private browsing / storage full) — ignore
           }
+        } else if (!hasCachedValue) {
+          // Redis was unavailable AND there's no cache to fall back on — nothing real to
+          // show. Set total to 0 so the component falls through to hiding the badge below,
+          // instead of leaving total null and spinning on the skeleton forever.
+          setTotal(0);
         }
-        // If total === 0: Redis was unavailable. Keep the cached value (don't call setTotal).
+        // Else: total === 0 but a cache exists. Keep the cached value (don't call setTotal).
       })
       .catch(() => {
-        // Network error — cached value (already in state) stays visible
+        if (!hasCachedValue) {
+          // Network error AND no cache — same "nothing real to show" case as above.
+          setTotal(0);
+        }
+        // Else: cached value (already in state) stays visible
       });
   }, []);
 

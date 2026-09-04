@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { X, Sparkles } from "lucide-react";
 import { useView } from "@/components/view-context";
 
@@ -54,9 +55,15 @@ function useHintDismissed(): boolean {
 
 /**
  * One-time, non-blocking hint nudging first-time visitors toward the Play / Chat
- * views. Dismissible, never covers content, and shown ONLY in the classic view
- * (don't nag someone who already switched). The seen-flag is a UI flag in
- * localStorage, not the view state (which is intentionally never persisted).
+ * views. Dismissible, never covers content, and shown ONLY on the homepage
+ * ("/") AND while in the classic view (don't nag someone who already switched).
+ * The homepage check matters because `view` is the SPA view-switcher's state,
+ * not the Next.js route — its module-level store defaults to "classic" on every
+ * standalone route (e.g. /work, /projects, /articles) too, since those pages
+ * never touch the view-switcher at all. Without the pathname check this hint
+ * would render (and overlap real content) on every one of those pages. The
+ * seen-flag is a UI flag in localStorage, not the view state (which is
+ * intentionally never persisted).
  *
  * Timing: gated behind a dwell timer (SHOW_DELAY_MS) so it never appears the
  * instant the page loads. Positioning: anchored to the TOP of the viewport on
@@ -66,6 +73,7 @@ function useHintDismissed(): boolean {
  */
 export function ViewHint() {
   const { view } = useView();
+  const pathname = usePathname();
   const dismissed = useHintDismissed();
   const [dwelled, setDwelled] = useState(false);
 
@@ -74,7 +82,8 @@ export function ViewHint() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (dismissed || !dwelled || view !== "classic") return null;
+  if (dismissed || !dwelled || pathname !== "/" || view !== "classic")
+    return null;
 
   return (
     <div className="fixed top-16 inset-x-3 z-30 rounded-xl border border-accent/40 bg-bg-surface/95 p-3 text-sm shadow-lg shadow-accent/10 backdrop-blur sm:inset-x-auto sm:top-auto sm:bottom-5 sm:right-44 sm:max-w-[16rem]">

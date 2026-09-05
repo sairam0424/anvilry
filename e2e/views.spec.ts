@@ -10,7 +10,20 @@ test("classic view loads and shows portfolio content", async ({ page }) => {
   // View switcher is available. NOTE: the old selector here was '[data-view]', which has
   // never existed in src — the only similar attribute is `data-view-dir` (set on the shell
   // for ::view-transition direction). Assert the real switcher by accessible name.
-  await expect(page.getByRole("button", { name: /classic/i }).first()).toBeVisible();
+  //
+  // Below `sm` (640px, see src/components/site-nav.tsx), the top-row compact switcher is
+  // hidden — packing it in alongside the logo, orb trigger, and hamburger overflowed the
+  // row on narrow phones (320px class) and pushed the hamburger off-screen. It moves into
+  // the MobileNav drawer instead, so it's still reachable, just not directly visible
+  // without opening the drawer first.
+  const viewport = page.viewportSize();
+  const isNarrow = viewport !== null && viewport.width < 640;
+  if (isNarrow) {
+    await page.getByRole("button", { name: /open menu/i }).click();
+  }
+  await expect(
+    page.getByRole("button", { name: /classic/i }).first(),
+  ).toBeVisible();
 });
 
 test("classic view: navigation to articles page works", async ({ page }) => {
@@ -38,7 +51,9 @@ test("chat view switches and renders chat interface", async ({ page }) => {
   // Chat input is present. NOTE: the composer is `<input value ... aria-label=...>` with NO
   // `type` attribute, so the old 'input[type="text"]' selector could never match it.
   // SSR is always Classic (see CLAUDE.md), so allow time for the post-hydration view switch.
-  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({
+    timeout: 15000,
+  });
 });
 
 test("chat view: typing a message and submitting works", async ({ page }) => {
@@ -56,16 +71,22 @@ test("chat view: typing a message and submitting works", async ({ page }) => {
   await expect(live).toBeAttached({ timeout: 15000 });
   // The transcript must grow beyond the echoed user message.
   await expect
-    .poll(async () => (await page.textContent("main")) ?? "", { timeout: 30000 })
+    .poll(async () => (await page.textContent("main")) ?? "", {
+      timeout: 30000,
+    })
     .not.toMatch(/^\s*$/);
   const body = (await page.textContent("main")) ?? "";
   // Either a real answer streamed, or chat is not configured in this environment (503 path).
-  expect(body).toMatch(/Sairam|Ascendion|projects|isn't switched on yet|went wrong/i);
+  expect(body).toMatch(
+    /Sairam|Ascendion|projects|isn't switched on yet|went wrong/i,
+  );
 });
 
 // ── Phase 3: cross-route view switching (view-context.tsx setViewInternal fix) ──
 
-test("switching views via ⌘K from a non-home route navigates home with ?view= applied", async ({ page }) => {
+test("switching views via ⌘K from a non-home route navigates home with ?view= applied", async ({
+  page,
+}) => {
   // Regression this guards: setViewInternal used to do `history.replaceState` on the
   // CURRENT url only — never navigating — so a view switch triggered from any route
   // other than "/" silently did nothing visible. The fix routes through a
@@ -86,7 +107,9 @@ test("switching views via ⌘K from a non-home route navigates home with ?view= 
   await expect(page).toHaveURL("/?view=chat");
   // ...and a visible content swap, not just a URL change — the chat composer
   // actually renders after the deep-linked view applies post-hydration.
-  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({
+    timeout: 15000,
+  });
 });
 
 // ── Developer (terminal) view ─────────────────────────────────────────────────
@@ -94,27 +117,52 @@ test("switching views via ⌘K from a non-home route navigates home with ?view= 
 test("developer view switches and renders terminal", async ({ page }) => {
   await page.goto("/?view=developer");
   // Terminal prompt is present (post-hydration; SSR is always Classic).
-  await expect(page.locator("main input").first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("main input").first()).toBeVisible({
+    timeout: 15000,
+  });
 });
 
-test("developer view: 'help' command shows available commands", async ({ page }) => {
+test("developer view: 'help' command shows available commands", async ({
+  page,
+}) => {
   await page.goto("/?view=developer");
   // The terminal exposes a [role="log"] transcript and a plain <input> — not a combobox.
-  await expect(page.locator('[role="log"]').first()).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[role="log"]').first()).toBeVisible({
+    timeout: 15000,
+  });
   const input = page.locator("main input").first();
   await input.fill("help");
   await page.keyboard.press("Enter");
-  await expect(page.locator('[role="log"]')).toContainText(/help|command/i, { timeout: 5000 });
+  await expect(page.locator('[role="log"]')).toContainText(/help|command/i, {
+    timeout: 5000,
+  });
 });
 
 // ── Gamified (3D graph) view ──────────────────────────────────────────────────
 
 test("gamified view switches and renders 3D canvas", async ({ page }) => {
   await page.goto("/?view=gamified");
-  // Canvas element from Three.js/R3F. Scoped to #main-content: a bare locator("canvas")
-  // matches TWO canvases (the graph plus an aria-hidden decorative one) and fails Playwright
-  // strict mode — which read as "the 3D view is broken" when it was rendering fine.
-  await expect(page.locator("#main-content canvas").first()).toBeVisible({ timeout: 20000 });
+  // Below 768px (src/components/game/build-graph.tsx's `useMediaQuery("(min-width: 768px)")`
+  // gate — the same threshold hero-graph uses), BuildGraph renders nothing: the R3F/Three.js
+  // canvas is a desktop + full-motion enhancement only. GraphIndex (src/components/game/
+  // graph-index.tsx) is the always-rendered accessible DOM-first index underneath it, and
+  // is the real mobile / reduced-motion / no-JS / screen-reader experience for this view —
+  // assert on that instead of a canvas that's intentionally absent at this width.
+  const viewport = page.viewportSize();
+  const isMobile = viewport !== null && viewport.width < 768;
+  if (isMobile) {
+    await expect(
+      page.getByRole("region", { name: "Explore every system" }),
+    ).toBeVisible({ timeout: 20000 });
+  } else {
+    // Canvas element from Three.js/R3F. Scoped to #main-content: a bare locator("canvas")
+    // matches TWO canvases (the graph plus an aria-hidden decorative one) and fails
+    // Playwright strict mode — which read as "the 3D view is broken" when it was rendering
+    // fine.
+    await expect(page.locator("#main-content canvas").first()).toBeVisible({
+      timeout: 20000,
+    });
+  }
 });
 
 // ── SEO / discoverability ─────────────────────────────────────────────────────

@@ -7,11 +7,12 @@ import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ViewSwitcher } from "@/components/view-switcher";
 
 type NavLink = { href: string; label: string };
 
 /**
- * Mobile nav drawer (< sm). The desktop nav hides every link below the `sm`
+ * Mobile nav drawer (< lg). The desktop nav hides every link below the `lg`
  * breakpoint; without this, switching back to Classic on a phone would land on a
  * page with no reachable nav. WCAG: focus trap while open, Escape to close, focus
  * restored to the trigger on close, aria-expanded/aria-controls wired, backdrop
@@ -89,6 +90,17 @@ export function MobileNav({ links }: { links: NavLink[] }) {
             aria-label="Site navigation"
             className="fixed inset-x-0 top-14 z-50 border-b border-border-strong bg-bg-surface px-6 py-4 shadow-2xl"
           >
+            {/* View switcher — only below `sm`. At `sm` and up the top nav row already
+                shows the compact pill (see site-nav.tsx); duplicating it here would be
+                redundant, so it's scoped to the narrow phones that hid it up there.
+                scope="drawer" gives this instance its own layoutId — the top-row
+                compact pill is unconditionally mounted (CSS-only visibility) and this
+                drawer only mounts when open, so both can be in the DOM together
+                whenever the drawer is opened in the sm-lg range; without a distinct
+                scope they'd collide on the same layoutId (see view-switcher.tsx). */}
+            <div className="mb-3 border-b border-border pb-3 sm:hidden">
+              <ViewSwitcher compact scope="drawer" />
+            </div>
             <nav className="flex flex-col gap-1">
               {links.map((l) => (
                 <Link

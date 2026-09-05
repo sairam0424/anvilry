@@ -12,15 +12,16 @@ import { useSpeechSynthesis, splitSentences } from "./use-speech-synthesis";
 
 describe("splitSentences", () => {
   it("splits on sentence-final punctuation", () => {
-    expect(splitSentences("I build agents. I scale backends. Want details?")).toEqual([
-      "I build agents.",
-      "I scale backends.",
-      "Want details?",
-    ]);
+    expect(
+      splitSentences("I build agents. I scale backends. Want details?"),
+    ).toEqual(["I build agents.", "I scale backends.", "Want details?"]);
   });
 
   it("keeps a trailing fragment with no terminal punctuation (the still-streaming bit)", () => {
-    expect(splitSentences("Done. Now streaming the next")).toEqual(["Done.", "Now streaming the next"]);
+    expect(splitSentences("Done. Now streaming the next")).toEqual([
+      "Done.",
+      "Now streaming the next",
+    ]);
   });
 
   it("caps an over-long run so no chunk exceeds the cutoff budget", () => {
@@ -102,7 +103,10 @@ describe("useSpeechSynthesis", () => {
   it("speak() enqueues one utterance per sentence", () => {
     const { result } = renderHook(() => useSpeechSynthesis());
     act(() => result.current.speak("First sentence. Second sentence."));
-    expect(spoken.map((u) => u.text)).toEqual(["First sentence.", "Second sentence."]);
+    expect(spoken.map((u) => u.text)).toEqual([
+      "First sentence.",
+      "Second sentence.",
+    ]);
     expect(result.current.isSpeaking).toBe(true);
   });
 
@@ -113,7 +117,11 @@ describe("useSpeechSynthesis", () => {
     expect(spoken.map((u) => u.text)).toEqual(["All done here."]);
     // Second chunk: the partial completes + a new one → both new sentences speak,
     // the already-spoken first one is NOT repeated.
-    act(() => result.current.speakChunk("All done here. Still typing the rest. And more."));
+    act(() =>
+      result.current.speakChunk(
+        "All done here. Still typing the rest. And more.",
+      ),
+    );
     expect(spoken.map((u) => u.text)).toEqual([
       "All done here.",
       "Still typing the rest.",
@@ -224,7 +232,9 @@ describe("useSpeechSynthesis — options form (v1.7)", () => {
   });
 
   it("default character (undefined) reproduces v1.6 hardcoded rate=1, pitch=1", () => {
-    const { result } = renderHook(() => useSpeechSynthesis({ engine: "browser" }));
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "browser" }),
+    );
     act(() => result.current.speak("Hello."));
     expect(spoken[0].rate).toBe(1);
     expect(spoken[0].pitch).toBe(1);
@@ -251,7 +261,9 @@ describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
   it("speak() with engine=google + voiceId fetches /api/tts-google with the right body", async () => {
     const fetchMock: typeof fetch = vi.fn(() =>
       Promise.resolve(
-        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), { status: 200 }),
+        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), {
+          status: 200,
+        }),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -277,7 +289,9 @@ describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const { result } = renderHook(() => useSpeechSynthesis({ engine: "google" }));
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "google" }),
+    );
     act(() => result.current.speak("Hello."));
     // Must NOT have hit the network — fell through to browser engine.
     expect(vi.mocked(fetchMock)).not.toHaveBeenCalled();
@@ -287,13 +301,18 @@ describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
   it("speak() with engine=polly + custom voiceId fetches /api/tts with the right body", async () => {
     const fetchMock: typeof fetch = vi.fn(() =>
       Promise.resolve(
-        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), { status: 200 }),
+        new Response(new Blob([new Uint8Array(0)], { type: "audio/mpeg" }), {
+          status: 200,
+        }),
       ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
     const { result } = renderHook(() =>
-      useSpeechSynthesis({ engine: "polly", voiceId: "polly-generative-stephen" }),
+      useSpeechSynthesis({
+        engine: "polly",
+        voiceId: "polly-generative-stephen",
+      }),
     );
     act(() => result.current.speak("Hello."));
     await new Promise((r) => setTimeout(r, 0));
@@ -303,7 +322,10 @@ describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
     const [url, init] = calls[0]!;
     expect(url).toBe("/api/tts");
     const body = JSON.parse(init!.body as string);
-    expect(body).toEqual({ text: "Hello.", voiceId: "polly-generative-stephen" });
+    expect(body).toEqual({
+      text: "Hello.",
+      voiceId: "polly-generative-stephen",
+    });
   });
 
   it("remote-engine fetch failure falls back to browser path (the cascade)", async () => {
@@ -320,5 +342,55 @@ describe("useSpeechSynthesis — engine=google branch (v1.7)", () => {
     await new Promise((r) => setTimeout(r, 0));
     // The browser engine should have spoken the text.
     expect(spoken.map((u) => u.text)).toContain("Hello world.");
+  });
+
+  /**
+   * REGRESSION (iOS Safari gesture unlock, see unlockRemoteAudio's doc comment in
+   * use-speech-synthesis.ts): WebKit only authorizes an <audio> element's .play()
+   * when it's invoked synchronously inside a real user-gesture handler. speak()'s
+   * remote branch previously went straight to playRemoteFrom(), which only calls
+   * .play() AFTER an awaited fetch — by then the gesture context is gone and iOS
+   * silently refuses playback even though the user just tapped. This test pins the
+   * property that keeps the fix correct: .play() must fire in the SAME synchronous
+   * tick as speak() itself, before the fetch it kicks off has any chance to settle.
+   */
+  it("calls audio.play() synchronously inside speak(), before the remote fetch resolves", async () => {
+    let resolveFetch: () => void = () => {};
+    const fetchMock: typeof fetch = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = () =>
+            resolve(
+              new Response(
+                new Blob([new Uint8Array(0)], { type: "audio/mpeg" }),
+                { status: 200 },
+              ),
+            );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const playSpy = vi
+      .spyOn(HTMLAudioElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
+
+    const { result } = renderHook(() =>
+      useSpeechSynthesis({ engine: "polly", voiceId: "polly-neural-joanna" }),
+    );
+
+    // speak() itself is not async — if the unlock call weren't synchronous, this
+    // assertion would run before it too and still (wrongly) pass. What proves the
+    // ordering is that the fetch it triggered has NOT been resolved yet at this
+    // point, so the only way play() could already have fired once is the
+    // synchronous unlockRemoteAudio() call, not the real remote-audio playback.
+    act(() => result.current.speak("Hello."));
+    expect(playSpy).toHaveBeenCalledTimes(1);
+
+    resolveFetch();
+    await new Promise((r) => setTimeout(r, 0));
+    // After the fetch settles, playRemoteFrom plays the real audio too — a second
+    // (real) call on top of the synchronous unlock call.
+    expect(playSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+    playSpy.mockRestore();
   });
 });

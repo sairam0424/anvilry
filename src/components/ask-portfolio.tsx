@@ -16,7 +16,8 @@ import { JumpToLatest } from "@/components/scroll/jump-to-latest";
 // Lazy markdown renderer — same safe config as the full chat view, kept off the
 // initial bundle (the widget is interaction-gated).
 const MarkdownMessage = dynamic(
-  () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
+  () =>
+    import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
   { ssr: false, loading: () => <SkeletonMarkdownLine /> },
 );
 
@@ -68,6 +69,27 @@ function AskPortfolioWidget() {
     wasOpen.current = open;
   }, [open]);
 
+  // Mobile keyboard awareness: `100dvh` accounts for the browser toolbar
+  // collapsing/expanding, but NOT for the on-screen keyboard — that only shrinks
+  // window.visualViewport. Re-measure on visualViewport resize (feature-detected;
+  // desktop/older browsers have no visualViewport and keep the CSS-only dvh
+  // behavior) so the panel — and the input near its bottom edge — stays above the
+  // keyboard instead of being pushed behind it.
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || !window.visualViewport)
+      return;
+    const vv = window.visualViewport;
+    const measure = () => {
+      setKeyboardInset(
+        Math.max(0, window.innerHeight - vv.height - vv.offsetTop),
+      );
+    };
+    measure();
+    vv.addEventListener("resize", measure);
+    return () => vv.removeEventListener("resize", measure);
+  }, [open]);
+
   const submit = (text: string) => {
     const q = text.trim();
     if (!q || isStreaming) return;
@@ -88,7 +110,17 @@ function AskPortfolioWidget() {
       </button>
 
       {open && (
-        <div className="fixed bottom-20 left-5 z-50 flex h-[28rem] max-h-[calc(100vh-7rem)] w-[min(92vw,24rem)] flex-col overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl">
+        <div
+          className="fixed bottom-20 left-5 z-50 flex h-[28rem] max-h-[calc(100dvh-7rem)] w-[min(92vw,24rem)] flex-col overflow-hidden rounded-2xl border border-border-strong bg-bg-surface shadow-2xl"
+          style={
+            keyboardInset > 0
+              ? {
+                  bottom: `calc(5rem + ${keyboardInset}px)`,
+                  maxHeight: `calc(100dvh - 7rem - ${keyboardInset}px)`,
+                }
+              : undefined
+          }
+        >
           <header className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <Sparkles size={15} className="text-accent" />
@@ -109,76 +141,78 @@ function AskPortfolioWidget() {
 
           {/* relative wrapper anchors the floating JumpToLatest over the transcript. */}
           <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            ref={scrollRef}
-            className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 outline-none [overflow-anchor:none]"
-            tabIndex={-1}
-          >
-            {/* contentRef wrapper: the ResizeObserver target that grows as messages and
+            <div
+              ref={scrollRef}
+              className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 outline-none [overflow-anchor:none]"
+              tabIndex={-1}
+            >
+              {/* contentRef wrapper: the ResizeObserver target that grows as messages and
                 the late dynamic-markdown mount, so the follow snap fires post-layout. */}
-            <div ref={contentRef} className="space-y-3">
-            {messages.length === 0 && (
-              <div className="space-y-3">
-                <p className="text-sm text-fg-muted">
-                  Hi! 👋 Ask me anything about Sairam&apos;s work, projects, or what he&apos;s looking for.
-                </p>
-                <div className="flex flex-col gap-2">
-                  {SUGGESTED.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => submit(s)}
-                      className="rounded-lg border border-border px-3 py-2 text-left text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg"
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {messages.map((m, i) => {
-              if (m.role === "user") {
-                return (
-                  <div key={i} className="flex justify-end">
-                    <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-accent px-3.5 py-2 text-sm text-bg-base">
-                      {m.content}
-                    </div>
-                  </div>
-                );
-              }
-              // Assistant: render markdown text segments + resolved cards (same safe
-              // model as the full chat view — tokens parsed out before markdown).
-              if (!m.content) {
-                return isStreaming ? (
-                  <div key={i} className="flex justify-start">
-                    <div className="rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted">
-                      Thinking…
-                    </div>
-                  </div>
-                ) : null;
-              }
-              return (
-                <div key={i} className="flex flex-col items-start gap-2">
-                  {parseCards(m.content).map((seg, j) =>
-                    seg.type === "text" ? (
-                      seg.text.trim() ? (
-                        <div
-                          key={j}
-                          className="max-w-[85%] rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted"
+              <div ref={contentRef} className="space-y-3">
+                {messages.length === 0 && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-fg-muted">
+                      Hi! 👋 Ask me anything about Sairam&apos;s work, projects,
+                      or what he&apos;s looking for.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {SUGGESTED.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => submit(s)}
+                          className="rounded-lg border border-border px-3 py-2 text-left text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg"
                         >
-                          <MarkdownMessage text={seg.text} />
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {messages.map((m, i) => {
+                  if (m.role === "user") {
+                    return (
+                      <div key={i} className="flex justify-end">
+                        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-accent px-3.5 py-2 text-sm text-bg-base">
+                          {m.content}
                         </div>
-                      ) : null
-                    ) : seg.type === "project" || seg.type === "work" ? (
-                      <div key={j} className="w-full">
-                        <ChatCard segment={seg} />
                       </div>
-                    ) : null /* cmd-view and cmd-highlight are side-effect-only */,
-                  )}
-                </div>
-              );
-            })}
+                    );
+                  }
+                  // Assistant: render markdown text segments + resolved cards (same safe
+                  // model as the full chat view — tokens parsed out before markdown).
+                  if (!m.content) {
+                    return isStreaming ? (
+                      <div key={i} className="flex justify-start">
+                        <div className="rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted">
+                          Thinking…
+                        </div>
+                      </div>
+                    ) : null;
+                  }
+                  return (
+                    <div key={i} className="flex flex-col items-start gap-2">
+                      {parseCards(m.content).map(
+                        (seg, j) =>
+                          seg.type === "text" ? (
+                            seg.text.trim() ? (
+                              <div
+                                key={j}
+                                className="max-w-[85%] rounded-2xl border border-border bg-bg-elevated px-3.5 py-2 text-sm text-fg-muted"
+                              >
+                                <MarkdownMessage text={seg.text} />
+                              </div>
+                            ) : null
+                          ) : seg.type === "project" || seg.type === "work" ? (
+                            <div key={j} className="w-full">
+                              <ChatCard segment={seg} />
+                            </div>
+                          ) : null /* cmd-view and cmd-highlight are side-effect-only */,
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
             <JumpToLatest
               show={!isAtBottom && messages.length > 0}
               onClick={scrollToBottom}
@@ -213,7 +247,8 @@ function AskPortfolioWidget() {
             </button>
           </form>
           <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-subtle">
-            <CornerDownLeft size={10} /> Grounded in real work · may simplify details
+            <CornerDownLeft size={10} /> Grounded in real work · may simplify
+            details
           </p>
         </div>
       )}

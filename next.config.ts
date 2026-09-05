@@ -67,7 +67,21 @@ const csp = [
   "connect-src 'self' https://*.vercel-insights.com https://vitals.vercel-insights.com https://va.vercel-scripts.com wss://speech.googleapis.com wss://speech.platform.bing.com https://www.gstatic.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "upgrade-insecure-requests",
+  // Vercel-only. `process.env.VERCEL` is set exclusively by Vercel's own infrastructure
+  // (Preview and Production) — never locally via `next dev` or `next start`, even in
+  // production mode. This directive upgrades every HTTP sub-resource request on the page
+  // to HTTPS, which is correct and desired on Vercel (always served over TLS). Locally
+  // the app is plain HTTP with no TLS listener, and unlike Chromium — which special-cases
+  // `localhost` as an already-secure context and quietly ignores the directive there —
+  // WebKit obeys it literally, rewriting every script/font/manifest request to
+  // https://localhost:PORT, which fails outright (no TLS listener). Net effect: on WebKit
+  // specifically, zero client JS ever loads locally — no hydration, no click handlers, no
+  // `?view=` query-param sync — which looked exactly like dozens of unrelated app bugs
+  // (clicks doing nothing, deep-links never applying) until this session's mobile-safari
+  // Playwright project's very first real run traced every one of them to this one header.
+  // Gating on VERCEL keeps production's security posture byte-for-byte identical while
+  // making local WebKit/Safari e2e testing possible at all.
+  ...(process.env.VERCEL ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 // Static security headers applied to every route. HSTS is already set by Vercel's

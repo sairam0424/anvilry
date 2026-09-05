@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   findBrowserVoice,
   getDefaultVoiceId,
@@ -46,7 +52,9 @@ import {
 // SSR-safe support flag (no setState-in-effect; matches use-mounted.ts idiom).
 const noopSubscribe = () => () => {};
 const getSupportedClient = () =>
-  typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  typeof window !== "undefined" &&
+  "speechSynthesis" in window &&
+  "SpeechSynthesisUtterance" in window;
 const getSupportedServer = () => false;
 
 /** Sentence-boundary split: end punctuation followed by whitespace/quote/bracket. */
@@ -173,10 +181,18 @@ function normalizeOptions(arg?: TtsEngine | UseSpeechSynthesisOptions): {
   character: VoiceCharacter;
 } {
   if (arg === undefined) {
-    return { engine: "browser", voiceId: undefined, character: DEFAULT_VOICE_CHARACTER };
+    return {
+      engine: "browser",
+      voiceId: undefined,
+      character: DEFAULT_VOICE_CHARACTER,
+    };
   }
   if (typeof arg === "string") {
-    return { engine: arg, voiceId: undefined, character: DEFAULT_VOICE_CHARACTER };
+    return {
+      engine: arg,
+      voiceId: undefined,
+      character: DEFAULT_VOICE_CHARACTER,
+    };
   }
   return {
     engine: arg.engine ?? "browser",
@@ -232,7 +248,9 @@ export function useSpeechSynthesis(
   const felledBackRef = useRef(false);
   // Ref to the browser enqueue fn so the remote fallback can call it without a
   // forward dependency (enqueue is defined below). Assigned in an effect.
-  const enqueueBrowserRef = useRef<(chunks: string[], from: number) => void>(() => {});
+  const enqueueBrowserRef = useRef<(chunks: string[], from: number) => void>(
+    () => {},
+  );
   // Desktop-only keep-alive against Chromium's ~15s SpeechSynthesis cutoff
   // (pause/resume). Skipped on Android, where pause() behaves like cancel() and
   // would truncate speech. Browser engine only — remote engines aren't subject
@@ -301,6 +319,36 @@ export function useSpeechSynthesis(
     setIsSpeaking(false);
   }, [cancelBrowser, cancelRemote]);
 
+  /**
+   * iOS Safari (WebKit) only allows an <audio> element's .play() to succeed
+   * when it is invoked SYNCHRONOUSLY inside a user-gesture handler (tap/click).
+   * playRemoteFrom() below must `await fetch(...)` (Polly/Google TTS) before it
+   * has real audio bytes to play, so by the time it calls a.play() the gesture
+   * context is long gone — iOS silently refuses playback even though the user
+   * just tapped "Listen".
+   *
+   * The fix is the standard mobile audio-unlock trick: call .play() on the
+   * SAME <audio> element SYNCHRONOUSLY here, still inside the click handler,
+   * before any real source is set. WebKit's autoplay authorization is tied to
+   * the HTMLMediaElement instance, not the call site — once an element has
+   * been play()'d from within a real gesture, later .play() calls on THAT
+   * SAME element remain authorized even from an async callback. playRemoteFrom
+   * only ever reuses audioRef.current (never allocates a new element once one
+   * exists), so it inherits this unlock. The play() call here has no source
+   * yet and is expected to reject (AbortError/NotSupportedError) — that
+   * rejection is harmless; only the synchronous call matters.
+   */
+  const unlockRemoteAudio = useCallback(() => {
+    const a = audioRef.current ?? new Audio();
+    audioRef.current = a;
+    try {
+      a.play()?.catch(() => {});
+    } catch {
+      // Some environments throw synchronously instead of rejecting a promise
+      // when there's no playable source — either way, harmless.
+    }
+  }, []);
+
   /** Build the request URL + body for the active remote engine. The catalog id
    *  flows through verbatim — the route validates it server-side. */
   const buildRemoteRequest = useCallback(
@@ -330,7 +378,9 @@ export function useSpeechSynthesis(
   const playRemoteFrom = useCallback(
     async (token: number) => {
       const fallback = () => {
-        const rest = remoteQueueRef.current.slice(remoteIdxRef.current).join(" ");
+        const rest = remoteQueueRef.current
+          .slice(remoteIdxRef.current)
+          .join(" ");
         cancelRemote();
         felledBackRef.current = true; // block speakChunk from re-entering remote this turn
         if (rest && browserSupported) {
@@ -477,6 +527,11 @@ export function useSpeechSynthesis(
           if (browserSupported) enqueue(chunks, 0);
           return;
         }
+        // MUST run synchronously, still inside the click handler that called
+        // speak() — see unlockRemoteAudio's doc comment. playRemoteFrom awaits
+        // a fetch before it can call .play(), which would otherwise lose the
+        // gesture context on iOS Safari.
+        unlockRemoteAudio();
         remoteQueueRef.current = chunks;
         remoteIdxRef.current = 0;
         const token = (remoteTokenRef.current += 1);
@@ -493,6 +548,7 @@ export function useSpeechSynthesis(
       cancel,
       enqueue,
       playRemoteFrom,
+      unlockRemoteAudio,
     ],
   );
 

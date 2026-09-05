@@ -2415,11 +2415,11 @@
       "preview": ".PHONY: search-index"
     },
     "Makefile:65": {
-      "fp": "d1ea33867996",
+      "fp": "b6abfea57e71",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "search-index: ## Generate Pagefind search index from production build (run after make build)"
+      "preview": "search-index: ## Regenerate the Pagefind search index without a full rebuild (pnpm build already run"
     },
     "Makefile:66": {
       "fp": "040e79e4a68a",
@@ -3000,7 +3000,7 @@
       "preview": "\"dev\": \"next dev\","
     },
     "package.json:11": {
-      "fp": "d920fd87a8dc",
+      "fp": "d5ff33100425",
       "citedBy": [
         "10-tests-and-quality-gates.md",
         "12-docs-knowledge-and-harness.md",
@@ -3009,7 +3009,7 @@
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"build\": \"velite --clean && vitest run && next build\","
+      "preview": "\"build\": \"velite --clean && vitest run && next build && pagefind --site .next/server/app --output-pa"
     },
     "package.json:12": {
       "fp": "64b4db5be764",

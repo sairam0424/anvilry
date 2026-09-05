@@ -17,6 +17,7 @@ const eslintConfig = defineConfig([
     ".velite/**",
     "scratch-pad/**",
     "public/static/**",
+    "public/pagefind/**",
     "scripts/**",
   ]),
 ]);

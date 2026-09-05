@@ -71,8 +71,14 @@ export function ChatView() {
           {/* Hands-free voice conversation (modal surface; null on the 5th-view surface
               or unsupported browsers). */}
           <TalkLaunchButton />
+          {/* Icon-only below `sm` (matches ViewSwitcher's compact-pill pattern in
+              view-switcher.tsx: icon always visible, label collapses to sr-only) — at
+              390px this row (Back to Classic / Résumé / Talk / this badge) has no room
+              for the full "AI Concierge" text without clipping past the viewport edge. */}
           <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
-            <Sparkles size={13} aria-hidden="true" /> AI Concierge
+            <Sparkles size={13} aria-hidden="true" />
+            <span className="hidden sm:inline">AI Concierge</span>
+            <span className="sr-only sm:hidden">AI Concierge</span>
           </p>
         </div>
       </div>
@@ -88,31 +94,46 @@ export function ChatView() {
           the bordered console (it was a rigid flex sibling, so it shoved the composer + caption
           past the section border). It collapses to nothing once a conversation starts (empty). */}
         {empty && (
-          <header className="min-h-0 shrink overflow-y-auto">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Ask me anything about {profile.name.split(" ")[0]}&apos;s work
-            </h1>
-            <p className="mt-2 max-w-xl text-sm text-fg-muted">
-              Grounded in real projects and production systems — GenAI, backend,
-              and open source. I answer in the first person and never invent
-              details.
-            </p>
-            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {impactMetrics.map((m) => (
-                <div
-                  key={m.label + m.sub}
-                  className="rounded-xl border border-border bg-bg-surface/60 px-3 py-2.5"
-                >
-                  {/* dt = term (the metric), dd = description (its value+context) */}
-                  <dt className="font-mono text-lg font-semibold text-fg">
-                    {m.value}
-                  </dt>
-                  <dd className="text-xs text-fg-muted">{m.label}</dd>
-                  <dd className="text-[11px] text-fg-subtle">{m.sub}</dd>
-                </div>
-              ))}
-            </dl>
-          </header>
+          // Scroll-affordance wrapper: the fade below must stay pinned to the visible
+          // bottom edge regardless of scroll position. An `absolute` element scrolls
+          // right along with an `overflow-y-auto` ancestor when it's a DESCENDANT of
+          // that same scrolling box — pinning requires the fade to be a SIBLING of the
+          // scrollable <header>, inside this non-scrolling `relative` wrapper instead.
+          <div className="relative min-h-0 shrink">
+            <header className="h-full overflow-y-auto">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Ask me anything about {profile.name.split(" ")[0]}&apos;s work
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-fg-muted">
+                Grounded in real projects and production systems — GenAI,
+                backend, and open source. I answer in the first person and never
+                invent details.
+              </p>
+              <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {impactMetrics.map((m) => (
+                  <div
+                    key={m.label + m.sub}
+                    className="rounded-xl border border-border bg-bg-surface/60 px-3 py-2.5"
+                  >
+                    {/* dt = term (the metric), dd = description (its value+context) */}
+                    <dt className="font-mono text-lg font-semibold text-fg">
+                      {m.value}
+                    </dt>
+                    <dd className="text-xs text-fg-muted">{m.label}</dd>
+                    <dd className="text-[11px] text-fg-subtle">{m.sub}</dd>
+                  </div>
+                ))}
+              </dl>
+            </header>
+            {/* This header is independently overflow-y-auto (a tall greeting + metric
+                grid on a short viewport), but nothing hinted that the cut-off third line
+                of a metric card ("Pensieve" etc.) was reachable by scrolling — pure-CSS
+                bottom fade, no JS. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-bg-surface via-bg-surface/85 via-45% to-transparent"
+            />
+          </div>
         )}
 
         {/* Conversation. Grows to fill; messages + a11y live region live here (2.3). */}

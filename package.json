@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "velite",
     "dev": "next dev",
-    "build": "velite --clean && vitest run && next build",
+    "build": "velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path public/pagefind",
     "analyze": "velite --clean && ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",

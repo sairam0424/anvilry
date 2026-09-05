@@ -6418,11 +6418,11 @@
       "preview": ")}"
     },
     "src/components/ask-portfolio.tsx:18": {
-      "fp": "f88b654830b5",
+      "fp": "1a8f6f036163",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "() => import(\"@/components/chat/markdown-message\").then((m) => m.MarkdownMessage),"
+      "preview": "const MarkdownMessage = dynamic("
     },
     "src/components/ask-portfolio.tsx:39": {
       "fp": "b68f190b795d",

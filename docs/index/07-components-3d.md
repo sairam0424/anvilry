@@ -229,7 +229,7 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 - `src/lib/use-reduced-motion.ts` and `src/lib/use-media-query.ts` (`useMediaQuery`, `useWebGLSupported`) are the gate primitives; both return `false` on the server.
 - `src/components/game/build-graph.tsx` / `build-graph-scene.tsx` are the Play-view R3F surface (game section) and share `WebGLBoundary`, the barrel, `frameloop="demand"` and `dpr={[1,1.75]}`.
 - `src/components/chat/voice-orb-3d.tsx` is the only post-processing consumer of the barrel and the only canvas that toggles `frameloop` at runtime (`errorMode ? "demand" : "always"`, `voice-orb-3d.tsx:306`).
-- `e2e/views.spec.ts:86-91` asserts a canvas appears for `?view=gamified`, scoped to `#main-content` because a bare `canvas` locator matches two canvases (the graph plus an aria-hidden decorative one).
+- `e2e/views.spec.ts:143-166` asserts a canvas appears for `?view=gamified` — but only above 768px (matching `build-graph.tsx`'s own gate); below that it asserts on `GraphIndex`'s accessible region instead, since `BuildGraph` renders nothing there by design. The canvas assertion itself is scoped to `#main-content` because a bare `canvas` locator matches two canvases (the graph plus an aria-hidden decorative one).
 
 ## Coverage
 

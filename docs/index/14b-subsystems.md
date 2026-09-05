@@ -239,7 +239,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 `NEXT_PUBLIC_ENABLED_VIEWS` — comma list intersected with `ALL_OPTIONAL = ["gamified","chat","developer","voice","resume"]`
 (`:20-21`). **Unset ⇒ all on; empty string ⇒ all optional off**, distinguished at `:28`. `classic` and
 `resume` are unconditionally true (`:20,:38`). Unknown entries are silently dropped (`:33`). Gates
-`view-router.tsx:64-69` and `view-switcher.tsx:38`.
+`view-router.tsx:64-69` and `view-switcher.tsx:101-104`.
 
 **Component-local reads**
 
@@ -457,7 +457,7 @@ CI  .github/workflows/ci.yml   — 4 jobs, NO `needs:`, all parallel
                 ↑ the ONLY place lint and tsc run; neither is in pnpm build
                 ↑ the index-citation check is deliberately a CI step and NOT in `pnpm build`, so a
                   stale doc fails the PR instead of blocking a production deploy (ci.yml:55-61)
-   job `e2e`  : pnpm install → playwright install --with-deps chromium → pnpm build
+   job `e2e`  : pnpm install → playwright install --with-deps chromium webkit → pnpm build
                              → node scripts/bundle-budget.mjs (ci.yml:115-116) → pnpm e2e
                 ↑ pnpm build re-runs vitest, so tests execute TWICE per CI run
                 ↑ playwright.config.ts webServer runs `pnpm start`, which needs a prior build
@@ -628,7 +628,7 @@ does not gate the route — only the nav link and the sitemap entry.
 | Every DOM suite runs twice, once without happy-dom globals | Removing the `node` project's `exclude: ["**/*.dom.test.{ts,tsx}", …]` (`vitest.config.ts:34`) — `src/x.dom.test.ts` also matches `src/**/*.test.ts`. |
 | "Failing test blocks deployment" property lost | Reordering or splitting the `build` chain into independent commands. |
 | Playwright tests a stale build | Without the `webServer` block, a leftover process on :3000 is silently tested — recorded as having produced 5 phantom failures during a release audit (`playwright.config.ts:23-32`). |
-| `Executable doesn't exist at .../chromium_headless_shell-<rev>` | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium`, which pins to the installed `@playwright/test` (`ci.yml:95-98`). |
+| `Executable doesn't exist at .../chromium_headless_shell-<rev>` (or the same for `webkit-<rev>/pw_run.sh` once `playwright.config.ts` gained the `mobile-safari` project) | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium webkit`, which pins to the installed `@playwright/test` (`ci.yml:95-102`). Omitting `webkit` here installs cleanly and passes silently — it only breaks the instant a `mobile-safari` spec actually runs. |
 | Dev server dies with "Can't resolve './projects.json'" | Passing `--clean` to Velite in dev, or setting `clean: true` in `velite.config.ts:125`. |
 | Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:107` → `site-footer.tsx:171`) and `/admin/telemetry`'s `export const instant = false` (`:11`) **plus** `await connection()` (`:434`) — the comment at `:428-433` records that `instant=false` alone does **not** clear it. |
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true`. The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. |

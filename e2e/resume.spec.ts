@@ -101,9 +101,27 @@ test.describe("/resume page — flag OFF (default)", () => {
     await expect(
       page.getByRole("button", { name: "PDF résumé" }),
     ).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      page.locator('iframe[title="Sairam Resume résumé preview"]'),
-    ).toBeAttached();
+
+    // Below 768px (see src/app/resume/page.tsx's `isDesktop` gate), the PDF tab
+    // shows a download CTA instead of embedding the iframe — PDF-in-iframe
+    // rendering is inconsistent across mobile browsers/WebViews. Assert whichever
+    // one this project's viewport should actually produce, rather than assuming
+    // desktop-only behavior.
+    const viewport = page.viewportSize();
+    const isMobile = viewport !== null && viewport.width < 768;
+
+    if (isMobile) {
+      await expect(
+        page.getByText(/PDF preview isn.t reliable on mobile browsers/),
+      ).toBeVisible();
+      await expect(
+        page.locator('iframe[title="Sairam Resume résumé preview"]'),
+      ).not.toBeAttached();
+    } else {
+      await expect(
+        page.locator('iframe[title="Sairam Resume résumé preview"]'),
+      ).toBeAttached();
+    }
   });
 });
 

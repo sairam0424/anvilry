@@ -94,8 +94,12 @@ jobs:
 
       # Pin the browser download to the installed @playwright/test version. A version/browser
       # mismatch fails with "Executable doesn't exist at .../chromium_headless_shell-<rev>".
+      # webkit added alongside chromium once playwright.config.ts gained the mobile-safari
+      # project (devices["iPhone 13"], which launches webkit) — omitting it here passed
+      # silently (chromium-only install) while every mobile-safari spec failed at browser
+      # launch with "Executable doesn't exist at .../webkit-<rev>/pw_run.sh".
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       # webServer runs `pnpm start`, which needs a production build present.
       - name: Build

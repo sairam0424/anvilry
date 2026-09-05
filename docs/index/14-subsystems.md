@@ -213,7 +213,7 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
 | 9 | `src/app/page.tsx:26-37` | Server-renders the Classic `<main>` and hands it to `ViewRouter` as `children`. |
 | 10 | `src/components/view-router.tsx:56-69` | The `viewTransitionName: "view-body"` wrapper + the six branches. |
 | 11 | `src/lib/enabled-views.ts:20-40` | `isViewEnabled()`; `classic` and `resume` are unconditionally true. |
-| 12 | `src/components/view-switcher.tsx:17-43` | 4 server-rendered pills; Voice appended only when `mounted && !compact && isViewEnabled("voice")` (`:38`). Per-instance `layoutId` (`:42`). |
+| 12 | `src/components/view-switcher.tsx:75-112` | 4 server-rendered pills; Voice appended only when `mounted && !compact && isViewEnabled("voice")` (`:102-104`). Per-instance `layoutId`, disambiguated by an optional `scope` prop for a third (drawer) render site (`:112`). |
 | 13 | `src/components/site-nav.tsx:40,66-71` | `viewTransitionName: "site-header"`; both switcher instances live in the DOM simultaneously. |
 | 14 | `src/app/globals.css:257-299` | The four slide keyframes, the `[data-view-dir]` selectors, the `site-header` `animation: none` pin, and the reduced-motion kill switch. |
 | 15 | `src/components/view-escape-hatch.tsx` | First focusable element of each non-classic view; imported by `chat-view`, `anvil-view`, `game-view`, `developer-view` — **not** by `view-router.tsx`. |
@@ -241,7 +241,7 @@ view-transition animation.
 | Whole provider tree forced client-rendered | Moving `useSearchParams()` out of the `ViewQuerySync` leaf — it forces client rendering up to the nearest Suspense boundary (`view-context.tsx:155-160`). |
 | GPU memory leak on low-end mobile | Changing the gamified branch from unmount to `hidden` — a hidden-but-live WebGL context is never disposed (`view-router.tsx:9-24`). |
 | `?view=X` silently ignored | `isViewEnabled(X)` false for a build with `NEXT_PUBLIC_ENABLED_VIEWS` restricted; the router stays on Classic (`view-router.tsx:64-69`). |
-| One Motion pill animates between the two switchers | Sharing `layoutId` across the desktop and compact instances (`view-switcher.tsx:39-42`). |
+| One Motion pill animates between multiple switcher instances | Sharing `layoutId` across concurrently-mounted instances without a distinct `scope` — up to three can exist at once (desktop full, top-row compact, drawer compact) since CSS/open-state only controls visibility, not mounting (`view-switcher.tsx:106-112`). |
 | `useView` throws | Any consumer outside `<ViewProvider>` (`view-context.tsx:190-194`). |
 
 ### Flags / env that alter it

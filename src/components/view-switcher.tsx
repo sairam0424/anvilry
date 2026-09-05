@@ -1,7 +1,13 @@
 "use client";
 
 import { motion } from "motion/react";
-import { LayoutGrid, Gamepad2, MessagesSquare, TerminalSquare, AudioLines } from "lucide-react";
+import {
+  LayoutGrid,
+  Gamepad2,
+  MessagesSquare,
+  TerminalSquare,
+  AudioLines,
+} from "lucide-react";
 import { useView, type View } from "@/components/view-context";
 import { useMounted } from "@/lib/use-mounted";
 import { isViewEnabled } from "@/lib/enabled-views";
@@ -12,13 +18,45 @@ import { Tooltip } from "@/components/ui/tooltip";
  * Segmented control to switch the top-level experience. Text-labelled (not
  * icon-only) and aria-pressed per WCAG; the active pill slides via a shared
  * layoutId, which MotionConfig reducedMotion='user' auto-disables for users with
- * OS reduce-motion on. Used in the nav (full) and as a compact pill on mobile.
+ * OS reduce-motion on. Used in the nav (full), as a compact pill in the sm-lg
+ * range of the top nav row, and as a compact pill inside the MobileNav drawer
+ * below `sm` — see the `scope` prop below for why the drawer instance needs it.
  */
-const OPTIONS: { view: View; label: string; short: string; description: string; icon: typeof LayoutGrid }[] = [
-  { view: "classic", label: "Classic", short: "Classic", description: "Standard portfolio layout", icon: LayoutGrid },
-  { view: "gamified", label: "Play", short: "Play", description: "Explorable 3D build graph", icon: Gamepad2 },
-  { view: "chat", label: "Chat", short: "Chat", description: "RAG-grounded AI concierge", icon: MessagesSquare },
-  { view: "developer", label: "Dev", short: "Dev", description: "Keyboard-driven terminal", icon: TerminalSquare },
+const OPTIONS: {
+  view: View;
+  label: string;
+  short: string;
+  description: string;
+  icon: typeof LayoutGrid;
+}[] = [
+  {
+    view: "classic",
+    label: "Classic",
+    short: "Classic",
+    description: "Standard portfolio layout",
+    icon: LayoutGrid,
+  },
+  {
+    view: "gamified",
+    label: "Play",
+    short: "Play",
+    description: "Explorable 3D build graph",
+    icon: Gamepad2,
+  },
+  {
+    view: "chat",
+    label: "Chat",
+    short: "Chat",
+    description: "RAG-grounded AI concierge",
+    icon: MessagesSquare,
+  },
+  {
+    view: "developer",
+    label: "Dev",
+    short: "Dev",
+    description: "Keyboard-driven terminal",
+    icon: TerminalSquare,
+  },
 ];
 
 // "Voice" is a first-class entry (the Anvil voice surface). It is appended only after
@@ -34,7 +72,26 @@ const VOICE_OPTION = {
   icon: AudioLines,
 };
 
-export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
+export function ViewSwitcher({
+  compact = false,
+  scope,
+}: {
+  compact?: boolean;
+  /**
+   * Disambiguates this instance's layoutId from any other instance rendered
+   * with the same `compact` value. site-nav.tsx's top-row compact pill (visible
+   * sm-lg) is always mounted in the DOM regardless of viewport (CSS only
+   * controls its visibility), and mobile-nav.tsx's drawer also mounts a compact
+   * instance whenever it's open — which happens at any width below `lg`,
+   * including the sm-lg range where the top-row one is CSS-visible. Both would
+   * otherwise compute the identical `view-switcher-active-compact` layoutId and
+   * be simultaneously mounted, which Motion's shared-layout animation doesn't
+   * support (undefined/glitchy behavior — see the codebase's own pre-existing
+   * full-vs-compact scoping this pattern extends). Pass a stable, unique string
+   * for every instance beyond the first "compact" one.
+   */
+  scope?: string;
+}) {
   const { view, setView } = useView();
   // Compact (mobile) drops the 5th "Voice" pill to protect the tight h-14 header row —
   // the Anvil header orb is the mobile voice door; the full view stays reachable on
@@ -42,11 +99,17 @@ export function ViewSwitcher({ compact = false }: { compact?: boolean }) {
   const mounted = useMounted();
   // Filter views by the build-time NEXT_PUBLIC_ENABLED_VIEWS flag (Classic is always on).
   const base = OPTIONS.filter((o) => isViewEnabled(o.view));
-  const options = mounted && !compact && isViewEnabled("voice") ? [...base, VOICE_OPTION] : base;
-  // Unique per instance: the switcher is rendered TWICE (desktop + compact mobile),
-  // both in the DOM at once. A shared layoutId would make Motion animate ONE pill
-  // between the two instances, breaking which button shows active. Scope it.
-  const layoutId = `view-switcher-active-${compact ? "compact" : "full"}`;
+  const options =
+    mounted && !compact && isViewEnabled("voice")
+      ? [...base, VOICE_OPTION]
+      : base;
+  // Unique per instance: the switcher can be mounted multiple times at once
+  // (desktop full + top-row compact + drawer compact), all in the DOM
+  // simultaneously (CSS/open-state only controls visibility, not mounting). A
+  // shared layoutId across concurrently-mounted instances would make Motion
+  // animate ONE pill between them, breaking which button shows active — scope
+  // every instance beyond the first "compact" one via `scope`.
+  const layoutId = `view-switcher-active-${compact ? "compact" : "full"}${scope ? `-${scope}` : ""}`;
 
   return (
     <div

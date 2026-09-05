@@ -82,11 +82,15 @@ export function SiteNav() {
           ))}
         </div>
 
-        {/* View switcher — full on desktop, compact icon pill on mobile (always visible). */}
+        {/* View switcher — full on desktop, compact icon pill for the sm-lg range. Below
+            `sm` it moves into the MobileNav drawer (see mobile-nav.tsx) instead of sitting
+            in this row — at a 320px viewport, logo + compact switcher (~164px) + the orb
+            trigger + hamburger overflowed this non-wrapping row and pushed the hamburger
+            off-screen. */}
         <div className="hidden lg:block">
           <ViewSwitcher />
         </div>
-        <div className="lg:hidden">
+        <div className="hidden sm:block lg:hidden">
           <ViewSwitcher compact />
         </div>
 

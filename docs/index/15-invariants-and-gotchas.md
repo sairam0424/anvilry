@@ -478,7 +478,7 @@ failure, and no runtime exception.
 | `GlowFallback` in `hero-avatar/index.tsx` intentionally duplicates the two blurred circles from `hero-graph/index.tsx:43-44` so switching hero modes causes no layout shift — the two must be kept in sync by hand | `src/components/hero-avatar/index.tsx:16-18`, `:19-26` |
 | Unknown `NEXT_PUBLIC_AVATAR_POSITION` values silently render the `hero-top` layout rather than erroring | `src/components/hero-avatar/index.tsx:102-110` |
 | `graph-index.tsx` promotes the **last** card to `sm:col-span-2` when a group has an odd node count — a layout rule keyed off `g.nodes.length % 2` | `src/components/game/graph-index.tsx:26` |
-| `mobile-nav.tsx`'s focus trap queries only inside `panelRef`; adding focusable chrome outside the panel while open escapes the trap | `src/components/mobile-nav.tsx:25-52` |
+| `mobile-nav.tsx`'s focus trap queries only inside `panelRef`; adding focusable chrome outside the panel while open escapes the trap | `src/components/mobile-nav.tsx:26-53` |
 | `easter-eggs.tsx`'s dismiss button is explicitly sized `h-7 w-7` because Tailwind preflight zeroes button padding and it would otherwise collapse to ~15 px (WCAG 2.5.8) | `src/components/game/easter-eggs.tsx:139-142` |
 | Tailwind v4 here has no `tailwindcss-animate`, so `animate-in` utilities silently no-op — `.hero-rise` is reused instead | `src/components/game/easter-eggs.tsx:131-133` |
 | `:focus-visible:not(.no-focus-ring)` is a deliberately **unlayered** rule that beats any Tailwind utility regardless of specificity; `.no-focus-ring` is the only opt-out | `src/app/globals.css:194-200` |

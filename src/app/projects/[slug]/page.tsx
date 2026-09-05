@@ -136,6 +136,12 @@ export default async function ProjectPage({
                   {project.commits.toLocaleString()} commits
                 </span>
               )}
+              {/* Explicit space text node: adjacent inline spans with no separating
+                  whitespace concatenate in Pagefind's static-HTML excerpt extraction
+                  (e.g. "775 commitsupdated today"). Flexbox's `gap-3` already provides
+                  the visual gap and ignores whitespace-only text nodes for layout, so
+                  this space is a no-op visually but fixes the raw-HTML text run. */}
+              {project.commits != null && updatedAgo && " "}
               {updatedAgo && (
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs text-fg-subtle">
                   <History size={14} />
@@ -145,14 +151,15 @@ export default async function ProjectPage({
             </div>
 
             <div className="mt-5 flex flex-wrap gap-1.5">
-              {project.tech.map((t) => (
+              {project.tech.flatMap((t) => [
                 <span
                   key={t}
                   className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted"
                 >
                   {t}
-                </span>
-              ))}
+                </span>,
+                " ",
+              ])}
             </div>
           </header>
         </Reveal>

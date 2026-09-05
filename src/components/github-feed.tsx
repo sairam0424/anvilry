@@ -57,6 +57,12 @@ export function GithubFeed({ repos }: { repos: GithubRepo[] }) {
                     {r.language}
                   </span>
                 )}
+                {/* Explicit space text node: adjacent inline spans with no separating
+                    whitespace concatenate in Pagefind's static-HTML excerpt extraction
+                    (e.g. "TypeScriptupdated today"). Flexbox's `gap-3` already provides
+                    the visual gap and ignores whitespace-only text nodes for layout, so
+                    this space is a no-op visually but fixes the raw-HTML text run. */}
+                {r.language && ago && " "}
                 {ago && <span>updated {ago}</span>}
               </div>
             </a>

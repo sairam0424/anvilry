@@ -222,6 +222,36 @@ body {
 }
 
 /*
+ * Reserve clearance for the fixed bottom UI cluster on narrow/short viewports.
+ *
+ * Three independently-mounted `position: fixed` elements live in this bottom band and
+ * never take up layout space: the "Ask my portfolio" launcher (bottom-5 left-5,
+ * ask-portfolio.tsx), the command-palette trigger (bottom-5 right-5, command-palette.tsx),
+ * and the discovery badge stacked above the trigger (bottom-[calc(1.25rem+46px)] right-5,
+ * discovery-badge.tsx). On tall/desktop viewports there's always enough content (or the
+ * footer's own margin) below the fold to clear them. On short/narrow viewports there often
+ * isn't — the cluster silently overlaps headings, body copy, or buttons at the natural
+ * landing scroll position (confirmed across iPhone SE, iPhone 14, and iPad portrait).
+ *
+ * `body` is a flex column (min-h-full) with #main-content as the flex-1 child and the
+ * footer pinned via mt-auto — so padding-bottom here shrinks #main-content on
+ * short-content pages (pushing the footer up, clear of the cluster) and adds a trailing
+ * gap after the footer on long-content pages (clear at the true end of scroll). Either
+ * way, nothing ever lands in this reserved band.
+ *
+ * Sized for the taller stack (right side): bottom-5 (20px) + palette trigger (~34px tall)
+ * + the badge's own 46px stacking offset + the badge's height (~30px) ≈ 96px, rounded up
+ * with a small margin. 768px matches this codebase's `md` breakpoint convention — it's the
+ * widest viewport (iPad portrait) the audit found affected; wider viewports have enough
+ * vertical room that this never engages.
+ */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 7rem;
+  }
+}
+
+/*
  * Faint technical grid + radial accent wash, isolated into a `position: fixed`
  * pseudo-element instead of `background-attachment: fixed` on body itself.
  * Chromium fails to repaint a fixed-attachment background once ANY element on the

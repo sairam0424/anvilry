@@ -45,14 +45,10 @@ import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
 import { unlockAll } from "@/lib/discovery-store";
 import { allProjects, allWork } from "@/lib/content";
-import { useView } from "@/components/view-context";
+import { useView, setPendingChatQuery } from "@/components/view-context";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { openTalkMode } from "@/components/chat/talk-overlay-store";
-import {
-  CURATED_VOICES,
-  getDefaultVoiceId,
-  getVoiceById,
-} from "@/lib/voice-catalog";
+import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
 import { VoicePicker } from "@/components/chat/voice-picker";
 import { VoiceSettingsDialog } from "@/components/chat/voice-settings-dialog";
 import { Settings } from "lucide-react";
@@ -393,24 +389,6 @@ export function CommandPaletteContent({
           },
         ]
       : []),
-    // Quick-swap entries — one per curated voice. Searching "stephen" / "warm" /
-    // "generative" all surface Stephen. Setting voiceId directly (no dialog open)
-    // so the palette doubles as a power-user voice switcher.
-    ...(ttsSupported
-      ? CURATED_VOICES.map((v) => ({
-          id: `voice-pick-${v.id}`,
-          label: `Voice: ${v.displayName}`,
-          hint: v.descriptor,
-          icon: <Volume2 size={16} />,
-          run: () => {
-            set({ voiceId: v.id });
-            setOpen(false);
-          },
-          // Searchable: voice + name + descriptor + accent + engine tier.
-          keywords: `voice ${v.displayName.toLowerCase()} ${v.descriptor.toLowerCase()} ${v.gender} ${v.accent} ${v.engine}${v.pollyTier ? " " + v.pollyTier : ""}`,
-          value: `Voice ${v.displayName} ${v.descriptor} ${v.gender} ${v.accent} ${v.engine}${v.pollyTier ? " " + v.pollyTier : ""}`,
-        }))
-      : []),
     // Hands-free two-way talk mode — only on the modal surface (the 5th-view surface
     // is entered via the ViewSwitcher) and only where speech recognition exists.
     ...(sttSupported && settings.talkSurface === "modal"
@@ -665,7 +643,20 @@ export function CommandPaletteContent({
           </div>
           <Command.List className="max-h-[50vh] overflow-y-auto p-2">
             <Command.Empty className="px-3 py-6 text-center text-sm text-fg-subtle">
-              No results.
+              {search.trim() ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingChatQuery(search.trim());
+                    switchTo("chat");
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm text-fg transition-colors hover:bg-bg-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {`Ask the AI concierge: "${search.trim()}" →`}
+                </button>
+              ) : (
+                "No results."
+              )}
             </Command.Empty>
             {/* Recent — MRU, idle-only (empty query). Prefixed value keeps it from
                 colliding with the canonical copy under cmdk's value-based nav. */}

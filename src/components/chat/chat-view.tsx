@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles, Send } from "lucide-react";
 import { useChat } from "@/components/chat/use-chat";
+import { consumePendingChatQuery } from "@/components/view-context";
 import {
   RECRUITER_CHIPS,
   STARTER_CHIPS,
@@ -31,6 +32,20 @@ export function ChatView() {
     useChat();
   const [input, setInput] = useState("");
   const empty = messages.length === 0;
+
+  // Command palette's empty-state redirect ("Ask the AI concierge: '{query}'")
+  // hands off a query via a one-shot module-level store (view-context.tsx) —
+  // send() is a `useChat()` value local to THIS component instance, so the
+  // palette can't call it directly. Consuming on mount fires it exactly once
+  // per switch into this view; the store clears itself so a later unrelated
+  // visit never re-sends a stale query.
+  useEffect(() => {
+    const query = consumePendingChatQuery();
+    if (query) send(query, []);
+    // Mount-only: must run once per view-mount, not re-fire when `send` is
+    // recreated by state changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

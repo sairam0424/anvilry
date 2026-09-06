@@ -2,7 +2,8 @@
 
 import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useThree, useFrame, THREE } from "@/lib/r3f";
-import { graphNodes, graphEdges, kindColor } from "@/lib/graph-data";
+import { graphNodes, graphEdges, resolveKindColor } from "@/lib/graph-data";
+import { useThemeColors } from "@/lib/use-theme-colors";
 
 const SCALE = 1.6;
 const idx = Object.fromEntries(graphNodes.map((n, i) => [n.id, i]));
@@ -19,34 +20,47 @@ const ptr = { x: 0, y: 0 };
 function Nodes() {
   const mesh = useRef<THREE.InstancedMesh>(null!);
   const { invalidate } = useThree();
+  const themeColors = useThemeColors();
   const geo = useMemo(() => new THREE.SphereGeometry(0.13, 24, 24), []);
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false }), []);
+  const mat = useMemo(
+    () => new THREE.MeshBasicMaterial({ toneMapped: false }),
+    [],
+  );
   const color = useMemo(() => new THREE.Color(), []);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const themedKindColor = useMemo(
+    () => resolveKindColor(themeColors),
+    [themeColors],
+  );
 
   useEffect(() => {
     graphNodes.forEach((n, i) => {
       dummy.position.set(n.pos[0] * SCALE, n.pos[1] * SCALE, n.pos[2] * SCALE);
       dummy.updateMatrix();
       mesh.current.setMatrixAt(i, dummy.matrix);
-      mesh.current.setColorAt(i, color.set(kindColor[n.kind]));
+      mesh.current.setColorAt(i, color.set(themedKindColor[n.kind]));
     });
     mesh.current.instanceMatrix.needsUpdate = true;
-    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
+    if (mesh.current.instanceColor)
+      mesh.current.instanceColor.needsUpdate = true;
     invalidate();
-  }, [color, dummy, invalidate]);
+  }, [color, dummy, invalidate, themedKindColor]);
 
   // Release the GPU geometry/material when the hero unmounts (e.g. switching views).
-  useEffect(() => () => {
-    geo.dispose();
-    mat.dispose();
-  }, [geo, mat]);
+  useEffect(
+    () => () => {
+      geo.dispose();
+      mat.dispose();
+    },
+    [geo, mat],
+  );
 
   return <instancedMesh ref={mesh} args={[geo, mat, graphNodes.length]} />;
 }
 
 /** Edges as a single LineSegments object — single draw call. */
 function Edges() {
+  const colors = useThemeColors();
   const geometry = useMemo(() => {
     const points: number[] = [];
     for (const [a, b] of graphEdges) {
@@ -63,7 +77,12 @@ function Edges() {
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#3a4258" transparent opacity={0.7} toneMapped={false} />
+      <lineBasicMaterial
+        color={colors.graphEdge}
+        transparent
+        opacity={0.7}
+        toneMapped={false}
+      />
     </lineSegments>
   );
 }

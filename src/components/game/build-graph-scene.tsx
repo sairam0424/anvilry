@@ -4,8 +4,9 @@ import { useMemo, useRef, useState } from "react";
 import { Canvas, useThree, useFrame, OrbitControls, THREE } from "@/lib/r3f";
 // Billboard, Text — unused while the hover label is disabled, see comment below.
 import type { ThreeEvent } from "@/lib/r3f";
-import { kindColor } from "@/lib/graph-data";
+import { resolveKindColor } from "@/lib/graph-data";
 import { questNodes, graphEdgesResolved } from "@/lib/game-model";
+import { useThemeColors } from "@/lib/use-theme-colors";
 
 const SCALE = 1.6;
 
@@ -22,6 +23,7 @@ const SCALE = 1.6;
  * router unmounts the gamified subtree on exit — no leaked context on mobile).
  */
 function Edges() {
+  const colors = useThemeColors();
   const geometry = useMemo(() => {
     const points: number[] = [];
     for (const [a, b] of graphEdgesResolved) {
@@ -35,7 +37,7 @@ function Edges() {
   return (
     <lineSegments geometry={geometry}>
       <lineBasicMaterial
-        color="#3a4258"
+        color={colors.graphEdge}
         transparent
         opacity={0.7}
         toneMapped={false}
@@ -122,6 +124,8 @@ function Node({
 
 function Graph({ onSelect }: { onSelect: (id: string) => void }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const themeColors = useThemeColors();
+  const themedKindColor = resolveKindColor(themeColors);
   return (
     <group rotation={[0.12, -0.3, 0]}>
       <Edges />
@@ -130,7 +134,7 @@ function Graph({ onSelect }: { onSelect: (id: string) => void }) {
           key={n.id}
           id={n.id}
           label={n.label}
-          color={kindColor[n.visualKind]}
+          color={themedKindColor[n.visualKind]}
           position={[n.pos[0] * SCALE, n.pos[1] * SCALE, n.pos[2] * SCALE]}
           hovered={hovered === n.id}
           onHover={setHovered}

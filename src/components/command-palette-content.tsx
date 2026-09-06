@@ -611,7 +611,23 @@ export function CommandPaletteContent({
         open={open}
         onOpenChange={setOpen}
         label="Command palette"
-        contentClassName="fixed inset-0 z-50 flex items-start justify-center pt-[14vh]"
+        // cmdk mounts its own unstyled `[cmdk-root]` div as the ONLY child of the
+        // `contentClassName` flex container below — our "w-full max-w-lg" card is
+        // one level deeper, inside that div. Because `[cmdk-root]` gets no width
+        // constraint of its own, it's an unconstrained flex item with the default
+        // `overflow: visible`, so its automatic minimum width is its *content's*
+        // min-content size — it never shrinks to the viewport, only to whatever
+        // width the card's own `max-w-lg` allows (512px), and centers past both
+        // edges on any viewport narrower than that. `min-w-0` lets it actually
+        // shrink below that floor; `w-full` makes it fill the (now-padded)
+        // available space so the card's own `w-full` below has a real width to
+        // resolve against instead of shrink-to-fit content sizing. Side effect:
+        // once `[cmdk-root]` fills the flex container, the parent's
+        // `justify-content: center` has nothing left to center — the card
+        // would sit flush-left instead. The card's own `mx-auto` below is what
+        // re-centers it now that its immediate ancestor is full-width.
+        className="w-full min-w-0"
+        contentClassName="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[14vh]"
       >
         {/* Accessible name + description for the underlying Radix DialogContent
             (visually hidden). Resolves the "DialogContent requires DialogTitle" a11y
@@ -624,7 +640,7 @@ export function CommandPaletteContent({
           className="fixed inset-0 bg-bg-base/70 backdrop-blur-sm"
           onClick={() => setOpen(false)}
         />
-        <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-xl border border-border-strong bg-bg-surface shadow-2xl">
+        <div className="relative z-10 mx-auto w-full max-w-lg overflow-hidden rounded-xl border border-border-strong bg-bg-surface shadow-2xl">
           {/* The search row carries the focus affordance (accent bottom-border via
               focus-within) — cleaner than the glaring global :focus-visible box that
               would otherwise ring the autofocused input inside the modal. */}

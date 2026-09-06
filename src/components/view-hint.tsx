@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { X, Sparkles } from "lucide-react";
 import { useView } from "@/components/view-context";
+import { useMediaQuery } from "@/lib/use-media-query";
 
 const SEEN_KEY = "anvilry-hint-seen";
 // How long a dismissal sticks before the hint is eligible to show again for the
@@ -76,6 +77,10 @@ export function ViewHint() {
   const pathname = usePathname();
   const dismissed = useHintDismissed();
   const [dwelled, setDwelled] = useState(false);
+  // Below `sm` the switcher isn't in the top row at all — it only lives inside
+  // the MobileNav drawer (see site-nav.tsx / mobile-nav.tsx) — so the copy must
+  // point at the hamburger menu there instead of a switcher that isn't visible.
+  const isDesktopOrTablet = useMediaQuery("(min-width: 640px)");
 
   useEffect(() => {
     const timer = setTimeout(() => setDwelled(true), SHOW_DELAY_MS);
@@ -99,8 +104,17 @@ export function ViewHint() {
         <Sparkles size={14} className="text-accent" /> Try a different view
       </p>
       <p className="mt-1 text-xs text-fg-muted">
-        Explore my work as a playable graph, or just ask the AI concierge — use
-        the Classic · Play · Chat switcher up top.
+        {isDesktopOrTablet ? (
+          <>
+            Explore my work as a playable graph, or just ask the AI concierge —
+            use the Classic · Play · Chat switcher up top.
+          </>
+        ) : (
+          <>
+            Explore my work as a playable graph, or just ask the AI concierge —
+            tap the menu to switch between Classic · Play · Chat.
+          </>
+        )}
       </p>
     </div>
   );

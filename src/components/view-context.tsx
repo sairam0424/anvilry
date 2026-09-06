@@ -48,6 +48,24 @@ const isView = (v: string | null | undefined): v is View =>
   v != null && (VIEWS as readonly string[]).includes(v);
 
 /**
+ * One-shot hand-off for "switch to chat AND auto-send this query" (e.g. the
+ * command palette's empty-state redirect). A plain module `let`, same shape as
+ * `routerBridge` below — the palette and ChatView are separate component
+ * trees with no shared state otherwise, and this is the one thing that needs
+ * to cross that gap. `consume` clears it so a later unrelated visit to the
+ * chat view never re-fires an old query.
+ */
+let pendingChatQuery: string | null = null;
+export function setPendingChatQuery(query: string) {
+  pendingChatQuery = query;
+}
+export function consumePendingChatQuery(): string | null {
+  const q = pendingChatQuery;
+  pendingChatQuery = null;
+  return q;
+}
+
+/**
  * Module-level external store for the active view. Living outside React (mirroring
  * the useSyncExternalStore pattern in src/lib/use-media-query.ts) lets every
  * consumer subscribe without prop-drilling or setState-in-effect, and lets the

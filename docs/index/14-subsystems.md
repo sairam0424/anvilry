@@ -93,7 +93,7 @@ handlers, and `command-palette.tsx` (~44 non-test importers in total, per sectio
 | 6 | `src/lib/game-model.ts:28-50` | `NODE_CONTENT`: 16 graph-node ids → `{kind, slug}`. `resolveNode()` (`:62-71`) returns `null` on a miss; `questNodes` `flatMap`s nulls away (`:96-109`). |
 | 7 | `src/lib/graph-data.ts:18-41` | Hand-authored 16 nodes + 19 edges (`graphEdges` `:43-70`) + `kindColor` (`:72-77`). No `Math.random` — build output is stable (`:1-6`); the docblock now defers the node count to `graphNodes` instead of hardcoding it (`:3`). |
 | 8 | `src/lib/corpus.ts:13-76` | The whole chatbot grounding document as one markdown string. Reads work/projects/**notes** — never articles. |
-| 9 | `src/lib/llms-txt.ts:12-79` | `/llms.txt`. Dedupes articles through `groupArticles` (`:22`), truncates summaries (100/80 chars), emits a `## Markdown Versions` block (`:68-79`). |
+| 9 | `src/lib/llms-txt.ts:12-99` | `/llms.txt`. Dedupes articles through `groupArticles` (`:22`), truncates summaries (100/80 chars), emits a `## Markdown Versions` block (`:83-97`). |
 | 10 | `src/lib/resume-json.ts:12-45` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:30`). |
 | 11 | `src/lib/mcp-tools.ts:50-175` | Nine pure tool functions + Zod input shapes. |
 | 12 | `src/lib/article-grouping.ts:62-117` | Two-pass syndication dedup keyed by `linkedNote` or `canonicalUrl`. |
@@ -570,7 +570,7 @@ and `CLAUDE.md:303` both say 9, and the hand-written `TOOLS` table on `/mcp` lis
 | 3 | `src/lib/content.ts` | The allowlist the tools resolve against. |
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
 | 5 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:35-45`) is still a hand-maintained duplicate, but it is now **enforced** rather than trusted — the comment at `:32-34` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
-| 6 | `src/lib/llms-txt.ts:65` | Advertises the server to agents. Fixed on this branch: it now publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`). |
+| 6 | `src/lib/llms-txt.ts:70` | Advertises the server to agents. Fixed on this branch: it now publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`). |
 | 7 | `src/app/api/cron/health-check/route.ts:61` | Probes `/api/mcp/mcp` as a P2 check. Fixed on this branch: the expected status is per-check (`:101`, gated at `:103`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30`). |
 
 ### Entry point
@@ -608,7 +608,7 @@ silent success.
 | `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:6-8`). |
 | `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:20-26`) hardcodes the exact strings, including `"Sairam Resume"` and hyphenated `"Full-Stack"`. `mcp-tools.test.ts:65` asserts every role resolves to a PDF that exists on disk. |
 | Tool list drifts from content | `mcp-tools.test.ts:36` asserts `list_projects`/`list_work` cover the whole content layer. |
-| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:65` used to do exactly that; **fixed on this branch** — it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:113-116`), and `src/lib/llms-txt.test.ts:22,25-26` pins both the live path and the absence of `/api/mcp/sse`. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:70` used to do exactly that; **fixed on this branch** — it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:113-116`), and `src/lib/llms-txt.test.ts:22,25-26` pins both the live path and the absence of `/api/mcp/sse`. |
 | `/mcp` docs drift | `src/app/mcp/page.tsx:35-45` is still hand-maintained, but **no longer unguarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
 
 ### Flags / env that alter it

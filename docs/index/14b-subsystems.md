@@ -165,7 +165,7 @@ the current total with `today: 0` rather than a 429 (`:44-49`).
 | Voice permanently broken in production | The Chrome speech WebSocket host removed from `connect-src`. |
 | Résumé PDF iframe blank | The `frame-ancestors` string replace no longer matching `next.config.ts:41`. |
 | Unbounded AWS spend | Rate limiting fails open in both failure modes; `/api/chat` is the cost-bearing endpoint. |
-| `/admin/*` crawled | `src/app/robots.ts:5-6` is allow-all with **no** `disallow` entries; the protection is the proxy, not robots. |
+| `/admin/*` crawled | `src/app/robots.ts:6-7` is allow-all with **no** `disallow` entries; the protection is the proxy, not robots. |
 
 ### Flags / env that alter it
 

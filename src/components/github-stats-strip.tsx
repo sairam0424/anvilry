@@ -64,6 +64,7 @@ export function GithubStatsStrip() {
         {fetchState === "loading" ? (
           <motion.div
             key="skeleton"
+            initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="grid grid-cols-2 gap-3 sm:grid-cols-4"

@@ -215,7 +215,7 @@ export function ChatView() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about my work, projects, or what I'm looking for…"
             aria-label="Ask a question about Sairam"
-            className="flex-1 rounded-xl border border-interactive bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
+            className="min-w-0 flex-1 rounded-xl border border-interactive bg-bg-base px-4 py-3 text-sm outline-none placeholder:text-fg-muted focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base"
           />
           {/* Push-to-talk mic — renders only where Web Speech is supported (else nothing,
             the text input is untouched). Transcripts fill the input for review. */}

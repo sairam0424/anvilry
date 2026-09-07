@@ -14,6 +14,13 @@ pinRank: 7
 featured: true
 order: 7
 excerpt: STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to and Hashnode, plus a markdown render-spec for a manual LinkedIn carousel handoff.
+decisions:
+  - title: "Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6"
+    body: "Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6 on purpose — Opus needs separate per-account Bedrock enablement, and I chose zero extra AWS config over deeper resilience. Fallback eligibility is narrow too — only connection errors, 429/404/5xx, and IAM-deny 403s trigger it; a bad-credentials 403 doesn't, since a new model won't fix that."
+  - title: "I kept Hashnode's client despite its now-decommissioned API"
+    body: "I kept Hashnode's client despite its now-decommissioned API, and never built a real publisher for LinkedIn at all — different reasons, same effect. Hashnode fails loudly with a documented manual-paste workflow instead of a silent no-op; LinkedIn never had an API to integrate, so the render-spec-plus-human-upload path was the honest choice from day one, not a fallback. The cost: \"publish without leaving the terminal\" holds for Dev.to alone."
+  - title: "Generated articles never get committed; only the tracking record does"
+    body: "Generated articles never get committed; only the tracking record does. That keeps the repo's diff history clean, but the article text isn't recoverable from git if local `content/` is lost — only proof it was published survives."
 ---
 
 **Inkforge** is personal publishing infrastructure — a CLI + web UI that turns scattered notes, topics, or code directories into polished technical articles and publishes them to Dev.to, Hashnode, and LinkedIn without leaving the terminal.
@@ -49,10 +56,3 @@ The **publisher layer** has two real implementations: a working Dev.to REST clie
 7. **Publish** — Dev.to pushes automatically; Hashnode throws its deprecation error; LinkedIn's PDF is uploaded by hand.
 8. **Tracking** — the article stays local and gitignored; only the `content/published/<platform>/<slug>.md` record is committed. The same pipeline has since generated Trelix and Tombstone launches too.
 
-## Key Decisions
-
-Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6 on purpose — Opus needs separate per-account Bedrock enablement, and I chose zero extra AWS config over deeper resilience. Fallback eligibility is narrow too — only connection errors, 429/404/5xx, and IAM-deny 403s trigger it; a bad-credentials 403 doesn't, since a new model won't fix that.
-
-I kept Hashnode's client despite its now-decommissioned API, and never built a real publisher for LinkedIn at all — different reasons, same effect. Hashnode fails loudly with a documented manual-paste workflow instead of a silent no-op; LinkedIn never had an API to integrate, so the render-spec-plus-human-upload path was the honest choice from day one, not a fallback. The cost: "publish without leaving the terminal" holds for Dev.to alone.
-
-Generated articles never get committed; only the tracking record does. That keeps the repo's diff history clean, but the article text isn't recoverable from git if local `content/` is lost — only proof it was published survives.

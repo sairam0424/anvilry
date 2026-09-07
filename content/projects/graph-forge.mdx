@@ -11,6 +11,13 @@ pinRank: 2
 featured: true
 order: 2
 excerpt: Models code as a Neo4j knowledge graph + Chroma embeddings over ~19 polyglot microservices, powering RAG over massive codebases with full observability.
+decisions:
+  - title: "Chose a parser-built context header over an LLM-generated one, despite losing retrieval precision"
+    body: "Anthropic-style \"Contextual Retrieval\" — an LLM writes a situating blurb per chunk at index time — would have coupled the otherwise LLM-free, Kafka-driven indexing pipeline to Bedrock's uptime, rate limits, and per-chunk cost. I kept indexing pure and cheap: a parser-built header plus query-time Neo4j neighborhood recovers most of the same signal without ever calling an LLM during ingest."
+  - title: "Chose Bedrock-primary with automatic Ollama fallback, and left a known gap in it rather than hide it"
+    body: "The fallback keeps the whole platform functional — and free — with zero cloud credentials configured. The cost: the swarm binds tools via LangGraph's `bind_tools`, so the fallback model has to be tool-capable too. If Bedrock goes down and the fallback model (the Compose default is `qwen2.5-coder:7b`) can't actually call tools, tool calls silently no-op instead of erroring. That gap is documented in the repo, not papered over."
+  - title: "Chose architectural breadth over test coverage"
+    body: "Nineteen services, a durable HITL multi-agent swarm, Istio-enforced zero-trust, and hybrid RRF retrieval shipped before a single Go unit test did. The project's own tech-debt tracker rates \"Go services: no unit tests, only compile checks\" as a HIGH-priority gap against its own documented 80%-coverage standard — an honest trade I'm now closing on two unmerged branches (`feat/test-suite-go-services`, `feat/test-suite-python-services`) rather than one I'm pretending isn't there."
 ---
 
 **Graph-Forge** understands polyglot code by modeling an entire codebase as a **Neo4j knowledge graph augmented with Chroma vector embeddings** — a dual index that answers both *"what breaks if I refactor this?"* (structure) and *"find similar patterns"* (semantics) in one platform.
@@ -39,8 +46,3 @@ Zero-trust here isn't a slide. Istio enforces cluster-wide **STRICT mTLS** over 
 3. **Route the model call.** LLM calls go through a `FallbackLLMProvider` that tries Bedrock first and falls back to a local Ollama model, walking a chain from `claude-opus-4-6` down to `sonnet-4-6` and `haiku-4-5` as needed.
 4. **Delegate to the swarm for anything that mutates code.** `agent-swarm` is a separate, durable LangGraph orchestrator: a Redis checkpointer persists state per thread/mission so a run resumes exactly where it left off, a Planner node fans out parallel tasks via LangGraph's `Send` API, and an `interrupt_before` node gates any code-mutating task behind explicit human approval before it executes.
 
-## Key Decisions
-
-- **Chose a parser-built context header over an LLM-generated one, despite losing retrieval precision.** Anthropic-style "Contextual Retrieval" — an LLM writes a situating blurb per chunk at index time — would have coupled the otherwise LLM-free, Kafka-driven indexing pipeline to Bedrock's uptime, rate limits, and per-chunk cost. I kept indexing pure and cheap: a parser-built header plus query-time Neo4j neighborhood recovers most of the same signal without ever calling an LLM during ingest.
-- **Chose Bedrock-primary with automatic Ollama fallback, and left a known gap in it rather than hide it.** The fallback keeps the whole platform functional — and free — with zero cloud credentials configured. The cost: the swarm binds tools via LangGraph's `bind_tools`, so the fallback model has to be tool-capable too. If Bedrock goes down and the fallback model (the Compose default is `qwen2.5-coder:7b`) can't actually call tools, tool calls silently no-op instead of erroring. That gap is documented in the repo, not papered over.
-- **Chose architectural breadth over test coverage.** Nineteen services, a durable HITL multi-agent swarm, Istio-enforced zero-trust, and hybrid RRF retrieval shipped before a single Go unit test did. The project's own tech-debt tracker rates "Go services: no unit tests, only compile checks" as a HIGH-priority gap against its own documented 80%-coverage standard — an honest trade I'm now closing on two unmerged branches (`feat/test-suite-go-services`, `feat/test-suite-python-services`) rather than one I'm pretending isn't there.

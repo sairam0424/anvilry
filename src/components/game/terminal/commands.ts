@@ -3,11 +3,13 @@ import { questNodes, dossierFor, questGroups } from "@/lib/game-model";
 import { buildCorpus } from "@/lib/corpus";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
 import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
+import { integrityChain } from "@/lib/integrity-chain";
 import { bootBanner } from "./boot-banner";
 import * as fmt from "./fmt";
 import type { Command, CommandResult, Line } from "./types";
 
-const out = (...text: string[]): Line[] => text.map((t) => ({ kind: "out" as const, text: t }));
+const out = (...text: string[]): Line[] =>
+  text.map((t) => ({ kind: "out" as const, text: t }));
 const err = (text: string): Line[] => [{ kind: "err", text }];
 
 const help: Command = {
@@ -22,12 +24,17 @@ const help: Command = {
     return {
       lines: [
         fmt.section("commands"),
-        ...fmt.table(core.map((c) => ["◇", (c.usage ?? c.name), c.description])),
+        ...fmt.table(core.map((c) => ["◇", c.usage ?? c.name, c.description])),
         fmt.blank(),
         fmt.section("navigation"),
-        ...fmt.table(navCmds.map((c) => ["→", (c.usage ?? c.name), c.description])),
+        ...fmt.table(
+          navCmds.map((c) => ["→", c.usage ?? c.name, c.description]),
+        ),
         fmt.blank(),
-        { kind: "out", text: "  tip: there's more than what's listed — try 'secret'." },
+        {
+          kind: "out",
+          text: "  tip: there's more than what's listed — try 'secret'.",
+        },
       ],
     };
   },
@@ -79,14 +86,30 @@ const open: Command = {
   usage: "open <slug|github|linkedin|resume>",
   run: (args) => {
     const slug = args[0];
-    if (!slug) return { lines: err("usage: open <slug>  (try 'ls', or 'open github')") };
+    if (!slug)
+      return { lines: err("usage: open <slug>  (try 'ls', or 'open github')") };
     // Quick targets for the common recruiter destinations.
-    if (slug === "github") return { lines: out(`opening ${profile.links.github} …`), nav: { type: "external", href: profile.links.github } };
-    if (slug === "linkedin") return { lines: out(`opening ${profile.links.linkedin} …`), nav: { type: "external", href: profile.links.linkedin } };
-    if (slug === "resume" || slug === "résumé") return { lines: out("opening /resume …"), nav: { type: "route", href: profile.links.resume } };
+    if (slug === "github")
+      return {
+        lines: out(`opening ${profile.links.github} …`),
+        nav: { type: "external", href: profile.links.github },
+      };
+    if (slug === "linkedin")
+      return {
+        lines: out(`opening ${profile.links.linkedin} …`),
+        nav: { type: "external", href: profile.links.linkedin },
+      };
+    if (slug === "resume" || slug === "résumé")
+      return {
+        lines: out("opening /resume …"),
+        nav: { type: "route", href: profile.links.resume },
+      };
     const target = getWork(slug) ?? getProject(slug);
     if (!target) return { lines: err(`not found: ${slug}  (try 'ls')`) };
-    return { lines: out(`opening ${target.name} …`), nav: { type: "route", href: target.url } };
+    return {
+      lines: out(`opening ${target.name} …`),
+      nav: { type: "route", href: target.url },
+    };
   },
 };
 
@@ -127,7 +150,10 @@ const tree: Command = {
       g.nodes.forEach((n, ni) => {
         const lastN = ni === g.nodes.length - 1;
         const pad = lastG ? "    " : "│   ";
-        lines.push({ kind: "out", text: `${pad}${lastN ? "└── " : "├── "}${n.label}` });
+        lines.push({
+          kind: "out",
+          text: `${pad}${lastN ? "└── " : "├── "}${n.label}`,
+        });
       });
     });
     return { lines };
@@ -153,7 +179,10 @@ const grep: Command = {
     const shown = hits.slice(0, GREP_LIMIT);
     const lines = out(header, ...shown);
     if (hits.length > GREP_LIMIT) {
-      lines.push({ kind: "out", text: `… +${hits.length - GREP_LIMIT} more — refine with a longer term` });
+      lines.push({
+        kind: "out",
+        text: `… +${hits.length - GREP_LIMIT} more — refine with a longer term`,
+      });
     }
     return { lines };
   },
@@ -162,13 +191,19 @@ const grep: Command = {
 const classic: Command = {
   name: "classic",
   description: "switch to the classic view",
-  run: () => ({ lines: out("switching to classic view …"), nav: { type: "view", view: "classic" } }),
+  run: () => ({
+    lines: out("switching to classic view …"),
+    nav: { type: "view", view: "classic" },
+  }),
 };
 
 const developer: Command = {
   name: "developer",
   description: "open the full-page developer terminal",
-  run: () => ({ lines: out("opening developer mode …"), nav: { type: "view", view: "developer" } }),
+  run: () => ({
+    lines: out("opening developer mode …"),
+    nav: { type: "view", view: "developer" },
+  }),
 };
 
 const clear: Command = {
@@ -196,6 +231,57 @@ const awards: Command = {
   }),
 };
 
+const integrity: Command = {
+  name: "integrity",
+  description:
+    "claims integrity ledger — is my résumé data still what I sealed",
+  run: () => {
+    if (integrityChain.length === 0) {
+      return { lines: out("no sealed entries yet.") };
+    }
+    const head = integrityChain[integrityChain.length - 1];
+    const first = integrityChain[0];
+    return {
+      lines: fmt.box("// CLAIMS INTEGRITY LEDGER", [
+        fmt.row("●", "entries", String(integrityChain.length)),
+        fmt.row(
+          "●",
+          "head",
+          `${head.hash.slice(0, 19)}… (commit ${head.parentCommitSha.slice(0, 7)})`,
+        ),
+        fmt.row(
+          "●",
+          "sealed",
+          `${head.sealedAt.slice(0, 10)} (commit ${head.parentCommitSha.slice(0, 7)})`,
+        ),
+        fmt.row(
+          "●",
+          "first",
+          `${first.sealedAt.slice(0, 10)} (commit ${first.parentCommitSha.slice(0, 7)})`,
+        ),
+        fmt.divider(),
+        {
+          kind: "out",
+          text: "  This proves the claims below have not been silently edited",
+        },
+        {
+          kind: "out",
+          text: "  since their sealing commit. It does NOT prove the numbers",
+        },
+        {
+          kind: "out",
+          text: "  were ever accurate — there is no independent issuer, unlike a",
+        },
+        {
+          kind: "out",
+          text: "  verifiable credential. Treat it as a tamper-evidence log, not",
+        },
+        { kind: "out", text: "  a certification." },
+      ]),
+    };
+  },
+};
+
 const resume: Command = {
   name: "resume",
   description: "open a résumé variant",
@@ -203,28 +289,39 @@ const resume: Command = {
   run: (args) => {
     // Flag read inside run() body — module-scope const would break vi.stubEnv in tests.
     const visibleVariants =
-      process.env.NEXT_PUBLIC_RESUME_VARIANTS === "true" ? resumeVariants : [resumeVariants[0]];
+      process.env.NEXT_PUBLIC_RESUME_VARIANTS === "true"
+        ? resumeVariants
+        : [resumeVariants[0]];
     const arg = (args[0] ?? "").toLowerCase();
     if (!arg) {
       return {
         lines: out(
           "résumé variants (resume <name>):",
           ...visibleVariants.map(
-            (r) => `  ${r.label.toLowerCase().split(" ")[0].padEnd(12)} ${r.label} — ${r.tag}`,
+            (r) =>
+              `  ${r.label.toLowerCase().split(" ")[0].padEnd(12)} ${r.label} — ${r.tag}`,
           ),
         ),
       };
     }
-    const match = visibleVariants.find((r) => r.label.toLowerCase().includes(arg));
+    const match = visibleVariants.find((r) =>
+      r.label.toLowerCase().includes(arg),
+    );
     if (!match) return { lines: err(`no variant: ${arg}  (run 'resume')`) };
-    return { lines: out(`opening ${match.label} …`), nav: { type: "external", href: match.file } };
+    return {
+      lines: out(`opening ${match.label} …`),
+      nav: { type: "external", href: match.file },
+    };
   },
 };
 
 const chat: Command = {
   name: "chat",
   description: "ask the AI concierge",
-  run: () => ({ lines: out("opening the AI concierge …"), nav: { type: "view", view: "chat" } }),
+  run: () => ({
+    lines: out("opening the AI concierge …"),
+    nav: { type: "view", view: "chat" },
+  }),
 };
 
 const contact: Command = {
@@ -259,20 +356,30 @@ const social: Command = {
   name: "social",
   description: "my profiles",
   run: () => ({
-    lines: out(`github:   ${profile.links.github}`, `linkedin: ${profile.links.linkedin}`),
+    lines: out(
+      `github:   ${profile.links.github}`,
+      `linkedin: ${profile.links.linkedin}`,
+    ),
   }),
 };
 
 const summary: Command = {
   name: "summary",
-  description: "everything in one hit (identity, work, projects, skills, awards)",
+  description:
+    "everything in one hit (identity, work, projects, skills, awards)",
   run: () => ({
     lines: [
-      fmt.row("●", "name", `${profile.name} — ${profile.role} @ ${profile.company}`),
+      fmt.row(
+        "●",
+        "name",
+        `${profile.name} — ${profile.role} @ ${profile.company}`,
+      ),
       fmt.row("◇", "bio", profile.headline),
       fmt.blank(),
       fmt.section("production work"),
-      ...fmt.table(allWork.map((w) => ["●", w.name, `${w.register} · ${w.role}`])),
+      ...fmt.table(
+        allWork.map((w) => ["●", w.name, `${w.register} · ${w.role}`]),
+      ),
       fmt.blank(),
       fmt.section("open-source projects"),
       ...fmt.table(allProjects.map((p) => ["▸", p.name, p.tagline])),
@@ -284,7 +391,10 @@ const summary: Command = {
       ...achievements.map((a) => fmt.row("✓", a.title, a.detail)),
       fmt.blank(),
       fmt.divider(),
-      { kind: "out", text: "  → run 'resume' to download · 'contact' to reach me" },
+      {
+        kind: "out",
+        text: "  → run 'resume' to download · 'contact' to reach me",
+      },
     ],
   }),
 };
@@ -298,7 +408,9 @@ const career: Command = {
     const workLines: Line[] = allWork.flatMap((w) => [
       fmt.row("●", w.name, w.register),
       fmt.row("◇", "", w.role),
-      ...(w.metrics[0] ? [fmt.row("▸", "", `${w.metrics[0].value} ${w.metrics[0].label}`)] : []),
+      ...(w.metrics[0]
+        ? [fmt.row("▸", "", `${w.metrics[0].value} ${w.metrics[0].label}`)]
+        : []),
       fmt.blank(),
     ]);
     return {
@@ -341,9 +453,17 @@ const find: Command = {
     const hits = [...allWork, ...allProjects].filter((item) =>
       item.tech.some((t) => t.toLowerCase().includes(term)),
     );
-    if (hits.length === 0) return { lines: out(`no systems use "${term}"  (try 'top' for the full stack)`) };
+    if (hits.length === 0)
+      return {
+        lines: out(`no systems use "${term}"  (try 'top' for the full stack)`),
+      };
     const header = `${hits.length} system${hits.length === 1 ? "" : "s"} use "${term}":`;
-    return { lines: out(header, ...hits.map((h) => `  ${h.slug.padEnd(22)} ${h.name}`)) };
+    return {
+      lines: out(
+        header,
+        ...hits.map((h) => `  ${h.slug.padEnd(22)} ${h.name}`),
+      ),
+    };
   },
 };
 
@@ -359,7 +479,10 @@ const top: Command = {
       ...shown.map((f) => `  ${f.tech.padEnd(20)} ×${f.count}`),
     );
     if (freq.length > TOP_LIMIT) {
-      lines.push({ kind: "out", text: `  … +${freq.length - TOP_LIMIT} more — run 'stack' for all skills` });
+      lines.push({
+        kind: "out",
+        text: `  … +${freq.length - TOP_LIMIT} more — run 'stack' for all skills`,
+      });
     }
     return { lines };
   },
@@ -374,12 +497,12 @@ const stats: Command = {
     return {
       lines: fmt.statsBox("// PORTFOLIO STATS", [
         { label: "production systems", value: allWork.length },
-        { label: "open-source repos",  value: allProjects.length },
-        { label: "OSS commits",        value: `${commits} (snapshot)` },
-        { label: "distinct tech",      value: distinctTech },
-        { label: "skill groups",       value: skills.length },
-        { label: "recognitions",       value: achievements.length },
-        { label: "résumé variants",    value: resumeVariants.length },
+        { label: "open-source repos", value: allProjects.length },
+        { label: "OSS commits", value: `${commits} (snapshot)` },
+        { label: "distinct tech", value: distinctTech },
+        { label: "skill groups", value: skills.length },
+        { label: "recognitions", value: achievements.length },
+        { label: "résumé variants", value: resumeVariants.length },
       ]),
     };
   },
@@ -395,12 +518,18 @@ const about: Command = {
   description: "a short bio (and what else is hidden here)",
   run: () => {
     const lines: Line[] = [
-      { kind: "out", text: `${profile.name} — ${profile.role} @ ${profile.company}` },
+      {
+        kind: "out",
+        text: `${profile.name} — ${profile.role} @ ${profile.company}`,
+      },
       { kind: "out", text: profile.subhead },
     ];
     if (hasPersonalContent) {
       lines.push({ kind: "out", text: "" });
-      lines.push({ kind: "out", text: "there's more than the résumé here — run 'secret' for the personal side." });
+      lines.push({
+        kind: "out",
+        text: "there's more than the résumé here — run 'secret' for the personal side.",
+      });
     }
     return { lines };
   },
@@ -412,7 +541,11 @@ const secret: Command = {
   hidden: true,
   run: () => {
     if (!hasPersonalContent) {
-      return { lines: out("personal notes coming soon — meanwhile, try 'whoami' or 'summary'.") };
+      return {
+        lines: out(
+          "personal notes coming soon — meanwhile, try 'whoami' or 'summary'.",
+        ),
+      };
     }
     const lines: Line[] = [];
     const section = (title: string, items: readonly string[]) => {
@@ -425,7 +558,10 @@ const secret: Command = {
     section("fun facts", personal.funFacts);
     section("currently learning", personal.currentlyLearning);
     section("ask me about", personal.askMeAbout);
-    lines.push({ kind: "out", text: "→ also try 'uses' (my toolkit) and 'now' (current focus)." });
+    lines.push({
+      kind: "out",
+      text: "→ also try 'uses' (my toolkit) and 'now' (current focus).",
+    });
     return { lines };
   },
 };
@@ -438,10 +574,17 @@ const uses: Command = {
   hidden: true,
   run: () => {
     if (personal.uses.length === 0) {
-      return { lines: out("toolkit coming soon — meanwhile, run 'stack' for my professional skills.") };
+      return {
+        lines: out(
+          "toolkit coming soon — meanwhile, run 'stack' for my professional skills.",
+        ),
+      };
     }
     return {
-      lines: personal.uses.map((g) => ({ kind: "out" as const, text: `  ${g.group}: ${g.items.join(", ")}` })),
+      lines: personal.uses.map((g) => ({
+        kind: "out" as const,
+        text: `  ${g.group}: ${g.items.join(", ")}`,
+      })),
     };
   },
 };
@@ -451,15 +594,30 @@ const nowCmd: Command = {
   description: "what I'm focused on right now",
   hidden: true,
   run: () => {
-    if (!hasNow) return { lines: out("nothing pinned right now — run 'summary' for the full picture.") };
-    const lines: Line[] = now.focus.map((f) => ({ kind: "out" as const, text: `  • ${f}` }));
+    if (!hasNow)
+      return {
+        lines: out(
+          "nothing pinned right now — run 'summary' for the full picture.",
+        ),
+      };
+    const lines: Line[] = now.focus.map((f) => ({
+      kind: "out" as const,
+      text: `  • ${f}`,
+    }));
     // Honest staleness line (no implied-current). Date is read at call time (client).
     const updatedMs = Date.parse(now.updated);
     if (!Number.isNaN(updatedMs)) {
       const days = Math.floor((Date.now() - updatedMs) / 86_400_000);
-      const when = days <= 0 ? "today" : days === 1 ? "1 day ago" : `${days} days ago`;
+      const when =
+        days <= 0 ? "today" : days === 1 ? "1 day ago" : `${days} days ago`;
       lines.push({ kind: "out", text: "" });
-      lines.push({ kind: "out", text: days > 90 ? `(last updated ${when} — may be stale)` : `(updated ${when})` });
+      lines.push({
+        kind: "out",
+        text:
+          days > 90
+            ? `(last updated ${when} — may be stale)`
+            : `(updated ${when})`,
+      });
     }
     return { lines };
   },
@@ -472,19 +630,28 @@ const cd: Command = {
   run: (args) => {
     const path = args[0] ?? "";
     if (!path || path === "/" || path === "~") {
-      return { lines: out("navigating to / …"), nav: { type: "route", href: "/" } };
+      return {
+        lines: out("navigating to / …"),
+        nav: { type: "route", href: "/" },
+      };
     }
     return { lines: err(`cd: ${path}: no such route — try 'cd /'`) };
   },
 };
 
-const neofetch: Command = { ...whoami, name: "neofetch", description: "system info (alias of whoami)" };
+const neofetch: Command = {
+  ...whoami,
+  name: "neofetch",
+  description: "system info (alias of whoami)",
+};
 
 const sudo: Command = {
   name: "sudo",
   description: "nice try",
   run: (args) => ({
-    lines: err(`sudo: ${args.join(" ") || "permission"} denied — this résumé is read-only ☺`),
+    lines: err(
+      `sudo: ${args.join(" ") || "permission"} denied — this résumé is read-only ☺`,
+    ),
   }),
 };
 
@@ -496,15 +663,46 @@ const sudo: Command = {
 const theme: Command = {
   name: "theme",
   description: "cycle the prompt theme (cyan/green/amber)",
-  run: () => ({ lines: out("theme cycling is interactive — use the terminal prompt.") }),
+  run: () => ({
+    lines: out("theme cycling is interactive — use the terminal prompt."),
+  }),
 };
 
 /** Ordered registry — insertion order drives `help` + autocomplete listing. */
 export const COMMANDS: Record<string, Command> = {
-  help, whoami, neofetch, ls, cat, tree, grep, find, top, stats, stack, awards, summary, career,
-  about, resume, open, contact, email, social, chat, theme, classic, developer, cd, clear, sudo,
+  help,
+  whoami,
+  neofetch,
+  ls,
+  cat,
+  tree,
+  grep,
+  find,
+  top,
+  stats,
+  stack,
+  awards,
+  integrity,
+  summary,
+  career,
+  about,
+  resume,
+  open,
+  contact,
+  email,
+  social,
+  chat,
+  theme,
+  classic,
+  developer,
+  cd,
+  clear,
+  sudo,
   // hidden (dispatchable + tracked, but absent from help + autocomplete) — the eggs:
-  secret, personal: personalAlias, uses, now: nowCmd,
+  secret,
+  personal: personalAlias,
+  uses,
+  now: nowCmd,
 };
 
 export function runCommand(raw: string): CommandResult {
@@ -514,7 +712,12 @@ export function runCommand(raw: string): CommandResult {
   const cmd = COMMANDS[name.toLowerCase()];
   const echo: Line = { kind: "in", text: `$ ${trimmed}` };
   if (!cmd) {
-    return { lines: [echo, { kind: "err", text: `command not found: ${name}  (try 'help')` }] };
+    return {
+      lines: [
+        echo,
+        { kind: "err", text: `command not found: ${name}  (try 'help')` },
+      ],
+    };
   }
   const result = cmd.run(args, { registry: COMMANDS });
   return { lines: [echo, ...result.lines], nav: result.nav };

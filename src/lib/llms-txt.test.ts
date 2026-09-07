@@ -18,7 +18,10 @@ describe("buildLlmsTxt — advertised MCP endpoint", () => {
     const line = txt
       .split("\n")
       .find((l) => l.startsWith("- MCP server (for AI agents):"));
-    expect(line, "llms.txt should advertise an MCP server in its Links section").toBeDefined();
+    expect(
+      line,
+      "llms.txt should advertise an MCP server in its Links section",
+    ).toBeDefined();
     expect(line).toContain("/api/mcp/mcp");
   });
 
@@ -36,5 +39,26 @@ describe("buildLlmsTxt — advertised MCP endpoint", () => {
       "route no longer disables SSE — re-check what llms.txt should advertise",
     ).toBe(true);
     expect(txt).toContain("/api/mcp/mcp");
+  });
+});
+
+describe("buildLlmsTxt — AI Usage Policy", () => {
+  const txt = buildLlmsTxt();
+
+  it("includes an AI Usage Policy section", () => {
+    expect(txt).toContain("## AI Usage Policy");
+  });
+
+  it("frames the policy as a stated preference, not an enforced block", () => {
+    const section = txt.split("## AI Usage Policy")[1] ?? "";
+    // Must not claim this technically blocks or prevents AI training —
+    // only that it's a stated preference under an existing convention.
+    expect(section.toLowerCase()).not.toMatch(/blocks? (ai )?training/);
+    expect(section.toLowerCase()).toMatch(/preference|signal/);
+  });
+
+  it("references the existing LICENSE content-exclusion terms", () => {
+    const section = txt.split("## AI Usage Policy")[1] ?? "";
+    expect(section.toLowerCase()).toContain("license");
   });
 });

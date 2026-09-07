@@ -20,24 +20,29 @@ export function buildLlmsTxt(): string {
 
   // Deduplicated articles — one entry per unique article (grouped by linkedNote/canonicalUrl)
   const articleGroups = groupArticles(allArticles);
-  const articles = articleGroups.length > 0
-    ? articleGroups
-        .map((g) => {
-          const platforms = g.platforms.map((p) => p.source).join(", ");
-          const href = g.canonical.linkedNote
-            ? `${BASE}/notes/${g.canonical.linkedNote}`
-            : (g.canonical.externalUrl ?? `${BASE}${g.canonical.url}`);
-          return `- [${g.canonical.title}](${href}): ${g.canonical.summary.slice(0, 100)}... [${platforms}]`;
-        })
-        .join("\n")
-    : "";
+  const articles =
+    articleGroups.length > 0
+      ? articleGroups
+          .map((g) => {
+            const platforms = g.platforms.map((p) => p.source).join(", ");
+            const href = g.canonical.linkedNote
+              ? `${BASE}/notes/${g.canonical.linkedNote}`
+              : (g.canonical.externalUrl ?? `${BASE}${g.canonical.url}`);
+            return `- [${g.canonical.title}](${href}): ${g.canonical.summary.slice(0, 100)}... [${platforms}]`;
+          })
+          .join("\n")
+      : "";
 
   // Native notes (engineering deep-dives)
-  const notes = allNotes.length > 0
-    ? allNotes
-        .map((n) => `- [${n.title}](${BASE}${n.url}): ${n.summary.slice(0, 80)}...`)
-        .join("\n")
-    : "";
+  const notes =
+    allNotes.length > 0
+      ? allNotes
+          .map(
+            (n) =>
+              `- [${n.title}](${BASE}${n.url}): ${n.summary.slice(0, 80)}...`,
+          )
+          .join("\n")
+      : "";
 
   return `# ${profile.name}
 
@@ -65,6 +70,16 @@ ${articles ? `\n## Articles & Writing\n${articles}` : ""}${notes ? `\n\n## Engin
 - MCP server (for AI agents): ${BASE}/api/mcp/mcp
 - RSS feed: ${BASE}/feed.xml
 
+## AI Usage Policy
+This site publishes a Content-Signal preference in robots.txt (search=yes,
+ai-input=yes, ai-train=no) — a stated preference under Cloudflare's Content
+Signals convention, not a technical enforcement mechanism. AI assistants and
+agents are welcome to read and cite this content when answering questions
+about ${profile.name} (that is the whole point of this file and the MCP
+server above). Bulk absorption into model training data is not authorized,
+consistent with the content-exclusion terms already in this repository's
+LICENSE file.
+
 ## Markdown Versions
 Every content page is available as clean markdown by appending .md to the URL.
 ${allWork.map((w) => `- ${BASE}${w.url}.md`).join("\n")}
@@ -76,6 +91,9 @@ ${allProjects.map((p) => `- ${BASE}${p.url}.md`).join("\n")}
 ${allNotes.length > 0 ? allNotes.map((n) => `- ${BASE}${n.url}.md`).join("\n") : "(none yet)"}
 
 ### Articles (native only)
-${allArticles.filter((a) => !a.externalUrl).map((a) => `- ${BASE}${a.url}.md`).join("\n")}
+${allArticles
+  .filter((a) => !a.externalUrl)
+  .map((a) => `- ${BASE}${a.url}.md`)
+  .join("\n")}
 `;
 }

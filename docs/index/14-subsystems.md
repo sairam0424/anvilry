@@ -95,7 +95,7 @@ handlers, and `command-palette.tsx` (~44 non-test importers in total, per sectio
 | 8 | `src/lib/corpus.ts:13-76` | The whole chatbot grounding document as one markdown string. Reads work/projects/**notes** — never articles. |
 | 9 | `src/lib/llms-txt.ts:12-99` | `/llms.txt`. Dedupes articles through `groupArticles` (`:22`), truncates summaries (100/80 chars), emits a `## Markdown Versions` block (`:83-97`). |
 | 10 | `src/lib/resume-json.ts:12-45` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:30`). |
-| 11 | `src/lib/mcp-tools.ts:50-175` | Nine pure tool functions + Zod input shapes. |
+| 11 | `src/lib/mcp-tools.ts:37-307` | Ten pure tool functions + Zod input shapes. |
 | 12 | `src/lib/article-grouping.ts:62-117` | Two-pass syndication dedup keyed by `linkedNote` or `canonicalUrl`. |
 
 ### Entry point
@@ -587,14 +587,14 @@ A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `s
 - **`src/lib/personal.ts` is never imported** — the professional-only boundary is stated at
   `src/lib/mcp-tools.ts:11-13` and asserted by `src/lib/mcp-tools.test.ts:22` ("does NOT leak personal.ts").
 - **`getProfileData()` hand-picks fields** rather than spreading `profile`; `email`, `calendlyUrl`, and
-  `substackUrl` are not returned (`mcp-tools.ts:50-63`).
+  `substackUrl` are not returned (`mcp-tools.ts:73-93`).
 - **Legacy SSE transport** — `disableSse: true` (`route.ts:126`).
 - **`export const runtime`** — removed because `cacheComponents` rejects the export's mere presence
   (`route.ts:6-8`).
 
 ### The not-found (`isError`) contract
 
-`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:42-48`). `wrap()` detects the
+`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:66-71`). `wrap()` detects the
 **literal `notFound` property** and sets `isError: true` (`route.ts:13`), so the calling agent receives the
 list of valid options instead of a fabricated answer. Renaming that field turns every not-found into a
 silent success.

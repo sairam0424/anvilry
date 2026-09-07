@@ -13,6 +13,13 @@ pinRank: 4
 featured: false
 order: 5
 excerpt: A sandboxed bash interpreter for AI agents — Tree-sitter WASM parser, in-process WASM runtimes (CPython, QuickJS, SQLite3), exposed over MCP.
+decisions:
+  - title: "FNV-1a over SHA-256 for the AST cache key"
+    body: "a non-cryptographic hash gives roughly 10x faster key generation and works in the browser, at the cost of weaker collision resistance; the project's own architecture notes defend it only as \"sufficient distribution for realistic script populations,\" not a formal guarantee."
+  - title: "`DestructiveStage` defaults to `warn`, not `block`"
+    body: "a detected `rm -rf /` or fork bomb surfaces as an Observation rather than a refusal, trading hard-stop safety for agent throughput. Callers who want the refusal have to opt in explicitly with `destructivePolicy: 'block'`."
+  - title: "Node floor of >=20.6.0 despite full ESM-hook sandbox hardening needing >=23.5"
+    body: "chose broad compatibility over guaranteeing the complete hardening story on the officially supported minimum runtime."
 ---
 
 AI agents need **deterministic, sandboxed shell execution** for tool-calling. **ag-bash** is a bash interpreter implemented entirely in TypeScript that gives them exactly that — exposed as the `@ag-bash/bash` shell engine plus an MCP server and an agent terminal bridge.
@@ -37,9 +44,3 @@ Three packages ship from one pnpm monorepo at a synchronized version (currently 
 4. Execution itself dispatches in-process to the matching **WASM runtime** — CPython, QuickJS, or SQLite3 — sandboxed away from the host shell.
 5. Output streams back live through `execStream()`, and `bash.fork()` / `bash.speculate()` can run N candidate command sequences concurrently and keep only the winner.
 6. The MCP server and agent-bridge sit on top of this same pipeline, exposing it to agents over stdio or a terminal UI respectively.
-
-## Key Decisions
-
-- **FNV-1a over SHA-256 for the AST cache key** — a non-cryptographic hash gives roughly 10x faster key generation and works in the browser, at the cost of weaker collision resistance; the project's own architecture notes defend it only as "sufficient distribution for realistic script populations," not a formal guarantee.
-- **`DestructiveStage` defaults to `warn`, not `block`** — a detected `rm -rf /` or fork bomb surfaces as an Observation rather than a refusal, trading hard-stop safety for agent throughput. Callers who want the refusal have to opt in explicitly with `destructivePolicy: 'block'`.
-- **Node floor of >=20.6.0 despite full ESM-hook sandbox hardening needing >=23.5** — chose broad compatibility over guaranteeing the complete hardening story on the officially supported minimum runtime.

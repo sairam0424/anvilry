@@ -155,38 +155,63 @@ export function ChatView() {
         <ChatMessages messages={messages} isStreaming={isStreaming} />
 
         {/* Persistent recruiter chip-rail — one-tap strongest-work / impact paths.
-          shrink-0: never let a short viewport compress the chips into the transcript. */}
+          shrink-0: never let a short viewport compress the chips into the transcript.
+          Horizontal scroll (not flex-wrap): these 7 long-text chips wrapped into ~7
+          stacked rows on mobile, tall enough to push the composer's Send button below
+          a short viewport's visible fold (confirmed at 320x568). Same mechanic as the
+          /decisions page's own tag-filter row — overflow-x-auto + shrink-0 +
+          whitespace-nowrap buttons, never letting a chip compress or line-wrap. */}
         <div className="mt-4 shrink-0">
-          <div
-            className="flex flex-wrap gap-2"
-            role="group"
-            aria-label="Suggested questions"
-          >
-            {RECRUITER_CHIPS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => ask(c)}
-                disabled={isStreaming}
-                className="rounded-full border border-border px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-          {empty && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {STARTER_CHIPS.map((c) => (
+          <div className="relative">
+            <div
+              className="flex gap-2 overflow-x-auto overscroll-x-contain"
+              style={{ WebkitOverflowScrolling: "touch" }}
+              role="group"
+              aria-label="Suggested questions"
+            >
+              {RECRUITER_CHIPS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => ask(c)}
                   disabled={isStreaming}
-                  className="rounded-full px-3 py-1.5 text-xs text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+                  className="shrink-0 whitespace-nowrap rounded-full border border-border px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
                 >
                   {c}
                 </button>
               ))}
+            </div>
+            {/* Scroll-affordance fade, mirroring the greeting header's own bottom fade above —
+              a sibling of the scrolling row (not a descendant) so it stays pinned to the edge. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+            />
+          </div>
+          {empty && (
+            <div className="relative mt-2">
+              <div
+                className="flex gap-2 overflow-x-auto overscroll-x-contain"
+                style={{ WebkitOverflowScrolling: "touch" }}
+                role="group"
+                aria-label="More suggested questions"
+              >
+                {STARTER_CHIPS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => ask(c)}
+                    disabled={isStreaming}
+                    className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+              />
             </div>
           )}
         </div>

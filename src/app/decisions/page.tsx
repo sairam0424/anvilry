@@ -4,24 +4,47 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
-import { allDecisions } from "@/lib/decisions";
+import { allDecisions, type LedgerEntry } from "@/lib/decisions";
 import { Reveal } from "@/components/ui/reveal";
 import { Section } from "@/components/ui/section";
 
-export default function DecisionsPage() {
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    for (const e of allDecisions) for (const t of e.tags) set.add(t);
-    return [...set].sort();
-  }, []);
+const CATEGORY_OPTIONS: {
+  value: "all" | LedgerEntry["sourceKind"];
+  label: string;
+}[] = [
+  { value: "all", label: "All" },
+  { value: "work", label: "Professional" },
+  { value: "project", label: "Open Source" },
+];
 
+export default function DecisionsPage() {
+  const [activeCategory, setActiveCategory] = useState<
+    "all" | LedgerEntry["sourceKind"]
+  >("all");
   const [activeTag, setActiveTag] = useState<"all" | string>("all");
-  const filterOptions: ("all" | string)[] = ["all", ...allTags];
+
+  // Category is the coarse, mutually-exclusive dimension (radio semantics) — filtered
+  // first. Tags are freeform and only make sense scoped to whatever category is active,
+  // since Work entries never carry tags (decisions.ts) and would otherwise always read
+  // as "untagged" noise in a combined list.
+  const byCategory = useMemo(
+    () =>
+      activeCategory === "all"
+        ? allDecisions
+        : allDecisions.filter((e) => e.sourceKind === activeCategory),
+    [activeCategory],
+  );
+
+  const tagOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of byCategory) for (const t of e.tags) set.add(t);
+    return ["all", ...[...set].sort()];
+  }, [byCategory]);
 
   const filtered =
     activeTag === "all"
-      ? allDecisions
-      : allDecisions.filter((e) => e.tags.includes(activeTag));
+      ? byCategory
+      : byCategory.filter((e) => e.tags.includes(activeTag));
 
   return (
     <main className="flex-1">
@@ -37,8 +60,51 @@ export default function DecisionsPage() {
           project or case study it came from.
         </p>
 
-        {filterOptions.length > 2 && (
-          <Reveal className="mb-10 mt-8">
+        <Reveal className="mt-8">
+          <div
+            role="radiogroup"
+            aria-label="Filter decisions by category"
+            className="inline-flex items-center rounded-lg border border-border-strong bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+          >
+            {CATEGORY_OPTIONS.map((opt) => {
+              const active = activeCategory === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setActiveCategory(opt.value);
+                    setActiveTag("all");
+                  }}
+                  className={[
+                    "relative inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
+                    active ? "text-bg-base" : "text-fg-muted hover:text-fg",
+                  ].join(" ")}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="decisions-category-segment"
+                      aria-hidden="true"
+                      className="absolute inset-0 z-0 rounded-md bg-accent"
+                      transition={{
+                        type: "spring",
+                        stiffness: 420,
+                        damping: 34,
+                      }}
+                    />
+                  )}
+                  <span className="relative z-10">{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Reveal>
+
+        {tagOptions.length > 2 && (
+          <Reveal className="mt-3">
             <div
               className="w-full overflow-x-auto overscroll-x-contain"
               style={{ WebkitOverflowScrolling: "touch" }}
@@ -48,7 +114,7 @@ export default function DecisionsPage() {
                 aria-label="Filter decisions by tag"
                 className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
               >
-                {filterOptions.map((opt) => {
+                {tagOptions.map((opt) => {
                   const active = activeTag === opt;
                   return (
                     <button
@@ -75,7 +141,7 @@ export default function DecisionsPage() {
                         />
                       )}
                       <span className="relative z-10">
-                        {opt === "all" ? "All" : opt}
+                        {opt === "all" ? "All tags" : opt}
                       </span>
                     </button>
                   );
@@ -107,7 +173,7 @@ export default function DecisionsPage() {
 
         {filtered.length === 0 && (
           <p className="mt-8 text-sm text-fg-subtle">
-            No decisions tagged &ldquo;{activeTag}&rdquo;.
+            No decisions found for this filter.
           </p>
         )}
       </Section>

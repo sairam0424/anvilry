@@ -65,6 +65,13 @@ jobs:
       - name: Codebase index citations
         run: node scripts/check-index-citations.mjs
 
+      # Verifies data/integrity-chain.json's hash chain is intact AND that
+      # profile.ts's current impactMetrics/achievements still match what was
+      # last sealed. On drift: `npx tsx scripts/seal-claims.ts --write` locally,
+      # then commit the updated chain file.
+      - name: Claims integrity chain
+        run: npx tsx scripts/seal-claims.ts
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

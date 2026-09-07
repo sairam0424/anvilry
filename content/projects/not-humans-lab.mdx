@@ -12,6 +12,13 @@ pinned: false
 featured: false
 order: 6
 excerpt: A documentation-and-governance layer with no shared code — three independent sub-projects (daily-dose, nh-deck, nh-skills) each keep their own toolchain, standardized only by ADRs, Conventional Commits, and mandatory PR review.
+decisions:
+  - title: "No shared build tooling, over a Turborepo/pnpm umbrella"
+    body: "Each sub-project keeps its own toolchain instead of folding into shared build tooling — framed as YAGNI (\"each project's toolchain is small enough on its own... shared tooling would add coordination cost without a proven need\"). The cost: the architecture doc's own Risks section admits the layout is \"unvalidated against real code,\" and the system-level tech-stack research pass meant to back this call came back as a placeholder/error — thinner-evidenced than the three project-level stack decisions it sits alongside."
+  - title: "Numbered ADRs, over commit-message-driven history"
+    body: "Cross-cutting decisions get a Nygard-style ADR instead of living only in commit messages or PR threads, at the cost of \"a small amount of process overhead per significant decision\" and a standing risk that the practice quietly lapses back into chat-only decisions if nobody keeps writing them."
+  - title: "Mandatory PR review, over direct commits — even solo"
+    body: "`main` is protected: no force-push, no direct commits, a PR required even when the maintainer is the only contributor. There's no team to review for; the stated purpose is a single self-imposed checkpoint against agent output, deliberately removing the option to bypass CI \"just this once.\""
 ---
 
 **Not-Humans-Lab** is a documentation-and-governance layer over three independent, personal sub-projects — **daily-dose** (an AI-curated arXiv + Hacker News digest), **nh-deck** (a local-first Markdown/HTML presentation CLI), and **nh-skills** (a personal collection of AI-agent Skills) — each keeping its own toolchain rather than folding into shared build tooling.
@@ -38,10 +45,3 @@ There is deliberately no shared build graph, package manager, or CI runner at th
 
 With no runtime, "how it works" here means how a decision gets made and stays made. Architecture-level choices go through Michael Nygard-style Architecture Decision Records under `docs/adr/` — sequentially numbered, never edited after acceptance, only superseded by a later ADR (ADR-0001, accepted 2026-09-02, formalizes the practice itself). Decisions scoped to a single sub-project stay in that sub-project's own file; `decisions.md` at the root is reserved for choices that cut across two or more of daily-dose, nh-deck, and nh-skills. Two dated, cross-cutting agent-behavior learnings are logged in `agent_learning.md`: parallel docs-writing and code-writing agents given the same prose spec independently invented different, non-matching directory structures across all three sub-projects (nh-deck's docs described `src/commands/`, `src/render/`, `src/server/`, `src/export/` subdirectories, while the real code stayed flat — `src/render.ts`, `src/server.ts`, `src/pdfExport.ts`); and a machine-global ConfigProtection hook blocks any write to a new sub-project's `tsconfig.json` without an explicit per-path exception.
 
-## Key Decisions
-
-**No shared build tooling, over a Turborepo/pnpm umbrella.** Each sub-project keeps its own toolchain instead of folding into shared build tooling — framed as YAGNI ("each project's toolchain is small enough on its own... shared tooling would add coordination cost without a proven need"). The cost: the architecture doc's own Risks section admits the layout is "unvalidated against real code," and the system-level tech-stack research pass meant to back this call came back as a placeholder/error — thinner-evidenced than the three project-level stack decisions it sits alongside.
-
-**Numbered ADRs, over commit-message-driven history.** Cross-cutting decisions get a Nygard-style ADR instead of living only in commit messages or PR threads, at the cost of "a small amount of process overhead per significant decision" and a standing risk that the practice quietly lapses back into chat-only decisions if nobody keeps writing them.
-
-**Mandatory PR review, over direct commits — even solo.** `main` is protected: no force-push, no direct commits, a PR required even when the maintainer is the only contributor. There's no team to review for; the stated purpose is a single self-imposed checkpoint against agent output, deliberately removing the option to bypass CI "just this once."

@@ -139,7 +139,7 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 | `list_all_content` | `{}` | `listAllContentData()` `:150` | n/a |
 | `get_content_item` | `contentTypeSchema` = `{ type: z.enum(["work","project","article","note"]), slug: z.string() }` `:144-147` | `getContentItemData()` `:160` | delegates to `getWorkData`/`getProjectData`, or `notFound("article"\|"note", slug, <all slugs>)` `:166`,`:171` |
 
-Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:42-48`); the route's `wrap()` detects the `notFound` key and sets `isError: true` on the MCP result — so the calling agent receives the list of valid options instead of a fabricated answer.
+Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:66-71`); the route's `wrap()` detects the `notFound` key and sets `isError: true` on the MCP result — so the calling agent receives the list of valid options instead of a fabricated answer.
 
 ## Detail
 

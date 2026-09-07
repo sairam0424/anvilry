@@ -115,6 +115,16 @@ const handler = createMcpHandler(
       },
       async ({ type, slug }) => wrap(T.getContentItemData(type, slug)),
     );
+    server.registerTool(
+      "list_decisions",
+      {
+        title: "List architecture decisions",
+        description:
+          "Real engineering tradeoffs across all projects and work case studies — the choice made, the alternative considered, and the cost paid. Optional tag filter.",
+        inputSchema: T.decisionsTagSchema,
+      },
+      async ({ tag }) => wrap(T.listDecisionsData(tag)),
+    );
   },
   {},
   // disableSse: SSE was removed from the MCP spec (2025-03-26) and the only transport

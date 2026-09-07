@@ -14,11 +14,12 @@
   --bg-elevated: #141826;    /* hovered / elevated */
   --border: #1f2433;
   --border-strong: #2c3346;
+  --border-interactive: #64748b;  /* real form-control borders — 4.20:1 on bg-base, clears the 3:1 SC 1.4.11 floor */
 
   /* text */
   --fg: #e9ecf5;             /* primary text — 14.8:1 on bg-base */
-  --fg-muted: #9aa3b8;       /* secondary — 6.9:1 on bg-base (AA) */
-  --fg-subtle: #747e99;      /* tertiary / captions — 4.7:1 on bg-base (WCAG AA) */
+  --fg-muted: #9aa3b8;       /* secondary — 7.91:1 on bg-base (AA) */
+  --fg-subtle: #747e99;      /* tertiary / captions — 4.94:1 on bg-base (WCAG AA) */
 
   /* accents */
   --accent: #38e1ff;         /* electric cyan — links, focus, graph edges */
@@ -26,6 +27,8 @@
   --violet: #a78bfa;         /* secondary accent — AI/agent motifs */
   --green: #4ade80;          /* metrics up / success */
   --amber: #fbbf24;          /* highlights */
+  --red: #f87171;         /* error / danger — 7.23:1 on bg-base */
+  --graph-edge: #3a4258;  /* Play-view graph edge lines — intentionally subtle, ~2:1 vs bg-base */
 
   /* effects */
   --glow-accent: 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent),
@@ -52,9 +55,11 @@
   color-scheme: light;
   --bg-base: #f7f8fb; --bg-surface: #ffffff; --bg-elevated: #eef1f6;
   --border: #dde1ea; --border-strong: #c7ccd9;
+  --border-interactive: #64748b;
   --fg: #12141c; --fg-muted: #4b5164; --fg-subtle: #6b7184;
   --accent: #0e7490; --accent-strong: #0b5b73; --violet: #7c3aed;
-  --green: #15803d; --amber: #b45309;
+  --green: #166534; --amber: #92400e; --red: #991b1b;
+  --graph-edge: #a8b0c4;  /* same ~2:1 subtlety against the light bg-base, not a stronger value */
 }
 
 @theme inline {
@@ -71,6 +76,7 @@
   --color-violet: var(--violet);
   --color-green: var(--green);
   --color-amber: var(--amber);
+  --color-red: var(--red);
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, "SF Mono", monospace;
@@ -319,6 +325,16 @@ body::before {
 ::selection {
   background: color-mix(in oklab, var(--accent) 30%, transparent);
   color: #fff;
+}
+
+/* utility: real interactive form-control border. Plain CSS, not a Tailwind
+   @layer utility class — the `* { border-color: var(--border); }` reset above
+   is UNLAYERED, so it always wins over any @layer utilities border-color class
+   regardless of specificity (border-border-strong has this exact same problem
+   site-wide, pre-existing, out of scope here — this fixes only the 2 real
+   inputs that need it). Matches .card-surface's plain-CSS pattern below. */
+.border-interactive {
+  border-color: var(--border-interactive);
 }
 
 /* utility: subtle card */

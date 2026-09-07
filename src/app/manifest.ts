@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { METADATA_COLORS } from "@/lib/metadata-colors";
 import { profile } from "@/lib/profile";
 
 // Web app manifest — name, theme color, and icon for "Add to Home Screen" / PWA.
@@ -9,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: profile.headline,
     start_url: "/",
     display: "standalone",
-    background_color: "#07080d",
-    theme_color: "#07080d",
+    background_color: METADATA_COLORS.bgBase,
+    theme_color: METADATA_COLORS.bgBase,
     icons: [
       { src: "/icon", sizes: "32x32", type: "image/png" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },

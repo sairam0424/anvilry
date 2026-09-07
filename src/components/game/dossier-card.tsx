@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Github } from "@/components/icons";
-import { kindColor } from "@/lib/graph-data";
+import { resolveKindColor } from "@/lib/graph-data";
 import { dossierFor, type QuestNode } from "@/lib/game-model";
 import { unlock } from "@/lib/discovery-store";
+import { useThemeColors } from "@/lib/use-theme-colors";
 
 /**
  * A "dossier" card for one system in the gamified index. Every value is derived
@@ -16,12 +17,17 @@ import { unlock } from "@/lib/discovery-store";
  */
 export function DossierCard({ node }: { node: QuestNode }) {
   const d = dossierFor(node);
-  const color = kindColor[node.visualKind];
+  const themeColors = useThemeColors();
+  const color = resolveKindColor(themeColors)[node.visualKind];
 
   return (
     <div className="card-surface group relative flex flex-col overflow-hidden p-5">
       {/* Kind-color accent rail (matches the 3D node color). */}
-      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ background: color }}
+      />
 
       <div className="flex items-start justify-between gap-3">
         <Link
@@ -51,7 +57,9 @@ export function DossierCard({ node }: { node: QuestNode }) {
         <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
           {d.facts.map((f) => (
             <div key={f.label}>
-              <dt className="font-mono text-sm font-semibold text-fg">{f.value}</dt>
+              <dt className="font-mono text-sm font-semibold text-fg">
+                {f.value}
+              </dt>
               <dd className="text-[11px] text-fg-subtle">{f.label}</dd>
             </div>
           ))}
@@ -60,7 +68,10 @@ export function DossierCard({ node }: { node: QuestNode }) {
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {d.tech.slice(0, 5).map((t) => (
-          <span key={t} className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted">
+          <span
+            key={t}
+            className="rounded-md border border-border px-2 py-0.5 font-mono text-[11px] text-fg-muted"
+          >
             {t}
           </span>
         ))}

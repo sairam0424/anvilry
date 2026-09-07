@@ -368,7 +368,7 @@ function kindBadge(kind: string): string {
     case "http.request":
       return "bg-blue-500/20 text-blue-300";
     case "client.error":
-      return "bg-red-500/20 text-red-300";
+      return "bg-red/20 text-red";
     case "server.error":
       return "bg-orange-500/20 text-orange-300";
     case "tts.request":
@@ -397,7 +397,7 @@ function Tile({
   accent?: boolean;
   warn?: boolean;
 }) {
-  const color = warn ? "text-red-400" : accent ? "text-accent" : "text-fg";
+  const color = warn ? "text-red" : accent ? "text-accent" : "text-fg";
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-border-strong/60 bg-bg-surface p-4">
       <span className="font-mono text-[10px] uppercase tracking-widest text-fg-muted">
@@ -410,7 +410,7 @@ function Tile({
       {pct != null && (
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-bg-elevated">
           <div
-            className={`h-full rounded-full ${warn ? "bg-red-400" : accent ? "bg-accent" : "bg-fg-muted/50"}`}
+            className={`h-full rounded-full ${warn ? "bg-red" : accent ? "bg-accent" : "bg-fg-muted/50"}`}
             style={{ width: `${Math.min(100, pct)}%` }}
           />
         </div>
@@ -827,7 +827,7 @@ export default async function TelemetryDashboard() {
                       <tr
                         key={`${e.ts}-${i}`}
                         className={`border-b border-border-strong/10 hover:bg-bg-elevated/40 ${
-                          isError ? "bg-red-500/5" : ""
+                          isError ? "bg-red/5" : ""
                         }`}
                       >
                         <td className="px-4 py-2 font-mono text-fg-subtle whitespace-nowrap">
@@ -844,7 +844,7 @@ export default async function TelemetryDashboard() {
                           {e.route ?? "—"}
                           {attrs.status != null && (
                             <span
-                              className={`ml-1.5 text-[10px] ${Number(attrs.status) >= 400 ? "text-red-400" : "text-fg-subtle/60"}`}
+                              className={`ml-1.5 text-[10px] ${Number(attrs.status) >= 400 ? "text-red" : "text-fg-subtle/60"}`}
                             >
                               {String(attrs.status)}
                             </span>
@@ -855,7 +855,7 @@ export default async function TelemetryDashboard() {
                         </td>
                         <td className="px-4 py-2 text-fg-subtle max-w-[480px]">
                           {isError ? (
-                            <span className="text-red-300">{fmtAttrs(e)}</span>
+                            <span className="text-red">{fmtAttrs(e)}</span>
                           ) : (
                             <span className="text-fg-subtle/80">
                               {fmtAttrs(e)}

@@ -29,6 +29,7 @@
  */
 
 import { useEffect } from "react";
+import { METADATA_COLORS } from "@/lib/metadata-colors";
 
 const DEDUPE_FLAG = "__anvilry_error_recently__" as const;
 
@@ -40,7 +41,11 @@ type GlobalErrorProps = {
   reset?: () => void;
 };
 
-export default function GlobalError({ error, unstable_retry, reset }: GlobalErrorProps) {
+export default function GlobalError({
+  error,
+  unstable_retry,
+  reset,
+}: GlobalErrorProps) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       (window as unknown as Record<string, number>)[DEDUPE_FLAG] = Date.now();
@@ -59,7 +64,8 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
           message: error.message || "global render error",
           stack: error.stack,
           url: typeof window !== "undefined" ? window.location.href : undefined,
-          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+          userAgent:
+            typeof navigator !== "undefined" ? navigator.userAgent : undefined,
           level: "error",
         });
       })
@@ -84,8 +90,8 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
           alignItems: "center",
           justifyContent: "center",
           padding: "5rem 1.5rem",
-          backgroundColor: "#07080d",
-          color: "#e9ecf5",
+          backgroundColor: METADATA_COLORS.bgBase,
+          color: METADATA_COLORS.fg,
           fontFamily:
             'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         }}
@@ -97,7 +103,7 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
               fontSize: "0.75rem",
               letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: "#747e99",
+              color: METADATA_COLORS.fgSubtle,
               margin: 0,
             }}
           >
@@ -110,13 +116,14 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
               lineHeight: 1.15,
               fontWeight: 600,
               letterSpacing: "-0.01em",
-              color: "#e9ecf5",
+              color: METADATA_COLORS.fg,
             }}
           >
             Something broke at the root of the app.
           </h1>
-          <p style={{ marginTop: "1rem", color: "#9aa3b8" }}>
-            We&apos;ve logged it. Try again, or open the homepage in a fresh tab.
+          <p style={{ marginTop: "1rem", color: METADATA_COLORS.fgMuted }}>
+            We&apos;ve logged it. Try again, or open the homepage in a fresh
+            tab.
           </p>
           {error.digest && (
             <p
@@ -124,10 +131,13 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
                 marginTop: "1rem",
                 fontFamily: 'ui-monospace, "SF Mono", monospace',
                 fontSize: "0.75rem",
-                color: "#747e99",
+                color: METADATA_COLORS.fgSubtle,
               }}
             >
-              digest: <span style={{ color: "#9aa3b8" }}>{error.digest}</span>
+              digest:{" "}
+              <span style={{ color: METADATA_COLORS.fgMuted }}>
+                {error.digest}
+              </span>
             </p>
           )}
           <div
@@ -144,9 +154,9 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
                 onClick={() => retry()}
                 style={{
                   borderRadius: "0.375rem",
-                  border: "1px solid #2c3346",
-                  backgroundColor: "#141826",
-                  color: "#e9ecf5",
+                  border: `1px solid ${METADATA_COLORS.borderStrong}`,
+                  backgroundColor: METADATA_COLORS.bgElevated,
+                  color: METADATA_COLORS.fg,
                   padding: "0.5rem 1rem",
                   fontSize: "0.875rem",
                   fontWeight: 500,
@@ -167,8 +177,8 @@ export default function GlobalError({ error, unstable_retry, reset }: GlobalErro
               href="/"
               style={{
                 borderRadius: "0.375rem",
-                border: "1px solid #1f2433",
-                color: "#9aa3b8",
+                border: `1px solid ${METADATA_COLORS.border}`,
+                color: METADATA_COLORS.fgMuted,
                 padding: "0.5rem 1rem",
                 fontSize: "0.875rem",
                 fontWeight: 500,

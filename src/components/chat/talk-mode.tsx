@@ -75,10 +75,10 @@ function TtsTestButton() {
       }}
       className={`rounded-full border px-3 py-1.5 text-[11px] transition-colors ${
         status === "ok"
-          ? "border-green-500/60 bg-green-500/10 text-green-400"
+          ? "border-green/60 bg-green/10 text-green"
           : status === "error"
-            ? "border-red-500/60 bg-red-500/10 text-red-400"
-            : "border-yellow-500/60 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
+            ? "border-red/60 bg-red/10 text-red"
+            : "border-amber/60 bg-amber/10 text-amber hover:bg-amber/20"
       }`}
     >
       {status === "ok"

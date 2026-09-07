@@ -19,19 +19,59 @@ export const graphNodes: GraphNode[] = [
   // Flagship work (center mass) — Ascendion systems
   { id: "pensieve", label: "Pensieve", kind: "work", pos: [0, 0.4, 0] },
   { id: "aava", label: "AAVA Code", kind: "work", pos: [1.3, -0.2, 0.4] },
-  { id: "wireframe-generator", label: "Wireframe Gen", kind: "work", pos: [0.6, -0.9, 0.5] },
-  { id: "prompt-to-react", label: "Prompt→React", kind: "work", pos: [-0.5, 0.6, 0.7] },
-  { id: "execution-engine", label: "Execution Engine", kind: "work", pos: [0.4, 1.1, -0.4] },
+  {
+    id: "wireframe-generator",
+    label: "Wireframe Gen",
+    kind: "work",
+    pos: [0.6, -0.9, 0.5],
+  },
+  {
+    id: "prompt-to-react",
+    label: "Prompt→React",
+    kind: "work",
+    pos: [-0.5, 0.6, 0.7],
+  },
+  {
+    id: "execution-engine",
+    label: "Execution Engine",
+    kind: "work",
+    pos: [0.4, 1.1, -0.4],
+  },
   // Agent frameworks & infra
-  { id: "mindforge", label: "MindForge", kind: "agent", pos: [-1.6, 0.9, -0.3] },
-  { id: "agent-forge", label: "Agent-Forge", kind: "agent", pos: [-2.1, -0.3, 0.5] },
-  { id: "contextos", label: "ContextOS", kind: "agent", pos: [-1.2, -1.1, -0.4] },
+  {
+    id: "mindforge",
+    label: "MindForge",
+    kind: "agent",
+    pos: [-1.6, 0.9, -0.3],
+  },
+  {
+    id: "agent-forge",
+    label: "Agent-Forge",
+    kind: "agent",
+    pos: [-2.1, -0.3, 0.5],
+  },
+  {
+    id: "contextos",
+    label: "ContextOS",
+    kind: "agent",
+    pos: [-1.2, -1.1, -0.4],
+  },
   // Code intelligence & engines
-  { id: "graph-forge", label: "Graph-Forge", kind: "engine", pos: [1.9, 1.0, -0.5] },
+  {
+    id: "graph-forge",
+    label: "Graph-Forge",
+    kind: "engine",
+    pos: [1.9, 1.0, -0.5],
+  },
   { id: "ag-bash", label: "ag-bash", kind: "engine", pos: [2.4, 0.1, 0.6] },
   { id: "grpc", label: "gRPC OPS", kind: "engine", pos: [1.6, -1.2, -0.2] },
   // Tooling & lab
-  { id: "commandvault", label: "CommandVault", kind: "tool", pos: [-0.3, 1.5, 0.5] },
+  {
+    id: "commandvault",
+    label: "CommandVault",
+    kind: "tool",
+    pos: [-0.3, 1.5, 0.5],
+  },
   { id: "nhl", label: "Not-Humans-Lab", kind: "tool", pos: [0.2, -1.6, -0.5] },
   // Production intelligence & publishing tools
   // Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units
@@ -64,8 +104,8 @@ export const graphEdges: GraphEdge[] = [
   ["nhl", "contextos"],
   ["commandvault", "mindforge"],
   // Tombstone and Inkforge are in the same production-tooling cluster
-  ["tombstone", "nhl"],         // Tombstone is part of the Not-Humans-World workspace
-  ["trelix", "graph-forge"],    // trelix is a code-intelligence engine (sibling of Graph-Forge)
+  ["tombstone", "nhl"], // Tombstone is part of the Not-Humans-World workspace
+  ["trelix", "graph-forge"], // trelix is a code-intelligence engine (sibling of Graph-Forge)
   ["inkforge", "commandvault"], // Inkforge generates content that CommandVault indexes
 ];
 
@@ -75,3 +115,26 @@ export const kindColor: Record<GraphNode["kind"], string> = {
   engine: "#4ade80", // green — engines
   tool: "#fbbf24", // amber — tooling
 };
+
+/**
+ * Live-theme counterpart to `kindColor` above. This file is a plain `.ts` module
+ * (no React), so it can't call `useThemeColors()` itself — `kindColor`'s hex
+ * literals therefore stay a build-time/SSR-safe default that never reacts to a
+ * dark/light theme flip. Components that render `kindColor`'s categorical mapping
+ * and CAN call hooks should call `useThemeColors()` themselves and pass the result
+ * here to get the theme-resolved equivalent instead of importing `kindColor`
+ * directly (see hero-graph/scene.tsx, game/build-graph-scene.tsx, game/dossier-card.tsx).
+ */
+export function resolveKindColor(colors: {
+  accent: string;
+  violet: string;
+  green: string;
+  amber: string;
+}): Record<GraphNode["kind"], string> {
+  return {
+    work: colors.accent,
+    agent: colors.violet,
+    engine: colors.green,
+    tool: colors.amber,
+  };
+}

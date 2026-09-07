@@ -244,11 +244,7 @@ const integrity: Command = {
     return {
       lines: fmt.box("// CLAIMS INTEGRITY LEDGER", [
         fmt.row("●", "entries", String(integrityChain.length)),
-        fmt.row(
-          "●",
-          "head",
-          `${head.hash.slice(0, 19)}… (commit ${head.parentCommitSha.slice(0, 7)})`,
-        ),
+        fmt.row("●", "head", `${head.hash.slice(0, 19)}…`),
         fmt.row(
           "●",
           "sealed",
@@ -262,21 +258,22 @@ const integrity: Command = {
         fmt.divider(),
         {
           kind: "out",
-          text: "  This proves the claims below have not been silently edited",
+          text: "  This proves the claims below have not been silently",
         },
         {
           kind: "out",
-          text: "  since their sealing commit. It does NOT prove the numbers",
+          text: "  edited since their sealing commit. It does NOT",
         },
         {
           kind: "out",
-          text: "  were ever accurate — there is no independent issuer, unlike a",
+          text: "  prove the numbers were ever accurate — there is",
         },
+        { kind: "out", text: "  no independent issuer, unlike a verifiable" },
         {
           kind: "out",
-          text: "  verifiable credential. Treat it as a tamper-evidence log, not",
+          text: "  credential. Treat it as a tamper-evidence log,",
         },
-        { kind: "out", text: "  a certification." },
+        { kind: "out", text: "  not a certification." },
       ]),
     };
   },

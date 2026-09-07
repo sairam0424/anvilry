@@ -1,21 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, GitFork, Users, BookOpen } from "lucide-react";
+import { Star, GitFork, Users, BookOpen, GitCommit } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Reveal } from "@/components/ui/reveal";
 import { SkeletonStatCard } from "@/components/ui/skeleton";
+import { pushedAgo } from "@/lib/github";
 
 type GitHubStats = {
   followers: number;
   publicRepos: number;
   totalStars: number;
   totalForks: number;
+  mostRecentPush: string | null;
 };
 
 type FetchState = "loading" | "ready" | "empty";
 
-function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
   return (
     <div className="card-surface flex items-center gap-3 px-4 py-3">
       <span className="text-accent">{icon}</span>
@@ -33,7 +43,7 @@ export function GithubStatsStrip() {
 
   useEffect(() => {
     fetch("/api/github/stats")
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data: GitHubStats | null) => {
         if (data && (data.followers > 0 || data.publicRepos > 0)) {
           setStats(data);
@@ -74,10 +84,41 @@ export function GithubStatsStrip() {
           >
             <Reveal>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <StatCard icon={<Users size={16} />} value={stats!.followers.toLocaleString()} label="GitHub followers" />
-                <StatCard icon={<BookOpen size={16} />} value={stats!.publicRepos.toLocaleString()} label="public repos" />
-                <StatCard icon={<Star size={16} />} value={stats!.totalStars > 0 ? stats!.totalStars.toLocaleString() : "—"} label="stars earned" />
-                <StatCard icon={<GitFork size={16} />} value={stats!.totalForks > 0 ? stats!.totalForks.toLocaleString() : "—"} label="forks" />
+                <StatCard
+                  icon={<Users size={16} />}
+                  value={stats!.followers.toLocaleString()}
+                  label="GitHub followers"
+                />
+                <StatCard
+                  icon={<BookOpen size={16} />}
+                  value={stats!.publicRepos.toLocaleString()}
+                  label="public repos"
+                />
+                <StatCard
+                  icon={<Star size={16} />}
+                  value={
+                    stats!.totalStars > 0
+                      ? stats!.totalStars.toLocaleString()
+                      : "—"
+                  }
+                  label="stars earned"
+                />
+                <StatCard
+                  icon={<GitFork size={16} />}
+                  value={
+                    stats!.totalForks > 0
+                      ? stats!.totalForks.toLocaleString()
+                      : "—"
+                  }
+                  label="forks"
+                />
+                {stats!.mostRecentPush && (
+                  <StatCard
+                    icon={<GitCommit size={16} />}
+                    value={pushedAgo(stats!.mostRecentPush)}
+                    label="last shipped"
+                  />
+                )}
               </div>
             </Reveal>
           </motion.div>

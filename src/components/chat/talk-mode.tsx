@@ -403,17 +403,29 @@ export function TalkMode({
           session's own ask() (one transcript, one mic). Hidden once a turn exists, and
           omitted entirely where STT is unsupported (the text fallback covers that). */}
       {prompts && prompts.length > 0 && messages.length === 0 && (
-        <div className="flex max-w-md flex-wrap items-center justify-center gap-2">
-          {prompts.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => ask(p)}
-              className="rounded-full border border-border bg-bg-surface px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              {p}
-            </button>
-          ))}
+        <div className="relative w-full max-w-md">
+          {/* justify-start, not center: this row's parent (anvil-view.tsx) already centers
+              the whole TalkMode block as a unit, and centering an overflowing flex row makes
+              its start unreachable by scroll in most browsers — a well-known flexbox pitfall. */}
+          <div
+            className="flex gap-2 overflow-x-auto overscroll-x-contain px-1 py-1"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {prompts.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => ask(p)}
+                className="shrink-0 whitespace-nowrap rounded-full border border-border bg-bg-surface px-3 py-1.5 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+          />
         </div>
       )}
 

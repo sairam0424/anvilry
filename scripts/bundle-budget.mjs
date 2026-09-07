@@ -54,14 +54,20 @@ const MIN_ROUTES = 16;
  * focus wins over a ~35KB bundle-size optimization; see the commit that added and then
  * reverted tooltip-radix.tsx for the measured failure.
  *
- * ~3,868 B / 0.3% headroom above today's measurement -- enough to absorb chunk-boundary
- * jitter and cross-OS variance (previously measured: macOS vs ubuntu-latest differed by
- * 1,511 B for a smaller total), not meant to invite further slack accumulation.
+ * Raised from 1,326,000 in the Claims Integrity Ledger PR: the new `integrity` terminal
+ * command (src/components/game/terminal/commands.ts) adds the command itself plus the
+ * committed data/integrity-chain.json re-export to the app-shell bundle reachable from `/`.
+ * Measured before/after on ubuntu-latest (this repo's CI host, not the macOS dev box used to
+ * write this comment -- cross-OS variance here has previously run ~1,500 B for a smaller
+ * total): `/` first-load was 1,324,201 B pre-change, 1,327,565 B post-change (+3,364 B).
+ *
+ * ~4,435 B / 0.3% headroom above that post-change measurement -- enough to absorb
+ * chunk-boundary jitter and cross-OS variance, not meant to invite further slack accumulation.
  *
  * Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,
  * the same discipline next.config.ts:127-149 already uses for the three.js chunk.
  */
-const MAX_FIRST_LOAD_BYTES = 1_326_000;
+const MAX_FIRST_LOAD_BYTES = 1_332_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies

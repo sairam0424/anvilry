@@ -77,6 +77,17 @@ export default function WorkPage() {
             </Reveal>
           ))}
         </div>
+
+        <p className="mt-8 text-sm text-fg-muted">
+          See the reasoning behind these systems in{" "}
+          <Link
+            href="/decisions"
+            className="text-accent underline-offset-4 hover:underline"
+          >
+            Decisions
+          </Link>
+          .
+        </p>
       </Section>
     </main>
   );

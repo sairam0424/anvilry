@@ -47,9 +47,9 @@ Read in full from `src/components/game/terminal/commands.ts:503-508` (registry) 
 
 | Name | Args | What it does | Output shape | Side effects |
 |---|---|---|---|---|
-| `help` | — | Lists visible commands split into "commands" / "navigation" buckets; nav bucket is the fixed list `classic, developer, chat, cd, clear` (`commands.ts:19`) | `fmt.section` + two `fmt.table` blocks + a literal `tip: … try 'secret'.` line (`commands.ts:30`) | none |
+| `help` | — | Lists visible commands split into "commands" / "navigation" buckets; nav bucket is the fixed list `classic, developer, chat, cd, clear` (`commands.ts:19`) | `fmt.section` + two `fmt.table` blocks + a literal `tip: … try 'secret'.` line (`commands.ts:36`) | none |
 | `whoami` | — | Prints `bootBanner()` | ASCII `art` lines + identity `out` lines | none |
-| `neofetch` | — | Spread-copy of `whoami` with a different name/description (`commands.ts:481`) | same as `whoami` | none |
+| `neofetch` | — | Spread-copy of `whoami` with a different name/description (`commands.ts:639`) | same as `whoami` | none |
 | `ls` | `[work\|projects]` | Lists `allWork` and/or `allProjects` slugs + names; no/unknown arg prints both sections (`commands.ts:64-72`) | `fmt.section` + `fmt.table` rows (`●` work, `▸` projects) | none |
 | `cat` | `<slug>` | Resolves a **content slug** → quest node via `questNodes.find(n => n.resolved.item.slug === slug)` then renders `dossierFor(node)` (`commands.ts:101-114`) | `fmt.box("// <NAME>")` with rows, dividers, blurb, facts, tech | none; `err` on miss |
 | `tree` | — | Renders `questGroups()` as an ASCII tree with `├──`/`└──` prefixes (`commands.ts:121-133`) | plain `out` lines starting with `.` | none |
@@ -59,11 +59,11 @@ Read in full from `src/components/game/terminal/commands.ts:503-508` (registry) 
 | `stats` | — | Computed rollup: work count, project count, summed `p.commits` labelled "(snapshot)", distinct tech, skill groups, achievements, résumé variants (`commands.ts:372-383`) | `fmt.statsBox("// PORTFOLIO STATS")` | none |
 | `stack` | — | `skills.flatMap(s => fmt.grouped(s.group, s.items))` | `// GROUP` headers + `▸` bullets | none |
 | `awards` | — | `achievements` as `✓ title  detail` rows | `fmt.section` + `fmt.row` | none |
-| `summary` | — | Identity + work + projects + skills + recognition in one dump, ending with a run-`resume`/`contact` pointer (`commands.ts:269-289`) | mixed `fmt.row`/`table`/`section`/`divider` | none |
+| `summary` | — | Identity + work + projects + skills + recognition in one dump, ending with a run-`resume`/`contact` pointer (`commands.ts:363-397`) | mixed `fmt.row`/`table`/`section`/`divider` | none |
 | `career` | — | Groups everything under the single `profile.company` / `profile.tenure` line; **deliberately prints no per-item years** because content has no per-item dates (`commands.ts:294-296`); shows only `w.metrics[0]` if present | `fmt.row` blocks per work item | none |
 | `about` | — | Always-visible bio door: name/role/company + `profile.subhead`; appends "run 'secret'" only when `hasPersonalContent` (`commands.ts:401-404`) | plain `out` lines | none |
-| `resume` | `[variant]` | No arg → lists variants. Arg → substring match on `label.toLowerCase()`. Visible set is `resumeVariants` when `NEXT_PUBLIC_RESUME_VARIANTS === "true"`, else only `resumeVariants[0]` — flag read **inside** `run()` so `vi.stubEnv` works (`commands.ts:204-206`) | `out` lines; listing pads `label.split(" ")[0]` to 12 chars | `nav: {type:"external", href: match.file}` → `window.open` the PDF |
-| `open` | `<slug\|github\|linkedin\|resume\|résumé>` | Special-cases the three recruiter destinations, else `getWork(slug) ?? getProject(slug)` (`commands.ts:84-89`) | `out` "opening … " line | `github`/`linkedin` → `external`; `resume`/`résumé` → `route` `/resume`; a slug → `route` `target.url` |
+| `resume` | `[variant]` | No arg → lists variants. Arg → substring match on `label.toLowerCase()`. Visible set is `resumeVariants` when `NEXT_PUBLIC_RESUME_VARIANTS === "true"`, else only `resumeVariants[0]` — flag read **inside** `run()` so `vi.stubEnv` works (`commands.ts:288-291`) | `out` lines; listing pads `label.split(" ")[0]` to 12 chars | `nav: {type:"external", href: match.file}` → `window.open` the PDF |
+| `open` | `<slug\|github\|linkedin\|resume\|résumé>` | Special-cases the three recruiter destinations, else `getWork(slug) ?? getProject(slug)` (`commands.ts:92-111`) | `out` "opening … " line | `github`/`linkedin` → `external`; `resume`/`résumé` → `route` `/resume`; a slug → `route` `target.url` |
 | `contact` | — | Boxed identity + email + github + linkedin + a "run 'resume'" pointer | `fmt.box("// CONTACT")` | none |
 | `email` | — | Prints the address as selectable text **first**, then attempts the mailto (`commands.ts:250-255`) | 2 `out` lines | `nav: {type:"external", href:"mailto:<email>"}` |
 | `social` | — | GitHub + LinkedIn URLs | 2 `out` lines | none |
@@ -76,7 +76,7 @@ Read in full from `src/components/game/terminal/commands.ts:503-508` (registry) 
 | `sudo` | `[anything]` | Joke denial echoing the args | 1 `err` line | none |
 | **`secret`** *(hidden)* | — | **Easter egg.** Prints `personal.hobbies / funFacts / currentlyLearning / askMeAbout` as `• ` bullets, then points at `uses` + `now`. Empty-safe: with `!hasPersonalContent` prints "personal notes coming soon" (`commands.ts:414-416`) | plain `out` lines | none |
 | **`personal`** *(hidden)* | — | Alias: `{ ...secret, name: "personal" }` — inherits `hidden: true` and `secret`'s description (`commands.ts:433`) | same as `secret` | none |
-| **`uses`** *(hidden)* | — | **Easter egg.** `personal.uses` groups as `group: items…`; empty-safe fallback points at `stack` (`commands.ts:440-441`) | plain `out` lines | none |
+| **`uses`** *(hidden)* | — | **Easter egg.** `personal.uses` groups as `group: items…`; empty-safe fallback points at `stack` (`commands.ts:573-579`) | plain `out` lines | none |
 | **`now`** *(hidden)* | — | **Easter egg.** `now.focus` bullets + an honest staleness footer computed from `Date.parse(now.updated)` at call time: `> 90` days → "(last updated N days ago — may be stale)", else "(updated …)" (`commands.ts:457-463`). Dark when `!hasNow` | plain `out` lines | none |
 
 Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/\s+/`, lowercases the first token, always prepends the echo line `{kind:"in", text:"$ <trimmed>"}`, and returns `command not found: <name>  (try 'help')` as an `err` for unknown tokens. Empty input returns `{ lines: [] }` with no echo.
@@ -100,7 +100,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 - **Role:** The stateful shell around the pure registry: scrollback, input, ↑/↓ history, prefix completion, theme state, NavAction execution, analytics + discovery unlock.
 - **Exports:** `useTerminal(initialLines?: Line[])` (hook) → `{ lines, input, setInput, run, recall, complete, theme }`.
 - **Reads / depends on:** `next/navigation` `useRouter`, `@/components/view-context` `useView`, `@vercel/analytics` `track`, `@/lib/discovery-store` `unlock`, and the four sibling pure helpers.
-- **Consumed by:** `terminal/terminal.tsx:45`.
+- **Consumed by:** `terminal/terminal.tsx:46` (the `useTerminal(initialLines)` call).
 - **Behaviour notes:** `const greeting: Line[] = bootBanner()` is evaluated **once at module import** (`:15`); `initialLines` (the 404 kernel panic) replaces it only for the first `useState` initializer (`:29`). Analytics + `unlock("terminal-command")` fire for *any* non-empty input **before** the `theme` branch, so cosmetic and cleared commands are still counted (`:41-45`). `theme` is intercepted at `:47` and appends its own `$ theme` / `theme → <next>` pair. NavAction execution: `clear` wipes and returns early (`:58-61`), then `view` → `setView`, `route` → `router.push`, `external` → `window.open(href, "_blank", "noopener,noreferrer")` guarded by `typeof window !== "undefined"` (`:63-67`).
 - **Gotchas / invariants:** History lives in refs (`history`, `histIndex` at `:32-33`), so it is **per-`<Terminal>`-instance** and is lost when the fullscreen overlay mounts its own Terminal. The `theme` interception matches only the exact trimmed lowercase string `"theme"` — `theme green` falls through to the registry's explanation line. `run` closes over `theme`, so its identity changes on every theme cycle (`:69`).
 

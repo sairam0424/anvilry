@@ -165,7 +165,7 @@ the current total with `today: 0` rather than a 429 (`:44-49`).
 | Voice permanently broken in production | The Chrome speech WebSocket host removed from `connect-src`. |
 | Résumé PDF iframe blank | The `frame-ancestors` string replace no longer matching `next.config.ts:41`. |
 | Unbounded AWS spend | Rate limiting fails open in both failure modes; `/api/chat` is the cost-bearing endpoint. |
-| `/admin/*` crawled | `src/app/robots.ts:5-6` is allow-all with **no** `disallow` entries; the protection is the proxy, not robots. |
+| `/admin/*` crawled | `src/app/robots.ts:6-7` is allow-all with **no** `disallow` entries; the protection is the proxy, not robots. |
 
 ### Flags / env that alter it
 
@@ -255,7 +255,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
 | `NEXT_PUBLIC_404_ORB` | `not-found.tsx:34` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:94` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:15-17`) |
-| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:206` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
+| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:289` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:16` (branched `:21`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:8` (**module scope**) | `./scene-physics` vs `./scene` |
@@ -287,7 +287,7 @@ settings (`scroll-flags.tsx:15`).
 | All optional views vanish | Setting `NEXT_PUBLIC_ENABLED_VIEWS=""` (empty ≠ unset, `enabled-views.ts:28`). |
 | A view silently disappears | A typo in the comma list — unknown entries are dropped by the `ALL_OPTIONAL.includes(v)` filter (`:33`). |
 | A section's default flips | Mixing the two polarity conventions: `ARTICLES_ENABLED` is `!== "false"`; every other boolean is `=== "true"`. |
-| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette-content.tsx:325-327`, `commands.ts:204-206`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
+| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette-content.tsx:325-327`, `commands.ts:288-291`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
 | Route renders despite its flag being off | `/stats` and `/search` are not route-gated — only unlinked and un-sitemapped. |
 | Discovery badge never appears | The flag is resolved server-side and threaded as a prop; `providers.tsx:57` is the gate, not the component. |
 
@@ -714,7 +714,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a voice surface | `src/components/chat/voice-surface-mutex.ts:23` (`VoiceSurfaceId`) | Create a store that calls `registerVoiceSurface` at module scope and `claimVoiceSurface` at the top of `open*()`; then route to it from `header-orb-trigger.tsx:69-78`. |
 | Change how the mic opens | `src/components/chat/use-speech-recognition.ts:161-164` | `continuous = false` is load-bearing for the whole half-duplex loop (`use-voice-session.ts:26-31`). `mic-button.tsx:60-63` is the consent gate. |
 | Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:35-45`. The count drift is **fixed**: the page listed 7 while the route registered 9 (`list_all_content` and `get_content_item` were live but undocumented); the page now documents all nine, and `route.ts:22` + `CLAUDE.md:212,303` say 9 too. It is now enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (`:25-40`), so it cannot silently drift again. Never import `personal.ts` (`mcp-tools.test.ts:22`). |
-| Change the MCP not-found contract | `src/lib/mcp-tools.ts:42-48` | `route.ts:13` keys `isError` on the literal `notFound` property; renaming it turns errors into successes. |
+| Change the MCP not-found contract | `src/lib/mcp-tools.ts:66-71` | `route.ts:13` keys `isError` on the literal `notFound` property; renaming it turns errors into successes. |
 | Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-45` | Then the `/admin/telemetry` kind filter and `scripts/replay-trace.mjs:47-55` (hardcoded `KINDS`). `schema.test.ts:150` pins the 7-kind union. |
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:83-106` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
 | Change telemetry retention | `src/lib/telemetry/emit.ts:42` (`SEVEN_DAYS_MS`) | Also `scripts/replay-trace.mjs:64`, which computes its own `since` from the same window. |
@@ -873,7 +873,7 @@ than the original open question.
   (needs a real browser upload); build and typecheck pass but the extraction path was never exercised
   post-bump.
 - **Whether migrating `zod` from `^3.25.76` to v4 breaks the raw-shape schema handoff** to `mcp-handler`'s
-  `registerTool` (`src/lib/mcp-tools.ts:29-36`). Both constraining peers already permit v4
+  `registerTool` (`src/lib/mcp-tools.ts:37-54`). Both constraining peers already permit v4
   (`pnpm-lock.yaml:911`), but nothing in the repo exercises v4.
 - **Whether `eslint.config.mjs`'s `globalIgnores` replaces or merges with `eslint-config-next`'s built-in
   ignores.** The comment at `:8` says "Override default ignores" and the list re-declares the four

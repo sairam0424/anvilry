@@ -14,6 +14,13 @@ pinRank: 4
 featured: true
 order: 5
 excerpt: Self-hosted feature flag intelligence with blast-radius gating, circuit-breaker auto-rollback, causal incident correlation ("What Changed?"), and Knight Capital–style tombstoning. Go + Python + TypeScript polyglot.
+decisions:
+  - title: "Fail-open, async Rekor submission over a blocking write"
+    body: "A third-party outage should never stop a flag mutation, so Rekor submission sits off the critical path and swallows its own failures by design. That same posture let a real bug — AUD-1b — go unnoticed for an unknown stretch: the Rekor client submitted a \"rekord\" entry claiming signature format `x509` but never actually included a signature or public key, so Rekor's server-side validation rejected every entry and the existing fail-open handling swallowed the failure silently. Every `REKOR_ENABLED=true` deployment believed it was writing to the transparency log while, very likely, no entry had ever been successfully recorded."
+  - title: "Duplicated HTTP clients over one shared Go module"
+    body: "The retry/backoff/circuit-breaker logic above is copied byte-for-byte into six-plus services rather than factored out. The cost: any tuning change has to be hand-applied to every copy instead of landing with one version bump."
+  - title: "Audit-log correlation over a real dependency graph for blast-radius \"dependent flags.\""
+    body: "Scoring counts how often two flags changed together in the last 30 days — cheap and always available, but correlation, not causation. Two flags toggled by the same engineer in the same sprint count as dependent; a flag with a genuine hard dependency that hasn't been co-changed recently scores as having none."
 ---
 
 **Tombstone** is a self-hosted production intelligence layer for feature flags at scale — built to answer the question that every SRE asks at 2am but no flag system answers: *which flag caused this incident, and can I roll it back safely right now?*
@@ -45,11 +52,3 @@ The evaluator exposes blast-radius scoring as a standalone query at `GET /api/v1
 Live, the evaluator's Redis-backed circuit breaker watches error rate per environment: 100+ requests in 10 seconds above 5% errors flips the flag off, no human involved. In parallel, the anomaly ensemble — Z-score, Isolation Forest, EWMA — scores metrics at 10s/60s/5m granularities and only fires on a 2-of-3 vote, limiting single-model false positives. Rollout recommendations come from a LinUCB bandit persisting per-arm matrices to Redis, falling back to Thompson Sampling below 50 observations per flag-environment pair.
 
 Every state transition is Merkle-chained (`sha256` of id, event type, actor, prev/new state, timestamp) and submitted asynchronously — fail-open — to a Sigstore Rekor log. A daily 02:00 UTC job rebuilds the causal graph in Redis sorted sets, which backs the dependency-graph view (`GET /api/v1/graph/dependencies`); the "What Changed?" incident timeline is sourced separately, straight from the audit log (`GET /api/v1/audit`).
-
-## Key Decisions
-
-**Fail-open, async Rekor submission over a blocking write.** A third-party outage should never stop a flag mutation, so Rekor submission sits off the critical path and swallows its own failures by design. That same posture let a real bug — AUD-1b — go unnoticed for an unknown stretch: the Rekor client submitted a "rekord" entry claiming signature format `x509` but never actually included a signature or public key, so Rekor's server-side validation rejected every entry and the existing fail-open handling swallowed the failure silently. Every `REKOR_ENABLED=true` deployment believed it was writing to the transparency log while, very likely, no entry had ever been successfully recorded.
-
-**Duplicated HTTP clients over one shared Go module.** The retry/backoff/circuit-breaker logic above is copied byte-for-byte into six-plus services rather than factored out. The cost: any tuning change has to be hand-applied to every copy instead of landing with one version bump.
-
-**Audit-log correlation over a real dependency graph for blast-radius "dependent flags."** Scoring counts how often two flags changed together in the last 30 days — cheap and always available, but correlation, not causation. Two flags toggled by the same engineer in the same sprint count as dependent; a flag with a genuine hard dependency that hasn't been co-changed recently scores as having none.

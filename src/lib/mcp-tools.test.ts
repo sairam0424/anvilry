@@ -10,6 +10,7 @@ import {
   getWorkData,
   searchExperienceData,
   getResumeVariantData,
+  listDecisionsData,
 } from "./mcp-tools";
 import { allProjects, allWork } from "@/lib/content";
 
@@ -28,7 +29,13 @@ describe("mcp tools", () => {
     expect(d.achievements.length).toBeGreaterThan(0);
     // Professional-only: no personal fields exposed.
     const json = JSON.stringify(d).toLowerCase();
-    for (const leak of ["hobbies", "funfacts", "currentlylearning", "askmeabout", "now"]) {
+    for (const leak of [
+      "hobbies",
+      "funfacts",
+      "currentlylearning",
+      "askmeabout",
+      "now",
+    ]) {
       expect(json.includes(`"${leak}"`)).toBe(false);
     }
   });
@@ -41,7 +48,10 @@ describe("mcp tools", () => {
   it("get_project / get_work resolve a real slug and fail closed on a fake one", () => {
     const realP = allProjects[0].slug;
     expect((getProjectData(realP) as { slug: string }).slug).toBe(realP);
-    const badP = getProjectData("totally-fake") as { notFound?: true; valid?: string[] };
+    const badP = getProjectData("totally-fake") as {
+      notFound?: true;
+      valid?: string[];
+    };
     expect(badP.notFound).toBe(true);
     expect(badP.valid).toContain(realP);
 
@@ -54,7 +64,9 @@ describe("mcp tools", () => {
     const hit = searchExperienceData("python");
     expect(hit.matches.length + hit.skills.length).toBeGreaterThan(0);
     for (const m of hit.matches) {
-      const exists = allWork.some((w) => w.slug === m.slug) || allProjects.some((p) => p.slug === m.slug);
+      const exists =
+        allWork.some((w) => w.slug === m.slug) ||
+        allProjects.some((p) => p.slug === m.slug);
       expect(exists).toBe(true);
     }
     const none = searchExperienceData("zzzznotarealtermzzzz");
@@ -67,7 +79,23 @@ describe("mcp tools", () => {
       const v = getResumeVariantData(role) as { url?: string; notFound?: true };
       expect(v.notFound, `role ${role} should resolve`).toBeUndefined();
       const path = (v.url ?? "").replace("https://anvilry.vercel.app", "");
-      expect(existsSync(join(process.cwd(), "public", path.replace(/^\//, "")))).toBe(true);
+      expect(
+        existsSync(join(process.cwd(), "public", path.replace(/^\//, ""))),
+      ).toBe(true);
     }
+  });
+
+  it("list_decisions returns real ledger entries and supports an optional tag filter", () => {
+    const all = listDecisionsData();
+    expect(all.length).toBeGreaterThan(0);
+    for (const e of all) {
+      expect(e.title).toBeTruthy();
+      expect(e.body).toBeTruthy();
+      expect(e.url).toContain("https://anvilry.vercel.app/");
+    }
+    // A tag nothing carries yet returns empty, not an error (tags are still unpopulated
+    // per the spec's YAGNI deferral — this proves the filter path is safe either way).
+    const filtered = listDecisionsData("nonexistent-tag");
+    expect(filtered).toEqual([]);
   });
 });

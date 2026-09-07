@@ -430,7 +430,7 @@ failure, and no runtime exception.
 | **No longer a silent-desync risk — fixed on this branch.** `global-error.tsx` (and 8 other metadata-route files that render via `ImageResponse`/`generateMetadata`/an error boundary with no access to the CSS cascade) used to duplicate the `globals.css` palette as separately hand-copied inline hex literals. All 9 now import one shared `METADATA_COLORS` constant instead, mirroring the dark-mode `:root` tokens 1:1 by name — a future palette change has one place to update instead of dozens of scattered literals | `src/lib/metadata-colors.ts` vs `src/app/globals.css:8-36`; consumers: `src/app/global-error.tsx`, `icon.tsx`, `apple-icon.tsx`, `manifest.ts`, `opengraph-image.tsx` + 4× `[slug]/opengraph-image.tsx` |
 | `dossier-card.tsx` renders two links to the same href but only the second calls `unlock("dossier-open")` — clicking the title does not record the discovery | `src/components/game/dossier-card.tsx:33` vs `:80-82` |
 | `developer-rail.tsx` builds its LinkedIn label as `linkedin.com/in/{profile.githubUser}`, reusing the GitHub username rather than reading `profile.links.linkedin` | `src/components/game/developer-rail.tsx:77` |
-| `developer-rail.tsx` always lists all five résumé PDFs, unlike the `resume` command which is gated by `NEXT_PUBLIC_RESUME_VARIANTS` | `src/components/game/developer-rail.tsx:35-47` vs `src/components/game/terminal/commands.ts:204-206` |
+| `developer-rail.tsx` always lists all five résumé PDFs, unlike the `resume` command which is gated by `NEXT_PUBLIC_RESUME_VARIANTS` | `src/components/game/developer-rail.tsx:35-47` vs `src/components/game/terminal/commands.ts:288-291` |
 
 ### Data-shape and sorting silences
 

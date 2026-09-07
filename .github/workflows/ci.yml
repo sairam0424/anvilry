@@ -65,6 +65,64 @@ jobs:
       - name: Codebase index citations
         run: node scripts/check-index-citations.mjs
 
+      # Verifies data/integrity-chain.json's hash chain is intact AND that
+      # profile.ts's current impactMetrics/achievements still match what was
+      # last sealed. On drift: `npx tsx scripts/seal-claims.ts --write` locally,
+      # then commit the updated chain file.
+      - name: Claims integrity chain
+        run: npx tsx scripts/seal-claims.ts
+
+  claims-integrity-autocommit:
+    name: Claims integrity auto-commit (opt-in)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # OFF BY DEFAULT. Local `npx tsx scripts/seal-claims.ts --write` is the
+    # always-available, always-safe way to seal a new entry — this job exists
+    # only so a maintainer can explicitly opt into CI doing it automatically,
+    # without that becoming the default behavior. To enable: set the repo
+    # variable SEAL_CLAIMS_AUTO_COMMIT to "true" (Settings -> Secrets and
+    # variables -> Actions -> Variables). Gated on `ci` passing first, so a
+    # broken build never gets an auto-sealed entry.
+    needs: ci
+    if: vars.SEAL_CLAIMS_AUTO_COMMIT == 'true'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+        with:
+          version: 10
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Seal a new entry if claims changed
+        run: npx tsx scripts/seal-claims.ts --write
+
+      # [skip ci] avoids this commit re-triggering the whole workflow (which
+      # would otherwise loop: push -> CI runs -> this job commits -> that
+      # commit triggers CI again -> ...).
+      - name: Commit the updated chain, if changed
+        run: |
+          if git diff --quiet -- data/integrity-chain.json; then
+            echo "No change to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/integrity-chain.json
+          git commit -m "chore: seal claims integrity chain [skip ci]"
+          git push
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

@@ -255,7 +255,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
 | `NEXT_PUBLIC_404_ORB` | `not-found.tsx:34` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:94` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:15-17`) |
-| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:206` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
+| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:289` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:16` (branched `:21`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:8` (**module scope**) | `./scene-physics` vs `./scene` |
@@ -287,7 +287,7 @@ settings (`scroll-flags.tsx:15`).
 | All optional views vanish | Setting `NEXT_PUBLIC_ENABLED_VIEWS=""` (empty ≠ unset, `enabled-views.ts:28`). |
 | A view silently disappears | A typo in the comma list — unknown entries are dropped by the `ALL_OPTIONAL.includes(v)` filter (`:33`). |
 | A section's default flips | Mixing the two polarity conventions: `ARTICLES_ENABLED` is `!== "false"`; every other boolean is `=== "true"`. |
-| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette-content.tsx:325-327`, `commands.ts:204-206`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
+| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:23-24`, `home/resume-view.tsx:41-43`, `command-palette-content.tsx:325-327`, `commands.ts:288-291`, `hero.tsx:15-16`, `hero-avatar/index.tsx:49`. |
 | Route renders despite its flag being off | `/stats` and `/search` are not route-gated — only unlinked and un-sitemapped. |
 | Discovery badge never appears | The flag is resolved server-side and threaded as a prop; `providers.tsx:57` is the gate, not the component. |
 

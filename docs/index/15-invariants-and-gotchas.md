@@ -452,7 +452,7 @@ failure, and no runtime exception.
 | `getServerSnapshot` in `discovery-store.ts` returns a fresh `new Set()` on every call, so the server snapshot is never referentially stable; `getDiscoveryCount()` reads module state **without** subscribing, so a component using only it never re-renders on unlock | `src/lib/discovery-store.ts:63`, `:86-88` |
 | `clearHighlight()` must be used rather than nulling the module variable, otherwise the pending timer leaks and a stale timeout nulls a newer highlight | `src/lib/highlight-store.ts:40-47` |
 | `inkTransitionRef` is a module-level mutable export assigned in an effect with **no** dependency array, so it re-assigns on every render | `src/components/ui/ink-transition.tsx:213-216` |
-| `github-stats-strip.tsx`'s `stats!` non-null assertions are only safe because `fetchState === "ready"` implies `stats` was set in the same `.then` | `src/components/github-stats-strip.tsx:77-80` |
+| `github-stats-strip.tsx`'s `stats!` non-null assertions are only safe because `fetchState === "ready"` implies `stats` was set in the same `.then` | `src/components/github-stats-strip.tsx:90-119` |
 | `buildColumns()` in `SkillTree` runs unmemoized on every render | `src/components/game/skill-tree.tsx:416` |
 
 ### Rendering, styling and a11y silences
@@ -504,7 +504,7 @@ failure, and no runtime exception.
 | The eval cron calls the **live** `/api/chat`, so it consumes the same per-IP rate limit and real Bedrock spend (~12 calls ≈ $0.012/run) | `src/app/api/cron/eval/route.ts:16`, `:113`, `:117` |
 | `/api/visit` returns the current total with `today: 0` on a limiter denial rather than a 429, so the badge never breaks — and `total === 0` is treated as "Redis was down" and never cached | `src/app/api/visit/route.ts:54-59`; `src/components/site-footer.tsx:41-53`, `:67` |
 | The `.md` passthrough routes read the **filesystem at request time**, so `content/` must ship in the deployed bundle; they use Velite only for the existence check. Two parallel implementations serve the same URLs | `src/app/work/[slug].md/route.ts:6-9`; `src/app/api/md/work/[slug]/route.ts:11-32`; rewrites `next.config.ts:220-228` |
-| `robots.txt` has **no** `disallow` entries — `/admin/*` is not excluded from crawling, only protected by the proxy | `src/app/robots.ts:5-6` |
+| `robots.txt` has **no** `disallow` entries — `/admin/*` is not excluded from crawling, only protected by the proxy | `src/app/robots.ts:6-7` |
 | The RSS feed ignores `NOTES_ENABLED`/`ARTICLES_ENABLED`, unlike `sitemap.ts` | `src/app/feed.xml/route.ts:5` vs `src/app/sitemap.ts:41`, `:62` |
 | `articles/[slug]/generateStaticParams` filters guaranteed-404 slugs while the sibling `opengraph-image.tsx` maps **all** slugs unfiltered — the disagreement is intentional, so OG images exist for slugs whose pages redirect or 404 | `src/app/articles/[slug]/page.tsx:39-45` vs `src/app/articles/[slug]/opengraph-image.tsx:28-30` |
 | `sitemap.ts` never emits `lastModified` on any entry | `src/app/sitemap.ts` |

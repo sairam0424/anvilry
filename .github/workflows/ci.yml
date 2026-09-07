@@ -81,7 +81,9 @@ jobs:
     # only so a maintainer can explicitly opt into CI doing it automatically,
     # without that becoming the default behavior. To enable: set the repo
     # variable SEAL_CLAIMS_AUTO_COMMIT to "true" (Settings -> Secrets and
-    # variables -> Actions -> Variables).
+    # variables -> Actions -> Variables). Gated on `ci` passing first, so a
+    # broken build never gets an auto-sealed entry.
+    needs: ci
     if: vars.SEAL_CLAIMS_AUTO_COMMIT == 'true'
     permissions:
       contents: write

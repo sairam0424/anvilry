@@ -67,11 +67,11 @@ export function GithubStatsStrip() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5"
             role="status"
             aria-label="Loading GitHub statistics"
           >
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <SkeletonStatCard key={i} />
             ))}
             <span className="sr-only">Loading GitHub statistics...</span>
@@ -84,7 +84,11 @@ export function GithubStatsStrip() {
             transition={{ duration: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
           >
             <Reveal>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {/* 5 cards (4 always-present + last-shipped once mostRecentPush resolves) — 2
+                  or 4 columns orphan a lone 5th card on its own row (same pitfall hero.tsx's
+                  impactMetrics grid comment already documents for 3 items). 1/3/5 all divide
+                  5 without a lone trailing item. */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                 <StatCard
                   icon={<Users size={16} />}
                   value={stats!.followers.toLocaleString()}

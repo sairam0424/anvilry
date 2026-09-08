@@ -115,7 +115,10 @@ export function ChatView() {
           // that same scrolling box — pinning requires the fade to be a SIBLING of the
           // scrollable <header>, inside this non-scrolling `relative` wrapper instead.
           <div className="relative min-h-0 shrink">
-            <header className="h-full overflow-y-auto">
+            <header
+              className="h-full overflow-y-auto scrollbar-hide"
+              tabIndex={0}
+            >
               <h1 className="text-2xl font-semibold tracking-tight">
                 Ask me anything about {profile.name.split(" ")[0]}&apos;s work
               </h1>
@@ -164,10 +167,11 @@ export function ChatView() {
         <div className="mt-4 shrink-0">
           <div className="relative">
             <div
-              className="flex gap-2 overflow-x-auto overscroll-x-contain"
+              className="flex gap-2 overflow-x-auto overscroll-x-contain scrollbar-hide"
               style={{ WebkitOverflowScrolling: "touch" }}
               role="group"
               aria-label="Suggested questions"
+              tabIndex={0}
             >
               {RECRUITER_CHIPS.map((c) => (
                 <button
@@ -191,10 +195,11 @@ export function ChatView() {
           {empty && (
             <div className="relative mt-2">
               <div
-                className="flex gap-2 overflow-x-auto overscroll-x-contain"
+                className="flex gap-2 overflow-x-auto overscroll-x-contain scrollbar-hide"
                 style={{ WebkitOverflowScrolling: "touch" }}
                 role="group"
                 aria-label="More suggested questions"
+                tabIndex={0}
               >
                 {STARTER_CHIPS.map((c) => (
                   <button

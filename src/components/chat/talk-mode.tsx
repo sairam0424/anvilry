@@ -408,8 +408,11 @@ export function TalkMode({
               the whole TalkMode block as a unit, and centering an overflowing flex row makes
               its start unreachable by scroll in most browsers — a well-known flexbox pitfall. */}
           <div
-            className="flex gap-2 overflow-x-auto overscroll-x-contain px-1 py-1"
+            className="flex gap-2 overflow-x-auto overscroll-x-contain scrollbar-hide px-1 py-1"
             style={{ WebkitOverflowScrolling: "touch" }}
+            role="group"
+            aria-label="Example prompts"
+            tabIndex={0}
           >
             {prompts.map((p) => (
               <button

@@ -122,6 +122,14 @@ export function SiteFooter() {
           <p className="mt-1 text-xs text-fg-subtle">
             {profile.role} · {profile.location}
           </p>
+          <p className="mt-2 text-xs">
+            <Link
+              href="/decisions"
+              className="text-fg-subtle hover:text-accent"
+            >
+              Decisions &amp; rationale →
+            </Link>
+          </p>
           {showVisitorCounter && (
             <p className="mt-2">
               <VisitorBadge />

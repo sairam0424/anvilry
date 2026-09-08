@@ -7,6 +7,15 @@ const themeGroup = s.enum([
   "Tooling & Lab",
 ]);
 
+/* One architecture-decision narrative, migrated verbatim from a project's
+ * former "## Key Decisions" MDX section. See docs/superpowers/specs/
+ * 2026-09-07-feature-phase-decisions-integrity-design.md. */
+const decision = s.object({
+  title: s.string(),
+  body: s.string(),
+  tags: s.array(s.string()).default([]),
+});
+
 /** Open-source / portfolio projects — architecture + tech only, no fabricated adoption. */
 const projects = defineCollection({
   name: "Project",
@@ -28,6 +37,7 @@ const projects = defineCollection({
       // /notes/[slug] when the article has a linkedNote (NOTES_ENABLED-gated, same
       // rule as ArticleGroupCard), else to the article's own page/external URL.
       relatedArticles: s.array(s.string()).optional(),
+      decisions: s.array(decision).default([]),
       tech: s.array(s.string()),
       pinned: s.boolean().default(false),
       pinRank: s.number().optional(),

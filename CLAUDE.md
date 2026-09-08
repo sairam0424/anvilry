@@ -209,7 +209,7 @@ The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). 
 
 `/api/mcp/[transport]` exposes the portfolio as a read-only MCP server (HTTP Streamable, legacy SSE disabled). Public endpoint: `https://anvilry.vercel.app/api/mcp/mcp`.
 
-**9 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):
+**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):
 
 | Tool | Description |
 |---|---|
@@ -222,6 +222,7 @@ The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). 
 | `get_resume_variant` | The canonical résumé PDF URL (`master`) |
 | `list_all_content` | Flat list of every work item, project, article and note — slug, name, summary, URL |
 | `get_content_item` | One content item by `type` (`work \| project \| article \| note`) and slug |
+| `list_decisions` | Architecture-decision entries across all projects/work, optionally filtered by tag |
 
 `src/app/mcp/page.tsx:35-45` renders the public `TOOLS` table — the documentation contract for
 this server. It is hand-maintained, but **enforced**: `src/app/mcp/tools-documented.test.ts`
@@ -300,7 +301,7 @@ Key flags: `NEXT_PUBLIC_DISCOVERY_BADGES`, `NEXT_PUBLIC_OPEN_TO_WORK`, `NEXT_PUB
 | `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |
 | `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags; `:5-7` wraps the export in `@next/bundle-analyzer` — inert unless `pnpm analyze` (`ANALYZE=true` + `--webpack`), do not delete as dead code |
 | `src/app/api/chat/route.ts` | LLM streaming endpoint |
-| `src/app/api/mcp/[transport]/route.ts` | MCP server (9 read-only tools) |
+| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |
 | `src/instrumentation.ts` | Next.js instrumentation hook (config snapshot on cold start) |
 | `src/instrumentation-client.ts` | Browser error beaconing + web-vitals reporting |
 

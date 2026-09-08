@@ -487,3 +487,15 @@ body::before {
   }
 }
 
+/* Hides scrollbar chrome (track + thumb) while keeping the element fully
+   scrollable via wheel/touch/keyboard. Reserved for small, decorative
+   horizontal chip rails that already carry a fade-edge affordance — never
+   apply this to a primary content surface (message lists, modals, tables,
+   code blocks), where the scrollbar is a legitimate navigational cue. */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+

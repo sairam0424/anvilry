@@ -12,6 +12,13 @@ pinned: false
 featured: false
 order: 7
 excerpt: Indexes 350+ slash commands, skills, agents, and plugins across Claude Code, Cursor, Copilot, Windsurf, and Aider into one searchable vault.
+decisions:
+  - title: "Two SQLite engines instead of one"
+    body: "better-sqlite3 gives native speed for the CLI; sql.js gives a pure-WASM fallback for the extension, which can't ship a native module across Electron's ABI. The cost is real — two adapters must stay behaviorally identical and both get tested — paid so the extension isn't a degraded second product."
+  - title: "A fixed 500ms debounce, not per-event parsing"
+    body: "Every save waits up to half a second before the vault reflects it, even an isolated change — a latency floor accepted so bulk operations like a branch checkout don't trigger a parse storm."
+  - title: "500-character truncation in the two fast search tiers, full content in the slow one"
+    body: "Fuse.js and MiniSearch cap indexed content at 500 characters; FTS5 stores everything, after an earlier 2000-char cap on that tier was explicitly removed. The fast tiers trade match depth for speed — a match buried deep in a long file only ever surfaces through FTS5."
 ---
 
 **CommandVault** indexes the **350+ slash commands, skills, agents, plugins, rules, and hooks** scattered across Claude Code, Cursor, Copilot, Windsurf, and Aider into a single searchable vault.
@@ -40,10 +47,3 @@ Persistence runs through a shared `DatabaseAdapter` interface: **better-sqlite3*
 6. The CLI and VS Code extension both read this through core's public API — one prints to the terminal, the other renders it in a TreeView sidebar and stats webview.
 7. `vault sync` and `vault import <url>` share the same `importFromUrl()` path, where outbound URLs pass through `validateUrl()` — it blocks private/internal hostnames and re-checks IPv4-mapped-IPv6 addresses after stripping the mapping, closing a bypass a naive hostname check would miss. `vault registry`'s own remote fetch is a separate code path that doesn't go through this guard.
 
-## Key Decisions
-
-**Two SQLite engines instead of one.** better-sqlite3 gives native speed for the CLI; sql.js gives a pure-WASM fallback for the extension, which can't ship a native module across Electron's ABI. The cost is real — two adapters must stay behaviorally identical and both get tested — paid so the extension isn't a degraded second product.
-
-**A fixed 500ms debounce, not per-event parsing.** Every save waits up to half a second before the vault reflects it, even an isolated change — a latency floor accepted so bulk operations like a branch checkout don't trigger a parse storm.
-
-**500-character truncation in the two fast search tiers, full content in the slow one.** Fuse.js and MiniSearch cap indexed content at 500 characters; FTS5 stores everything, after an earlier 2000-char cap on that tier was explicitly removed. The fast tiers trade match depth for speed — a match buried deep in a long file only ever surfaces through FTS5.

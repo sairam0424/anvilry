@@ -14,6 +14,13 @@ pinRank: 5
 featured: true
 order: 6
 excerpt: Zero-infra code intelligence — Tree-sitter AST indexing + 7-leg RRF retrieval (BM25 + vector + call-graph + SPLADE + multi-granularity) + knowledge graph (Louvain community detection, Pyvis). MCP server. 1,467 unit tests. Works offline with no API key.
+decisions:
+  - title: "7-leg fan-out over a simpler pipeline, despite the cost"
+    body: "No single tool combines all 7 legs, and RRF rewards agreement across them — but a full fan-out costs 50-500ms per query versus under 1ms for a tier-1 hit. The 3-tier planner exists to keep most queries out of that expensive path."
+  - title: "\"Beast-mode\" features (FLARE, HyDE, multi-query expansion) ship opt-in"
+    body: "Each is a real LLM cost — stacking HyDE and multi-query expansion runs N+2 chat calls (4 at default N=2). Docs recommend one flag at a time, not all on a slow backend."
+  - title: "Call-graph depth caps at 1 hop for most single-intent queries, with one deliberate exception"
+    body: "The traversal code warns against depth=2 for tier 2 to keep latency predictable, but `feature_flow` overrides that guidance — a \"how does X flow\" question needs the extra hop to be useful at all."
 ---
 
 **trelix** is a production-ready code indexing and retrieval engine that transforms any repository into a queryable knowledge base. Where grep finds exact strings, trelix finds *relevant* code — via a hybrid retrieval pipeline, call-graph traversal, and LLM synthesis that answers "how does auth work?" with actual code paths, not a keyword hit list.
@@ -47,11 +54,5 @@ trelix runs as a single Python service around one SQLite file, in four layers:
 5. Tiers 2 and 3 trigger up to 7 legs of fan-out (fewer by default — the extra legs are config-gated), fused by RRF and deduplicated on file path + symbol ID.
 6. Call-graph expansion walks 1 hop for most single-intent types — `feature_flow` is the exception, walking 2 hops despite the traversal code's own warning against it.
 7. Oversized results synthesize in batches via GraphRAG map-reduce; the LLM answers from real code paths, not a keyword list.
-
-## Key Decisions
-
-- **7-leg fan-out over a simpler pipeline, despite the cost.** No single tool combines all 7 legs, and RRF rewards agreement across them — but a full fan-out costs 50-500ms per query versus under 1ms for a tier-1 hit. The 3-tier planner exists to keep most queries out of that expensive path.
-- **"Beast-mode" features (FLARE, HyDE, multi-query expansion) ship opt-in.** Each is a real LLM cost — stacking HyDE and multi-query expansion runs N+2 chat calls (4 at default N=2). Docs recommend one flag at a time, not all on a slow backend.
-- **Call-graph depth caps at 1 hop for most single-intent queries, with one deliberate exception.** The traversal code warns against depth=2 for tier 2 to keep latency predictable, but `feature_flow` overrides that guidance — a "how does X flow" question needs the extra hop to be useful at all.
 
 A note on the numbers above: the frontmatter's 1,467 unit tests and the pull-quote's 929 unit + 16 integration disagree, and neither matches the repo today. 1,467 is CHANGELOG.md's exact v2.4.0 figure; 929/16 appears nowhere in the CHANGELOG, git history, or CI config. Live against HEAD (v3.2.5): **4,353 unit tests, 81 integration**, up from 1,643 at v2.9.0. The coverage gate moved too, from 75% (v1.0.0) to 79% today.

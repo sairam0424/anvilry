@@ -514,7 +514,7 @@ script was added at `package.json:12` — see the `package.json` gotchas below.)
 - **Reads / depends on:** `@next/bundle-analyzer` via `createRequire(import.meta.url)` (`:4-7`, because the file
   is ESM), dynamic `import("velite")` (`:15`), env `ANALYZE`; writes env `NEXT_PUBLIC_BUILD_YEAR` and
   `VELITE_STARTED`. The analyzer wrapper and the `ANALYZE` read both **survive** the deletion of
-  `bundle-analysis.yml` — the dependency is still a devDependency (`package.json:58`) and `:232` still wraps the
+  `bundle-analysis.yml` — the dependency is still a devDependency (`package.json:60`) and `:232` still wraps the
   config — but they are now reachable only from the local `pnpm analyze` script, and only because that script
   also passes `--webpack`. On every other build the wrapper is a pass-through.
 - **Consumed by:** the Next.js CLI (`next dev`, `next build`). Not imported by any `src/` module.

@@ -584,7 +584,7 @@ failure table. And like the index-citation check it is a **merge** gate, not a *
 `pnpm build` alone, so a bundle regression fails the PR rather than blocking a production deploy.
 
 **`@next/bundle-analyzer` survives as a local attribution tool.** It is still a devDependency
-(`package.json:58`) and `next.config.ts:5-7` still wraps the config with it, but the only thing that sets
+(`package.json:60`) and `next.config.ts:5-7` still wraps the config with it, but the only thing that sets
 `ANALYZE` is now the `pnpm analyze` script — `package.json:12`, which is
 `velite --clean && ANALYZE=true next build --webpack`, and the explicit `--webpack` is what makes the
 plugin do anything at all; it writes `.next/analyze/{client,edge,nodejs}.html`.

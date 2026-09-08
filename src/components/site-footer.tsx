@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, Rss } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { useView } from "@/components/view-context";
 
@@ -175,6 +182,42 @@ export function SiteFooter() {
               <Linkedin size={18} />
             </a>
             <a
+              href={profile.links.npm}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="npm"
+            >
+              <Npm size={18} />
+            </a>
+            <a
+              href={profile.links.pypi}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="PyPI"
+            >
+              <Pypi size={18} />
+            </a>
+            <a
+              href={profile.links.devto}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="Dev.to"
+            >
+              <Devto size={18} />
+            </a>
+            <a
+              href={profile.links.substack}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent"
+              aria-label="Substack"
+            >
+              <Substack size={18} />
+            </a>
+            <a
               href={`mailto:${profile.email}`}
               className="hover:text-accent"
               aria-label="Email"
@@ -196,14 +239,6 @@ export function SiteFooter() {
           © {process.env.NEXT_PUBLIC_BUILD_YEAR ?? "2026"} Sairam Ugge
         </span>
         <div className="flex items-center gap-4">
-          <a
-            href={profile.substackUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="transition-colors hover:text-accent"
-          >
-            Subscribe
-          </a>
           <a
             href="/feed.xml"
             className="inline-flex items-center gap-1 transition-colors hover:text-accent"

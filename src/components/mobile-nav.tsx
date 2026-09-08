@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -147,6 +154,54 @@ export function MobileNav({ links }: { links: NavLink[] }) {
                     className="rounded-lg p-3 text-fg-muted transition-colors hover:bg-bg-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
                     <Linkedin size={20} />
+                  </a>
+                </Tooltip>
+                <Tooltip content="npm">
+                  <a
+                    href={profile.links.npm}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="npm"
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg p-3 text-fg-muted transition-colors hover:bg-bg-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <Npm size={20} />
+                  </a>
+                </Tooltip>
+                <Tooltip content="PyPI">
+                  <a
+                    href={profile.links.pypi}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="PyPI"
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg p-3 text-fg-muted transition-colors hover:bg-bg-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <Pypi size={20} />
+                  </a>
+                </Tooltip>
+                <Tooltip content="Dev.to">
+                  <a
+                    href={profile.links.devto}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Dev.to"
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg p-3 text-fg-muted transition-colors hover:bg-bg-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <Devto size={20} />
+                  </a>
+                </Tooltip>
+                <Tooltip content="Substack">
+                  <a
+                    href={profile.links.substack}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Substack"
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg p-3 text-fg-muted transition-colors hover:bg-bg-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <Substack size={20} />
                   </a>
                 </Tooltip>
                 {/* ThemeToggle's own button (theme-toggle.tsx) isn't padded — it's shared

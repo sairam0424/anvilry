@@ -79,7 +79,7 @@ export function buildCorpus(): string {
   return `# ${profile.name} — ${profile.role} @ ${profile.company} (${profile.tenure})
 Location: ${profile.location}
 Summary: ${profile.headline} ${profile.subhead}
-Links: GitHub ${profile.links.github} · LinkedIn ${profile.links.linkedin}
+Links: GitHub ${profile.links.github} · LinkedIn ${profile.links.linkedin} · npm ${profile.links.npm} · PyPI ${profile.links.pypi} · Dev.to ${profile.links.devto} · Substack ${profile.links.substack}
 Contact: ${profile.email}
 
 ## Production Work (at Ascendion)

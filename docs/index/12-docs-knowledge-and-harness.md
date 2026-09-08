@@ -337,10 +337,11 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    "**7 tools** (all sourced from `src/lib/mcp-tools.ts`)" with a seven-row table, and to repeat "MCP server
    (7 read-only tools)" in the Key Files table. `src/app/api/mcp/[transport]/route.ts` calls
    `server.registerTool` **nine** times — the seven plus `list_all_content` (`:98-99`) and
-   `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions. Current state: the
-   prose says **9 tools** with all nine tabled (`CLAUDE.md:212`), the Key Files row says "MCP server (9
-   read-only tools)" (`CLAUDE.md:303`), the route's own docblock says "9 read-only tools"
-   (`src/app/api/mcp/[transport]/route.ts:22`), and the public `/mcp` page tables all nine
+   `get_content_item` (`:108-109`); `src/lib/mcp-tools.ts` exports nine data functions at that point — a
+   tenth, `list_decisions`, was added later. Current state: the
+   prose says **10 tools** with all ten tabled (`CLAUDE.md:212`), the Key Files row says "MCP server (10
+   read-only tools)" (`CLAUDE.md:304`), the route's own docblock says "10 read-only tools"
+   (`src/app/api/mcp/[transport]/route.ts:12`), and the public `/mcp` page tables all ten
    (`src/app/mcp/page.tsx:35-45`). **Guard:** `src/app/mcp/tools-documented.test.ts` asserts set equality
    between the page's `TOOLS` rows and the route's `registerTool` calls (`:92`, with the missing names in the
    failure message at `:85`); `vitest run` is chained into `pnpm build`, so adding a tool without

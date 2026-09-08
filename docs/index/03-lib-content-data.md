@@ -119,13 +119,14 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 
 ## MCP tool inventory
 
-`src/lib/mcp-tools.ts` is transport-agnostic; the wiring is `src/app/api/mcp/[transport]/route.ts`. **The route registers 9 tools.**
+`src/lib/mcp-tools.ts` is transport-agnostic; the wiring is `src/app/api/mcp/[transport]/route.ts`. **The route registers 10 tools.**
 
-**The "7 tools" drift is fixed on this branch — do not go looking for it.** `list_all_content` and `get_content_item` were added after the original seven (`route.ts` registrations after `get_resume_variant`), and the prose count lagged behind in the docs, the route docblock and the public tools table. Every one of those now says 9 — and the two sites this index used to cite were each wrong in a second way as well:
+**The count has drifted twice — do not go looking for either drift, both are fixed.** `list_all_content` and `get_content_item` were added after the original seven (`route.ts` registrations after `get_resume_variant`), taking it to 9; `list_decisions` later took it to 10. Both times the prose count lagged behind in the docs, the route docblock and the public tools table before catching up:
 
-- `CLAUDE.md` says **9 tools** and the table under it carries all nine rows (`CLAUDE.md:212-224` — the claim at :202, the rows at :206-214), and its Key Files row says "MCP server (9 read-only tools)" (`CLAUDE.md:303`). An earlier reading of this index cited line 181 of the pre-v3.5.0 `CLAUDE.md`; in the current file that line is blank, because the v3.5.0 rewrite shifted every `CLAUDE.md` line number.
-- the `mcp-tools.ts` docblock (`mcp-tools.ts:5-13`) **never carried a tool count at all** — it states the single-source and professional-only boundaries only, so there is nothing there to drift. The count that *was* stale lived in the route docblock, which now reads "9 read-only tools" (`route.ts:22`).
-- the public documentation table `src/app/mcp/page.tsx:35-45` lists all nine, and is now enforced rather than trusted: `src/app/mcp/tools-documented.test.ts` asserts the documented set and the route's `registerTool` calls are the same set — documents-nothing-extra (`:76`), documents-everything (`:81`), identical counts (`:90`) — plus a regex-drop guard so an extraction failure cannot make the comparison vacuous (`:61`). `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build.
+- `CLAUDE.md` says **10 tools** and the table under it carries all ten rows (`CLAUDE.md:212-225` — the claim at :212, the rows at :216-225), and its Key Files row says "MCP server (10 read-only tools)" (`CLAUDE.md:304`).
+- the `mcp-tools.ts` docblock (`mcp-tools.ts:5-13`) **never carried a tool count at all** — it states the single-source and professional-only boundaries only, so there is nothing there to drift. The count that *was* stale lived in the route docblock, which now reads "10 read-only tools" (`route.ts:12`).
+- the public documentation table `src/app/mcp/page.tsx:35-45` lists all ten, and is now enforced rather than trusted: `src/app/mcp/tools-documented.test.ts` asserts the documented set and the route's `registerTool` calls are the same set — documents-nothing-extra (`:76`), documents-everything (`:81`), identical counts (`:90`) — plus a regex-drop guard so an extraction failure cannot make the comparison vacuous (`:61`). `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build.
+- `wrapToolResult()` (`mcp-tools.ts:237-246`) is where every tool result actually gets shaped for the wire — a bare array (every `list_*`/`search_experience` tool) fails the MCP SDK's runtime validation of `structuredContent` unless wrapped in `{ items: data }` first; this lived unwrapped in the route file for long enough that all 5 array-returning tools failed on every real call, undetected because `mcp-tools.test.ts` only ever exercised the pure data functions, never this wrapping layer.
 
 | Tool (registered name) | Input schema (exact) | Impl | Not-found behaviour |
 |---|---|---|---|
@@ -139,7 +140,7 @@ All other 13 mappings are identity (`game-model.ts:30,32-41,43-44,46-49`). The m
 | `list_all_content` | `{}` | `listAllContentData()` `:150` | n/a |
 | `get_content_item` | `contentTypeSchema` = `{ type: z.enum(["work","project","article","note"]), slug: z.string() }` `:144-147` | `getContentItemData()` `:160` | delegates to `getWorkData`/`getProjectData`, or `notFound("article"\|"note", slug, <all slugs>)` `:166`,`:171` |
 
-Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:42-48`); the route's `wrap()` detects the `notFound` key and sets `isError: true` on the MCP result — so the calling agent receives the list of valid options instead of a fabricated answer.
+Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:66-71`); the route's `wrap()` detects the `notFound` key and sets `isError: true` on the MCP result — so the calling agent receives the list of valid options instead of a fabricated answer.
 
 ## Detail
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { projectsByGroup } from "@/lib/content";
 import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
@@ -76,6 +77,19 @@ export default async function ProjectsPage() {
           </div>
         </Section>
       ))}
+
+      <Section className="pt-0 pb-16">
+        <p className="text-sm text-fg-muted">
+          See the reasoning behind these choices in{" "}
+          <Link
+            href="/decisions"
+            className="text-accent underline-offset-4 hover:underline"
+          >
+            Decisions
+          </Link>
+          .
+        </p>
+      </Section>
     </main>
   );
 }

@@ -38,7 +38,7 @@ the pnpm-11 install fix, the article source-label fix, the bundle gate and two d
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
 | **Version** | `3.6.0` — correctness + CI-integrity release (`package.json:3`) |
 | **Scale** | 416 files indexed · 279 `.ts`/`.tsx` in `src/` totalling 32,253 lines · 37 content files · 59 route-defining files |
-| **Subsystems** | content pipeline · view system · chat/LLM · voice · MCP (9 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
+| **Subsystems** | content pipeline · view system · chat/LLM · voice · MCP (10 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:183`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
 | **Strongest guard** | `game-model.test.ts` asserts a bijection between 3D graph nodes and real content — it blocks the deploy |
 | **This index** | 17 files: this front door, 13 per-area sections, 2 subsystem maps, 1 invariants ledger |
@@ -72,7 +72,7 @@ corrected text.
 | npm scripts | **12** — the previous 11 plus `analyze`, added on this branch when `bundle-analysis.yml` was deleted. `analyze` is `velite --clean && ANALYZE=true next build --webpack`; the `--webpack` flag is **mandatory**, because a bare `next build` in Next 16 is Turbopack and `@next/bundle-analyzer` is webpack-only. Still no `search-index` — see [11](./11-config-build-ci-infra.md) | `package.json:8-22` — the block starts at `:8`, not `:5`, since `engines` was inserted at `:5-7`; `analyze` is `package.json:12` |
 | Content items | 5 work · 11 projects · 5 notes · 15 articles (14 non-draft) | `.velite/*.json`, section [09](./09-content-and-schemas.md) |
 | 3D graph | 16 nodes / 19 edges, bijective with 5 work + 11 projects; count it from the arrays — the file's header docblock no longer hardcodes a node count (it now says "every flagship work system + every OSS repo … see `graphNodes` below for the count") | `src/lib/graph-data.ts:18-41` (nodes), `:43-70` (edges); de-numbered docblock `:3-4` |
-| MCP tools | **9** registered. ~~"docs still say 7"~~ — **corrected on this branch:** the route docblock now says "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), the public table lists all 9 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`CLAUDE.md:212`, `:302`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:30-117` |
+| MCP tools | **10** registered. ~~"docs still say 7"~~, then ~~"docs still say 9"~~ — **both corrected on this branch:** the route docblock now says "10 read-only tools" (`src/app/api/mcp/[transport]/route.ts:12`), the public table lists all 10 (`src/app/mcp/page.tsx:35-45`), and `CLAUDE.md` agrees in both places (`CLAUDE.md:212`, `:304`). Guarded: `src/app/mcp/tools-documented.test.ts` asserts the documented table and the route's `registerTool` calls are identical, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build | `src/app/api/mcp/[transport]/route.ts:20-118` |
 | Terminal commands | **31** — 27 visible + 4 hidden eggs. ~~"docs still say roughly 16"~~ — **corrected on this branch:** `CLAUDE.md:115` and `ARCHITECTURE.md:74` both say 31 now | `src/components/game/terminal/commands.ts:503-508` |
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` | `vercel.json:3-7` |
@@ -274,7 +274,7 @@ every route handler runs on Next's default Node.js runtime; `src/proxy.ts` is th
 | `/feed.xml` | machine-readable | `src/app/feed.xml/route.ts` | nodejs; `application/xml`; static; ignores the notes/articles flags |
 | `/.well-known/vercel/flags` | api | `src/app/.well-known/vercel/flags/route.ts` | nodejs; `verifyAccess`-gated (401 + `null` body); exposes exactly 1 flag |
 | `POST /api/chat` | api | `src/app/api/chat/route.ts` | nodejs · `maxDuration = 30` · rate-limited · streams, `Cache-Control: no-store` |
-| `GET,POST,DELETE /api/mcp/[transport]` | api | `src/app/api/mcp/[transport]/route.ts` | nodejs · `maxDuration = 30` · public read-only; 9 tools; `disableSse: true`. Public endpoint: `/api/mcp/mcp` |
+| `GET,POST,DELETE /api/mcp/[transport]` | api | `src/app/api/mcp/[transport]/route.ts` | nodejs · `maxDuration = 30` · public read-only; 10 tools; `disableSse: true`. Public endpoint: `/api/mcp/mcp` |
 | `POST /api/tts` | api | `src/app/api/tts/route.ts` | nodejs · `maxDuration = 15` · rate-limited · AWS Polly · per-instance LRU |
 | `POST /api/tts-google` | api | `src/app/api/tts-google/route.ts` | nodejs · `maxDuration = 15` · rate-limited · Google Chirp 3 HD via REST |
 | `POST /api/transcribe` | api | `src/app/api/transcribe/route.ts` | nodejs · `maxDuration = 20` · rate-limited · AWS Transcribe Streaming |

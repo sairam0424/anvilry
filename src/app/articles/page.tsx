@@ -120,50 +120,59 @@ export default function ArticlesPage() {
                     inner inline-flex row does), so `overflow-x-auto` here clips/scrolls the
                     overflow locally instead of letting it bubble up through Section → main →
                     body (all flex containers with no overflow clip of their own). */}
-                <div
-                  className="w-full overflow-x-auto overscroll-x-contain"
-                  style={{ WebkitOverflowScrolling: "touch" }}
-                >
+                <div className="relative">
                   <div
-                    role="group"
-                    aria-label="Filter articles by platform"
-                    className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+                    className="w-full overflow-x-auto overscroll-x-contain scrollbar-hide"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                    tabIndex={0}
                   >
-                    {filterOptions.map((opt) => {
-                      const active = activeFilter === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setActiveFilter(opt)}
-                          aria-pressed={active}
-                          className={[
-                            "relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
-                            active
-                              ? "text-bg-base"
-                              : "text-fg-muted hover:text-fg",
-                          ].join(" ")}
-                        >
-                          {active && (
-                            <motion.span
-                              layoutId="article-filter-pill"
-                              aria-hidden="true"
-                              className="absolute inset-0 z-0 rounded-full bg-accent"
-                              transition={{
-                                type: "spring",
-                                stiffness: 420,
-                                damping: 34,
-                              }}
-                            />
-                          )}
-                          <span className="relative z-10">
-                            {opt === "all" ? "All" : SOURCE_LABELS[opt]}
-                          </span>
-                        </button>
-                      );
-                    })}
+                    <div
+                      role="group"
+                      aria-label="Filter articles by platform"
+                      className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+                    >
+                      {filterOptions.map((opt) => {
+                        const active = activeFilter === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => setActiveFilter(opt)}
+                            aria-pressed={active}
+                            className={[
+                              "relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
+                              active
+                                ? "text-bg-base"
+                                : "text-fg-muted hover:text-fg",
+                            ].join(" ")}
+                          >
+                            {active && (
+                              <motion.span
+                                layoutId="article-filter-pill"
+                                aria-hidden="true"
+                                className="absolute inset-0 z-0 rounded-full bg-accent"
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 420,
+                                  damping: 34,
+                                }}
+                              />
+                            )}
+                            <span className="relative z-10">
+                              {opt === "all" ? "All" : SOURCE_LABELS[opt]}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                  {/* Scroll-affordance fade, mirroring the chat composer's chip-rail pattern —
+                      a sibling of the scrolling row (not a descendant) so it stays pinned to the edge. */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+                  />
                 </div>
               </Reveal>
             )}

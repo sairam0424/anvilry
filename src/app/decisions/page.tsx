@@ -105,48 +105,59 @@ export default function DecisionsPage() {
 
         {tagOptions.length > 2 && (
           <Reveal className="mt-3">
-            <div
-              className="w-full overflow-x-auto overscroll-x-contain"
-              style={{ WebkitOverflowScrolling: "touch" }}
-            >
+            <div className="relative">
               <div
-                role="group"
-                aria-label="Filter decisions by tag"
-                className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+                className="w-full overflow-x-auto overscroll-x-contain scrollbar-hide"
+                style={{ WebkitOverflowScrolling: "touch" }}
+                tabIndex={0}
               >
-                {tagOptions.map((opt) => {
-                  const active = activeTag === opt;
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setActiveTag(opt)}
-                      aria-pressed={active}
-                      className={[
-                        "relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
-                        active ? "text-bg-base" : "text-fg-muted hover:text-fg",
-                      ].join(" ")}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="decisions-filter-pill"
-                          aria-hidden="true"
-                          className="absolute inset-0 z-0 rounded-full bg-accent"
-                          transition={{
-                            type: "spring",
-                            stiffness: 420,
-                            damping: 34,
-                          }}
-                        />
-                      )}
-                      <span className="relative z-10">
-                        {opt === "all" ? "All tags" : opt}
-                      </span>
-                    </button>
-                  );
-                })}
+                <div
+                  role="group"
+                  aria-label="Filter decisions by tag"
+                  className="inline-flex items-center rounded-full border border-border bg-bg-surface/80 p-0.5 backdrop-blur gap-0.5"
+                >
+                  {tagOptions.map((opt) => {
+                    const active = activeTag === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setActiveTag(opt)}
+                        aria-pressed={active}
+                        className={[
+                          "relative inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-base",
+                          active
+                            ? "text-bg-base"
+                            : "text-fg-muted hover:text-fg",
+                        ].join(" ")}
+                      >
+                        {active && (
+                          <motion.span
+                            layoutId="decisions-filter-pill"
+                            aria-hidden="true"
+                            className="absolute inset-0 z-0 rounded-full bg-accent"
+                            transition={{
+                              type: "spring",
+                              stiffness: 420,
+                              damping: 34,
+                            }}
+                          />
+                        )}
+                        <span className="relative z-10">
+                          {opt === "all" ? "All tags" : opt}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+              {/* Scroll-affordance fade, mirroring the chat composer's chip-rail pattern —
+                  a sibling of the scrolling row (not a descendant) so it stays pinned to the edge. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+              />
             </div>
           </Reveal>
         )}

@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
-import {
-  Github,
-  Linkedin,
-  Npm,
-  Pypi,
-  Devto,
-  Substack,
-} from "@/components/icons";
+import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { hasNotes, hasArticles } from "@/lib/content";
 import {
@@ -105,7 +98,13 @@ export function SiteNav() {
             (build-flagged; renders nothing when disabled or where STT is unsupported). */}
         <HeaderOrbTrigger />
 
-        {/* Desktop: social + résumé icons. Mobile: these move into the drawer. */}
+        {/* Desktop: social + résumé icons. Mobile: these move into the drawer.
+            Deliberately kept to GitHub + LinkedIn only — the persistent nav is
+            wayfinding-first; the full profile set (npm/PyPI/Dev.to/Substack) lives
+            in the footer, hero, contact section, résumé view, ⌘K palette, and
+            terminal instead, matching the convention real dev portfolios use
+            (Kent C. Dodds, Josh Comeau, Cassidy Williams) rather than bundling every
+            profile icon into the nav bar itself. */}
         <div className="hidden items-center gap-3 lg:flex">
           <Tooltip content="GitHub">
             <a
@@ -127,50 +126,6 @@ export function SiteNav() {
               className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <Linkedin size={18} />
-            </a>
-          </Tooltip>
-          <Tooltip content="npm">
-            <a
-              href={profile.links.npm}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="npm"
-              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Npm size={18} />
-            </a>
-          </Tooltip>
-          <Tooltip content="PyPI">
-            <a
-              href={profile.links.pypi}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="PyPI"
-              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Pypi size={18} />
-            </a>
-          </Tooltip>
-          <Tooltip content="Dev.to">
-            <a
-              href={profile.links.devto}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Dev.to"
-              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Devto size={18} />
-            </a>
-          </Tooltip>
-          <Tooltip content="Substack">
-            <a
-              href={profile.links.substack}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Substack"
-              className="rounded text-fg-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <Substack size={18} />
             </a>
           </Tooltip>
           <Tooltip content="Résumé">

@@ -23,9 +23,16 @@ import { unlock } from "@/lib/discovery-store";
  * via the always-visible `about`/`secret` terminal commands (never egg-locked — a11y).
  */
 const KONAMI = [
-  "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
-  "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight",
-  "b", "a",
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "b",
+  "a",
 ];
 
 let consoleGreeted = false;
@@ -35,13 +42,22 @@ function isTypingTarget(): boolean {
   const el = document.activeElement;
   if (!el) return false;
   const tag = el.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || (el as HTMLElement).isContentEditable;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    (el as HTMLElement).isContentEditable
+  );
 }
 
 /** The one personal line the Konami card reveals (first fun fact, else first hobby). */
 function konamiReveal(): string | null {
   if (!hasPersonalContent) return null;
-  return personal.funFacts[0] ?? personal.hobbies[0] ?? personal.currentlyLearning[0] ?? null;
+  return (
+    personal.funFacts[0] ??
+    personal.hobbies[0] ??
+    personal.currentlyLearning[0] ??
+    null
+  );
 }
 
 export function EasterEggs() {
@@ -57,9 +73,11 @@ export function EasterEggs() {
   useEffect(() => {
     if (consoleGreeted) return;
     consoleGreeted = true;
-    const secretHint = hasPersonalContent ? "\n(psst — type `secret` in Developer mode, or try the Konami code)" : "\n(psst — try the Konami code)";
+    const secretHint = hasPersonalContent
+      ? "\n(psst — type `secret` in Developer mode, or try the Konami code)"
+      : "\n(psst — try the Konami code)";
     console.log(
-      `%c~/ ${profile.name} %c\nGenAI & Backend Engineer — you found the console. 👋\nIf you're hiring for agent infra or event-driven backends, let's talk:\n${profile.email} · ${profile.links.github}${secretHint}`,
+      `%c~/ ${profile.name} %c\nGenAI & Backend Engineer — you found the console. 👋\nIf you're hiring for agent infra or event-driven backends, let's talk:\n${profile.email} · ${profile.links.github} · ${profile.links.npm} · ${profile.links.pypi} · ${profile.links.devto} · ${profile.links.substack}${secretHint}`,
       "color:#38e1ff;font-weight:bold;font-size:14px",
       "color:#9aa3b8;font-size:12px",
     );
@@ -84,7 +102,8 @@ export function EasterEggs() {
         }
       } else {
         // Case-insensitive reset too, so the comparison matches the forward match above.
-        progress.current = e.key.toLowerCase() === KONAMI[0].toLowerCase() ? 1 : 0;
+        progress.current =
+          e.key.toLowerCase() === KONAMI[0].toLowerCase() ? 1 : 0;
       }
     };
     window.addEventListener("keydown", onKey);
@@ -143,19 +162,27 @@ export function EasterEggs() {
       >
         <X size={15} aria-hidden="true" />
       </button>
-      <p id={headingId} className="flex items-center gap-1.5 font-medium text-accent">
+      <p
+        id={headingId}
+        className="flex items-center gap-1.5 font-medium text-accent"
+      >
         <Sparkles size={15} aria-hidden="true" /> You know the code.
       </p>
       {fact ? (
         <>
           <p className="mt-2 text-fg-muted">{fact}</p>
           <p className="mt-3 text-xs text-fg-subtle">
-            More of the personal side: run <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-fg">secret</code>{" "}
+            More of the personal side: run{" "}
+            <code className="rounded bg-bg-surface px-1 py-0.5 font-mono text-fg">
+              secret
+            </code>{" "}
             in Developer mode.
           </p>
         </>
       ) : (
-        <p className="mt-2 text-fg-muted">Thanks for exploring — now go read a dossier.</p>
+        <p className="mt-2 text-fg-muted">
+          Thanks for exploring — now go read a dossier.
+        </p>
       )}
     </div>
   );

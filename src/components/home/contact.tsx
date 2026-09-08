@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { ArrowUpRight, CalendarDays, CheckCircle, Copy } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile } from "@/lib/profile";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
@@ -22,24 +29,37 @@ export function Contact() {
   }
 
   return (
-    <Section id="contact" label="// let's talk" title="Open to Backend, GenAI & Full-Stack roles">
+    <Section
+      id="contact"
+      label="// let's talk"
+      title="Open to Backend, GenAI & Full-Stack roles"
+    >
       <Reveal>
         <div className="card-surface flex flex-col items-start justify-between gap-6 p-8 sm:flex-row sm:items-center">
           <p className="max-w-md text-fg-muted">
-            Building agent infrastructure or scaling an event-driven backend? I&apos;d love to hear about it.
+            Building agent infrastructure or scaling an event-driven backend?
+            I&apos;d love to hear about it.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             {/* Copy email — primary CTA */}
             <button
               type="button"
               onClick={copyEmail}
-              aria-label={copied ? "Email copied to clipboard" : `Copy email address: ${profile.email}`}
+              aria-label={
+                copied
+                  ? "Email copied to clipboard"
+                  : `Copy email address: ${profile.email}`
+              }
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-bg-base transition-colors hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
             >
               {copied ? (
-                <><CheckCircle size={16} /> Copied!</>
+                <>
+                  <CheckCircle size={16} /> Copied!
+                </>
               ) : (
-                <><Copy size={16} /> Copy email</>
+                <>
+                  <Copy size={16} /> Copy email
+                </>
               )}
             </button>
 
@@ -49,7 +69,8 @@ export function Contact() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-accent/40 px-4 py-2.5 text-sm text-accent transition-colors hover:border-accent hover:bg-accent/10"
             >
-              <CalendarDays size={16} /> Schedule a call <ArrowUpRight size={13} className="text-accent/70" />
+              <CalendarDays size={16} /> Schedule a call{" "}
+              <ArrowUpRight size={13} className="text-accent/70" />
             </a>
             <a
               href={profile.links.linkedin}
@@ -57,7 +78,8 @@ export function Contact() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
             >
-              <Linkedin size={16} /> LinkedIn <ArrowUpRight size={13} className="text-fg-subtle" />
+              <Linkedin size={16} /> LinkedIn{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
             </a>
             <a
               href={profile.links.github}
@@ -65,7 +87,44 @@ export function Contact() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
             >
-              <Github size={16} /> GitHub <ArrowUpRight size={13} className="text-fg-subtle" />
+              <Github size={16} /> GitHub{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
+            </a>
+            <a
+              href={profile.links.npm}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
+            >
+              <Npm size={16} /> npm{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
+            </a>
+            <a
+              href={profile.links.pypi}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
+            >
+              <Pypi size={16} /> PyPI{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
+            </a>
+            <a
+              href={profile.links.devto}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
+            >
+              <Devto size={16} /> Dev.to{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
+            </a>
+            <a
+              href={profile.links.substack}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2.5 text-sm text-fg transition-colors hover:bg-bg-elevated"
+            >
+              <Substack size={16} /> Substack{" "}
+              <ArrowUpRight size={13} className="text-fg-subtle" />
             </a>
           </div>
         </div>

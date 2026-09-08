@@ -255,7 +255,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
 | `NEXT_PUBLIC_404_ORB` | `not-found.tsx:34` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:94` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:15-17`) |
-| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:289` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:35-47` is NOT gated** — it always lists all five. |
+| `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:24`, `home/resume-view.tsx:42`, `command-palette-content.tsx:327`, `game/terminal/commands.ts:289` | all 5 résumé PDFs vs only `resumeVariants[0]`. **`developer-rail.tsx:41-63` is NOT gated** — it always lists all five. |
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:16` (branched `:21`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:8` (**module scope**) | `./scene-physics` vs `./scene` |
@@ -678,7 +678,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Redis key literals | `src/app/admin/telemetry/page.tsx:25,217,251,254,257,260,265` · the five `api/cron/*` writers · `src/lib/telemetry/emit.ts:58` · `src/instrumentation.ts:95` |
 | Nav height `3.5rem` / `h-14` | `src/components/site-nav.tsx:57` · `src/components/ui/skeleton.tsx` (`SkeletonViewTransition`) · `chat-view.tsx:52-60` · `developer-view.tsx:36` · `globals.css:58-65` (`scroll-padding-top`) |
 | View-transition names | `view-router.tsx:56` · `site-nav.tsx:40` · `globals.css:270-289` |
-| Résumé label | `src/lib/profile.ts:77` · `src/lib/mcp-tools.ts:20-26` (`ROLE_TO_LABEL`) · `public/resume/*.pdf` filenames |
+| Résumé label | `src/lib/profile.ts:138` · `src/lib/mcp-tools.ts:20-26` (`ROLE_TO_LABEL`) · `public/resume/*.pdf` filenames |
 | Article `source` enum | `velite.config.ts:109` · `src/components/platform-badge.tsx:13-23` · `src/app/articles/page.tsx:25-32` (`SOURCE_LABELS`) · `articles/[slug]/opengraph-image.tsx:19-26`. **All four are now keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind: `devto` and `hashnode` were missing, so **9 of 15 article OG cards rendered the generic `> article`**. Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
 | Terminal command visibility filter | `src/components/game/terminal/commands.ts:525-527` (`COMMAND_NAMES`) · `terminal.tsx:17-19` (independent re-filter for the fuzzy dropdown) |
 | Terminal input selector | `terminal.tsx:254` (`aria-label="Terminal command input"`) · `terminal-overlay.tsx:39-41` (queries that exact string) |
@@ -895,7 +895,7 @@ than the original open question.
   originating section): the `highlight-store.ts:9-10` claim that `project-card.tsx` subscribes;
   `open-to-work-banner.tsx:6-8` "hidden via CSS (h-0)";
   `home/resume-view.tsx:14-16` "ViewEscapeHatch auto-rendered by view-router";
-  `anvil-core-surface.tsx:20-22` "~200px reactive orb"; `easter-eggs.tsx:57-66` "once per session";
+  `anvil-core-surface.tsx:20-22` "~200px reactive orb"; `easter-eggs.tsx:73-84` "once per session";
   `use-trace-runner.ts:69-70` "Reset when the scenario changes";
   `CLAUDE.md:249`'s `src/lib/voice-settings.ts` (the real file is `voice-settings-context.tsx`);
   `ARCHITECTURE.md:99` listing `EXTENDED_THINKING` among `NEXT_PUBLIC_*` flags.

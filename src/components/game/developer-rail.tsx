@@ -1,7 +1,14 @@
 "use client";
 
 import { Download, Mail } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile, impactMetrics, resumeVariants } from "@/lib/profile";
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -20,7 +27,9 @@ export function DeveloperRail() {
       <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border">
         {impactMetrics.map((m) => (
           <div key={m.sub} className="bg-bg-surface p-3.5">
-            <dt className="font-mono text-xl font-semibold text-fg">{m.value}</dt>
+            <dt className="font-mono text-xl font-semibold text-fg">
+              {m.value}
+            </dt>
             <dd className="mt-0.5 text-xs text-fg-muted">
               {m.label}
               <span className="block text-fg-subtle">{m.sub}</span>
@@ -40,9 +49,15 @@ export function DeveloperRail() {
                 download
                 className="group flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
-                <Download size={13} className="shrink-0 text-fg-subtle group-hover:text-accent" aria-hidden="true" />
+                <Download
+                  size={13}
+                  className="shrink-0 text-fg-subtle group-hover:text-accent"
+                  aria-hidden="true"
+                />
                 <span className="truncate">{r.label}</span>
-                <span className="ml-auto shrink-0 text-[10px] text-fg-subtle">{r.tag}</span>
+                <span className="ml-auto shrink-0 text-[10px] text-fg-subtle">
+                  {r.tag}
+                </span>
               </a>
             </li>
           ))}
@@ -57,7 +72,8 @@ export function DeveloperRail() {
             href={`mailto:${profile.email}`}
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
-            <Mail size={13} className="text-accent" aria-hidden="true" /> {profile.email}
+            <Mail size={13} className="text-accent" aria-hidden="true" />{" "}
+            {profile.email}
           </a>
           <Tooltip content="GitHub">
             <a
@@ -67,7 +83,8 @@ export function DeveloperRail() {
               aria-label="GitHub profile"
               className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <Github size={13} className="text-accent" /> github.com/{profile.githubUser}
+              <Github size={13} className="text-accent" /> github.com/
+              {profile.githubUser}
             </a>
           </Tooltip>
           <Tooltip content="LinkedIn">
@@ -78,7 +95,52 @@ export function DeveloperRail() {
               aria-label="LinkedIn profile"
               className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <Linkedin size={13} className="text-accent" /> linkedin.com/in/{profile.githubUser}
+              <Linkedin size={13} className="text-accent" /> linkedin.com/in/
+              {profile.githubUser}
+            </a>
+          </Tooltip>
+          <Tooltip content="npm">
+            <a
+              href={profile.links.npm}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="npm profile"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Npm size={13} className="text-accent" /> npm
+            </a>
+          </Tooltip>
+          <Tooltip content="PyPI">
+            <a
+              href={profile.links.pypi}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="PyPI profile"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Pypi size={13} className="text-accent" /> PyPI
+            </a>
+          </Tooltip>
+          <Tooltip content="Dev.to">
+            <a
+              href={profile.links.devto}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Dev.to profile"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Devto size={13} className="text-accent" /> Dev.to
+            </a>
+          </Tooltip>
+          <Tooltip content="Substack">
+            <a
+              href={profile.links.substack}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Substack"
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-fg-muted transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <Substack size={13} className="text-accent" /> Substack
             </a>
           </Tooltip>
         </div>

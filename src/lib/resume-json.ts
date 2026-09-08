@@ -11,16 +11,40 @@ const BASE = "https://anvilry.vercel.app";
  */
 export function buildResumeJson() {
   return {
-    $schema: "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
+    $schema:
+      "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
     basics: {
       name: profile.name,
       label: profile.role,
       email: profile.email,
       summary: `${profile.headline} ${profile.subhead}`,
-      location: { city: profile.locationCity, countryCode: profile.locationCountry },
+      location: {
+        city: profile.locationCity,
+        countryCode: profile.locationCountry,
+      },
       profiles: [
-        { network: "GitHub", username: profile.githubUser, url: profile.links.github },
-        { network: "LinkedIn", username: profile.githubUser, url: profile.links.linkedin },
+        {
+          network: "GitHub",
+          username: profile.githubUser,
+          url: profile.links.github,
+        },
+        {
+          network: "LinkedIn",
+          username: profile.githubUser,
+          url: profile.links.linkedin,
+        },
+        { network: "npm", username: "sairamugge-0000", url: profile.links.npm },
+        { network: "PyPI", username: "Sairam0000", url: profile.links.pypi },
+        {
+          network: "Dev.to",
+          username: "sai_ram_0000",
+          url: profile.links.devto,
+        },
+        {
+          network: "Substack",
+          username: "sairam0000",
+          url: profile.links.substack,
+        },
       ],
       url: BASE,
     },

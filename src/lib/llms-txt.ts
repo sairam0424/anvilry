@@ -65,6 +65,10 @@ ${articles ? `\n## Articles & Writing\n${articles}` : ""}${notes ? `\n\n## Engin
 - Portfolio: ${BASE}/
 - GitHub: ${profile.links.github}
 - LinkedIn: ${profile.links.linkedin}
+- npm: ${profile.links.npm}
+- PyPI: ${profile.links.pypi}
+- Dev.to: ${profile.links.devto}
+- Substack: ${profile.links.substack}
 - Résumé: ${BASE}/resume
 - Structured résumé (JSON): ${BASE}/api/resume.json
 - MCP server (for AI agents): ${BASE}/api/mcp/mcp

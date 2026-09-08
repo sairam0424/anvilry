@@ -98,7 +98,13 @@ export function SiteNav() {
             (build-flagged; renders nothing when disabled or where STT is unsupported). */}
         <HeaderOrbTrigger />
 
-        {/* Desktop: social + résumé icons. Mobile: these move into the drawer. */}
+        {/* Desktop: social + résumé icons. Mobile: these move into the drawer.
+            Deliberately kept to GitHub + LinkedIn only — the persistent nav is
+            wayfinding-first; the full profile set (npm/PyPI/Dev.to/Substack) lives
+            in the footer, hero, contact section, résumé view, ⌘K palette, and
+            terminal instead, matching the convention real dev portfolios use
+            (Kent C. Dodds, Josh Comeau, Cassidy Williams) rather than bundling every
+            profile icon into the nav bar itself. */}
         <div className="hidden items-center gap-3 lg:flex">
           <Tooltip content="GitHub">
             <a

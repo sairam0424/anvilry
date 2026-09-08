@@ -26,6 +26,10 @@ describe("mcp tools", () => {
     expect(d.name).toBeTruthy();
     expect(d.role).toBeTruthy();
     expect(d.links.github).toContain("github.com");
+    expect(d.links.npm).toContain("npmjs.com");
+    expect(d.links.pypi).toContain("pypi.org");
+    expect(d.links.devto).toContain("dev.to");
+    expect(d.links.substack).toContain("substack.com");
     expect(d.skills.length).toBeGreaterThan(0);
     expect(d.achievements.length).toBeGreaterThan(0);
     // Professional-only: no personal fields exposed.

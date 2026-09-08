@@ -82,6 +82,10 @@ export function getProfileData() {
     links: {
       github: profile.links.github,
       linkedin: profile.links.linkedin,
+      npm: profile.links.npm,
+      pypi: profile.links.pypi,
+      devto: profile.links.devto,
+      substack: profile.links.substack,
       site: BASE,
     },
     skills: skills.map((s) => ({ group: s.group, items: s.items })),

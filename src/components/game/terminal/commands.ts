@@ -80,24 +80,32 @@ const ls: Command = {
   },
 };
 
+// Quick `open` targets that navigate straight to an external profile link
+// rather than a content dossier.
+const OPEN_LINK_TARGETS: Record<string, string> = {
+  github: profile.links.github,
+  linkedin: profile.links.linkedin,
+  npm: profile.links.npm,
+  pypi: profile.links.pypi,
+  devto: profile.links.devto,
+  substack: profile.links.substack,
+};
+
 const open: Command = {
   name: "open",
-  description: "open a system's dossier (or github/linkedin/resume)",
-  usage: "open <slug|github|linkedin|resume>",
+  description:
+    "open a system's dossier (or github/linkedin/npm/pypi/devto/substack/resume)",
+  usage: "open <slug|github|linkedin|npm|pypi|devto|substack|resume>",
   run: (args) => {
     const slug = args[0];
     if (!slug)
       return { lines: err("usage: open <slug>  (try 'ls', or 'open github')") };
-    // Quick targets for the common recruiter destinations.
-    if (slug === "github")
+    // Quick targets for the common recruiter/profile destinations.
+    const linkTarget = OPEN_LINK_TARGETS[slug];
+    if (linkTarget)
       return {
-        lines: out(`opening ${profile.links.github} …`),
-        nav: { type: "external", href: profile.links.github },
-      };
-    if (slug === "linkedin")
-      return {
-        lines: out(`opening ${profile.links.linkedin} …`),
-        nav: { type: "external", href: profile.links.linkedin },
+        lines: out(`opening ${linkTarget} …`),
+        nav: { type: "external", href: linkTarget },
       };
     if (slug === "resume" || slug === "résumé")
       return {
@@ -333,6 +341,14 @@ const contact: Command = {
       fmt.row("✉", "email", profile.email),
       fmt.row("◈", "github", profile.links.github),
       fmt.row("◈", "linkedin", profile.links.linkedin),
+      // npm's full URL (39 chars) is 1 char over this box's value budget and would
+      // otherwise get silently sliced mid-string by fmt.box — displaying the bare
+      // domain+path instead (same "https://" stripping the developer-rail already
+      // does for github/linkedin) keeps it identifiable and complete.
+      fmt.row("◈", "npm", profile.links.npm.replace(/^https:\/\/(www\.)?/, "")),
+      fmt.row("◈", "pypi", profile.links.pypi),
+      fmt.row("◈", "dev.to", profile.links.devto),
+      fmt.row("◈", "substack", profile.links.substack),
       fmt.row("→", "résumé", "run 'resume' to download a variant"),
     ]),
   }),
@@ -356,6 +372,10 @@ const social: Command = {
     lines: out(
       `github:   ${profile.links.github}`,
       `linkedin: ${profile.links.linkedin}`,
+      `npm:      ${profile.links.npm}`,
+      `pypi:     ${profile.links.pypi}`,
+      `dev.to:   ${profile.links.devto}`,
+      `substack: ${profile.links.substack}`,
     ),
   }),
 };

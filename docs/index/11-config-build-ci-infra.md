@@ -736,7 +736,7 @@ script was added at `package.json:12` — see the `package.json` gotchas below.)
 
 ### `public/resume/*.pdf`
 - **Role:** The 5 role-targeted resume variants served as static assets.
-- **Consumed by:** `src/lib/profile.ts:77` maps each file to a label + tag:
+- **Consumed by:** `src/lib/profile.ts:138` maps each file to a label + tag:
   `Sairam_Resume_MX_E.pdf` → "Sairam Resume" / "Backend & GenAI",
   `_BE` → "Backend" / "Distributed Systems", `_FS` → "Full-Stack" / "GenAI Platforms",
   `_FE` → "Frontend" / "GenAI Platforms", `_GAI` → "GenAI" / "LLM Systems".

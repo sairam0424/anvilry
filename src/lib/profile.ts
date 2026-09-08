@@ -20,10 +20,20 @@ export const profile = {
     "I co-built Pensieve and architected the AAVA Code backend at Ascendion, and build open-source AI infrastructure in the open.",
   email: "uggesairam0000@gmail.com",
   calendlyUrl: "https://calendly.com/sairamugge/30min",
-  substackUrl: "https://sairam0000.substack.com",
   links: {
     github: "https://github.com/sairam0424",
     linkedin: "https://linkedin.com/in/sairam0424",
+    // Real npm publisher account (registry-verified: maintainer of mindforge-cc,
+    // @context-os/*, @ag-bash/*, 24 packages total) — username differs from the
+    // GitHub/PyPI handle, this is npm's own account name.
+    npm: "https://www.npmjs.com/~sairamugge-0000",
+    // Real PyPI maintainer account (verified via the "1 maintainer" listing on
+    // https://pypi.org/project/trelix/ — its project_urls point back to
+    // github.com/sairam0424/trelix).
+    pypi: "https://pypi.org/user/Sairam0000/",
+    // Real Dev.to profile — its own website_url field points back to this site.
+    devto: "https://dev.to/sai_ram_0000",
+    substack: "https://sairam0000.substack.com",
     resume: "/resume",
   },
   githubUser: "sairam0424",
@@ -33,10 +43,30 @@ export const profile = {
  *  The repo count is DERIVED from the content layer (allProjects.length), not hand-typed,
  *  so it can never drift from the actual published projects — structurally pinning the
  *  one banner number the audit flagged as un-sourced. */
-export const impactMetrics: { value: string; label: string; sub: string; href: string }[] = [
-  { value: "2K+", label: "daily users", sub: "Pensieve", href: "/work/pensieve" },
-  { value: "3K+", label: "daily users", sub: "AAVA Code · 5+ clients", href: "/work/aava-code" },
-  { value: `${allProjects.length}`, label: "open-source repos", sub: "AI infrastructure", href: "/projects" },
+export const impactMetrics: {
+  value: string;
+  label: string;
+  sub: string;
+  href: string;
+}[] = [
+  {
+    value: "2K+",
+    label: "daily users",
+    sub: "Pensieve",
+    href: "/work/pensieve",
+  },
+  {
+    value: "3K+",
+    label: "daily users",
+    sub: "AAVA Code · 5+ clients",
+    href: "/work/aava-code",
+  },
+  {
+    value: `${allProjects.length}`,
+    label: "open-source repos",
+    sub: "AI infrastructure",
+    href: "/projects",
+  },
 ];
 
 export const skills: { group: string; items: string[] }[] = [
@@ -54,13 +84,40 @@ export const skills: { group: string; items: string[] }[] = [
   },
   {
     group: "Backend & Distributed",
-    items: ["FastAPI", "gRPC", "REST", "GraphQL", "Microservices", "Event-Driven"],
+    items: [
+      "FastAPI",
+      "gRPC",
+      "REST",
+      "GraphQL",
+      "Microservices",
+      "Event-Driven",
+    ],
   },
   {
     group: "Data & Messaging",
-    items: ["PostgreSQL", "MongoDB", "Redis", "ChromaDB", "Apache Kafka", "Redis Streams", "SSE", "WebSockets"],
+    items: [
+      "PostgreSQL",
+      "MongoDB",
+      "Redis",
+      "ChromaDB",
+      "Apache Kafka",
+      "Redis Streams",
+      "SSE",
+      "WebSockets",
+    ],
   },
-  { group: "Cloud & Ops", items: ["AWS", "Docker", "Kubernetes", "CI/CD", "OpenTelemetry", "Prometheus", "Grafana"] },
+  {
+    group: "Cloud & Ops",
+    items: [
+      "AWS",
+      "Docker",
+      "Kubernetes",
+      "CI/CD",
+      "OpenTelemetry",
+      "Prometheus",
+      "Grafana",
+    ],
+  },
   { group: "Frontend", items: ["React", "Angular", "Next.js", "Tailwind CSS"] },
 ];
 
@@ -69,10 +126,17 @@ export const achievements = [
   { title: "Meta Hacker Cup 2022", detail: "4,048 / 70,000+" },
   { title: "Flipkart GRiD 2022", detail: "Top tier · 1,325 / 40,000+" },
   { title: "Institute Rank 1", detail: "GeeksforGeeks & InterviewBit" },
-  { title: "Mentored 250–300 students", detail: "Data Structures & Algorithms" },
+  {
+    title: "Mentored 250–300 students",
+    detail: "Data Structures & Algorithms",
+  },
 ];
 
 /** The single canonical résumé PDF (lives in /public/resume). */
 export const resumeVariants = [
-  { label: "Sairam Resume", file: "/resume/Sairam_Resume_MX_E.pdf", tag: "Backend & GenAI" },
+  {
+    label: "Sairam Resume",
+    file: "/resume/Sairam_Resume_MX_E.pdf",
+    tag: "Backend & GenAI",
+  },
 ];

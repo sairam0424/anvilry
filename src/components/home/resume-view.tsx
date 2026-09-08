@@ -81,6 +81,42 @@ function ResumeContent() {
             className="text-accent hover:underline print:text-black"
           >
             LinkedIn
+          </a>{" "}
+          ·{" "}
+          <a
+            href={profile.links.npm}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            npm
+          </a>{" "}
+          ·{" "}
+          <a
+            href={profile.links.pypi}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            PyPI
+          </a>{" "}
+          ·{" "}
+          <a
+            href={profile.links.devto}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            Dev.to
+          </a>{" "}
+          ·{" "}
+          <a
+            href={profile.links.substack}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            Substack
           </a>
         </p>
         <p className="mt-3 text-sm leading-relaxed text-fg-muted print:text-gray-700">
@@ -238,6 +274,42 @@ function ResumeContent() {
             className="text-accent hover:underline print:text-black"
           >
             LinkedIn
+          </Link>
+          ,{" "}
+          <Link
+            href={profile.links.npm}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            npm
+          </Link>
+          ,{" "}
+          <Link
+            href={profile.links.pypi}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            PyPI
+          </Link>
+          ,{" "}
+          <Link
+            href={profile.links.devto}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            Dev.to
+          </Link>{" "}
+          or{" "}
+          <Link
+            href={profile.links.substack}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline print:text-black"
+          >
+            Substack
           </Link>
         </p>
       </footer>

@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile, impactMetrics } from "@/lib/profile";
 import { HeroGraph } from "@/components/hero-graph";
 import { HeroAvatar } from "@/components/hero-avatar";
@@ -82,6 +89,42 @@ export function Hero() {
               className="text-fg-muted hover:text-accent"
             >
               <Linkedin size={20} />
+            </a>
+            <a
+              href={profile.links.npm}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="npm"
+              className="text-fg-muted hover:text-accent"
+            >
+              <Npm size={20} />
+            </a>
+            <a
+              href={profile.links.pypi}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="PyPI"
+              className="text-fg-muted hover:text-accent"
+            >
+              <Pypi size={20} />
+            </a>
+            <a
+              href={profile.links.devto}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Dev.to"
+              className="text-fg-muted hover:text-accent"
+            >
+              <Devto size={20} />
+            </a>
+            <a
+              href={profile.links.substack}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Substack"
+              className="text-fg-muted hover:text-accent"
+            >
+              <Substack size={20} />
             </a>
           </div>
         </div>

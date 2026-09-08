@@ -64,7 +64,7 @@ game view        /api/chat      /llms.txt      /api/resume.json  /api/mcp/[trans
  terminal)       commands
 ```
 
-Also derived, but not via `content.ts`: `profile.ts` imports `allProjects` solely to derive the "open-source repos" banner number (`profile.ts:39`), and `github.ts` imports `profile.githubUser` as the fetch owner (`github.ts:116`).
+Also derived, but not via `content.ts`: `profile.ts` imports `allProjects` solely to derive the "open-source repos" banner number (`profile.ts:66`), and `github.ts` imports `profile.githubUser` as the fetch owner (`github.ts:116`).
 
 Real counts at this version (`.velite/*.json`): **projects 11, work 5, notes 5, articles 15**. `graph-data.graphNodes` has **16** entries (5 work + 11 projects) and `NODE_CONTENT` has **16** entries — the bijection asserted by `game-model.test.ts:55-57` currently holds exactly.
 

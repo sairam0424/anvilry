@@ -33,7 +33,14 @@ export function PersonJsonLd() {
       addressLocality: profile.locationCity,
       addressCountry: profile.locationCountry,
     },
-    sameAs: [profile.links.github, profile.links.linkedin],
+    sameAs: [
+      profile.links.github,
+      profile.links.linkedin,
+      profile.links.npm,
+      profile.links.pypi,
+      profile.links.devto,
+      profile.links.substack,
+    ],
     knowsAbout: skills.flatMap((s) => s.items),
     ...(isOpenToWork && {
       seeks: { "@type": "Demand", name: "GenAI & Backend Engineering roles" },
@@ -320,7 +327,14 @@ export function ProfilePageJsonLd() {
       jobTitle: profile.role,
       worksFor: { "@type": "Organization", name: profile.company },
       url: BASE_URL,
-      sameAs: [profile.links.github, profile.links.linkedin],
+      sameAs: [
+        profile.links.github,
+        profile.links.linkedin,
+        profile.links.npm,
+        profile.links.pypi,
+        profile.links.devto,
+        profile.links.substack,
+      ],
       knowsAbout: skills.flatMap((s) => s.items),
     },
   };

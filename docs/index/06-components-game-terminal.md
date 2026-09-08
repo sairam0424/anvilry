@@ -61,7 +61,7 @@ Read in full from `src/components/game/terminal/commands.ts:503-508` (registry) 
 | `awards` | — | `achievements` as `✓ title  detail` rows | `fmt.section` + `fmt.row` | none |
 | `summary` | — | Identity + work + projects + skills + recognition in one dump, ending with a run-`resume`/`contact` pointer (`commands.ts:363-397`) | mixed `fmt.row`/`table`/`section`/`divider` | none |
 | `career` | — | Groups everything under the single `profile.company` / `profile.tenure` line; **deliberately prints no per-item years** because content has no per-item dates (`commands.ts:294-296`); shows only `w.metrics[0]` if present | `fmt.row` blocks per work item | none |
-| `about` | — | Always-visible bio door: name/role/company + `profile.subhead`; appends "run 'secret'" only when `hasPersonalContent` (`commands.ts:401-404`) | plain `out` lines | none |
+| `about` | — | Always-visible bio door: name/role/company + `profile.subhead`; appends "run 'secret'" only when `hasPersonalContent` (`commands.ts:544-550`) | plain `out` lines | none |
 | `resume` | `[variant]` | No arg → lists variants. Arg → substring match on `label.toLowerCase()`. Visible set is `resumeVariants` when `NEXT_PUBLIC_RESUME_VARIANTS === "true"`, else only `resumeVariants[0]` — flag read **inside** `run()` so `vi.stubEnv` works (`commands.ts:288-291`) | `out` lines; listing pads `label.split(" ")[0]` to 12 chars | `nav: {type:"external", href: match.file}` → `window.open` the PDF |
 | `open` | `<slug\|github\|linkedin\|resume\|résumé>` | Special-cases the three recruiter destinations, else `getWork(slug) ?? getProject(slug)` (`commands.ts:92-111`) | `out` "opening … " line | `github`/`linkedin` → `external`; `resume`/`résumé` → `route` `/resume`; a slug → `route` `target.url` |
 | `contact` | — | Boxed identity + email + github + linkedin + a "run 'resume'" pointer | `fmt.box("// CONTACT")` | none |
@@ -74,7 +74,7 @@ Read in full from `src/components/game/terminal/commands.ts:503-508` (registry) 
 | `cd` | `[path]` | Only `""`, `/`, `~` are valid → home; anything else errors (`commands.ts:474-477`) | `out` or `err` | `nav: {type:"route", href:"/"}` |
 | `clear` | — | Returns **zero** lines + the clear action | `[]` | `nav: {type:"clear"}` → `setLines([])`; the `$ clear` echo is discarded too (`use-terminal.ts:58-61`) |
 | `sudo` | `[anything]` | Joke denial echoing the args | 1 `err` line | none |
-| **`secret`** *(hidden)* | — | **Easter egg.** Prints `personal.hobbies / funFacts / currentlyLearning / askMeAbout` as `• ` bullets, then points at `uses` + `now`. Empty-safe: with `!hasPersonalContent` prints "personal notes coming soon" (`commands.ts:414-416`) | plain `out` lines | none |
+| **`secret`** *(hidden)* | — | **Easter egg.** Prints `personal.hobbies / funFacts / currentlyLearning / askMeAbout` as `• ` bullets, then points at `uses` + `now`. Empty-safe: with `!hasPersonalContent` prints "personal notes coming soon" (`commands.ts:560-566`) | plain `out` lines | none |
 | **`personal`** *(hidden)* | — | Alias: `{ ...secret, name: "personal" }` — inherits `hidden: true` and `secret`'s description (`commands.ts:433`) | same as `secret` | none |
 | **`uses`** *(hidden)* | — | **Easter egg.** `personal.uses` groups as `group: items…`; empty-safe fallback points at `stack` (`commands.ts:573-579`) | plain `out` lines | none |
 | **`now`** *(hidden)* | — | **Easter egg.** `now.focus` bullets + an honest staleness footer computed from `Date.parse(now.updated)` at call time: `> 90` days → "(last updated N days ago — may be stale)", else "(updated …)" (`commands.ts:457-463`). Dark when `!hasNow` | plain `out` lines | none |
@@ -93,7 +93,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
   - `cat` resolves through the **graph** (`:101`), `open` through **content** (`:87`). A work/project item that `ls` lists but has no entry in `NODE_CONTENT` (`src/lib/game-model.ts:28`) is `open`-able but **not** `cat`-able.
   - `COMMAND_NAMES` must stay `!hidden`-filtered (`:525-527`) or Tab will broadcast the egg commands; `terminal.tsx:17-19` applies the same filter independently for the fuzzy dropdown — two places to keep in sync.
   - The `NEXT_PUBLIC_RESUME_VARIANTS` read is deliberately inside `run()` (`:204-206`); hoisting it to module scope breaks `vi.stubEnv` in tests.
-  - `resume`'s listing key is `label.toLowerCase().split(" ")[0]`; for `resumeVariants[0]` (`"Sairam Resume"`) that word is **`sairam`**, not `master` (`src/lib/profile.ts:77`).
+  - `resume`'s listing key is `label.toLowerCase().split(" ")[0]`; for `resumeVariants[0]` (`"Sairam Resume"`) that word is **`sairam`**, not `master` (`src/lib/profile.ts:138`).
   - `theme`'s registry `run()` is intentionally *not* a success message — see `:491-500`.
 
 ### `src/components/game/terminal/use-terminal.ts`
@@ -130,7 +130,7 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 - **Reads / depends on:** `@/lib/profile` (`profile`, `impactMetrics`), `@/lib/personal` `hasPersonalContent`.
 - **Consumed by:** `terminal/commands.ts:6` (`whoami`), `terminal/use-terminal.ts:9` (default greeting), `src/app/not-found.tsx:25` (`bootBanner404`).
 - **Behaviour notes:** `bootBanner404` emits three fake `[    0.0xxxxx]` module-load `art` lines then `KERNEL PANIC: route not found (0x404)` and `shell survived — try: ls, help, cd /` as `err` lines (`:12-19`). `bootBanner` renders a 5-line ASCII "Anvilry" figlet as `art`, then identity/headline/metrics/location as `out`, and appends the `try 'secret'` breadcrumb only when `hasPersonalContent` (`:61-63`).
-- **Gotchas / invariants:** `metricsShort` string-replaces `"daily users" → "users"` and `"open-source repos" → "OSS repos"` (`:38`) to keep the line under ~60 chars — renaming those labels in `src/lib/profile.ts:36-40` silently un-shortens the banner and wraps it.
+- **Gotchas / invariants:** `metricsShort` string-replaces `"daily users" → "users"` and `"open-source repos" → "OSS repos"` (`:38`) to keep the line under ~60 chars — renaming those labels in `src/lib/profile.ts:46-70` silently un-shortens the banner and wraps it.
 
 ### `src/components/game/terminal/fmt.ts`
 - **Role:** Box-drawing/table/row formatters that all return `Line[]`.
@@ -314,5 +314,5 @@ Dispatch contract (`commands.ts:510-521`): `runCommand(raw)` trims, splits on `/
 ## UNVERIFIED
 
 - The claim in `CLAUDE.md:114` / `ARCHITECTURE.md:74` that the terminal has "~16 commands" does not match the registry, which holds **31** entries (27 visible). The docs figure appears stale; the registry at `commands.ts:503-508` is authoritative.
-- `easter-eggs.tsx:57-66` describes the console greeting as "once per session", but the guard is a module-level `let` (`:31`) with no storage — I could not find any session-persistence mechanism, so the effective scope is per module instance.
+- `easter-eggs.tsx:73-84` describes the console greeting as "once per session", but the guard is a module-level `let` (`:31`) with no storage — I could not find any session-persistence mechanism, so the effective scope is per module instance.
 - Whether `NEXT_PUBLIC_SKILL_TREE` / `NEXT_PUBLIC_RESUME_VARIANTS` are set in any deployed Vercel environment — only the local `.env.example` (commented out) and `Makefile` defaults (`false`) were inspected.

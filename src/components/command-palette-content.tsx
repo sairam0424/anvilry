@@ -42,7 +42,14 @@ import {
   CalendarDays,
   GitBranch,
 } from "lucide-react";
-import { Github, Linkedin } from "@/components/icons";
+import {
+  Github,
+  Linkedin,
+  Npm,
+  Pypi,
+  Devto,
+  Substack,
+} from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
 import { unlockAll } from "@/lib/discovery-store";
 import { allProjects, allWork } from "@/lib/content";
@@ -293,6 +300,31 @@ export function CommandPaletteContent({
       label: "LinkedIn",
       icon: <Linkedin size={16} />,
       run: () => go(profile.links.linkedin, true),
+    },
+    {
+      id: "npm",
+      label: "npm",
+      icon: <Npm size={16} />,
+      run: () => go(profile.links.npm, true),
+    },
+    {
+      id: "pypi",
+      label: "PyPI",
+      icon: <Pypi size={16} />,
+      run: () => go(profile.links.pypi, true),
+    },
+    {
+      id: "devto",
+      label: "Dev.to",
+      icon: <Devto size={16} />,
+      run: () => go(profile.links.devto, true),
+    },
+    {
+      id: "substack",
+      label: "Substack",
+      icon: <Substack size={16} />,
+      run: () => go(profile.links.substack, true),
+      keywords: "newsletter subscribe writing",
     },
     {
       id: "email",

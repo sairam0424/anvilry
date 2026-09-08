@@ -341,7 +341,11 @@ const contact: Command = {
       fmt.row("✉", "email", profile.email),
       fmt.row("◈", "github", profile.links.github),
       fmt.row("◈", "linkedin", profile.links.linkedin),
-      fmt.row("◈", "npm", profile.links.npm),
+      // npm's full URL (39 chars) is 1 char over this box's value budget and would
+      // otherwise get silently sliced mid-string by fmt.box — displaying the bare
+      // domain+path instead (same "https://" stripping the developer-rail already
+      // does for github/linkedin) keeps it identifiable and complete.
+      fmt.row("◈", "npm", profile.links.npm.replace(/^https:\/\/(www\.)?/, "")),
       fmt.row("◈", "pypi", profile.links.pypi),
       fmt.row("◈", "dev.to", profile.links.devto),
       fmt.row("◈", "substack", profile.links.substack),

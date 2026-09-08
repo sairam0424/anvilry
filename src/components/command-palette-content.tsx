@@ -40,6 +40,7 @@ import {
   Ear,
   Sparkles,
   CalendarDays,
+  GitBranch,
 } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
@@ -250,6 +251,14 @@ export function CommandPaletteContent({
       hint: `${allProjects.length} repos`,
       icon: <FolderGit2 size={16} />,
       run: () => go("/projects"),
+    },
+    {
+      id: "decisions",
+      label: "Decisions",
+      hint: "architecture tradeoffs, the alternative & the cost",
+      icon: <GitBranch size={16} />,
+      run: () => go("/decisions"),
+      keywords: "rationale tradeoffs why architecture ledger",
     },
     {
       id: "about",

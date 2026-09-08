@@ -8,18 +8,8 @@ import * as T from "@/lib/mcp-tools";
 // Components requires it; only `runtime = "edge"` is unsupported. Behaviour is unchanged.
 export const maxDuration = 30;
 
-/** Wrap a tool result as MCP content + structuredContent; mark not-found as an error. */
-function wrap(data: unknown) {
-  const isNotFound = !!data && typeof data === "object" && "notFound" in data;
-  return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
-    structuredContent: data as Record<string, unknown>,
-    ...(isNotFound && { isError: true }),
-  };
-}
-
 /**
- * Portfolio MCP server — exposes the real content layer as 9 read-only tools so a
+ * Portfolio MCP server — exposes the real content layer as 10 read-only tools so a
  * recruiter/engineer can attach it to Claude Desktop / Cursor and "ask their own AI
  * about Sairam". All logic lives in the pure, unit-tested @/lib/mcp-tools (single
  * source — can't drift/fabricate); this route is thin wiring. Public endpoint
@@ -35,7 +25,7 @@ const handler = createMcpHandler(
           "Sairam Ugge's identity, headline, links, skills, and achievements.",
         inputSchema: {},
       },
-      async () => wrap(T.getProfileData()),
+      async () => T.wrapToolResult(T.getProfileData()),
     );
     server.registerTool(
       "list_projects",
@@ -45,7 +35,7 @@ const handler = createMcpHandler(
           "All open-source projects (name, tagline, group, repo, tech).",
         inputSchema: {},
       },
-      async () => wrap(T.listProjectsData()),
+      async () => T.wrapToolResult(T.listProjectsData()),
     );
     server.registerTool(
       "get_project",
@@ -54,7 +44,7 @@ const handler = createMcpHandler(
         description: "One open-source project's detail by slug.",
         inputSchema: T.projectSlugSchema,
       },
-      async ({ slug }) => wrap(T.getProjectData(slug)),
+      async ({ slug }) => T.wrapToolResult(T.getProjectData(slug)),
     );
     server.registerTool(
       "list_work",
@@ -64,7 +54,7 @@ const handler = createMcpHandler(
           "Production work case studies (role, register, metrics, tech).",
         inputSchema: {},
       },
-      async () => wrap(T.listWorkData()),
+      async () => T.wrapToolResult(T.listWorkData()),
     );
     server.registerTool(
       "get_work",
@@ -73,7 +63,7 @@ const handler = createMcpHandler(
         description: "One production work case study's detail by slug.",
         inputSchema: T.workSlugSchema,
       },
-      async ({ slug }) => wrap(T.getWorkData(slug)),
+      async ({ slug }) => T.wrapToolResult(T.getWorkData(slug)),
     );
     server.registerTool(
       "search_experience",
@@ -83,7 +73,7 @@ const handler = createMcpHandler(
           "Keyword search across work, projects, and skills (e.g. 'kafka', 'multi-agent').",
         inputSchema: T.searchSchema,
       },
-      async ({ query }) => wrap(T.searchExperienceData(query)),
+      async ({ query }) => T.wrapToolResult(T.searchExperienceData(query)),
     );
     server.registerTool(
       "get_resume_variant",
@@ -93,7 +83,7 @@ const handler = createMcpHandler(
           "The canonical résumé PDF URL — the only role is 'master'.",
         inputSchema: T.resumeRoleSchema,
       },
-      async ({ role }) => wrap(T.getResumeVariantData(role)),
+      async ({ role }) => T.wrapToolResult(T.getResumeVariantData(role)),
     );
     server.registerTool(
       "list_all_content",
@@ -103,7 +93,7 @@ const handler = createMcpHandler(
           "Flat list of every work case study, project, article, and note — with slug, name, summary, and URL.",
         inputSchema: {},
       },
-      async () => wrap(T.listAllContentData()),
+      async () => T.wrapToolResult(T.listAllContentData()),
     );
     server.registerTool(
       "get_content_item",
@@ -113,7 +103,18 @@ const handler = createMcpHandler(
           "Fetch a specific content item by type (work, project, article, note) and slug.",
         inputSchema: T.contentTypeSchema,
       },
-      async ({ type, slug }) => wrap(T.getContentItemData(type, slug)),
+      async ({ type, slug }) =>
+        T.wrapToolResult(T.getContentItemData(type, slug)),
+    );
+    server.registerTool(
+      "list_decisions",
+      {
+        title: "List architecture decisions",
+        description:
+          "Real engineering tradeoffs across all projects and work case studies — the choice made, the alternative considered, and the cost paid. Optional tag filter.",
+        inputSchema: T.decisionsTagSchema,
+      },
+      async ({ tag }) => T.wrapToolResult(T.listDecisionsData(tag)),
     );
   },
   {},

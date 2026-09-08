@@ -13,6 +13,13 @@ pinRank: 5
 featured: false
 order: 4
 excerpt: SQLite/vector indexing, multi-agent orchestration, and resilience — shipped as core/CLI/MCP npm packages plus a 3D spatial dashboard.
+decisions:
+  - title: "Made the embedding provider optional, not bundled"
+    body: "`@xenova/transformers` pulls in `onnxruntime-web` → `onnx-proto` → `protobufjs`, which carries a critical RCE advisory with no fix in any maintained ONNX package. Default install: 83 packages, zero known vulnerabilities. Opt into semantic search: 130 packages, 1 critical + 4 high advisories `npm audit fix` can't clear. Cost: an upgrade silently drops semantic search until the dependency returns — why degraded retrieval now surfaces across five output surfaces instead of failing quietly."
+  - title: "Hard-fixed the vector index at 384 dimensions"
+    body: "the local MiniLM model's width — instead of auto-negotiating per provider. Gemini and Ollama report 768 dimensions, so enabling `GEMINI_API_KEY` or `OLLAMA_MODEL` deliberately throws at startup instead of silently writing mismatched-width vectors into the store. Cost: those \"supported\" providers don't work out of the box — using them means re-embedding the index or injecting a custom 384-dim provider."
+  - title: "Left git auto-commit off by default"
+    body: "The architecture doc explains why: an agent-authored commit puts an unreviewed write into shared history — \"and that is precisely how a corrupt write once reached this repository's history.\" With `CONTEXTOS_AUTO_COMMIT` unset, agent writes exist only as an audit-log row and an unreviewed diff until a human opts in — a real reviewability gap, traded against repeating the incident that caused it."
 ---
 
 **ContextOS** is a context + resilience layer for autonomous AI agents, shipped as **three published npm packages** — `@context-os/core` (a DI-container engine), `@context-os/cli` (Commander surface), and `@context-os/mcp` (an MCP server over dual stdio + HTTP/SSE transport) — plus a React 19 + Vite + Tailwind v4 + Three.js **spatial dashboard** rendering a force-directed 3D knowledge graph.
@@ -43,11 +50,3 @@ An agent talks to ContextOS over the MCP server's stdio or HTTP/SSE transport, w
 4. **Resilience.** Every write lands in the Merkle-linked audit log; the circuit breaker and CUSUM detector watch for cascade-preceding patterns and auto-quarantine before one happens.
 5. **Live repair.** The Sentinel watches the workspace via native fsevents and triggers immediate re-validation on change; a corrupted `context.md` or project file gets a Gemini 1.5 Pro repair from the Janitor Agent (v1.11.0), capped at three attempts per file.
 6. **Retrieval.** Queries are embedded locally (`@xenova/transformers`, 384-dim MiniLM) and matched via `sqlite-vec` in `better-sqlite3`. A degraded, keyword-only result now says so in-band — in `SearchResult.type`, CLI text, `--json` output, and the MCP tool response — instead of failing silently.
-
-## Key Decisions
-
-**Made the embedding provider optional, not bundled.** `@xenova/transformers` pulls in `onnxruntime-web` → `onnx-proto` → `protobufjs`, which carries a critical RCE advisory with no fix in any maintained ONNX package. Default install: 83 packages, zero known vulnerabilities. Opt into semantic search: 130 packages, 1 critical + 4 high advisories `npm audit fix` can't clear. Cost: an upgrade silently drops semantic search until the dependency returns — why degraded retrieval now surfaces across five output surfaces instead of failing quietly.
-
-**Hard-fixed the vector index at 384 dimensions** — the local MiniLM model's width — instead of auto-negotiating per provider. Gemini and Ollama report 768 dimensions, so enabling `GEMINI_API_KEY` or `OLLAMA_MODEL` deliberately throws at startup instead of silently writing mismatched-width vectors into the store. Cost: those "supported" providers don't work out of the box — using them means re-embedding the index or injecting a custom 384-dim provider.
-
-**Left git auto-commit off by default.** The architecture doc explains why: an agent-authored commit puts an unreviewed write into shared history — "and that is precisely how a corrupt write once reached this repository's history." With `CONTEXTOS_AUTO_COMMIT` unset, agent writes exist only as an audit-log row and an unreviewed diff until a human opts in — a real reviewability gap, traded against repeating the incident that caused it.

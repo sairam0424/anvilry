@@ -1557,7 +1557,7 @@
       "preview": "The chatbot grounding is the **in-context corpus** (`src/lib/corpus.ts`, ~4KB). No vector DB at this"
     },
     "CLAUDE.md:212": {
-      "fp": "5501fe766197",
+      "fp": "826a4efde0f6",
       "citedBy": [
         "02-api-routes.md",
         "03-lib-content-data.md",
@@ -1568,7 +1568,7 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "**9 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
+      "preview": "**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
     "CLAUDE.md:221": {
       "fp": "86cf5b5f3fb0",

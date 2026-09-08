@@ -44,7 +44,10 @@ export function CommandPalette({
 
   return (
     <>
-      {/* Trigger pill — bottom-right, terminal-styled */}
+      {/* Trigger pill — bottom-right, terminal-styled. Raised to bottom-20 below `sm`:
+          the chat composer's Send button sits at the same right edge on narrow viewports
+          (its max-w-3xl container becomes full-width there), and this pill's z-40 was
+          rendering on top of it, making Send unclickable on mobile. */}
       <Tooltip content="Open command palette (⌘K)">
         <button
           ref={triggerRef}
@@ -53,7 +56,7 @@ export function CommandPalette({
             setOpen(true);
           }}
           aria-label="Open command palette"
-          className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg"
+          className="fixed bottom-20 right-5 z-40 inline-flex items-center gap-2 rounded-lg border border-border-strong bg-bg-surface/90 px-3 py-2 font-mono text-xs text-fg-muted shadow-lg backdrop-blur transition-colors hover:border-accent hover:text-fg sm:bottom-5"
         >
           <TerminalSquare size={14} className="text-accent" />
           <span className="hidden sm:inline">Command</span>

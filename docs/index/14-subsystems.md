@@ -73,7 +73,7 @@ game-model.ts   corpus.ts     llms-txt.ts    resume-json.ts   mcp-tools.ts    ar
    │              │              │               │              │                    │
    ▼              ▼              ▼               ▼              ▼                    ▼
 gamified view   /api/chat     /llms.txt      /api/resume.json  /api/mcp/mcp      /articles,
-+ terminal      /llms-full.txt                                 (9 tools)        writing-preview,
++ terminal      /llms-full.txt                                 (10 tools)       writing-preview,
 (cat/ls/tree)   terminal grep                                                   article-group-card
 ```
 
@@ -95,7 +95,7 @@ handlers, and `command-palette.tsx` (~44 non-test importers in total, per sectio
 | 8 | `src/lib/corpus.ts:13-76` | The whole chatbot grounding document as one markdown string. Reads work/projects/**notes** — never articles. |
 | 9 | `src/lib/llms-txt.ts:12-99` | `/llms.txt`. Dedupes articles through `groupArticles` (`:22`), truncates summaries (100/80 chars), emits a `## Markdown Versions` block (`:83-97`). |
 | 10 | `src/lib/resume-json.ts:12-45` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:30`). |
-| 11 | `src/lib/mcp-tools.ts:50-175` | Nine pure tool functions + Zod input shapes. |
+| 11 | `src/lib/mcp-tools.ts:37-307` | Ten pure tool functions + Zod input shapes. |
 | 12 | `src/lib/article-grouping.ts:62-117` | Two-pass syndication dedup keyed by `linkedNote` or `canonicalUrl`. |
 
 ### Entry point
@@ -552,10 +552,10 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 | `list_all_content` | `{}` | `listAllContentData()` `:150` | n/a |
 | `get_content_item` | `contentTypeSchema` `:144-147` | `getContentItemData()` `:160` | delegates, or `notFound("article"\|"note", …)` `:166`,`:171` |
 
-Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9** — and as of this
-branch every copy of that count agrees. The 7-vs-9 drift this index originally recorded is **fixed**: the
-route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:212`
-and `CLAUDE.md:303` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
+Registration sites: `route.ts:20, 30, 40, 49, 59, 68, 78, 88, 98, 109`. **The count is 10** — and as of this
+branch every copy of that count agrees. The 7-vs-9 and 9-vs-10 drifts this index originally recorded are **fixed**: the
+route's own docblock now reads "10 read-only tools" (`src/app/api/mcp/[transport]/route.ts:12`), `CLAUDE.md:212`
+and `CLAUDE.md:304` both say 10, and the hand-written `TOOLS` table on `/mcp` lists all ten rows
 (`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
 `src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
 (`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:455-456` records the
@@ -587,14 +587,14 @@ A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `s
 - **`src/lib/personal.ts` is never imported** — the professional-only boundary is stated at
   `src/lib/mcp-tools.ts:11-13` and asserted by `src/lib/mcp-tools.test.ts:22` ("does NOT leak personal.ts").
 - **`getProfileData()` hand-picks fields** rather than spreading `profile`; `email`, `calendlyUrl`, and
-  `substackUrl` are not returned (`mcp-tools.ts:50-63`).
+  `substackUrl` are not returned (`mcp-tools.ts:73-93`).
 - **Legacy SSE transport** — `disableSse: true` (`route.ts:126`).
 - **`export const runtime`** — removed because `cacheComponents` rejects the export's mere presence
   (`route.ts:6-8`).
 
 ### The not-found (`isError`) contract
 
-`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:42-48`). `wrap()` detects the
+`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:66-71`). `wrap()` detects the
 **literal `notFound` property** and sets `isError: true` (`route.ts:13`), so the calling agent receives the
 list of valid options instead of a fabricated answer. Renaming that field turns every not-found into a
 silent success.

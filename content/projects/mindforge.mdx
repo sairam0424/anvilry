@@ -13,6 +13,13 @@ pinRank: 6
 featured: true
 order: 1
 excerpt: Command-driven multi-agent orchestration for Claude Code — 174 commands, 154 subagents, cost-aware model routing, and true wave parallelism. Ships as npx mindforge-cc.
+decisions:
+  - title: "Advisory governance over fail-closed hooks"
+    body: "Outside Claude Code's own hook channel, MindForge enforces policy by convention rather than by blocking — a trade its own README states outright, made against a fail-closed tail that was measured denying benign commands on a fresh clone."
+  - title: "A single canonical version source over a \"bump N files\" heuristic"
+    body: "`package.json` feeds a sync script and test gate fanning out across 16 channels — the SDK, the MCP server, three lockfiles, the Homebrew formula, the Dockerfile, the marketplace listing. The cost of skipping that gate already happened once: v11.9.2 shipped with the Homebrew formula and Dockerfile still pinned four releases behind."
+  - title: "A zero-dependency SDK over a bundled WebSocket client"
+    body: "Shipping `sdk/` with no runtime dependencies keeps it lean, but it means `WebSocketEventStream` can't function on Node 18 or 20 unless the caller manually installs and polyfills `ws` onto `globalThis` — a real enough gap that the code now throws a descriptive error instead of the bare `ReferenceError` it used to."
 ---
 
 Multi-agent AI workflows are powerful but chaotic: unbounded token spend, logic drift in long loops, and no audit trail. **MindForge** is a command-driven orchestration framework for Claude Code that brings governance to that chaos.
@@ -39,8 +46,3 @@ MindForge splits into four load-bearing subsystems. **Wave execution** (`bin/aut
 5. State — tasks, waves, audit pointers — persists to `.planning/HANDOFF.json` via `state-manager.js`, so a session can resume after a crash.
 6. Progress and results stream out over `WebSocketEventStream` to any connected SDK client; `verify-audit.js` can independently replay the chain and fails closed the moment a hash breaks.
 
-## Key Decisions
-
-- **Advisory governance over fail-closed hooks.** Outside Claude Code's own hook channel, MindForge enforces policy by convention rather than by blocking — a trade its own README states outright, made against a fail-closed tail that was measured denying benign commands on a fresh clone.
-- **A single canonical version source over a "bump N files" heuristic.** `package.json` feeds a sync script and test gate fanning out across 16 channels — the SDK, the MCP server, three lockfiles, the Homebrew formula, the Dockerfile, the marketplace listing. The cost of skipping that gate already happened once: v11.9.2 shipped with the Homebrew formula and Dockerfile still pinned four releases behind.
-- **A zero-dependency SDK over a bundled WebSocket client.** Shipping `sdk/` with no runtime dependencies keeps it lean, but it means `WebSocketEventStream` can't function on Node 18 or 20 unless the caller manually installs and polyfills `ws` onto `globalThis` — a real enough gap that the code now throws a descriptive error instead of the bare `ReferenceError` it used to.

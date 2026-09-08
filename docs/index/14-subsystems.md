@@ -73,7 +73,7 @@ game-model.ts   corpus.ts     llms-txt.ts    resume-json.ts   mcp-tools.ts    ar
    │              │              │               │              │                    │
    ▼              ▼              ▼               ▼              ▼                    ▼
 gamified view   /api/chat     /llms.txt      /api/resume.json  /api/mcp/mcp      /articles,
-+ terminal      /llms-full.txt                                 (9 tools)        writing-preview,
++ terminal      /llms-full.txt                                 (10 tools)       writing-preview,
 (cat/ls/tree)   terminal grep                                                   article-group-card
 ```
 
@@ -552,10 +552,10 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 | `list_all_content` | `{}` | `listAllContentData()` `:150` | n/a |
 | `get_content_item` | `contentTypeSchema` `:144-147` | `getContentItemData()` `:160` | delegates, or `notFound("article"\|"note", …)` `:166`,`:171` |
 
-Registration sites: `route.ts:30, 40, 50, 59, 69, 78, 88, 98, 108`. **The count is 9** — and as of this
-branch every copy of that count agrees. The 7-vs-9 drift this index originally recorded is **fixed**: the
-route's own docblock now reads "9 read-only tools" (`src/app/api/mcp/[transport]/route.ts:22`), `CLAUDE.md:212`
-and `CLAUDE.md:303` both say 9, and the hand-written `TOOLS` table on `/mcp` lists all nine rows
+Registration sites: `route.ts:20, 30, 40, 49, 59, 68, 78, 88, 98, 109`. **The count is 10** — and as of this
+branch every copy of that count agrees. The 7-vs-9 and 9-vs-10 drifts this index originally recorded are **fixed**: the
+route's own docblock now reads "10 read-only tools" (`src/app/api/mcp/[transport]/route.ts:12`), `CLAUDE.md:212`
+and `CLAUDE.md:304` both say 10, and the hand-written `TOOLS` table on `/mcp` lists all ten rows
 (`src/app/mcp/page.tsx:35-45`) — `list_all_content` and `get_content_item` were the two it had been missing.
 `src/lib/mcp-tools.ts` was correct throughout, exporting all nine `*Data` functions
 (`:50,65,77,93,105,121,137,150,160`); the two tools landed at v3.0.0 (`CHANGELOG.md:455-456` records the

@@ -227,6 +227,25 @@ export const contentTypeSchema = {
 };
 
 /** Flat list of all content items (work, projects, articles, notes) — slug + title + type. */
+/** Wrap a tool result as MCP content + structuredContent; mark not-found as an error.
+ *  structuredContent must be an object per the MCP spec — the list_* / search_* tools
+ *  above return a bare array, which the SDK's runtime validation rejects ("expected
+ *  record") even though TypeScript will happily let an `as Record<string, unknown>`
+ *  cast through. Every array-returning tool failed on every real call until this
+ *  wrapped arrays in { items }; `content` (the JSON text) is left as the raw array,
+ *  unaffected by this. */
+export function wrapToolResult(data: unknown) {
+  const isNotFound = !!data && typeof data === "object" && "notFound" in data;
+  const structuredContent = Array.isArray(data)
+    ? { items: data }
+    : (data as Record<string, unknown>);
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+    structuredContent,
+    ...(isNotFound && { isError: true }),
+  };
+}
+
 export function listAllContentData() {
   return [
     ...allWork.map((w) => ({

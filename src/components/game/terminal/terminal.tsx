@@ -209,10 +209,11 @@ export function Terminal({
           eat into the fixed-height `lg:` desktop layout (developer-view.tsx). */}
       <div className="relative border-t border-border">
         <div
-          className="flex gap-1.5 overflow-x-auto overscroll-x-contain px-4 py-2"
+          className="flex gap-1.5 overflow-x-auto overscroll-x-contain scrollbar-hide px-4 py-2"
           style={{ WebkitOverflowScrolling: "touch" }}
           role="group"
           aria-label="Quick commands"
+          tabIndex={0}
         >
           {CHIPS.map((c) => (
             <button

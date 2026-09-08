@@ -11,6 +11,7 @@ import {
   searchExperienceData,
   getResumeVariantData,
   listDecisionsData,
+  wrapToolResult,
 } from "./mcp-tools";
 import { allProjects, allWork } from "@/lib/content";
 
@@ -97,5 +98,27 @@ describe("mcp tools", () => {
     // per the spec's YAGNI deferral — this proves the filter path is safe either way).
     const filtered = listDecisionsData("nonexistent-tag");
     expect(filtered).toEqual([]);
+  });
+
+  it("wrapToolResult's structuredContent is always an object, even for array-returning tools", () => {
+    // Regression: an `as Record<string, unknown>` cast let a bare array through at the
+    // type level, but the MCP SDK's runtime validation rejects a non-object
+    // structuredContent — every list_*/search_experience tool failed on every real
+    // call until this wrapped arrays in { items }.
+    const arrayResult = wrapToolResult(listProjectsData());
+    expect(Array.isArray(arrayResult.structuredContent)).toBe(false);
+    expect(typeof arrayResult.structuredContent).toBe("object");
+    expect(arrayResult.structuredContent).toHaveProperty("items");
+    expect(
+      Array.isArray(
+        (arrayResult.structuredContent as { items: unknown }).items,
+      ),
+    ).toBe(true);
+
+    const objectResult = wrapToolResult(getProfileData());
+    expect(objectResult.structuredContent).toEqual(getProfileData());
+
+    const notFoundResult = wrapToolResult(getProjectData("totally-fake"));
+    expect(notFoundResult.isError).toBe(true);
   });
 });

@@ -11,6 +11,13 @@ pinRank: 1
 featured: true
 order: 3
 excerpt: A Karpathy-style propose/eval/score/commit-or-revert loop over a git-versioned agent spec, with an LLM-judge eval harness. Framework-agnostic.
+decisions:
+  - title: "Git as the rollback mechanism, not a custom versioned store"
+    body: "Commit-or-revert rides on git's own history instead of a bespoke database of spec versions. The cost is a real git operation per iteration, slower than an in-memory diff-and-discard — the payoff is an audit trail already inspectable with tools every engineer has, with no parallel system to keep in sync."
+  - title: "Held-out validation as a periodic overfit check, not a per-iteration eval pass"
+    body: "Scoring every candidate against the same examples that shaped its proposal risks the loop learning to game its own judge. Rather than paying that cost every iteration, a held-out check runs periodically (every 10th iteration by default) against examples the loop never optimized against — cheaper than gating every commit on it, at the cost of only catching overfitting in arrears rather than blocking it in the moment it happens."
+  - title: "Framework-agnostic adapters over a deep, single-framework integration"
+    body: "Thin adapters across LangChain, LangGraph, CrewAI, AutoGen, and raw SDKs mean none gets the tightest integration a framework-native rebuild could reach. In exchange, the same loop runs over whatever stack an agent is already built on, instead of forcing a migration first."
 ---
 
 **Agent-Forge** runs a Karpathy-style **propose → eval → score → commit-or-revert** loop over a mutable, git-versioned `AGENT.md` specification — so agents iteratively improve against a measurable eval suite without human intervention between iterations.
@@ -45,8 +52,3 @@ The system splits into layers, each owning one part of the loop:
 8. The Next.js dashboard and MCP surface expose the audit trail — every commit is a decision an eval made, not a person.
 9. The loop repeats with no human between iterations; the only touchpoint left is judging whether the trend is worth continuing.
 
-## Key Decisions
-
-- **Git as the rollback mechanism, not a custom versioned store.** Commit-or-revert rides on git's own history instead of a bespoke database of spec versions. The cost is a real git operation per iteration, slower than an in-memory diff-and-discard — the payoff is an audit trail already inspectable with tools every engineer has, with no parallel system to keep in sync.
-- **Held-out validation as a periodic overfit check, not a per-iteration eval pass.** Scoring every candidate against the same examples that shaped its proposal risks the loop learning to game its own judge. Rather than paying that cost every iteration, a held-out check runs periodically (every 10th iteration by default) against examples the loop never optimized against — cheaper than gating every commit on it, at the cost of only catching overfitting in arrears rather than blocking it in the moment it happens.
-- **Framework-agnostic adapters over a deep, single-framework integration.** Thin adapters across LangChain, LangGraph, CrewAI, AutoGen, and raw SDKs mean none gets the tightest integration a framework-native rebuild could reach. In exchange, the same loop runs over whatever stack an agent is already built on, instead of forcing a migration first.

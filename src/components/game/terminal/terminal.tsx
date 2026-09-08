@@ -42,11 +42,14 @@ export function Terminal({
   maximizeRef?: React.Ref<HTMLButtonElement>;
   initialLines?: import("./types").Line[];
 }) {
-  const { lines, input, setInput, run, recall, complete, theme } = useTerminal(initialLines);
+  const { lines, input, setInput, run, recall, complete, theme } =
+    useTerminal(initialLines);
   const promptColor = THEME_TEXT[theme] ?? "text-accent";
 
   // Fuzzy autocomplete dropdown state
-  const [suggestions, setSuggestions] = useState<{ name: string; description: string }[]>([]);
+  const [suggestions, setSuggestions] = useState<
+    { name: string; description: string }[]
+  >([]);
   const [suggIdx, setSuggIdx] = useState(-1);
   const [showSugg, setShowSugg] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +97,10 @@ export function Terminal({
         setSuggIdx((i) => Math.min(i + 1, suggestions.length - 1));
       } else {
         const v = recall("down");
-        if (v !== null) { e.preventDefault(); setInput(v); }
+        if (v !== null) {
+          e.preventDefault();
+          setInput(v);
+        }
       }
     } else if (e.key === "ArrowUp") {
       if (showSugg) {
@@ -102,18 +108,27 @@ export function Terminal({
         setSuggIdx((i) => Math.max(i - 1, 0));
       } else {
         const v = recall("up");
-        if (v !== null) { e.preventDefault(); setInput(v); }
+        if (v !== null) {
+          e.preventDefault();
+          setInput(v);
+        }
       }
     } else if (e.key === "Tab") {
       e.preventDefault();
       if (showSugg && suggestions.length > 0) {
         // Accept highlighted suggestion or top suggestion
-        acceptSuggestion(suggIdx >= 0 ? suggestions[suggIdx].name : suggestions[0].name);
+        acceptSuggestion(
+          suggIdx >= 0 ? suggestions[suggIdx].name : suggestions[0].name,
+        );
       } else {
         const c = complete(input);
         if (c) setInput(c);
       }
-    } else if (e.key === "ArrowRight" && ghostHint && input === inputRef.current?.value) {
+    } else if (
+      e.key === "ArrowRight" &&
+      ghostHint &&
+      input === inputRef.current?.value
+    ) {
       // Accept ghost hint with →
       e.preventDefault();
       setInput(input + ghostHint);
@@ -136,12 +151,17 @@ export function Terminal({
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-fg-subtle">
         <TerminalSquare size={13} className="shrink-0 text-accent" />
         <span className="truncate">sairam@anvilry</span>
-        <span className="ml-auto hidden text-[10px] sm:inline">keyboard-native · type &apos;help&apos;</span>
+        <span className="ml-auto hidden text-[10px] sm:inline">
+          keyboard-native · type &apos;help&apos;
+        </span>
         {onMaximize && (
           <button
             ref={maximizeRef}
             type="button"
-            onClick={() => { track("terminal_maximize"); onMaximize(); }}
+            onClick={() => {
+              track("terminal_maximize");
+              onMaximize();
+            }}
             aria-label="Maximize terminal to fullscreen"
             className="-mr-1 ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded text-fg-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:ml-0"
           >
@@ -168,10 +188,13 @@ export function Terminal({
               aria-hidden={l.kind === "art" || undefined}
               className={cn(
                 "whitespace-pre-wrap",
-                l.kind === "in"  ? "text-accent" :
-                l.kind === "err" ? "text-amber" :
-                l.kind === "art" ? "whitespace-pre text-fg-subtle/60" :
-                                   "text-fg-muted",
+                l.kind === "in"
+                  ? "text-accent"
+                  : l.kind === "err"
+                    ? "text-amber"
+                    : l.kind === "art"
+                      ? "whitespace-pre text-fg-subtle/60"
+                      : "text-fg-muted",
               )}
             >
               {l.text}
@@ -180,22 +203,36 @@ export function Terminal({
         </div>
       </div>
 
-      {/* Quick-run chips */}
-      <div
-        className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2"
-        role="group"
-        aria-label="Quick commands"
-      >
-        {CHIPS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => { track("terminal_chip", { name: c }); runAndPin(c); }}
-            className="rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            {c}
-          </button>
-        ))}
+      {/* Quick-run chips — horizontal scroll (not flex-wrap), matching the chat view's
+          composer chip rail and the /decisions tag filter: keeps this row a fixed single-line
+          height regardless of how many chips exist, rather than wrapping into extra rows that
+          eat into the fixed-height `lg:` desktop layout (developer-view.tsx). */}
+      <div className="relative border-t border-border">
+        <div
+          className="flex gap-1.5 overflow-x-auto overscroll-x-contain scrollbar-hide px-4 py-2"
+          style={{ WebkitOverflowScrolling: "touch" }}
+          role="group"
+          aria-label="Quick commands"
+          tabIndex={0}
+        >
+          {CHIPS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
+                track("terminal_chip", { name: c });
+                runAndPin(c);
+              }}
+              className="shrink-0 whitespace-nowrap rounded-full border border-border px-2.5 py-1 text-[11px] text-fg-muted transition-colors hover:border-accent hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-bg-surface via-bg-surface/85 via-45% to-transparent"
+        />
       </div>
 
       {/* Input row + autocomplete dropdown */}
@@ -220,9 +257,17 @@ export function Terminal({
                   ? "bg-accent/10 text-fg"
                   : "text-fg-muted hover:bg-bg-elevated hover:text-fg",
               )}
-              onMouseDown={(e) => { e.preventDefault(); acceptSuggestion(s.name); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                acceptSuggestion(s.name);
+              }}
             >
-              <span className={cn("font-semibold", i === suggIdx ? "text-accent" : "text-fg-muted")}>
+              <span
+                className={cn(
+                  "font-semibold",
+                  i === suggIdx ? "text-accent" : "text-fg-muted",
+                )}
+              >
                 {i === 0 ? "▸" : " "} {s.name}
               </span>
               <span className="truncate text-fg-subtle">{s.description}</span>
@@ -233,13 +278,16 @@ export function Terminal({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const cmd = suggIdx >= 0 && showSugg ? suggestions[suggIdx].name : input;
+            const cmd =
+              suggIdx >= 0 && showSugg ? suggestions[suggIdx].name : input;
             runAndPin(cmd);
             setInput("");
           }}
           className="flex items-center gap-2 px-4 py-2 transition-shadow focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent"
         >
-          <span className={promptColor} aria-hidden="true">{">"}</span>
+          <span className={promptColor} aria-hidden="true">
+            {">"}
+          </span>
 
           {/* Input + ghost hint overlay */}
           <div className="relative min-w-0 flex-1">
@@ -275,7 +323,10 @@ export function Terminal({
           </div>
 
           {input === "" && (
-            <span className={cn("terminal-cursor select-none", promptColor)} aria-hidden="true">
+            <span
+              className={cn("terminal-cursor select-none", promptColor)}
+              aria-hidden="true"
+            >
               ▍
             </span>
           )}

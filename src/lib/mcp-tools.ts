@@ -1,6 +1,14 @@
 import { z } from "zod";
-import { allProjects, allWork, allArticles, allNotes, getProject, getWork } from "@/lib/content";
+import {
+  allProjects,
+  allWork,
+  allArticles,
+  allNotes,
+  getProject,
+  getWork,
+} from "@/lib/content";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
+import { allDecisions } from "@/lib/decisions";
 
 /**
  * Pure, transport-agnostic logic for the portfolio MCP server (src/app/api/mcp). Reads
@@ -26,20 +34,35 @@ const ROLE_TO_LABEL: Record<ResumeRole, string> = {
 };
 
 // Zod input schemas (raw-shape form for mcp-handler's registerTool).
-export const projectSlugSchema = { slug: z.string().describe("project slug, e.g. mindforge") };
-export const workSlugSchema = { slug: z.string().describe("work slug, e.g. pensieve") };
+export const projectSlugSchema = {
+  slug: z.string().describe("project slug, e.g. mindforge"),
+};
+export const workSlugSchema = {
+  slug: z.string().describe("work slug, e.g. pensieve"),
+};
 export const searchSchema = {
-  query: z.string().min(1).max(120).describe("keywords, e.g. 'kafka' or 'multi-agent'"),
+  query: z
+    .string()
+    .min(1)
+    .max(120)
+    .describe("keywords, e.g. 'kafka' or 'multi-agent'"),
 };
 export const resumeRoleSchema = {
-  role: z.enum(RESUME_ROLES).describe("target role flavor for the résumé variant"),
+  role: z
+    .enum(RESUME_ROLES)
+    .describe("target role flavor for the résumé variant"),
 };
 
 export const projectSlugs = () => allProjects.map((p) => p.slug);
 export const workSlugs = () => allWork.map((w) => w.slug);
 
 /** A not-found result carrying the valid options (so the calling agent can self-correct). */
-export type NotFound = { notFound: true; kind: string; given: string; valid: string[] };
+export type NotFound = {
+  notFound: true;
+  kind: string;
+  given: string;
+  valid: string[];
+};
 const notFound = (kind: string, given: string, valid: string[]): NotFound => ({
   notFound: true,
   kind,
@@ -56,9 +79,16 @@ export function getProfileData() {
     location: profile.location,
     headline: profile.headline,
     summary: profile.subhead,
-    links: { github: profile.links.github, linkedin: profile.links.linkedin, site: BASE },
+    links: {
+      github: profile.links.github,
+      linkedin: profile.links.linkedin,
+      site: BASE,
+    },
     skills: skills.map((s) => ({ group: s.group, items: s.items })),
-    achievements: achievements.map((a) => ({ title: a.title, detail: a.detail })),
+    achievements: achievements.map((a) => ({
+      title: a.title,
+      detail: a.detail,
+    })),
   };
 }
 
@@ -122,15 +152,37 @@ export function searchExperienceData(query: string) {
   const q = query.toLowerCase();
   const workHits = allWork
     .filter((w) =>
-      [w.name, w.role, w.register, w.summary, ...w.tech].join(" ").toLowerCase().includes(q),
+      [w.name, w.role, w.register, w.summary, ...w.tech]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
     )
-    .map((w) => ({ kind: "work" as const, slug: w.slug, name: w.name, url: `${BASE}${w.url}` }));
+    .map((w) => ({
+      kind: "work" as const,
+      slug: w.slug,
+      name: w.name,
+      url: `${BASE}${w.url}`,
+    }));
   const projectHits = allProjects
-    .filter((p) => [p.name, p.tagline, p.group, ...p.tech].join(" ").toLowerCase().includes(q))
-    .map((p) => ({ kind: "project" as const, slug: p.slug, name: p.name, url: `${BASE}${p.url}` }));
+    .filter((p) =>
+      [p.name, p.tagline, p.group, ...p.tech]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    )
+    .map((p) => ({
+      kind: "project" as const,
+      slug: p.slug,
+      name: p.name,
+      url: `${BASE}${p.url}`,
+    }));
   const skillHits = skills
     .filter((s) => [s.group, ...s.items].join(" ").toLowerCase().includes(q))
-    .map((s) => ({ kind: "skill" as const, group: s.group, items: s.items.filter((i) => i.toLowerCase().includes(q)) }));
+    .map((s) => ({
+      kind: "skill" as const,
+      group: s.group,
+      items: s.items.filter((i) => i.toLowerCase().includes(q)),
+    }));
   return { query, matches: [...workHits, ...projectHits], skills: skillHits };
 }
 
@@ -138,7 +190,35 @@ export function getResumeVariantData(role: ResumeRole) {
   const label = ROLE_TO_LABEL[role];
   const variant = resumeVariants.find((r) => r.label === label);
   if (!variant) return notFound("resume_variant", role, [...RESUME_ROLES]);
-  return { role, label: variant.label, tag: variant.tag, url: `${BASE}${variant.file}` };
+  return {
+    role,
+    label: variant.label,
+    tag: variant.tag,
+    url: `${BASE}${variant.file}`,
+  };
+}
+
+export const decisionsTagSchema = {
+  tag: z
+    .string()
+    .optional()
+    .describe("filter to decisions carrying this tag; omit for all"),
+};
+
+/** All architecture-decision entries (project Key Decisions + work constraints/tradeoffs),
+ *  optionally filtered by tag. */
+export function listDecisionsData(tag?: string) {
+  const entries = tag
+    ? allDecisions.filter((e) => e.tags.includes(tag))
+    : allDecisions;
+  return entries.map((e) => ({
+    sourceKind: e.sourceKind,
+    sourceName: e.sourceName,
+    title: e.title,
+    body: e.body,
+    tags: e.tags,
+    url: `${BASE}${e.href}`,
+  }));
 }
 
 export const contentTypeSchema = {
@@ -147,29 +227,100 @@ export const contentTypeSchema = {
 };
 
 /** Flat list of all content items (work, projects, articles, notes) — slug + title + type. */
+/** Wrap a tool result as MCP content + structuredContent; mark not-found as an error.
+ *  structuredContent must be an object per the MCP spec — the list_* / search_* tools
+ *  above return a bare array, which the SDK's runtime validation rejects ("expected
+ *  record") even though TypeScript will happily let an `as Record<string, unknown>`
+ *  cast through. Every array-returning tool failed on every real call until this
+ *  wrapped arrays in { items }; `content` (the JSON text) is left as the raw array,
+ *  unaffected by this. */
+export function wrapToolResult(data: unknown) {
+  const isNotFound = !!data && typeof data === "object" && "notFound" in data;
+  const structuredContent = Array.isArray(data)
+    ? { items: data }
+    : (data as Record<string, unknown>);
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+    structuredContent,
+    ...(isNotFound && { isError: true }),
+  };
+}
+
 export function listAllContentData() {
   return [
-    ...allWork.map((w) => ({ type: "work" as const, slug: w.slug, name: w.name, summary: w.summary, url: `${BASE}${w.url}` })),
-    ...allProjects.map((p) => ({ type: "project" as const, slug: p.slug, name: p.name, summary: p.tagline, url: `${BASE}${p.url}` })),
-    ...allArticles.map((a) => ({ type: "article" as const, slug: a.slug, name: a.title, summary: a.summary, url: `${BASE}${a.url}` })),
-    ...allNotes.map((n) => ({ type: "note" as const, slug: n.slug, name: n.title, summary: n.summary, url: `${BASE}${n.url}` })),
+    ...allWork.map((w) => ({
+      type: "work" as const,
+      slug: w.slug,
+      name: w.name,
+      summary: w.summary,
+      url: `${BASE}${w.url}`,
+    })),
+    ...allProjects.map((p) => ({
+      type: "project" as const,
+      slug: p.slug,
+      name: p.name,
+      summary: p.tagline,
+      url: `${BASE}${p.url}`,
+    })),
+    ...allArticles.map((a) => ({
+      type: "article" as const,
+      slug: a.slug,
+      name: a.title,
+      summary: a.summary,
+      url: `${BASE}${a.url}`,
+    })),
+    ...allNotes.map((n) => ({
+      type: "note" as const,
+      slug: n.slug,
+      name: n.title,
+      summary: n.summary,
+      url: `${BASE}${n.url}`,
+    })),
   ];
 }
 
 /** Get a single content item by type + slug. */
-export function getContentItemData(type: "work" | "project" | "article" | "note", slug: string) {
+export function getContentItemData(
+  type: "work" | "project" | "article" | "note",
+  slug: string,
+) {
   switch (type) {
-    case "work":    return getWorkData(slug);
-    case "project": return getProjectData(slug);
+    case "work":
+      return getWorkData(slug);
+    case "project":
+      return getProjectData(slug);
     case "article": {
       const a = allArticles.find((x) => x.slug === slug);
-      if (!a) return notFound("article", slug, allArticles.map((x) => x.slug));
-      return { slug: a.slug, name: a.title, summary: a.summary, date: a.date, tags: a.tags, url: `${BASE}${a.url}` };
+      if (!a)
+        return notFound(
+          "article",
+          slug,
+          allArticles.map((x) => x.slug),
+        );
+      return {
+        slug: a.slug,
+        name: a.title,
+        summary: a.summary,
+        date: a.date,
+        tags: a.tags,
+        url: `${BASE}${a.url}`,
+      };
     }
     case "note": {
       const n = allNotes.find((x) => x.slug === slug);
-      if (!n) return notFound("note", slug, allNotes.map((x) => x.slug));
-      return { slug: n.slug, name: n.title, summary: n.summary, date: n.date, url: `${BASE}${n.url}` };
+      if (!n)
+        return notFound(
+          "note",
+          slug,
+          allNotes.map((x) => x.slug),
+        );
+      return {
+        slug: n.slug,
+        name: n.title,
+        summary: n.summary,
+        date: n.date,
+        url: `${BASE}${n.url}`,
+      };
     }
   }
 }

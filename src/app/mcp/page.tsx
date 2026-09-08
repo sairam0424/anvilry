@@ -11,7 +11,12 @@ export const metadata: Metadata = {
   description,
   alternates: { canonical: "/mcp" },
   // Page-specific OG so a share of /mcp shows this page, not the homepage identity.
-  openGraph: { type: "website", url: "/mcp", title: `MCP server — ${profile.name}`, description },
+  openGraph: {
+    type: "website",
+    url: "/mcp",
+    title: `MCP server — ${profile.name}`,
+    description,
+  },
 };
 
 const CLAUDE_CONFIG = `{
@@ -40,23 +45,39 @@ const TOOLS = [
   ["get_work", "One case study's detail by slug"],
   ["search_experience", "Keyword search across work, projects, skills"],
   ["get_resume_variant", "The canonical résumé PDF URL"],
-  ["list_all_content", "Every work item, project, article and note — slug, name, summary, URL"],
-  ["get_content_item", "One content item by type (work, project, article, note) and slug"],
+  [
+    "list_all_content",
+    "Every work item, project, article and note — slug, name, summary, URL",
+  ],
+  [
+    "get_content_item",
+    "One content item by type (work, project, article, note) and slug",
+  ],
+  [
+    "list_decisions",
+    "Real architecture tradeoffs across projects and work, optionally filtered by tag",
+  ],
 ];
 
 export default function McpPage() {
   return (
     <main className="flex-1">
-      <Section label="// model context protocol" title="Ask your own AI about me" titleAs="h1">
+      <Section
+        label="// model context protocol"
+        title="Ask your own AI about me"
+        titleAs="h1"
+      >
         <div className="max-w-2xl space-y-4 text-fg-muted">
           <p>
-            This portfolio runs a small <span className="text-fg">MCP server</span> — the same protocol AI
-            assistants use to call tools. Connect it to Claude Desktop or Cursor and ask your own AI about my
-            work; it answers from my real projects and résumé.
+            This portfolio runs a small{" "}
+            <span className="text-fg">MCP server</span> — the same protocol AI
+            assistants use to call tools. Connect it to Claude Desktop or Cursor
+            and ask your own AI about my work; it answers from my real projects
+            and résumé.
           </p>
           <p className="text-sm text-fg-subtle">
-            Read-only · grounded in the same content as this site · no LLM cost on the server · it can only
-            return real data, never invent.
+            Read-only · grounded in the same content as this site · no LLM cost
+            on the server · it can only return real data, never invent.
           </p>
         </div>
 
@@ -96,14 +117,26 @@ export default function McpPage() {
             <table className="mt-3 w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-fg-subtle">
-                  <th scope="col" className="py-2 pr-4 font-mono text-xs font-normal">tool</th>
-                  <th scope="col" className="py-2 font-mono text-xs font-normal">what it returns</th>
+                  <th
+                    scope="col"
+                    className="py-2 pr-4 font-mono text-xs font-normal"
+                  >
+                    tool
+                  </th>
+                  <th
+                    scope="col"
+                    className="py-2 font-mono text-xs font-normal"
+                  >
+                    what it returns
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {TOOLS.map(([name, desc]) => (
                   <tr key={name} className="border-b border-border/50">
-                    <td className="py-2 pr-4 align-top font-mono text-xs text-accent">{name}</td>
+                    <td className="py-2 pr-4 align-top font-mono text-xs text-accent">
+                      {name}
+                    </td>
                     <td className="py-2 text-fg-muted">{desc}</td>
                   </tr>
                 ))}

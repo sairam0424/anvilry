@@ -44,6 +44,20 @@ test("classic view: navigation to work page works", async ({ page }) => {
   await expect(page.locator("main")).toBeVisible();
 });
 
+test("classic view: navigation to decisions page works", async ({ page }) => {
+  await page.goto("/decisions");
+  await expect(page).toHaveURL("/decisions");
+  await expect(page.locator("main")).toBeVisible();
+  // At least one decision card renders and links to a real canonical page.
+  const firstLink = page
+    .locator("main a[href^='/work/']")
+    .or(page.locator("main a[href^='/projects/']"))
+    .first();
+  await expect(firstLink).toBeVisible();
+  const href = await firstLink.getAttribute("href");
+  expect(href).toMatch(/^\/(work|projects)\/[a-z0-9-]+$/);
+});
+
 // ── Chat view ─────────────────────────────────────────────────────────────────
 
 test("chat view switches and renders chat interface", async ({ page }) => {

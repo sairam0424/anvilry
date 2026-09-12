@@ -104,7 +104,7 @@ when Upstash env is unset or errors (`src/lib/rate-limit.ts:73`, `:79-82`).
 - **Role:** The site's LLM endpoint — validates and bounds a chat history, assembles a grounded system prompt from the Velite corpus, and returns a plain-text byte stream with a trailing trace frame.
 - **Exports:** `maxDuration` (`= 30`, :12) — segment config; `POST` (async route handler).
 - **Reads / depends on:** `@/lib/corpus` (`buildCorpus`), `@/lib/profile`, `@/lib/content` (`allProjects`, `allWork`), `@/lib/llm` (`isConfigured`, `streamWithFallback`), `@/lib/rate-limit`, `@/lib/telemetry/{with-trace,emit,schema}`, `node:crypto`. Env: `VERCEL_URL` (:74), `EXTENDED_THINKING` (:263) — plus everything `src/lib/llm.ts` reads (`LLM_PROVIDER`, `BEDROCK_*`).
-- **Consumed by:** `src/components/chat/use-chat.ts:305` (`fetch("/api/chat", …)`); asserted in `src/components/ask-portfolio.dom.test.tsx:67`; hammered 12× per run by `src/app/api/cron/eval/route.ts:113`.
+- **Consumed by:** `src/components/chat/use-chat.ts:305` (`fetch("/api/chat", …)`); asserted in `src/components/ask-portfolio.dom.test.tsx:81`; hammered 12× per run by `src/app/api/cron/eval/route.ts:113`.
 - **Request → stream → fallback → telemetry path:**
   1. Whole body wrapped in `withTrace(req, "chat", …)` (:157) — mints `traceId`/`spanId`, stamps `x-anvilry-trace-id` on the response, and emits exactly one `http.request` span after the stream finishes (`src/lib/telemetry/with-trace.ts:202-221`).
   2. `isConfigured()` → **503** `{ error: "Chat is not configured." }` (:158-160).

@@ -143,6 +143,8 @@ function AskPortfolioWidget() {
           <div className="relative flex min-h-0 flex-1 flex-col">
             <div
               ref={scrollRef}
+              role="log"
+              aria-label="Chat transcript"
               className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 outline-none [overflow-anchor:none]"
               tabIndex={-1}
             >

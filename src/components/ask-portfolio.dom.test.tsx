@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+  cleanup,
+} from "@testing-library/react";
 import { AskPortfolio } from "./ask-portfolio";
 import { ViewProvider } from "@/components/view-context";
 
@@ -63,17 +70,37 @@ describe("AskPortfolio widget (unified onto useChat)", () => {
     // The user message echoes immediately.
     expect(screen.getByText("What did you build?")).toBeTruthy();
     // The streamed assistant answer settles via the shared useChat reader loop.
-    await waitFor(() => expect(screen.getByText("Hello from the corpus.")).toBeTruthy());
+    // Scoped to the transcript log: once settled, useChatA11y also mirrors the
+    // same final text into the sr-only aria-live announcer (announce-on-settle,
+    // see use-chat-a11y.ts), so an unscoped query matches both and throws.
+    // Timeout above the default 1000ms: the commit is coalesced onto
+    // requestAnimationFrame with a 250ms safety-timer fallback
+    // (BACKGROUND_FLUSH_MS in use-chat.ts) for when rAF doesn't fire — under
+    // happy-dom + CI load that fallback can occasionally miss the default window.
+    const transcript = screen.getByRole("log", { name: "Chat transcript" });
+    await waitFor(
+      () =>
+        expect(
+          within(transcript).getByText("Hello from the corpus."),
+        ).toBeTruthy(),
+      { timeout: 3000 },
+    );
 
     // It POSTed to /api/chat — the one shared seam, not a widget-private endpoint.
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
-    expect(fetchMock).toHaveBeenCalledWith("/api/chat", expect.objectContaining({ method: "POST" }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/chat",
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 
   it("surfaces the 503 not-configured message gracefully", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ ok: false, status: 503, body: null }) as unknown as Response),
+      vi.fn(
+        async () =>
+          ({ ok: false, status: 503, body: null }) as unknown as Response,
+      ),
     );
 
     renderWidget();

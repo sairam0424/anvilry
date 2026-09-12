@@ -6369,13 +6369,13 @@
       "preview": "import { motion } from \"motion/react\";"
     },
     "src/components/ask-portfolio.dom.test.tsx:2": {
-      "fp": "4243799a32cd",
+      "fp": "6222d0f43088",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "import { render, screen, fireEvent, waitFor, cleanup } from \"@testing-library/react\";"
+      "preview": "import { render, screen, fireEvent, waitFor, within, cleanup } from \"@testing-library/react\";"
     },
-    "src/components/ask-portfolio.dom.test.tsx:67": {
+    "src/components/ask-portfolio.dom.test.tsx:81": {
       "fp": "91109d4c8598",
       "citedBy": [
         "02-api-routes.md"

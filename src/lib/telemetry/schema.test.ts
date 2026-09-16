@@ -136,10 +136,11 @@ describe("TelemetryEventSchema.safeParse — rejects invalid events", () => {
 /* -------------------------------- KindLiteral -------------------------------- */
 
 describe("KindLiteral type export", () => {
-  it("includes the seven canonical kinds", () => {
+  it("includes the eight canonical kinds", () => {
     // Compile-time check: this assignment is only valid if KindLiteral is the
     // union we expect. The runtime expectation also guards against accidental
-    // re-ordering of KIND_LITERALS.
+    // re-ordering of KIND_LITERALS. "chat.cache" (FAQ cache hit/miss for
+    // /api/chat) was added alongside the eighth kind.
     const allowed: KindLiteral[] = [
       "http.request",
       "llm.attempt",
@@ -148,6 +149,7 @@ describe("KindLiteral type export", () => {
       "client.error",
       "server.error",
       "budget.tick",
+      "chat.cache",
     ];
     expect(allowed).toEqual([...KIND_LITERALS]);
   });

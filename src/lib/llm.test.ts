@@ -127,8 +127,14 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
           },
         },
         // 2. content_block_delta — first text delta starts the TTFT clock
-        { type: "content_block_delta", delta: { type: "text_delta", text: "Hello" } },
-        { type: "content_block_delta", delta: { type: "text_delta", text: " world." } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hello" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: " world." },
+        },
         // 3. message_delta carries the final output_tokens + stop_reason
         {
           type: "message_delta",
@@ -141,7 +147,11 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
     const onAttempt = vi.fn<(a: LlmAttempt) => void>();
     const { streamWithFallback } = await import("./llm");
     const stream = streamWithFallback(
-      { messages: [{ role: "user", content: "ping" }], max_tokens: 100, system: "test" },
+      {
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 100,
+        system: "test",
+      },
       { onAttempt },
     );
 
@@ -196,7 +206,10 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
             },
           },
         },
-        { type: "content_block_delta", delta: { type: "text_delta", text: "cached!" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "cached!" },
+        },
         {
           type: "message_delta",
           delta: { stop_reason: "end_turn" },
@@ -207,7 +220,11 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
     const onAttempt = vi.fn<(a: LlmAttempt) => void>();
     const { streamWithFallback } = await import("./llm");
     const stream = streamWithFallback(
-      { messages: [{ role: "user", content: "warm" }], max_tokens: 100, system: "test" },
+      {
+        messages: [{ role: "user", content: "warm" }],
+        max_tokens: 100,
+        system: "test",
+      },
       { onAttempt },
     );
 
@@ -227,7 +244,10 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
           type: "message_start",
           message: { usage: { input_tokens: 5, cache_read_input_tokens: 100 } },
         },
-        { type: "content_block_delta", delta: { type: "text_delta", text: "x" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "x" },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -235,18 +255,149 @@ describe("streamWithFallback — v1.8 usage capture (the headline win)", () => {
     const { streamWithFallback } = await import("./llm");
     await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "ping" }], max_tokens: 10, system: "x" },
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
         { onAttempt },
       ),
     );
     const usage = onAttempt.mock.calls[0][0].usage!;
     // Required snake_case keys.
     expect(Object.keys(usage)).toEqual(
-      expect.arrayContaining(["input_tokens", "cache_read_input_tokens", "output_tokens"]),
+      expect.arrayContaining([
+        "input_tokens",
+        "cache_read_input_tokens",
+        "output_tokens",
+      ]),
     );
     // Forbidden camelCase keys (a future SDK swap would slip these in).
     expect(usage).not.toHaveProperty("inputTokens");
     expect(usage).not.toHaveProperty("cacheReadInputTokens");
+  });
+});
+
+describe("streamWithFallback — answerText capture (FAQ-cache write-through source)", () => {
+  it("captures the full concatenated text_delta text on a clean success", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hello" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: " world." },
+        },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "end_turn" },
+          usage: { output_tokens: 3 },
+        },
+      ],
+    ];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    expect(onAttempt).toHaveBeenCalledTimes(1);
+    expect(onAttempt.mock.calls[0][0].answerText).toBe("Hello world.");
+  });
+
+  it("is undefined when the attempt errors before any byte (fallback path)", async () => {
+    STATE.events = [
+      // attempt 0: errors before any text_delta — answerText must be absent.
+      [{ type: "message_start", message: { usage: { input_tokens: 5 } } }],
+      // attempt 1: succeeds cleanly.
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "OK" },
+        },
+        { type: "message_delta", usage: { output_tokens: 1 } },
+      ],
+    ];
+    STATE.throwsOn = [0];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
+        { onAttempt },
+      ),
+    );
+    expect(onAttempt).toHaveBeenCalledTimes(2);
+    // Failed attempt: no answerText.
+    expect(onAttempt.mock.calls[0][0].answerText).toBeUndefined();
+    // Successful fallback attempt: answerText present.
+    expect(onAttempt.mock.calls[1][0].answerText).toBe("OK");
+  });
+
+  it("is undefined on every attempt when all fail (apology path, nothing to cache)", async () => {
+    STATE.events = [[], [], []];
+    STATE.throwsOn = [0, 1, 2];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
+        { onAttempt },
+      ),
+    );
+    expect(onAttempt).toHaveBeenCalledTimes(3);
+    expect(
+      onAttempt.mock.calls.every((c) => c[0].answerText === undefined),
+    ).toBe(true);
+  });
+
+  it("excludes thinking_delta content — only text_delta bytes are captured", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "thinking_delta", thinking: "reasoning bytes" },
+        },
+        {
+          type: "content_block_delta",
+          index: 1,
+          delta: { type: "text_delta", text: "Final answer." },
+        },
+        { type: "message_delta", usage: { output_tokens: 2 } },
+      ],
+    ];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt, extendedThinking: true },
+      ),
+    );
+    const answerText = onAttempt.mock.calls[0][0].answerText;
+    expect(answerText).toBe("Final answer.");
+    expect(answerText).not.toContain("reasoning bytes");
   });
 });
 
@@ -261,7 +412,10 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
       // attempt 1: full success
       [
         { type: "message_start", message: { usage: { input_tokens: 5 } } },
-        { type: "content_block_delta", delta: { type: "text_delta", text: "OK" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "OK" },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -270,7 +424,11 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
     const onAttempt = vi.fn<(a: LlmAttempt) => void>();
     const { streamWithFallback } = await import("./llm");
     const stream = streamWithFallback(
-      { messages: [{ role: "user", content: "ping" }], max_tokens: 10, system: "x" },
+      {
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 10,
+        system: "x",
+      },
       { onAttempt },
     );
 
@@ -297,7 +455,11 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "ping" }], max_tokens: 10, system: "x" },
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
         { onAttempt },
       ),
     );
@@ -305,7 +467,9 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
     expect(body).toContain("Sorry");
     // All three attempts should have produced an onAttempt event.
     expect(onAttempt).toHaveBeenCalledTimes(3);
-    expect(onAttempt.mock.calls.every((c) => c[0].error?.name === "Error")).toBe(true);
+    expect(
+      onAttempt.mock.calls.every((c) => c[0].error?.name === "Error"),
+    ).toBe(true);
   });
 });
 
@@ -314,7 +478,10 @@ describe("streamWithFallback — onAttempt safety (telemetry never breaks the ch
     STATE.events = [
       [
         { type: "message_start", message: { usage: { input_tokens: 5 } } },
-        { type: "content_block_delta", delta: { type: "text_delta", text: "fine" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "fine" },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -324,7 +491,11 @@ describe("streamWithFallback — onAttempt safety (telemetry never breaks the ch
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "ping" }], max_tokens: 10, system: "x" },
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
         { onAttempt },
       ),
     );
@@ -339,14 +510,21 @@ describe("streamWithFallback — traceId threading", () => {
   it("includes traceId in the trace frame when provided", async () => {
     STATE.events = [
       [
-        { type: "content_block_delta", delta: { type: "text_delta", text: "ok" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "ok" },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "ping" }], max_tokens: 10, system: "x" },
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
         { traceId: "trace-12345" },
       ),
     );
@@ -357,7 +535,10 @@ describe("streamWithFallback — traceId threading", () => {
   it("omits traceId from the frame when not provided (back-compat with v1.6)", async () => {
     STATE.events = [
       [
-        { type: "content_block_delta", delta: { type: "text_delta", text: "ok" } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "ok" },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -381,21 +562,49 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
   it("streams reasoning live between THINKING_SENTINEL and THINKING_END, answer follows", async () => {
     STATE.events = [
       [
-        { type: "content_block_start", index: 0, content_block: { type: "thinking", thinking: "" } },
-        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "I need to " } },
-        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "think carefully." } },
+        {
+          type: "content_block_start",
+          index: 0,
+          content_block: { type: "thinking", thinking: "" },
+        },
+        {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "thinking_delta", thinking: "I need to " },
+        },
+        {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "thinking_delta", thinking: "think carefully." },
+        },
         { type: "content_block_stop", index: 0 },
-        { type: "content_block_start", index: 1, content_block: { type: "text", text: "" } },
-        { type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "Here is my answer." } },
+        {
+          type: "content_block_start",
+          index: 1,
+          content_block: { type: "text", text: "" },
+        },
+        {
+          type: "content_block_delta",
+          index: 1,
+          delta: { type: "text_delta", text: "Here is my answer." },
+        },
         { type: "content_block_stop", index: 1 },
-        { type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 8 } },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "end_turn" },
+          usage: { output_tokens: 8 },
+        },
       ],
     ];
 
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "explain" }], max_tokens: 200, system: "test" },
+        {
+          messages: [{ role: "user", content: "explain" }],
+          max_tokens: 200,
+          system: "test",
+        },
         { extendedThinking: true },
       ),
     );
@@ -429,7 +638,10 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
   it("does NOT prepend THINKING_SENTINEL when extendedThinking is false", async () => {
     STATE.events = [
       [
-        { type: "content_block_delta", delta: { type: "text_delta", text: "Normal answer." } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Normal answer." },
+        },
         { type: "message_delta", usage: { output_tokens: 3 } },
       ],
     ];
@@ -437,7 +649,11 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
         { extendedThinking: false },
       ),
     );
@@ -451,7 +667,10 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
   it("does NOT emit THINKING_END when extendedThinking is false (no-thinking path is clean)", async () => {
     STATE.events = [
       [
-        { type: "content_block_delta", delta: { type: "text_delta", text: "Clean." } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Clean." },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -459,7 +678,11 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
         { extendedThinking: false },
       ),
     );
@@ -472,15 +695,27 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     // THINKING_END must NOT appear because it is only emitted on first text_delta.
     STATE.events = [
       [
-        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "just thinking" } },
-        { type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 0 } },
+        {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "thinking_delta", thinking: "just thinking" },
+        },
+        {
+          type: "message_delta",
+          delta: { stop_reason: "end_turn" },
+          usage: { output_tokens: 0 },
+        },
       ],
     ];
 
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
         { extendedThinking: true },
       ),
     );
@@ -496,8 +731,16 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
   it("reasoning is absent from trace frame on the new protocol", async () => {
     STATE.events = [
       [
-        { type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "some reasoning" } },
-        { type: "content_block_delta", index: 1, delta: { type: "text_delta", text: "Answer." } },
+        {
+          type: "content_block_delta",
+          index: 0,
+          delta: { type: "thinking_delta", thinking: "some reasoning" },
+        },
+        {
+          type: "content_block_delta",
+          index: 1,
+          delta: { type: "text_delta", text: "Answer." },
+        },
         { type: "message_delta", usage: { output_tokens: 1 } },
       ],
     ];
@@ -505,13 +748,19 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
         { extendedThinking: true },
       ),
     );
 
     // Find THINKING_END then TRACE_DELIMITER
-    const afterSentinel = body.startsWith(THINKING_SENTINEL) ? body.slice(THINKING_SENTINEL.length) : body;
+    const afterSentinel = body.startsWith(THINKING_SENTINEL)
+      ? body.slice(THINKING_SENTINEL.length)
+      : body;
     const endIdx = afterSentinel.indexOf(THINKING_END);
     const afterEnd = afterSentinel.slice(endIdx + THINKING_END.length);
     const frameJson = afterEnd.split(TRACE_DELIMITER)[1];
@@ -525,7 +774,10 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     // Test: a stream with no thinking events should produce no THINKING_END in stream.
     STATE.events = [
       [
-        { type: "content_block_delta", delta: { type: "text_delta", text: "Haiku answer." } },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Haiku answer." },
+        },
         { type: "message_delta", usage: { output_tokens: 2 } },
       ],
     ];
@@ -533,7 +785,11 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
       streamWithFallback(
-        { messages: [{ role: "user", content: "hi" }], max_tokens: 100, system: "test" },
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
         { extendedThinking: true },
       ),
     );

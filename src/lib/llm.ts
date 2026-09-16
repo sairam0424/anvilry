@@ -1,7 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import { profile } from "@/lib/profile";
-import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
+import {
+  TRACE_DELIMITER,
+  THINKING_SENTINEL,
+  THINKING_END,
+} from "@/lib/llm-trace";
 
 /**
  * LLM provider abstraction for the "Ask my portfolio" chatbot.
@@ -35,7 +39,11 @@ const BEDROCK_CHAIN = [
 ];
 
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
-const ANTHROPIC_CHAIN = ["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"];
+const ANTHROPIC_CHAIN = [
+  "claude-sonnet-4-6",
+  "claude-opus-4-7",
+  "claude-haiku-4-5",
+];
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
  *  un-enabled / mistyped inference-profile id as a 400, not a 404). Only these
@@ -64,7 +72,8 @@ function decodeSecret(value: string | undefined): string {
   if (!value) return "";
   try {
     const decoded = Buffer.from(value, "base64").toString("utf-8");
-    if (Buffer.from(decoded, "utf-8").toString("base64") === value) return decoded;
+    if (Buffer.from(decoded, "utf-8").toString("base64") === value)
+      return decoded;
   } catch {
     /* fall through */
   }
@@ -108,7 +117,8 @@ export function modelChain(): string[] {
  */
 export function makeClient(): Anthropic {
   if (getProvider() === "bedrock") {
-    const { accessKeyId, secretAccessKey, sessionToken, region } = bedrockCreds();
+    const { accessKeyId, secretAccessKey, sessionToken, region } =
+      bedrockCreds();
     // Pass DECODED creds explicitly via providerChainResolver (the .env stores
     // them base64-encoded under BEDROCK_* names, so the AWS default chain would
     // otherwise sign with the still-encoded values). Double-async by design:
@@ -139,7 +149,9 @@ export function isFallbackEligible(err: unknown): boolean {
   if (status === 429 || status === 404) return true;
   if (typeof status === "number" && status >= 500) return true;
   if (status === 400) {
-    const msg = String((err as { message?: string })?.message ?? "").toLowerCase();
+    const msg = String(
+      (err as { message?: string })?.message ?? "",
+    ).toLowerCase();
     return MODEL_UNAVAILABLE_MARKERS.some((m) => msg.includes(m));
   }
   // plain 400, 422, 401, 403 -> deterministic -> NOT eligible
@@ -191,6 +203,12 @@ export type LlmAttempt = {
   finish_reason?: string;
   usage?: LlmUsage;
   error?: { name: string; message: string; status?: number };
+  /** Full answer prose for THIS attempt. Present ONLY on a clean, complete
+   *  success (mirrors "a trace frame was appended"); absent on every error,
+   *  mid-stream failure, or thinking-only/zero-byte completion. Excludes
+   *  thinking_delta bytes and the trailing trace frame structurally — it is
+   *  built from the exact same text_delta bytes the client renders. */
+  answerText?: string;
 };
 
 export function streamWithFallback(
@@ -291,13 +309,19 @@ export function streamWithFallback(
         let ttftMs: number | undefined;
         let finishReason: string | undefined;
         let thinkingEndEmitted = false;
+        // Accumulates ONLY text_delta bytes (never thinking_delta, never the
+        // trailing trace frame — both are appended/emitted elsewhere in this
+        // loop). Read by route.ts's onAttempt handler to write-through a clean
+        // answer into the FAQ cache; undefined on any error/fallback path.
+        let answerText = "";
 
         // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
         // NOTE: If multimodal attachments are present (content is a ContentBlockParam[]),
         // extended thinking + image content blocks may conflict on some Bedrock inference
         // profiles. If this becomes an issue, disable thinking when content is not a plain
         // string by checking: messages.some(m => Array.isArray(m.content)).
-        const useThinking = opts?.extendedThinking === true && !model.includes("haiku");
+        const useThinking =
+          opts?.extendedThinking === true && !model.includes("haiku");
 
         // Build the params for this attempt — add thinking config if enabled.
         // IMPORTANT: Anthropic requires max_tokens > budget_tokens. The route
@@ -315,14 +339,20 @@ export function streamWithFallback(
           const thinkingParams = {
             ...params,
             model,
-            max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),
+            max_tokens: Math.max(
+              (params as { max_tokens?: number }).max_tokens ?? 0,
+              2048,
+            ),
             thinking: { type: "enabled" as const, budget_tokens: 1024 },
             betas: ["interleaved-thinking-2025-05-14"] as string[],
           };
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           stream = (client as any).beta.messages.stream(thinkingParams);
         } else {
-          stream = client.messages.stream({ ...params, model } as Anthropic.MessageStreamParams & { model: string });
+          stream = client.messages.stream({
+            ...params,
+            model,
+          } as Anthropic.MessageStreamParams & { model: string });
         }
 
         // Emit THINKING_SENTINEL immediately so client shows animation without
@@ -337,12 +367,18 @@ export function streamWithFallback(
             // cache_read input tokens. THIS is where prompt-cache verification
             // lives — until v1.8 these were silently dropped.
             if (event.type === "message_start") {
-              const u = (event.message as { usage?: LlmUsage } | undefined)?.usage;
+              const u = (event.message as { usage?: LlmUsage } | undefined)
+                ?.usage;
               if (u) {
                 usage = {
-                  ...(u.input_tokens != null ? { input_tokens: u.input_tokens } : {}),
+                  ...(u.input_tokens != null
+                    ? { input_tokens: u.input_tokens }
+                    : {}),
                   ...(u.cache_creation_input_tokens != null
-                    ? { cache_creation_input_tokens: u.cache_creation_input_tokens }
+                    ? {
+                        cache_creation_input_tokens:
+                          u.cache_creation_input_tokens,
+                      }
                     : {}),
                   ...(u.cache_read_input_tokens != null
                     ? { cache_read_input_tokens: u.cache_read_input_tokens }
@@ -358,7 +394,8 @@ export function streamWithFallback(
               if (u?.output_tokens != null) {
                 usage = { ...(usage ?? {}), output_tokens: u.output_tokens };
               }
-              const sr = (event as { delta?: { stop_reason?: string } }).delta?.stop_reason;
+              const sr = (event as { delta?: { stop_reason?: string } }).delta
+                ?.stop_reason;
               if (sr) finishReason = sr;
               continue;
             }
@@ -368,13 +405,19 @@ export function streamWithFallback(
             // to delineate the reasoning phase from the answer phase.
             if (
               event.type === "content_block_delta" &&
-              (event.delta as { type: string; thinking?: string }).type === "thinking_delta"
+              (event.delta as { type: string; thinking?: string }).type ===
+                "thinking_delta"
             ) {
-              const chunk = (event.delta as { type: string; thinking?: string }).thinking ?? "";
+              const chunk =
+                (event.delta as { type: string; thinking?: string }).thinking ??
+                "";
               if (chunk) controller.enqueue(encoder.encode(chunk));
               continue;
             }
-            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            if (
+              event.type === "content_block_delta" &&
+              event.delta.type === "text_delta"
+            ) {
               if (ttftMs == null) ttftMs = Date.now() - attemptStart;
               // On the FIRST text_delta: emit THINKING_END to signal reasoning is done.
               if (useThinking && !thinkingEndEmitted) {
@@ -382,6 +425,7 @@ export function streamWithFallback(
                 thinkingEndEmitted = true;
               }
               controller.enqueue(encoder.encode(event.delta.text));
+              answerText += event.delta.text;
               emittedAny = true;
               continue;
             }
@@ -397,6 +441,11 @@ export function streamWithFallback(
             latency_ms: latencyMs,
             finish_reason: finishReason,
             usage,
+            // Present iff a trace frame is about to be appended below — i.e. iff
+            // the client will render a fully-formed assistant message. Never set
+            // on the catch-block's safeOnAttempt call, so a partial/fallback
+            // path can never be cached, by construction.
+            ...(emittedAny ? { answerText } : {}),
           });
           // Clean finish — append the honest trace frame (which model served the bytes,
           // whether a fallback fired, and the v1.8 usage + ttft + latency telemetry).

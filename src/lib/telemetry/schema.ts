@@ -42,6 +42,11 @@ export const KIND_LITERALS = [
   "client.error",
   "server.error",
   "budget.tick",
+  // FAQ full-response cache hit/miss for /api/chat first-turn questions. Kept
+  // separate from llm.attempt (rather than a synthetic zero-usage entry)
+  // because a cache hit has zero real LLM usage — conflating the two would
+  // corrupt the existing cacheHitRate()/cost tiles' semantics.
+  "chat.cache",
 ] as const;
 
 export type KindLiteral = (typeof KIND_LITERALS)[number];
@@ -124,5 +129,8 @@ export function redact(text: string): string {
 export function hashIp(ip: string, salt: string | undefined): string {
   if (!salt) return "anonymous";
   if (!ip || ip === "anonymous") return "anonymous";
-  return createHash("sha256").update(salt + ip).digest("hex").slice(0, 16);
+  return createHash("sha256")
+    .update(salt + ip)
+    .digest("hex")
+    .slice(0, 16);
 }

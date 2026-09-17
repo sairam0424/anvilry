@@ -60,7 +60,7 @@ Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`co
 - **Role:** The chatbot's entire AI layer — provider selection, credential decoding, model fallback chain, and the streaming `ReadableStream` that falls through models on availability errors.
 - **Exports:** `LlmProvider` (type) — `"bedrock" | "anthropic"`; `LlmUsage` (type) — snake_case token block; `LlmAttempt` (type) — per-attempt observability span; `getProvider()`; `bedrockCreds()`; `isConfigured()`; `modelChain()`; `makeClient()`; `isFallbackEligible(err)`; `streamWithFallback(params, opts?)`; plus a re-export of `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` (llm.ts:160).
 - **Reads / depends on:** `@anthropic-ai/sdk`, `@anthropic-ai/bedrock-sdk`, `@/lib/profile` (for the apology email), `@/lib/llm-trace`. Env: `LLM_PROVIDER`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY`.
-- **Consumed by:** `src/app/api/chat/route.ts:5` (`isConfigured`, `streamWithFallback`); `src/app/api/tts/route.ts:2` and `src/app/api/transcribe/route.ts:6` (`bedrockCreds` only — same AWS account/region reuse).
+- **Consumed by:** `src/app/api/chat/route.ts` (`isConfigured`, `streamWithFallback`, `TRACE_DELIMITER`); `src/app/api/tts/route.ts:2` and `src/app/api/transcribe/route.ts:6` (`bedrockCreds` only — same AWS account/region reuse).
 
 **Exact provider toggle** (llm.ts:52-54):
 
@@ -75,15 +75,16 @@ Bedrock is the default for *any* value other than the exact string `"anthropic"`
 | Provider | Index 0 (primary) | Index 1 (secondary) | Index 2 (fallback) | Cite |
 |---|---|---|---|---|
 | `bedrock` | `us.anthropic.claude-sonnet-4-6` | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | llm.ts:31-35 |
-| `anthropic` | `claude-sonnet-4-6` | `claude-opus-4-7` | `claude-haiku-4-5` | llm.ts:38 |
+| `anthropic` | `claude-sonnet-4-6` | `claude-opus-4-7` | `claude-haiku-4-5` | llm.ts:43-47 |
 
-Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:27-30). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:38).
+Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:27-30). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:45).
 
 **`decodeSecret`'s base64 round-trip check** (llm.ts:63-72) — private, not exported:
 
 ```ts
 const decoded = Buffer.from(value, "base64").toString("utf-8");
-if (Buffer.from(decoded, "utf-8").toString("base64") === value) return decoded;   // llm.ts:66-67
+if (Buffer.from(decoded, "utf-8").toString("base64") === value)
+  return decoded;   // llm.ts:75-77
 ```
 
 Re-encoding the decode and comparing to the original is the discriminator; a plain "decodes without throwing" test is too loose because many raw secrets are coincidentally valid base64. Raw `AKIA…` keys are not valid base64 *of themselves*, so they fall through unchanged. Empty/undefined → `""` (llm.ts:64).
@@ -115,9 +116,9 @@ The load-bearing reason (llm.ts:149-157): streaming errors surface *inside* the 
   - `isFallbackEligible` (llm.ts:136-147): `APIConnectionError` → true; status `429`/`404` → true; status `>= 500` → true; status `400` → true only if the lowercased message contains one of the six `MODEL_UNAVAILABLE_MARKERS` (llm.ts:43-50: `"model identifier is invalid"`, `"model id is invalid"`, `"could not be found"`, `"not authorized to access the model"`, `"don't have access to the model"`, `"is not supported"`). Plain 400/401/403/422 → **not** eligible. Status+message driven so it survives a double-installed SDK where `instanceof` breaks.
   - `makeClient` passes DECODED creds via a **double-async** `providerChainResolver: async () => async () => ({...})` (llm.ts:119-123) — the resolver returns a credential provider, which returns credentials. Without this the AWS default chain would sign with still-base64 values.
   - Client construction happens **inside** `start()` (llm.ts:263-281) so a constructor failure becomes a graceful apology stream rather than an uncaught 500. That failure emits an attempt with `model: "client-init"` and `attempt_index: -1` (llm.ts:270-272) and strips the leading `\n\n` from the apology (llm.ts:278).
-  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:339-353); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:356-364). `usage` starts `undefined` so the trace frame omits the key entirely when the SDK emits no usage block (llm.ts:288-290).
-  - Extended thinking: `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:300) — Haiku is silently excluded. When on, `max_tokens` is bumped to `Math.max(existing, 2048)` because Anthropic requires `max_tokens > budget_tokens` and `budget_tokens` is 1024 (llm.ts:318-319); beta header `interleaved-thinking-2025-05-14` (llm.ts:320) is sent via `client.beta.messages.stream()` (llm.ts:323) — using `client.messages.stream()` with a `betas` body param 400s because Bedrock rejects unknown body keys (llm.ts:307-312).
-  - `thinking_delta` chunks stream live to the client (llm.ts:369-376); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:380-383). Reasoning is deliberately absent from the trace frame (llm-trace.ts:41).
+  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:339-353); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:391-402). `usage` starts `undefined` so the trace frame omits the key entirely when the SDK emits no usage block (llm.ts:288-290).
+  - Extended thinking: `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:324-325) — Haiku is silently excluded. When on, `max_tokens` is bumped to `Math.max(existing, 2048)` because Anthropic requires `max_tokens > budget_tokens` and `budget_tokens` is 1024 (llm.ts:343-346); beta header `interleaved-thinking-2025-05-14` (llm.ts:320) is sent via `client.beta.messages.stream()` (llm.ts:323) — using `client.messages.stream()` with a `betas` body param 400s because Bedrock rejects unknown body keys (llm.ts:307-312).
+  - `thinking_delta` chunks stream live to the client (llm.ts:407-422); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:380-383). Reasoning is deliberately absent from the trace frame (llm-trace.ts:41).
   - `ttftMs` is set on the first `text_delta` only (llm.ts:378) — thinking bytes do not count toward TTFT.
   - `safeOnAttempt` swallows any `onAttempt` throw (llm.ts:241-247); `close()` is idempotent via a `closed` latch (llm.ts:253-258).
 - **Gotchas / invariants:**
@@ -131,7 +132,7 @@ The load-bearing reason (llm.ts:149-157): streaming errors surface *inside* the 
 - **Role:** Client-safe chat-stream protocol constants and the `TraceFrame` shape, isolated so the browser bundle never pulls the Bedrock SDK.
 - **Exports:** `TRACE_DELIMITER` = `U+001E` (RECORD SEPARATOR) — llm-trace.ts:23; `THINKING_SENTINEL` = `U+001E U+0001` — :24; `THINKING_END` = `U+001E U+0002` (STX) — :25; `LlmUsage` (type) :27-32; `TraceFrame` (type) :34-42 = `{ model, fellBack, traceId?, usage?, ttftMs?, latencyMs? }`. Code points verified by hexdump (`036`, `036 001`, `036 002`).
 - **Reads / depends on:** nothing (pure constants).
-- **Consumed by:** `src/lib/llm.ts:4`; `src/components/chat/use-chat.ts:8`.
+- **Consumed by:** `src/lib/llm.ts:5-9`; `src/components/chat/use-chat.ts:8`.
 - **Behaviour notes:** Wire layout (llm-trace.ts:6-9): `[THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]`, or `[answer][TRACE_DELIMITER][JSON]` without extended thinking.
 - **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first.
 

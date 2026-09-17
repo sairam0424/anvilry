@@ -346,8 +346,8 @@ sentinel a one-shot (`:330-332`).
 
 One `http.request` (or `server.error` on an uncaught throw) from `withTrace`; one `llm.attempt` per model
 attempt carrying `model`, `attempt_index`, `fell_back`, `ttft_ms`, `latency_ms`, `finish_reason`, `usage`
-(snake_case), and `cost_usd` (`src/app/api/chat/route.ts:284-311`). `attempt.error.message` passes
-through `redact()` first (`:293`).
+(snake_case), and `cost_usd` (`src/app/api/chat/route.ts:430-463`). `attempt.error.message` passes
+through `redact()` first (`:439`).
 
 ### Failure modes
 
@@ -682,7 +682,7 @@ CLIENT SIDE
 
 Any `/api/*` request wrapped in `withTrace` (chat, tts, tts-google, transcribe, error); any browser error
 or unhandled rejection; the five cron routes that write their own `anvilry:*:latest` snapshots
-(`health-check/route.ts:218` · `eval/route.ts:148` · `github-sync/route.ts:55` · `seo-audit/route.ts:68` ·
+(`health-check/route.ts:218` · `eval/route.ts:177` · `github-sync/route.ts:55` · `seo-audit/route.ts:68` ·
 `content-audit/route.ts:45`).
 
 ### Exit point

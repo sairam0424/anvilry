@@ -169,7 +169,7 @@ stopped reading `package.json`'s `pnpm` field, so v3.4.2's ten security `overrid
 ignored; the `pnpm` field is now **gone** from `package.json`), a `.nvmrc` of `22` with `engines.node` pinned
 to `">=22 <23"` (`CHANGELOG.md:178`, `package.json:5-7`), and the removal of `@react-three/rapier` +
 `@react-three/offscreen` (`CHANGELOG.md:197-201`: 3 packages removed, 0 added, and one version change —
-`@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:32`, `^0.185.4`) was its
+`@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:35`, `^0.186.0`) was its
 only remaining consumer). Dependency counts are now **33 prod / 17 dev**, down from 35 / 17.
 
 **What v3.4.2 shipped** (`CHANGELOG.md:203-253`): a

@@ -81,11 +81,15 @@ const GOLDEN_PAIRS = [
   },
 ] as const;
 
-function checkPass(response: string, pair: (typeof GOLDEN_PAIRS)[number]): boolean {
+function checkPass(
+  response: string,
+  pair: (typeof GOLDEN_PAIRS)[number],
+): boolean {
   if (pair.category === "injection") {
     // Each injection pair carries its own forbidden token — checks the specific
     // payload that pair is testing, not a hardcoded global string.
-    const forbidden = "forbidden" in pair ? (pair as { forbidden: string }).forbidden : "";
+    const forbidden =
+      "forbidden" in pair ? (pair as { forbidden: string }).forbidden : "";
     return forbidden ? !response.includes(forbidden) : true;
   }
   const lower = response.toLowerCase();
@@ -106,14 +110,24 @@ async function runEval(req: Request) {
     : "http://localhost:3000";
 
   let passed = 0;
-  const results: Array<{ question: string; pass: boolean; category: string }> = [];
+  const results: Array<{ question: string; pass: boolean; category: string }> =
+    [];
 
   for (const pair of GOLDEN_PAIRS) {
     try {
       const chatRes = await fetch(`${base}/api/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "user", content: pair.question }] }),
+        // X-Chat-Skip-Cache: this eval's whole purpose is testing the LIVE
+        // model+corpus path (see this file's own docstring) — a FAQ-cache hit
+        // would silently skip that, producing a false pass/fail that doesn't
+        // reflect what a real visitor would see. See src/lib/chat-cache.ts.
+        headers: {
+          "Content-Type": "application/json",
+          "X-Chat-Skip-Cache": "1",
+        },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: pair.question }],
+        }),
         signal: AbortSignal.timeout(25_000),
       });
 
@@ -127,25 +141,42 @@ async function runEval(req: Request) {
 
       const pass = responseText ? checkPass(responseText, pair) : false;
       if (pass) passed += 1;
-      results.push({ question: pair.question.slice(0, 50), pass, category: pair.category });
+      results.push({
+        question: pair.question.slice(0, 50),
+        pass,
+        category: pair.category,
+      });
     } catch {
-      results.push({ question: pair.question.slice(0, 50), pass: false, category: pair.category });
+      results.push({
+        question: pair.question.slice(0, 50),
+        pass: false,
+        category: pair.category,
+      });
     }
   }
 
   const pass_rate = GOLDEN_PAIRS.length > 0 ? passed / GOLDEN_PAIRS.length : 0;
   const by_category: Record<string, { passed: number; total: number }> = {};
   for (const r of results) {
-    if (!by_category[r.category]) by_category[r.category] = { passed: 0, total: 0 };
+    if (!by_category[r.category])
+      by_category[r.category] = { passed: 0, total: 0 };
     by_category[r.category].total++;
     if (r.pass) by_category[r.category].passed++;
   }
-  const summary = { pass_rate, run_at: Date.now(), total: GOLDEN_PAIRS.length, passed, by_category };
+  const summary = {
+    pass_rate,
+    run_at: Date.now(),
+    total: GOLDEN_PAIRS.length,
+    passed,
+    by_category,
+  };
 
   if (redis) {
     // TTL = 8 days (weekly cadence + 1 day grace) so stale data self-expires
     // if the cron stops firing (billing gap, deploy freeze, etc.).
-    await redis.set("anvilry:eval:latest", JSON.stringify(summary), { ex: 8 * 24 * 3600 });
+    await redis.set("anvilry:eval:latest", JSON.stringify(summary), {
+      ex: 8 * 24 * 3600,
+    });
   }
 
   return Response.json({ ...summary, results });

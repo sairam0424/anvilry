@@ -100,3 +100,17 @@ updates:
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
 
+  # Every third-party Action in .github/workflows/ is SHA-pinned (see the
+  # "# vX" comment on each `uses:` line) for supply-chain safety, but a pinned
+  # SHA never moves on its own. This ecosystem is what actually bumps those
+  # pins forward — Dependabot updates both the SHA and its version comment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Chicago
+    target-branch: develop
+    reviewers:
+      - sairam0424

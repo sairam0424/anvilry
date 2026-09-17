@@ -131,6 +131,32 @@ function costSummary(llmAttempts: TelemetryEvent[]): {
   return { totalUsd, savedUsd };
 }
 
+function faqCacheStats(chatCacheEvents: TelemetryEvent[]): {
+  pct: number;
+  hits: number;
+  total: number;
+  savedUsd: number;
+} {
+  let hits = 0;
+  let savedUsd = 0;
+  for (const e of chatCacheEvents) {
+    const a = e.attrs as Record<string, unknown>;
+    if (a.outcome === "hit") {
+      hits += 1;
+      if (typeof a.saved_usd === "number") savedUsd += a.saved_usd;
+    }
+  }
+  return {
+    pct:
+      chatCacheEvents.length === 0
+        ? 0
+        : Math.round((hits / chatCacheEvents.length) * 100),
+    hits,
+    total: chatCacheEvents.length,
+    savedUsd,
+  };
+}
+
 function uniqueSessions(httpRequests: TelemetryEvent[]): {
   count: number;
   allAnonymous: boolean;
@@ -354,6 +380,17 @@ function fmtAttrs(e: TelemetryEvent): string {
       ]
         .filter(Boolean)
         .join("  ·  ") as string;
+    case "chat.cache": {
+      const parts = [String(a.outcome ?? "?")];
+      if (a.tier && a.tier !== "none") parts.push(`tier:${a.tier}`);
+      if (a.model)
+        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+      if (typeof a.saved_usd === "number")
+        parts.push(`saved:$${a.saved_usd.toFixed(4)}`);
+      if (typeof a.similarity === "number")
+        parts.push(`sim:${a.similarity.toFixed(2)}`);
+      return parts.join("  ·  ");
+    }
     default:
       return truncate(JSON.stringify(a), 100);
   }
@@ -375,6 +412,8 @@ function kindBadge(kind: string): string {
       return "bg-teal-500/20 text-teal-300";
     case "budget.tick":
       return "bg-yellow-500/20 text-yellow-300";
+    case "chat.cache":
+      return "bg-emerald-500/20 text-emerald-300";
     default:
       return "bg-bg-elevated text-fg-muted";
   }
@@ -461,6 +500,7 @@ export default async function TelemetryDashboard() {
   const httpRequests = allEvents.filter((e) => e.kind === "http.request");
   const clientErrors = allEvents.filter((e) => e.kind === "client.error");
   const serverErrors = allEvents.filter((e) => e.kind === "server.error");
+  const chatCacheEvents = allEvents.filter((e) => e.kind === "chat.cache");
 
   const errorCount = clientErrors.length + serverErrors.length;
   const errorRate =
@@ -469,6 +509,7 @@ export default async function TelemetryDashboard() {
       : 0;
   const routes = routeCounts(httpRequests);
   const cache = cacheHitRate(llmAttempts);
+  const faqCache = faqCacheStats(chatCacheEvents);
   const fallback = fallbackRate(llmAttempts);
   const latency = avgLatency(llmAttempts);
   const ttft = avgTtft(llmAttempts);
@@ -519,7 +560,7 @@ export default async function TelemetryDashboard() {
         </header>
 
         {/* Tiles — row 1: volume + cache + cost */}
-        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Tile
             label="Events (24h)"
             value={String(allEvents.length)}
@@ -531,6 +572,13 @@ export default async function TelemetryDashboard() {
             sub={`${fmtTokens(cache.cacheRead)} / ${fmtTokens(cache.totalInput)} tokens`}
             pct={cache.pct}
             accent={cache.pct > 30}
+          />
+          <Tile
+            label="FAQ cache hit rate"
+            value={`${faqCache.pct}%`}
+            sub={`${faqCache.hits}/${faqCache.total} · saved $${faqCache.savedUsd.toFixed(4)}`}
+            pct={faqCache.pct}
+            accent={faqCache.hits > 0}
           />
           <Tile
             label="Total tokens"

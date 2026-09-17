@@ -24,6 +24,19 @@ export const TRACE_DELIMITER = "";
 export const THINKING_SENTINEL = "";
 export const THINKING_END = ""; // U+001E + U+0002 (STX) — signals thinking→answering transition
 
+// The three control chars used by the protocol above: U+001E is
+// TRACE_DELIMITER and the shared prefix of THINKING_SENTINEL (+U+0001) and
+// THINKING_END (+U+0002). A legitimate model completion should never contain
+// any of these bytes in its own generated text — stripped defensively from
+// every model-generated chunk (both live and before a cache write) so an
+// anomalous completion can never smuggle in a byte that collides with this
+// protocol's own framing and corrupts the client's splitTrace() parsing.
+const CONTROL_BYTES_RE = /[\u001e\u0001\u0002]/g;
+
+export function stripControlBytes(text: string): string {
+  return text.replace(CONTROL_BYTES_RE, "");
+}
+
 export type LlmUsage = {
   input_tokens?: number;
   output_tokens?: number;

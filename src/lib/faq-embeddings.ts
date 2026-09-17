@@ -20,6 +20,13 @@ import { bedrockCreds } from "@/lib/llm";
 const EMBED_MODEL_ID = "amazon.titan-embed-text-v2:0";
 const EMBED_DIMENSIONS = 512;
 
+/** The AWS SDK v3's NodeHttpHandler defaults requestTimeout to 0 (disabled) —
+ *  without an explicit bound, a slow/hung Bedrock response could consume the
+ *  chat route's entire maxDuration (30s) budget. This tier is a bonus over
+ *  the base exact-match cache, never a blocker, so it gets its own tight cap
+ *  well under that budget. */
+const EMBED_TIMEOUT_MS = 5_000;
+
 /** Returns `null` (never throws) on any failure — the semantic tier is a
  *  bonus, never a blocker for the base exact-match cache. */
 export async function embedText(text: string): Promise<number[] | null> {
@@ -47,6 +54,7 @@ export async function embedText(text: string): Promise<number[] | null> {
           normalize: true,
         }),
       }),
+      { abortSignal: AbortSignal.timeout(EMBED_TIMEOUT_MS) },
     );
 
     const parsed = JSON.parse(new TextDecoder().decode(res.body)) as {

@@ -90,4 +90,18 @@ describe("embedText", () => {
     const { embedText } = await import("./faq-embeddings");
     await expect(embedText("what is pensieve")).resolves.toBeNull();
   });
+
+  it("bounds the InvokeModel call with an abort signal", async () => {
+    sendMock.mockResolvedValueOnce(fixtureResponse([0.1, 0.2, 0.3]));
+    const { embedText } = await import("./faq-embeddings");
+    await embedText("what is pensieve");
+    const [, options] = sendMock.mock.calls[0];
+    expect(options?.abortSignal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("returns null (never throws) when the call is aborted", async () => {
+    sendMock.mockRejectedValueOnce(new Error("AbortError"));
+    const { embedText } = await import("./faq-embeddings");
+    await expect(embedText("what is pensieve")).resolves.toBeNull();
+  });
 });

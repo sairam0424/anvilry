@@ -3090,13 +3090,12 @@
       "preview": "\"version\": \"3.6.0\","
     },
     "package.json:32": {
-      "fp": "5ba15150b96c",
+      "fp": "5c960f41039e",
       "citedBy": [
-        "12-docs-knowledge-and-harness.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"@types/three\": \"^0.185.4\","
+      "preview": "\"@react-three/drei\": \"^10.7.8\","
     },
     "package.json:40": {
       "fp": "16f452215b4e",

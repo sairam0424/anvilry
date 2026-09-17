@@ -437,21 +437,15 @@
       ],
       "preview": "continue-on-error: true"
     },
-    ".github/workflows/ci.yml:22": {
+    ".github/workflows/ci.yml:24": {
       "fp": "c8c82d24e074",
       "citedBy": [
         "10-tests-and-quality-gates.md",
         "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "version: 10"
-    },
-    ".github/workflows/ci.yml:24": {
-      "fp": "9bd01635a76e",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "- name: Setup Node.js 22"
     },
     ".github/workflows/ci.yml:254": {
       "fp": "a7e3c0126445",
@@ -459,15 +453,6 @@
         "10-tests-and-quality-gates.md"
       ],
       "preview": "# Deliberately exits 0 — see the comment on this job."
-    },
-    ".github/workflows/ci.yml:27": {
-      "fp": "d862eb11525b",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "node-version: 22"
     },
     ".github/workflows/ci.yml:3": {
       "fp": "fc8135fd1264",
@@ -16389,6 +16374,22 @@
         "07-components-3d.md"
       ],
       "preview": "() => import(\"./scene-physics\").then((m) => m.HeroGraphScenePhysics),"
+    },
+    ".github/workflows/ci.yml:26": {
+      "fp": "9bd01635a76e",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- name: Setup Node.js 22"
+    },
+    ".github/workflows/ci.yml:29": {
+      "fp": "d862eb11525b",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "node-version: 22"
     }
   }
 }

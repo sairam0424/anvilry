@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { redis } from "@/lib/redis";
 import { emit } from "@/lib/telemetry/emit";
 import { redact } from "@/lib/telemetry/schema";
+import { stripControlBytes } from "@/lib/llm-trace";
 
 /**
  * Full-response FAQ cache for /api/chat — serves repeat first-turn questions
@@ -30,6 +31,18 @@ import { redact } from "@/lib/telemetry/schema";
  *  - No raw question text is persisted (the key is already a hash of it).
  *  - Cache-layer errors are emitted as a distinguishable server.error event,
  *    not silently folded into the same signal as a genuine miss.
+ *
+ * Accepted tradeoff, deliberately NOT fixed: `make health` and one e2e spec
+ * hit production /api/chat directly with a fixed literal question, sharing
+ * this same cache namespace with real visitor traffic when run locally
+ * against pulled production credentials (CI itself never touches it — no
+ * Bedrock/Upstash secrets are set there). A dev-authored entry is now
+ * content-gated, corpus-tagged, and purgeable, so it's functionally
+ * indistinguishable from a real visitor's — the theoretical "leak" is the
+ * cache doing its job, not a real risk, for a single-owner portfolio site.
+ * A VERCEL_ENV-scoped key namespace would close this fully but is
+ * disproportionate complexity for the actual risk here; revisit only if
+ * this ever stops being a personal portfolio site's chatbot.
  */
 
 const ENTRY_PREFIX = "anvilry:chat:cache:";
@@ -54,14 +67,6 @@ export const FAQ_CACHE_INDEX_CAP = 500;
  *  ones (an anomalously long completion is rejected outright, never cached
  *  truncated, since a truncated cached answer would look permanently broken). */
 export const MAX_CACHEABLE_ANSWER_CHARS = 4000;
-
-// Control chars used by the streaming trace protocol (llm-trace.ts): U+001E
-// is TRACE_DELIMITER and the shared prefix of THINKING_SENTINEL (+U+0001) and
-// THINKING_END (+U+0002). A legitimate model answer should never contain any
-// of these bytes — stripped defensively before a cache write so an anomalous
-// completion containing one can't corrupt every future cache-hit visitor's
-// client-side trace-frame parsing (use-chat.ts's splitTrace).
-const CONTROL_CHARS_RE = /[\u001e\u0001\u0002]/g;
 
 export type FaqCacheEntry = {
   answer: string;
@@ -249,7 +254,7 @@ export async function faqCacheSet(
   // would be wrong for every future cache-hit visitor.
   if (finishReason !== "end_turn") return;
 
-  const sanitized = answer.replace(CONTROL_CHARS_RE, "").trim();
+  const sanitized = stripControlBytes(answer).trim();
   if (sanitized.length === 0 || sanitized.length > MAX_CACHEABLE_ANSWER_CHARS)
     return;
 

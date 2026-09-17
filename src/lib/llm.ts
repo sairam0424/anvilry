@@ -5,6 +5,7 @@ import {
   TRACE_DELIMITER,
   THINKING_SENTINEL,
   THINKING_END,
+  stripControlBytes,
 } from "@/lib/llm-trace";
 
 /**
@@ -408,9 +409,14 @@ export function streamWithFallback(
               (event.delta as { type: string; thinking?: string }).type ===
                 "thinking_delta"
             ) {
-              const chunk =
+              // Stripped defensively: a legitimate thinking chunk should never
+              // contain the protocol's own framing bytes (see llm-trace.ts) —
+              // this is a live stream, not something faqCacheSet can sanitize
+              // after the fact.
+              const chunk = stripControlBytes(
                 (event.delta as { type: string; thinking?: string }).thinking ??
-                "";
+                  "",
+              );
               if (chunk) controller.enqueue(encoder.encode(chunk));
               continue;
             }
@@ -424,8 +430,12 @@ export function streamWithFallback(
                 controller.enqueue(encoder.encode(THINKING_END));
                 thinkingEndEmitted = true;
               }
-              controller.enqueue(encoder.encode(event.delta.text));
-              answerText += event.delta.text;
+              // Stripped defensively — same reasoning as the thinking_delta
+              // branch above; also keeps answerText (the FAQ-cache write
+              // source) clean without needing a second pass later.
+              const text = stripControlBytes(event.delta.text);
+              controller.enqueue(encoder.encode(text));
+              answerText += text;
               emittedAny = true;
               continue;
             }

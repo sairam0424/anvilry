@@ -399,6 +399,39 @@ describe("streamWithFallback — answerText capture (FAQ-cache write-through sou
     expect(answerText).toBe("Final answer.");
     expect(answerText).not.toContain("reasoning bytes");
   });
+
+  it("strips literal protocol control bytes from a model completion, live AND in answerText", async () => {
+    // A model should never emit U+001E (TRACE_DELIMITER's own byte) in its
+    // prose, but if it did, an unstripped occurrence would corrupt the
+    // client's splitTrace() — stripped defensively at the source.
+    const dirty = "answer part one" + "\u001e" + "part two";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: dirty },
+        },
+        { type: "message_delta", usage: { output_tokens: 1 } },
+      ],
+    ];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 10,
+          system: "x",
+        },
+        { onAttempt },
+      ),
+    );
+    const [text] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("answer part onepart two");
+    expect(onAttempt.mock.calls[0][0].answerText).toBe(
+      "answer part onepart two",
+    );
+  });
 });
 
 describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {

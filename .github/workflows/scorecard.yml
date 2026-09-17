@@ -3,10 +3,15 @@ name: OSSF Scorecard
 # Supply-chain health signal for this public, 0-star repo. Scorecard checks things
 # CodeQL/dependency-review don't: branch protection, pinned dependencies, dangerous
 # workflow patterns, maintained-ness, etc. Runs on a weekly cron plus every push to
-# develop/main so the published score tracks what's actually deployed.
+# main. NOT develop: ossf/scorecard-action hard-rejects any branch other than the
+# repo's actual GitHub default branch ("validating options: only default branch is
+# supported" / "refs/heads/develop not supported with push event") — it doesn't
+# read this workflow's own branch filter, so listing develop here just guarantees
+# a red X on every push to it. Confirmed failing twice in a row (PR #230's own
+# merge, then PR #232's) before this fix.
 on:
   push:
-    branches: ["develop", "main"]
+    branches: ["main"]
   schedule:
     - cron: "30 2 * * 1" # weekly, Monday 02:30 UTC
   workflow_dispatch:

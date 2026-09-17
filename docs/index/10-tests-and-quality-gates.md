@@ -401,5 +401,5 @@ The other three assertions in that file *are* real deploy blockers: every `refs`
 
 - I did not execute `pnpm test`, `pnpm build`, or `pnpm e2e`. Every claim above is read from source. Actual pass/fail state, real coverage percentages, and runtime durations are unconfirmed.
 - The `dom` Vitest project declares no `exclude` (`vitest.config.ts:38-43`); I assume it relies on Vitest 4's default `node_modules` exclusion but did not confirm that default empirically.
-- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:82`) against the current specs.
+- `e2e/views.spec.ts` and `e2e/resume.spec.ts` are the only two spec files. I did not confirm the total Playwright test count claimed in the CI comment ("5 of 19 tests were failing", `ci.yml:144`) against the current specs.
 - Whether the Vercel production build actually sets `NODE_ENV=production` in the build shell (the stated reason for `env.NODE_ENV` in `vitest.config.ts:19-25`) is taken from that comment, not independently verified.

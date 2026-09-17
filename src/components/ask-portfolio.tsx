@@ -145,6 +145,14 @@ function AskPortfolioWidget() {
               ref={scrollRef}
               role="log"
               aria-label="Chat transcript"
+              // role="log" implies aria-live="polite" by default, which would
+              // announce every new message the instant it's appended — a second
+              // channel competing with useChatA11y's deliberate, debounced,
+              // exactly-one-channel announcer above (see its "NO DOUBLE-SPEAK"
+              // comment). Explicit aria-live="off" overrides the implicit
+              // default: screen readers still get the "log" landmark/semantics,
+              // just not an automatic announcement on every DOM change.
+              aria-live="off"
               className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 outline-none [overflow-anchor:none]"
               tabIndex={-1}
             >

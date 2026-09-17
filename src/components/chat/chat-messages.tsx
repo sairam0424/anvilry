@@ -105,7 +105,10 @@ function ImageLightbox({
         {hasPrev && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setIdx((i) => i - 1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => i - 1);
+            }}
             aria-label="Previous image"
             className="absolute left-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
@@ -115,7 +118,10 @@ function ImageLightbox({
         {hasNext && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); setIdx((i) => i + 1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => i + 1);
+            }}
             aria-label="Next image"
             className="absolute right-3 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
@@ -201,7 +207,11 @@ function ThinkingBlock({
           </span>
           <span>
             Thinking…{" "}
-            {elapsed > 0 && <strong className="font-semibold text-fg-muted">{elapsed}s</strong>}
+            {elapsed > 0 && (
+              <strong className="font-semibold text-fg-muted">
+                {elapsed}s
+              </strong>
+            )}
           </span>
         </div>
         {liveReasoning && (
@@ -229,13 +239,19 @@ function ThinkingBlock({
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1.5 text-[11px] text-fg-subtle/70 transition-colors hover:text-fg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         aria-expanded={open}
-        title={open ? "Collapse reasoning (ctrl+o)" : "Expand reasoning (ctrl+o)"}
+        title={
+          open ? "Collapse reasoning (ctrl+o)" : "Expand reasoning (ctrl+o)"
+        }
       >
         <span className="text-fg-subtle/40">{open ? "▾" : "▶"}</span>
         <span>
           Thought for{" "}
-          <strong className="font-semibold text-fg-muted">{duration > 0 ? `${duration}s` : "a moment"}</strong>
-          {!open && <span className="ml-1.5 text-fg-subtle/40">(ctrl+o to expand)</span>}
+          <strong className="font-semibold text-fg-muted">
+            {duration > 0 ? `${duration}s` : "a moment"}
+          </strong>
+          {!open && (
+            <span className="ml-1.5 text-fg-subtle/40">(ctrl+o to expand)</span>
+          )}
         </span>
       </button>
       {open && (
@@ -259,7 +275,8 @@ function friendlyModel(id: string): string {
 // Lazy-loaded so the ~46KB react-markdown tree stays OUT of the initial route
 // bundle — the chat is interaction-gated, so it only loads when a view/widget opens.
 const MarkdownMessage = dynamic(
-  () => import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
+  () =>
+    import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
   { ssr: false, loading: () => <SkeletonMarkdownLine /> },
 );
 
@@ -286,8 +303,15 @@ export function ChatMessages({
   const { setView } = useView();
 
   // Lightbox state — null when closed, images array + start index when open.
-  const [lightbox, setLightbox] = useState<{ images: { src: string; name: string }[]; startIndex: number } | null>(null);
-  const openLightbox = useCallback((images: { src: string; name: string }[], startIndex: number) => setLightbox({ images, startIndex }), []);
+  const [lightbox, setLightbox] = useState<{
+    images: { src: string; name: string }[];
+    startIndex: number;
+  } | null>(null);
+  const openLightbox = useCallback(
+    (images: { src: string; name: string }[], startIndex: number) =>
+      setLightbox({ images, startIndex }),
+    [],
+  );
   const closeLightbox = useCallback(() => setLightbox(null), []);
 
   // Dispatch cmd-view and cmd-highlight tokens from completed (non-streaming) assistant
@@ -341,11 +365,16 @@ export function ChatMessages({
   );
 
   // Suppress the full-text announce-on-settle while TTS is reading the latest answer.
-  const { liveMessage } = useChatA11y(messages, isStreaming, activeIdx !== null);
-  const { scrollRef, contentRef, anchorRef, isAtBottom, scrollToBottom } = useAutoScroll({
-    threshold: 120,
-    surface: "chat",
-  });
+  const { liveMessage } = useChatA11y(
+    messages,
+    isStreaming,
+    activeIdx !== null,
+  );
+  const { scrollRef, contentRef, anchorRef, isAtBottom, scrollToBottom } =
+    useAutoScroll({
+      threshold: 120,
+      surface: "chat",
+    });
 
   // Keep our own handle on the scroll container so the jump button can return focus
   // there (the engine's scrollRef is a callback ref we don't own the node of).
@@ -388,71 +417,100 @@ export function ChatMessages({
     // relative wrapper anchors the floating JumpToLatest; min-h-0 lets the inner
     // scroll child shrink below content so overflow-y-auto engages (see chat-view).
     <>
-    {lightbox && <ImageLightbox images={lightbox.images} startIndex={lightbox.startIndex} onClose={closeLightbox} />}
-    <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
-      <div
-        ref={setScroll}
-        // [overflow-anchor:none] stops the browser's scroll-anchoring from fighting
-        // the JS pin (defensive; Safari 27).
-        aria-live="polite"
-        aria-atomic="false"
-        className="min-h-0 flex-1 space-y-4 overflow-y-auto outline-none [overflow-anchor:none]"
-        tabIndex={-1}
-      >
-        {liveRegion}
-        {/* contentRef wrapper: the ResizeObserver target that grows as messages/markdown
+      {lightbox && (
+        <ImageLightbox
+          images={lightbox.images}
+          startIndex={lightbox.startIndex}
+          onClose={closeLightbox}
+        />
+      )}
+      <div className="relative mt-6 flex min-h-0 flex-1 flex-col">
+        <div
+          ref={setScroll}
+          // [overflow-anchor:none] stops the browser's scroll-anchoring from fighting
+          // the JS pin (defensive; Safari 27).
+          // aria-live="off": this container was accidentally made a live region in an
+          // unrelated commit (#54, articles/dedup/routing) — it wraps `liveRegion`
+          // (useChatA11y's deliberate, debounced, single-channel announcer) AND the
+          // full message list, so every new message got double-announced: once by
+          // this container reacting to its own DOM mutation, once by the announcer.
+          // Explicit "off" overrides that; see the same fix in ask-portfolio.tsx.
+          aria-live="off"
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto outline-none [overflow-anchor:none]"
+          tabIndex={-1}
+        >
+          {liveRegion}
+          {/* contentRef wrapper: the ResizeObserver target that grows as messages/markdown
             mount, so the late dynamic-markdown paint triggers the follow snap. */}
-        <div ref={contentRef} className="space-y-4">
-          {messages.map((m, i) => {
-            const isLast = i === messages.length - 1;
-            if (m.role === "user") {
-              return (
-                <div
-                  key={i}
-                  ref={i === lastUserIdx ? anchorRef : undefined}
-                  className="flex justify-end scroll-mt-3"
-                >
-                  <div className="flex max-w-[88%] flex-col items-end gap-1.5">
-                    {/* Attachment previews — mosaic grid for images (xopc/Telegram pattern),
+          <div ref={contentRef} className="space-y-4">
+            {messages.map((m, i) => {
+              const isLast = i === messages.length - 1;
+              if (m.role === "user") {
+                return (
+                  <div
+                    key={i}
+                    ref={i === lastUserIdx ? anchorRef : undefined}
+                    className="flex justify-end scroll-mt-3"
+                  >
+                    <div className="flex max-w-[88%] flex-col items-end gap-1.5">
+                      {/* Attachment previews — mosaic grid for images (xopc/Telegram pattern),
                         filename badge for PDFs, hover-download (VS Code Copilot / Slack pattern) */}
-                    {m.attachments && m.attachments.length > 0 && (() => {
-                      const images = m.attachments!.filter((f) => f.mediaType !== "application/pdf");
-                      const pdfs = m.attachments!.filter((f) => f.mediaType === "application/pdf");
-                      const lightboxImages = images.map((f) => ({ src: f.previewUrl, name: f.name }));
-                      const count = images.length;
-                      // Mosaic grid classes — 1: single large, 2: side by side, 3: first spans 2 rows + 2 stacked, 3+: 2-col grid
-                      const gridClass =
-                        count === 1 ? "flex" :
-                        count === 2 ? "grid grid-cols-2 gap-1.5" :
-                        count === 3 ? "grid grid-cols-2 grid-rows-2 gap-1.5 h-44" :
-                        "grid grid-cols-2 gap-1.5";
-                      return (
-                        <div className="flex flex-col items-end gap-1.5">
-                          {images.length > 0 && (
-                            <div className={gridClass}>
-                              {images.map((f, fi) => (
-                                <button
-                                  key={fi}
-                                  type="button"
-                                  onClick={() => openLightbox(lightboxImages, fi)}
-                                  aria-label={`View full size: ${f.name}`}
-                                  className={[
-                                    "group relative overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                                    count === 1 ? "h-40 w-40" :
-                                    count === 3 && fi === 0 ? "row-span-2 h-full min-h-0" :
-                                    "h-20 w-20",
-                                  ].join(" ")}
-                                >
-                                  {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
-                                  <img
-                                    src={f.previewUrl}
-                                    alt={f.name}
-                                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                  />
-                                  {/* Hover overlay — view label (download in lightbox header via "↓ Download" button) */}
-                                  <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
-                                    <span className="text-white text-[11px] font-medium">View</span>
-                                    {/* TODO: uncomment to re-enable "↓ Save" on hover (Slack/Copilot pattern)
+                      {m.attachments &&
+                        m.attachments.length > 0 &&
+                        (() => {
+                          const images = m.attachments!.filter(
+                            (f) => f.mediaType !== "application/pdf",
+                          );
+                          const pdfs = m.attachments!.filter(
+                            (f) => f.mediaType === "application/pdf",
+                          );
+                          const lightboxImages = images.map((f) => ({
+                            src: f.previewUrl,
+                            name: f.name,
+                          }));
+                          const count = images.length;
+                          // Mosaic grid classes — 1: single large, 2: side by side, 3: first spans 2 rows + 2 stacked, 3+: 2-col grid
+                          const gridClass =
+                            count === 1
+                              ? "flex"
+                              : count === 2
+                                ? "grid grid-cols-2 gap-1.5"
+                                : count === 3
+                                  ? "grid grid-cols-2 grid-rows-2 gap-1.5 h-44"
+                                  : "grid grid-cols-2 gap-1.5";
+                          return (
+                            <div className="flex flex-col items-end gap-1.5">
+                              {images.length > 0 && (
+                                <div className={gridClass}>
+                                  {images.map((f, fi) => (
+                                    <button
+                                      key={fi}
+                                      type="button"
+                                      onClick={() =>
+                                        openLightbox(lightboxImages, fi)
+                                      }
+                                      aria-label={`View full size: ${f.name}`}
+                                      className={[
+                                        "group relative overflow-hidden rounded-xl border border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                                        count === 1
+                                          ? "h-40 w-40"
+                                          : count === 3 && fi === 0
+                                            ? "row-span-2 h-full min-h-0"
+                                            : "h-20 w-20",
+                                      ].join(" ")}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element -- blob: URL */}
+                                      <img
+                                        src={f.previewUrl}
+                                        alt={f.name}
+                                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                      />
+                                      {/* Hover overlay — view label (download in lightbox header via "↓ Download" button) */}
+                                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/0 opacity-0 transition-all duration-200 group-hover:bg-black/40 group-hover:opacity-100">
+                                        <span className="text-white text-[11px] font-medium">
+                                          View
+                                        </span>
+                                        {/* TODO: uncomment to re-enable "↓ Save" on hover (Slack/Copilot pattern)
                                     <a
                                       href={f.previewUrl}
                                       download={f.name}
@@ -463,117 +521,134 @@ export function ChatMessages({
                                       ↓ Save
                                     </a>
                                     */}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {pdfs.map((f, fi) => (
+                                <div
+                                  key={fi}
+                                  className="flex items-center gap-1.5 rounded-xl bg-accent/80 px-3 py-2 text-xs text-bg-base"
+                                >
+                                  <span aria-hidden="true">📄</span>
+                                  <span className="max-w-[120px] truncate">
+                                    {f.name}
                                   </span>
-                                </button>
+                                </div>
                               ))}
                             </div>
-                          )}
-                          {pdfs.map((f, fi) => (
-                            <div
-                              key={fi}
-                              className="flex items-center gap-1.5 rounded-xl bg-accent/80 px-3 py-2 text-xs text-bg-base"
-                            >
-                              <span aria-hidden="true">📄</span>
-                              <span className="max-w-[120px] truncate">{f.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                    <div className="whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
-                      {m.content}
+                          );
+                        })()}
+                      <div className="whitespace-pre-wrap rounded-2xl bg-accent px-4 py-2.5 text-sm leading-relaxed text-bg-base">
+                        {m.content}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            }
-            // Assistant: split into text + resolved cards. Cards render full-width below text.
-            const segments = parseCards(m.content);
-            const showBadge = !!m.model && (!isStreaming || !isLast);
-            // Plain prose for TTS = the text segments only (card tokens never spoken).
-            // Read-aloud is offered once an answer is complete (not mid-stream).
-            const spokenText = segments
-              .filter((s): s is { type: "text"; text: string } => s.type === "text")
-              .map((s) => s.text)
-              .join(" ")
-              .trim();
-            const canRead = ttsAvailable && !!spokenText && (!isStreaming || !isLast);
-            return (
-              <div key={i} className="flex flex-col items-start gap-2">
-                {/* ThinkingBlock: visible in all three states:
+                );
+              }
+              // Assistant: split into text + resolved cards. Cards render full-width below text.
+              const segments = parseCards(m.content);
+              const showBadge = !!m.model && (!isStreaming || !isLast);
+              // Plain prose for TTS = the text segments only (card tokens never spoken).
+              // Read-aloud is offered once an answer is complete (not mid-stream).
+              const spokenText = segments
+                .filter(
+                  (s): s is { type: "text"; text: string } => s.type === "text",
+                )
+                .map((s) => s.text)
+                .join(" ")
+                .trim();
+              const canRead =
+                ttsAvailable && !!spokenText && (!isStreaming || !isLast);
+              return (
+                <div key={i} className="flex flex-col items-start gap-2">
+                  {/* ThinkingBlock: visible in all three states:
                     (a) isThinking=true, isStreaming=true  → dots + live reasoning
                     (b) isThinking=false, liveReasoning set, isStreaming=true  → collapsed toggle above streaming answer
                     (c) isThinking=false, liveReasoning set, isStreaming=false → collapsed toggle above settled answer */}
-                {m.liveReasoning !== undefined || m.isThinking ? (
-                  <ThinkingBlock
-                    isThinking={m.isThinking}
-                    liveReasoning={m.liveReasoning}
-                    isStreaming={isStreaming && isLast}
-                    thinkingStartedAt={m.thinkingStartedAt}
-                    thinkingDuration={m.thinkingDuration}
-                  />
-                ) : null}
-                {/* Pre-flight waiting indicator — shown when streaming has started but no bytes
+                  {m.liveReasoning !== undefined || m.isThinking ? (
+                    <ThinkingBlock
+                      isThinking={m.isThinking}
+                      liveReasoning={m.liveReasoning}
+                      isStreaming={isStreaming && isLast}
+                      thinkingStartedAt={m.thinkingStartedAt}
+                      thinkingDuration={m.thinkingDuration}
+                    />
+                  ) : null}
+                  {/* Pre-flight waiting indicator — shown when streaming has started but no bytes
                     have arrived yet (content="", no thinking sentinel, no segments).
                     This covers: (a) PDF extraction delay before send(), (b) network latency
                     before the first byte, (c) any gap between send and THINKING_SENTINEL.
                     Collapses immediately once any content, thinking, or reasoning appears. */}
-                {isStreaming && isLast && !m.isThinking && m.liveReasoning === undefined && !m.content && (
-                  <div className="flex max-w-[88%] items-center gap-2 rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
-                    <span className="inline-flex gap-1" aria-label="Loading response">
-                      <span className="animate-pulse">·</span>
-                      <span className="animate-pulse [animation-delay:200ms]">·</span>
-                      <span className="animate-pulse [animation-delay:400ms]">·</span>
-                    </span>
-                    <span>Loading…</span>
-                  </div>
-                )}
-                {/* Answer segments — hidden while still in thinking phase (no content yet) */}
-                {!(m.isThinking && isStreaming && isLast) &&
-                  segments.map((seg, j) =>
-                    seg.type === "text" ? (
-                      seg.text.trim() ? (
-                        <div
-                          key={j}
-                          className="max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm leading-relaxed text-fg"
+                  {isStreaming &&
+                    isLast &&
+                    !m.isThinking &&
+                    m.liveReasoning === undefined &&
+                    !m.content && (
+                      <div className="flex max-w-[88%] items-center gap-2 rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm text-fg-subtle">
+                        <span
+                          className="inline-flex gap-1"
+                          aria-label="Loading response"
                         >
-                          <MarkdownMessage text={seg.text} />
-                        </div>
-                      ) : null
-                    ) : seg.type === "project" || seg.type === "work" ? (
-                      <div key={j} className="w-full max-w-md">
-                        <ChatCard segment={seg} />
+                          <span className="animate-pulse">·</span>
+                          <span className="animate-pulse [animation-delay:200ms]">
+                            ·
+                          </span>
+                          <span className="animate-pulse [animation-delay:400ms]">
+                            ·
+                          </span>
+                        </span>
+                        <span>Loading…</span>
                       </div>
-                    ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
-                  )}
-                {/* Answer footer: the honest model badge + the optional read-aloud
+                    )}
+                  {/* Answer segments — hidden while still in thinking phase (no content yet) */}
+                  {!(m.isThinking && isStreaming && isLast) &&
+                    segments.map(
+                      (seg, j) =>
+                        seg.type === "text" ? (
+                          seg.text.trim() ? (
+                            <div
+                              key={j}
+                              className="max-w-[88%] rounded-2xl border border-border bg-bg-surface px-4 py-2.5 text-sm leading-relaxed text-fg"
+                            >
+                              <MarkdownMessage text={seg.text} />
+                            </div>
+                          ) : null
+                        ) : seg.type === "project" || seg.type === "work" ? (
+                          <div key={j} className="w-full max-w-md">
+                            <ChatCard segment={seg} />
+                          </div>
+                        ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
+                    )}
+                  {/* Answer footer: the honest model badge + the optional read-aloud
                     toggle. The badge shows which model served the bytes (and if the
                     Opus→Sonnet→Haiku fallback fired) — NOT a RAG citation. Read-aloud
                     appears only when TTS is opted in + supported + the answer is done. */}
-                {(showBadge || canRead) && (
-                  <div className="flex items-center gap-2 px-1">
-                    {showBadge && (
-                      <p className="font-mono text-[10px] text-fg-subtle">
-                        {m.fellBack ? "↳ primary unavailable · " : ""}Answered by{" "}
-                        {friendlyModel(m.model!)} · Bedrock
-                      </p>
-                    )}
-                    {canRead && (
-                      <ReadAloudButton
-                        speaking={activeIdx === i}
-                        onToggle={() => toggleRead(i, spokenText)}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  {(showBadge || canRead) && (
+                    <div className="flex items-center gap-2 px-1">
+                      {showBadge && (
+                        <p className="font-mono text-[10px] text-fg-subtle">
+                          {m.fellBack ? "↳ primary unavailable · " : ""}Answered
+                          by {friendlyModel(m.model!)} · Bedrock
+                        </p>
+                      )}
+                      {canRead && (
+                        <ReadAloudButton
+                          speaking={activeIdx === i}
+                          onToggle={() => toggleRead(i, spokenText)}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      <JumpToLatest show={!isAtBottom} onClick={onJump} />
-    </div>
+        <JumpToLatest show={!isAtBottom} onClick={onJump} />
+      </div>
     </>
   );
 }

@@ -27,7 +27,7 @@ so the workflow count dropped 4 → 3 (`ls .github/workflows/` → `ci.yml`, `co
 | File | Role | Key exports |
 |---|---|---|
 | `package.json` | name `anvilry`, version `3.6.0`, `private: true`, `engines.node: ">=22 <23"`. 12 scripts (`analyze` is the newest), 33 deps, 17 devDeps. **Carries no `pnpm` field any more** — `overrides` and `onlyBuiltDependencies` moved to `pnpm-workspace.yaml` in v3.5.0, joining the `ignoredBuiltDependencies` already there | n/a (JSON) |
-| `.nvmrc` | Single line, `22`. Added in v3.5.0 alongside `engines.node` so local Node matches the CI pin (`.github/workflows/ci.yml:24-27`) | n/a |
+| `.nvmrc` | Single line, `22`. Added in v3.5.0 alongside `engines.node` so local Node matches the CI pin (`.github/workflows/ci.yml:26-29`) | n/a |
 | `next.config.ts` | Next config: enforced CSP + 4 security headers, per-route `/resume` CSP override, 4 `.md` rewrites, `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper (**local-only now** — inert unless `pnpm analyze` supplies both `ANALYZE=true` *and* `--webpack`) | `default` — `withBundleAnalyzer(nextConfig)` |
 | `tsconfig.json` | `strict`, `noEmit`, `moduleResolution: "bundler"`, `target: ES2017`, `@/*` → `./src/*`, `next` TS plugin | n/a (JSON) |
 | `eslint.config.mjs` | Flat config: `eslint-config-next/core-web-vitals` + `/typescript`, then re-declares default ignores plus `.vercel/ .velite/ scratch-pad/ public/static/ scripts/` | `default` — `eslintConfig` |
@@ -141,11 +141,11 @@ Re-verify them after any Next or analyzer upgrade.
 but the only Pagefind entry point is the Makefile target (`Makefile:64-66`). Likewise `lint` and `tsc --noEmit`
 are **not** part of `pnpm build` — they run only in CI, as does the bundle-budget gate. There is also no
 `packageManager` field; the pnpm major is pinned only by CI — `pnpm/action-setup` `version: 10` in the `ci` and
-`e2e` jobs (`.github/workflows/ci.yml:22`, `:84`) and `version: 11` in `install-pnpm-11` (`:148`).
+`e2e` jobs (`.github/workflows/ci.yml:24`, `:84`) and `version: 11` in `install-pnpm-11` (`:230`).
 
 **Node version is pinned, and the pin is load-bearing (new in v3.5.0).** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }` and `.nvmrc:1` is `22` — deliberately a *ceiling*, not just a floor, and matched
-to the CI pin (`ci.yml:24-27` `node-version: 22`). `CHANGELOG.md:178-181` records the failure that motivated it: a
+to the CI pin (`ci.yml:26-29` `node-version: 22`). `CHANGELOG.md:178-181` records the failure that motivated it: a
 contributor on Node 26 saw **9 failing tests and a red `pnpm build` with no explanation**, because Node 26
 exposes a native `localStorage` global (unavailable without `--localstorage-file`) that collides with vitest's
 happy-dom global injection. Widening the range re-opens that trap. Two limits: `engines` **warns rather than
@@ -463,7 +463,7 @@ Before `allowBuilds` existed, pnpm 11 seeded it into this tracked file itself wi
 filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of `package.json`**.
 It prints `The "pnpm" field in package.json is no longer read by pnpm` and skips it — a warning line that reads
 like boilerplate. Nothing was broken yet, because `pnpm-lock.yaml` already encoded the resolved graph and CI pins
-pnpm 10 (`ci.yml:22`) — but **one `pnpm install` on pnpm 11 would have regenerated the lockfile without the
+pnpm 10 (`ci.yml:24`) — but **one `pnpm install` on pnpm 11 would have regenerated the lockfile without the
 `overrides:` block and silently reverted v3.4.2's entire security release.** Both pnpm 10 and 11 read
 `pnpm-workspace.yaml`, so the new location works on either. The migration was verified in a stated order
 (commit `ceae0d1`): `install --lockfile-only` under pnpm 11 → lockfile **byte-identical** to baseline (the proof

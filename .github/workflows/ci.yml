@@ -11,6 +11,8 @@ jobs:
     name: Lint · Type-check · Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -37,6 +39,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      # NON-BLOCKING BY DESIGN (continue-on-error), same rationale as the security-alerts
+      # job below: visibility, not enforcement. dependency-review.yml already blocks
+      # high/critical CVEs, but only in the DIFF of a PR — it never re-checks packages that
+      # were already in the tree before this PR opened. This step covers that gap: the full
+      # installed tree, every run, on every branch.
+      - name: Dependency audit (report)
+        continue-on-error: true
+        run: pnpm audit --audit-level high
 
       # .velite/ is gitignored — must be generated before tsc or vitest runs.
       # Mirrors the production build order: velite --clean && vitest run && next build
@@ -127,6 +138,8 @@ jobs:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     # Wired in deliberately: `pnpm e2e` was referenced by NO workflow, so the suite rotted
     # unnoticed until 5 of 19 tests were failing on selectors that could never match. A gate that
     # nobody runs provides zero signal. playwright.config.ts now carries a `webServer` block, so
@@ -192,6 +205,8 @@ jobs:
     name: Install on pnpm 11
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     # WHY THIS JOB EXISTS
     # The `ci` job above pins `version: 10`, which is correct — but it means no green run has ever
     # exercised the pnpm the rest of the world actually installs. `npm i -g pnpm` resolves to 11.

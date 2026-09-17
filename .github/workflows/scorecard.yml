@@ -1,0 +1,54 @@
+name: OSSF Scorecard
+
+# Supply-chain health signal for this public, 0-star repo. Scorecard checks things
+# CodeQL/dependency-review don't: branch protection, pinned dependencies, dangerous
+# workflow patterns, maintained-ness, etc. Runs on a weekly cron plus every push to
+# develop/main so the published score tracks what's actually deployed.
+on:
+  push:
+    branches: ["develop", "main"]
+  schedule:
+    - cron: "30 2 * * 1" # weekly, Monday 02:30 UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analyze:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Needed to upload the results as SARIF to code-scanning.
+      security-events: write
+      # Needed to publish results and get a badge (see publish_results below).
+      id-token: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publishes the score to scorecard.dev for the public badge. Safe for a
+          # public repo — no private data is exposed, only what Scorecard itself analyzed.
+          publish_results: true
+
+      - name: Upload SARIF as an artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 7
+
+      - name: Upload to code-scanning
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          sarif_file: results.sarif

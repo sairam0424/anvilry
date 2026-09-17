@@ -44,6 +44,14 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid request." }, { status: 400 });
   }
 
+  // Content-Length bypass backstop: a missing/false header skips the
+  // declared-length check above entirely (it defaults to 0), so req.json()
+  // would otherwise buffer an unbounded body before this point. Mirrors the
+  // same post-read guard used in /api/transcribe/route.ts and /api/error/route.ts.
+  if (JSON.stringify(body).length > MAX_BODY_BYTES) {
+    return Response.json({ error: "Request too large." }, { status: 413 });
+  }
+
   // 2000 chars is generous for a question to purge (the live chat path caps
   // input at 600) — this bound exists purely so an authenticated admin
   // request can't hand an unbounded string to normalizeQuestion/hashing.

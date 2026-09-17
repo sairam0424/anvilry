@@ -22,10 +22,14 @@ import { stripControlBytes } from "@/lib/llm-trace";
  *
  * Safety layers added after an adversarial audit of the first cut:
  *  - FAQ_CACHE_ENABLED kill switch, independent of Redis-overall.
- *  - Content-safety gate (finish_reason === "end_turn" only) + control-char
+ *  - Completion-integrity gate (finish_reason === "end_turn" only) + control-char
  *    stripping + a max-length sanity bound before anything is cached — a
- *    single jailbroken/truncated completion must never get replayed to every
- *    future visitor.
+ *    truncated/anomalous completion must never get replayed to every future
+ *    visitor. NOTE: this checks completion cleanliness, not actual content
+ *    safety — a jailbreak that finishes cleanly (end_turn) still passes this
+ *    gate and would be cached. The blast radius is bounded (TTL, corpus-tag
+ *    invalidation, admin purge below) but this is a known accepted gap, not
+ *    a moderation layer.
  *  - Entries are tagged with the corpus build they were answered against, so
  *    a content-correcting deploy can't have its old answer survive the TTL.
  *  - No raw question text is persisted (the key is already a hash of it).
@@ -255,9 +259,10 @@ export async function faqCacheSet(
 ): Promise<void> {
   if (!isFaqCacheEnabled() || !redis) return;
 
-  // Content-safety gate: only cache a clean, complete completion. A
+  // Completion-integrity gate: only cache a clean, complete completion. A
   // max_tokens-truncated (or otherwise non-clean) stop cached as canonical
-  // would be wrong for every future cache-hit visitor.
+  // would be wrong for every future cache-hit visitor. NOT a content-safety
+  // check — a jailbreak that finishes with end_turn still passes this.
   if (finishReason !== "end_turn") return;
 
   const sanitized = stripControlBytes(answer).trim();
@@ -300,7 +305,12 @@ export async function faqCacheSet(
         // fresher write for the same question) before this second write
         // lands. Re-check right before writing: only proceed if `cachedAt`
         // still matches what THIS call wrote above — not a full atomic CAS,
-        // but it closes the exact race a purge-then-resurrect would hit.
+        // so a narrower TOCTOU window still exists between this GET and the
+        // SET below (a purge/replace landing in that exact gap would still
+        // resurrect the embedding-less entry). Closing it fully would need a
+        // Lua script (GET+conditional SET as one atomic op via the Upstash
+        // SDK's eval support) — not done here since the narrowed window is
+        // small and the entry it could resurrect is still content-gated.
         const current = await redis.get<string | FaqCacheEntry>(key);
         const currentEntry = current ? parseEntry(current) : null;
         if (currentEntry?.cachedAt === cachedAt) {

@@ -325,7 +325,7 @@ Items **5, 7, 8, 11, 12, 13, 14, 15** are still live and still need fixing.
    state: `DEPLOY.md:94` = Primary `us.anthropic.claude-sonnet-4-6`, `:95` = Secondary
    `us.anthropic.claude-opus-4-6-v1`, `:96` = Fallback `us.anthropic.claude-haiku-4-5-20251001-v1:0`, and
    `:99` = `claude-sonnet-4-6 → claude-opus-4-7 → claude-haiku-4-5`. Both now match
-   `src/lib/llm.ts:32-34` (`BEDROCK_CHAIN`) and `src/lib/llm.ts:38` (`ANTHROPIC_CHAIN` =
+   `src/lib/llm.ts:32-34` (`BEDROCK_CHAIN`) and `src/lib/llm.ts:43-47` (`ANTHROPIC_CHAIN` =
    `["claude-sonnet-4-6", "claude-opus-4-7", "claude-haiku-4-5"]`). The same edit added a standing rule at
    `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is authoritative
    if this table ever disagrees with it" — with the source citations inline. `CLAUDE.md:200` and

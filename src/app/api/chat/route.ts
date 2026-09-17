@@ -11,8 +11,6 @@ import {
   faqCacheGet,
   faqCacheSemanticGet,
   faqCacheSet,
-  faqCacheKey,
-  normalizeQuestion,
   isSemanticMatchEnabled,
 } from "@/lib/chat-cache";
 import { randomUUID } from "node:crypto";
@@ -350,7 +348,10 @@ export async function POST(req: Request) {
         attrs: {
           outcome: hit ? "hit" : "miss",
           tier: hit?.tier ?? "none",
-          key_hash: faqCacheKey(normalizeQuestion(question)).slice(-16),
+          // No key_hash here (CodeRabbit flagged it, correctly on reflection):
+          // it's a one-way hash so not a raw-text leak, but it also has no
+          // real operational use — faqCachePurge takes the original question
+          // text, not a hash, so this field couldn't even drive a purge call.
           ...(hit
             ? { saved_usd: hit.entry.costUsd, model: hit.entry.model }
             : {}),

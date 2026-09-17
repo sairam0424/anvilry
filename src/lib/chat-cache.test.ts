@@ -38,6 +38,17 @@ const { redisMock, redisStateRef } = vi.hoisted(() => {
   return { redisMock, redisStateRef };
 });
 
+// chat-cache.ts's semantic-tier branch does `await import("./faq-embeddings")`
+// dynamically, but vitest's module mocking intercepts dynamic imports the
+// same way as static ones. Mocked here (not left to the real module) so
+// tests can control whether embedText "succeeds" without making a real AWS
+// call — faq-embeddings.test.ts covers the real module's own AWS-call logic.
+const { embedTextMock } = vi.hoisted(() => ({ embedTextMock: vi.fn() }));
+vi.mock("./faq-embeddings", () => ({
+  embedText: embedTextMock,
+  cosineSimilarity: vi.fn(),
+}));
+
 vi.mock("@/lib/redis", () => ({
   get redis() {
     return redisStateRef.current;
@@ -66,6 +77,8 @@ beforeEach(() => {
   redisMock.mget.mockResolvedValue([]);
   redisMock.zremrangebyscore.mockResolvedValue(0);
   redisMock.zremrangebyrank.mockResolvedValue(0);
+  embedTextMock.mockReset();
+  embedTextMock.mockResolvedValue(null);
   delete process.env.FAQ_CACHE_SEMANTIC_MATCH;
   delete process.env.FAQ_CACHE_ENABLED;
   // Keep test output clean — emitCacheError's console.warn and emit()'s own
@@ -442,7 +455,7 @@ describe("isSemanticMatchEnabled", () => {
 });
 
 describe("faqCachePurge", () => {
-  it("deletes the entry key and removes it from the index, reporting purged:true on a real hit", async () => {
+  it("deletes the entry key and removes it from the index, reporting status:purged on a real hit", async () => {
     redisMock.del.mockResolvedValueOnce(1);
     const { faqCachePurge, faqCacheKey, normalizeQuestion } =
       await import("./chat-cache");
@@ -453,28 +466,30 @@ describe("faqCachePurge", () => {
       "anvilry:chat:cache:index",
       key,
     );
-    expect(result).toEqual({ purged: true, key });
+    expect(result).toEqual({ status: "purged", key });
   });
 
-  it("reports purged:false when the key did not exist (idempotent, not an error)", async () => {
+  it("reports status:not_found when the key did not exist (idempotent, not an error)", async () => {
     redisMock.del.mockResolvedValueOnce(0);
     const { faqCachePurge } = await import("./chat-cache");
     const result = await faqCachePurge("Some question nobody asked");
-    expect(result.purged).toBe(false);
+    expect(result.status).toBe("not_found");
   });
 
-  it("no-ops to purged:false when Redis is not configured", async () => {
+  it("reports status:error (distinguishable from not_found) when Redis is not configured", async () => {
     redisStateRef.current = null;
     const { faqCachePurge } = await import("./chat-cache");
     const result = await faqCachePurge("q");
-    expect(result.purged).toBe(false);
+    expect(result.status).toBe("error");
   });
 
-  it("swallows a Redis error, returns purged:false, and emits a distinguishable server.error event", async () => {
+  it("swallows a Redis error, reports status:error, and emits a distinguishable server.error event", async () => {
     redisMock.del.mockRejectedValueOnce(new Error("upstash down"));
     const { faqCachePurge } = await import("./chat-cache");
     const result = await faqCachePurge("q");
-    expect(result.purged).toBe(false);
+    expect(result.status).toBe("error");
+    if (result.status === "error")
+      expect(result.message).toContain("upstash down");
     expect(redisMock.zadd).toHaveBeenCalledWith(
       "anvilry:trace:server.error",
       expect.anything(),
@@ -486,6 +501,41 @@ describe("faqCachePurge", () => {
     redisMock.del.mockResolvedValueOnce(1);
     const { faqCachePurge } = await import("./chat-cache");
     const result = await faqCachePurge("q");
-    expect(result.purged).toBe(true);
+    expect(result.status).toBe("purged");
+  });
+
+  it("does not resurrect a purged entry via the delayed embedding write (race guard)", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([0.1, 0.2, 0.3]);
+    // Simulate: base write succeeds, then before the embedding write lands,
+    // an admin purge already deleted the key — the re-check's get() sees
+    // nothing (this is also the default mock value, but set explicitly here
+    // for clarity about what's being simulated).
+    redisMock.get.mockResolvedValue(null);
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, "end_turn");
+    // Only the base entry write should have happened — the embedding-augmented
+    // second write must be skipped because the re-check found no entry.
+    expect(redisMock.set).toHaveBeenCalledTimes(1);
+  });
+
+  it("proceeds with the embedding write when the entry is still there and unchanged", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([0.1, 0.2, 0.3]);
+    const { faqCacheSet } = await import("./chat-cache");
+    // The re-check's get() must see the SAME cachedAt this call wrote. Since
+    // faqCacheSet computes cachedAt internally via Date.now(), capture what
+    // gets written to the base `set` call and echo it back from the re-check.
+    redisMock.get.mockImplementation(async (key: string) => {
+      if (key === CORPUS_BUILT_AT_KEY) return null;
+      const [, storedJson] = redisMock.set.mock.calls[0] ?? [];
+      return storedJson ?? null;
+    });
+    await faqCacheSet("q", "a", "m", 0, "end_turn");
+    expect(redisMock.set).toHaveBeenCalledTimes(2);
+    const [, secondPayload] = redisMock.set.mock.calls[1];
+    expect(JSON.parse(secondPayload as string).embedding).toEqual([
+      0.1, 0.2, 0.3,
+    ]);
   });
 });

@@ -19,9 +19,22 @@ export const maxDuration = 10;
  * Example: curl -u admin:$ADMIN_PASSWORD -X POST .../api/admin/faq-cache/purge
  *   -H "Content-Type: application/json" -d '{"question":"What is Pensieve?"}'
  */
+// Rejects a declared body over this before ever calling req.json() — mirrors
+// the same declared-Content-Length-before-parse guard /api/chat/route.ts
+// uses. {"question": "<=2000 chars>"} plus JSON overhead fits comfortably
+// under 4KB; this exists purely so an authenticated admin request can't hand
+// an unbounded body to req.json()'s buffering before the question-length
+// check below ever runs.
+const MAX_BODY_BYTES = 4 * 1024;
+
 export async function POST(req: Request) {
   const auth = requireAdmin(req);
   if (auth instanceof Response) return auth;
+
+  const declaredLen = Number(req.headers.get("content-length") ?? 0);
+  if (declaredLen > MAX_BODY_BYTES) {
+    return Response.json({ error: "Request too large." }, { status: 413 });
+  }
 
   let body: { question?: unknown };
   try {
@@ -45,5 +58,8 @@ export async function POST(req: Request) {
   }
 
   const result = await faqCachePurge(body.question);
+  if (result.status === "error") {
+    return Response.json(result, { status: 503 });
+  }
   return Response.json(result);
 }

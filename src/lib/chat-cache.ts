@@ -295,9 +295,19 @@ export async function faqCacheSet(
       const { embedText } = await import("./faq-embeddings");
       const embedding = await embedText(normalized);
       if (embedding) {
-        await redis.set(key, JSON.stringify({ ...entry, embedding }), {
-          ex: FAQ_CACHE_TTL_SECONDS,
-        });
+        // embedText's network round trip is a real window for the entry to
+        // be purged (an admin remediating a bad answer) or replaced (a
+        // fresher write for the same question) before this second write
+        // lands. Re-check right before writing: only proceed if `cachedAt`
+        // still matches what THIS call wrote above — not a full atomic CAS,
+        // but it closes the exact race a purge-then-resurrect would hit.
+        const current = await redis.get<string | FaqCacheEntry>(key);
+        const currentEntry = current ? parseEntry(current) : null;
+        if (currentEntry?.cachedAt === cachedAt) {
+          await redis.set(key, JSON.stringify({ ...entry, embedding }), {
+            ex: FAQ_CACHE_TTL_SECONDS,
+          });
+        }
       }
     } catch (err) {
       // Non-fatal: the base entry already wrote successfully above, so this
@@ -309,23 +319,40 @@ export async function faqCacheSet(
   }
 }
 
+export type FaqCachePurgeResult =
+  | { status: "purged"; key: string }
+  | { status: "not_found"; key: string }
+  | { status: "error"; key: string; message: string };
+
 /** Admin-only purge of a single cache entry by its (unnormalized) question
  *  text — used by /api/admin/faq-cache/purge so a discovered-bad entry can be
  *  removed without a deploy or direct Upstash console access. Deliberately
  *  NOT gated on isFaqCacheEnabled() — an operator purging a bad entry while
  *  investigating shouldn't first need the cache itself to be enabled.
- *  Idempotent: purging a non-existent key is not an error. */
+ *
+ *  Returns a distinguishable "error" status rather than collapsing a real
+ *  Redis failure into the same shape as "nothing was there to purge" — during
+ *  an actual incident, an operator needs to tell those two apart (the route
+ *  maps "error" to HTTP 503). "not_found" is still success, not an error:
+ *  purging a non-existent key is idempotent. */
 export async function faqCachePurge(
   question: string,
-): Promise<{ purged: boolean; key: string }> {
+): Promise<FaqCachePurgeResult> {
   const key = faqCacheKey(normalizeQuestion(question));
-  if (!redis) return { purged: false, key };
+  if (!redis)
+    return { status: "error", key, message: "Redis is not configured" };
   try {
     const deleted = await redis.del(key);
     await redis.zrem(INDEX_KEY, key);
-    return { purged: deleted > 0, key };
+    return deleted > 0
+      ? { status: "purged", key }
+      : { status: "not_found", key };
   } catch (err) {
     emitCacheError("purge", err);
-    return { purged: false, key };
+    return {
+      status: "error",
+      key,
+      message: (err as Error)?.message ?? "unknown error",
+    };
   }
 }

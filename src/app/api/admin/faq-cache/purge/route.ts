@@ -8,8 +8,9 @@ export const maxDuration = 10;
  *
  * Removes a single FAQ-cache entry by its question text — the operator
  * remediation path for a discovered-bad cached answer (e.g. a jailbreak that
- * slipped past the content-safety gate in chat-cache.ts) without needing a
- * deploy or direct Upstash console access.
+ * finished cleanly and so passed chat-cache.ts's completion-integrity gate,
+ * which checks finish_reason, not content safety) without needing a deploy
+ * or direct Upstash console access.
  *
  * Auth: same HTTP Basic scheme as /admin/telemetry (ADMIN_PASSWORD via
  * requireAdmin() — src/lib/admin-auth.ts). Deliberately NOT rate-limited like

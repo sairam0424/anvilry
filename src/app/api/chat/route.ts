@@ -466,7 +466,7 @@ export async function POST(req: Request) {
           // Write-through: attempt.answerText is present iff this was a clean,
           // complete success (see llm.ts) — every error/fallback path leaves it
           // undefined, so this can never cache a partial or apology-tail reply.
-          // faqCacheSet applies its own additional content-safety gate on
+          // faqCacheSet applies its own additional completion-integrity gate on
           // finish_reason (only "end_turn" is cacheable) — passed through here.
           if (question != null && attempt.answerText != null) {
             void faqCacheSet(

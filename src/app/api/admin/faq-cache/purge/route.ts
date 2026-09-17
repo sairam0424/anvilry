@@ -30,9 +30,16 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  if (typeof body.question !== "string" || body.question.trim().length === 0) {
+  // 2000 chars is generous for a question to purge (the live chat path caps
+  // input at 600) — this bound exists purely so an authenticated admin
+  // request can't hand an unbounded string to normalizeQuestion/hashing.
+  if (
+    typeof body.question !== "string" ||
+    body.question.trim().length === 0 ||
+    body.question.length > 2000
+  ) {
     return Response.json(
-      { error: "question (non-empty string) is required." },
+      { error: "question (non-empty string, max 2000 chars) is required." },
       { status: 400 },
     );
   }

@@ -96,6 +96,28 @@ describe("normalizeQuestion", () => {
       normalizeQuestion("  what is pensieve  "),
     );
   });
+
+  it("strips a mix of trailing punctuation characters, not just one kind", async () => {
+    const { normalizeQuestion } = await import("./chat-cache");
+    expect(normalizeQuestion("what is pensieve?!.,;:")).toBe(
+      "what is pensieve",
+    );
+  });
+
+  it("stays fast on a long adversarial run of trailing punctuation (CodeQL js/polynomial-redos regression guard)", async () => {
+    const { normalizeQuestion } = await import("./chat-cache");
+    // normalizeQuestion previously ended in `.replace(/[?!.,;:]+$/g, "")`,
+    // flagged by CodeQL as polynomial-time on adversarial input (many
+    // repetitions of one of these chars). This input is exactly that shape,
+    // reachable with unbounded length via the admin purge route (no length
+    // cap there, unlike the main chat path) — assert it resolves quickly
+    // rather than hanging, using a plain loop instead of that regex.
+    const adversarial = "question" + "!".repeat(50_000);
+    const start = performance.now();
+    const result = normalizeQuestion(adversarial);
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(result).toBe("question");
+  });
 });
 
 describe("faqCacheKey", () => {

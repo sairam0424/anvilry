@@ -90,12 +90,18 @@ export type FaqCacheHit =
  *  no new dependency; catches near-identical phrasing but not true paraphrases
  *  ("what tech do you use" vs "what's your stack") — that gap is what the
  *  optional semantic tier is for. */
+const TRAILING_PUNCTUATION = new Set(["?", "!", ".", ",", ";", ":"]);
+
 export function normalizeQuestion(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .replace(/[?!.,;:]+$/g, "");
+  const collapsed = text.trim().toLowerCase().replace(/\s+/g, " ");
+  // Plain loop, not a `[...]+$` regex: CodeQL flagged that pattern as
+  // polynomial-time on adversarial input (e.g. a long run of "!"). `text`
+  // here isn't length-capped at every call site (the admin purge route
+  // accepts an arbitrary-length question), so this is provably linear
+  // instead of relying on the regex engine's backtracking behavior.
+  let end = collapsed.length;
+  while (end > 0 && TRAILING_PUNCTUATION.has(collapsed[end - 1])) end--;
+  return collapsed.slice(0, end);
 }
 
 export function faqCacheKey(normalized: string): string {

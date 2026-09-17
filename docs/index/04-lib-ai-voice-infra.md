@@ -354,7 +354,7 @@ Every emitted event carries `attrs: { ipHash, uaHash, ...attrs }` plus `latency_
 - **Exports:** `useAutoScroll(opts?)` → `UseAutoScroll`.
 - **Consumed by:** `src/components/ask-portfolio.tsx:12`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
 - **Behaviour notes:** BOTH engine hooks are called unconditionally every render (:25-29) — required by the rules of hooks — and each is handed `enabled: callerEnabled && engine === "<its own>"` so the inactive engine attaches no observers/listeners (:24-29). The return is `engine === "library" ? library : custom` (:30), i.e. `custom` is the else-branch default.
-- **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:345` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
+- **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:373` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
 
 #### `src/lib/scroll/use-stick-to-bottom-custom.ts`
 - **Role:** The in-repo engine — intent-flag + ResizeObserver + programmatic-guard design.

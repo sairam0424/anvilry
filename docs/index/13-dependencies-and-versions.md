@@ -207,7 +207,7 @@ Every override exists to resolve a Dependabot advisory on a **transitive, lockfi
 | `ip-address` | `^10.3.1` | 10.5.0 | **high** — `Address4` decodes leading-zero octets as decimal while resolvers decode octal → SSRF / trust-boundary bypass | `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`. Server-side only; commit notes "0 client chunks contain ip-address". `express-rate-limit` already declared `ip-address: ^10.2.0`, so the override only re-resolves inside a blessed range |
 | `fast-uri` | `^3.1.5` | 3.1.5 | **high** — host confusion via backslash authority introducer | Transitive under the MCP/validation chain |
 | `js-yaml` | `^4.3.1` | 4.3.1 | **high** — quadratic CPU consumption (DoS) in `!!omap` resolution | devDependency chain (build-time) |
-| `postcss` | `^8.5.23` | both instances converged to 8.5.26 (`pnpm-lock.yaml:4317,9645`) | medium/high — attacker-controlled `sourceMappingURL` reads arbitrary `.map` files when `from` is unset | Build-time; resolved above the override floor, single version now |
+| `postcss` | `^8.5.23` | both instances converged to 8.5.26 (`pnpm-lock.yaml:4112,9201`) | medium/high — attacker-controlled `sourceMappingURL` reads arbitrary `.map` files when `from` is unset | Build-time; resolved above the override floor, single version now |
 | `brace-expansion@1` | `^1.1.16` | 1.1.18 | **high** — advisory scope `<1.1.16` | eslint tooling chain (dev). Version-scoped on purpose |
 | `brace-expansion@>=3` | `^5.0.7` | 5.0.9 | **high** — advisory scope `>=3.0.0 <5.0.7` | Same chain. Split into two keys because a blanket `^5.0.7` would force `minimatch@3` (which requires the 1.x line) onto 5.x and break eslint. Verified: 1.1.18 and 5.0.9 coexist |
 | `sharp` | `^0.35.0` | 0.35.3 | **high** | Two instances existed; `next@16.3.0` already carried patched 0.35.3, only `velite`'s 0.34.5 was vulnerable — build-time image processing of the repo's own content. Because it is a native module, `.velite` was wiped and regenerated to prove it: exit 0, work=5 / projects=11 / articles=15 / notes=5 |
@@ -224,7 +224,7 @@ Every override exists to resolve a Dependabot advisory on a **transitive, lockfi
 | `next` / `eslint-config-next` | `16.3.0` | Held in lockstep so the lint ruleset matches the framework |
 | `react` / `react-dom` | `19.2.8` | Kept identical to each other; bumped as a pair in 3.4.1 (`CHANGELOG.md:263`) |
 | `@react-three/postprocessing` | `3.0.4` | 3.0.5 types-only regression: `ChromaticAberration` props are `Omit<Partial<ConstructorParameters<...>[0]>, 'offset'>`, the ctor param is optional so the type includes `\| undefined`, `keyof` of that union collapses to `never`, and every real prop is erased. Runtime is fine — only `tsc` catches it. A version-scoped Dependabot `ignore` for `["3.0.5"]` accompanies the pin so 3.0.6+ still flows |
-| `@modelcontextprotocol/sdk` | `1.26.0` | `mcp-handler@1.1.0`'s peer range is the single literal version `1.26.0` (`pnpm-lock.yaml:3861`). This pin is the direct cause of the `security_update_not_possible` failures |
+| `@modelcontextprotocol/sdk` | `1.26.0` | `mcp-handler@1.1.0`'s peer range is the single literal version `1.26.0` (`pnpm-lock.yaml:3707`). This pin is the direct cause of the `security_update_not_possible` failures |
 
 ## Framework version notes
 

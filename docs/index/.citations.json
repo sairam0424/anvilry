@@ -3069,15 +3069,6 @@
       ],
       "preview": "\"dependencies\": {"
     },
-    "package.json:23": {
-      "fp": "7b39505492fd",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "README.md"
-      ],
-      "preview": "\"@anthropic-ai/bedrock-sdk\": \"^0.33.3\","
-    },
     "package.json:27": {
       "fp": "dbc78eb9df14",
       "citedBy": [
@@ -3149,14 +3140,12 @@
       "preview": "\"zod\": \"^3.25.76\""
     },
     "package.json:58": {
-      "fp": "00eb105e188a",
+      "fp": "c1f65a407a13",
       "citedBy": [
-        "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "README.md"
       ],
-      "preview": "\"@next/bundle-analyzer\": \"^16.3.3\","
+      "preview": "\"zod\": \"^3.25.76\""
     },
     "package.json:7": {
       "fp": "e52a1813c460",

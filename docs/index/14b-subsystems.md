@@ -641,7 +641,7 @@ does not gate the route — only the nav link and the sitemap entry.
 | The `@react-three/postprocessing` types regression returns | Loosening the exact `3.0.4` pin (`package.json:32`) or the version-scoped Dependabot `ignore` for `["3.0.5"]` without the other — they are a matched pair. |
 | eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:223-225`). |
 | Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`mcp-handler`'s literal peer), producing `security_update_not_possible` — the reason all 10 `pnpm.overrides` exist. |
-| `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4276`) against a declared `^0.185.1` — one minor of headroom. |
+| `three` bump breaks a peer | `postprocessing@6.39.4` declares `three: >= 0.168.0 < 0.186.0` (`pnpm-lock.yaml:4118`) against a declared `^0.185.1` — one minor of headroom. |
 
 ### Flags / env that alter it
 

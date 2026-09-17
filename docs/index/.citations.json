@@ -16390,6 +16390,13 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "node-version: 22"
+    },
+    ".github/workflows/ci.yml:230": {
+      "fp": "0255a5d666cd",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "version: 11"
     }
   }
 }

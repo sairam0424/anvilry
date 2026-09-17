@@ -141,7 +141,7 @@ Re-verify them after any Next or analyzer upgrade.
 but the only Pagefind entry point is the Makefile target (`Makefile:64-66`). Likewise `lint` and `tsc --noEmit`
 are **not** part of `pnpm build` — they run only in CI, as does the bundle-budget gate. There is also no
 `packageManager` field; the pnpm major is pinned only by CI — `pnpm/action-setup` `version: 10` in the `ci` and
-`e2e` jobs (`.github/workflows/ci.yml:24`, `:84`) and `version: 11` in `install-pnpm-11` (`:148`).
+`e2e` jobs (`.github/workflows/ci.yml:24`, `:84`) and `version: 11` in `install-pnpm-11` (`:230`).
 
 **Node version is pinned, and the pin is load-bearing (new in v3.5.0).** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }` and `.nvmrc:1` is `22` — deliberately a *ceiling*, not just a floor, and matched

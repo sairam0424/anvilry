@@ -300,7 +300,7 @@ CLIENT
                                                                           parse-cards.ts:33,:54-68
    → text segments → MarkdownMessage (react-markdown + skipHtml + rehypeSanitize)
    → project/work  → ChatCard (100% Velite-sourced fields)
-   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:297-311
+   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:331-346
 ```
 
 ### Participating files, in flow order

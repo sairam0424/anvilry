@@ -215,10 +215,20 @@ function ThinkingBlock({
           </span>
         </div>
         {liveReasoning && (
+          // aria-live="off", not "polite": this is the THIRD instance of the exact
+          // double-speak bug class this session already fixed twice (ask-portfolio.tsx's
+          // role="log", chat-messages.tsx's transcript container) -- found via a live
+          // Playwright-MCP E2E sweep, since the regression test's mocked fetch response
+          // never sends a THINKING_SENTINEL and so never exercises isThinking===true.
+          // A "polite" live region here would have a screen reader attempt to announce
+          // every mutation of this raw, token-by-token internal reasoning stream,
+          // competing with the ONE deliberate announcer channel (useChatA11y, which
+          // already says "Answering…" during this exact phase). Visually useful for
+          // sighted users watching it scroll; must stay silent for assistive tech.
           <pre
             ref={liveEndRef}
             className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle"
-            aria-live="polite"
+            aria-live="off"
             aria-label="Claude's live reasoning"
           >
             {liveReasoning}

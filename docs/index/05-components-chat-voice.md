@@ -215,7 +215,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render one plain-text assistant segment as markdown, safe by construction.
 - **Exports:** `closeOpenMarkdown` (fn), `MarkdownMessage` (memoized component, prop `{ text: string }`).
 - **Reads / depends on:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
-- **Consumed by:** `chat-messages.tsx:279`, `ask-portfolio.tsx:17`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
+- **Consumed by:** `chat-messages.tsx:287-291`, `ask-portfolio.tsx:17`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
 - **Behaviour notes:** A `components` map overrides 16 element renderers (:47-84); `h1` and `h2` both render as `<h3>` (:54-55). Memoized on `text` so settled bubbles never re-parse (:20-22).
 - **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16).
 

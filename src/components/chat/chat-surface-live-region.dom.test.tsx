@@ -10,6 +10,7 @@ import {
 import { ChatView } from "./chat-view";
 import { AskPortfolio } from "@/components/ask-portfolio";
 import { ViewProvider } from "@/components/view-context";
+import { THINKING_SENTINEL, THINKING_END } from "@/lib/llm-trace";
 
 /**
  * Regression guard for the aria-live SINGLE-ANNOUNCEMENT invariant across the WHOLE
@@ -71,6 +72,25 @@ function streamingResponse(chunks: string[]): Response {
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       for (const c of chunks) controller.enqueue(encoder.encode(c));
+      controller.close();
+    },
+  });
+  return { ok: true, body, status: 200 } as unknown as Response;
+}
+
+/** Like streamingResponse, but with a real delay between each chunk. Needed
+ *  whenever a test must observe an INTERMEDIATE state (e.g. mid-thinking,
+ *  before the answer arrives) — streamingResponse's synchronous start()
+ *  enqueues every chunk before the reader's first read() resolves, so the
+ *  whole exchange settles before any waitFor can catch the middle. */
+function delayedStreamingResponse(chunks: string[], delayMs = 40): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      for (const c of chunks) {
+        controller.enqueue(encoder.encode(c));
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
       controller.close();
     },
   });
@@ -156,6 +176,66 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
       { timeout: 1000 },
     );
 
+    expectExactlyOneLiveAnnouncer(container);
+  });
+
+  it("ChatView: exactly one live region survives the THINKING phase — regression for a real bug found via live Playwright-MCP E2E, not caught by the tests above", async () => {
+    // The two tests above never send THINKING_SENTINEL, so isThinking never becomes
+    // true and chat-messages.tsx's live-reasoning <pre> (rendered only while
+    // isThinking && isStreaming) is never mounted — a real, live-only gap: that
+    // <pre> shipped with aria-live="polite", a THIRD independent instance of the
+    // exact double-speak bug class this session already fixed twice elsewhere.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        delayedStreamingResponse([
+          THINKING_SENTINEL,
+          "Weighing which project best demonstrates depth...",
+          THINKING_END,
+          "AAVA Code is my strongest backend work.",
+        ]),
+      ),
+    );
+
+    const { container } = render(
+      <ViewProvider>
+        <ChatView />
+      </ViewProvider>,
+    );
+
+    fireEvent.change(screen.getByLabelText("Ask a question about Sairam"), {
+      target: { value: "What's your strongest backend project?" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    // Mid-thinking: the live-reasoning text has streamed in, but the answer hasn't
+    // started yet. This is the exact window the bug lived in.
+    await waitFor(() =>
+      expect(
+        within(container).getAllByText(
+          "Weighing which project best demonstrates depth...",
+        ).length,
+      ).toBeGreaterThan(0),
+    );
+
+    const livePre = container.querySelector(
+      'pre[aria-label="Claude\'s live reasoning"]',
+    );
+    expect(livePre).toBeTruthy();
+    expect(livePre?.getAttribute("aria-live")).toBe("off");
+
+    expectExactlyOneLiveAnnouncer(container);
+
+    // Let it settle to the final answer and re-check.
+    await waitFor(
+      () =>
+        expect(
+          within(container).getAllByText(
+            "AAVA Code is my strongest backend work.",
+          ).length,
+        ).toBeGreaterThan(0),
+      { timeout: 3000 },
+    );
     expectExactlyOneLiveAnnouncer(container);
   });
 

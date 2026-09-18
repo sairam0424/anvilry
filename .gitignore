@@ -55,6 +55,7 @@ scratch-pad/
 # Playwright E2E test output
 test-results/
 playwright-report/
+.playwright-mcp/
 
 # Agent-tooling state (claude-flow / Ruflo). Written into the CURRENT working
 # directory, so a `cd` into any subdirectory drops a second copy there too.

@@ -29,8 +29,24 @@ const { STATE, fakeStream } = vi.hoisted(() => {
   const STATE: {
     events: unknown[][];
     throwsOn: number[];
+    /** Per-index override for the thrown error's status (defaults to 500,
+     *  which is fallback-eligible). Set an entry to 400 to simulate a
+     *  deterministic, NOT-fallback-eligible error. */
+    throwStatus: Record<number, number>;
     callCount: number;
-  } = { events: [], throwsOn: [], callCount: 0 };
+    /** Captures the params object passed to the most recent messages.stream()
+     *  call — lets tests assert on the actual request shape (thinking config,
+     *  model id) sent per attempt, not just the resulting byte stream. */
+    lastStreamParams: unknown;
+    streamParamsByCall: unknown[];
+  } = {
+    events: [],
+    throwsOn: [],
+    throwStatus: {},
+    callCount: 0,
+    lastStreamParams: undefined,
+    streamParamsByCall: [],
+  };
   function fakeStream() {
     const idx = STATE.callCount;
     STATE.callCount += 1;
@@ -41,7 +57,7 @@ const { STATE, fakeStream } = vi.hoisted(() => {
         for (const event of events) yield event;
         if (willThrow) {
           const err = new Error("simulated bedrock error");
-          (err as { status?: number }).status = 500;
+          (err as { status?: number }).status = STATE.throwStatus[idx] ?? 500;
           throw err;
         }
       },
@@ -54,13 +70,15 @@ const { STATE, fakeStream } = vi.hoisted(() => {
 // mockImplementation discards its return when called as a constructor).
 vi.mock("@anthropic-ai/bedrock-sdk", () => {
   class FakeAnthropicBedrock {
-    messages: { stream: () => unknown };
-    beta: { messages: { stream: () => unknown } };
+    messages: { stream: (p: unknown) => unknown };
     constructor() {
-      this.messages = { stream: () => fakeStream() };
-      // beta.messages.stream routes through the same fake stream so extended
-      // thinking tests use the same STATE.events fixture pattern.
-      this.beta = { messages: { stream: () => fakeStream() } };
+      this.messages = {
+        stream: (p: unknown) => {
+          STATE.lastStreamParams = p;
+          STATE.streamParamsByCall.push(p);
+          return fakeStream();
+        },
+      };
     }
   }
   return { AnthropicBedrock: FakeAnthropicBedrock };
@@ -72,11 +90,15 @@ vi.mock("@anthropic-ai/bedrock-sdk", () => {
 vi.mock("@anthropic-ai/sdk", () => {
   class FakeAPIConnectionError extends Error {}
   class FakeAnthropic {
-    messages: { stream: () => unknown };
-    beta: { messages: { stream: () => unknown } };
+    messages: { stream: (p: unknown) => unknown };
     constructor() {
-      this.messages = { stream: () => fakeStream() };
-      this.beta = { messages: { stream: () => fakeStream() } };
+      this.messages = {
+        stream: (p: unknown) => {
+          STATE.lastStreamParams = p;
+          STATE.streamParamsByCall.push(p);
+          return fakeStream();
+        },
+      };
     }
     static APIConnectionError = FakeAPIConnectionError;
   }
@@ -90,7 +112,11 @@ beforeEach(() => {
   process.env.BEDROCK_REGION = "us-east-1";
   STATE.events = [];
   STATE.throwsOn = [];
+  STATE.throwStatus = {};
   STATE.callCount = 0;
+  STATE.lastStreamParams = undefined;
+  STATE.streamParamsByCall = [];
+  delete process.env.LLM_USE_SONNET_5;
 });
 
 afterEach(() => {
@@ -723,9 +749,14 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     expect(body).not.toContain(THINKING_END);
   });
 
-  it("does not emit THINKING_END when no text_delta arrives (thinking-only stream edge case)", async () => {
-    // Simulate a stream that has thinking deltas but never produces a text_delta.
-    // THINKING_END must NOT appear because it is only emitted on first text_delta.
+  it("still emits THINKING_END on a thinking-only completion (no text_delta ever arrives) — regression for a real stuck-client bug", async () => {
+    // Simulate a stream that has thinking deltas but never produces a text_delta —
+    // e.g. adaptive thinking consumed the whole max_tokens budget and the model
+    // stopped after reasoning alone, with no answer. Before this fix, THINKING_END
+    // was ONLY emitted on the first text_delta, so this exact scenario left
+    // THINKING_SENTINEL sent with no matching THINKING_END ever following it —
+    // the client's "thinking" UI state had no closing signal and would be stuck
+    // showing the reasoning animation forever, even though the stream closes.
     STATE.events = [
       [
         {
@@ -753,11 +784,13 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
       ),
     );
 
-    // emittedAny remains false (no text_delta), so no trace frame either.
-    // THINKING_SENTINEL starts with U+001E (same as TRACE_DELIMITER) so we can't
-    // use a plain .not.toContain(TRACE_DELIMITER) — instead verify no JSON trace
-    // frame is embedded (a trace frame always starts with TRACE_DELIMITER + "{").
-    expect(body).not.toContain(THINKING_END);
+    // THINKING_END now DOES appear, closing the reasoning phase for the client.
+    expect(body).toContain(THINKING_END);
+    // emittedAny still remains false (no text_delta) — no trace frame, no
+    // cached answer, by construction. THINKING_SENTINEL starts with U+001E
+    // (same as TRACE_DELIMITER) so we can't use a plain
+    // .not.toContain(TRACE_DELIMITER) — instead verify no JSON trace frame is
+    // embedded (a trace frame always starts with TRACE_DELIMITER + "{").
     expect(body).not.toContain(TRACE_DELIMITER + "{");
   });
 
@@ -848,5 +881,369 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
       const frame = JSON.parse(body.slice(traceStart + TRACE_DELIMITER.length));
       expect(frame).not.toHaveProperty("reasoning");
     }
+  });
+});
+
+describe("streamWithFallback — adaptive thinking request shape (2026-09 migration)", () => {
+  it("sends {type:'adaptive'} + output_config.effort, no beta, no budget_tokens, when extendedThinking is true for a non-Haiku model", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    const sent = STATE.lastStreamParams as {
+      thinking?: unknown;
+      output_config?: { effort?: string };
+      betas?: unknown;
+      max_tokens?: number;
+    };
+    expect(sent.thinking).toEqual({ type: "adaptive" });
+    expect(sent.output_config?.effort).toBe("low");
+    expect(sent.betas).toBeUndefined();
+    // No budget_tokens anywhere on the thinking config (the deprecated shape).
+    expect(sent.thinking).not.toHaveProperty("budget_tokens");
+    // Headroom bump is still applied for the thinking case.
+    expect(sent.max_tokens).toBeGreaterThanOrEqual(2048);
+  });
+
+  it("sends an EXPLICIT {type:'disabled'} (not just an omitted field) when extendedThinking is false for a non-Haiku model", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: false },
+      ),
+    );
+
+    const sent = STATE.lastStreamParams as { thinking?: unknown };
+    // Explicit, not omitted: Sonnet 5 / Opus 5 default thinking ON when this
+    // field is missing entirely, so an explicit disable is required, not optional.
+    expect(sent.thinking).toEqual({ type: "disabled" });
+  });
+
+  it("omits the thinking field entirely for Haiku (Haiku does not recognize the param at all)", async () => {
+    // Force fallthrough past Sonnet + Opus so the 3rd attempt (index 2) is Haiku.
+    STATE.throwsOn = [0, 1];
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Haiku." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    expect(STATE.streamParamsByCall).toHaveLength(3);
+    const haikuParams = STATE.streamParamsByCall[2] as { thinking?: unknown };
+    expect(haikuParams).not.toHaveProperty("thinking");
+  });
+
+  it("drops (never streams raw) an unsolicited thinking_delta event when extendedThinking is false — defense-in-depth against provider-side default-on thinking", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "unsolicited reasoning" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Answer only." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: false },
+      ),
+    );
+
+    expect(body).not.toContain("unsolicited reasoning");
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    const [text] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("Answer only.");
+  });
+});
+
+describe("streamWithFallback — thinking-phase closure across a fallback (CodeRabbit review of PR #260)", () => {
+  it("closes the thinking phase with THINKING_END before a terminal apology when the primary throws mid-reasoning with a non-eligible error", async () => {
+    // A plain 400 is NOT fallback-eligible: the apology fires immediately,
+    // without ever trying the remaining models, even though this is not the
+    // last attempt.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "partial reasoning" },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 400 }; // deterministic input error -> NOT eligible
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    // Without the fix, THINKING_END never appears here — the apology text
+    // would be misclassified by the client's parser as more reasoning.
+    const endIdx = body.indexOf(THINKING_END);
+    expect(endIdx).toBeGreaterThan(0);
+    expect(body.slice(endIdx + THINKING_END.length)).toContain("Sorry");
+  });
+
+  it("does NOT close the thinking phase when falling back to another thinking-capable model — reasoning continues the same open framing", async () => {
+    // Primary (Sonnet, thinking-capable) throws a fallback-ELIGIBLE error
+    // (500) after only a thinking_delta. Secondary (Opus, also
+    // thinking-capable) then succeeds with real text.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "sonnet reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "opus reasoning" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Opus answer." },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    // Exactly ONE THINKING_END for the whole stream — the failed Sonnet
+    // attempt's partial reasoning and Opus's own reasoning both live inside
+    // the SAME still-open framing, not two separate closed-then-reopened ones.
+    const firstEnd = body.indexOf(THINKING_END);
+    expect(firstEnd).toBeGreaterThan(0);
+    expect(body.indexOf(THINKING_END, firstEnd + 1)).toBe(-1);
+
+    const liveReasoning = body.slice(THINKING_SENTINEL.length, firstEnd);
+    expect(liveReasoning).toBe("sonnet reasoningopus reasoning");
+
+    const afterEnd = body.slice(firstEnd + THINKING_END.length);
+    const [text] = afterEnd.split(TRACE_DELIMITER);
+    expect(text).toBe("Opus answer.");
+  });
+
+  it("closes the thinking phase before falling back to Haiku, so Haiku's real answer is not swallowed as reasoning", async () => {
+    // Both thinking-capable models (Sonnet, Opus) throw fallback-eligible
+    // errors after only a thinking_delta; Haiku (not thinking-capable) then
+    // succeeds. THINKING_END must appear BEFORE Haiku's answer text, or the
+    // client's parser would misclassify "Haiku answer." as more reasoning.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "sonnet reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "opus reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Haiku answer." },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0, 1];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    const endIdx = body.indexOf(THINKING_END);
+    expect(endIdx).toBeGreaterThan(0);
+    const liveReasoning = body.slice(THINKING_SENTINEL.length, endIdx);
+    expect(liveReasoning).toBe("sonnet reasoningopus reasoning");
+
+    const afterEnd = body.slice(endIdx + THINKING_END.length);
+    const [text] = afterEnd.split(TRACE_DELIMITER);
+    expect(text).toBe("Haiku answer.");
+  });
+});
+
+describe("LLM_USE_SONNET_5 toggle", () => {
+  it("defaults to Sonnet 4.6 as primary when the flag is unset (Bedrock chain)", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    expect(onAttempt.mock.calls[0][0].model).toBe(
+      "us.anthropic.claude-sonnet-4-6",
+    );
+  });
+
+  it("switches ONLY the primary rung to Sonnet 5 when LLM_USE_SONNET_5=true (Bedrock chain) — Opus/Haiku rungs unchanged", async () => {
+    process.env.LLM_USE_SONNET_5 = "true";
+    STATE.throwsOn = [0, 1]; // fall through primary + secondary to see all 3 rungs
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Fallback." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    const models = onAttempt.mock.calls.map((c) => c[0].model);
+    expect(models).toEqual([
+      "us.anthropic.claude-sonnet-5",
+      "us.anthropic.claude-opus-4-6-v1",
+      "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    ]);
+  });
+
+  it("switches ONLY the primary rung to claude-sonnet-5 when LLM_USE_SONNET_5=true (direct Anthropic chain) — Opus/Haiku rungs unchanged", async () => {
+    process.env.LLM_PROVIDER = "anthropic";
+    process.env.LLM_USE_SONNET_5 = "true";
+    STATE.throwsOn = [0, 1];
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Fallback." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    const models = onAttempt.mock.calls.map((c) => c[0].model);
+    expect(models).toEqual([
+      "claude-sonnet-5",
+      "claude-opus-4-7",
+      "claude-haiku-4-5",
+    ]);
+  });
+
+  it("isSonnet5PrimaryEnabled() reflects the env var directly", async () => {
+    const { isSonnet5PrimaryEnabled } = await import("./llm");
+    expect(isSonnet5PrimaryEnabled()).toBe(false);
+    process.env.LLM_USE_SONNET_5 = "true";
+    expect(isSonnet5PrimaryEnabled()).toBe(true);
   });
 });

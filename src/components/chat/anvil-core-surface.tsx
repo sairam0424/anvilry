@@ -1,14 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "motion/react";
 import { useVoiceSession } from "@/components/chat/use-voice-session";
-import { MarkdownMessage } from "@/components/chat/markdown-message";
+import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 import {
   useCoreVoiceOpen,
   setCoreVoiceOpen,
   getCoreVoiceOpener,
 } from "@/components/chat/anvil-core-store";
+
+// Lazy markdown renderer — same safe config as the full chat view, kept off the
+// initial bundle (this voice surface is off by default: ORB_EXPERIENCE=core).
+const MarkdownMessage = dynamic(
+  () =>
+    import("@/components/chat/markdown-message").then((m) => m.MarkdownMessage),
+  { ssr: false, loading: () => <SkeletonMarkdownLine /> },
+);
 
 /**
  * The CORE Siri voice surface — a minimal orb-only auto-listening interface.
@@ -56,7 +65,10 @@ export function AnvilCoreSurface() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); close(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -123,12 +135,24 @@ export function AnvilCoreSurface() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ type: "spring", stiffness: 500, damping: 30, mass: 0.6 }}
       // eslint-disable-next-line react-hooks/refs -- posRef is read in a Motion style callback, not during React render
-      style={{ transformOrigin: "top right", top: posRef.current.top, right: posRef.current.right }}
+      style={{
+        transformOrigin: "top right",
+        // eslint-disable-next-line react-hooks/refs -- posRef is read in a Motion style callback, not during React render
+        top: posRef.current.top,
+        // eslint-disable-next-line react-hooks/refs -- posRef is read in a Motion style callback, not during React render
+        right: posRef.current.right,
+      }}
       className="fixed z-50 flex flex-col items-center gap-2 p-3"
     >
       {/* sr-only live region for AT (WCAG 4.1.3) */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
-        {listening ? "Listening" : thinking ? "Thinking" : speaking ? "Speaking" : ""}
+        {listening
+          ? "Listening"
+          : thinking
+            ? "Thinking"
+            : speaking
+              ? "Speaking"
+              : ""}
       </div>
 
       {/* Compact orb — the SAME fluid CSS metaball as the header orb, just larger.
@@ -149,7 +173,13 @@ export function AnvilCoreSurface() {
           }`}
         />
         <span className="text-[10px] text-fg-subtle">
-          {listening ? "Listening" : state === "paused" ? "Tap to talk" : speaking ? "Speaking" : "Thinking"}
+          {listening
+            ? "Listening"
+            : state === "paused"
+              ? "Tap to talk"
+              : speaking
+                ? "Speaking"
+                : "Thinking"}
         </span>
       </div>
 
@@ -158,7 +188,10 @@ export function AnvilCoreSurface() {
         <div className="w-[min(80vw,16rem)] rounded-xl border border-border/60 bg-bg-surface/80 px-4 py-3 shadow-lg backdrop-blur-sm">
           <div
             className="prose-portfolio max-h-[clamp(7.5rem,40vh,18rem)] overflow-y-auto text-sm leading-relaxed"
-            style={{ maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)" }}
+            style={{
+              maskImage:
+                "linear-gradient(to bottom, black 85%, transparent 100%)",
+            }}
           >
             <MarkdownMessage text={lastAnswer} />
           </div>

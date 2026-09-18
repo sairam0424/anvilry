@@ -70,57 +70,60 @@ return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
 
 Bedrock is the default for *any* value other than the exact string `"anthropic"` (including unset).
 
-**Full model fallback chains** (exact IDs):
+**Full model fallback chains** (exact IDs). As of 2026-09-18, the PRIMARY rung on both
+chains is conditional on `isSonnet5PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5 ===
+"true"`, default false) — Opus and Haiku are never affected by this flag:
 
 | Provider | Index 0 (primary) | Index 1 (secondary) | Index 2 (fallback) | Cite |
 |---|---|---|---|---|
-| `bedrock` | `us.anthropic.claude-sonnet-4-6` | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | llm.ts:31-35 |
-| `anthropic` | `claude-sonnet-4-6` | `claude-opus-4-7` | `claude-haiku-4-5` | llm.ts:43-47 |
+| `bedrock` | `us.anthropic.claude-sonnet-4-6` (or `-sonnet-5` when the flag is on) | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | `bedrockChain()`, llm.ts:52-60 |
+| `anthropic` | `claude-sonnet-4-6` (or `claude-sonnet-5` when the flag is on) | `claude-opus-4-7` | `claude-haiku-4-5` | `anthropicChain()`, llm.ts:63-69 |
 
-Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:27-30). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:45).
+Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:47-50). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:66).
 
-**`decodeSecret`'s base64 round-trip check** (llm.ts:63-72) — private, not exported:
+**`decodeSecret`'s base64 round-trip check** (llm.ts:94-104) — private, not exported:
 
 ```ts
 const decoded = Buffer.from(value, "base64").toString("utf-8");
 if (Buffer.from(decoded, "utf-8").toString("base64") === value)
-  return decoded;   // llm.ts:75-77
+  return decoded;   // llm.ts:97-99
 ```
 
-Re-encoding the decode and comparing to the original is the discriminator; a plain "decodes without throwing" test is too loose because many raw secrets are coincidentally valid base64. Raw `AKIA…` keys are not valid base64 *of themselves*, so they fall through unchanged. Empty/undefined → `""` (llm.ts:64).
+Re-encoding the decode and comparing to the original is the discriminator; a plain "decodes without throwing" test is too loose because many raw secrets are coincidentally valid base64. Raw `AKIA…` keys are not valid base64 *of themselves*, so they fall through unchanged. Empty/undefined → `""` (llm.ts:95).
 
 **Every env var read**, with cites:
 
 | Env var | Where | Behaviour |
 |---|---|---|
-| `LLM_PROVIDER` | llm.ts:53 | `"anthropic"` → direct API; anything else → bedrock |
-| `BEDROCK_ACCESS_KEY_ID` | llm.ts:79 | base64-or-raw via `decodeSecret` |
-| `BEDROCK_SECRET_ACCESS_KEY` | llm.ts:80 | base64-or-raw via `decodeSecret` |
-| `BEDROCK_SESSION_TOKEN` | llm.ts:81-83 | optional (STS temp creds); `undefined` when unset |
-| `BEDROCK_REGION` | llm.ts:87 | **preferred** region source |
-| `AWS_REGION` | llm.ts:87 | second-choice fallback only (local dev); reserved on Vercel — observed corrupted to `s-east-1` in prod (llm.ts:84-86) |
-| `ANTHROPIC_API_KEY` | llm.ts:97 | readiness check for the `anthropic` provider; the SDK itself reads it from env (llm.ts:126-127) |
+| `LLM_PROVIDER` | llm.ts:84 | `"anthropic"` → direct API; anything else → bedrock |
+| `LLM_USE_SONNET_5` | llm.ts:43-45 | `"true"` → Sonnet 5 replaces Sonnet 4.6 as PRIMARY on both chains; default false |
+| `BEDROCK_ACCESS_KEY_ID` | llm.ts:111 | base64-or-raw via `decodeSecret` |
+| `BEDROCK_SECRET_ACCESS_KEY` | llm.ts:112 | base64-or-raw via `decodeSecret` |
+| `BEDROCK_SESSION_TOKEN` | llm.ts:113-115 | optional (STS temp creds); `undefined` when unset |
+| `BEDROCK_REGION` | llm.ts:119 | **preferred** region source |
+| `AWS_REGION` | llm.ts:119 | second-choice fallback only (local dev); reserved on Vercel — observed corrupted to `s-east-1` in prod (llm.ts:116-118) |
+| `ANTHROPIC_API_KEY` | llm.ts:129 | readiness check for the `anthropic` provider; the SDK itself reads it from env (llm.ts:159-160) |
 
 Note: `llm.ts` does **not** read `EXTENDED_THINKING` — the chat route does (`src/app/api/chat/route.ts:263`, `process.env.EXTENDED_THINKING !== "false"`, i.e. default ON) and passes the result down as `opts.extendedThinking`.
 
-**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:251 and set `true` only on a `text_delta` enqueue (llm.ts:385). It gates three separate decisions:
+**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:292 and set `true` only on a `text_delta` enqueue (llm.ts:487). It gates three separate decisions:
 
-1. **Fallback eligibility** (llm.ts:432-437): `if (emittedAny || isLast || !isFallbackEligible(err))` → enqueue `apologyTail` and close. Only a zero-byte + eligible + models-remain attempt advances the loop. Once bytes are on the wire they cannot be un-sent, so a later error is terminal — no retry.
-2. **Trace-frame emission** (llm.ts:405-412): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that a zero-byte attempt can never materialize a trace frame.
-3. **THINKING_SENTINEL emission** (llm.ts:330-332): `if (useThinking && !emittedAny)` — the sentinel is emitted once, before the first stream, so a fallback attempt does not re-emit it.
+1. **Fallback eligibility** (llm.ts:540-544): `if (emittedAny || isLast || !isFallbackEligible(err))` → enqueue `apologyTail` and close. Only a zero-byte + eligible + models-remain attempt advances the loop. Once bytes are on the wire they cannot be un-sent, so a later error is terminal — no retry.
+2. **Trace-frame emission** (llm.ts:512-519): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that a zero-byte attempt can never materialize a trace frame.
+3. **THINKING_SENTINEL emission** (llm.ts:398-400): `if (useThinking && !emittedAny)` — the sentinel is emitted once, before the first stream, so a fallback attempt does not re-emit it.
 
-The load-bearing reason (llm.ts:149-157): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Bytes-already-sent is the only reliable discriminator.
+The load-bearing reason (llm.ts:184-192): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Bytes-already-sent is the only reliable discriminator.
 
 - **Behaviour notes:**
-  - `PER_ATTEMPT_TIMEOUT_MS = 15_000` applied as the SDK `timeout` for both providers (llm.ts:24, 118, 127).
-  - `isFallbackEligible` (llm.ts:136-147): `APIConnectionError` → true; status `429`/`404` → true; status `>= 500` → true; status `400` → true only if the lowercased message contains one of the six `MODEL_UNAVAILABLE_MARKERS` (llm.ts:43-50: `"model identifier is invalid"`, `"model id is invalid"`, `"could not be found"`, `"not authorized to access the model"`, `"don't have access to the model"`, `"is not supported"`). Plain 400/401/403/422 → **not** eligible. Status+message driven so it survives a double-installed SDK where `instanceof` breaks.
-  - `makeClient` passes DECODED creds via a **double-async** `providerChainResolver: async () => async () => ({...})` (llm.ts:119-123) — the resolver returns a credential provider, which returns credentials. Without this the AWS default chain would sign with still-base64 values.
-  - Client construction happens **inside** `start()` (llm.ts:263-281) so a constructor failure becomes a graceful apology stream rather than an uncaught 500. That failure emits an attempt with `model: "client-init"` and `attempt_index: -1` (llm.ts:270-272) and strips the leading `\n\n` from the apology (llm.ts:278).
-  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:339-353); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:391-402). `usage` starts `undefined` so the trace frame omits the key entirely when the SDK emits no usage block (llm.ts:288-290).
-  - Extended thinking: `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:324-325) — Haiku is silently excluded. When on, `max_tokens` is bumped to `Math.max(existing, 2048)` because Anthropic requires `max_tokens > budget_tokens` and `budget_tokens` is 1024 (llm.ts:343-346); beta header `interleaved-thinking-2025-05-14` (llm.ts:320) is sent via `client.beta.messages.stream()` (llm.ts:323) — using `client.messages.stream()` with a `betas` body param 400s because Bedrock rejects unknown body keys (llm.ts:307-312).
-  - `thinking_delta` chunks stream live to the client (llm.ts:407-422); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:380-383). Reasoning is deliberately absent from the trace frame (llm-trace.ts:41).
-  - `ttftMs` is set on the first `text_delta` only (llm.ts:378) — thinking bytes do not count toward TTFT.
-  - `safeOnAttempt` swallows any `onAttempt` throw (llm.ts:241-247); `close()` is idempotent via a `closed` latch (llm.ts:253-258).
+  - `PER_ATTEMPT_TIMEOUT_MS = 15_000` applied as the SDK `timeout` for both providers (llm.ts:33, 151, 160).
+  - `isFallbackEligible` (llm.ts:169-182): `APIConnectionError` → true; status `429`/`404` → true; status `>= 500` → true; status `400` → true only if the lowercased message contains one of the six `MODEL_UNAVAILABLE_MARKERS` (llm.ts:74-81: `"model identifier is invalid"`, `"model id is invalid"`, `"could not be found"`, `"not authorized to access the model"`, `"don't have access to the model"`, `"is not supported"`). Plain 400/401/403/422 → **not** eligible. Status+message driven so it survives a double-installed SDK where `instanceof` breaks.
+  - `makeClient` passes DECODED creds via a **double-async** `providerChainResolver: async () => async () => ({...})` (llm.ts:152-156) — the resolver returns a credential provider, which returns credentials. Without this the AWS default chain would sign with still-base64 values.
+  - Client construction happens **inside** `start()` (llm.ts:304-322) so a constructor failure becomes a graceful apology stream rather than an uncaught 500. That failure emits an attempt with `model: "client-init"` and `attempt_index: -1` (llm.ts:309-318) and strips the leading `\n\n` from the apology (llm.ts:319).
+  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:407-427); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:430-439). `usage` starts `undefined` so the trace frame omits the key entirely when the SDK emits no usage block (llm.ts:331).
+  - Extended thinking (migrated 2026-09-18 off the deprecated `thinking.enabled`+`budget_tokens` shape): `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:348-349) — Haiku is silently excluded from the whole `thinking` param, not just given `disabled` (llm.ts:350,384-393: `modelSupportsThinking` gates whether the key is sent at all). When on, sends `thinking:{type:"adaptive"}` + `output_config:{effort:"low"}` via plain `client.messages.stream()` — no beta header needed anymore. When off (and non-Haiku), sends an EXPLICIT `thinking:{type:"disabled"}` rather than omitting the field, because Claude Sonnet 5/Opus 5 default adaptive thinking ON when the field is omitted entirely (llm.ts:352-393). `max_tokens` is still bumped to `Math.max(existing, 2048)` when thinking is on, as shared thinking+answer headroom (llm.ts:383-390). If a thinking-enabled attempt throws before any `text_delta` (e.g. adaptive thinking consumed the whole budget on reasoning alone), the catch path closes the thinking phase with `THINKING_END` before a terminal apology or a fallback to a non-thinking model (Haiku), but deliberately leaves it open across a fallback to another thinking-capable model (llm.ts:562-590, added after CodeRabbit review of PR #260 caught the client-stuck-thinking / answer-misclassified-as-reasoning risk).
+  - `thinking_delta` chunks stream live to the client, gated on `useThinking` as defense-in-depth against unsolicited provider-side reasoning (llm.ts:440-470); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:471-489). Reasoning is deliberately absent from the trace frame (llm-trace.ts:41).
+  - `ttftMs` is set on the first `text_delta` only (llm.ts:475) — thinking bytes do not count toward TTFT.
+  - `safeOnAttempt` swallows any `onAttempt` throw (llm.ts:282-288); `close()` is idempotent via a `closed` latch (llm.ts:293-299).
 - **Gotchas / invariants:**
   - The `LlmUsage` field names are **snake_case** and must stay so — `llm.test.ts` pins them (llm.ts:162-169). A future SDK returning camelCase would silently zero out token telemetry.
   - The trace frame is **additive by contract** (llm.ts:220-222): `splitTrace` in `use-chat.ts` `JSON.parse`s and spreads, so unknown keys are kept. Removing a key is the breaking change, not adding one.

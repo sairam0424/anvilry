@@ -278,7 +278,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | Name | Required? | Consumed by (path:line) | Purpose | Gotchas |
 |---|---|---|---|---|
 | `LLM_PROVIDER` | No (default `bedrock`) | `src/lib/llm.ts:53` | `"anthropic"` → direct API, anything else → Bedrock | Provider switch is an env change, not a code change (`.env.example:2-4`) |
-| `BEDROCK_ACCESS_KEY_ID` | Yes for chat | `src/lib/llm.ts:79`; presence logged `src/instrumentation.ts:65` | Bedrock creds | Stored **base64-encoded**; `decodeSecret()` round-trip-equality-checks so raw keys pass through unchanged (`.env.example:8-10`) |
+| `BEDROCK_ACCESS_KEY_ID` | Yes for chat | `src/lib/llm.ts:79`; presence logged `src/instrumentation.ts:65` | Bedrock creds | Stored **base64-encoded**; `decodeSecret()` round-trip-equality-checks so raw keys pass through unchanged (`.env.example:9-12`) |
 | `BEDROCK_SECRET_ACCESS_KEY` | Yes for chat | `src/lib/llm.ts:80` | Bedrock creds | Same base64/raw handling |
 | `BEDROCK_SESSION_TOKEN` | No | `src/lib/llm.ts:81-82` | Temporary STS creds only | `.env.example:13` |
 | `BEDROCK_REGION` | No (default `us-east-1`) | `src/lib/llm.ts:87` | Bedrock region | **Use this, never `AWS_REGION`** — see the corruption note below |

@@ -16,12 +16,21 @@ import { PersonJsonLd, WebSiteJsonLd, FaqJsonLd } from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
+import { hasNotes, hasArticles } from "@/lib/content";
 import { getDiscoveryBadgesEnabled } from "@/lib/flags";
 import { OpenToWorkBanner } from "@/components/open-to-work-banner";
 import { OPEN_TO_WORK } from "@/lib/writing-flags";
 
-const sans = Inter({ variable: "--font-sans", subsets: ["latin"], display: "swap" });
-const mono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"], display: "swap" });
+const sans = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const siteUrl = "https://anvilry.vercel.app";
 
@@ -61,11 +70,18 @@ export const metadata: Metadata = {
     description: profile.headline,
     siteName: profile.name,
   },
-  twitter: { card: "summary_large_image", title: `${profile.name} — ${profile.role}`, description: profile.headline, images: [siteUrl + "/opengraph-image"] },
+  twitter: {
+    card: "summary_large_image",
+    title: `${profile.name} — ${profile.role}`,
+    description: profile.headline,
+    images: [siteUrl + "/opengraph-image"],
+  },
   robots: { index: true, follow: true },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const discoveryBadgesEnabled = await getDiscoveryBadgesEnabled();
   // data-scroll-behavior="smooth": Next 16 no longer overrides scroll-behavior on navigation
   // by default. We set `scroll-behavior: smooth` in globals.css and rely on it for in-page
@@ -105,15 +121,22 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <WebSiteJsonLd />
         <FaqJsonLd />
       </head>
-      <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
+      <body
+        className="min-h-full flex flex-col antialiased"
+        suppressHydrationWarning
+      >
         {/* First focusable element — lets keyboard users skip the nav (WCAG 2.4.1). */}
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
         <Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>
-          <SiteNav />
+          <SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />
           {OPEN_TO_WORK && <OpenToWorkBanner />}
-          <div id="main-content" tabIndex={-1} className="flex flex-1 flex-col outline-none">
+          <div
+            id="main-content"
+            tabIndex={-1}
+            className="flex flex-1 flex-col outline-none"
+          >
             {children}
           </div>
           <SiteFooter />

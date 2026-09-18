@@ -13861,18 +13861,18 @@
       "preview": "// 400 — Bedrock rejects unknown body keys and never sees the beta header."
     },
     "src/lib/llm.ts:318": {
-      "fp": "9af7f9481f74",
+      "fp": "29576b54e255",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "max_tokens: Math.max((params as { max_tokens?: number }).max_tokens ?? 0, 2048),"
+      "preview": "});"
     },
     "src/lib/llm.ts:319": {
-      "fp": "26bc8b10f364",
+      "fp": "54d1ad310c19",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "thinking: { type: \"enabled\" as const, budget_tokens: 1024 },"
+      "preview": "controller.enqueue(encoder.encode(apologyTail.replace(/^\\n\\n/, \"\")));"
     },
     "src/lib/llm.ts:32": {
       "fp": "036d38ce5d14",
@@ -13890,11 +13890,12 @@
       "preview": "betas: [\"interleaved-thinking-2025-05-14\"] as string[],"
     },
     "src/lib/llm.ts:322": {
-      "fp": "8a528046fa1f",
+      "fp": "d10b36aa74a5",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
       ],
-      "preview": "// eslint-disable-next-line @typescript-eslint/no-explicit-any"
+      "preview": "}"
     },
     "src/lib/llm.ts:323": {
       "fp": "96c89867e42e",
@@ -14007,11 +14008,11 @@
       "preview": "if (useThinking && !thinkingEndEmitted) {"
     },
     "src/lib/llm.ts:383": {
-      "fp": "d10b36aa74a5",
+      "fp": "00fa278ea019",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "}"
+      "preview": ": {}),"
     },
     "src/lib/llm.ts:385": {
       "fp": "873ab549ff72",

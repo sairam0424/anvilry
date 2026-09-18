@@ -281,9 +281,12 @@ SERVER  /api/chat  (maxDuration = 30, route.ts:12)
    → system prompt = buildCorpus() + profile + PROJECT_SLUGS/WORK_SLUGS
                      + cache_control { type: "ephemeral" }                :128-129,:265-315
    → streamWithFallback(...)
-        modelChain(): us.anthropic.claude-sonnet-4-6 (or -sonnet-5 if
-                    LLM_USE_SONNET_5=true) → us.anthropic.claude-opus-4-6-v1
-                    → us.anthropic.claude-haiku-4-5-20251001-v1:0         llm.ts:52-60
+        modelChain(): provider-dependent (LLM_PROVIDER, default bedrock) —
+          bedrock: us.anthropic.claude-sonnet-4-6 (or -sonnet-5 if
+                   LLM_USE_SONNET_5=true) → us.anthropic.claude-opus-4-6-v1
+                   → us.anthropic.claude-haiku-4-5-20251001-v1:0         llm.ts:52-60
+          anthropic: claude-sonnet-4-6 (or claude-sonnet-5) → claude-opus-4-7
+                   → claude-haiku-4-5                                    llm.ts:63-69
         makeClient() INSIDE start() so a ctor failure becomes an apology
                      stream, emitted as model:"client-init", attempt_index:-1  llm.ts:304-322
         per attempt: client.messages.stream() w/ adaptive thinking, timeout 15_000 ms  llm.ts:33,:373

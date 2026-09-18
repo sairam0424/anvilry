@@ -121,9 +121,9 @@ even though nothing visible was actually streamed. `emittedAny` gates two separa
 of 2026-09-18: `if (useThinking && !emittedAny && !thinkingSentinelEmitted)` (llm.ts:407-409) —
 `thinkingSentinelEmitted` (declared once per stream, llm.ts:299) is what actually prevents a second,
 spurious sentinel on a fallback attempt; `!emittedAny` here is just "don't bother opening a new
-reasoning phase once a real answer has already started."
+reasoning phase once a `text_delta` has already arrived."
 
-The load-bearing reason (llm.ts:184-192): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Bytes-already-sent is the only reliable discriminator.
+The load-bearing reason (llm.ts:184-192): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Whether a `text_delta` has already arrived is the only reliable discriminator.
 
 - **Behaviour notes:**
   - `PER_ATTEMPT_TIMEOUT_MS = 15_000` applied as the SDK `timeout` for both providers (llm.ts:33, 151, 160).

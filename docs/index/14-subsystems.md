@@ -339,9 +339,11 @@ append `apologyTail` and close (`src/lib/llm.ts:563-590`, read directly — as o
 the thinking phase with `THINKING_END` first if one was open). Fallback to the next model is possible
 **only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:497`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:184-192`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
-are indistinguishable by call site — bytes-on-the-wire is the only reliable discriminator. The same flag
-also keeps a zero-byte attempt from materialising a trace frame (`:405-412`) and makes the thinking
-sentinel a one-shot (`:330-332`).
+are indistinguishable by call site — whether a `text_delta` has already arrived is the only reliable
+discriminator. The same flag also keeps an attempt with no `text_delta` from materialising a trace frame
+(`:512-519`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
+(`thinkingSentinelEmitted`, `:407-409`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
+writeup.
 
 ### Telemetry spans emitted on this path
 

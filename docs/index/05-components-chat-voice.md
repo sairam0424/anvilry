@@ -356,10 +356,10 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/anvil-core-surface.tsx`
 - **Role:** The minimal orb-only "CORE" voice surface — enlarged orb, mic-hot dot, frosted answer card, nothing else.
 - **Exports:** `AnvilCoreSurface` (component, no props).
-- **Reads / depends on:** `useVoiceSession`, `MarkdownMessage` (static import), `anvil-core-store`.
-- **Consumed by:** `app/layout.tsx:12` (mounted at :115).
-- **Behaviour notes:** Self-gates — returns `null` when closed (:102). Auto-starts once per open and resets `autoStarted` on close (:40-46). `close()` stops the session, clears the store flag, and focuses the opener (:49-53). Esc (window) and capture-phase outside `pointerdown` both close, excluding the orb (:56-78). `aria-expanded`/`aria-controls` are set imperatively on the opener with id `anvil-core-surface` (:81-87). Renders the CSS-only `anvil-orb-idle` blob at `h-16 w-16` — **not** the reactive 3D orb, despite the header comment describing a ~200 px reactive orb (:134-138 vs :20-22).
-- **Gotchas / invariants:** `posRef` is read inside a Motion `style` object with an eslint disable for `react-hooks/refs` (:125-126). The answer card renders the **raw** `messages[i].content` through `MarkdownMessage` (:163) — card tokens are *not* stripped here (contrast `talk-mode.tsx:263`, which uses `toCaptionText`).
+- **Reads / depends on:** `useVoiceSession`, `MarkdownMessage` (as of 2026-09-18, lazy via `next/dynamic` with `ssr:false`, `SkeletonMarkdownLine` loading fallback — was a static import before the bundle-size fix in PR #260), `anvil-core-store`.
+- **Consumed by:** `app/layout.tsx:11` (import), mounted at `:154`.
+- **Behaviour notes:** Self-gates — returns `null` when closed (:114). Auto-starts once per open and resets `autoStarted` on close (:48-54). `close()` stops the session, clears the store flag, and focuses the opener (:58-62). Esc (window) and capture-phase outside `pointerdown` both close, excluding the orb (:67-89). `aria-expanded`/`aria-controls` are set imperatively on the opener with id `anvil-core-surface` (:92-98). Renders the CSS-only `anvil-orb-idle` blob at `h-16 w-16` (:161) — **not** the reactive 3D orb, despite the header comment describing a ~200px reactive orb (:26).
+- **Gotchas / invariants:** `posRef` is read inside a Motion `style` object with an eslint disable for `react-hooks/refs` — as of 2026-09-18 THREE separate disable comments (:137, :140, :142), not one two-line span, after a formatter reflowed the JSX attribute onto multiple lines and broke a single shared suppression. The answer card renders the **raw** `messages[i].content` through `MarkdownMessage` (:196) — card tokens are *not* stripped here (contrast `talk-mode.tsx:263`, which uses `toCaptionText`).
 
 ### `chat/anvil-view.tsx`
 - **Role:** The `?view=voice` "Anvil" view — a lean voice hero wrapped around `TalkMode`.

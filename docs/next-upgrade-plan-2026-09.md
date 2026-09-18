@@ -62,7 +62,8 @@ already shipped to real users with a confirmed, sourced failure mode.
 
 - **[P0 / S] Migrate the extended-thinking request shape off the deprecated
   `thinking.enabled`+`budget_tokens`/beta-header pattern to `thinking.adaptive`+
-  `output_config.effort`** — *(stream: claude-model-chain-currency)*
+  `output_config.effort`** — *(stream: claude-model-chain-currency)* — **✅ SHIPPED, PR #260**
+  (`e2bcdb0`). Landed with `output_config.effort: "low"`.
   This is Anvilry's **live, default-on production code path today** (`EXTENDED_THINKING`
   defaults to `true` in `src/app/api/chat/route.ts:385`). AWS's Bedrock docs already flag the
   exact shape Anvilry sends (`{type:"enabled", budget_tokens:1024}` + `betas:
@@ -83,7 +84,10 @@ already shipped to real users with a confirmed, sourced failure mode.
   users would see the apology-tail error, not a silent degrade.
 
 - **[P0 / S] Gate the `thinking_delta` content-block handler behind `useThinking`** — *(stream:
-  claude-model-chain-currency)*
+  claude-model-chain-currency)* — **✅ SHIPPED, PR #260** (`e2bcdb0`), plus a distinct catch-path
+  counterpart found and fixed during CodeRabbit's review of that PR (PR #262, `f1b9fd2`): if a
+  thinking-enabled attempt throws before any answer text, the reasoning phase is now closed with
+  `THINKING_END` before falling back to a non-thinking model or a terminal apology.
   The non-extended-thinking branch in `llm.ts`'s `streamWithFallback` streams any
   `thinking_delta` bytes straight to the client with **no** `THINKING_SENTINEL`/`THINKING_END`
   framing today, because that framing is only wired up when `useThinking` is already `true`.
@@ -100,7 +104,10 @@ already shipped to real users with a confirmed, sourced failure mode.
   future model swap or Anthropic-side default change enables thinking without an explicit opt-in.
 
 - **[P0 / S] Stop shipping the full Velite content JSON (every MDX body) to every route via
-  `SiteNav`** — *(stream: core-web-vitals-and-bundle-optimization)*
+  `SiteNav`** — *(stream: core-web-vitals-and-bundle-optimization)* — **✅ SHIPPED, PR #260**
+  (`9ca6edd`). The actual byte contribution turned out much smaller than estimated below (~55 B,
+  not ~295 KB) — `CommandPalette` independently imports from `@/lib/content` too, so the shared
+  chunk still carries most of that weight regardless; flagged as an unstarted follow-up.
   `src/components/site-nav.tsx` — a `"use client"` component mounted unconditionally in root
   layout, i.e. on every route — only needs two booleans (`hasNotes`/`hasArticles`), but because
   `src/lib/content.ts` computes those booleans from the **full**
@@ -121,7 +128,9 @@ already shipped to real users with a confirmed, sourced failure mode.
   verifiable with existing e2e nav tests.
 
 - **[P0 / S] Defer `AnvilCoreSurface`'s `MarkdownMessage` import behind
-  `next/dynamic(ssr:false)`** — *(stream: core-web-vitals-and-bundle-optimization)*
+  `next/dynamic(ssr:false)`** — *(stream: core-web-vitals-and-bundle-optimization)* — **✅ SHIPPED,
+  PR #260** (`9ca6edd`). This was the fix that actually reclaimed most of the headroom (see the
+  P1 re-measure item below — real gain confirmed via live E2E: chunk correctly stays deferred).
   `anvil-core-surface.tsx` — also statically mounted unconditionally in root layout — eagerly
   imports `MarkdownMessage` (the full `react-markdown`/`remark-gfm`/`rehype-sanitize`/
   `unified`/`hast`/`mdast` chain, 126,485 B uncompressed per `next experimental-analyze`) into
@@ -136,7 +145,11 @@ already shipped to real users with a confirmed, sourced failure mode.
   loading skeleton already exists.
 
 - **[P0 / S] Add a regression test pinning the aria-live single-announcement invariant for the
-  chat surface** — *(stream: testing-ci-tooling-currency)*
+  chat surface** — *(stream: testing-ci-tooling-currency)* — **✅ SHIPPED, PR #260** (`a7de09f`,
+  `chat-surface-live-region.dom.test.tsx`). This exact test class then earned its keep almost
+  immediately: a live Playwright-MCP E2E sweep found a THIRD independent instance of this bug
+  class (the live-reasoning stream in `chat-messages.tsx`, invisible to the original test since
+  its mock never triggered the thinking phase) — fixed and covered in PR #262 (`0639a3d`).
   This session found **two real, live aria-live double-announce bugs** that the full existing
   CI (lint/typecheck/vitest/E2E) missed — a distinct second generation of a bug class the
   codebase already fixed once before (`CHANGELOG.md:657-658,797`, the "NO DOUBLE-SPEAK" logic in
@@ -156,9 +169,14 @@ already shipped to real users with a confirmed, sourced failure mode.
 
 ## P1 — Next
 
-- **[P1 / S] Bump `BEDROCK_CHAIN`'s primary to `us.anthropic.claude-sonnet-5` (and mirror
-  `ANTHROPIC_CHAIN`'s primary to `claude-sonnet-5`) — only after the two P0 thinking-shape
-  fixes above land** — *(stream: claude-model-chain-currency)*
+- **[P1 / S] Bump the model chains' primary to Claude Sonnet 5 — only after the two P0
+  thinking-shape fixes above land** — *(stream: claude-model-chain-currency)* — **✅ SHIPPED as an
+  opt-in, PR #260** (`e2bcdb0`): rather than a hard bump, this landed as `LLM_USE_SONNET_5`
+  (default off) — flipping it makes Sonnet 5 primary on both chains while leaving Opus/Haiku
+  untouched, and can be reverted without a code change. Verified live via server telemetry with
+  the flag on: `model:"us.anthropic.claude-sonnet-5"`, `fell_back:false`, `finish_reason:"end_turn"`.
+  **Still genuinely open:** actually flipping the flag on in production is a separate, deliberate
+  decision this plan does not make for you.
   Claude Sonnet 5 (launched on Bedrock 2026-06-30, "Active" lifecycle) is Anthropic's current
   mid-tier model — described by Anthropic as bringing near-Opus intelligence at the same
   Sonnet cost/speed tier Anvilry already budgets for — closing a two-generation currency gap

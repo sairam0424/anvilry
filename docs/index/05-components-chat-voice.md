@@ -215,9 +215,9 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render one plain-text assistant segment as markdown, safe by construction.
 - **Exports:** `closeOpenMarkdown` (fn), `MarkdownMessage` (memoized component, prop `{ text: string }`).
 - **Reads / depends on:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
-- **Consumed by:** `chat-messages.tsx:279` and `ask-portfolio.tsx:17` (both via `next/dynamic` with `ssr:false`), and `anvil-core-surface.tsx:6` (static import).
+- **Consumed by:** `chat-messages.tsx:279`, `ask-portfolio.tsx:17`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
 - **Behaviour notes:** A `components` map overrides 16 element renderers (:47-84); `h1` and `h2` both render as `<h3>` (:54-55). Memoized on `text` so settled bubbles never re-parse (:20-22).
-- **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16). `anvil-core-surface.tsx` imports it **statically**, so that surface pulls react-markdown into its chunk while the other two lazy-load it (`chat-messages.tsx:275-276` calls out the ~46 KB motive).
+- **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16).
 
 ### `chat/chat-messages.tsx`
 - **Role:** Render the whole transcript for the Chat view: attachments, lightbox, thinking block, answer segments, cards, model badge, read-aloud, and the a11y live region.

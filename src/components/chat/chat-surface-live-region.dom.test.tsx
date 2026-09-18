@@ -129,11 +129,18 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     expectExactlyOneLiveAnnouncer(container);
 
     // Let the stream settle for real (real timers — matches production debounce).
+    // getAllByText, not getByText: by design, this exact text legitimately appears
+    // TWICE once settled (the visible chat bubble AND the sr-only announcer's copy
+    // of the same answer) — that duplication is the feature working correctly, not
+    // a violation. getByText throws on >1 match; this assertion only needs "has the
+    // answer text landed somewhere in the tree yet."
     await waitFor(
       () =>
         expect(
-          within(container).getByText("Building agent backends at Ascendion."),
-        ).toBeTruthy(),
+          within(container).getAllByText(
+            "Building agent backends at Ascendion.",
+          ).length,
+        ).toBeGreaterThan(0),
       { timeout: 3000 },
     );
 
@@ -175,12 +182,15 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     );
     expectExactlyOneLiveAnnouncer(container);
 
+    // getAllByText, not getByText — same reasoning as the ChatView test above:
+    // if the sr-only announcer happens to be nested inside the transcript's
+    // role="log" element, this exact text can legitimately match twice.
     await waitFor(
       () => {
         const transcript = screen.getByRole("log", { name: "Chat transcript" });
         expect(
-          within(transcript).getByText("Hello from the corpus."),
-        ).toBeTruthy();
+          within(transcript).getAllByText("Hello from the corpus.").length,
+        ).toBeGreaterThan(0);
       },
       { timeout: 3000 },
     );

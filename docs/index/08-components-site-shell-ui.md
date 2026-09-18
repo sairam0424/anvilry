@@ -143,11 +143,11 @@ Two named transition groups exist in the tree:
 
 ### `src/components/site-nav.tsx`
 - **Role:** Sticky site header.
-- **Exports:** `SiteNav` (component, no props).
-- **Reads / depends on:** `usePathname`, `@/lib/profile` `profile`, `@/lib/content` `hasNotes`/`hasArticles`, `@/lib/writing-flags` `ARTICLES_ENABLED`/`NOTES_ENABLED`/`STATS_ENABLED`/`SEARCH_ENABLED`, `ViewSwitcher`, `chat/header-orb-trigger` `HeaderOrbTrigger`, `MobileNav`, `icons`.
-- **Consumed by:** `src/app/layout.tsx:98`.
-- **Behaviour notes:** `navLinks` is built at module scope; Articles and Notes appear only when **both** the flag and real content exist (`:14-24`). `isActive` treats `/` exactly, `/#…` anchors as homepage-active, and everything else as prefix-match on `${href}/` (`:27-32`); it drives both the accent class and `aria-current="page"` (`:58`). Two `ViewSwitcher` instances render simultaneously — full at `sm:block`, `compact` at `sm:hidden` (`:66-71`).
-- **Gotchas / invariants:** `style={{ viewTransitionName: "site-header" }}` (`:40`) is what `globals.css:284-289` pins; removing it would make the sticky nav fade on every view switch. Header row is a fixed `h-14` (`:42`) — the same 3.5rem the `SkeletonViewTransition` and full-height views subtract.
+- **Exports:** `SiteNav({ hasNotes, hasArticles }: SiteNavProps)`. Took no props through v3.6.0; converted to accept both as plain booleans (2026-09) so this client component never imports `@/lib/content` itself — that module computes every collection's booleans from the FULL compiled-MDX JSON at module scope, so importing even one export pulled every note/article body into the client bundle. The caller (root layout, a Server Component) now reads `@/lib/content` and passes the two booleans down.
+- **Reads / depends on:** `usePathname`, `@/lib/profile` `profile`, `@/lib/writing-flags` `ARTICLES_ENABLED`/`NOTES_ENABLED`/`STATS_ENABLED`/`SEARCH_ENABLED`, `ViewSwitcher`, `chat/header-orb-trigger` `HeaderOrbTrigger`, `MobileNav`, `icons`. Deliberately does **not** depend on `@/lib/content` anymore (see above).
+- **Consumed by:** `src/app/layout.tsx:133` — `<SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />`.
+- **Behaviour notes:** `navLinks` is built inside the component body (closing over the `hasNotes`/`hasArticles` props, not a module-level import); Articles and Notes appear only when **both** the flag and real content exist (`:42-55`). `isActive` treats `/` exactly, `/#…` anchors as homepage-active, and everything else as prefix-match on `${href}/` (`:30-36`); it drives both the accent class and `aria-current="page"` (`:89`). Two `ViewSwitcher` instances render simultaneously — full at `lg:block`, `compact` at `sm:block lg:hidden` (`:101-106`).
+- **Gotchas / invariants:** `style={{ viewTransitionName: "site-header" }}` (`:68`) is what `globals.css:284-289` pins; removing it would make the sticky nav fade on every view switch. Header row is a fixed `h-14` (`:67`) — the same 3.5rem the `SkeletonViewTransition` and full-height views subtract.
 
 ### `src/components/site-footer.tsx`
 - **Role:** Global footer, machine-readable link row, optional visitor counter, copyright/RSS strip.

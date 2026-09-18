@@ -281,12 +281,15 @@ SERVER  /api/chat  (maxDuration = 30, route.ts:12)
    → system prompt = buildCorpus() + profile + PROJECT_SLUGS/WORK_SLUGS
                      + cache_control { type: "ephemeral" }                :128-129,:265-315
    → streamWithFallback(...)
-        modelChain(): us.anthropic.claude-sonnet-4-6
-                    → us.anthropic.claude-opus-4-6-v1
-                    → us.anthropic.claude-haiku-4-5-20251001-v1:0         llm.ts:31-35
+        modelChain(): provider-dependent (LLM_PROVIDER, default bedrock) —
+          bedrock: us.anthropic.claude-sonnet-4-6 (or -sonnet-5 if
+                   LLM_USE_SONNET_5=true) → us.anthropic.claude-opus-4-6-v1
+                   → us.anthropic.claude-haiku-4-5-20251001-v1:0         llm.ts:52-60
+          anthropic: claude-sonnet-4-6 (or claude-sonnet-5) → claude-opus-4-7
+                   → claude-haiku-4-5                                    llm.ts:63-69
         makeClient() INSIDE start() so a ctor failure becomes an apology
-                     stream, emitted as model:"client-init", attempt_index:-1  llm.ts:263-281
-        per attempt: client.beta.messages.stream(), timeout 15_000 ms      llm.ts:24,:323
+                     stream, emitted as model:"client-init", attempt_index:-1  llm.ts:304-322
+        per attempt: client.messages.stream() w/ adaptive thinking, timeout 15_000 ms  llm.ts:33,:373
         onAttempt → one llm.attempt span incl. cost_usd from BEDROCK_PRICE route.ts:24-46,:284-311
    → WIRE: [THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]
                                                                           llm-trace.ts:6-9
@@ -300,7 +303,7 @@ CLIENT
                                                                           parse-cards.ts:33,:54-68
    → text segments → MarkdownMessage (react-markdown + skipHtml + rehypeSanitize)
    → project/work  → ChatCard (100% Velite-sourced fields)
-   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:297-311
+   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:331-346
 ```
 
 ### Participating files, in flow order
@@ -334,13 +337,16 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 
 ### The `emittedAny` fallback invariant
 
-`if (emittedAny || isLast || !isFallbackEligible(err))` → append `apologyTail` and close
-(`src/lib/llm.ts:433-437`, read directly). Fallback to the next model is possible **only while zero
-bytes have been sent**. The load-bearing reason is at `src/lib/llm.ts:149-157`: streaming errors surface
+`const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
+append `apologyTail` and close (`src/lib/llm.ts:563-590`, read directly — as of 2026-09-18 also closes
+the thinking phase with `THINKING_END` first if one was open). Fallback to the next model is possible
+**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:497`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:184-192`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
-are indistinguishable by call site — bytes-on-the-wire is the only reliable discriminator. The same flag
-also keeps a zero-byte attempt from materialising a trace frame (`:405-412`) and makes the thinking
-sentinel a one-shot (`:330-332`).
+are indistinguishable by call site — whether a `text_delta` has already arrived is the only reliable
+discriminator. The same flag also keeps an attempt with no `text_delta` from materialising a trace frame
+(`:512-519`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
+(`thinkingSentinelEmitted`, `:407-409`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
+writeup.
 
 ### Telemetry spans emitted on this path
 
@@ -358,9 +364,10 @@ through `redact()` first (`:439`).
 | Unbounded spend when Upstash is down | `checkRateLimit` fails open: `{ ok: true }` when unconfigured (`rate-limit.ts:73`) and on any thrown error (`:79-82`). The only signal is a production-only module-load warning (`:41-47`). |
 | Wrong `cost_usd` for a new model id | `BEDROCK_PRICE` (`route.ts:24-46`) is a hardcoded table; unknown models silently fall back to Sonnet 4.6 pricing (`:49-50`) — non-zero but wrong. |
 | Token telemetry silently zeroes | An SDK returning camelCase usage keys. Pinned by `src/lib/llm.test.ts:244-249`. |
-| Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:87`) is what shields it. |
-| Opus 4.6 400s "model identifier is invalid" | Dropping the `-v1` suffix (`llm.ts:27-30`). |
-| Bedrock 400 on extended thinking | Using `client.messages.stream()` with a `betas` body param instead of `client.beta.messages.stream()` (`llm.ts:307-312,:323`). |
+| Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:119`) is what shields it. |
+| Opus 4.6 400s "model identifier is invalid" | Dropping the `-v1` suffix (`llm.ts:47-50`). |
+| Sonnet 5 / Opus 5 400s on extended thinking | Still sending the old `thinking:{type:"enabled",budget_tokens}` shape — deprecated on 4.6, hard-rejected on 5. Must be `thinking:{type:"adaptive"}` + `output_config:{effort:...}` (`llm.ts:352-393`). |
+| Unsolicited/unframed reasoning bytes in the visible chat | If a model ever defaults thinking ON when the field is omitted (true for Sonnet 5/Opus 5) and the explicit `disabled` send were ever removed, `thinking_delta` bytes would need to stay gated on `useThinking` (`llm.ts:459`) or they'd stream raw with no `THINKING_SENTINEL`. |
 | Dropped tail token / frozen background tab | Removing the trailing `flushNow(acc)` (`use-chat.ts:353-354`) or the `BACKGROUND_FLUSH_MS` timer (`:124,:229`). |
 | Card fabricated for nonexistent content | Structurally impossible: locked slug charset, build-time allowlist, unresolved tokens dropped. `src/components/chat/parse-cards.test.ts:55-75` is the gate. |
 | XSS via streamed markdown | Removing `skipHtml` or overriding `urlTransform` (`markdown-message.tsx:10-16`). |

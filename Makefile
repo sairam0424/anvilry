@@ -296,6 +296,7 @@ env-check: ## Show which environment variables are set vs unset (secrets masked)
 	@printf "  BEDROCK_SECRET_ACCESS_KEY   = %s\n" "$(if $(BEDROCK_SECRET_ACCESS_KEY),SET (masked),⚠️  UNSET — chatbot will fail)"
 	@printf "  BEDROCK_REGION              = %s\n" "$${BEDROCK_REGION:-us-east-1 (default)}"
 	@printf "  ANTHROPIC_API_KEY           = %s\n" "$(if $(ANTHROPIC_API_KEY),SET (masked),unset)"
+	@printf "  LLM_USE_SONNET_5            = %s\n" "$${LLM_USE_SONNET_5:-false (default) — set to 'true' to make Sonnet 5 primary (Opus/Haiku unchanged)}"
 	@echo ""
 	@printf "$(YELLOW)Rate Limiting$(RESET)\n"
 	@printf "  UPSTASH_REDIS_REST_URL      = %s\n" "$(if $(UPSTASH_REDIS_REST_URL),SET,unset — rate limiter disabled)"

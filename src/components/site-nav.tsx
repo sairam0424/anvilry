@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Github, Linkedin } from "@/components/icons";
 import { profile } from "@/lib/profile";
-import { hasNotes, hasArticles } from "@/lib/content";
 import {
   ARTICLES_ENABLED,
   NOTES_ENABLED,
@@ -18,19 +17,15 @@ import { MobileNav } from "@/components/mobile-nav";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-// Content section links appear ONLY when both the feature flag AND content exist.
-const navLinks = [
-  { href: "/work", label: "Work" },
-  { href: "/projects", label: "Projects" },
-  ...(ARTICLES_ENABLED && hasArticles
-    ? [{ href: "/articles", label: "Articles" }]
-    : []),
-  ...(NOTES_ENABLED && hasNotes ? [{ href: "/notes", label: "Writing" }] : []),
-  { href: "/about", label: "About" },
-  { href: "/resume", label: "Résumé" },
-  ...(STATS_ENABLED ? [{ href: "/stats", label: "Stats" }] : []),
-  ...(SEARCH_ENABLED ? [{ href: "/search", label: "Search" }] : []),
-];
+type SiteNavProps = {
+  /** Whether any published (non-draft) notes exist. Computed server-side from the
+   *  Velite content collections and passed down as a plain boolean so this
+   *  client component never needs to import `@/lib/content` (which would pull the
+   *  full compiled-MDX JSON for every collection into the client bundle). */
+  hasNotes: boolean;
+  /** Whether any published (non-draft) articles exist. Same rationale as hasNotes. */
+  hasArticles: boolean;
+};
 
 /** Returns true when the nav link should be considered "active" for the current path. */
 function isActive(href: string, pathname: string): boolean {
@@ -40,8 +35,24 @@ function isActive(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SiteNav() {
+export function SiteNav({ hasNotes, hasArticles }: SiteNavProps) {
   const pathname = usePathname();
+
+  // Content section links appear ONLY when both the feature flag AND content exist.
+  const navLinks = [
+    { href: "/work", label: "Work" },
+    { href: "/projects", label: "Projects" },
+    ...(ARTICLES_ENABLED && hasArticles
+      ? [{ href: "/articles", label: "Articles" }]
+      : []),
+    ...(NOTES_ENABLED && hasNotes
+      ? [{ href: "/notes", label: "Writing" }]
+      : []),
+    { href: "/about", label: "About" },
+    { href: "/resume", label: "Résumé" },
+    ...(STATS_ENABLED ? [{ href: "/stats", label: "Stats" }] : []),
+    ...(SEARCH_ENABLED ? [{ href: "/search", label: "Search" }] : []),
+  ];
 
   return (
     <header

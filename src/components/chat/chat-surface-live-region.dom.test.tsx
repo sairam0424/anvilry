@@ -236,6 +236,17 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
         ).toBeGreaterThan(0),
       { timeout: 3000 },
     );
+    // Also wait for isStreaming to genuinely flip false (the Send button's
+    // accessible name only reverts from "Stop" once streaming ends) before
+    // this test finishes and cleanup() unmounts. delayedStreamingResponse's
+    // mocked stream still has a pending setTimeout after the last chunk (the
+    // same per-chunk delay applies before its final controller.close()) --
+    // asserting only on answer text can let the test end and cleanup fire
+    // while that timer is still outstanding, a latent flakiness risk in CI.
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: "Send" })).toBeTruthy(),
+      { timeout: 1000 },
+    );
     expectExactlyOneLiveAnnouncer(container);
   });
 

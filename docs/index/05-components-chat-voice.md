@@ -215,7 +215,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render one plain-text assistant segment as markdown, safe by construction.
 - **Exports:** `closeOpenMarkdown` (fn), `MarkdownMessage` (memoized component, prop `{ text: string }`).
 - **Reads / depends on:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
-- **Consumed by:** `chat-messages.tsx:279`, `ask-portfolio.tsx:17`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
+- **Consumed by:** `chat-messages.tsx:287-291`, `ask-portfolio.tsx:17`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
 - **Behaviour notes:** A `components` map overrides 16 element renderers (:47-84); `h1` and `h2` both render as `<h3>` (:54-55). Memoized on `text` so settled bubbles never re-parse (:20-22).
 - **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16).
 
@@ -233,7 +233,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - Model badge shows `friendlyModel(m.model)` + `· Bedrock`, prefixed with `"↳ primary unavailable · "` when `fellBack` (:557-559). `friendlyModel` maps on substring: opus → "Claude Opus", sonnet → "Claude Sonnet", haiku → "Claude Haiku", else "Claude" (:251-257).
   - Attachment mosaic grid class is chosen by image count 1/2/3/3+ (:424-428); `count === 3` gives the first image `row-span-2` (:442).
   - `ImageLightbox` binds Escape / ArrowLeft / ArrowRight on `document` (:40-48) and renders `role="dialog" aria-modal="true"` without a focus trap (:51-57).
-- **Gotchas / invariants:** Model output reaches the DOM only as React text nodes; cards come from the slug allowlist (:266-272 doc). The container carries `[overflow-anchor:none]` to stop browser scroll-anchoring fighting the JS pin (:395-399). Two live regions coexist: the `sr-only` `aria-atomic="true"` one from `useChatA11y` (:363-367) and `aria-live="polite" aria-atomic="false"` on the scroll container (:397-398).
+- **Gotchas / invariants:** Model output reaches the DOM only as React text nodes; cards come from the slug allowlist (:266-272 doc). The container carries `[overflow-anchor:none]` to stop browser scroll-anchoring fighting the JS pin (:395-399). As of 2026-09-18, `useChatA11y` (`liveMessage`, rendered `aria-live="polite" aria-atomic="true"` at `:403`) is the ONLY deliberate `aria-live="polite"` announcer on this surface — both the transcript scroll container (`:448`) and `ThinkingBlock`'s live-reasoning `<pre>` (`:231`) explicitly carry `aria-live="off"`, each fixed after a real double-announce bug. Transcript container: PR #257/#258. Live-reasoning: PR #262 — originally DISCOVERED via a live Playwright-MCP E2E sweep, because at the time the existing regression-test mock never sent a THINKING_SENTINEL and so never exercised the thinking phase; `chat-surface-live-region.dom.test.tsx` now DOES exercise it and is the current regression guard for this specific fix. Also covered by `chat-messages.dom.test.tsx`.
 
 ### `chat/chat-view.tsx`
 - **Role:** The `chat` view — a bounded-height "concierge console" around `useChat`.

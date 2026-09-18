@@ -743,9 +743,14 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
     expect(body).not.toContain(THINKING_END);
   });
 
-  it("does not emit THINKING_END when no text_delta arrives (thinking-only stream edge case)", async () => {
-    // Simulate a stream that has thinking deltas but never produces a text_delta.
-    // THINKING_END must NOT appear because it is only emitted on first text_delta.
+  it("still emits THINKING_END on a thinking-only completion (no text_delta ever arrives) — regression for a real stuck-client bug", async () => {
+    // Simulate a stream that has thinking deltas but never produces a text_delta —
+    // e.g. adaptive thinking consumed the whole max_tokens budget and the model
+    // stopped after reasoning alone, with no answer. Before this fix, THINKING_END
+    // was ONLY emitted on the first text_delta, so this exact scenario left
+    // THINKING_SENTINEL sent with no matching THINKING_END ever following it —
+    // the client's "thinking" UI state had no closing signal and would be stuck
+    // showing the reasoning animation forever, even though the stream closes.
     STATE.events = [
       [
         {
@@ -773,11 +778,13 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
       ),
     );
 
-    // emittedAny remains false (no text_delta), so no trace frame either.
-    // THINKING_SENTINEL starts with U+001E (same as TRACE_DELIMITER) so we can't
-    // use a plain .not.toContain(TRACE_DELIMITER) — instead verify no JSON trace
-    // frame is embedded (a trace frame always starts with TRACE_DELIMITER + "{").
-    expect(body).not.toContain(THINKING_END);
+    // THINKING_END now DOES appear, closing the reasoning phase for the client.
+    expect(body).toContain(THINKING_END);
+    // emittedAny still remains false (no text_delta) — no trace frame, no
+    // cached answer, by construction. THINKING_SENTINEL starts with U+001E
+    // (same as TRACE_DELIMITER) so we can't use a plain
+    // .not.toContain(TRACE_DELIMITER) — instead verify no JSON trace frame is
+    // embedded (a trace frame always starts with TRACE_DELIMITER + "{").
     expect(body).not.toContain(TRACE_DELIMITER + "{");
   });
 

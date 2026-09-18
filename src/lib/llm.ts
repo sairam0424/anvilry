@@ -490,6 +490,19 @@ export function streamWithFallback(
             // message_stop, content_block_start, content_block_stop — ignored;
             // their payloads are already covered by message_delta + the byte stream.
           }
+          // Loop ended with zero text_delta events (e.g. adaptive thinking
+          // consumed the whole max_tokens budget and the model stopped after
+          // reasoning alone — a real risk now that adaptive thinking has no
+          // hard budget_tokens ceiling reserving headroom for an answer, unlike
+          // the deprecated shape this replaced). Without this, thinkingEndEmitted
+          // stays false forever: THINKING_SENTINEL was already sent, but
+          // THINKING_END — the ONLY signal that closes the client's "thinking"
+          // UI state — would never fire, leaving the client stuck reasoning
+          // forever even though the stream is about to close with no answer.
+          if (useThinking && !thinkingEndEmitted) {
+            controller.enqueue(encoder.encode(THINKING_END));
+            thinkingEndEmitted = true;
+          }
           const latencyMs = Date.now() - attemptStart;
           safeOnAttempt({
             model,

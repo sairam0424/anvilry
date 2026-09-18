@@ -17,10 +17,14 @@ import {
  * AWS Bedrock <-> the direct Anthropic API is an env change (LLM_PROVIDER), not
  * a code change.
  *
- * Owner directive: Sonnet 4.6 primary -> Opus 4.6 secondary -> Haiku 4.5 fallback.
+ * Owner directive: Sonnet (4.6, or 5 when LLM_USE_SONNET_5 is set) primary ->
+ * Opus 4.6 secondary -> Haiku 4.5 fallback.
  * (Updated 2026-06-17 to match the BEDROCK_CHAIN order below — earlier wording said
  * "Opus primary" while the array shipped Sonnet-first since v1.6, leaving log
  * analysis ambiguous about which model was the "expected primary" on a given turn.)
+ * (Updated 2026-09-18: added the LLM_USE_SONNET_5 toggle — see isSonnet5PrimaryEnabled()
+ * below — so the primary rung can move to Claude Sonnet 5 without touching the
+ * Opus/Haiku rungs or requiring a code change to roll back.)
  * Ported from the production pattern in Too-Hot-To-Loose (career_copilot provider.py).
  */
 
@@ -28,23 +32,41 @@ export type LlmProvider = "bedrock" | "anthropic";
 
 const PER_ATTEMPT_TIMEOUT_MS = 15_000;
 
+/** Feature flag: when "true", Claude Sonnet 5 replaces Sonnet 4.6 as the
+ *  PRIMARY rung on both chains. Opus and Haiku rungs are deliberately left
+ *  untouched — Opus is already IAM-denied on this account regardless of which
+ *  Opus generation is named, and Haiku 4.5 is still Bedrock's current Haiku
+ *  generation, so neither needs to move. Default OFF: this is a capability
+ *  upgrade, not a fix, so it stays an explicit opt-in until proven in
+ *  production. REQUIRES the adaptive-thinking shape below — Sonnet 5 rejects
+ *  the old thinking.enabled+budget_tokens request shape outright (400). */
+export function isSonnet5PrimaryEnabled(): boolean {
+  return process.env.LLM_USE_SONNET_5 === "true";
+}
+
 /**
  * Region-prefixed Bedrock inference-profile IDs (verified live in the reference
  * account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with
- * "model identifier is invalid". Sonnet 4.6's bare id resolves fine.
+ * "model identifier is invalid". Sonnet 4.6's and Sonnet 5's bare ids resolve fine.
  */
-const BEDROCK_CHAIN = [
-  "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
-  "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
-  "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
-];
+function bedrockChain(): string[] {
+  return [
+    isSonnet5PrimaryEnabled()
+      ? "us.anthropic.claude-sonnet-5"
+      : "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+    "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
+  ];
+}
 
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
-const ANTHROPIC_CHAIN = [
-  "claude-sonnet-4-6",
-  "claude-opus-4-7",
-  "claude-haiku-4-5",
-];
+function anthropicChain(): string[] {
+  return [
+    isSonnet5PrimaryEnabled() ? "claude-sonnet-5" : "claude-sonnet-4-6",
+    "claude-opus-4-7",
+    "claude-haiku-4-5",
+  ];
+}
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
  *  un-enabled / mistyped inference-profile id as a 400, not a 404). Only these
@@ -109,7 +131,7 @@ export function isConfigured(): boolean {
 
 /** Ordered model chain [primary, secondary, fallback] for the active provider. */
 export function modelChain(): string[] {
-  return getProvider() === "bedrock" ? BEDROCK_CHAIN : ANTHROPIC_CHAIN;
+  return getProvider() === "bedrock" ? bedrockChain() : anthropicChain();
 }
 
 /**
@@ -224,7 +246,7 @@ export function streamWithFallback(
     /** Optional traceId threaded into the trace frame so the client can correlate
      *  the streamed answer with the server-side llm.attempt events. */
     traceId?: string;
-    /** When true, enables Anthropic extended thinking (budget_tokens: 1024).
+    /** When true, enables Anthropic adaptive extended thinking (effort: "low").
      *  Haiku models are silently excluded — they do not support extended thinking.
      *  The stream is: THINKING_SENTINEL + reasoning bytes + THINKING_END + answer bytes.
      *  Reasoning streams live to the client; the trace frame does NOT include reasoning. */
@@ -316,45 +338,60 @@ export function streamWithFallback(
         // answer into the FAQ cache; undefined on any error/fallback path.
         let answerText = "";
 
-        // Extended thinking: only for non-Haiku models (Haiku doesn't support it).
-        // NOTE: If multimodal attachments are present (content is a ContentBlockParam[]),
-        // extended thinking + image content blocks may conflict on some Bedrock inference
-        // profiles. If this becomes an issue, disable thinking when content is not a plain
-        // string by checking: messages.some(m => Array.isArray(m.content)).
+        // Extended thinking: only for non-Haiku models (Haiku doesn't support the
+        // `thinking` param at all — not even an explicit "disabled"). NOTE: If
+        // multimodal attachments are present (content is a ContentBlockParam[]),
+        // extended thinking + image content blocks may conflict on some Bedrock
+        // inference profiles. If this becomes an issue, disable thinking when
+        // content is not a plain string by checking:
+        // messages.some(m => Array.isArray(m.content)).
         const useThinking =
           opts?.extendedThinking === true && !model.includes("haiku");
+        const modelSupportsThinking = !model.includes("haiku");
 
-        // Build the params for this attempt — add thinking config if enabled.
-        // IMPORTANT: Anthropic requires max_tokens > budget_tokens. The route
-        // passes max_tokens: 1024 which equals budget_tokens — bump it to 2048
-        // so the model has room to both think (1024) and answer (1024).
+        // Adaptive thinking (`{type:"adaptive"}` + `output_config.effort`)
+        // replaces the deprecated `{type:"enabled", budget_tokens}` shape: AWS
+        // Bedrock docs mark that shape deprecated on Sonnet/Opus 4.6 ("to be
+        // removed in a future model release"), and Claude Sonnet 5/Opus 5 reject
+        // it outright with a ValidationException. Adaptive thinking needs no
+        // beta header (client.messages.stream() is enough — no more
+        // client.beta.messages.stream() special-casing) and no max_tokens bump
+        // for the budget itself; "effort" bounds thinking cost directly. "low"
+        // approximates this route's prior small 1024-token budget's intent (a
+        // quick portfolio-bot answer, not a deep research task). The max_tokens
+        // bump below is kept only as shared thinking+answer headroom, same
+        // purpose as before.
         //
-        // CRITICAL: When using extended thinking, we MUST use client.beta.messages.stream()
-        // instead of client.messages.stream(). The beta stream method correctly extracts
-        // the `betas` array from params and sets it as the `anthropic-beta` HTTP header,
-        // which the Bedrock adapter reads and includes as `anthropic_beta` in the Bedrock
-        // request body. Using client.messages.stream() with a `betas` body param causes a
-        // 400 — Bedrock rejects unknown body keys and never sees the beta header.
-        let stream: ReturnType<typeof client.messages.stream>;
-        if (useThinking) {
-          const thinkingParams = {
-            ...params,
-            model,
-            max_tokens: Math.max(
-              (params as { max_tokens?: number }).max_tokens ?? 0,
-              2048,
-            ),
-            thinking: { type: "enabled" as const, budget_tokens: 1024 },
-            betas: ["interleaved-thinking-2025-05-14"] as string[],
-          };
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          stream = (client as any).beta.messages.stream(thinkingParams);
-        } else {
-          stream = client.messages.stream({
-            ...params,
-            model,
-          } as Anthropic.MessageStreamParams & { model: string });
-        }
+        // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
+        // the `thinking` field is omitted entirely — unlike 4.6, where omission
+        // means no thinking at all. So the "off" case below sends an EXPLICIT
+        // `{type:"disabled"}` for any thinking-capable model, never just omits
+        // the field — omission would silently start reasoning (and billing for
+        // it) the moment LLM_USE_SONNET_5 flips on, even with extendedThinking
+        // false. Haiku gets no `thinking` key at all, since it doesn't
+        // recognize the param.
+        const stream = client.messages.stream({
+          ...params,
+          model,
+          ...(useThinking
+            ? {
+                max_tokens: Math.max(
+                  (params as { max_tokens?: number }).max_tokens ?? 0,
+                  2048,
+                ),
+              }
+            : {}),
+          ...(modelSupportsThinking
+            ? {
+                thinking: useThinking
+                  ? ({ type: "adaptive" } as const)
+                  : ({ type: "disabled" } as const),
+                ...(useThinking
+                  ? { output_config: { effort: "low" as const } }
+                  : {}),
+              }
+            : {}),
+        } as Anthropic.MessageStreamParams & { model: string });
 
         // Emit THINKING_SENTINEL immediately so client shows animation without
         // waiting for the first thinking_delta (which may take several hundred ms).
@@ -404,11 +441,22 @@ export function streamWithFallback(
             // They arrive BEFORE text_delta events. The client uses THINKING_SENTINEL
             // (already emitted above) + THINKING_END (emitted on first text_delta below)
             // to delineate the reasoning phase from the answer phase.
+            //
+            // Gated on useThinking, not just "did a thinking_delta event
+            // arrive": the explicit request-side `thinking:{type:"disabled"}`
+            // set above should make this unreachable in practice, but Sonnet
+            // 5/Opus 5's adaptive-thinking-on-by-default behavior is exactly
+            // the kind of provider-side default this repo has already been
+            // burned by once — if a thinking_delta ever arrives despite the
+            // explicit disable, drop it here rather than streaming raw,
+            // unframed reasoning bytes (no THINKING_SENTINEL was emitted for
+            // this attempt in that case).
             if (
               event.type === "content_block_delta" &&
               (event.delta as { type: string; thinking?: string }).type ===
                 "thinking_delta"
             ) {
+              if (!useThinking) continue;
               // Stripped defensively: a legitimate thinking chunk should never
               // contain the protocol's own framing bytes (see llm-trace.ts) —
               // this is a live stream, not something faqCacheSet can sanitize

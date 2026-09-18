@@ -30,7 +30,18 @@ const { STATE, fakeStream } = vi.hoisted(() => {
     events: unknown[][];
     throwsOn: number[];
     callCount: number;
-  } = { events: [], throwsOn: [], callCount: 0 };
+    /** Captures the params object passed to the most recent messages.stream()
+     *  call — lets tests assert on the actual request shape (thinking config,
+     *  model id) sent per attempt, not just the resulting byte stream. */
+    lastStreamParams: unknown;
+    streamParamsByCall: unknown[];
+  } = {
+    events: [],
+    throwsOn: [],
+    callCount: 0,
+    lastStreamParams: undefined,
+    streamParamsByCall: [],
+  };
   function fakeStream() {
     const idx = STATE.callCount;
     STATE.callCount += 1;
@@ -54,13 +65,15 @@ const { STATE, fakeStream } = vi.hoisted(() => {
 // mockImplementation discards its return when called as a constructor).
 vi.mock("@anthropic-ai/bedrock-sdk", () => {
   class FakeAnthropicBedrock {
-    messages: { stream: () => unknown };
-    beta: { messages: { stream: () => unknown } };
+    messages: { stream: (p: unknown) => unknown };
     constructor() {
-      this.messages = { stream: () => fakeStream() };
-      // beta.messages.stream routes through the same fake stream so extended
-      // thinking tests use the same STATE.events fixture pattern.
-      this.beta = { messages: { stream: () => fakeStream() } };
+      this.messages = {
+        stream: (p: unknown) => {
+          STATE.lastStreamParams = p;
+          STATE.streamParamsByCall.push(p);
+          return fakeStream();
+        },
+      };
     }
   }
   return { AnthropicBedrock: FakeAnthropicBedrock };
@@ -72,11 +85,15 @@ vi.mock("@anthropic-ai/bedrock-sdk", () => {
 vi.mock("@anthropic-ai/sdk", () => {
   class FakeAPIConnectionError extends Error {}
   class FakeAnthropic {
-    messages: { stream: () => unknown };
-    beta: { messages: { stream: () => unknown } };
+    messages: { stream: (p: unknown) => unknown };
     constructor() {
-      this.messages = { stream: () => fakeStream() };
-      this.beta = { messages: { stream: () => fakeStream() } };
+      this.messages = {
+        stream: (p: unknown) => {
+          STATE.lastStreamParams = p;
+          STATE.streamParamsByCall.push(p);
+          return fakeStream();
+        },
+      };
     }
     static APIConnectionError = FakeAPIConnectionError;
   }
@@ -91,6 +108,9 @@ beforeEach(() => {
   STATE.events = [];
   STATE.throwsOn = [];
   STATE.callCount = 0;
+  STATE.lastStreamParams = undefined;
+  STATE.streamParamsByCall = [];
+  delete process.env.LLM_USE_SONNET_5;
 });
 
 afterEach(() => {
@@ -848,5 +868,233 @@ describe("streamWithFallback — extended thinking v2.3.0 live-stream protocol",
       const frame = JSON.parse(body.slice(traceStart + TRACE_DELIMITER.length));
       expect(frame).not.toHaveProperty("reasoning");
     }
+  });
+});
+
+describe("streamWithFallback — adaptive thinking request shape (2026-09 migration)", () => {
+  it("sends {type:'adaptive'} + output_config.effort, no beta, no budget_tokens, when extendedThinking is true for a non-Haiku model", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    const sent = STATE.lastStreamParams as {
+      thinking?: unknown;
+      output_config?: { effort?: string };
+      betas?: unknown;
+      max_tokens?: number;
+    };
+    expect(sent.thinking).toEqual({ type: "adaptive" });
+    expect(sent.output_config?.effort).toBe("low");
+    expect(sent.betas).toBeUndefined();
+    // No budget_tokens anywhere on the thinking config (the deprecated shape).
+    expect(sent.thinking).not.toHaveProperty("budget_tokens");
+    // Headroom bump is still applied for the thinking case.
+    expect(sent.max_tokens).toBeGreaterThanOrEqual(2048);
+  });
+
+  it("sends an EXPLICIT {type:'disabled'} (not just an omitted field) when extendedThinking is false for a non-Haiku model", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: false },
+      ),
+    );
+
+    const sent = STATE.lastStreamParams as { thinking?: unknown };
+    // Explicit, not omitted: Sonnet 5 / Opus 5 default thinking ON when this
+    // field is missing entirely, so an explicit disable is required, not optional.
+    expect(sent.thinking).toEqual({ type: "disabled" });
+  });
+
+  it("omits the thinking field entirely for Haiku (Haiku does not recognize the param at all)", async () => {
+    // Force fallthrough past Sonnet + Opus so the 3rd attempt (index 2) is Haiku.
+    STATE.throwsOn = [0, 1];
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Haiku." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    expect(STATE.streamParamsByCall).toHaveLength(3);
+    const haikuParams = STATE.streamParamsByCall[2] as { thinking?: unknown };
+    expect(haikuParams).not.toHaveProperty("thinking");
+  });
+
+  it("drops (never streams raw) an unsolicited thinking_delta event when extendedThinking is false — defense-in-depth against provider-side default-on thinking", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "unsolicited reasoning" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Answer only." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: false },
+      ),
+    );
+
+    expect(body).not.toContain("unsolicited reasoning");
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    const [text] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("Answer only.");
+  });
+});
+
+describe("LLM_USE_SONNET_5 toggle", () => {
+  it("defaults to Sonnet 4.6 as primary when the flag is unset (Bedrock chain)", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    expect(onAttempt.mock.calls[0][0].model).toBe(
+      "us.anthropic.claude-sonnet-4-6",
+    );
+  });
+
+  it("switches ONLY the primary rung to Sonnet 5 when LLM_USE_SONNET_5=true (Bedrock chain) — Opus/Haiku rungs unchanged", async () => {
+    process.env.LLM_USE_SONNET_5 = "true";
+    STATE.throwsOn = [0, 1]; // fall through primary + secondary to see all 3 rungs
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Fallback." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    const models = onAttempt.mock.calls.map((c) => c[0].model);
+    expect(models).toEqual([
+      "us.anthropic.claude-sonnet-5",
+      "us.anthropic.claude-opus-4-6-v1",
+      "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    ]);
+  });
+
+  it("switches ONLY the primary rung to claude-sonnet-5 when LLM_USE_SONNET_5=true (direct Anthropic chain) — Opus/Haiku rungs unchanged", async () => {
+    process.env.LLM_PROVIDER = "anthropic";
+    process.env.LLM_USE_SONNET_5 = "true";
+    STATE.throwsOn = [0, 1];
+    STATE.events = [
+      [],
+      [],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Fallback." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { onAttempt },
+      ),
+    );
+    const models = onAttempt.mock.calls.map((c) => c[0].model);
+    expect(models).toEqual([
+      "claude-sonnet-5",
+      "claude-opus-4-7",
+      "claude-haiku-4-5",
+    ]);
+  });
+
+  it("isSonnet5PrimaryEnabled() reflects the env var directly", async () => {
+    const { isSonnet5PrimaryEnabled } = await import("./llm");
+    expect(isSonnet5PrimaryEnabled()).toBe(false);
+    process.env.LLM_USE_SONNET_5 = "true";
+    expect(isSonnet5PrimaryEnabled()).toBe(true);
   });
 });

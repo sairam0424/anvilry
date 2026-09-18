@@ -106,11 +106,22 @@ Re-encoding the decode and comparing to the original is the discriminator; a pla
 
 Note: `llm.ts` does **not** read `EXTENDED_THINKING` — the chat route does (`src/app/api/chat/route.ts:263`, `process.env.EXTENDED_THINKING !== "false"`, i.e. default ON) and passes the result down as `opts.extendedThinking`.
 
-**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:292 and set `true` only on a `text_delta` enqueue (llm.ts:487). It gates three separate decisions:
+**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:292 and set `true`
+unconditionally inside the `text_delta` branch (llm.ts:497), BEFORE any content check — unlike the
+`thinking_delta` branch, which only enqueues a chunk `if (chunk)` (non-empty after
+`stripControlBytes`). So the true gate is **"has a `text_delta` event been received,"** not
+literally "have any bytes been sent": a `text_delta` event whose text strips to an empty string
+would still set `emittedAny = true` and permanently disable fallback for the rest of that attempt,
+even though nothing visible was actually streamed. `emittedAny` gates two separate decisions:
 
-1. **Fallback eligibility** (llm.ts:540-544): `if (emittedAny || isLast || !isFallbackEligible(err))` → enqueue `apologyTail` and close. Only a zero-byte + eligible + models-remain attempt advances the loop. Once bytes are on the wire they cannot be un-sent, so a later error is terminal — no retry.
-2. **Trace-frame emission** (llm.ts:512-519): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that a zero-byte attempt can never materialize a trace frame.
-3. **THINKING_SENTINEL emission** (llm.ts:398-400): `if (useThinking && !emittedAny)` — the sentinel is emitted once, before the first stream, so a fallback attempt does not re-emit it.
+1. **Fallback eligibility** (llm.ts:563-590): `const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` → enqueue `apologyTail` and close. Only an attempt with no `text_delta` yet + an eligible error + models remaining advances the loop. Once a `text_delta` has arrived it cannot be un-sent, so a later error is terminal — no retry.
+2. **Trace-frame emission** (llm.ts:512-519): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that an attempt with no `text_delta` can never materialize a trace frame.
+
+`THINKING_SENTINEL` emission is a SEPARATE, stream-scoped guard, not gated on `emittedAny` alone as
+of 2026-09-18: `if (useThinking && !emittedAny && !thinkingSentinelEmitted)` (llm.ts:407-409) —
+`thinkingSentinelEmitted` (declared once per stream, llm.ts:299) is what actually prevents a second,
+spurious sentinel on a fallback attempt; `!emittedAny` here is just "don't bother opening a new
+reasoning phase once a real answer has already started."
 
 The load-bearing reason (llm.ts:184-192): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Bytes-already-sent is the only reliable discriminator.
 

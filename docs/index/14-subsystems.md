@@ -337,7 +337,7 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 `const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
 append `apologyTail` and close (`src/lib/llm.ts:563-590`, read directly — as of 2026-09-18 also closes
 the thinking phase with `THINKING_END` first if one was open). Fallback to the next model is possible
-**only while zero answer-text bytes have been sent** (thinking bytes don't count — `emittedAny` is set only on a `text_delta`). The load-bearing reason is at `src/lib/llm.ts:184-192`: streaming errors surface
+**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:497`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:184-192`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
 are indistinguishable by call site — bytes-on-the-wire is the only reliable discriminator. The same flag
 also keeps a zero-byte attempt from materialising a trace frame (`:405-412`) and makes the thinking

@@ -290,6 +290,13 @@ export function streamWithFallback(
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       let emittedAny = false;
+      // Tracks whether THINKING_SENTINEL has been sent for the WHOLE stream,
+      // not per attempt — the old `!emittedAny` guard re-fired it on every
+      // fallback attempt that hadn't produced text yet (e.g. Sonnet throws
+      // mid-thinking, Opus retries: a second, spurious THINKING_SENTINEL
+      // landed mid-reasoning). The sentinel opens the framing exactly once;
+      // matches thinkingEndEmitted's per-attempt closing counterpart below.
+      let thinkingSentinelEmitted = false;
       let closed = false;
       const close = () => {
         if (!closed) {
@@ -395,8 +402,11 @@ export function streamWithFallback(
 
         // Emit THINKING_SENTINEL immediately so client shows animation without
         // waiting for the first thinking_delta (which may take several hundred ms).
-        if (useThinking && !emittedAny) {
+        // Guarded on thinkingSentinelEmitted (once per stream), not emittedAny
+        // (once per attempt) — see the declaration above.
+        if (useThinking && !emittedAny && !thinkingSentinelEmitted) {
           controller.enqueue(encoder.encode(THINKING_SENTINEL));
+          thinkingSentinelEmitted = true;
         }
         try {
           for await (const event of stream) {
@@ -550,7 +560,30 @@ export function streamWithFallback(
             },
           });
           const isLast = i === chain.length - 1;
-          if (emittedAny || isLast || !isFallbackEligible(err)) {
+          const goingToApology =
+            emittedAny || isLast || !isFallbackEligible(err);
+          // Close THIS attempt's thinking phase before a terminal apology or
+          // a fallback to a model that doesn't support thinking (Haiku) — the
+          // client's parser treats every byte after THINKING_SENTINEL as
+          // reasoning until THINKING_END arrives, so without this, the NEXT
+          // thing streamed (the apology text, or Haiku's real answer) would
+          // be silently misclassified as more reasoning and never rendered
+          // as the visible answer. A retry to a model that DOES support
+          // thinking deliberately skips this: its own reasoning continues
+          // the same still-open framing seamlessly (see CodeRabbit review of
+          // PR #260 — this is the catch-path counterpart to the "always emit
+          // THINKING_END" fix above, which only covered the non-throwing path).
+          const nextModelSupportsThinking =
+            !isLast && !chain[i + 1].includes("haiku");
+          if (
+            useThinking &&
+            !thinkingEndEmitted &&
+            (goingToApology || !nextModelSupportsThinking)
+          ) {
+            controller.enqueue(encoder.encode(THINKING_END));
+            thinkingEndEmitted = true;
+          }
+          if (goingToApology) {
             controller.enqueue(encoder.encode(apologyTail));
             close();
             return;

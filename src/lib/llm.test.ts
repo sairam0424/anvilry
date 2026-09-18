@@ -29,6 +29,10 @@ const { STATE, fakeStream } = vi.hoisted(() => {
   const STATE: {
     events: unknown[][];
     throwsOn: number[];
+    /** Per-index override for the thrown error's status (defaults to 500,
+     *  which is fallback-eligible). Set an entry to 400 to simulate a
+     *  deterministic, NOT-fallback-eligible error. */
+    throwStatus: Record<number, number>;
     callCount: number;
     /** Captures the params object passed to the most recent messages.stream()
      *  call — lets tests assert on the actual request shape (thinking config,
@@ -38,6 +42,7 @@ const { STATE, fakeStream } = vi.hoisted(() => {
   } = {
     events: [],
     throwsOn: [],
+    throwStatus: {},
     callCount: 0,
     lastStreamParams: undefined,
     streamParamsByCall: [],
@@ -52,7 +57,7 @@ const { STATE, fakeStream } = vi.hoisted(() => {
         for (const event of events) yield event;
         if (willThrow) {
           const err = new Error("simulated bedrock error");
-          (err as { status?: number }).status = 500;
+          (err as { status?: number }).status = STATE.throwStatus[idx] ?? 500;
           throw err;
         }
       },
@@ -107,6 +112,7 @@ beforeEach(() => {
   process.env.BEDROCK_REGION = "us-east-1";
   STATE.events = [];
   STATE.throwsOn = [];
+  STATE.throwStatus = {};
   STATE.callCount = 0;
   STATE.lastStreamParams = undefined;
   STATE.streamParamsByCall = [];
@@ -1001,6 +1007,142 @@ describe("streamWithFallback — adaptive thinking request shape (2026-09 migrat
     expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
     const [text] = body.split(TRACE_DELIMITER);
     expect(text).toBe("Answer only.");
+  });
+});
+
+describe("streamWithFallback — thinking-phase closure across a fallback (CodeRabbit review of PR #260)", () => {
+  it("closes the thinking phase with THINKING_END before a terminal apology when the primary throws mid-reasoning with a non-eligible error", async () => {
+    // A plain 400 is NOT fallback-eligible: the apology fires immediately,
+    // without ever trying the remaining models, even though this is not the
+    // last attempt.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "partial reasoning" },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 400 }; // deterministic input error -> NOT eligible
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    // Without the fix, THINKING_END never appears here — the apology text
+    // would be misclassified by the client's parser as more reasoning.
+    const endIdx = body.indexOf(THINKING_END);
+    expect(endIdx).toBeGreaterThan(0);
+    expect(body.slice(endIdx + THINKING_END.length)).toContain("Sorry");
+  });
+
+  it("does NOT close the thinking phase when falling back to another thinking-capable model — reasoning continues the same open framing", async () => {
+    // Primary (Sonnet, thinking-capable) throws a fallback-ELIGIBLE error
+    // (500) after only a thinking_delta. Secondary (Opus, also
+    // thinking-capable) then succeeds with real text.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "sonnet reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "opus reasoning" },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Opus answer." },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    // Exactly ONE THINKING_END for the whole stream — the failed Sonnet
+    // attempt's partial reasoning and Opus's own reasoning both live inside
+    // the SAME still-open framing, not two separate closed-then-reopened ones.
+    const firstEnd = body.indexOf(THINKING_END);
+    expect(firstEnd).toBeGreaterThan(0);
+    expect(body.indexOf(THINKING_END, firstEnd + 1)).toBe(-1);
+
+    const liveReasoning = body.slice(THINKING_SENTINEL.length, firstEnd);
+    expect(liveReasoning).toBe("sonnet reasoningopus reasoning");
+
+    const afterEnd = body.slice(firstEnd + THINKING_END.length);
+    const [text] = afterEnd.split(TRACE_DELIMITER);
+    expect(text).toBe("Opus answer.");
+  });
+
+  it("closes the thinking phase before falling back to Haiku, so Haiku's real answer is not swallowed as reasoning", async () => {
+    // Both thinking-capable models (Sonnet, Opus) throw fallback-eligible
+    // errors after only a thinking_delta; Haiku (not thinking-capable) then
+    // succeeds. THINKING_END must appear BEFORE Haiku's answer text, or the
+    // client's parser would misclassify "Haiku answer." as more reasoning.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "sonnet reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "opus reasoning" },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Haiku answer." },
+        },
+      ],
+    ];
+    STATE.throwsOn = [0, 1];
+
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 100,
+          system: "test",
+        },
+        { extendedThinking: true },
+      ),
+    );
+
+    const endIdx = body.indexOf(THINKING_END);
+    expect(endIdx).toBeGreaterThan(0);
+    const liveReasoning = body.slice(THINKING_SENTINEL.length, endIdx);
+    expect(liveReasoning).toBe("sonnet reasoningopus reasoning");
+
+    const afterEnd = body.slice(endIdx + THINKING_END.length);
+    const [text] = afterEnd.split(TRACE_DELIMITER);
+    expect(text).toBe("Haiku answer.");
   });
 });
 

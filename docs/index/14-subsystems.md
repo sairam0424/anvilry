@@ -334,9 +334,10 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 
 ### The `emittedAny` fallback invariant
 
-`if (emittedAny || isLast || !isFallbackEligible(err))` → append `apologyTail` and close
-(`src/lib/llm.ts:433-437`, read directly). Fallback to the next model is possible **only while zero
-bytes have been sent**. The load-bearing reason is at `src/lib/llm.ts:149-157`: streaming errors surface
+`const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
+append `apologyTail` and close (`src/lib/llm.ts:563-590`, read directly — as of 2026-09-18 also closes
+the thinking phase with `THINKING_END` first if one was open). Fallback to the next model is possible
+**only while zero bytes have been sent**. The load-bearing reason is at `src/lib/llm.ts:184-192`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
 are indistinguishable by call site — bytes-on-the-wire is the only reliable discriminator. The same flag
 also keeps a zero-byte attempt from materialising a trace frame (`:405-412`) and makes the thinking

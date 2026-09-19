@@ -56,12 +56,16 @@ vi.mock("@/lib/redis", () => ({
   isRedisConfigured: () => redisStateRef.current !== null,
 }));
 
-/** Sets up redisMock.get to answer the corpus-build-tag key with `tag` and
- *  every other key (the entry lookup) with `entryValue`. Covers both calls
- *  faqCacheGet/faqCacheSemanticGet/faqCacheSet make in parallel. */
+/** Sets up redisMock.get AND redisMock.mget to answer the corpus-build-tag key
+ *  with `tag` and every other key (the entry lookup) with `entryValue`. Covers
+ *  faqCacheSemanticGet/faqCacheSet (still call redis.get for the corpus tag)
+ *  and faqCacheGet (now merges the entry lookup + corpus tag into one mget). */
 function mockGetByKey(entryValue: unknown, tag: string | null) {
   redisMock.get.mockImplementation(async (key: string) =>
     key === CORPUS_BUILT_AT_KEY ? tag : entryValue,
+  );
+  redisMock.mget.mockImplementation(async (...keys: string[]) =>
+    keys.map((key) => (key === CORPUS_BUILT_AT_KEY ? tag : entryValue)),
   );
 }
 
@@ -89,6 +93,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("normalizeQuestion", () => {
@@ -249,7 +254,7 @@ describe("faqCacheGet", () => {
   });
 
   it("fails open to null when Redis throws, and emits a distinguishable server.error event", async () => {
-    redisMock.get.mockRejectedValue(new Error("upstash down"));
+    redisMock.mget.mockRejectedValue(new Error("upstash down"));
     const { faqCacheGet } = await import("./chat-cache");
     await expect(faqCacheGet("What is Pensieve?")).resolves.toBeNull();
     expect(redisMock.zadd).toHaveBeenCalledWith(
@@ -268,21 +273,25 @@ describe("faqCacheGet", () => {
     redisStateRef.current = null;
     const { faqCacheGet } = await import("./chat-cache");
     await expect(faqCacheGet("What is Pensieve?")).resolves.toBeNull();
-    expect(redisMock.get).not.toHaveBeenCalled();
+    expect(redisMock.mget).not.toHaveBeenCalled();
   });
 
   it("returns null and touches no Redis calls when the kill switch is off", async () => {
     process.env.FAQ_CACHE_ENABLED = "false";
     const { faqCacheGet } = await import("./chat-cache");
     await expect(faqCacheGet("What is Pensieve?")).resolves.toBeNull();
-    expect(redisMock.get).not.toHaveBeenCalled();
+    expect(redisMock.mget).not.toHaveBeenCalled();
   });
 });
 
 describe("faqCacheSet", () => {
   const CLEAN = "end_turn";
 
-  it("writes the entry (tagged with the current corpus build), indexes it, and trims the index by age and rank", async () => {
+  it("writes the entry (tagged with the current corpus build), indexes it, and trims the index by age and rank (on a sampled write)", async () => {
+    // cachedAt (= Date.now() inside faqCacheSet) must be divisible by
+    // TRIM_SAMPLE_EVERY (20) for the index trims to fire on this call.
+    vi.useFakeTimers();
+    vi.setSystemTime(1_700_000_000_020);
     mockGetByKey(null, "build-123");
     const { faqCacheSet, faqCacheKey, normalizeQuestion } =
       await import("./chat-cache");
@@ -315,6 +324,34 @@ describe("faqCacheSet", () => {
       0,
       -501,
     );
+  });
+
+  it("skips the index trims on a non-sampled write (still writes the entry and indexes it)", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1_700_000_000_007); // NOT divisible by TRIM_SAMPLE_EVERY (20)
+    mockGetByKey(null, "build-123");
+    const { faqCacheSet, faqCacheKey, normalizeQuestion } =
+      await import("./chat-cache");
+    await faqCacheSet(
+      "What is Pensieve?",
+      "It's a...",
+      "us.anthropic.claude-sonnet-4-6",
+      0.0012,
+      CLEAN,
+    );
+
+    const key = faqCacheKey(normalizeQuestion("What is Pensieve?"));
+    expect(redisMock.set).toHaveBeenCalledWith(
+      key,
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(redisMock.zadd).toHaveBeenCalledWith(
+      "anvilry:chat:cache:index",
+      expect.objectContaining({ member: key }),
+    );
+    expect(redisMock.zremrangebyscore).not.toHaveBeenCalled();
+    expect(redisMock.zremrangebyrank).not.toHaveBeenCalled();
   });
 
   it("never persists raw question text in the entry", async () => {

@@ -41,6 +41,18 @@ import type { TelemetryEvent } from "./schema";
 
 const SEVEN_DAYS_MS = 7 * 86_400_000;
 
+/** The retention trim is best-effort housekeeping (see the file header), not a
+ *  correctness requirement, so paying its Redis-command cost on every single
+ *  emit() call is wasteful — confirmed via a live production audit that
+ *  emit() firing 2-4x per /api/chat request was a real contributor to
+ *  exhausting Upstash's free-tier monthly command quota. Sampled to 1-in-20
+ *  calls, deterministically off event.ts rather than Math.random(): a
+ *  counter-based sample would need module-level state that leaks across
+ *  requests/tests sharing this module, whereas ts % N is stateless and
+ *  reproducible. Real timestamps aren't aligned to any period, so this still
+ *  approximates a uniform 5% sample in production. */
+const TRIM_SAMPLE_EVERY = 20;
+
 export function emit(event: TelemetryEvent): void {
   // Sink 1 — Vercel Runtime Logs. Never throws. Wrap in try/catch defensively
   // anyway: a custom global console.log replacement that throws would otherwise
@@ -70,12 +82,14 @@ export function emit(event: TelemetryEvent): void {
       ),
     );
 
-  redis
-    .zremrangebyscore(key, 0, cutoff)
-    .catch((err: unknown) =>
-      console.warn(
-        "[telemetry] redis sink failed: %s",
-        err instanceof Error ? err.name : "unknown",
-      ),
-    );
+  if (event.ts % TRIM_SAMPLE_EVERY === 0) {
+    redis
+      .zremrangebyscore(key, 0, cutoff)
+      .catch((err: unknown) =>
+        console.warn(
+          "[telemetry] redis sink failed: %s",
+          err instanceof Error ? err.name : "unknown",
+        ),
+      );
+  }
 }

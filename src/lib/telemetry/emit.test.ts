@@ -22,13 +22,18 @@ import type { TelemetryEvent } from "./schema";
 
 const { redisMock, redisStateRef } = vi.hoisted(() => {
   const redisMock = {
-    zadd: vi.fn<(key: string, args: { score: number; member: string }) => Promise<number>>(),
-    zremrangebyscore: vi.fn<(key: string, min: number, max: number) => Promise<number>>(),
+    zadd: vi.fn<
+      (key: string, args: { score: number; member: string }) => Promise<number>
+    >(),
+    zremrangebyscore:
+      vi.fn<(key: string, min: number, max: number) => Promise<number>>(),
   };
   // A ref object so the mock factory can read the CURRENT redis (or null)
   // without binding to the value at module-load time. Tests flip
   // redisStateRef.current to simulate the unconfigured-singleton path.
-  const redisStateRef: { current: typeof redisMock | null } = { current: redisMock };
+  const redisStateRef: { current: typeof redisMock | null } = {
+    current: redisMock,
+  };
   return { redisMock, redisStateRef };
 });
 
@@ -51,7 +56,12 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Build a minimal valid TelemetryEvent for the given kind. */
+/** Build a minimal valid TelemetryEvent for the given kind.
+ *  NOTE: the default `ts` (1_700_000_000_000) is deliberately divisible by
+ *  20 -- emit()'s zremrangebyscore trim is now sampled to 1-in-20 calls via
+ *  `event.ts % 20 === 0`, so every existing test below that expects the trim
+ *  to fire on a single call keeps working unchanged. The dedicated sampling
+ *  tests further down use both a satisfying and a non-satisfying ts. */
 function makeEvent(overrides: Partial<TelemetryEvent> = {}): TelemetryEvent {
   return {
     ts: 1_700_000_000_000,
@@ -210,5 +220,22 @@ describe("emit — redis sink (best-effort, fail-open)", () => {
     // The trim is best-effort; failure is warned but never propagates.
     expect(warnSpy).toHaveBeenCalled();
     expect(warnSpy.mock.calls[0][0]).toContain("[telemetry] redis sink failed");
+  });
+
+  it("samples the retention trim to 1-in-20 calls (ts % 20 === 0) to cut Redis command usage", async () => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const { emit } = await import("./emit");
+
+    // Divisible by 20 -> trim fires.
+    emit(makeEvent({ ts: 1_700_000_000_020 }));
+    // NOT divisible by 20 -> trim is skipped, but zadd still always fires.
+    emit(makeEvent({ ts: 1_700_000_000_007 }));
+
+    expect(redisMock.zadd).toHaveBeenCalledTimes(2);
+    expect(redisMock.zremrangebyscore).toHaveBeenCalledTimes(1);
+    const [key, min, max] = redisMock.zremrangebyscore.mock.calls[0];
+    expect(key).toBe("anvilry:trace:llm.attempt");
+    expect(min).toBe(0);
+    expect(max).toBe(1_700_000_000_020 - 7 * 86_400_000);
   });
 });

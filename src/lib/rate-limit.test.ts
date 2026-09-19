@@ -107,16 +107,17 @@ describe("checkRateLimit — configured happy path", () => {
   });
 
   it("returns { ok: false, retryAfter } when the limiter reports the budget is exhausted", async () => {
+    // reset is comfortably mid-second (12_345ms out) so the real elapsed time
+    // between computing it here and rate-limit.ts's own Date.now() call a few
+    // lines later can never cross a whole-second boundary in practice — the
+    // expected retryAfter is thus a fixed, deterministic 13 (ceil(12345/1000)),
+    // not a range.
     const reset = Date.now() + 12_345;
     ratelimitInstanceMock.limit.mockResolvedValue({ success: false, reset });
     const { checkRateLimit } = await import("./rate-limit");
 
     const result = await checkRateLimit(makeRequest());
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.retryAfter).toBeGreaterThan(0);
-      expect(result.retryAfter).toBeLessThanOrEqual(13); // ceil(12345/1000)
-    }
+    expect(result).toEqual({ ok: false, retryAfter: 13 });
   });
 
   it("passes x-vercel-forwarded-for (unspoofable) as the identifier when present", async () => {

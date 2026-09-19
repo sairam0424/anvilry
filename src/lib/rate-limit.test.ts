@@ -65,6 +65,12 @@ beforeEach(() => {
   // would just return the SAME cached module — built against redisMock,
   // never reflecting a later test's `redisStateRef.current = null`.
   vi.resetModules();
+  // Fixed clock: checkRateLimit's retryAfter math calls Date.now() a second
+  // time, after the mock's `reset` value is computed here. A real clock makes
+  // that arithmetic depend on however many real milliseconds elapse between
+  // the two calls — fake timers pin both to the same instant instead.
+  vi.useFakeTimers();
+  vi.setSystemTime(1_700_000_000_000);
   redisStateRef.current = redisMock;
   RatelimitMock.mockClear();
   ratelimitInstanceMock.limit.mockReset();
@@ -76,6 +82,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -107,11 +114,10 @@ describe("checkRateLimit — configured happy path", () => {
   });
 
   it("returns { ok: false, retryAfter } when the limiter reports the budget is exhausted", async () => {
-    // reset is comfortably mid-second (12_345ms out) so the real elapsed time
-    // between computing it here and rate-limit.ts's own Date.now() call a few
-    // lines later can never cross a whole-second boundary in practice — the
-    // expected retryAfter is thus a fixed, deterministic 13 (ceil(12345/1000)),
-    // not a range.
+    // Both Date.now() calls (here, and inside checkRateLimit's retryAfter
+    // math) resolve to the SAME fixed instant via vi.setSystemTime() in
+    // beforeEach, so retryAfter is exactly ceil(12345/1000) — not merely
+    // "close to it modulo real elapsed time."
     const reset = Date.now() + 12_345;
     ratelimitInstanceMock.limit.mockResolvedValue({ success: false, reset });
     const { checkRateLimit } = await import("./rate-limit");

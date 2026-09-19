@@ -65,6 +65,12 @@ export const FAQ_CACHE_TTL_SECONDS = 24 * 60 * 60;
 /** Caps the semantic-tier scan cost and the index's own storage footprint. */
 export const FAQ_CACHE_INDEX_CAP = 500;
 
+/** Same sampling technique and rationale as telemetry/emit.ts's identically-named
+ *  constant: the index trims below are best-effort housekeeping, not a
+ *  correctness requirement, so this bounds their Redis-command cost to 1-in-20
+ *  cache writes instead of every one. */
+export const TRIM_SAMPLE_EVERY = 20;
+
 /** A legitimate answer from this bot is 2-4 sentences (per its own system
  *  prompt). 4000 chars is a generous multiple of that, not a tight limit —
  *  it exists purely to reject anomalous completions, not to truncate normal
@@ -184,10 +190,16 @@ export async function faqCacheGet(
   if (!isFaqCacheEnabled() || !redis) return null;
   try {
     const key = faqCacheKey(normalizeQuestion(question));
-    const [raw, currentTag] = await Promise.all([
-      redis.get<string | FaqCacheEntry>(key),
-      getCurrentCorpusBuildTag(),
-    ]);
+    // MGET, not a get() + a separate getCurrentCorpusBuildTag() call: both are
+    // plain Redis reads against the same instance, and MGET is billed as ONE
+    // command (confirmed against Upstash's own billing docs) versus two GETs —
+    // a real, verified contributor to exhausting the free-tier monthly quota.
+    // faqCacheSemanticGet and faqCacheSet still call getCurrentCorpusBuildTag()
+    // directly, since their own Redis reads aren't a plain single-key GET this
+    // can merge with.
+    const [raw, currentTag] = await redis.mget<
+      [string | FaqCacheEntry | null, string | null]
+    >(key, CORPUS_BUILT_AT_KEY);
     if (!raw) return null;
     const entry = parseEntry(raw);
     if (!isSameCorpusBuild(entry, currentTag)) return null;
@@ -284,12 +296,20 @@ export async function faqCacheSet(
   try {
     await redis.set(key, JSON.stringify(entry), { ex: FAQ_CACHE_TTL_SECONDS });
     await redis.zadd(INDEX_KEY, { score: cachedAt, member: key });
-    await redis.zremrangebyscore(
-      INDEX_KEY,
-      0,
-      cachedAt - FAQ_CACHE_TTL_SECONDS * 1000,
-    );
-    await redis.zremrangebyrank(INDEX_KEY, 0, -(FAQ_CACHE_INDEX_CAP + 1));
+    // Both index trims are sampled to 1-in-20 writes (same TRIM_SAMPLE_EVERY
+    // technique as telemetry/emit.ts, deterministic off cachedAt rather than
+    // Math.random() so it stays reproducible in tests) -- they bound the
+    // index's staleness/size but aren't needed on every single write, and
+    // this repo's own live audit found this exact command multiplicity
+    // contributing to exhausting the free-tier Upstash quota.
+    if (cachedAt % TRIM_SAMPLE_EVERY === 0) {
+      await redis.zremrangebyscore(
+        INDEX_KEY,
+        0,
+        cachedAt - FAQ_CACHE_TTL_SECONDS * 1000,
+      );
+      await redis.zremrangebyrank(INDEX_KEY, 0, -(FAQ_CACHE_INDEX_CAP + 1));
+    }
   } catch (err) {
     emitCacheError("set", err);
     return;

@@ -1,6 +1,6 @@
 "use client";
 
-/** Tinted platform pill — used by ArticleCard and the articles filter bar.
+/** Tinted platform pill — used by the articles filter bar.
  *  source "native" = first-party essay (no external platform). */
 export type ArticleSource =
   | "medium"

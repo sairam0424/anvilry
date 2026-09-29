@@ -6310,14 +6310,6 @@
       ],
       "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
     },
-    "src/components/article-card.tsx:18": {
-      "fp": "89f11ea62f9a",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "if (a.linkedNote) return { href: `/notes/${a.linkedNote}`, external: false };"
-    },
     "src/components/article-group-card.tsx:21": {
       "fp": "94b61cd82740",
       "citedBy": [

@@ -1,23 +1,23 @@
 import { describe, it, expect } from "vitest";
-import { allNotes, hasNotes, getNote } from "./content";
+import { allNotes, publishedNotes, hasNotes, getNote } from "./content";
 
 /**
- * Notes collection contract: empty-safe (ships dark until posts exist), drafts excluded,
- * newest-first, dates parseable. The nav link + section gate on hasNotes, so an empty
- * collection must report hasNotes=false (no dead "coming soon" link).
+ * Notes collection contract: empty-safe (ships dark until posts exist), drafts excluded, newest-first,
+ * dates parseable — asserted over `publishedNotes`: `allNotes` is [] while NOTES_ENABLED is off (the CI
+ * default), so looping over it would check nothing. hasNotes gates the nav link (no dead "coming soon").
  */
 describe("notes collection", () => {
   it("hasNotes reflects published-note count (dark when empty)", () => {
     expect(hasNotes).toBe(allNotes.length > 0);
   });
 
-  it("excludes drafts and sorts newest-first with parseable dates", () => {
-    for (const n of allNotes) {
+  it("published notes exclude drafts and sort newest-first with parseable dates", () => {
+    for (const n of publishedNotes) {
       expect(n.draft).toBe(false);
       expect(Number.isNaN(new Date(n.date).getTime()), `${n.slug} has an unparseable date`).toBe(false);
     }
-    for (let i = 1; i < allNotes.length; i++) {
-      expect(allNotes[i - 1].date >= allNotes[i].date, "notes must be newest-first").toBe(true);
+    for (let i = 1; i < publishedNotes.length; i++) {
+      expect(publishedNotes[i - 1].date >= publishedNotes[i].date, "notes must be newest-first").toBe(true);
     }
   });
 

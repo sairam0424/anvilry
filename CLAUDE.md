@@ -267,7 +267,7 @@ Voice is pure progressive enhancement — all capabilities default off and fail 
 
 - `/api/chat`, `/api/tts`, `/api/transcribe` are guarded by Upstash Redis rate limiting (8 req/min per IP).
 - Telemetry uses a dual-sink strategy: Vercel Runtime Logs (permanent) + Upstash Redis sorted sets (7-day retention, queryable). The `/admin/telemetry` dashboard is HTTP Basic Auth–protected via `ADMIN_PASSWORD`.
-- `src/proxy.ts` is the **Edge-runtime** auth gate for `/admin/*` (uses Web Crypto SubtleCrypto SHA-256). `src/lib/admin-auth.ts` is the **server-side** version (Node.js `timingSafeEqual`). Both exist because Edge runtime lacks Node.js APIs.
+- `src/proxy.ts` is the first-filter auth gate for `/admin/*`. Next 16 proxies run on the **Node.js runtime** by default, so it shares `isAdminAuthorized` from `src/lib/admin-auth.ts` (SHA-256 digests compared with `timingSafeEqual`) with `requireAdmin` (route handlers) and the `/admin/telemetry` page, which re-checks auth itself and calls `notFound()` when unauthorized.
 
 ### Feature Flags
 
@@ -299,7 +299,7 @@ Key flags: `NEXT_PUBLIC_DISCOVERY_BADGES`, `NEXT_PUBLIC_OPEN_TO_WORK`, `NEXT_PUB
 | `src/lib/rate-limit.ts` | Per-IP Upstash rate limiter (fails open) |
 | `src/lib/redis.ts` | Upstash Redis singleton (shared by rate-limit, telemetry, admin) |
 | `src/lib/flags.ts` | Feature flag resolver (build-time env vs. Vercel Flags SDK runtime) |
-| `src/proxy.ts` | Edge-runtime HTTP Basic Auth for /admin/* (SubtleCrypto) |
+| `src/proxy.ts` | Node-runtime HTTP Basic Auth gate for /admin/* (shares `isAdminAuthorized` with `src/lib/admin-auth.ts`) |
 | `velite.config.ts` | Content schemas (Zod) — Work, Project, Note, Article |
 | `next.config.ts` | CSP headers (enforced), security, Turbopack, experimental flags; `:5-7` wraps the export in `@next/bundle-analyzer` — inert unless `pnpm analyze` (`ANALYZE=true` + `--webpack`), do not delete as dead code |
 | `src/app/api/chat/route.ts` | LLM streaming endpoint |

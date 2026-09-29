@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { requireAdmin } from "./admin-auth";
+import { isAdminAuthorized, requireAdmin } from "./admin-auth";
 
 /**
  * HTTP Basic Auth guard contract. Security-critical: these tests pin both the
@@ -83,6 +83,60 @@ describe("requireAdmin — rejection paths", () => {
   it("returns 401 with empty Authorization value", () => {
     process.env.ADMIN_PASSWORD = "good";
     expect((requireAdmin(makeReq("")) as Response).status).toBe(401);
+  });
+});
+
+function configure(value: string): void {
+  process.env.ADMIN_PASSWORD = value;
+}
+
+describe("requireAdmin — length mismatch and edge inputs", () => {
+  it("returns 401 when supplied value is much longer than the configured one", () => {
+    configure("good");
+    const r = requireAdmin(
+      makeReq(basicHeader("good".repeat(500))),
+    ) as Response;
+    expect(r.status).toBe(401);
+  });
+
+  it("returns 401 when supplied value is a strict prefix of the configured one", () => {
+    configure("goodpass");
+    expect(
+      (requireAdmin(makeReq(basicHeader("good"))) as Response).status,
+    ).toBe(401);
+  });
+
+  it("returns 401 for an empty supplied value", () => {
+    configure("good");
+    expect((requireAdmin(makeReq(basicHeader(""))) as Response).status).toBe(
+      401,
+    );
+  });
+
+  it("returns 401 for a lowercase basic scheme", () => {
+    configure("good");
+    const header = "basic " + Buffer.from(":good").toString("base64");
+    expect((requireAdmin(makeReq(header)) as Response).status).toBe(401);
+  });
+});
+
+describe("isAdminAuthorized", () => {
+  it("is true for the correct credentials", () => {
+    configure("good");
+    expect(isAdminAuthorized(basicHeader("good"))).toBe(true);
+  });
+
+  it("is false for wrong, missing, or non-Basic headers", () => {
+    configure("good");
+    expect(isAdminAuthorized(basicHeader("bad"))).toBe(false);
+    expect(isAdminAuthorized(null)).toBe(false);
+    expect(isAdminAuthorized("Bearer tok")).toBe(false);
+  });
+
+  it("is false for everything when ADMIN_PASSWORD is unset", () => {
+    delete process.env.ADMIN_PASSWORD;
+    expect(isAdminAuthorized(basicHeader(""))).toBe(false);
+    expect(isAdminAuthorized(basicHeader("good"))).toBe(false);
   });
 });
 

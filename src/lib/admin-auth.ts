@@ -16,39 +16,37 @@ import { timingSafeEqual, createHash } from "node:crypto";
  * is the safer failure mode for a production deployment.
  */
 
-/** Returns { ok: true } when the request carries the correct Basic credentials,
- *  or a ready-to-return 401 Response when they are absent or wrong. */
-export function requireAdmin(req: Request): { ok: true } | Response {
+const BASIC_PREFIX = "Basic ";
+
+/** True when the Authorization header value carries the correct Basic
+ *  credentials. Shared by requireAdmin (route handlers), the proxy gate, and
+ *  the telemetry page so all three layers apply the same compare. */
+export function isAdminAuthorized(header: string | null): boolean {
   const envPassword = process.env.ADMIN_PASSWORD;
   if (!envPassword) {
     // No password configured → deny all access. Log once so it's findable
     // in Vercel Logs, but do NOT leak the reason to the HTTP client.
     console.warn("[admin-auth] ADMIN_PASSWORD is not set — /admin/* is locked out.");
-    return unauthorized();
+    return false;
   }
 
-  const header = req.headers.get("Authorization") ?? "";
-  if (!header.startsWith("Basic ")) {
-    return unauthorized();
-  }
+  if (!header?.startsWith(BASIC_PREFIX)) return false;
 
-  const encoded = header.slice("Basic ".length).trim();
-  let decoded: string;
-  try {
-    decoded = Buffer.from(encoded, "base64").toString("utf-8");
-  } catch {
-    return unauthorized();
-  }
+  // Buffer.from(_, "base64") never throws; malformed input decodes to garbage
+  // that simply fails the compare below.
+  const decoded = Buffer.from(header.slice(BASIC_PREFIX.length).trim(), "base64").toString("utf-8");
 
   // Support both "password" (no colon) and "anything:password" forms so curl
   // users can do -u admin:mypassword or -u :mypassword without extra flags.
   const supplied = decoded.includes(":") ? decoded.split(":").slice(1).join(":") : decoded;
 
-  if (!constantTimeEqual(supplied, envPassword)) {
-    return unauthorized();
-  }
+  return constantTimeEqual(supplied, envPassword);
+}
 
-  return { ok: true };
+/** Returns { ok: true } when the request carries the correct Basic credentials,
+ *  or a ready-to-return 401 Response when they are absent or wrong. */
+export function requireAdmin(req: Request): { ok: true } | Response {
+  return isAdminAuthorized(req.headers.get("Authorization")) ? { ok: true } : unauthorized();
 }
 
 /** Timing-safe compare via SHA-256 digests — comparisons against digests of

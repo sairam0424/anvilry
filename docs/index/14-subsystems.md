@@ -851,9 +851,9 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (both or neither — sink 2 and the whole dashboard);
 `TELEMETRY_IP_SALT` (unset ⇒ every IP stored as `"anonymous"`, `with-trace.ts:157`);
 `TELEMETRY_ENABLED` — **opt-out, and only the exact string `"false"`**, read at exactly one place,
-`src/app/api/error/route.ts:92` (`.env.example:135` still describes it as disabling "all event emission",
-which is broader than the single read; the `TELEMETRY_ENABLED` row of `docs/configuration.md` states the
-narrow behaviour); `ADMIN_PASSWORD` (Basic auth for
+`src/app/api/error/route.ts:92` (`.env.example:135` used to describe it as disabling "all event emission",
+which is broader than the single read; it and the `TELEMETRY_ENABLED` row of `docs/configuration.md` now state
+the narrow, beacon-only behaviour); `ADMIN_PASSWORD` (Basic auth for
 `/admin/*` — checked first by `src/proxy.ts:21-35` and again by the page `:472`; unset ⇒ locked out for
 everyone, `admin-auth.ts:24-31`; it also gates `POST /api/admin/faq-cache/purge` through `requireAdmin`);
 `VERCEL_ENV` (corpus timestamp gate); `CRON_SECRET` (bearer for the five cron routes, `vercel.json:3-7`, all

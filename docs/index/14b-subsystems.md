@@ -1079,15 +1079,17 @@ record the outcome rather than the original open question.
   the ReadyPlayerMe wording in `avatar-mesh.tsx:13,94` and `rig.ts:47,54` (the shipped asset is an Avaturn
   export); `avatar-mesh.tsx:19-21` ("only runs when invalidate() is called (mousemove or touchmove from
   AvatarControls)" — `useAvatarIdle` also invalidates every frame, `use-avatar-idle.ts:27`);
-  `.env.example:135` ("disables all event emission" — only `/api/error` honours `TELEMETRY_ENABLED`,
-  `error/route.ts:92`); `.env.example:140` and `Makefile:313` (an unset `ADMIN_PASSWORD` "renders auth
-  instructions" / "shows setup instructions" — it is a bare 401, `admin-auth.ts:26-31`); `.env.example:116-117`
+  `.env.example:116-117`
   (an unset `GOOGLE_TTS_API_KEY` "hides" the Google engine option from settings — nothing client-side reads the
   key, `voice-settings-dialog.tsx` lists every `TtsEngine`, and `tts-google/route.ts:39` only turns the request
   into a 503); the `github-sync/route.ts:6-17` docstring ("Hourly GitHub stats cache warm", "1 GitHub API call per hour") against
   `vercel.json:5` (daily, `0 8 * * *`) and the 5400 s key TTL (`github-sync/route.ts:53`) — the idempotency
   skip (`github-sync/route.ts:26-30`) can only fire for a manual or duplicate invocation within 90 minutes of a
-  run, never on the next scheduled one.
+  run, never on the next scheduled one. (The `.env.example` comments for `TELEMETRY_ENABLED` ("disables all event
+  emission") and `ADMIN_PASSWORD` ("renders auth instructions"), and the matching `Makefile` `env-check` message,
+  used to head this list; they were corrected together with this index and now describe the real behaviour —
+  `TELEMETRY_ENABLED` only gates the `/api/error` beacon, `error/route.ts:92`; an unset `ADMIN_PASSWORD` is a bare
+  401, `admin-auth.ts:26-31`.)
 - **Stale in-file comments found in this refresh:** `next.config.ts:19-20` ("shipped as Report-Only first" —
   the header at `:114` is enforced); `src/app/search/page.tsx:6` (bundle "generated post-build by
   `make search-index`" — it is the last step of `pnpm build`); `scripts/bundle-budget.mjs:27` (the header's

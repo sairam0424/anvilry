@@ -58,14 +58,13 @@
       "preview": "BEDROCK_ACCESS_KEY_ID=BASE64_OR_RAW_ACCESS_KEY_ID"
     },
     ".env.example:135": {
-      "fp": "4d7d5a94b4fe",
+      "fp": "624a60618457",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "14-subsystems.md",
-        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "#   TELEMETRY_ENABLED=false   — disables all event emission (default: on)"
+      "preview": "#   TELEMETRY_ENABLED=false   — browser-beacon kill switch only (/api/error -> 204); default: on"
     },
     ".env.example:136": {
       "fp": "fda9ab317f5c",
@@ -82,12 +81,12 @@
       "preview": "#                               Generate: openssl rand -base64 16"
     },
     ".env.example:139": {
-      "fp": "be7f3cc365af",
+      "fp": "2bca0ecdb1c0",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "#   ADMIN_PASSWORD=...        — HTTP Basic Auth password for /admin/telemetry."
+      "preview": "#   ADMIN_PASSWORD=...        — HTTP Basic Auth for /admin/telemetry + the FAQ-cache purge route."
     },
     ".env.example:14": {
       "fp": "fc16a758db44",
@@ -97,13 +96,12 @@
       "preview": "BEDROCK_SECRET_ACCESS_KEY=BASE64_OR_RAW_SECRET_ACCESS_KEY"
     },
     ".env.example:140": {
-      "fp": "3aca01d02ce6",
+      "fp": "5eaa5a762697",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "#                               When unset the page renders auth instructions."
+      "preview": "#                               When unset, /admin/* is locked out (401); no default password."
     },
     ".env.example:15": {
       "fp": "db12ce48b2e3",
@@ -2314,12 +2312,12 @@
       "preview": "@printf \"  FAQ_CACHE_ENABLED           = %s\\n\" \"$${FAQ_CACHE_ENABLED:-true (default) — set to 'false"
     },
     "Makefile:313": {
-      "fp": "807248e5693d",
+      "fp": "c9ca41fd12d4",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "14b-subsystems.md"
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "@printf \"  ADMIN_PASSWORD              = %s\\n\" \"$(if $(ADMIN_PASSWORD),SET (masked),unset — /admin/t"
+      "preview": "@printf \"  ADMIN_PASSWORD              = %s\\n\" \"$(if $(ADMIN_PASSWORD),SET (masked),unset — /admin/*"
     },
     "Makefile:319": {
       "fp": "19fbd641db6d",

@@ -64,9 +64,9 @@ No file in this scope exports `runtime`. Route handlers therefore run on the **N
 default). `src/app/api/mcp/[transport]/route.ts:6-8` records that `export const runtime = "nodejs"` was
 *removed* because `cacheComponents` rejects the export's presence, and that Node remains what runs.
 `next.config.ts:183` sets `cacheComponents: true`, which is why every `revalidate` / `dynamic` segment
-export in this scope was deleted (see the in-file comments cited below). `src/proxy.ts` is the one
-Edge-runtime file (per its own docblock at `src/proxy.ts:5` and `CLAUDE.md`); no Node-proxy opt-in exists
-in `next.config.ts` (verified absent).
+export in this scope was deleted (see the in-file comments cited below). `src/proxy.ts` runs on the
+Node.js runtime too — Next 16's default for proxies (per its own docblock at `src/proxy.ts:7-9` and
+`CLAUDE.md`), so nothing in `next.config.ts` needs to opt it in.
 
 The shared per-IP limiter is `checkRateLimit` from `src/lib/rate-limit.ts` —
 `Ratelimit.slidingWindow(8, "60 s")`, prefix `anvilry:chat` (`src/lib/rate-limit.ts:19-26`), **fails open**

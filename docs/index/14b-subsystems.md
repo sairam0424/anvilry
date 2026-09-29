@@ -70,17 +70,25 @@ GET /admin/telemetry
                                           the request is already authenticated upstream
 ```
 
-`sha256Hex` is `crypto.subtle.digest("SHA-256", …)` → hex (`src/proxy.ts:26-31`); the final comparison is
-a plain `!==` of two digests. The docblock at `:12-20` states plainly that this is a **first filter, not a
-constant-time gate**. Credentials are decoded with `atob` (`:56`, a Web API, byte-oriented), and both
-`password` and `username:password` forms are accepted (everything after the first colon).
+The proxy body itself does no hashing or decoding: it calls `isAdminAuthorized(req.headers.get("Authorization"))`
+and returns the 401 challenge when that is false (`src/proxy.ts:25-35`). The compare lives in
+`src/lib/admin-auth.ts`: SHA-256 digests of both sides checked with `timingSafeEqual`
+(`src/lib/admin-auth.ts:55-59`). The proxy docblock (`src/proxy.ts:15-19`) calls the proxy a **first
+filter, not the only gate** — the page re-checks. Credentials are decoded with
+`Buffer.from(…, "base64").toString("utf-8")` (`src/lib/admin-auth.ts:37`, which never throws), and both
+`password` and `username:password` forms are accepted (everything after the first colon,
+`src/lib/admin-auth.ts:39-41`).
 
-**Why both implementations exist.** `src/lib/admin-auth.ts` is the Node twin: `requireAdmin(req)` using
-`node:crypto` `createHash` + `timingSafeEqual` on the digests (`:57-61`), with `WWW-Authenticate` +
-`Cache-Control: no-store` on deny (`:63-71`). `src/proxy.ts:11-13` states it is **intentionally not
-imported** because the Edge runtime lacks `node:crypto`. At v3.4.2 `admin-auth.ts` has **zero runtime
-importers** — the Edge proxy is the live gate; `admin-auth.ts` is guarded by
-`src/lib/admin-auth.test.ts` (11 assertions) but unwired.
+**One implementation, three call sites.** `src/lib/admin-auth.ts` holds the only credential check:
+`isAdminAuthorized(header)` (`src/lib/admin-auth.ts:24-44`) using `node:crypto` `createHash` +
+`timingSafeEqual` on the digests (`src/lib/admin-auth.ts:55-59`); `requireAdmin(req)` wraps it
+(`src/lib/admin-auth.ts:48-50`) and, on deny, returns 401 with `WWW-Authenticate` +
+`Cache-Control: no-store` (`src/lib/admin-auth.ts:62-68`). Next 16 proxies run on Node.js, so
+`src/proxy.ts` imports it directly (`src/proxy.ts:4`); the telemetry page
+(`src/app/admin/telemetry/page.tsx:15`) and the FAQ-cache purge handler
+(`src/app/api/admin/faq-cache/purge/route.ts:1`) call it too. It is guarded by
+`src/lib/admin-auth.test.ts`, with contract tests for the proxy gate (`src/proxy.test.ts`) and the page
+(`src/app/admin/telemetry/page.test.tsx`).
 
 ### Flow — the cron gate
 
@@ -157,9 +165,8 @@ the current total with `today: 0` rather than a 429 (`:44-49`).
 
 | Failure | Mechanism |
 |---|---|
-| `/admin` open | `src/proxy.ts` not executing (matcher edited, file moved) — the page itself checks nothing (`admin/telemetry/page.tsx:425-426`). |
-| `/admin` locked out entirely | `ADMIN_PASSWORD` unset — deliberate (`proxy.ts:38-43`). |
-| Non-Latin-1 password fails | `atob` is byte-oriented (`proxy.ts:56`). |
+| `/admin` open | Both layers gone: the page's own `isAdminAuthorized` → `notFound()` guard removed (`src/app/admin/telemetry/page.tsx:467-472`) **and** `src/proxy.ts` not executing (matcher edited, file moved). The proxy failing alone fails closed — the page still 404s without credentials. |
+| `/admin` locked out entirely | `ADMIN_PASSWORD` unset — deliberate: `isAdminAuthorized` returns false (`src/lib/admin-auth.ts:26-31`), so the proxy answers 401 and the page calls `notFound()`. |
 | All five crons 401 | `CRON_SECRET` unset — deliberate fail-closed. |
 | Every MDX page crashes | `'unsafe-eval'` removed from `script-src`. |
 | Voice permanently broken in production | The Chrome speech WebSocket host removed from `connect-src`. |
@@ -719,7 +726,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:83-106` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
 | Change telemetry retention | `src/lib/telemetry/emit.ts:42` (`SEVEN_DAYS_MS`) | Also `scripts/replay-trace.mjs:64`, which computes its own `since` from the same window. |
 | Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:449-459`; every fetch helper must stay fail-soft (`:22-38,203-212`). Warn thresholds are inline magic numbers (`:545,567,689,708,718-719`). |
-| Change `/admin` auth | `src/proxy.ts:22-79` | `src/lib/admin-auth.ts` is the unwired Node twin — keep them in agreement or `/admin` can pass one and fail the other (`proxy.ts:11-20`). The page itself checks nothing. |
+| Change `/admin` auth | `src/lib/admin-auth.ts:24-44` (the shared check); the gates `src/proxy.ts:25-35` and `src/app/admin/telemetry/page.tsx:467-472` | One `isAdminAuthorized` serves the proxy, the page and `requireAdmin` (`src/lib/admin-auth.ts:48-50`), so change the compare once, there. The proxy is the first filter (401 challenge); the page re-checks and 404s. Tests: `src/lib/admin-auth.test.ts`, `src/proxy.test.ts`, `src/app/admin/telemetry/page.test.tsx`. |
 | Add an authenticated route | `src/proxy.ts:22-24` (`config.matcher`) | Currently exactly `["/admin/:path*"]`. |
 | Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:156-157` now lists all five and records that they are all fail-closed; it previously listed one. |
 | Change the CSP or a security header | `next.config.ts:37-95` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41`. HSTS is deliberately absent. |

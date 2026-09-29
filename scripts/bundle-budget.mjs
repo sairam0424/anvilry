@@ -36,8 +36,8 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 
 const STATS = ".next/diagnostics/route-bundle-stats.json";
 
-/** 16 routes today. Fewer means Next changed the artifact's shape and this gate is lying. */
-const MIN_ROUTES = 16;
+/** 17 routes today: the 16 src/app page.tsx routes plus /_not-found. Fewer means Next changed the artifact's shape and this gate is lying. */
+const MIN_ROUTES = 17;
 
 /**
  * Ceiling, not a baseline. Largest today is `/` at 1,322,132 B (was 1,220,794 B before the

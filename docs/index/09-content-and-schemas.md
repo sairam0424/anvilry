@@ -368,9 +368,8 @@ Article records point at slugs that do not:
 
 Nothing validates this: `linkedNote` is a bare `s.string()` (`velite.config.ts:105`), and grep
 across `src/**/*.test.ts*` finds no test referencing `linkedNote`. The consumers build the href
-unconditionally — `src/components/article-card.tsx:18`
-(`if (a.linkedNote) return { href: \`/notes/${a.linkedNote}\` … }`),
-`src/components/article-group-card.tsx:21-22`, `src/app/articles/page.tsx:152-153`, and the
+unconditionally — `src/components/article-group-card.tsx:21-22`,
+`src/app/articles/page.tsx:152-153`, and the
 `redirect()` at `src/app/articles/[slug]/page.tsx:71-72` — all gated on `NOTES_ENABLED`.
 Because `NOTES_ENABLED` defaults to **false** (`src/lib/writing-flags.ts:22`), those three
 cards currently fall back to `externalUrl`, which all three have; the dangling links only become

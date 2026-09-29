@@ -283,7 +283,7 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 ### `src/lib/utils.ts`
 - **Role:** Single 3-line helper. Trivial.
 - **Exports:** `cn(...inputs: ClassValue[])` — `twMerge(clsx(inputs))` (`:5-7`).
-- **Consumed by:** `app/resume/page.tsx`, `game/terminal/terminal.tsx`, `ui/button.tsx`, `ui/empty-state.tsx`, `ui/section.tsx`, `ui/skeleton.tsx`, `view-switcher.tsx`.
+- **Consumed by:** `app/resume/page.tsx`, `game/terminal/terminal.tsx`, `ui/section.tsx`, `ui/skeleton.tsx`, `view-switcher.tsx`.
 
 ## Test guards (which test file covers which module)
 

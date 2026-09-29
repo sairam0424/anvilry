@@ -28,8 +28,7 @@ version: v3.6.0
 | `src/components/mobile-nav.tsx` | `< sm` drawer with focus trap, Escape close, focus restore | `MobileNav` |
 | `src/components/command-palette.tsx` | ⌘K/Ctrl-K cmdk palette: views, nav, actions, voice settings, work/project items, MRU recents | `CommandPalette` |
 | `src/components/mdx-content.tsx` | Compiles the Velite `code` string into a React component via `new Function` (the CSP `unsafe-eval` driver) | `MDXContent` |
-| `src/components/json-ld.tsx` | Eight schema.org JSON-LD blocks with `</`-escaping serialiser | `PersonJsonLd`, `BreadcrumbJsonLd`, `SoftwareSourceCodeJsonLd`, `WebSiteJsonLd`, `CreativeWorkJsonLd`, `FaqJsonLd`, `ArticleJsonLd`, `ProfilePageJsonLd` |
-| `src/components/article-card.tsx` | Single-article card with `linkedNote` → external → internal href resolution. **No importers found.** | `ArticleCard` |
+| `src/components/json-ld.tsx` | Seven schema.org JSON-LD blocks with `</`-escaping serialiser | `PersonJsonLd`, `BreadcrumbJsonLd`, `SoftwareSourceCodeJsonLd`, `WebSiteJsonLd`, `CreativeWorkJsonLd`, `FaqJsonLd`, `ProfilePageJsonLd` |
 | `src/components/article-group-card.tsx` | Deduped multi-platform article card ("also on" badge buttons) | `ArticleGroupCard` |
 | `src/components/note-card.tsx` | Note card with inkforge provenance badge | `NoteCard` |
 | `src/components/project-card.tsx` | OSS project card (RSC) with commit count / group fallback | `ProjectCard` |
@@ -52,8 +51,6 @@ version: v3.6.0
 | `src/components/ui/reveal.tsx` | Scroll-into-view reveal with mount + reduced-motion static fallback | `Reveal` |
 | `src/components/ui/skeleton.tsx` | Base skeleton + 4 composite shapes + full-viewport view-transition fallback | `Skeleton`, `SkeletonStatCard`, `SkeletonCard`, `SkeletonIframe`, `SkeletonMarkdownLine`, `SkeletonViewTransition` |
 | `src/components/ui/ink-transition.tsx` | Raw WebGL2 fBm ink-burn overlay + module-level `inkTransitionRef` handle | `InkTransitionHandle` (type), `inkTransitionRef` (mutable let), `InkTransition` |
-| `src/components/ui/button.tsx` | 3-variant × 3-size button primitive. **No importers found.** | `Button` |
-| `src/components/ui/empty-state.tsx` | Centered empty-state card. **No importers found.** | `EmptyState` |
 | `src/components/scroll/jump-to-latest.tsx` | Presentational "Jump to latest" pill (WCAG 2.2.2 resume control for autoscroll) | `JumpToLatest` |
 
 ---
@@ -179,7 +176,7 @@ Two named transition groups exist in the tree:
 
 ### `src/components/json-ld.tsx`
 - **Role:** All schema.org structured-data blocks (RSC — no `"use client"`).
-- **Exports:** `PersonJsonLd`, `BreadcrumbJsonLd({ items })`, `SoftwareSourceCodeJsonLd({ name, description, url, codeRepository, tech })`, `WebSiteJsonLd`, `CreativeWorkJsonLd({ name, description, url, keywords })`, `FaqJsonLd`, `ArticleJsonLd({ title, description, url, datePublished, dateModified?, tags? })`, `ProfilePageJsonLd`.
+- **Exports:** `PersonJsonLd`, `BreadcrumbJsonLd({ items })`, `SoftwareSourceCodeJsonLd({ name, description, url, codeRepository, tech })`, `WebSiteJsonLd`, `CreativeWorkJsonLd({ name, description, url, keywords })`, `FaqJsonLd`, `ProfilePageJsonLd`.
 - **Reads / depends on:** `@/lib/profile` (`profile`, `skills`), `@/lib/personal` `now`.
 - **Consumed by:** `src/app/layout.tsx` (Person, WebSite, Faq), `src/app/projects/[slug]/page.tsx`, `src/app/articles/[slug]/page.tsx`, `src/app/notes/[slug]/page.tsx`, `src/app/work/[slug]/page.tsx`, `src/app/about/page.tsx`.
 - **Behaviour notes:** Every block emits through `safeJsonLd`, which is `JSON.stringify(data).replace(/<\//g, "<\\/")` (`:8-10`) — `JSON.stringify` alone does not escape `</script>`, which would break out of the script tag (`:4-7`). `isOpenToWork` is derived from `now.focus.some((f) => /open to (new )?roles?/i.test(f))` (`:16`) and conditionally adds a `seeks: { @type: "Demand" }` property (`:38`) — removing the "open to new roles" line from `personal.ts` drops the schema signal automatically. `PROGRAMMING_LANGUAGES` is a 19-member allowlist (`:73-76`); a `tech` entry outside it becomes a keyword rather than a `programmingLanguage` (`:93`, `:102-103`). `CreativeWorkJsonLd` deliberately omits `aggregateRating` (Google's self-serving-review policy, `:141-142`).
@@ -192,12 +189,6 @@ Two named transition groups exist in the tree:
 - **Consumed by:** `src/app/articles/page.tsx`, `src/components/home/writing-preview.tsx`.
 - **Behaviour notes:** `resolveCanonicalHref` cascade (`:18-30`): `linkedNote` **only if `NOTES_ENABLED`** → `canonical.externalUrl` → first `externalPlatforms[].externalUrl` → `canonical.url`. Only external hrefs get `target="_blank" rel="noopener noreferrer"` (`:46`). Tags are sliced to 3 (`:91`).
 - **Gotchas / invariants:** Secondary platform badges are `<button>` elements calling `window.open` with `stopPropagation` + `preventDefault`, **not** `<a>` — nesting an anchor inside the card's outer `<Link>` would be invalid HTML (`:55-73`).
-
-### `src/components/article-card.tsx`
-- **Role:** Single-article card (not the group variant).
-- **Exports:** `ArticleCard` (component) — props `{ article: Article }`.
-- **Consumed by:** **No importers found** — grep for `ArticleCard` across `src/` and `e2e/` returns only its own definition and a stale mention in `platform-badge.tsx:3`. Currently dead-but-compiled.
-- **Behaviour notes:** `resolveHref` (`:17-21`): `linkedNote` → `/notes/${linkedNote}` (internal, **no** `NOTES_ENABLED` check, unlike the group card) → non-native + `externalUrl` → external → `a.url`. `fmt` formats dates with `timeZone: "UTC"` to avoid relative drift (`:10-15`).
 
 ### `src/components/note-card.tsx`
 - **Role:** Note card.
@@ -321,30 +312,8 @@ Two named transition groups exist in the tree:
   - The ink path only runs when `NEXT_PUBLIC_INK_TRANSITION === "true"` (`view-context.tsx:99`); otherwise the component mounts but is never invoked.
   - The docblock lists a `prefers-reduced-motion: no-preference` gate (`:22`) but that check lives in `view-context.tsx:80-92`, not in this file.
 
-### `src/components/ui/button.tsx`
-- **Role:** Button primitive.
-- **Exports:** `Button` — props `ComponentPropsWithoutRef<"button"> & { variant?: "primary" | "secondary" | "ghost"; size?: "sm" | "md" | "lg" }`. Defaults: `variant = "secondary"`, `size = "md"` (`:28-29`).
-- **Consumed by:** **No importers found** — grep for `ui/button`, `<Button` and `from "@/components/ui/button"` across `src/` and `e2e/` returns only this file.
-- **Behaviour notes:** Variant classes (`:7-14`): `primary` = `bg-accent text-bg-base hover:bg-accent-strong`; `secondary` = `border border-border-strong text-fg hover:bg-bg-elevated`; `ghost` = `text-fg-muted hover:text-fg hover:bg-bg-surface`. All three set `focus-visible:ring-accent`. Size classes (`:16-20`): `sm` = `px-3 py-1.5 text-xs`, `md` = `px-4 py-2 text-sm`, `lg` = `px-6 py-3 text-base`. Always-on base: `inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors`, a `focus-visible:ring-2 ring-offset-1 ring-offset-bg-base` block, and `disabled:pointer-events-none disabled:opacity-40` (`:40-42`). Merged with `cn` (clsx + tailwind-merge), so a caller `className` wins conflicts.
-
-### `src/components/ui/empty-state.tsx`
-- **Role:** Centered empty-state card.
-- **Exports:** `EmptyState` — props `{ icon?: ReactNode; heading: string; body?: string; action?: ReactNode; className?: string }`.
-- **Consumed by:** **No importers found** — grep for `EmptyState` across `src/` returns only this file.
-- **Behaviour notes:** Base `card-surface flex flex-col items-center gap-3 px-8 py-12 text-center` (`:16`). `icon` is wrapped `aria-hidden="true"` (`:20-24`); `heading` renders as an `<h3>`; `body` is capped at `max-w-xs`; `action` gets an `mt-2` wrapper. All three optionals render only when truthy.
-
-### `src/components/scroll/jump-to-latest.tsx`
-- **Role:** Presentational "Jump to latest" pill for the autoscroll state machine.
-- **Exports:** `JumpToLatest` — props `{ show: boolean; onClick: () => void; label?: string }` (default label `"Jump to latest"`).
-- **Consumed by:** `src/components/ask-portfolio.tsx`, `src/components/chat/chat-messages.tsx`.
-- **Behaviour notes:** Returns `null` when `!show` (`:28`). Outer wrapper is `pointer-events-none absolute inset-x-0 bottom-3 z-10`, with the button re-enabling `pointer-events-auto` (`:30-31`) so the surrounding strip never eats transcript clicks.
-- **Gotchas / invariants:** Purely presentational — visibility and the snap are owned by the autoscroll hook; the caller's `onClick` is expected to call `scrollToBottom()` **and** move focus back to the transcript/input (`:19-27`). Documented as the WCAG 2.2.2 (Pause, Stop, Hide, Level A) resume mechanism for the auto-updating transcript, with a 36px height + 44px tap area via padding (2.5.8 AA) — the parent must be `relative` (`:5-18`).
-
----
-
 ## Coverage
 
-- `src/components/article-card.tsx`
 - `src/components/article-group-card.tsx`
 - `src/components/command-palette.tsx`
 - `src/components/copy-button.tsx`
@@ -375,8 +344,6 @@ Two named transition groups exist in the tree:
 - `src/components/home/resume-view.tsx`
 - `src/components/home/testimonials.tsx`
 - `src/components/home/writing-preview.tsx`
-- `src/components/ui/button.tsx`
-- `src/components/ui/empty-state.tsx`
 - `src/components/ui/ink-transition.tsx`
 - `src/components/ui/reveal.tsx`
 - `src/components/ui/section.tsx`
@@ -387,5 +354,4 @@ Two named transition groups exist in the tree:
 
 ## UNVERIFIED
 
-- Whether `ArticleCard`, `Button`, and `EmptyState` are intentionally-retained primitives or dead code — grep finds no importers, but intent is not recorded anywhere in the repo.
 - Whether the stale comments noted above (`open-to-work-banner.tsx:6-8` "hidden via CSS (h-0)"; `home/resume-view.tsx:14-16` "ViewEscapeHatch auto-rendered by view-router") reflect removed behaviour or were never accurate. The current code does neither.

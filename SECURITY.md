@@ -2,7 +2,7 @@
 
 ## Scope
 
-Anvilry is a personal engineering portfolio. The attack surface is intentionally small — a Next.js frontend with three API routes (`/api/chat`, `/api/tts`, `/api/transcribe`) sitting behind Upstash rate limiting on Vercel.
+Anvilry is a personal engineering portfolio. The attack surface is intentionally small — a Next.js frontend whose cost-bearing API routes (`/api/chat`, `/api/tts`, `/api/tts-google`, `/api/transcribe`) and error beacon (`/api/error`) sit behind per-class Upstash rate limiting on Vercel, alongside a public read-only MCP server (`/api/mcp/mcp`), Basic-auth admin routes (`/admin/telemetry`, `POST /api/admin/faq-cache/purge`) and `CRON_SECRET`-gated cron routes.
 
 In scope for responsible disclosure:
 

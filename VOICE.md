@@ -144,7 +144,7 @@ If `BEDROCK_ACCESS_KEY_ID` and `BEDROCK_SECRET_ACCESS_KEY` are configured:
 - **AWS Polly TTS** (higher quality) — toggle via the command palette (**"Use higher-quality voice (Polly)"**). Routes `/api/tts` requests, caches in-memory, falls back to browser on any error. Needs IAM `polly:SynthesizeSpeech`.
 - **AWS Transcribe STT** (private, enables Firefox) — toggle via the palette (**"Mic: use private transcription (AWS)"**). Routes `/api/transcribe` requests, returns the final transcript, falls back to browser on error. Needs IAM `transcribe:StartStreamTranscription`.
 
-Both routes are optional, fail-closed (HTTP non-2xx → browser fallback), per-IP rate-limited (Upstash, 8/min shared with chat), and require no new environment variables (they reuse the Bedrock creds + region).
+Both routes are optional, fail-closed (HTTP non-2xx → browser fallback), per-IP rate-limited (Upstash, 8/min on their own `voice` bucket, separate from chat), and require no new environment variables (they reuse the Bedrock creds + region).
 
 ### Key Properties
 
@@ -155,7 +155,7 @@ Both routes are optional, fail-closed (HTTP non-2xx → browser fallback), per-I
 | **STT engines** | `"browser"` (Web Speech API, free) \| `"transcribe"` (AWS Transcribe, optional) | `src/lib/voice-settings-context.tsx` |
 | **TTS engines** | `"browser"` (speechSynthesis, free) \| `"polly"` (AWS Polly Neural, optional) | `src/lib/voice-settings-context.tsx` |
 | **Talk surfaces** | `"modal"` (default overlay) \| `"view"` (optional 5th view) | `src/lib/voice-settings-context.tsx` |
-| **Rate limit** | 8 requests per minute per IP (shared: `/api/chat`, `/api/transcribe`, `/api/tts`) | `src/lib/rate-limit.ts` |
+| **Rate limit** | 8 requests per minute per IP, per route class: `/api/tts`, `/api/tts-google` and `/api/transcribe` share the `voice` bucket; `/api/chat` has its own `chat` bucket | `src/lib/rate-limit.ts` |
 | **Browser support** | Chrome/Edge/Safari (full); Firefox (degrades to text or uses AWS Transcribe) | `src/components/chat/use-speech-recognition.ts` |
 | **Polly TTS max length** | 600 chars per request (hard safety cut) | `src/app/api/tts/route.ts` |
 | **Transcribe max audio** | 5 MiB (~2.6 min @ 16 kHz mono PCM) | `src/app/api/transcribe/route.ts` |
@@ -494,7 +494,7 @@ The **Voice feature is entirely optional and defaults to the free browser path.*
 - **Fails closed:** `503` if unconfigured / `502` on error → client silently falls back to `speechSynthesis`.
 - **Caching:** in-process LRU (`Map`, max 100 entries) dedupes identical sentences (repeats cost zero); `Cache-Control: private, max-age=3600` + `X-TTS-Cache: hit/miss`.
 - **Cost:** free tier 1M chars/month for the first 12 months; ~$16/1M chars after. Negligible at recruiter volumes (cached + rate-limited).
-- **Rate limit:** shared with chat (Upstash, 8 req/min per IP).
+- **Rate limit:** the `voice` bucket (Upstash, 8 req/min per IP), separate from chat.
 
 ### Optional Upgrade 2 — AWS Transcribe Streaming (Private STT)
 
@@ -503,7 +503,7 @@ The **Voice feature is entirely optional and defaults to the free browser path.*
 - **Fails closed:** `503` if unconfigured / `502` on error → client silently falls back to `SpeechRecognition`.
 - **Audio limits:** max 5 MiB per request (~2.6 min of 16 kHz mono PCM), chunked to Transcribe in 8 KB frames.
 - **Cost:** ~$0.024/min of audio. Negligible at recruiter volumes.
-- **Rate limit:** shared with chat (Upstash, 8 req/min per IP).
+- **Rate limit:** the `voice` bucket (Upstash, 8 req/min per IP), separate from chat.
 
 ### Enabling the Upgrades
 
@@ -584,12 +584,12 @@ curl -X POST http://localhost:3000/api/transcribe --data-binary @recording.pcm
 # 200 + {"transcript":"..."} = success | 503/502 = falls back to browser | 429 = rate-limited | 413 = audio > 5 MiB
 ```
 
-### Rate Limiting (Shared Across Chat + Voice)
+### Rate Limiting (Per Route Class, Separate From Chat)
 
-Both routes use the same Upstash limiter (`src/lib/rate-limit.ts`):
+Every voice route (`/api/tts`, `/api/tts-google`, `/api/transcribe`) charges the `voice` class via `checkRateLimit(req, "voice")` (`src/lib/rate-limit.ts`); `/api/chat` uses the `chat` class and `/api/error` the `beacon` class, so voice traffic cannot 429 chat:
 
 ```typescript
-limiter: Ratelimit.slidingWindow(8, "60 s")  // 8 requests / 60s / IP
+limiter: Ratelimit.slidingWindow(8, "60 s")  // 8 requests / 60s / IP, one independent limiter per class
 ```
 
 **Fails open:** if `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are unset, the limiter is disabled and all requests pass; it activates automatically once the env vars are deployed — no code change.
@@ -733,7 +733,7 @@ Idioms: `NODE_ENV=test` forces React's test-only `act`; `tsconfigPaths: true` re
 1. Extend the type: `export type TtsEngine = "browser" | "polly" | "eleven-labs";`
 2. Update the guard in `src/lib/voice-settings-context.tsx`: `isTtsEngine(v) => v === "browser" || v === "polly" || v === "eleven-labs"`.
 3. Add engine logic in `speak()`/`speakChunk()` (fetch audio, play via `HTMLAudioElement` like Polly).
-4. Create the route `src/app/api/tts-elevenlabs/route.ts` — same contract as `/api/tts` (`POST { text }` → `audio/mpeg`), fail-closed (errors → browser TTS), rate-limited via `checkRateLimit(req)`.
+4. Create the route `src/app/api/tts-elevenlabs/route.ts` — same contract as `/api/tts` (`POST { text }` → `audio/mpeg`), fail-closed (errors → browser TTS), rate-limited via `checkRateLimit(req, "voice")` (the class argument is required).
 5. Add a palette toggle in `command-palette.tsx` (UI is already engine-agnostic).
 6. Add a `useStt`-style test case proving fallback to browser TTS on error.
 
@@ -870,7 +870,7 @@ Three engines, all server-proxied (CSP-safe):
   - Polly **Generative** — premium tier (Stephen, Ruth, Danielle). $30/M with 100k chars/mo free for year 1. Reachable ONLY via user-pick on a Generative-supported voice; unknown voiceId or tier mismatches reject 400 (impossible to send Joanna+generative).
   - SSML prosody (`<prosody rate>`, `<prosody pitch>`, `<break time>`) supported on Neural; rejected on Generative (the hook silently strips character knobs on Generative).
 
-- **Google Cloud TTS** (`/api/tts-google`) — Chirp 3 HD voices. **Permanent free tier 1M chars/mo** (vs Polly's 12-month limit). Set `GOOGLE_TTS_API_KEY` to enable; when unset, the engine option is hidden from settings and the route returns 503 (client falls back to Polly → browser). Uses the REST API directly (not `@google-cloud/text-to-speech` SDK) to keep the Vercel function bundle small.
+- **Google Cloud TTS** (`/api/tts-google`) — Chirp 3 HD voices. **Permanent free tier 1M chars/mo** (vs Polly's 12-month limit). Set `GOOGLE_TTS_API_KEY` to enable; when unset, the route returns 503 and the client speaks the rest of the answer with the browser voice (there is no Google → Polly hop, and nothing hides the engine option from settings). Uses the REST API directly (not `@google-cloud/text-to-speech` SDK) to keep the Vercel function bundle small.
 
 ### Surfaces
 

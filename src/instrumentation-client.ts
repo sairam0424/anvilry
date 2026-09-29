@@ -44,8 +44,8 @@
 // re-points a bundler config at it from the server, the import simply no-ops instead of
 // crashing the build with "navigator is not defined".
 if (typeof window !== "undefined") {
-  // web-vitals field data → Vercel Runtime Logs (grep "[vitals]"). No Redis, no new
-  // API route — just structured console output that closes the lab-vs-field gap.
+  // web-vitals field data → the visitor's browser console, grep "[vitals]" (NOT Vercel Runtime
+  // Logs: nothing ships it server-side). No Redis, no new API route — just console output.
   // Lazy import: keeps the web-vitals bundle (~4KB) out of the critical path.
   import("web-vitals").then(({ onLCP, onINP, onCLS }) => {
     const report = ({ name, value, rating }: { name: string; value: number; rating: string }) =>

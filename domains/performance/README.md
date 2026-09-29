@@ -48,7 +48,7 @@ win is already banked without them, both are doc-labeled "not recommended for pr
       EXT_texture_webp at UNCHANGED resolution. Draco would not have helped.
 - [ ] Add web-vitals collection to Vercel Analytics dashboard (already has `@vercel/speed-insights`)
 - [ ] Check LCP on `/?view=gamified` — 3D canvas should not be in critical path. The *bundle* half of
-      this is now proven every CI run (`WebGLRenderer` in 0 of 16 routes' first-load sets); what is
+      this is now proven every CI run (`WebGLRenderer` in 0 of 17 route records' first-load sets); what is
       left is the runtime measurement after the view switch.
 - [x] ~~A/B the R3F twin-chunk lever on 16.3.0~~ — cancelled; resolved by the upgrade alone (#120)
 - [x] ~~Coalesce per-chunk writes in `src/components/chat/use-chat.ts`~~ — done in **#122**
@@ -57,19 +57,19 @@ win is already banked without them, both are doc-labeled "not recommended for pr
 The first guard is now **ENFORCED in CI**. Each of the rest still fails *silently* — nothing
 type-checks or test-fails when they regress, the bundle just quietly doubles.
 
-- **✅ ENFORCED: per-route first-load budget + three.js-stays-lazy.** `.github/workflows/ci.yml:110-111`
-  runs `node scripts/bundle-budget.mjs` immediately after the "Build" step inside the existing `e2e`
-  job, so it rides the build that already happens — no second build. It reads
-  `.next/diagnostics/route-bundle-stats.json`, which `next build` writes with no flag but **only under
-  Turbopack**, and fails the job if either: (a) any route's `firstLoadUncompressedJsBytes` exceeds
-  **1,285,000 B** (`scripts/bundle-budget.mjs:45`; largest today is `/` at **1,220,794 B** — ~5%
-  headroom, and the on-disk sum of that route's chunk paths is the same 1,220,794 B, so it is a
-  measurement not a model); or (b) the `WebGLRenderer` marker (`scripts/bundle-budget.mjs:57`) turns up
-  in any route's first-load chunk set — today it sits in exactly one chunk, **897,249 B**, present in
-  **0 of 16** routes' first-load sets. A missing or malformed artifact **exits 1 by design**: "I could
-  not measure" must be RED, which is exactly what the deleted `bundle-analysis.yml` got wrong for its
-  entire 222-run life (211 green, 11 red). There is deliberately no `continue-on-error` and no `if-no-files-found` — do not
-  add them. **This does NOT catch a duplicate `three` copy that stays off the critical path** — that
+- **✅ ENFORCED: per-route first-load budget + three.js-stays-lazy.** The "Bundle budget" step of the `e2e` job in `.github/workflows/ci.yml`
+  runs `node scripts/bundle-budget.mjs` immediately after the "Build" step, so it rides the build that already happens — no second build.
+  It reads `.next/diagnostics/route-bundle-stats.json`, which `next build` writes with no flag but **only under Turbopack**, and fails the job if any of:
+  (a) the artifact has fewer than `MIN_ROUTES` = **17** records (the 16 `src/app` page routes plus `/_not-found`);
+  (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **1,336,000 B** (1,285,000 B at v3.6.0; each raise is recorded with measured
+  before/after bytes in the script's docblock, which quotes `/` at 1,333,521 B when it was last raised — small, baseline-dependent headroom, so re-measure
+  with `pnpm build && node scripts/bundle-budget.mjs` instead of quoting a percentage); or
+  (c) the `WebGLRenderer` marker (`LAZY_MARKER`) turns up in any route's first-load chunk set — today it sits in exactly one chunk, **897,249 B**,
+  present in **0 of 17** route records' first-load sets. A missing or malformed artifact **exits 1 by design**: "I could not measure" must be RED,
+  which is exactly what the deleted `bundle-analysis.yml` got wrong for its entire 222-run life (211 green, 11 red). There is deliberately no
+  `continue-on-error` and no `if-no-files-found` — do not add them. The step also fails if a listed first-load chunk is missing on disk.
+  **This does NOT catch a duplicate `three` copy that stays off the critical path** — the marker scan
+  only looks at first-load chunks, so that check
   remains the manual grep below.
 - **R3F dedup depends on ONE resolved `three` version.** After any `three`/fiber/drei bump:
   `find node_modules/.pnpm -maxdepth 1 -name "three@*"` should show a single live version, and
@@ -86,13 +86,13 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   numbers, not the per-branch figures above, when checking for regression. Note the raw
   `grep -lE "react-three|THREE\." | wc -l` metric below returns 5 (chunks REFERENCING R3F) — that is
   not the copy count. **Use that exact two-alternative pattern**, which is the one every KB figure
-  here was counted with (`next.config.ts:136-138`); the narrower `grep -l "react-three"` returns 2 on
+  here was counted with (the "R3F TWIN-CHUNK" note in `next.config.ts`); the narrower `grep -l "react-three"` returns 2 on
   a current build and will read as a phantom regression. The copy count is
   `grep -l "WebGLRenderer" | wc -l`, which must be 1.
   **Every KB figure in this section is a TURBOPACK measurement** — Turbopack is what `next build`
   runs and therefore what ships. None of them came from the `@next/bundle-analyzer` treemap, and the
   two are not comparable: the shipped single three.js chunk is **897,249 B** (876.2 KiB, matching
-  `next.config.ts:127-149`), which the CI gate re-verifies every run.
+  the "R3F TWIN-CHUNK" note in `next.config.ts`), which the CI gate re-verifies every run.
 
 ## Evidence & analysis
 *(link signals and docs here as they accumulate)*
@@ -100,17 +100,17 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
 ## Metrics
 - **Bundle size — what actually ships (authoritative):** `.next/diagnostics/route-bundle-stats.json`,
   written by a bare `pnpm build` with no flag and no analyzer. Per-route records keyed
-  `route` / `firstLoadUncompressedJsBytes` / `firstLoadChunkPaths`; 16 routes today. Read by
+  `route` / `firstLoadUncompressedJsBytes` / `firstLoadChunkPaths`; 17 records today (16 page routes + `/_not-found`). Read by
   `scripts/bundle-budget.mjs`, which prints every route sorted descending, so `pnpm build && node
   scripts/bundle-budget.mjs` *is* the metric. Emitted **only under Turbopack** — a `--webpack` build
   produces no such file.
-- **Bundle size — module attribution (LOCAL tool, not a metric):** `pnpm analyze` (`package.json:12`
-  = `velite --clean && ANALYZE=true next build --webpack`) writes
+- **Bundle size — module attribution (LOCAL tool, not a metric):** `pnpm analyze` (the `analyze` script
+  in `package.json` = `velite --clean && ANALYZE=true next build --webpack`) writes
   `.next/analyze/{client,edge,nodejs}.html`. The `--webpack` flag is **required, not optional**:
   `next build` in Next 16 is Turbopack, and `@next/bundle-analyzer` is webpack-only — under Turbopack
   it prints "not compatible with Turbopack builds, no report will be generated" and produces nothing
   while still exiting 0. (This is why the old `ANALYZE=true pnpm build` instruction was worse than
-  no instruction: it looked like it worked.) The analyzer is still wired at `next.config.ts:5-7` and
+  no instruction: it looked like it worked.) The analyzer is still wired at the top of `next.config.ts` (`withBundleAnalyzer`) and
   still a devDependency purely for this. Treat the treemap as "**which modules are heavy**", never as
   shipped bytes — webpack chunks differently from Turbopack, and the three.js chunk Turbopack really
   emits is 897,249 B in exactly one chunk.
@@ -227,10 +227,11 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
             in Next 16 is Turbopack and @next/bundle-analyzer is webpack-only, its compare step read
             a Pages-Router manifest that is `{"/_app": []}` here, and if-no-files-found: warn +
             continue-on-error made all of it invisible. Replaced by scripts/bundle-budget.mjs on the
-            existing e2e build (ci.yml:110-111): per-route first-load budget from
+            existing e2e build (the "Bundle budget" step in ci.yml): per-route first-load budget from
             .next/diagnostics/route-bundle-stats.json plus a three.js-stays-lazy assertion, no
             continue-on-error, hard-fails when it cannot measure. Analyzer demoted to the local
             `pnpm analyze` (--webpack required). Corrected here too: the "next build uses webpack"
             claim was FALSE — the 876 KB single-chunk three.js figure is and always was a Turbopack
             measurement (897,249 B, re-confirmed), so the chunk invariant and src/lib/r3f.ts's
             load-bearing role both STAND; only the bundler attribution was wrong.
+2026-09-29 | docs drift pass — checked against main @ a929932 + five fixes: ceiling is MAX_FIRST_LOAD_BYTES = 1,336,000 B (was 1,285,000 B at v3.6.0), MIN_ROUTES = 17 (16 page routes + /_not-found), CI step re-referenced by name (its old ci.yml:110-111 cite had drifted). The 1248 KB / 113-of-113 baseline above was measured on Next 16.3.0 and has not been re-measured since (Next 16.3.5, three ^0.186) — re-run it before quoting it.

@@ -73,7 +73,7 @@ const MAX_FIRST_LOAD_BYTES = 1_336_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies
- * exactly ONE chunk — verified here at 897,249 B (876.2 KiB), and present in 0 of the 16 routes'
+ * exactly ONE chunk — verified here at 897,249 B (876.2 KiB), and present in 0 of the 17 routes'
  * first-load sets, i.e. genuinely lazy today.
  *
  * This is the assertion a total-bytes guard CANNOT make. An eager `import * as THREE` in a shell

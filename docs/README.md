@@ -38,7 +38,7 @@ Main text = *what's true now*. Append an optional `## Timeline` for *what happen
 | File | Description |
 |------|-------------|
 | `configuration.md` | Environment variables, feature flags, and provider configuration |
-| `index/` | Per-file/per-route codebase index. Describes `main` @ `a929932` (v3.6.0) plus five post-`a929932` behaviour changes; CI re-checks its `path:line` citations (`scripts/check-index-citations.mjs`). Start at `index/README.md` |
+| `index/` | Per-file/per-route codebase index. Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (v3.6.0) plus five post-`a929932` behaviour changes; CI re-checks its `path:line` citations (`scripts/check-index-citations.mjs`). Start at `index/README.md` |
 | `superpowers/plans/` | 17 dated implementation plans (one per shipped change) |
 | `superpowers/specs/` | 6 dated design specs |
 | `next-upgrade-plan-2026-09.md` | Draft (`status: draft`) upgrade plan synthesized from 10 research streams run 2026-09-18: model chain, prompt caching, Next/React/R3F currency, rate-limit resilience, bundle budget, CI tooling. Some items are already marked shipped |

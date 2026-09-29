@@ -4,6 +4,126 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] — 2026-09-30
+
+**Minor** — a hardening and correctness pass. No new features, dependency changes or content changes;
+most of the diff is internal (shared auth helpers, per-class rate-limit buckets, regression tests, dead
+code removed, and a documentation re-derivation). It is a minor rather than a patch because a few
+behaviours that operators and integrators can observe do change: the rate-limit budget, admin and cron
+auth, what a build publishes while `NEXT_PUBLIC_NOTES_ENABLED` is off, and one command-palette entry.
+
+**With `NEXT_PUBLIC_NOTES_ENABLED=true` — how production runs — the published site content is
+unchanged**: the note fixes below only take effect when the flag is off (its default), and the sources of
+`llms.txt`, `llms-full.txt`, `feed.xml`, `sitemap.xml`, the `.md` endpoints, note OG images and the MCP
+tools are either untouched or changed only behind that flag. Everything else changes who is admitted, one
+client-side palette entry, or code and docs that serve no response.
+
+### Security
+- **One constant-time credential check for the admin dashboard, applied at every layer** (#281).
+  `src/proxy.ts` compared unsalted SHA-256 hex strings with `!==`, `requireAdmin` carried its own copy of
+  the check, and `/admin/telemetry` had no auth of its own. `isAdminAuthorized` in
+  `src/lib/admin-auth.ts` is now the single check (SHA-256 digests through `timingSafeEqual`), called by
+  the proxy, by `requireAdmin` (the FAQ-cache purge route, which sits outside the proxy matcher) and by
+  the telemetry page, which re-checks on its own and calls `notFound()` before any Redis read so it stays
+  protected if the proxy matcher is ever bypassed or changed. This is defence in depth and no exploit is
+  claimed: correct credentials behave exactly as before, and an unset `ADMIN_PASSWORD` still denies
+  everything.
+  **Operator-visible:** with `ADMIN_PASSWORD` unset, every `/admin/*` request now logs
+  `[admin-auth] ADMIN_PASSWORD is not set`; the proxy used to answer 401 silently.
+- **One fail-closed, constant-time `CRON_SECRET` check for all five cron routes** (#280). `eval`,
+  `health-check`, `github-sync`, `seo-audit` and `content-audit` each carried their own copy that
+  compared the `Authorization` header with `!==`. They now share `unauthorizedUnlessCron` in the new
+  `src/lib/cron-auth.ts` (SHA-256 digests through `timingSafeEqual`; an unset `CRON_SECRET` authorises
+  nothing), and the 401 response is unchanged.
+
+### Fixed
+- **Voice and error-beacon traffic could 429 the visitor's own chat** (#280). One 8-per-60-s per-IP
+  bucket was shared by `/api/chat`, `/api/tts`, `/api/tts-google`, `/api/transcribe` and `/api/error`, so
+  per-sentence TTS or an error-beacon loop could use up the budget a visitor needs for chat. There are
+  now three independent buckets — `chat`, `voice` (`tts` + `tts-google` + `transcribe`) and `beacon`
+  (`/api/error`) — each still 8 requests per 60 s per IP, and `checkRateLimit(req, cls)` takes the class
+  as a required argument so a new route cannot silently share one.
+  **Operator-visible:** one client can now make up to 24 requests a minute across the three classes (8
+  each) where it used to get 8 in total. `chat` keeps its `anvilry:chat` Redis key prefix so live
+  counters carry over; `voice` and `beacon` add `anvilry:voice` and `anvilry:beacon`. The limits are not
+  retuned, and the limiter still fails open when Upstash is unconfigured or errors.
+- **The weekly eval cron competed with visitors for the chat budget** (#280). Its 12 sequential
+  `/api/chat` calls run back to back with no pause and counted against the same per-IP budget, and a
+  response that is not `ok` scores the question as a failure, so later questions could fail on a 429
+  rather than on the answer. A request carrying a valid `CRON_SECRET` bearer now skips the limiter (in
+  every class) and the eval route sends that bearer on its chat calls. This removes the self-throttle
+  only.
+- **Notes leaked from every machine-readable surface while `NEXT_PUBLIC_NOTES_ENABLED` was off** (#279).
+  With the flag off (the default, and what CI runs) the `/notes` pages 404, but `feed.xml`, `llms.txt`,
+  `llms-full.txt` (which is the chatbot corpus), the MCP `list_all_content` and `get_content_item` tools
+  and both raw-markdown handler sets (`/notes/<slug>.md` and `/api/md/notes/<slug>`) still published
+  them. `allNotes` in `src/lib/content.ts` is now empty while the flag is off, so everything derived from
+  it follows; the `/notes` route files read a new ungated `publishedNotes` instead, because
+  `generateStaticParams` must return at least one entry under `cacheComponents`, and the pages still 404.
+  Articles whose only destination is a note (a `linkedNote` and either no `externalUrl` or one pointing
+  at our own `/notes/`) are hidden in that state — today `tombstone-v1-2-devto` and the native
+  `how-dns-works` essay, whose `how-dns-works-devto` cross-post remains — and so leave every list built
+  from `allArticles`; `llms.txt` no longer links `/notes/<linkedNote>`. `/notes/<slug>/opengraph-image`
+  renders the generic card instead of the note's title and date. The `/stats` "Articles & notes" count and
+  the `seo-audit` and `content-audit` crons stop counting notes too.
+  **No effect where the flag is on** (production serves `/notes` today): a flag-on case in the new
+  `notes-dark.test.ts` pins that every surface still publishes notes, and per #279 seven of its eight
+  cases failed on the pre-fix code.
+- **The command palette could open a second talk-mode session on the Voice view** (#282). That view
+  already owns the microphone and the header orb is inert there, but the palette's "Start voice
+  conversation" entry checked only for speech-recognition support and the modal talk surface, so it
+  could start a second session competing for the mic. The orb and the palette now share one predicate,
+  `isVoiceViewActive(view)` in `voice-surface-mutex.ts`, and the entry is not offered on that view.
+  Client-side only.
+- **A non-ASCII `ADMIN_PASSWORD` was rejected by the admin proxy** (#281). The proxy decoded the Basic
+  credentials with `atob` (Latin-1) while `requireAdmin` decoded UTF-8; the shared check decodes UTF-8
+  everywhere. ASCII passwords are unaffected.
+
+### Changed
+- **Bundle-gate sanity floor** (#283): `MIN_ROUTES` in `scripts/bundle-budget.mjs` goes from 16 to 17,
+  the 16 `page.tsx` routes plus `/_not-found`, so a route record dropping out of Next's diagnostics
+  artifact now fails the gate instead of passing on a floor one short. The byte ceiling
+  (`MAX_FIRST_LOAD_BYTES`) is untouched.
+- **Tooling defaults** (#283): `.gitignore` now ignores two local harness artifacts
+  (`.claude/proven-config.json`, `.claude/.proven-config-version`), and the `ship-change` workflow
+  defaults its base branch to `develop`, where PRs actually go, instead of `main`.
+- **Test robustness** (#279): `notes.test.ts` now asserts its draft-exclusion, newest-first and
+  parseable-date checks over `publishedNotes`, because `allNotes` is empty in CI's default
+  configuration and the loops would have checked nothing; and the flag-off case of
+  `notes-dark.test.ts` no longer pins `tombstone-v1-2-devto` (giving it a real `externalUrl` would
+  fail the deploy, as `vitest run` is chained into `pnpm build`). The flag-on case still pins it.
+- **Documentation re-derived against the code** (#284): `docs/index/` (all 17 files), `CLAUDE.md`,
+  `ARCHITECTURE.md`, `README.md`, `DEPLOY.md`, `TELEMETRY.md`, `VOICE.md`, `SECURITY.md`,
+  `docs/configuration.md`, the contributing guide and the docs, domain-loop and signals READMEs were
+  re-checked against the tree and the claims that had drifted were corrected. Examples confirmed against
+  `main`: the terminal has 32 commands (the docs said 31); the telemetry retention trim runs on roughly
+  1-in-20 emits, not on every emit; and `README.md` and `ARCHITECTURE.md` did not mention the
+  `/decisions` page or the `list_decisions` MCP tool. `CLAUDE.md` and `ARCHITECTURE.md` now state their
+  base commit and prefer symbol names to line numbers, to slow the drift. Four code comments that
+  repeated the same stale claims were corrected (comment-only: `scripts/bundle-budget.mjs`,
+  `src/components/json-ld.tsx`, `src/instrumentation-client.ts`, `src/lib/telemetry/with-trace.ts`).
+- **Citation gate:** `scripts/check-index-citations.mjs` verified 2,812 of 2,812 citations with no
+  errors or warnings after the re-derivation. Note that `docs/index/.citations.json` was regenerated from
+  the verified prose, so — as in 3.6.0 — a green run is not independent evidence the prose is right, and
+  about 3,250 context-relative citations are not machine-checkable.
+- **`.env.example` and `make env-check` no longer misdescribe two variables** (#284).
+  `TELEMETRY_ENABLED=false` was described as disabling all event emission, but the only read in `src/` is
+  the `/api/error` beacon route, so it is a browser-beacon kill switch only and server-side spans keep
+  emitting. An unset `ADMIN_PASSWORD` was described as rendering setup instructions; it locks `/admin/*`
+  out (a bare 401 from the proxy, and the page falls back to `notFound()`). Wording only.
+
+### Added
+- **Regression coverage for each fix** (#279–#282): eight new test files (85 → 93 under `src/`) covering
+  the dark-notes surfaces (with a flag-on case), cron auth on all five routes, the rate-limit
+  route-to-class mapping, the admin proxy, the telemetry page and the purge route, plus extended
+  rate-limit, admin-auth and command-palette tests.
+
+### Removed
+- **Four unreferenced pieces of code** (#283): `src/components/article-card.tsx` (`ArticleCard`),
+  `src/components/ui/button.tsx`, `src/components/ui/empty-state.tsx` and the `ArticleJsonLd` export of
+  `src/components/json-ld.tsx`. None had an importer anywhere in `src/`, `e2e/`, `scripts/` or
+  `content/` (re-checked on this tree), so nothing user-visible changes.
+
 ## [3.6.0] — 2026-08-21
 
 **Minor** — a correctness and CI-integrity pass. Not a feature release, but **OG image output changes** for `devto`/`hashnode` articles, which makes it a public-artifact change rather than a patch (the same reasoning as 3.5.0).

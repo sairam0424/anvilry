@@ -27,7 +27,7 @@ describe("notes dark (NOTES_ENABLED=false)", () => {
     const onlyNote = (a: { linkedNote?: string; externalUrl?: string }) =>
       Boolean(a.linkedNote) && (!a.externalUrl || a.externalUrl.startsWith(`${BASE}/notes/`));
     expect(content.allArticles.filter(onlyNote)).toEqual([]);
-    expect(content.allArticles.some((a) => a.slug === "tombstone-v1-2-devto")).toBe(false);
+    // No slug is pinned here: setting tombstone-v1-2-devto's real externalUrl legitimately re-lists it while dark.
   });
 
   it("content layer exposes no notes", async () => {

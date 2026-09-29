@@ -4,7 +4,7 @@ End-to-end structured telemetry for the "Ask my portfolio" chatbot. Zero new ven
 all sinks are same-origin (Vercel Runtime Logs) or already-provisioned infra (Upstash Redis).
 Free text is redacted at the call site before storage (regex-only; §4 lists exactly what is and is not stored).
 
-> **Scope:** describes `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes**. Two touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
+> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes**. Two touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
 
 ---
 

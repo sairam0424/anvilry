@@ -6,7 +6,7 @@ status: adopted
 ---
 
 > **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, performance.
-> **Scope:** the domain table, layout map and invariants below describe `main` @ `a929932` (`package.json` 3.6.0) plus five later behavioural fixes: notes hidden at the data layer while `NEXT_PUBLIC_NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron; one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page) and one shared `src/lib/cron-auth.ts`; command-palette talk mode gated by `isVoiceViewActive`; `MIN_ROUTES` 17 in the bundle gate, verified-dead components removed. The `v1.0.0` above versions the knowledge-base model, not the app.
+> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (`package.json` 3.6.0) plus five later behavioural fixes: notes hidden at the data layer while `NEXT_PUBLIC_NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron; one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page) and one shared `src/lib/cron-auth.ts`; command-palette talk mode gated by `isVoiceViewActive`; `MIN_ROUTES` 17 in the bundle gate, verified-dead components removed. The `v1.0.0` above versions the knowledge-base model, not the app.
 
 # Knowledge-base architecture
 

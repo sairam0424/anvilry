@@ -1271,11 +1271,11 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "6dc4ab3db269",
+      "fp": "c08f1f9d87e0",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** the domain table, layout map and invariants below describe `main` @ `a929932` (`package"
+      "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.7.0 (`package.jso"
     },
     "ARCHITECTURE.md:99": {
       "fp": "ed771fd6ccde",
@@ -1284,7 +1284,15 @@
       ],
       "preview": "- **Feature flags.** `NEXT_PUBLIC_*` env vars gate experimental features (GRAPH_PHYSICS, MULTIMODAL_"
     },
-    "CHANGELOG.md:11": {
+    "CHANGELOG.md:127": {
+      "fp": "87a4c32b93f0",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "README.md"
+      ],
+      "preview": "## [3.6.0] — 2026-08-21"
+    },
+    "CHANGELOG.md:131": {
       "fp": "afe76b8d59a6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1292,21 +1300,78 @@
       ],
       "preview": "### Fixed"
     },
-    "CHANGELOG.md:113": {
+    "CHANGELOG.md:148": {
+      "fp": "a2656816da7a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "**Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it instal"
+    },
+    "CHANGELOG.md:171": {
+      "fp": "f7f3216c3072",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "not a constraint), so one omission would fall through `:59` and render a raw `devto`."
+    },
+    "CHANGELOG.md:173": {
+      "fp": "2e16922cfc13",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "### Added"
+    },
+    "CHANGELOG.md:183": {
+      "fp": "78c2d4537bb4",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
+    },
+    "CHANGELOG.md:191": {
+      "fp": "1c8fa42a05e3",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "correctly fails on one and names `--webpack` as the cause."
+    },
+    "CHANGELOG.md:205": {
+      "fp": "5095a19adb55",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
+    },
+    "CHANGELOG.md:217": {
+      "fp": "0c595a592a06",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "README.md"
+      ],
+      "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
+    },
+    "CHANGELOG.md:219": {
+      "fp": "f8dc5506feac",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "## [3.5.0] — 2026-08-21"
+    },
+    "CHANGELOG.md:233": {
       "fp": "b10847c33a09",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the"
     },
-    "CHANGELOG.md:116": {
+    "CHANGELOG.md:236": {
       "fp": "a876bd2d0d1b",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "pointing them at nothing. **Public artifact change.**"
     },
-    "CHANGELOG.md:120": {
+    "CHANGELOG.md:240": {
       "fp": "907db8726a39",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1314,7 +1379,7 @@
       ],
       "preview": "- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`"
     },
-    "CHANGELOG.md:122": {
+    "CHANGELOG.md:242": {
       "fp": "c967c6044c37",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1322,35 +1387,35 @@
       ],
       "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
     },
-    "CHANGELOG.md:145": {
+    "CHANGELOG.md:265": {
       "fp": "b87d6402a897",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the"
     },
-    "CHANGELOG.md:150": {
+    "CHANGELOG.md:270": {
       "fp": "6904a0e277ed",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "is a latent fallback inconsistency, not a live bypass."
     },
-    "CHANGELOG.md:160": {
+    "CHANGELOG.md:280": {
       "fp": "e87c24791291",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- Corrected in-code comments that misdescribed their own code, including a banner claiming a test"
     },
-    "CHANGELOG.md:162": {
+    "CHANGELOG.md:282": {
       "fp": "c414e36c7415",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`@react-three/rapier` described as loaded when it is imported nowhere."
     },
-    "CHANGELOG.md:178": {
+    "CHANGELOG.md:298": {
       "fp": "0926a918ce91",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1360,7 +1425,7 @@
       ],
       "preview": "- **Node version pin:** `.nvmrc` (22) and `engines.node` (`>=22 <23`), matching the CI pin. Without"
     },
-    "CHANGELOG.md:181": {
+    "CHANGELOG.md:301": {
       "fp": "d5609bbaa648",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1369,7 +1434,7 @@
       ],
       "preview": "collides with vitest's happy-dom global injection."
     },
-    "CHANGELOG.md:184": {
+    "CHANGELOG.md:304": {
       "fp": "9b69baeb014e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1379,14 +1444,14 @@
       ],
       "preview": "- **pnpm settings moved to `pnpm-workspace.yaml`.** pnpm v11 no longer reads the `pnpm` field of"
     },
-    "CHANGELOG.md:188": {
+    "CHANGELOG.md:308": {
       "fp": "9199ac98b998",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "release, signalled only by a warning line that reads like boilerplate."
     },
-    "CHANGELOG.md:190": {
+    "CHANGELOG.md:310": {
       "fp": "f8f7365f53b0",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1394,7 +1459,7 @@
       ],
       "preview": "Both pnpm 10 and 11 read the new location. Verified by regenerating the lockfile with each"
     },
-    "CHANGELOG.md:194": {
+    "CHANGELOG.md:314": {
       "fp": "ce9c976af644",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1402,7 +1467,7 @@
       ],
       "preview": "0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9."
     },
-    "CHANGELOG.md:196": {
+    "CHANGELOG.md:316": {
       "fp": "742e82b0518b",
       "citedBy": [
         "07-components-3d.md",
@@ -1410,7 +1475,7 @@
       ],
       "preview": "### Removed"
     },
-    "CHANGELOG.md:197": {
+    "CHANGELOG.md:317": {
       "fp": "b8c3c33d4077",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1419,7 +1484,7 @@
       ],
       "preview": "- `@react-three/rapier` and `@react-three/offscreen` — declared dependencies with **zero imports**"
     },
-    "CHANGELOG.md:198": {
+    "CHANGELOG.md:318": {
       "fp": "8e6657d9183e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1427,7 +1492,7 @@
       ],
       "preview": "anywhere in `src/`. Deferred until the overrides migration made lockfile regeneration safe."
     },
-    "CHANGELOG.md:199": {
+    "CHANGELOG.md:319": {
       "fp": "3a0b2a614fe4",
       "citedBy": [
         "07-components-3d.md",
@@ -1435,7 +1500,7 @@
       ],
       "preview": "Measured impact: 3 packages removed, 0 added, 1 version change"
     },
-    "CHANGELOG.md:201": {
+    "CHANGELOG.md:321": {
       "fp": "d9ea6ad36d1f",
       "citedBy": [
         "07-components-3d.md",
@@ -1446,98 +1511,98 @@
       ],
       "preview": "was the only remaining consumer)."
     },
-    "CHANGELOG.md:203": {
+    "CHANGELOG.md:323": {
       "fp": "8b7a5c9e23e9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.4.2] — 2026-08-15"
     },
-    "CHANGELOG.md:206": {
+    "CHANGELOG.md:326": {
       "fp": "0aa70116c274",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "high severity. Also wires E2E into CI and makes the Playwright suite self-managing."
     },
-    "CHANGELOG.md:208": {
+    "CHANGELOG.md:328": {
       "fp": "533a2492391b",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "Until this release, production served the vulnerable versions — the fixes had been merged to"
     },
-    "CHANGELOG.md:209": {
+    "CHANGELOG.md:329": {
       "fp": "2dd0f67dda39",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "`develop` (Preview only) but not promoted."
     },
-    "CHANGELOG.md:211": {
+    "CHANGELOG.md:331": {
       "fp": "a4ff72c5e89e",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "### Security"
     },
-    "CHANGELOG.md:212": {
+    "CHANGELOG.md:332": {
       "fp": "e71e1c282194",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`pdfjs-dist` 6.0.227 -> 6.2.108** (high) — arbitrary JavaScript execution upon opening a"
     },
-    "CHANGELOG.md:214": {
+    "CHANGELOG.md:334": {
       "fp": "1ebceb043643",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "user-selected PDFs client-side."
     },
-    "CHANGELOG.md:215": {
+    "CHANGELOG.md:335": {
       "fp": "84f8bcd6d3bc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`ip-address` 10.2.0 -> 10.5.0** (high) — `Address4` decodes leading-zero octets as decimal"
     },
-    "CHANGELOG.md:217": {
+    "CHANGELOG.md:337": {
       "fp": "9957c7303189",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`mcp-handler` -> `@modelcontextprotocol/sdk` -> `express-rate-limit`; server-side only."
     },
-    "CHANGELOG.md:218": {
+    "CHANGELOG.md:338": {
       "fp": "6cef5f81b648",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`hono` 4.12.25 -> 4.13.2** (medium x3, low x1) — `memo()` retained SSR output across requests"
     },
-    "CHANGELOG.md:220": {
+    "CHANGELOG.md:340": {
       "fp": "9e87e4da5492",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "middleware, Proxy Helper header leak."
     },
-    "CHANGELOG.md:221": {
+    "CHANGELOG.md:341": {
       "fp": "4863beb796a6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`js-yaml` 4.2.0 -> 4.3.1** (high) — quadratic CPU consumption in `!!omap` resolution."
     },
-    "CHANGELOG.md:222": {
+    "CHANGELOG.md:342": {
       "fp": "1b691181626d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`fast-uri` 3.1.2 -> 3.1.5** (high) — host confusion via backslash authority introducer."
     },
-    "CHANGELOG.md:223": {
+    "CHANGELOG.md:343": {
       "fp": "2495da8e6183",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1546,7 +1611,7 @@
       ],
       "preview": "- **`brace-expansion` -> 1.1.18 and 5.0.9** (high) — two separate major lines, each patched within"
     },
-    "CHANGELOG.md:225": {
+    "CHANGELOG.md:345": {
       "fp": "5e8fcd724c24",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1555,49 +1620,49 @@
       ],
       "preview": "onto 5.x and broken the eslint chain."
     },
-    "CHANGELOG.md:226": {
+    "CHANGELOG.md:346": {
       "fp": "d3c528f5bdfa",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`sharp` 0.34.5 -> 0.35.3** (high) — only velite's build-time instance was affected; Next 16.3.0"
     },
-    "CHANGELOG.md:227": {
+    "CHANGELOG.md:347": {
       "fp": "6ab0f5a0e9c7",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "already carried the patched 0.35.3."
     },
-    "CHANGELOG.md:228": {
+    "CHANGELOG.md:348": {
       "fp": "4582bda8000e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`@hono/node-server` -> 1.19.17** (medium) — `serve-static` path traversal via `%5C` on Windows."
     },
-    "CHANGELOG.md:229": {
+    "CHANGELOG.md:349": {
       "fp": "96a9fda4290b",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`postcss` -> 8.5.23+** (medium/high) — attacker-controlled `sourceMappingURL` read arbitrary"
     },
-    "CHANGELOG.md:230": {
+    "CHANGELOG.md:350": {
       "fp": "85aef74adb7e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`.map` files when `from` is unset."
     },
-    "CHANGELOG.md:231": {
+    "CHANGELOG.md:351": {
       "fp": "9b6a6fd9c8da",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`body-parser` 2.2.2 -> 2.3.0** (low)."
     },
-    "CHANGELOG.md:233": {
+    "CHANGELOG.md:353": {
       "fp": "8e7bfd4cc727",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1606,7 +1671,7 @@
       ],
       "preview": "Six were transitive and lockfile-pinned, so `pnpm update` could not move them —"
     },
-    "CHANGELOG.md:235": {
+    "CHANGELOG.md:355": {
       "fp": "96a5b77bacc5",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1615,28 +1680,28 @@
       ],
       "preview": "`security_update_not_possible`. Fixed via `pnpm.overrides`."
     },
-    "CHANGELOG.md:238": {
+    "CHANGELOG.md:358": {
       "fp": "6fadeed9bf1b",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **E2E is now a CI gate.** `pnpm e2e` was referenced by no workflow, so the suite had rotted"
     },
-    "CHANGELOG.md:242": {
+    "CHANGELOG.md:362": {
       "fp": "12f193f55671",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "because the default `GITHUB_TOKEN` cannot read the Dependabot alerts API."
     },
-    "CHANGELOG.md:243": {
+    "CHANGELOG.md:363": {
       "fp": "8f99540d284a",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Playwright `webServer`** — the suite now starts and health-checks its own server. Previously a"
     },
-    "CHANGELOG.md:252": {
+    "CHANGELOG.md:372": {
       "fp": "b3318f770342",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1646,7 +1711,7 @@
       ],
       "preview": "- Dependabot ignores now live on `main`. Dependabot reads `dependabot.yml` from the DEFAULT BRANCH"
     },
-    "CHANGELOG.md:253": {
+    "CHANGELOG.md:373": {
       "fp": "382750558133",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1657,98 +1722,91 @@
       ],
       "preview": "only, so the `typescript`/`eslint` semver-major ignores added on `develop` had been inert."
     },
-    "CHANGELOG.md:263": {
+    "CHANGELOG.md:383": {
       "fp": "920375370fab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `react` / `react-dom` 19.2.7 -> **19.2.8** (patch)"
     },
-    "CHANGELOG.md:273": {
+    "CHANGELOG.md:393": {
       "fp": "783808ceb2d5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `@types/three` ^0.184.1 -> **^0.185.4**, finally tracking runtime `three@0.185.1`. Caret"
     },
-    "CHANGELOG.md:275": {
+    "CHANGELOG.md:395": {
       "fp": "abc4b971d2ca",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "follow the runtime bump on its own."
     },
-    "CHANGELOG.md:276": {
+    "CHANGELOG.md:396": {
       "fp": "f8379cf83c34",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- Dev tooling: `velite` ^0.3.1 -> ^0.4.0, `@types/node` ^20 -> ^26, `vitest` -> ^4.1.10,"
     },
-    "CHANGELOG.md:28": {
-      "fp": "a2656816da7a",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "**Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it instal"
-    },
-    "CHANGELOG.md:291": {
+    "CHANGELOG.md:411": {
       "fp": "8e54b98b74ac",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`typescript` major (7.x)** — `@typescript-eslint/typescript-estree` 8.61.0 crashes on load"
     },
-    "CHANGELOG.md:295": {
+    "CHANGELOG.md:415": {
       "fp": "e7b06f5096ab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "toolchain fails."
     },
-    "CHANGELOG.md:296": {
+    "CHANGELOG.md:416": {
       "fp": "e4e610a95c54",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`eslint` major (10.x)** — separately blocked upstream (`eslint-plugin-react` calls APIs"
     },
-    "CHANGELOG.md:299": {
+    "CHANGELOG.md:419": {
       "fp": "1bc184f28e2a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "patches still flow."
     },
-    "CHANGELOG.md:325": {
+    "CHANGELOG.md:445": {
       "fp": "df5cd9b282c9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,"
     },
-    "CHANGELOG.md:327": {
+    "CHANGELOG.md:447": {
       "fp": "132dd7e8a2d4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "uniformly: `/projects` uses `\"use cache\"` + `cacheLife(\"hours\")` because it awaits a live"
     },
-    "CHANGELOG.md:434": {
+    "CHANGELOG.md:554": {
       "fp": "f2d3f71a827e",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **`/llms-full.txt`** — full chatbot corpus (~6KB) as `text/plain` with"
     },
-    "CHANGELOG.md:455": {
+    "CHANGELOG.md:575": {
       "fp": "6c9694a6dced",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **2 new MCP tools** — `list_all_content` (all work/project/article/note items) and"
     },
-    "CHANGELOG.md:456": {
+    "CHANGELOG.md:576": {
       "fp": "2dee0866a4a4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1756,64 +1814,21 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
-    "CHANGELOG.md:51": {
-      "fp": "f7f3216c3072",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "not a constraint), so one omission would fall through `:59` and render a raw `devto`."
-    },
-    "CHANGELOG.md:53": {
-      "fp": "2e16922cfc13",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "### Added"
-    },
-    "CHANGELOG.md:577": {
+    "CHANGELOG.md:697": {
       "fp": "5bd4b1b4d54d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- `streamWithFallback` docblock claimed \"Opus 4.6 primary\" while the `BEDROCK_CHAIN` array"
     },
-    "CHANGELOG.md:579": {
+    "CHANGELOG.md:699": {
       "fp": "b1d0b68e19dc",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "ambiguous about the expected primary model."
     },
-    "CHANGELOG.md:63": {
-      "fp": "78c2d4537bb4",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
-    },
-    "CHANGELOG.md:7": {
-      "fp": "87a4c32b93f0",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "README.md"
-      ],
-      "preview": "## [3.6.0] — 2026-08-21"
-    },
-    "CHANGELOG.md:71": {
-      "fp": "1c8fa42a05e3",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "correctly fails on one and names `--webpack` as the cause."
-    },
-    "CHANGELOG.md:85": {
-      "fp": "5095a19adb55",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
-    },
-    "CHANGELOG.md:859": {
+    "CHANGELOG.md:979": {
       "fp": "5ca93d9cf04d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1821,28 +1836,13 @@
       ],
       "preview": "[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0"
     },
-    "CHANGELOG.md:867": {
+    "CHANGELOG.md:987": {
       "fp": "07652699e8f2",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "[1.0.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.0.0"
-    },
-    "CHANGELOG.md:97": {
-      "fp": "0c595a592a06",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "README.md"
-      ],
-      "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
-    },
-    "CHANGELOG.md:99": {
-      "fp": "f8dc5506feac",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "## [3.5.0] — 2026-08-21"
     },
     "CLAUDE.md:241": {
       "fp": "826a4efde0f6",
@@ -1916,11 +1916,11 @@
       "preview": "that file is authoritative if this table ever disagrees with it."
     },
     "DEPLOY.md:5": {
-      "fp": "fca430a772f7",
+      "fp": "3dbc51fff616",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "Claude on **AWS Bedrock**. Describes `main` @ `a929932` plus five post-`a929932` behaviour changes; "
+      "preview": "Claude on **AWS Bedrock**. Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` "
     },
     "DEPLOY.md:94": {
       "fp": "0ef37997cd28",
@@ -1944,11 +1944,11 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "a3cf92b42d9d",
+      "fp": "eb2e0c934efd",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** describes `main` @ `a929932` (`package.json` 3.6.0) **plus five post-`a929932` behaviou"
+      "preview": "> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (`package.json"
     },
     "docs/README.md:29": {
       "fp": "3df16b7c843e",
@@ -3233,14 +3233,14 @@
       "preview": "\"@modelcontextprotocol/sdk\": \"1.26.0\","
     },
     "package.json:3": {
-      "fp": "b2cdf318be35",
+      "fp": "6dc3ba77d248",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "\"version\": \"3.6.0\","
+      "preview": "\"version\": \"3.7.0\","
     },
     "package.json:33": {
       "fp": "aa55e91eacb8",
@@ -20771,11 +20771,11 @@
       "preview": "* before any route handler."
     },
     "TELEMETRY.md:7": {
-      "fp": "8329ce5b88a8",
+      "fp": "82c2576a0b12",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** describes `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes**. T"
+      "preview": "> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (v3.6.0) **plu"
     },
     "tsconfig.json:26": {
       "fp": "84bbcb60e727",

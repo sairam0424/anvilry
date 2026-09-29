@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { allNotes, getNote } from "@/lib/content";
+import { publishedNotes, getNote } from "@/lib/content";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
@@ -22,7 +22,7 @@ export function generateStaticParams() {
   // NOTES_ENABLED is false, so these routes remain 404s while notes ship dark — they are just
   // prerendered as 404s instead of resolved on demand. This also makes the page route
   // consistent with ./opengraph-image.tsx, which already maps all note slugs with no flag check.
-  return allNotes.map((n) => ({ slug: n.slug }));
+  return publishedNotes.map((n) => ({ slug: n.slug }));
 }
 
 export async function generateMetadata({

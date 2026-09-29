@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { allNotes, getNote } from "@/lib/content";
+import { publishedNotes, getNote } from "@/lib/content";
 import { METADATA_COLORS } from "@/lib/metadata-colors";
 import { profile } from "@/lib/profile";
 
@@ -10,7 +10,7 @@ export const contentType = "image/png";
 // pattern — so a shared /notes/<slug> link unfurls with a card stamped with THAT
 // note's title + date instead of the identical generic root card.
 export function generateStaticParams() {
-  return allNotes.map((n) => ({ slug: n.slug }));
+  return publishedNotes.map((n) => ({ slug: n.slug }));
 }
 
 export const alt = "Note";

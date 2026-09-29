@@ -154,7 +154,7 @@ Three independent layers, all in scope, all fail-closed:
 
 ## The voice-surface-mutex contract
 
-**Problem it solves (stated in the module header, `voice-surface-mutex.ts:4-21`):** every voice surface mounts
+**Problem it solves (stated in the module header, `voice-surface-mutex.ts:4-22`):** every voice surface mounts
 its **own** `<TalkMode>` → `useVoiceSession` → `useChat` + mic + TTS. `useChat` is per-instance state, not a
 shared context, so two simultaneously-open surfaces = two concurrent mics talking over each other.
 

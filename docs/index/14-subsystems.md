@@ -466,7 +466,7 @@ ENTRY (five doors)
 
 Any of the five doors above. All of them funnel through a store `open*()` (or, for `?view=voice`, through
 `ViewRouter`), and therefore through `claimVoiceSurface` — except the voice **view**, which is
-deliberately not a mutex participant (`voice-surface-mutex.ts:18-20`).
+deliberately not a mutex participant (`voice-surface-mutex.ts:19`).
 
 ### Exit point
 

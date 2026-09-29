@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { openTalkMode } from "@/components/chat/talk-overlay-store";
 import { openInlineVoice } from "@/components/chat/anvil-inline-store";
 import { openCoreVoice } from "@/components/chat/anvil-core-store";
+import { isVoiceViewActive } from "@/components/chat/voice-surface-mutex";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { useView } from "@/components/view-context";
 
@@ -64,7 +65,7 @@ export function HeaderOrbTrigger() {
   // The Voice VIEW already IS a live talk surface (its own session/mic). Opening a
   // second surface from the orb there would stack a second concurrent mic — so on that
   // view the orb is inert (a full one-mic mutex across all surfaces lands in P2).
-  const onVoiceView = view === "voice";
+  const onVoiceView = isVoiceViewActive(view);
 
   const open = (el: HTMLElement) => {
     if (onVoiceView) return; // don't stack a second session over the voice view

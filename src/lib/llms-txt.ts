@@ -1,6 +1,7 @@
 import { profile } from "@/lib/profile";
 import { allWork, allProjects, allNotes, allArticles } from "@/lib/content";
 import { groupArticles } from "@/lib/article-grouping";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 
 const BASE = "https://anvilry.vercel.app";
 
@@ -25,7 +26,7 @@ export function buildLlmsTxt(): string {
       ? articleGroups
           .map((g) => {
             const platforms = g.platforms.map((p) => p.source).join(", ");
-            const href = g.canonical.linkedNote
+            const href = g.canonical.linkedNote && NOTES_ENABLED
               ? `${BASE}/notes/${g.canonical.linkedNote}`
               : (g.canonical.externalUrl ?? `${BASE}${g.canonical.url}`);
             return `- [${g.canonical.title}](${href}): ${g.canonical.summary.slice(0, 100)}... [${platforms}]`;

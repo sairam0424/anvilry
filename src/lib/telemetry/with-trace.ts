@@ -25,9 +25,9 @@ function afterSafeEmit(event: TelemetryEvent): void {
  * The error is RE-THROWN after emission so the route's own catch logic still runs —
  * withTrace is a side observer, never a swallow.
  *
- * Why a wrapper and not middleware: Next 16 middleware runs on the Edge runtime and
- * doesn't see the response body or the route's own errors. The cost-bearing routes
- * (chat / tts / transcribe) all run on `runtime: "nodejs"`, so the wrapper sits where
+ * Why a wrapper and not middleware: a Next 16 Proxy (Node runtime by default) runs before the
+ * route and never sees the response body or the route's own errors. The cost-bearing routes
+ * (chat / tts / transcribe) run on Next's default Node.js runtime, so the wrapper sits where
  * the work actually happens. It also lets the route enrich the auto event via
  * `ctx.attrs({ status, byteCount, ... })` — middleware can't do that without a
  * second roundtrip.

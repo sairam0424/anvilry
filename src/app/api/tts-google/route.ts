@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
     // Same per-IP guard as /api/tts and /api/chat — Google free tier IS bounded
     // (1M chars/mo) so a bot can still exhaust it without rate limiting.
-    const rl = await checkRateLimit(req);
+    const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
       return Response.json(
         { error: "Too many requests." },

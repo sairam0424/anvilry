@@ -195,6 +195,14 @@ describe("/api/error — content-length cap", () => {
   });
 });
 
+describe("/api/error — rate-limit class", () => {
+  it("charges the beacon bucket", async () => {
+    const { checkRateLimit } = await import("@/lib/rate-limit");
+    await POST(makeReq(validPayload()));
+    expect(checkRateLimit).toHaveBeenCalledWith(expect.any(Request), "beacon");
+  });
+});
+
 describe("/api/error — operational gates", () => {
   it("returns 204 with NO emit when TELEMETRY_ENABLED=false (opt-out)", async () => {
     process.env.TELEMETRY_ENABLED = "false";

@@ -23,7 +23,7 @@ if (!TASK || !REPO) {
     'ship-change requires args.task (what to build) and args.repo (absolute repo path).'
   )
 }
-const BASE = a.baseBranch || 'main'
+const BASE = a.baseBranch || 'develop'
 const BRANCH_HINT = a.branch || '' // empty → Setup agent derives one
 const VERIFY_HINTS = a.verifyHints || ''
 const OPEN_PR = a.openPr !== false // default true

@@ -10,18 +10,19 @@ vi.mock("@vercel/analytics", () => ({
   track: vi.fn(),
 }));
 
-const { setView, setPendingChatQuery } = vi.hoisted(() => ({
+const { setView, setPendingChatQuery, currentView } = vi.hoisted(() => ({
   setView: vi.fn(),
   setPendingChatQuery: vi.fn(),
+  currentView: { value: "classic" },
 }));
 vi.mock("@/components/view-context", () => ({
-  useView: () => ({ view: "classic", setView }),
+  useView: () => ({ view: currentView.value, setView }),
   setPendingChatQuery,
 }));
 
 vi.mock("@/lib/voice-settings-context", () => ({
   useVoiceSettings: () => ({
-    settings: { voiceId: null, ttsEnabled: false },
+    settings: { voiceId: null, ttsEnabled: false, talkSurface: "modal" },
     set: vi.fn(),
     toggle: vi.fn(),
   }),
@@ -61,6 +62,7 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", createLocalStorageStub());
   setView.mockClear();
   setPendingChatQuery.mockClear();
+  currentView.value = "classic";
 });
 
 afterEach(() => {
@@ -114,5 +116,24 @@ describe("command palette empty-state AI concierge redirect", () => {
     // Idle query with results present shouldn't show Command.Empty at all;
     // this just pins that an EMPTY search never renders the redirect copy.
     expect(screen.queryByText(/Ask the AI concierge:/)).toBeNull();
+  });
+});
+
+describe("command palette voice-conversation entry", () => {
+  const TALK_LABEL = /Start voice conversation/;
+
+  beforeEach(() => {
+    vi.stubGlobal("SpeechRecognition", class {});
+  });
+
+  it("offers the entry on non-voice views", () => {
+    renderPalette();
+    expect(screen.getByText(TALK_LABEL)).toBeTruthy();
+  });
+
+  it("hides the entry on the voice view, which already owns the mic", () => {
+    currentView.value = "voice";
+    renderPalette();
+    expect(screen.queryByText(TALK_LABEL)).toBeNull();
   });
 });

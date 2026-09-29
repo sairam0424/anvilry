@@ -9,12 +9,12 @@ cadence: weekly
 # seo — discoverability loop
 
 Monitors and improves search engine and LLM discoverability. Consumes the sitemap, structured data
-(JSON-LD), and Vercel Analytics. Produces updated SEO configs, structured data improvements, and
+(JSON-LD), Vercel Analytics and the weekly `/api/cron/seo-audit` report. Produces updated SEO configs, structured data improvements, and
 signals flagging crawl issues or missed opportunities.
 
 ## Current focus
-Ensure all article and project pages have correct `og:image`, `og:description`, and
-`DefinedTerm` JSON-LD structured data added in v2.5.0 is rendering correctly.
+Ensure article and project pages have correct `og:image` / `og:description` and that the JSON-LD that exists renders correctly.
+`DefinedTerm` (v2.5.0's `Person.skills`) was removed on 2026-09-02 as invalid schema.org and is not in `src/`.
 
 ## llms.txt — retained for coding agents ONLY, not for search (corrected 2026-08-12)
 
@@ -52,8 +52,8 @@ Google: "optimizing for generative AI search is optimizing for the search experi
 SEO**." Its own mythbusting section names **content "chunking"** and **rewriting content just for AI**
 as things you do *not* need to do. There is no generative-AI-specific schema.org type, so do not add
 AI-targeted schema hoping for a lift. Conversely, **do not cut the existing JSON-LD** — the claim that
-it is justified only by classic rich results was tested and **refuted**. The six shipped schemas
-(Person, BreadcrumbList, SoftwareSourceCode, FAQPage, ProfilePage, WebSite) stay as maintained infra.
+it is justified only by classic rich results was tested and **refuted**. The shipped schemas (Person, WebSite and FAQPage in the root layout; ProfilePage on `/about`; BreadcrumbList on
+detail pages; SoftwareSourceCode on projects, CreativeWork on work items, an inline BlogPosting on articles and notes) stay as maintained infra.
 
 The one genuinely actionable item is an eligibility gate, not a content tactic: a page must be indexed
 and snippet-eligible, **and** the site must be included via Search Console → Settings → **Search
@@ -63,10 +63,10 @@ ChatGPT/Claude/Perplexity.
 
 ## Backlog
 - [ ] **Verify Search Console → Settings → Search generative AI = Include** (5 min, no code)
-- [ ] Resolve the `.md`-endpoint duplicate-content question — are canonicals set for `/work/[slug].md`?
-- [ ] Check `sitemap.ts` includes all dynamic routes (articles, notes, work, projects)
-- [ ] Confirm `robots.ts` allows crawling of all public routes
-- [ ] Validate JSON-LD structured data on article pages (DefinedTerm + Article schema)
+- [ ] Resolve the `.md`-endpoint duplicate-content question — the endpoints exist twice (`/{collection}/[slug].md` route dirs and the `next.config.ts` rewrites to `/api/md/*`) and neither sets a canonical, `Link` or `X-Robots-Tag` header; confirm which one serves in production
+- [ ] Check `sitemap.ts` includes all dynamic routes (articles, work, projects; notes only while `NEXT_PUBLIC_NOTES_ENABLED` is on) — `/decisions` has no metadata export and no sitemap entry
+- [ ] Confirm `robots.ts` still allows crawling of all public routes (it allows `/` for every user agent and emits `Content-Signal: search=yes, ai-input=yes, ai-train=no`, pinned by `robots.test.ts`)
+- [ ] Validate JSON-LD structured data on article pages (BreadcrumbList + the inline BlogPosting, which is serialised with a bare `JSON.stringify` rather than the `safeJsonLd` escaper the other schemas use)
 - [ ] Check canonical URLs are set correctly on all cross-posted articles
 - [ ] Monitor Google Search Console for crawl errors (manual task — flag as signal if found)
 - [ ] ~~Verify llms.txt is up to date after v2.8.0 merge~~ — deprioritized; keep it correct, stop growing it
@@ -85,3 +85,4 @@ ChatGPT/Claude/Perplexity.
             adversarial research pass (Google Search Central + a 137,210-domain log census + 6
             corroborating datasets). GEO/AEO recorded as not-a-discipline. JSON-LD retained — the
             deflationary case against it was refuted.
+2026-09-29 | docs drift pass — checked against main @ a929932 + five fixes: `DefinedTerm` is gone (it shipped in v2.5.0 as `Person.skills` and was removed 2026-09-02, commit 1116d78), the schema list corrected (adds CreativeWork and inline BlogPosting; the unused ArticleJsonLd was deleted), `.md` endpoint duplication and missing headers recorded, `/decisions` metadata gap noted

@@ -1,3 +1,4 @@
+import { unauthorizedUnlessCron } from "@/lib/cron-auth";
 import { redis } from "@/lib/redis";
 import { allArticles, allNotes } from "@/lib/content";
 
@@ -16,11 +17,8 @@ export const maxDuration = 60;
 const EIGHTEEN_MONTHS_MS = 18 * 30 * 24 * 60 * 60 * 1000;
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = unauthorizedUnlessCron(req);
+  if (denied) return denied;
 
   const threshold = Date.now() - EIGHTEEN_MONTHS_MS;
 

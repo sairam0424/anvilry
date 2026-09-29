@@ -185,7 +185,7 @@ export async function POST(req: Request) {
 
     // Per-IP rate limit BEFORE any Bedrock call, so a bot can't run up cost. Fails
     // open when Upstash isn't configured (local dev) — see src/lib/rate-limit.ts.
-    const rl = await checkRateLimit(req);
+    const rl = await checkRateLimit(req, "chat");
     if (!rl.ok) {
       return Response.json(
         { error: "Too many requests — please slow down a moment." },

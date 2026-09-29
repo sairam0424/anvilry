@@ -65,8 +65,8 @@ export async function POST(req: Request) {
       return Response.json({ error: "TTS not configured." }, { status: 503 });
     }
 
-    // Same per-IP guard as /api/chat — Polly is real spend, so bound it.
-    const rl = await checkRateLimit(req);
+    // Per-IP guard (shared "voice" bucket, separate from chat) — Polly is real spend, so bound it.
+    const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
       return Response.json(
         { error: "Too many requests." },

@@ -35,7 +35,7 @@ export const maxDuration = 5;
  *   2) telemetry-on-by-default     — TELEMETRY_ENABLED=false short-circuits to 204.
  *                                    Default ON because the whole point of v1.8 is to
  *                                    fail noisily — an opt-out env, not an opt-in.
- *   3) checkRateLimit              — 8/min per IP (shared limiter from /api/chat). A
+ *   3) checkRateLimit              — 8/min per IP (own "beacon" bucket, separate from chat/voice). A
  *                                    page stuck in an error loop could fire dozens of
  *                                    beacons per second; rate-limited.
  *   4) content-length 8KB cap      — error payloads are tiny (message + stack); 8KB
@@ -94,11 +94,11 @@ export async function POST(req: Request) {
       return new Response(null, { status: 204 });
     }
 
-    // Stage 3 — per-IP rate limit (8/min, sliding window from /api/chat).
-    // A misbehaving page in an error loop is the threat model here; same limiter
-    // as the cost-bearing routes because a beacon storm on a free route still
+    // Stage 3 — per-IP rate limit (8/min sliding window, own "beacon" bucket).
+    // A misbehaving page in an error loop is the threat model here; it gets its own
+    // bucket so a beacon storm can't 429 chat, but is still bounded because it
     // bloats the Redis sink (Phase 1.2's ZADD into anvilry:trace:client.error).
-    const rl = await checkRateLimit(req);
+    const rl = await checkRateLimit(req, "beacon");
     if (!rl.ok) {
       return new Response(null, {
         status: 429,

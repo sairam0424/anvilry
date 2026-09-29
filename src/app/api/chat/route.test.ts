@@ -128,6 +128,14 @@ function makeReq(
   });
 }
 
+describe("/api/chat — rate-limit class", () => {
+  it("charges the chat bucket", async () => {
+    const { checkRateLimit } = await import("@/lib/rate-limit");
+    await POST(makeReq([{ role: "user", content: "What stack do you use?" }]));
+    expect(checkRateLimit).toHaveBeenCalledWith(expect.any(Request), "chat");
+  });
+});
+
 describe("/api/chat — cache eligibility wiring", () => {
   it("checks the cache on a single first-turn text question", async () => {
     const res = await POST(

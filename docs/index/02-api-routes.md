@@ -68,9 +68,11 @@ export in this scope was deleted (see the in-file comments cited below). `src/pr
 Edge-runtime file (per its own docblock at `src/proxy.ts:5` and `CLAUDE.md`); no Node-proxy opt-in exists
 in `next.config.ts` (verified absent).
 
-The shared per-IP limiter is `checkRateLimit` from `src/lib/rate-limit.ts` —
-`Ratelimit.slidingWindow(8, "60 s")`, prefix `anvilry:chat` (`src/lib/rate-limit.ts:19-26`), **fails open**
-when Upstash env is unset or errors (`src/lib/rate-limit.ts:73`, `:79-82`).
+The per-IP limiter is `checkRateLimit(req, cls)` from `src/lib/rate-limit.ts` — one
+`Ratelimit.slidingWindow(8, "60 s")` bucket **per route class**: `chat` (`/api/chat`, prefix `anvilry:chat`),
+`voice` (`/api/tts`, `/api/tts-google`, `/api/transcribe`, prefix `anvilry:voice`) and `beacon` (`/api/error`,
+prefix `anvilry:beacon`) (`src/lib/rate-limit.ts:21-29`, `src/lib/rate-limit.ts:40-42`). It **fails open**
+when Upstash env is unset or errors (`src/lib/rate-limit.ts:99`, `:106-109`).
 
 | Method(s) | Path | File | runtime | maxDuration | rate limited? | auth | caching / revalidate | external services | telemetry emitted |
 |---|---|---|---|---|---|---|---|---|---|
@@ -190,26 +192,27 @@ when Upstash env is unset or errors (`src/lib/rate-limit.ts:73`, `:79-82`).
 - **Gotchas / invariants:** `export const revalidate = 3600` was **removed** for `cacheComponents`; the 1-hour cadence now lives only in the two fetch-level `next: { revalidate: 3600 }` options (`:31` and `src/lib/github.ts:101`) — deleting either silently changes the GitHub polling cadence (:3-7). `health-check` treats `repoCount === 0` as a `warn`, which is the canary for a missing/rate-limited token (`health-check/route.ts:113-119`).
 
 ### `src/app/api/cron/*` — the CRON_SECRET check
-All five cron routes implement the **identical** three-line guard. Verbatim:
+All five cron routes open their handler with the **identical** two-line guard, which delegates to one shared
+helper (`unauthorizedUnlessCron` in `src/lib/cron-auth.ts`). Verbatim:
 
 ```ts
-const secret = process.env.CRON_SECRET;
-const authHeader = req.headers.get("authorization");
-if (!secret || authHeader !== `Bearer ${secret}`) {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
-}
+const denied = unauthorizedUnlessCron(req);
+if (denied) return denied;
 ```
 
-Locations: `eval/route.ts:98-102`, `health-check/route.ts:146-150`, `github-sync/route.ts:18-22`,
-`seo-audit/route.ts:16-20`, `content-audit/route.ts:19-23`. Properties, exactly as implemented:
-**fail-closed** — an unset `CRON_SECRET` yields 401 rather than open access (`eval/route.ts:14` states
-this explicitly); the header name is read lower-case (`"authorization"`); the comparison is a plain
-non-constant-time `!==` against the literal `` `Bearer ${secret}` `` (no scheme-case tolerance, no
-trimming, no `x-vercel-*` alternative). Base-URL derivation, by contrast, is **not** uniform:
+Locations: `eval/route.ts:103-104`, `health-check/route.ts:151-153`, `github-sync/route.ts:19-20`,
+`seo-audit/route.ts:17-18`, `content-audit/route.ts:20-21`; the helper is `src/lib/cron-auth.ts:15-26`
+(`hasValidCronSecret`, then `unauthorizedUnlessCron`, which returns the 401 `{ error: "Unauthorized" }`).
+Properties, exactly as implemented: **fail-closed** — an unset (or empty) `CRON_SECRET` yields 401 rather than
+open access (`src/lib/cron-auth.ts:11-12` and `eval/route.ts:15` state this explicitly); the header name is
+read lower-case (`"authorization"`); the comparison is **constant-time** — both sides are SHA-256-hashed and
+compared with `timingSafeEqual` (`src/lib/cron-auth.ts:4-6`, `src/lib/cron-auth.ts:19`) — against the literal
+`` `Bearer ${secret}` `` (still an exact match: no scheme-case tolerance, no trimming, no `x-vercel-*`
+alternative). Base-URL derivation, by contrast, is **not** uniform:
 `eval/route.ts:104-106`, `github-sync/route.ts:34-36` and `seo-audit/route.ts:22-24` each inline
 `process.env.VERCEL_URL ? \`https://${VERCEL_URL}\` : "http://localhost:3000"`; `content-audit` makes
 zero network calls and needs no base at all; and `health-check` no longer reads `VERCEL_URL` directly —
-it calls `probeBase()` from `@/lib/health-expectations` (`health-check/route.ts:152`,
+it calls `probeBase()` from `@/lib/health-expectations` (`health-check/route.ts:155`,
 `src/lib/health-expectations.ts:51-58`), which prefers `VERCEL_PROJECT_PRODUCTION_URL` and falls back
 to `VERCEL_URL` only as a last resort. See the health-check section below for why that distinction is
 load-bearing.

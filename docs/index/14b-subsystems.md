@@ -84,20 +84,20 @@ importers** — the Edge proxy is the live gate; `admin-auth.ts` is guarded by
 
 ### Flow — the cron gate
 
-All five routes implement the identical, verbatim guard:
+All five routes open with the identical, verbatim two-line guard, which delegates to one shared helper
+(`unauthorizedUnlessCron` in `src/lib/cron-auth.ts`):
 
 ```ts
-const secret = process.env.CRON_SECRET;
-const authHeader = req.headers.get("authorization");
-if (!secret || authHeader !== `Bearer ${secret}`) {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
-}
+const denied = unauthorizedUnlessCron(req);
+if (denied) return denied;
 ```
 
-Sites: `eval/route.ts:98-102`, `health-check/route.ts:146-150`, `github-sync/route.ts:18-22`,
-`seo-audit/route.ts:16-20`, `content-audit/route.ts:19-23`. Properties exactly as implemented:
-**fail-closed** (unset `CRON_SECRET` ⇒ 401, never open — stated at `eval/route.ts:14`), lower-case header
-name, plain non-constant-time `!==`, no scheme-case tolerance, no trimming, no `x-vercel-*` alternative.
+Sites: `eval/route.ts:103-104`, `health-check/route.ts:151-153`, `github-sync/route.ts:19-20`,
+`seo-audit/route.ts:17-18`, `content-audit/route.ts:20-21`; helper `src/lib/cron-auth.ts:15-26`. Properties
+exactly as implemented: **fail-closed** (unset `CRON_SECRET` ⇒ 401, never open — stated at
+`src/lib/cron-auth.ts:11-12` and `eval/route.ts:15`), lower-case header name, **constant-time** compare
+(SHA-256 digests through `timingSafeEqual`, `src/lib/cron-auth.ts:4-6` and `src/lib/cron-auth.ts:19`), an
+exact match with no scheme-case tolerance, no trimming and no `x-vercel-*` alternative.
 Schedules live in `vercel.json:3-7`; all five fire regardless and immediately 401 when the secret is unset.
 
 ### Headers and CSP
@@ -132,11 +132,13 @@ Three CSP entries are load-bearing and non-obvious:
 
 ### Rate limiting
 
-One limiter, one budget: `Ratelimit.slidingWindow(8, "60 s")`, prefix `anvilry:chat`, `analytics: false`
-(`src/lib/rate-limit.ts:22-25`). **Five routes share it** — `/api/chat`, `/api/tts`, `/api/tts-google`,
-`/api/transcribe`, `/api/error` — so they are not independently budgeted. It **fails open** on both
-paths: `{ ok: true }` when unconfigured (`:73`) and on any Upstash throw (`:79-82`), with a production-only
-module-load warning as the sole signal (`:41-47`). `/api/visit` has its **own** limiter —
+One budget per route class: `Ratelimit.slidingWindow(8, "60 s")`, `analytics: false`, built once per class
+under prefixes `anvilry:chat`, `anvilry:voice` and `anvilry:beacon` (`src/lib/rate-limit.ts:21-29`,
+`src/lib/rate-limit.ts:40-42`). **Five routes, three classes** — `chat` ← `/api/chat`; `voice` ← `/api/tts`,
+`/api/tts-google`, `/api/transcribe` (these three share one budget); `beacon` ← `/api/error` — so a voice or
+error-beacon loop cannot 429 chat. It **fails open** on both
+paths: `{ ok: true }` when unconfigured (`:99`) and on any Upstash throw (`:106-109`), with a production-only
+module-load warning as the sole signal (`:62-68`). `/api/visit` has its **own** limiter —
 `slidingWindow(1, "30 m")`, prefix `anvilry:visit` (`api/visit/route.ts:27-34`) — and on denial returns
 the current total with `today: 0` rather than a 429 (`:44-49`).
 
@@ -721,9 +723,9 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:449-459`; every fetch helper must stay fail-soft (`:22-38,203-212`). Warn thresholds are inline magic numbers (`:545,567,689,708,718-719`). |
 | Change `/admin` auth | `src/proxy.ts:22-79` | `src/lib/admin-auth.ts` is the unwired Node twin — keep them in agreement or `/admin` can pass one and fail the other (`proxy.ts:11-20`). The page itself checks nothing. |
 | Add an authenticated route | `src/proxy.ts:22-24` (`config.matcher`) | Currently exactly `["/admin/:path*"]`. |
-| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim (e.g. `github-sync/route.ts:18-22`). `CLAUDE.md:156-157` now lists all five and records that they are all fail-closed; it previously listed one. |
+| Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Copy the fail-closed `CRON_SECRET` guard verbatim — the two-line `unauthorizedUnlessCron(req)` call from `src/lib/cron-auth.ts` (e.g. `github-sync/route.ts:19-20`). `CLAUDE.md:156-157` now lists all five and records that they are all fail-closed; it previously listed one. |
 | Change the CSP or a security header | `next.config.ts:37-95` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41`. HSTS is deliberately absent. |
-| Change rate limits | `src/lib/rate-limit.ts:22-25` | One budget shared by chat, tts, tts-google, transcribe, error. `/api/visit` has its own (`api/visit/route.ts:27-34`). Both fail-open paths are deliberate (`:73,79-82`). |
+| Change rate limits | `src/lib/rate-limit.ts:21-29` | One 8/60s budget per class: `chat` (`/api/chat`), `voice` (tts, tts-google, transcribe), `beacon` (`/api/error`). `/api/visit` has its own (`api/visit/route.ts:27-34`). Both fail-open paths are deliberate (`:99,106-109`). |
 | Add a build-time feature flag | `src/lib/writing-flags.ts` (or a component-local read) | Match the `=== "true"` convention (only `ARTICLES_ENABLED` is `!== "false"`). Read it **inside** a function body if a test needs `vi.stubEnv`. Then `.env.example`, `docs/configuration.md`, and `Makefile:154-180` (`flags-show`). |
 | Migrate a flag to runtime toggling | `src/lib/flags.ts:17-29` | Also declare it in `src/app/.well-known/vercel/flags/route.ts:11-22`; requires `FLAG_DRIVER=vercel` + `FLAGS_SECRET`. `FLAG_DRIVER` is captured at module load (`:13`). |
 | Gate which views exist in a build | `src/lib/enabled-views.ts:20-40` | Unset ⇒ all on; empty string ⇒ all optional off. `classic` and `resume` cannot be disabled. |

@@ -313,7 +313,7 @@ CLIENT
 | 1 | `src/components/chat/use-chat.ts` | The one transport for **every** surface: message list, stream read loop, rAF coalescing, thinking-phase timing, abort. |
 | 2 | `src/components/chat/chat-view.tsx` / `src/components/ask-portfolio.tsx` / `src/components/chat/use-voice-session.ts` | The three `useChat` call sites. `ask-portfolio.tsx:39` keys the widget by `view` so a view change resets the transcript. |
 | 3 | `src/lib/telemetry/with-trace.ts:200-221` | Mints the traceId, stamps `x-anvilry-trace-id` on a **reconstructed** Response that passes `res.body` through so streaming survives; emits exactly one span. |
-| 4 | `src/lib/rate-limit.ts:19-26,53-82` | `slidingWindow(8, "60 s")`, prefix `anvilry:chat`; **fails open** twice over. |
+| 4 | `src/lib/rate-limit.ts:21-29,74-110` | `checkRateLimit(req, "chat")` charges the `chat` bucket: `slidingWindow(8, "60 s")`, prefix `anvilry:chat` (voice and beacon have their own buckets); **fails open** twice over. |
 | 5 | `src/lib/corpus.ts:13` | Grounding document, rebuilt per request from build-time Velite data. |
 | 6 | `src/lib/llm.ts:52-54` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. |
 | 7 | `src/lib/llm.ts:63-72` | `decodeSecret`: base64-vs-raw discrimination by re-encoding the decode and comparing (`:66-67`). |
@@ -361,7 +361,7 @@ through `redact()` first (`:439`).
 |---|---|
 | 503 "Chat is not configured" | `isConfigured()` false — no `BEDROCK_ACCESS_KEY_ID`/`BEDROCK_SECRET_ACCESS_KEY` (or no `ANTHROPIC_API_KEY` under the direct provider). Client copy at `use-chat.ts:312-325`. |
 | 429 | Shared 8/60s budget exhausted — **shared with `/api/tts`, `/api/tts-google`, `/api/transcribe`, `/api/error`**, all under prefix `anvilry:chat`. |
-| Unbounded spend when Upstash is down | `checkRateLimit` fails open: `{ ok: true }` when unconfigured (`rate-limit.ts:73`) and on any thrown error (`:79-82`). The only signal is a production-only module-load warning (`:41-47`). |
+| Unbounded spend when Upstash is down | `checkRateLimit` fails open: `{ ok: true }` when unconfigured (`rate-limit.ts:99`) and on any thrown error (`:106-109`). The only signal is a production-only module-load warning (`:62-68`). |
 | Wrong `cost_usd` for a new model id | `BEDROCK_PRICE` (`route.ts:24-46`) is a hardcoded table; unknown models silently fall back to Sonnet 4.6 pricing (`:49-50`) — non-zero but wrong. |
 | Token telemetry silently zeroes | An SDK returning camelCase usage keys. Pinned by `src/lib/llm.test.ts:244-249`. |
 | Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:119`) is what shields it. |

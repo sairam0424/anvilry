@@ -212,20 +212,30 @@ The load-bearing reason (llm.ts:184-192): streaming errors surface *inside* the 
 - **Reads / depends on:** `@upstash/ratelimit`, `./redis` (the shared singleton). No direct env reads — env handling is owned by `redis.ts` (:15-17).
 - **Consumed by:** `src/app/api/chat/route.ts:6`, `src/app/api/tts/route.ts:3`, `src/app/api/tts-google/route.ts:1`, `src/app/api/transcribe/route.ts:7`, `src/app/api/error/route.ts:3`.
 
-**Exact budget** (rate-limit.ts:22-25):
+**Exact budget** (rate-limit.ts:21-29 and rate-limit.ts:40-42):
 
 ```ts
-limiter: Ratelimit.slidingWindow(8, "60 s"),
-prefix: "anvilry:chat",
+const REQUESTS_PER_WINDOW = 8;
+const WINDOW = "60 s";
+
+const KEY_PREFIX: Record<RateLimitClass, string> = {
+  chat: "anvilry:chat",
+  voice: "anvilry:voice",
+  beacon: "anvilry:beacon",
+};
+
+// inside buildLimiters(), once per class:
+limiter: Ratelimit.slidingWindow(REQUESTS_PER_WINDOW, WINDOW),
+prefix: KEY_PREFIX[cls],
 analytics: false,
 ```
 
-**8 requests per 60-second sliding window, per derived client IP**, under the Redis key prefix `anvilry:chat` — shared across chat, TTS, Google TTS, transcribe, and error routes (they all call the same limiter instance).
+**8 requests per 60-second sliding window, per derived client IP, per route class** — `buildLimiters()` (rate-limit.ts:33-46) builds one `Ratelimit` for each of `chat`, `voice` and `beacon`, each under its own Redis key prefix, so one class can never starve another. Routes map to classes as: `chat` ← `/api/chat`; `voice` ← `/api/tts`, `/api/tts-google`, `/api/transcribe` (these three do share one budget); `beacon` ← `/api/error`.
 
 **Fail-open behaviour**, two distinct paths:
 
-1. **Not configured** — `limiter` is `null` when `redis` is `null`, and `checkRateLimit` returns `{ ok: true }` immediately: `if (!limiter) return { ok: true }; // not configured -> fail open` (rate-limit.ts:73).
-2. **Configured but erroring** — any throw from `limiter.limit()` (Upstash unreachable/timeout/5xx) is caught and downgraded to a warn + allow (rate-limit.ts:79-82):
+1. **Not configured** — `limiters` is `null` when `redis` is `null`, and `checkRateLimit` returns `{ ok: true }` immediately: `if (!limiters) return { ok: true }; // not configured -> fail open` (rate-limit.ts:99).
+2. **Configured but erroring** — any throw from `limiters[cls].limit()` (Upstash unreachable/timeout/5xx) is caught and downgraded to a warn + allow (rate-limit.ts:106-109):
 
 ```ts
 } catch (err) {
@@ -234,7 +244,7 @@ analytics: false,
 }
 ```
 
-The rationale (:66-68): a cost guard must never be a single point of failure for the feature it protects — going down should degrade to "no limit", not "no chat".
+The rationale (:91-93): a cost guard must never be a single point of failure for the feature it protects — going down should degrade to "no limit", not "no chat".
 
 - **Behaviour notes:**
   - A **loud module-load warning** fires when unconfigured in production (rate-limit.ts:41-47), naming `/api/chat`, `/api/tts`, `/api/transcribe` as unprotected. Local dev stays quiet.

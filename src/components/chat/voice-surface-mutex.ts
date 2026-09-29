@@ -15,10 +15,18 @@
  * registered surface's close. Stores depend on this leaf module (never on each other),
  * so there is no import cycle.
  *
- * The ?view=voice view is handled separately (the header orb is disabled on that view —
- * see header-orb-trigger), because a view isn't a "close-able overlay"; it's mutually
- * exclusive by routing. This mutex governs the two OVERLAY surfaces (modal + inline).
+ * The ?view=voice view is handled separately, because a view isn't a "close-able
+ * overlay"; it's mutually exclusive by routing. Every overlay ENTRY POINT (header orb,
+ * command palette) gates itself with `isVoiceViewActive` so that rule lives here only.
+ * This mutex governs the OVERLAY surfaces (modal + inline + core).
  */
+
+import type { View } from "@/components/view-context";
+
+/** True while the full-page voice view owns the mic; overlay entry points must stay inert. */
+export function isVoiceViewActive(view: View): boolean {
+  return view === "voice";
+}
 
 export type VoiceSurfaceId = "modal" | "inline" | "core";
 

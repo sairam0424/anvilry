@@ -56,6 +56,7 @@ import { allProjects, allWork } from "@/lib/content";
 import { useView, setPendingChatQuery } from "@/components/view-context";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { openTalkMode } from "@/components/chat/talk-overlay-store";
+import { isVoiceViewActive } from "@/components/chat/voice-surface-mutex";
 import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
 import { VoicePicker } from "@/components/chat/voice-picker";
 import { VoiceSettingsDialog } from "@/components/chat/voice-settings-dialog";
@@ -112,7 +113,7 @@ export function CommandPaletteContent({
   const [recent, setRecent] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
-  const { setView } = useView();
+  const { view, setView } = useView();
   const { settings, toggle, set } = useVoiceSettings();
   // Voice picker dialog opens on "Pick voice…" (quick-swap commands set the
   // voiceId directly without opening, since they're a one-action choice).
@@ -431,8 +432,11 @@ export function CommandPaletteContent({
         ]
       : []),
     // Hands-free two-way talk mode — only on the modal surface (the 5th-view surface
-    // is entered via the ViewSwitcher) and only where speech recognition exists.
-    ...(sttSupported && settings.talkSurface === "modal"
+    // is entered via the ViewSwitcher), only where speech recognition exists, and never
+    // on the voice view (it already owns the mic — a second session would stack).
+    ...(sttSupported &&
+    settings.talkSurface === "modal" &&
+    !isVoiceViewActive(view)
       ? [
           {
             id: "voice-talk",

@@ -374,8 +374,10 @@ unconditionally — `src/components/article-card.tsx:18`
 `redirect()` at `src/app/articles/[slug]/page.tsx:71-72` — all gated on `NOTES_ENABLED`.
 Because `NOTES_ENABLED` defaults to **false** (`src/lib/writing-flags.ts:22`), those three
 cards currently fall back to `externalUrl`, which all three have; the dangling links only become
-reachable once `NEXT_PUBLIC_NOTES_ENABLED=true`. `src/lib/llms-txt.ts:27-28` builds the same
-`/notes/<linkedNote>` URL for the AI-discovery file.
+reachable once `NEXT_PUBLIC_NOTES_ENABLED=true`. `src/lib/llms-txt.ts:29-30` builds the same
+`/notes/<linkedNote>` URL for the AI-discovery file, but only when `NOTES_ENABLED` is on (`:29`);
+while notes are dark it falls back to the canonical article's `externalUrl`, else its own URL
+(`:31`).
 
 ### 6. Slug namespace overlap
 

@@ -1,3 +1,4 @@
+import { unauthorizedUnlessCron } from "@/lib/cron-auth";
 import { redis } from "@/lib/redis";
 
 export const maxDuration = 60;
@@ -99,11 +100,8 @@ function checkPass(
 const TRACE_DELIMITER = "\x1e";
 
 async function runEval(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = unauthorizedUnlessCron(req);
+  if (denied) return denied;
 
   const base = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
@@ -124,6 +122,9 @@ async function runEval(req: Request) {
         headers: {
           "Content-Type": "application/json",
           "X-Chat-Skip-Cache": "1",
+          // Already verified by unauthorizedUnlessCron above; lets /api/chat's
+          // limiter recognise this run and skip the 8/min per-IP budget.
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: pair.question }],

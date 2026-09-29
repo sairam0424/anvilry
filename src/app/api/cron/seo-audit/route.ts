@@ -1,3 +1,4 @@
+import { unauthorizedUnlessCron } from "@/lib/cron-auth";
 import { redis } from "@/lib/redis";
 import { allWork, allProjects, allArticles, allNotes } from "@/lib/content";
 
@@ -13,11 +14,8 @@ export const maxDuration = 60;
  * Auth: Authorization: Bearer ${CRON_SECRET}
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (!secret || authHeader !== `Bearer ${secret}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = unauthorizedUnlessCron(req);
+  if (denied) return denied;
 
   const base = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`

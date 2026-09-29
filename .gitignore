@@ -65,3 +65,5 @@ agentdb.rvf
 agentdb.rvf.*
 .swarm/
 .claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version

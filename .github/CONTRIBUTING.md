@@ -25,8 +25,8 @@ Thanks for taking the time. Anvilry is my personal engineering portfolio — not
 
 ## Before you open a PR
 
-1. Run `pnpm lint` and `pnpm test` locally — both run in CI and a failing check blocks merge.
-2. Test the affected view(s): Classic, Play (WebGL), Chat, Developer. The PR template asks which ones you checked.
+1. Run `pnpm lint` and `pnpm test` locally — both run in CI, and a failing test also fails `pnpm build`, which blocks the deploy.
+2. Test the affected view(s): Classic, Play (WebGL), Chat, Developer, and Voice where relevant. The PR template asks which ones you checked.
 3. Keep the diff small and focused. One fix per PR.
 
 ---

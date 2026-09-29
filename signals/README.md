@@ -44,5 +44,5 @@ A short statement of the signal (what, and why it matters), then an optional app
 Signals in this repo map to the following domain loops:
 
 - `content` — MDX freshness, missing case studies, stale metrics, authorship gaps
-- `seo` — crawl issues, missing structured data, canonical gaps, llms.txt staleness
+- `seo` — crawl issues, missing structured data, canonical gaps, llms.txt staleness (agent-facing surface only, not a search lever)
 - `performance` — bundle regressions, slow routes, Core Web Vitals drops, LCP issues

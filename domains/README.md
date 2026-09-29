@@ -54,6 +54,6 @@ lives in the artifacts it links, not here.
 
 | Domain | Goal | Cadence | Collector |
 |--------|------|---------|-----------|
-| `content` | Keep the portfolio content fresh, consistent, and discoverable | weekly | MDX files + Velite output |
-| `seo` | Maximize organic reach via llms.txt, structured data, sitemap, canonical URLs | weekly | Vercel Analytics + Search Console |
-| `performance` | Keep Core Web Vitals green; catch bundle regressions before they ship | on PR | pnpm build bundle analysis |
+| `content` | Keep the portfolio content fresh, consistent, and discoverable | weekly | MDX files + Velite output; `/api/cron/content-audit` flags stale articles and notes |
+| `seo` | Maximize organic reach via structured data, sitemap, and canonical URLs (llms.txt is an agent-facing surface, not a search lever) | weekly | `/api/cron/seo-audit` (Redis + dashboard tile); Search Console checks are manual |
+| `performance` | Keep Core Web Vitals green; catch bundle regressions before they ship | on PR | `scripts/bundle-budget.mjs` in the CI `e2e` job (reads `.next/diagnostics/route-bundle-stats.json`); `pnpm analyze` is local attribution only |

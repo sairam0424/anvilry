@@ -156,9 +156,9 @@ export function SoftwareSourceCodeJsonLd({
 }
 
 /**
- * WebSite schema. No potentialAction/SearchAction: SEARCH_ENABLED defaults off and
- * the Pagefind index isn't built as part of the normal deploy pipeline (needs a
- * separate `make search-index` step), so there is no live, working search endpoint
+ * WebSite schema. No potentialAction/SearchAction: SEARCH_ENABLED defaults off, so /search
+ * is not a live, advertised page (`pnpm build` does now generate the Pagefind index, but
+ * that alone does not switch the page on), so there is no working search endpoint
  * to point Google's sitelinks search box at today. Google also retired the
  * sitelinks-search-box rich result regardless, so there's no SERP benefit either
  * way. Re-add potentialAction pointing at /search if SEARCH_ENABLED ever ships live.
@@ -273,44 +273,6 @@ export function FaqJsonLd() {
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: safeJsonLd(faq) }}
-    />
-  );
-}
-
-/**
- * Article JSON-LD for article/note detail pages.
- * Exported here so notes pages can use it without duplicating the schema.
- */
-export function ArticleJsonLd({
-  title,
-  description,
-  url,
-  datePublished,
-  dateModified,
-  tags,
-}: {
-  title: string;
-  description: string;
-  url: string;
-  datePublished: string;
-  dateModified?: string;
-  tags?: string[];
-}) {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: title,
-    description,
-    url,
-    author: { "@type": "Person", name: profile.name, url: BASE_URL },
-    datePublished,
-    ...(dateModified && { dateModified }),
-    ...(tags?.length && { keywords: tags.join(", ") }),
-  };
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }

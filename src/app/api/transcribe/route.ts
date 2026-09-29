@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "Transcribe not configured." }, { status: 503 });
     }
 
-    const rl = await checkRateLimit(req);
+    const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
       return Response.json(
         { error: "Too many requests." },

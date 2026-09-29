@@ -310,7 +310,7 @@ env-check: ## Show which environment variables are set vs unset (secrets masked)
 	@printf "  GOOGLE_TTS_API_KEY          = %s\n" "$(if $(GOOGLE_TTS_API_KEY),SET (masked),unset — Google voices hidden)"
 	@echo ""
 	@printf "$(YELLOW)Telemetry$(RESET)\n"
-	@printf "  ADMIN_PASSWORD              = %s\n" "$(if $(ADMIN_PASSWORD),SET (masked),unset — /admin/telemetry shows setup instructions)"
+	@printf "  ADMIN_PASSWORD              = %s\n" "$(if $(ADMIN_PASSWORD),SET (masked),unset — /admin/* is locked out (401))"
 	@printf "  TELEMETRY_IP_SALT           = %s\n" "$(if $(TELEMETRY_IP_SALT),SET (masked),unset — IPs stored as 'anonymous')"
 	@echo ""
 	@printf "$(YELLOW)Flags SDK$(RESET)\n"

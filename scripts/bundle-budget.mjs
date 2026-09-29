@@ -36,8 +36,8 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 
 const STATS = ".next/diagnostics/route-bundle-stats.json";
 
-/** 16 routes today. Fewer means Next changed the artifact's shape and this gate is lying. */
-const MIN_ROUTES = 16;
+/** 17 routes today: the 16 src/app page.tsx routes plus /_not-found. Fewer means Next changed the artifact's shape and this gate is lying. */
+const MIN_ROUTES = 17;
 
 /**
  * Ceiling, not a baseline. Largest today is `/` at 1,322,132 B (was 1,220,794 B before the
@@ -73,7 +73,7 @@ const MAX_FIRST_LOAD_BYTES = 1_336_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies
- * exactly ONE chunk — verified here at 897,249 B (876.2 KiB), and present in 0 of the 16 routes'
+ * exactly ONE chunk — verified here at 897,249 B (876.2 KiB), and present in 0 of the 17 routes'
  * first-load sets, i.e. genuinely lazy today.
  *
  * This is the assertion a total-bytes guard CANNOT make. An eager `import * as THREE` in a shell

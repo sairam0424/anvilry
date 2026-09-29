@@ -1,4 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 // This dashboard is 100% request-time: it reads a rolling 24h window out of Redis on every
@@ -10,6 +12,7 @@ import { connection } from "next/server";
 // below is separately guarded by `await connection()`.
 export const instant = false;
 
+import { isAdminAuthorized } from "@/lib/admin-auth";
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
 
@@ -461,8 +464,12 @@ function Tile({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function TelemetryDashboard() {
-  // Auth is handled upstream by src/proxy.ts — by the time this renders,
-  // the request is authenticated. No html/body shell here; the layout provides those.
+  // Defense in depth: src/proxy.ts is the first filter, but this page re-checks Basic auth
+  // so it stays protected if the proxy matcher is ever bypassed or changed. Pages cannot
+  // emit a 401 challenge, so an unauthorized request gets notFound() before any Redis read.
+  // headers() is request-time data; it also keeps this segment out of prerendering.
+  // No html/body shell here; the layout provides those.
+  if (!isAdminAuthorized((await headers()).get("Authorization"))) notFound();
   // `await connection()` marks this page as request-time, which is required under
   // nextConfig.cacheComponents: Date.now() is synchronous IO and fails the prerender otherwise
   // ("encountered the unstable value `Date.now()` while prerendering"). That error cannot be

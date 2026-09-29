@@ -12,6 +12,7 @@ import {
   type Note,
   type Article,
 } from "../../.velite";
+import { NOTES_ENABLED } from "@/lib/writing-flags";
 
 export type { Project, Work, Note, Article };
 
@@ -43,11 +44,16 @@ export function projectsByGroup() {
 export const getProject = (slug: string) => allProjects.find((p) => p.slug === slug);
 export const getWork = (slug: string) => allWork.find((w) => w.slug === slug);
 
-/** Published notes (drafts excluded), newest first. Empty until the owner writes posts —
- *  the /notes nav link + section gate on allNotes.length so it ships dark. */
-export const allNotes: Note[] = [...rawNotes]
+/** Published notes (drafts excluded), newest first, regardless of NOTES_ENABLED. Only the
+ *  /notes route files use this: cacheComponents needs generateStaticParams to return at
+ *  least one entry even while the section is dark. Every other consumer reads `allNotes`. */
+export const publishedNotes: Note[] = [...rawNotes]
   .filter((n) => !n.draft)
   .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+/** Notes visible to consumers: empty while NOTES_ENABLED is off, so llms.txt, the feed, MCP,
+ *  the chat corpus and the .md handlers cannot publish notes the /notes pages 404. */
+export const allNotes: Note[] = NOTES_ENABLED ? publishedNotes : [];
 
 export const getNote = (slug: string) => allNotes.find((n) => n.slug === slug);
 export const hasNotes = allNotes.length > 0;
@@ -60,11 +66,20 @@ export const inkforgeNotes = allNotes.filter((n) => n.generatedBy === "inkforge"
  *  that appear on the /articles page as the "Generated" section. */
 export const inkforgeArticles = allNotes.filter((n) => n.generatedBy === "inkforge" && !n.draft);
 
+const OWN_NOTES_URL_PREFIX = "https://anvilry.vercel.app/notes/";
+
+/** An article whose only destination is a note: it has a linkedNote and either no
+ *  externalUrl or an externalUrl that is itself an internal /notes/ URL. */
+const isNoteOnlyArticle = (a: Article) =>
+  Boolean(a.linkedNote) && (!a.externalUrl || a.externalUrl.startsWith(OWN_NOTES_URL_PREFIX));
+
 /** Published articles (curator model — each has an externalUrl or is native),
  *  newest first. Empty until the owner adds entries — the nav link + /articles
- *  page gate on allArticles.length so it ships dark. */
+ *  page gate on allArticles.length so it ships dark. While notes are dark, articles
+ *  that only point at a note are dropped too (they would link to a 404). */
 export const allArticles: Article[] = [...rawArticles]
   .filter((a) => !a.draft)
+  .filter((a) => NOTES_ENABLED || !isNoteOnlyArticle(a))
   .sort((a, b) => (a.date < b.date ? 1 : -1));
 
 export const getArticle = (slug: string) => allArticles.find((a) => a.slug === slug);

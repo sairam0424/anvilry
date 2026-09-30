@@ -4,6 +4,46 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] — 2026-10-01
+
+**Minor** — two things a visitor could see are removed, and one accessibility label stops naming the
+model. Nothing is added, no setting changes, and nothing in dependencies, content or API contracts.
+It is a minor because both removals are visible behaviour and the optional discovery badge now counts to 4.
+
+### Removed
+- **The `Answered by <model> · <provider>` line under every chat answer** (#291). `ChatMessages` was the
+  only place that rendered it; the line, its `friendlyModel` helper and the `showBadge` condition that
+  gated it are gone, and the answer footer is now the read-aloud ("Listen") toggle alone, under the same
+  conditions as before. The `↳ primary unavailable` prefix lived in the same element, so it is gone too.
+  **Operator-visible:** a visitor can no longer see that a fallback rung answered. The trace frame still
+  carries `model` and `fellBack` (visible in devtools or `curl`, never in rendered or spoken text) and
+  `llm.attempt` telemetry still records `fell_back`, so a primary that has quietly degraded to Haiku (see
+  the 3.8.0 note) now shows only there, e.g. in the admin dashboard's Fallback rate tile. Left alone: the
+  dashboard still shows model names, `use-chat` still stores `model` and `fellBack` on each message, a
+  visitor who asks may still get a model name from the bot (the system prompt does not specifically
+  withhold it; not tried live), and on phones the "AI Concierge" header label is screen-reader-only, so no
+  visible text says the answers are AI-generated. A neutral cue that names no model is an open decision.
+- **The Konami-code easter egg** (#292). The ↑↑↓↓←→←→ B A sequence no longer opens the "You know the code."
+  card, and the Konami mentions are gone from the Developer-view hint and from the DevTools console
+  greeting. The console greeting itself, the hidden `secret` / `uses` / `now` terminal commands, `about`
+  and the `personal.ts` content are unchanged.
+  - The `"konami"` discovery slot (the fourth of five) is gone from `DiscoveryKey` and `ALL_KEYS`, so the
+    exploration badge (`NEXT_PUBLIC_DISCOVERY_BADGES`, off by default) reads `★ N/4` instead of `★ N/5`. A
+    `"konami"` value already in a returning visitor's localStorage is filtered out on read; that visitor's
+    count simply falls by one, and no migration was needed.
+
+### Changed
+- The streaming reasoning block's `aria-label` read "Claude's live reasoning" and now reads "Live
+  reasoning" (#291), so the model family is no longer in the DOM or read out by screen readers.
+- The command palette's "Unlock all discoveries" hint takes its number from `DISCOVERY_TOTAL` instead of a
+  literal, and the flag description (`flags.ts`, `/.well-known/vercel/flags`), the `.env.example` comment
+  and `make flags-beast` now say N/4 (#292).
+- The suite goes from 859 to 864 tests across 94 files: four for #291, and for #292 the easter-egg test
+  rewritten for the greeting, a new `discovery-store.dom.test.ts` (total of 4; a legacy stored `konami`
+  ignored) and one palette test that pins the derived count.
+- The docs index is relabelled to 3.9.0; the areas #291 and #292 touched were updated (chat answer
+  footer, easter-egg and discovery-badge sections, file and test counts), the counts elsewhere were not.
+
 ## [3.8.0] — 2026-09-30
 
 **Minor** — one behaviour fix in the chat model chain, one consequence of it that the chat route now

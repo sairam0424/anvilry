@@ -3,14 +3,14 @@ kind: doc
 title: Tests, E2E & Quality Gates
 domain: [content]
 status: current
-version: v3.8.0
+version: v3.9.0
 ---
 
 # Tests, E2E & Quality Gates
 
-> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> **Basis:** describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer when `NEXT_PUBLIC_NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a cron-secret bypass (`src/lib/cron-auth.ts`); admin auth through one shared `isAdminAuthorized` used by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Measured on `a929932` plus the five fixes (worktree `8e9e73e`): 93 Vitest files, 817 tests, all passing (Vitest 5.0.0); 24 Playwright tests.
+> **Basis:** describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer when `NEXT_PUBLIC_NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a cron-secret bypass (`src/lib/cron-auth.ts`); admin auth through one shared `isAdminAuthorized` used by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Measured on `a929932` plus the five fixes (worktree `8e9e73e`): 93 Vitest files, 817 tests, all passing (Vitest 5.0.0); 24 Playwright tests.
 
 **Scope:** `src/**/*.test.{ts,tsx}`, `src/**/*.dom.test.{ts,tsx}`, `e2e/resume.spec.ts`, `e2e/views.spec.ts`, `vitest.config.ts`, `playwright.config.ts`, plus the CI wiring of the non-Vitest gates (`scripts/bundle-budget.mjs`, `scripts/check-index-citations.mjs`, `scripts/seal-claims.ts`, `.github/workflows/ci.yml`)
 **Files indexed:** 98 (96 test/spec files + 2 configs) — 94 under `src/` (`find src -name '*.test.*'`; 61 run in the `node` project, 33 `*.dom.test.*` in `dom`) plus the 2 Playwright specs under `e2e/`. 864 tests in total, 0 skipped in Vitest. Since v3.6.0's `pnpm-build-allowlist-consistency` suite, the tree gained rate-limit, cron-auth, proxy, admin-page, chat-route, FAQ-cache purge, decisions-ledger, notes-dark, theme-contrast and claims-integrity suites (see **At a glance**). The citation check is a CI step, not a suite (`src/lib/index-citations.test.ts` was deleted; see **CI jobs**).

@@ -1,127 +1,137 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, act, fireEvent, cleanup, waitFor } from "@testing-library/react";
-import { personal } from "@/lib/personal";
-import { EasterEggs } from "./easter-eggs";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+} from "vitest";
+import { StrictMode } from "react";
+import { render, act, cleanup } from "@testing-library/react";
+import { profile } from "@/lib/profile";
 
 /**
- * The global Konami egg: fires anywhere, reveals an accessible (focusable, Esc-
- * dismissible, non-trapping) dialog card, restores focus on close, and is SUPPRESSED
- * while a text input is focused so it never fights the terminal's ↑/↓ history.
+ * What is left of the old easter-egg component: the DevTools console greeting. The
+ * Konami code (its card, its hint in the Developer view and its discovery badge) was
+ * removed at the owner's request; the greeting stays.
  *
- * personal.ts is POPULATED in the repo, so the card renders a real owner fact + a
- * pointer to `secret` (asserted below). A separate suite mocks an EMPTY personal module
- * to pin the "Thanks for exploring" fallback (the empty-safe contract).
+ * `consoleGreeted` is MODULE state (it is what makes the greeting fire once per page
+ * load), so every test loads a fresh copy of the module (vi.resetModules + a dynamic
+ * import) instead of sharing the one a top-level import would give all of them.
  */
 const KONAMI = [
-  "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
-  "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight",
-  "b", "a",
+  "ArrowUp",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowLeft",
+  "ArrowRight",
+  "b",
+  "a",
 ];
 
-const fireKonami = () => {
-  for (const key of KONAMI) {
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
-    });
-  }
-};
+let logSpy: MockInstance<typeof console.log>;
 
 beforeEach(() => {
-  try {
-    localStorage.clear();
-  } catch {
-    /* ignore */
-  }
+  logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
 afterEach(() => {
   cleanup();
+  logSpy.mockRestore();
+  vi.doUnmock("@/lib/personal");
   vi.resetModules();
 });
 
-describe("EasterEggs — global Konami (populated personal.ts)", () => {
-  it("reveals the dialog card after the Konami sequence", () => {
-    render(<EasterEggs />);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    fireKonami();
-    expect(screen.getByRole("dialog")).toBeTruthy();
-  });
-
-  it("reveals a REAL owner fact + a pointer to `secret` (reveal payload contract)", () => {
-    render(<EasterEggs />);
-    fireKonami();
-    const card = screen.getByRole("dialog");
-    const expectedFact =
-      personal.funFacts[0] ?? personal.hobbies[0] ?? personal.currentlyLearning[0];
-    expect(card.textContent).toContain(expectedFact);
-    expect(card.textContent).toMatch(/secret/i);
-  });
-
-  it("is a labelled dialog (accessible name from its heading)", () => {
-    render(<EasterEggs />);
-    fireKonami();
-    // getByRole with name resolves via aria-labelledby → the heading text.
-    expect(screen.getByRole("dialog", { name: /you know the code/i })).toBeTruthy();
-  });
-
-  it("Esc dismisses the card and restores focus to the prior element (WCAG 2.4.3)", async () => {
-    render(
-      <>
-        <button>prior focus</button>
-        <EasterEggs />
-      </>,
-    );
-    const prior = screen.getByRole("button", { name: "prior focus" });
-    prior.focus();
-    expect(document.activeElement).toBe(prior);
-
-    fireKonami();
-    expect(screen.getByRole("dialog")).toBeTruthy();
-
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    });
-    expect(screen.queryByRole("dialog")).toBeNull();
-    await waitFor(() => expect(document.activeElement).toBe(prior));
-  });
-
-  it("does NOT fire while a text input is focused (no fighting terminal history)", () => {
-    render(
-      <>
-        <input aria-label="Terminal command input" />
-        <EasterEggs />
-      </>,
-    );
-    const input = screen.getByLabelText("Terminal command input");
-    input.focus();
-    for (const key of KONAMI) {
-      act(() => fireEvent.keyDown(input, { key, bubbles: true }));
-    }
-    expect(screen.queryByRole("dialog")).toBeNull();
-  });
-
-  it("the dismiss button is labelled (a11y) and present", () => {
-    render(<EasterEggs />);
-    fireKonami();
-    expect(screen.getByRole("button", { name: /dismiss/i })).toBeTruthy();
-  });
-});
-
-describe("EasterEggs — empty personal.ts (empty-safe fallback)", () => {
-  it("shows the celebratory fallback (no fabricated fact) when personal is empty", async () => {
-    vi.resetModules();
+async function loadEasterEggs(
+  opts: { personal: boolean } = { personal: true },
+) {
+  vi.resetModules();
+  if (!opts.personal) {
     vi.doMock("@/lib/personal", () => ({
-      personal: { hobbies: [], funFacts: [], currentlyLearning: [], askMeAbout: [], uses: [] },
+      personal: {
+        hobbies: [],
+        funFacts: [],
+        currentlyLearning: [],
+        askMeAbout: [],
+        uses: [],
+      },
       now: { updated: "", focus: [] },
       hasPersonalContent: false,
       hasNow: false,
     }));
-    const { EasterEggs: EmptyEggs } = await import("./easter-eggs");
-    render(<EmptyEggs />);
-    fireKonami();
-    const card = screen.getByRole("dialog");
-    expect(card.textContent).toMatch(/thanks for exploring/i);
-    expect(card.textContent).not.toMatch(/secret/i); // no pointer when there's nothing to find
-    vi.doUnmock("@/lib/personal");
+  }
+  const mod = await import("./easter-eggs");
+  return mod.EasterEggs;
+}
+
+/** Everything the greeting printed, as one string (format string plus %c styles). */
+const printed = () =>
+  logSpy.mock.calls.map((args) => args.join(" ")).join("\n");
+
+describe("EasterEggs — the DevTools console greeting", () => {
+  it("logs exactly once per page load, across StrictMode double effects and re-mounts", async () => {
+    const EasterEggs = await loadEasterEggs();
+    const first = render(
+      <StrictMode>
+        <EasterEggs />
+      </StrictMode>,
+    );
+    first.unmount();
+    render(<EasterEggs />);
+    expect(logSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the owner and every contact link", async () => {
+    const EasterEggs = await loadEasterEggs();
+    render(<EasterEggs />);
+    const text = printed();
+    expect(text).toContain(profile.name);
+    expect(text).toContain("you found the console");
+    for (const value of [
+      profile.email,
+      profile.links.github,
+      profile.links.npm,
+      profile.links.pypi,
+      profile.links.devto,
+      profile.links.substack,
+    ]) {
+      expect(text).toContain(value);
+    }
+  });
+
+  it("points at the hidden `secret` command when personal content exists, and never at the Konami code", async () => {
+    const EasterEggs = await loadEasterEggs();
+    render(<EasterEggs />);
+    expect(printed()).toContain("type `secret` in Developer mode");
+    expect(printed()).not.toMatch(/konami/i);
+  });
+
+  it("prints no hint at all when there is no personal content (empty-safe)", async () => {
+    const EasterEggs = await loadEasterEggs({ personal: false });
+    render(<EasterEggs />);
+    const text = printed();
+    expect(text).toContain("you found the console");
+    expect(text).not.toMatch(/psst|secret|konami/i);
+  });
+});
+
+describe("EasterEggs — the Konami code is gone", () => {
+  it("renders nothing and ignores the old key sequence (no dialog, no card)", async () => {
+    const EasterEggs = await loadEasterEggs();
+    const { container } = render(<EasterEggs />);
+    for (const key of KONAMI) {
+      act(() => {
+        window.dispatchEvent(
+          new KeyboardEvent("keydown", { key, bubbles: true }),
+        );
+      });
+    }
+    expect(container.innerHTML).toBe("");
+    expect(document.body.querySelector("[role='dialog']")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/you know the code/i);
   });
 });

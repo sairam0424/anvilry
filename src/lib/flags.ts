@@ -17,7 +17,7 @@ const useVercelDriver = process.env.FLAG_DRIVER === "vercel";
 const discoveryBadgesFlag = flag<boolean>({
   key: "NEXT_PUBLIC_DISCOVERY_BADGES",
   defaultValue: false,
-  description: "Show the ★ N/5 discovered exploration badge (bottom-right)",
+  description: "Show the ★ N/4 discovered exploration badge (bottom-right)",
   options: [
     { label: "Off", value: false },
     { label: "On", value: true },

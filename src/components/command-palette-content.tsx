@@ -51,7 +51,7 @@ import {
   Substack,
 } from "@/components/icons";
 import { profile, resumeVariants } from "@/lib/profile";
-import { unlockAll } from "@/lib/discovery-store";
+import { unlockAll, DISCOVERY_TOTAL } from "@/lib/discovery-store";
 import { allProjects, allWork } from "@/lib/content";
 import { useView, setPendingChatQuery } from "@/components/view-context";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
@@ -232,7 +232,7 @@ export function CommandPaletteContent({
           {
             id: "unlock-discoveries",
             label: "Unlock all discoveries",
-            hint: "★ reveal all 5 exploration badges",
+            hint: `★ reveal all ${DISCOVERY_TOTAL} exploration badges`,
             icon: <Sparkles size={16} />,
             run: () => {
               unlockAll();

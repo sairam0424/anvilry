@@ -17,8 +17,8 @@ import {
  * AWS Bedrock <-> the direct Anthropic API is an env change (LLM_PROVIDER), not
  * a code change.
  *
- * Owner directive: Sonnet (4.6, or 5 when LLM_USE_SONNET_5 is set) primary ->
- * Opus 4.6 secondary -> Haiku 4.5 fallback.
+ * Owner directive: Sonnet (4.6, 5 when LLM_USE_SONNET_5 is set, or 5.5 when
+ * LLM_USE_SONNET_5_5 is set) primary -> Opus 4.6 secondary -> Haiku 4.5 fallback.
  * (Updated 2026-06-17 to match the BEDROCK_CHAIN order below — earlier wording said
  * "Opus primary" while the array shipped Sonnet-first since v1.6, leaving log
  * analysis ambiguous about which model was the "expected primary" on a given turn.)
@@ -44,16 +44,51 @@ export function isSonnet5PrimaryEnabled(): boolean {
   return process.env.LLM_USE_SONNET_5 === "true";
 }
 
+/** Feature flag: when "true", Claude Sonnet 5.5 becomes the PRIMARY rung on both
+ *  chains, taking precedence over LLM_USE_SONNET_5. Opus and Haiku are left
+ *  untouched. Default OFF, for the same reason as the Sonnet 5 flag: a
+ *  capability upgrade stays an explicit opt-in until proven in production.
+ *
+ *  Things a naive "swap the id" change gets wrong (verified live against
+ *  Bedrock, 2026-09-30):
+ *  - Bedrock serves 5.5 ONLY through the GLOBAL inference profile. There is no
+ *    `us.` profile: that id answers "model identifier is invalid", which
+ *    isFallbackEligible reads as "model unavailable", so a wrong id would not
+ *    fail loudly, it would skip the primary on every request. Global routing
+ *    means a request may be processed outside the US regions.
+ *  - The principal needs IAM on the global profile. Without it 5.5 answers 403
+ *    (eligible), Opus 403s too, and Haiku answers EVERY request: no error, only
+ *    fell_back / attrs.status 403 in llm.attempt. Check fellBack after enabling.
+ *  - It rejects `thinking: {type:"disabled"}`; see thinkingOff().
+ *  - It rejects `temperature`; this module sends no sampling parameters. */
+export function isSonnet55PrimaryEnabled(): boolean {
+  return process.env.LLM_USE_SONNET_5_5 === "true";
+}
+
+/** The primary rung's id: 5.5 (LLM_USE_SONNET_5_5) beats 5 (LLM_USE_SONNET_5),
+ *  which beats the 4.6 default. */
+function pickPrimary(ids: {
+  sonnet46: string;
+  sonnet5: string;
+  sonnet55: string;
+}): string {
+  if (isSonnet55PrimaryEnabled()) return ids.sonnet55;
+  return isSonnet5PrimaryEnabled() ? ids.sonnet5 : ids.sonnet46;
+}
+
 /**
  * Region-prefixed Bedrock inference-profile IDs (verified live in the reference
  * account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with
  * "model identifier is invalid". Sonnet 4.6's and Sonnet 5's bare ids resolve fine.
+ * Sonnet 5.5 is the exception: no `us.` profile, only `global.anthropic.claude-sonnet-5-5`.
  */
 function bedrockChain(): string[] {
   return [
-    isSonnet5PrimaryEnabled()
-      ? "us.anthropic.claude-sonnet-5"
-      : "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+    pickPrimary({
+      sonnet46: "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+      sonnet5: "us.anthropic.claude-sonnet-5",
+      sonnet55: "global.anthropic.claude-sonnet-5-5",
+    }),
     "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
     "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
   ];
@@ -62,15 +97,37 @@ function bedrockChain(): string[] {
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
 function anthropicChain(): string[] {
   return [
-    isSonnet5PrimaryEnabled() ? "claude-sonnet-5" : "claude-sonnet-4-6",
+    pickPrimary({
+      sonnet46: "claude-sonnet-4-6",
+      sonnet5: "claude-sonnet-5",
+      sonnet55: "claude-sonnet-5-5",
+    }),
     "claude-opus-4-7",
     "claude-haiku-4-5",
   ];
 }
 
+/** The explicit "thinking off" request shape for a thinking-capable model.
+ *  Sonnet 5.5 rejects `{type:"disabled"}` with a 400 (`"thinking.type.disabled"
+ *  is not supported for this model`) and names `between_tools` as its lowest
+ *  setting; every other thinking-capable rung takes "disabled". Keep this
+ *  per-model: that 400 contains "is not supported" (see
+ *  MODEL_UNAVAILABLE_MARKERS), so the wrong shape would silently skip the
+ *  primary instead of failing. Verified live on the streaming path: with
+ *  `between_tools` a tool-less request streams no thinking blocks; with the
+ *  field omitted, 5.5 thinks by default (a thinking block appears). */
+function thinkingOff(model: string): {
+  type: "disabled" | "between_tools";
+} {
+  return model.includes("sonnet-5-5")
+    ? { type: "between_tools" }
+    : { type: "disabled" };
+}
+
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
  *  un-enabled / mistyped inference-profile id as a 400, not a 404). Only these
- *  400s trigger fallback; every other 400 is a deterministic input error. */
+ *  400s trigger fallback; every other 400 is a deterministic input error. A 403
+ *  saying the same (model access not granted) advances the chain too. */
 const MODEL_UNAVAILABLE_MARKERS = [
   "model identifier is invalid",
   "model id is invalid",
@@ -79,6 +136,13 @@ const MODEL_UNAVAILABLE_MARKERS = [
   "don't have access to the model",
   "is not supported",
 ];
+
+/** 403 messages that mean "this principal may not use THIS model": an IAM
+ *  identity-policy deny (this account hard-denies the whole Opus family) or a
+ *  missing allow. The next rung may still be permitted, so these advance the
+ *  chain. A bad-credential 403 (invalid/expired token, signature mismatch) says
+ *  none of this and stays terminal — every rung would fail the same way. */
+const MODEL_DENIED_MARKERS = ["is not authorized to perform", "explicit deny"];
 
 export function getProvider(): LlmProvider {
   return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
@@ -165,19 +229,32 @@ export function makeClient(): Anthropic {
  * for deterministic input errors (malformed prompt/schema, bad creds) that fail
  * identically on every model. status+message-driven so it survives even a
  * hypothetical double-install of the SDK where `instanceof` could break.
+ *
+ * A 403 is eligible only when its message names a per-model deny
+ * (MODEL_DENIED_MARKERS / MODEL_UNAVAILABLE_MARKERS). Without that, the
+ * IAM-denied Opus rung would end the chain in the apology and Haiku, the last
+ * rung, would never be reached.
  */
 export function isFallbackEligible(err: unknown): boolean {
   if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass
   const status = (err as { status?: number })?.status;
   if (status === 429 || status === 404) return true;
   if (typeof status === "number" && status >= 500) return true;
-  if (status === 400) {
-    const msg = String(
-      (err as { message?: string })?.message ?? "",
-    ).toLowerCase();
-    return MODEL_UNAVAILABLE_MARKERS.some((m) => msg.includes(m));
+  if (status === 400 || status === 403) {
+    // AWS may spell an apostrophe typographically where the markers use the
+    // ASCII one; fold it so "don't have access to the model" matches either
+    // spelling. Only the listed markers count: "isn't supported" would not.
+    const msg = String((err as { message?: string })?.message ?? "")
+      .toLowerCase()
+      .replace(/[\u2018\u2019]/g, "'");
+    const markers =
+      status === 403
+        ? [...MODEL_UNAVAILABLE_MARKERS, ...MODEL_DENIED_MARKERS]
+        : MODEL_UNAVAILABLE_MARKERS;
+    return markers.some((m) => msg.includes(m));
   }
-  // plain 400, 422, 401, 403 -> deterministic -> NOT eligible
+  // plain 400, 422, 401, and a 403 that is not a per-model deny (bad or expired
+  // credentials, signature mismatch) -> deterministic -> NOT eligible
   return false;
 }
 
@@ -372,11 +449,13 @@ export function streamWithFallback(
         // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
         // the `thinking` field is omitted entirely — unlike 4.6, where omission
         // means no thinking at all. So the "off" case below sends an EXPLICIT
-        // `{type:"disabled"}` for any thinking-capable model, never just omits
+        // off shape (thinkingOff()) for any thinking-capable model, never just omits
         // the field — omission would silently start reasoning (and billing for
         // it) the moment LLM_USE_SONNET_5 flips on, even with extendedThinking
         // false. Haiku gets no `thinking` key at all, since it doesn't
         // recognize the param.
+        // (That shape is "disabled", or `between_tools` for Sonnet 5.5, which
+        // rejects "disabled": see thinkingOff().)
         const stream = client.messages.stream({
           ...params,
           model,
@@ -392,7 +471,7 @@ export function streamWithFallback(
             ? {
                 thinking: useThinking
                   ? ({ type: "adaptive" } as const)
-                  : ({ type: "disabled" } as const),
+                  : thinkingOff(model),
                 ...(useThinking
                   ? { output_config: { effort: "low" as const } }
                   : {}),
@@ -453,12 +532,12 @@ export function streamWithFallback(
             // to delineate the reasoning phase from the answer phase.
             //
             // Gated on useThinking, not just "did a thinking_delta event
-            // arrive": the explicit request-side `thinking:{type:"disabled"}`
-            // set above should make this unreachable in practice, but Sonnet
+            // arrive": the explicit request-side thinking-off shape set above
+            // should make this unreachable in practice, but Sonnet
             // 5/Opus 5's adaptive-thinking-on-by-default behavior is exactly
             // the kind of provider-side default this repo has already been
             // burned by once — if a thinking_delta ever arrives despite the
-            // explicit disable, drop it here rather than streaming raw,
+            // explicit off shape, drop it here rather than streaming raw,
             // unframed reasoning bytes (no THINKING_SENTINEL was emitted for
             // this attempt in that case).
             if (
@@ -524,8 +603,8 @@ export function streamWithFallback(
             usage,
             // Present iff a trace frame is about to be appended below — i.e. iff
             // the client will render a fully-formed assistant message. Never set
-            // on the catch-block's safeOnAttempt call, so a partial/fallback
-            // path can never be cached, by construction.
+            // on the catch-block's safeOnAttempt call, so a partial answer is
+            // never cached (the route also skips fell_back successes).
             ...(emittedAny ? { answerText } : {}),
           });
           // Clean finish — append the honest trace frame (which model served the bytes,

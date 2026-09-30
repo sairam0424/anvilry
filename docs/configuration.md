@@ -44,7 +44,7 @@ These must be set before the chatbot works. Everything else degrades gracefully.
 ```
 Bedrock (default): Sonnet 4.6 → Opus 4.6 → Haiku 4.5   |   Direct Anthropic: Sonnet 4.6 → Opus 4.7 → Haiku 4.5
 ```
-`LLM_USE_SONNET_5=true` swaps only the primary rung to Claude Sonnet 5 on whichever chain is active (default off; see "Server Toggles, Caches & Crons" below). Each attempt has a 15 s timeout. Fall-through happens only on availability errors (429 / 404 / 5xx / connection errors, or a 400 whose message says the model is invalid or inaccessible) and only while no text has been streamed; other 400s and 401 / 403 / 422 are deterministic, so they end the chain with the apology tail instead. Ids and rules live in `bedrockChain()`, `anthropicChain()` and `isFallbackEligible()` in `src/lib/llm.ts`.
+`LLM_USE_SONNET_5=true` swaps only the primary rung to Claude Sonnet 5, and `LLM_USE_SONNET_5_5=true` to Claude Sonnet 5.5 (which wins if both are set), on whichever chain is active (default off; see "Server Toggles, Caches & Crons" below). Each attempt has a 15 s timeout. Fall-through happens only on availability errors (429 / 404 / 5xx / connection errors, a 400 whose message says the model is invalid or inaccessible, or a 403 whose message names an IAM or model-access deny) and only while no text has been streamed; other 400s, 401 / 422 and a credential 403 (invalid or expired token, signature mismatch) are deterministic, so they end the chain with the apology tail instead. Ids and rules live in `bedrockChain()`, `anthropicChain()` and `isFallbackEligible()` in `src/lib/llm.ts`.
 
 ---
 
@@ -342,7 +342,8 @@ Server-side switches, the FAQ response cache, the cron schedule and the build-ti
 | Variable | Default | Description |
 |---|---|---|
 | `LLM_USE_SONNET_5` | off | Exactly `"true"` moves only the **primary** rung to Claude Sonnet 5 (`us.anthropic.claude-sonnet-5` on Bedrock, `claude-sonnet-5` direct); Opus and Haiku are unchanged. The profile must be enabled and allowed by IAM (`DEPLOY.md` §7, "Extra IAM by feature"). Cost telemetry prices only three Bedrock ids (`BEDROCK_PRICE` in `src/app/api/chat/route.ts`); every other id, including Sonnet 5 and all direct-Anthropic ids, is priced as Sonnet 4.6, so `cost_usd` is approximate on those paths. |
-| `EXTENDED_THINKING` | on | Server switch read per request by `/api/chat`: anything but exactly `"false"` calls non-Haiku models with adaptive thinking (`effort: "low"`, `max_tokens` raised to at least 2048). `"false"` sends an explicit `thinking: {type: "disabled"}`, never an omitted field, because `src/lib/llm.ts` notes that Sonnet 5 thinks by default when the field is absent. |
+| `LLM_USE_SONNET_5_5` | off | Exactly `"true"` moves only the **primary** rung to Claude Sonnet 5.5 and wins over `LLM_USE_SONNET_5`. On Bedrock that is the **global** profile `global.anthropic.claude-sonnet-5-5` (there is no `us.` profile), so requests may be processed outside the US regions and the IAM policy must allow the profile (`DEPLOY.md` §7, "Extra IAM by feature"); direct API: `claude-sonnet-5-5` (unverified on that path). Opus and Haiku are unchanged. 5.5 rejects `thinking: {type: "disabled"}`, so `llm.ts` sends `between_tools` when extended thinking is off. It has no `BEDROCK_PRICE` row, so `cost_usd` is approximate on this path too. |
+| `EXTENDED_THINKING` | on | Server switch read per request by `/api/chat`: anything but exactly `"false"` calls non-Haiku models with adaptive thinking (`effort: "low"`, `max_tokens` raised to at least 2048). `"false"` sends an explicit `thinking: {type: "disabled"}` (`between_tools` on the Sonnet 5.5 rung, which rejects `disabled`), never an omitted field, because `src/lib/llm.ts` notes that Sonnet 5 thinks by default when the field is absent. |
 | `NEXT_PUBLIC_EXTENDED_THINKING` | on | Build-time, UI only (`chat-messages.tsx`): `"false"` hides the reasoning disclosure. Independent of `EXTENDED_THINKING`, so the two can disagree; set both to switch reasoning off end to end. |
 
 ### FAQ response cache
@@ -354,7 +355,7 @@ Repeat first-turn questions are answered from Redis with zero Bedrock spend (`sr
 | `FAQ_CACHE_ENABLED` | on | Kill switch for both tiers (anything but exactly `"false"` is on), independent of the rest of Redis. Also a plain miss when Redis is unset or erroring. |
 | `FAQ_CACHE_SEMANTIC_MATCH` | off | Exactly `"true"` adds a second tier: the normalized question is embedded with Bedrock Titan Text Embeddings V2 (`amazon.titan-embed-text-v2:0`, 512 dimensions, 5 s timeout, the same `BEDROCK_*` credentials) and matched by cosine similarity ≥ 0.92 against an index capped at 500 entries. Costs one extra `InvokeModel` per exact-tier miss, plus one more when the clean answer is written through, and sends the question text to Bedrock. The IAM policy needs `bedrock:InvokeModel` on the Titan model (`DEPLOY.md` §7, "Extra IAM by feature"); on any failure the tier silently misses. |
 
-Storage: `anvilry:chat:cache:<sha256 of the normalized question>` with a 24 h TTL (`FAQ_CACHE_TTL_SECONDS`) and an index at `anvilry:chat:cache:index`. Only a clean `end_turn` answer of 1–4,000 characters is written (control bytes stripped). Each entry is tagged with `anvilry:corpus:built_at`, which a production deploy re-stamps, so a corpus change turns older answers into misses (both tags null, as in local dev, counts as a match). The index trim runs on roughly 1-in-20 writes. Cache-layer errors are emitted as `server.error` with `attrs.source = "chat-cache"`.
+Storage: `anvilry:chat:cache:<sha256 of the normalized question>` with a 24 h TTL (`FAQ_CACHE_TTL_SECONDS`) and an index at `anvilry:chat:cache:index`. Only a clean `end_turn` answer of 1–4,000 characters is written (control bytes stripped), and only when the primary model produced it: an answer served by a fallback rung is streamed but never cached, so a transient outage is not replayed for 24 h. Each entry is tagged with `anvilry:corpus:built_at`, which a production deploy re-stamps, so a corpus change turns older answers into misses (both tags null, as in local dev, counts as a match). The index trim runs on roughly 1-in-20 writes. Cache-layer errors are emitted as `server.error` with `attrs.source = "chat-cache"`.
 
 **Purge a bad entry:** `curl -u :$ADMIN_PASSWORD -X POST https://<host>/api/admin/faq-cache/purge -H 'Content-Type: application/json' -d '{"question":"What is Pensieve?"}'`. The route (`maxDuration` 10, body ≤ 4 KB, question ≤ 2,000 characters) calls `requireAdmin`, is deliberately not rate-limited, sits outside the proxy matcher (`/admin/:path*`), and answers `purged` or `not_found` (both 200) or 503 when Redis is unavailable. It exists because the write gate checks completion cleanliness, not content safety.
 
@@ -404,7 +405,7 @@ All five are `GET` handlers (eval also accepts `POST`) that need `Authorization:
 | `ADMIN_PASSWORD` | `.env.local` (optional) | Project settings |
 | `TELEMETRY_IP_SALT` | `.env.local` (optional) | Project settings |
 | `CRON_SECRET` | `.env.local` (optional; crons are not run locally) | Project settings — **required**, or all five crons return 401 |
-| `LLM_USE_SONNET_5`, `FAQ_CACHE_ENABLED`, `FAQ_CACHE_SEMANTIC_MATCH`, `EXTENDED_THINKING` | `.env.local` (optional) | Project settings (optional server toggles; read per request, but a changed value only reaches new deployments) |
+| `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `FAQ_CACHE_ENABLED`, `FAQ_CACHE_SEMANTIC_MATCH`, `EXTENDED_THINKING` | `.env.local` (optional) | Project settings (optional server toggles; read per request, but a changed value only reaches new deployments) |
 | `NEXT_PUBLIC_OPEN_TO_WORK` | `.env.local` | Project settings |
 | All other `NEXT_PUBLIC_*` | `.env.local` for local testing | Project settings |
 
@@ -418,7 +419,7 @@ Checked against `src/`, `next.config.ts`, `scripts/` and `playwright.config.ts` 
 
 | File | Variables Read |
 |---|---|
-| `src/lib/llm.ts` | `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` |
+| `src/lib/llm.ts` | `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` |
 | `src/lib/writing-flags.ts` | The `NEXT_PUBLIC_*` writing, hiring, homepage and algorithm flags (§8–10, §12) plus `NEXT_PUBLIC_CHROME_TTS_BANNER` |
 | `src/lib/flags.ts` | `FLAG_DRIVER`, `NEXT_PUBLIC_DISCOVERY_BADGES`, `FLAGS_SECRET` (presence log only; the Flags SDK reads the secret itself) |
 | `src/lib/enabled-views.ts` | `NEXT_PUBLIC_ENABLED_VIEWS` |

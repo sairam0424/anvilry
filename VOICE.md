@@ -550,9 +550,9 @@ Minimum full policy (Bedrock + Voice):
         "bedrock:InvokeModelWithResponseStream"
       ],
       "Resource": [
-        "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-opus-4-6-v1",
-        "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-sonnet-4-6",
-        "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-opus-4-6-v1",
+        "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-sonnet-4-6",
+        "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
         "arn:aws:bedrock:*::foundation-model/anthropic.*"
       ]
     },

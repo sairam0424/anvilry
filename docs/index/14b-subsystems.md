@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 93 test files (61 node + 32 dom), 859 tests, all passing at this tree (vitest 5.0.0, ~27 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 93 test files (61 node + 32 dom), 863 tests, all passing at this tree (vitest 5.0.0, ~27 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -626,7 +626,7 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
 is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 93 test files
-(859 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+(863 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -848,7 +848,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change the FAQ response cache | `src/lib/chat-cache.ts` (TTL `:63`, index cap `:66`, answer bound `:79`, semantic threshold `:223`, kill switch `:129-131`) | Lookup `chat/route.ts:322-378` (first-turn string questions only; hit frame carries `cacheHit: true`, header `X-Chat-Cache: hit`), write-through `:466-486` (skipped for an answer from a fallback rung); embeddings in `src/lib/faq-embeddings.ts` (Titan v2, 512 dims); emits telemetry kind `chat.cache`; `chat-cache.test.ts`. The eval cron bypasses it with `X-Chat-Skip-Cache`. |
 | Purge a bad cached answer | `POST /api/admin/faq-cache/purge` with Basic auth and `{ "question": "…" }` (`purge/route.ts:31-74`) | Removes the entry (and its index member) keyed by the normalised question (`chat-cache.ts:105-119`); returns 503 when Redis errors or is not configured, 200 `not_found` when nothing matched (`chat-cache.ts:368-388`). |
 | Change the chat wire protocol | `src/lib/llm-trace.ts:19-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:59-116` parses it; `api/cron/eval/route.ts:100` duplicates `TRACE_DELIMITER` as a literal. |
-| Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:29-33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:332-347`. Gate: `parse-cards.test.ts`. |
+| Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:29-33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:323-338`. Gate: `parse-cards.test.ts`. |
 | Change markdown rendering of assistant text | `src/components/chat/markdown-message.tsx:47-95` | Do not remove `skipHtml` or override `urlTransform` — that is the XSS posture (`:9-16`). |
 | Add or reorder a **view** | `src/components/view-context.tsx:24-45` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:62-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:25-59,101-104`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
 | Change the view-transition animation | `src/app/globals.css:360-402` | The named groups come from `view-router.tsx:56` and `site-nav.tsx:68`; direction from `view-context.tsx:207-210`. |
@@ -1069,7 +1069,7 @@ record the outcome rather than the original open question.
 - **Stale-comment / doc-drift items carried forward** (each re-checked against a929932 plus the five fixes and
   still true; none fixed by this index): the `highlight-store.ts:6-9` claim that `project-card.tsx` can
   subscribe — in fact `useHighlightedSlug` (`highlight-store.ts:49`) has **no importer**, only `highlightProject` is called
-  (`chat-messages.tsx:343`), so the `[[cmd:highlight:<slug>]]` token drives a store nothing reads;
+  (`chat-messages.tsx:334`), so the `[[cmd:highlight:<slug>]]` token drives a store nothing reads;
   `open-to-work-banner.tsx:6-8` "Hidden via CSS (h-0) when the flag is off" (the banner has no such CSS; the
   caller gates it, `layout.tsx:134`); `home/resume-view.tsx:13-16` "ViewEscapeHatch auto-rendered by
   view-router" (`view-router.tsx` never renders it; the non-classic views mount it themselves — `chat-view.tsx:84`,

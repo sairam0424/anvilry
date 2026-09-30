@@ -342,7 +342,7 @@ CLIENT
                                                                           parse-cards.ts:29-33,:54-68
    → text segments → MarkdownMessage (react-markdown + skipHtml + rehypeSanitize)
    → project/work  → ChatCard (100% Velite-sourced fields)
-   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:331-347
+   → cmd-*         → NO DOM; dispatched once per settled message only     chat-messages.tsx:322-338
 ```
 
 ### Participating files, in flow order
@@ -361,7 +361,7 @@ CLIENT
 | 10 | `src/lib/llm-trace.ts:23-55` | `TRACE_DELIMITER` U+001E, `THINKING_SENTINEL` U+001E U+0001, `THINKING_END` U+001E U+0002, `stripControlBytes` (`:34-38` — applied to every model-generated chunk so a completion can never smuggle in framing bytes), `LlmUsage`, `TraceFrame`. |
 | 11 | `src/components/chat/parse-cards.ts:29-33,54-68` | Token grammar with a locked `[a-z0-9-]+` slug charset; every token resolved against the build-time allowlist or dropped. |
 | 12 | `src/components/chat/markdown-message.tsx:88-93` | `remarkGfm` + `rehypeSanitize` + `skipHtml`, default `urlTransform` left in place. |
-| 13 | `src/components/chat/chat-messages.tsx` | Transcript renderer: thinking block, model badge, read-aloud, cmd dispatch, autoscroll, `useChatA11y` live region. |
+| 13 | `src/components/chat/chat-messages.tsx` | Transcript renderer: thinking block, read-aloud, cmd dispatch, autoscroll, `useChatA11y` live region. |
 | 14 | `src/components/chat/chat-card.tsx:12-78` | Renders only Velite fields — the model chooses *which* card, never its contents or href. |
 | 15 | `src/lib/chat-cache.ts` / `src/lib/faq-embeddings.ts` | The Upstash-backed FAQ response cache (see the section below). |
 | 16 | `src/app/api/admin/faq-cache/purge/route.ts` | Operator remediation: `POST` a question, its cache entry is deleted. `requireAdmin` (Basic auth, `ADMIN_PASSWORD`). |

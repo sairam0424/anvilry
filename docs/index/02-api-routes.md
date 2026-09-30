@@ -3,14 +3,14 @@ kind: doc
 title: API Routes, Machine-Readable Endpoints & Instrumentation
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
 # API Routes, Machine-Readable Endpoints & Instrumentation
 
-> Part of the Anvilry v3.7.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer while `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron and a shared `src/lib/cron-auth.ts`; one admin check (`isAdminAuthorized`) shared by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk mode gated on `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Line citations are against that tree.
+> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer while `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron and a shared `src/lib/cron-auth.ts`; one admin check (`isAdminAuthorized`) shared by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk mode gated on `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Line citations are against that tree.
 
 **Scope:** `src/app/api/**`, `src/app/.well-known/vercel/flags/route.ts`, `src/app/feed.xml/route.ts`,
 `src/app/llms.txt/route.ts`, `src/app/llms-full.txt/route.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`,

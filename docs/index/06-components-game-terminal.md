@@ -3,14 +3,14 @@ kind: doc
 title: Components — Gamified View & Developer Terminal
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
 # Components — Gamified View & Developer Terminal
 
-> Part of the Anvilry v3.7.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets with a cron bypass; shared admin auth; command-palette talk-mode gated by `isVoiceViewActive`; `MIN_ROUTES=17` and dead-component removal). None of the five changes a file in this scope. Line citations are re-pointed to that tree.
+> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets with a cron bypass; shared admin auth; command-palette talk-mode gated by `isVoiceViewActive`; `MIN_ROUTES=17` and dead-component removal). None of the five changes a file in this scope. Line citations are re-pointed to that tree.
 
 **Scope:** `src/components/game/**` (incl. `src/components/game/terminal/**`), excluding `*.test.*` / `*.dom.test.*`
 **Files indexed:** 23
@@ -255,7 +255,7 @@ Dispatch contract (`commands.ts:725-741`): `runCommand(raw)` trims, splits on `/
 - **Reads / depends on:** `@/lib/agent-trace` (`AGENTS`, `scenarios`, `traceApproved`, `linkForSlug`), `game/use-trace-runner`, `@/lib/use-mounted` `useMounted`, `motion/react` `useReducedMotion`, `lucide-react` (`Play`, `RotateCcw`).
 - **Consumed by:** `game/game-view.tsx:8`.
 - **Behaviour notes:** `useTraceRunner(scenario, !!reduced || !mounted)` — reduced-motion **or** pre-hydration means instant full reveal (`:27`). Esc resets, with the listener attached only while `status !== "idle"` (`:29-37`). Scenario selection is a native `<select>` whose `onChange` calls `reset()` before switching index (`:58-60`). A `sr-only` `aria-live="polite" aria-atomic="true"` div carries `liveMessage` (`:91-93`). Steps render as an `<ol>` sliced to `revealedCount` (`:96`), each with the agent's `label`/`role`/`color` from `AGENTS` and the step's `ms` (`:100-109`). `step.refs` slugs render as links only when `linkForSlug(slug)` is non-null (`:114-124`) — the zero-fabrication guard.
-- **PLACEHOLDER_SENTINEL gate:** `if (!traceApproved) return null;` at `:40` — placed **after** all hooks so hook order stays stable. `traceApproved` is computed in `src/lib/agent-trace.ts:120-122` as "no step's `action` or `output` contains `PLACEHOLDER_SENTINEL`", where `PLACEHOLDER_SENTINEL = "[DRAFT — owner to approve]"` (`agent-trace.ts:22`). **At v3.7.0 every scripted step still carries the sentinel** (`agent-trace.ts:59-101`), so `traceApproved === false` and this component renders nothing in production. **Correction (this index previously called `agent-trace.test.ts` a "deploy-blocking guard" — that was never true and the source now says so outright):** the test is a *consistency* check, not a ship gate. Its single assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:51-57`), which passes in **both** states, so it can never fail the build; the docblock over `traceApproved` says "NOT a hard build failure" (`agent-trace.ts:114-119`) and the file's header banner now agrees ("NOT block the build" — `agent-trace.ts:3-18`). See the Testing Notes section of `CLAUDE.md`. The real protection is that `traceApproved === false` makes this component render nothing, so un-reviewed prose ships dark rather than being blocked.
+- **PLACEHOLDER_SENTINEL gate:** `if (!traceApproved) return null;` at `:40` — placed **after** all hooks so hook order stays stable. `traceApproved` is computed in `src/lib/agent-trace.ts:120-122` as "no step's `action` or `output` contains `PLACEHOLDER_SENTINEL`", where `PLACEHOLDER_SENTINEL = "[DRAFT — owner to approve]"` (`agent-trace.ts:22`). **At v3.8.0 every scripted step still carries the sentinel** (`agent-trace.ts:59-101`), so `traceApproved === false` and this component renders nothing in production. **Correction (this index previously called `agent-trace.test.ts` a "deploy-blocking guard" — that was never true and the source now says so outright):** the test is a *consistency* check, not a ship gate. Its single assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:51-57`), which passes in **both** states, so it can never fail the build; the docblock over `traceApproved` says "NOT a hard build failure" (`agent-trace.ts:114-119`) and the file's header banner now agrees ("NOT block the build" — `agent-trace.ts:3-18`). See the Testing Notes section of `CLAUDE.md`. The real protection is that `traceApproved === false` makes this component render nothing, so un-reviewed prose ships dark rather than being blocked.
 - **Gotchas / invariants:** Removing/renaming the sentinel in `agent-trace.ts` immediately ships the demo — that string is the shipping switch, not a lint marker.
 
 ### `src/components/game/use-trace-runner.ts`

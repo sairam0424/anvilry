@@ -3,14 +3,14 @@ kind: doc
 title: lib — Content, Data Derivation & Domain Model
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
 # lib — Content, Data Derivation & Domain Model
 
-> Part of the Anvilry v3.7.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. main @ a929932 (v3.6.0) plus five later fixes that touch this domain: notes are hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets (chat/voice/beacon) with a cron-secret bypass, admin auth shared through `isAdminAuthorized`, command-palette talk mode gated by `isVoiceViewActive`, and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the first changes code owned by this doc (`content.ts`, `llms-txt.ts`); the others are listed so a reader does not look for them here (rate limiting and auth live in the infra half of `src/lib`).
+> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. main @ a929932 (v3.6.0) plus five later fixes that touch this domain: notes are hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets (chat/voice/beacon) with a cron-secret bypass, admin auth shared through `isAdminAuthorized`, command-palette talk mode gated by `isVoiceViewActive`, and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the first changes code owned by this doc (`content.ts`, `llms-txt.ts`); the others are listed so a reader does not look for them here (rate limiting and auth live in the infra half of `src/lib`).
 
 **Scope:** `src/lib/*.ts` (top level only), content/data/domain half — `content.ts`, `corpus.ts`, `decisions.ts`, `game-model.ts`, `graph-data.ts`, `article-grouping.ts`, `llms-txt.ts`, `profile.ts`, `personal.ts`, `testimonials.ts`, `resume-json.ts`, `mcp-tools.ts`, `claims-integrity.ts`, `integrity-chain.ts`, `discovery-store.ts`, `enabled-views.ts`, `flags.ts`, `writing-flags.ts`, `github.ts`, `utils.ts`, `highlight-store.ts`; plus the CLI `scripts/seal-claims.ts` and the committed ledger `data/integrity-chain.json`. Excludes `*.test.ts` and the AI/voice/infra half (`llm*.ts`, `llm-trace.ts`, `agent-trace.ts`, `chat-cache.ts`, `faq-embeddings.ts`, `voice-*`, `rate-limit.ts`, `redis.ts`, `admin-auth.ts`, `cron-auth.ts`, `health-expectations.ts`, `metadata-colors.ts`, `theme-context.tsx`, `r3f.ts`, `use-*.ts`, `telemetry/`, `scroll/`).
 **Files indexed:** 21 `src/lib` modules + 1 script + 1 data file

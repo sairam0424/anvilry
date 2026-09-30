@@ -1485,6 +1485,28 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     expect(text).toBe("Haiku answer.");
     expect(JSON.parse(frameJson).fellBack).toBe(true);
   });
+
+  it("keeps an IAM-deny 403 terminal once bytes were sent: the partial answer, then the apology, and no retry", async () => {
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "partial" },
+        },
+      ],
+      answer("must never be reached"),
+    ];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 403 };
+    STATE.throwMessage = { 0: IAM_DENY_MESSAGE };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams));
+    expect(body).toContain("partial");
+    expect(body).toContain("Sorry");
+    expect(body).not.toContain("must never be reached");
+    expect(body).not.toContain(TRACE_DELIMITER);
+    expect(STATE.callCount).toBe(1);
+  });
 });
 
 describe("LLM_USE_SONNET_5_5 toggle", () => {

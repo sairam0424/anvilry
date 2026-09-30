@@ -129,6 +129,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks();
+  // A flag a test set must not outlive it (beforeEach resets them too).
+  delete process.env.LLM_USE_SONNET_5;
+  delete process.env.LLM_USE_SONNET_5_5;
 });
 
 /** Read the entire ReadableStream into one decoded string. */
@@ -1290,7 +1293,7 @@ describe("isFallbackEligible — status/message truth table", () => {
     [
       "400 no access to model (typographic apostrophe)",
       400,
-      "400 You don’t have access to the model with the specified model ID.",
+      "400 You don\u2019t have access to the model with the specified model ID.",
     ],
     ["403 IAM explicit deny", 403, IAM_DENY_MESSAGE],
     [
@@ -1308,7 +1311,17 @@ describe("isFallbackEligible — status/message truth table", () => {
     [
       "403 model access not granted (typographic apostrophe)",
       403,
-      "403 You don’t have access to the model with the specified model ID.",
+      "403 You don\u2019t have access to the model with the specified model ID.",
+    ],
+    [
+      "403 model access not granted (upper case)",
+      403,
+      "403 You DON\u2019T have access to the model with the specified model ID.",
+    ],
+    [
+      "403 explicit deny in a service control policy",
+      403,
+      "403 Access was blocked by an explicit deny in a service control policy",
     ],
   ];
 
@@ -1331,6 +1344,11 @@ describe("isFallbackEligible — status/message truth table", () => {
       "403 The request signature we calculated does not match the signature you provided. " +
         "Check your AWS Secret Access Key and signing method.",
     ],
+    [
+      "400 carrying IAM deny text (the denied markers are 403-only)",
+      400,
+      IAM_DENY_MESSAGE,
+    ],
     ["403 with no message", 403, ""],
     ["422 unprocessable", 422, "422 unprocessable entity"],
     ["an error with no status", undefined, "boom"],
@@ -1346,7 +1364,7 @@ describe("isFallbackEligible — status/message truth table", () => {
     expect(isFallbackEligible(errWith(status, message))).toBe(false);
   });
 
-  it("falls back on a connection error (which includes timeouts)", async () => {
+  it("falls back on a connection error", async () => {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
     const { isFallbackEligible } = await import("./llm");
     expect(
@@ -1433,6 +1451,39 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     expect(body).toContain("Sorry");
     expect(body).not.toContain(TRACE_DELIMITER);
     expect(STATE.callCount).toBe(3);
+  });
+
+  it("keeps the thinking framing intact on the 403 path with extended thinking on, the production default", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "5.5 reasoning" },
+        },
+      ],
+      [],
+      answer("Haiku answer."),
+    ];
+    STATE.throwsOn = [0, 1];
+    STATE.throwStatus = { 0: 503, 1: 403 };
+    STATE.throwMessage = { 1: IAM_DENY_MESSAGE };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(chainParams, { extendedThinking: true }),
+    );
+
+    // Exactly one sentinel and one end, with END before the Haiku answer.
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(true);
+    expect(body.split(THINKING_SENTINEL)).toHaveLength(2);
+    expect(body.split(THINKING_END)).toHaveLength(2);
+    const endIdx = body.indexOf(THINKING_END);
+    expect(body.slice(THINKING_SENTINEL.length, endIdx)).toBe("5.5 reasoning");
+    const [text, frameJson] = body
+      .slice(endIdx + THINKING_END.length)
+      .split(TRACE_DELIMITER);
+    expect(text).toBe("Haiku answer.");
+    expect(JSON.parse(frameJson).fellBack).toBe(true);
   });
 });
 
@@ -1563,5 +1614,25 @@ describe("streamWithFallback — thinking-off shape is chosen per model (Sonnet 
     const sent = STATE.streamParamsByCall[0] as Sent;
     expect(sent.model).toBe(expectedModel);
     expect(sent.thinking).toEqual({ type: "disabled" });
+  });
+
+  it("still drops an unsolicited thinking_delta on 5.5 when thinking is off (defense in depth)", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "unsolicited reasoning" },
+        },
+        ...answer("Answer only."),
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { extendedThinking: false }),
+    );
+    expect(body).not.toContain("unsolicited reasoning");
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    expect(body.split(TRACE_DELIMITER)[0]).toBe("Answer only.");
   });
 });

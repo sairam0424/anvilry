@@ -49,13 +49,16 @@ export function isSonnet5PrimaryEnabled(): boolean {
  *  untouched. Default OFF, for the same reason as the Sonnet 5 flag: a
  *  capability upgrade stays an explicit opt-in until proven in production.
  *
- *  Three things a naive "swap the id" change gets wrong (verified live against
+ *  Things a naive "swap the id" change gets wrong (verified live against
  *  Bedrock, 2026-09-30):
  *  - Bedrock serves 5.5 ONLY through the GLOBAL inference profile. There is no
  *    `us.` profile: that id answers "model identifier is invalid", which
  *    isFallbackEligible reads as "model unavailable", so a wrong id would not
  *    fail loudly, it would skip the primary on every request. Global routing
  *    means a request may be processed outside the US regions.
+ *  - The principal needs IAM on the global profile. Without it 5.5 answers 403
+ *    (eligible), Opus 403s too, and Haiku answers EVERY request: no error, only
+ *    fell_back / error.status 403 in llm.attempt. Check fellBack after enabling.
  *  - It rejects `thinking: {type:"disabled"}`; see thinkingOff().
  *  - It rejects `temperature`; this module sends no sampling parameters. */
 export function isSonnet55PrimaryEnabled(): boolean {
@@ -77,7 +80,7 @@ function pickPrimary(ids: {
  * Region-prefixed Bedrock inference-profile IDs (verified live in the reference
  * account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with
  * "model identifier is invalid". Sonnet 4.6's and Sonnet 5's bare ids resolve fine.
- * Sonnet 5.5 has NO `us.` profile: only `global.anthropic.claude-sonnet-5-5`.
+ * Sonnet 5.5 is the exception: no `us.` profile, only `global.anthropic.claude-sonnet-5-5`.
  */
 function bedrockChain(): string[] {
   return [
@@ -110,8 +113,12 @@ function anthropicChain(): string[] {
  *  setting; every other thinking-capable rung takes "disabled". Keep this
  *  per-model: that 400 contains "is not supported" (see
  *  MODEL_UNAVAILABLE_MARKERS), so the wrong shape would silently skip the
- *  primary instead of failing. */
-function thinkingOff(model: string): { type: string } {
+ *  primary instead of failing. Verified live on the streaming path: with
+ *  `between_tools` a tool-less request streams no thinking blocks; with the
+ *  field omitted, 5.5 thinks by default (a thinking block appears). */
+function thinkingOff(model: string): {
+  type: "disabled" | "between_tools";
+} {
   return model.includes("sonnet-5-5")
     ? { type: "between_tools" }
     : { type: "disabled" };
@@ -234,8 +241,9 @@ export function isFallbackEligible(err: unknown): boolean {
   if (status === 429 || status === 404) return true;
   if (typeof status === "number" && status >= 500) return true;
   if (status === 400 || status === 403) {
-    // AWS emits typographic apostrophes ("don’t", "isn’t"); fold them so the
-    // ASCII markers match either spelling.
+    // AWS emits typographic apostrophes in some messages (observed: "isn’t
+    // supported"); fold them so an ASCII-apostrophe marker such as "don't have
+    // access to the model" matches either spelling.
     const msg = String((err as { message?: string })?.message ?? "")
       .toLowerCase()
       .replace(/[\u2018\u2019]/g, "'");
@@ -441,13 +449,13 @@ export function streamWithFallback(
         // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
         // the `thinking` field is omitted entirely — unlike 4.6, where omission
         // means no thinking at all. So the "off" case below sends an EXPLICIT
-        // `{type:"disabled"}` for any thinking-capable model, never just omits
+        // off shape (thinkingOff()) for any thinking-capable model, never just omits
         // the field — omission would silently start reasoning (and billing for
         // it) the moment LLM_USE_SONNET_5 flips on, even with extendedThinking
         // false. Haiku gets no `thinking` key at all, since it doesn't
         // recognize the param.
-        // (Sonnet 5.5 rejects "disabled" and takes `between_tools` instead:
-        // see thinkingOff().)
+        // (That shape is "disabled", or `between_tools` for Sonnet 5.5, which
+        // rejects "disabled": see thinkingOff().)
         const stream = client.messages.stream({
           ...params,
           model,
@@ -524,12 +532,12 @@ export function streamWithFallback(
             // to delineate the reasoning phase from the answer phase.
             //
             // Gated on useThinking, not just "did a thinking_delta event
-            // arrive": the explicit request-side `thinking:{type:"disabled"}`
-            // set above should make this unreachable in practice, but Sonnet
+            // arrive": the explicit request-side thinking-off shape set above
+            // should make this unreachable in practice, but Sonnet
             // 5/Opus 5's adaptive-thinking-on-by-default behavior is exactly
             // the kind of provider-side default this repo has already been
             // burned by once — if a thinking_delta ever arrives despite the
-            // explicit disable, drop it here rather than streaming raw,
+            // explicit off shape, drop it here rather than streaming raw,
             // unframed reasoning bytes (no THINKING_SENTINEL was emitted for
             // this attempt in that case).
             if (

@@ -2,7 +2,7 @@
 
 Production deploy guide for the Anvilry portfolio. The site is a Next.js 16 app; the only
 runtime dependency beyond the static build is the **"Ask my portfolio" chatbot**, which calls
-Claude on **AWS Bedrock**. Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` plus five post-`a929932` behaviour changes; the code wins.
+Claude on **AWS Bedrock**. Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` plus seven post-`a929932` behaviour changes (five in v3.7.0, two in v3.8.0: IAM-denied models fall through, and the opt-in Sonnet 5.5 primary); the code wins.
 
 ---
 
@@ -86,8 +86,8 @@ Upstash Redis sliding window — distributed, so it holds across Vercel instance
 ## 3. Verified model chain (tested live against this AWS account, us-east-1)
 
 The chatbot tries these in order (15 s timeout per attempt), falling through **only** on availability errors
-(429 / 404 / 5xx / connection-timeout, or a 400 that means "model unavailable") and only before any text has
-streamed; deterministic errors (malformed prompt, bad creds, 401 / 403 / 422) end the chain with the apology tail instead of burning it.
+(429 / 404 / 5xx / connection-timeout, a 400 that means "model unavailable", or a 403 that names an IAM or model-access deny) and only before any text has
+streamed; deterministic errors (malformed prompt, bad or expired creds, 401 / 422, a credential 403) end the chain with the apology tail instead of burning it.
 
 | Tier | Bedrock inference-profile ID | Status |
 |---|---|---|
@@ -110,16 +110,16 @@ that file is authoritative if this table ever disagrees with it.
     "Effect": "Allow",
     "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
     "Resource": [
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-opus-4-6-v1",
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-sonnet-4-6",
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-opus-4-6-v1",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-sonnet-4-6",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
       "arn:aws:bedrock:*::foundation-model/anthropic.*"
     ]
   }]
 }
 ```
 (Cross-region inference profiles fan out to regional foundation models, hence the
-`foundation-model/anthropic.*` resource alongside the profiles.)
+`foundation-model/anthropic.*` resource alongside the profiles. Inference-profile ARNs carry your account id; foundation-model ARNs do not.)
 
 ### Optional: voice upgrades (Polly TTS / Transcribe STT)
 Only needed if you turn on the in-app voice flags ("Use higher-quality voice (Polly)"
@@ -226,12 +226,14 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 | `ADMIN_PASSWORD` | *(long random string)* | Unlocks `/admin/telemetry` and `POST /api/admin/faq-cache/purge` (HTTP Basic; any username). Unset → both stay locked (`401`). |
 | `TELEMETRY_IP_SALT` | `openssl rand -base64 16` | Optional. Hashes IP and user-agent on telemetry spans; without it the dashboard's Visitors tile shows "—". |
 | `LLM_USE_SONNET_5` | `true` | Optional, off by default (the `src/lib/llm.ts` docblock keeps it an explicit opt-in until proven in production). Moves only the primary rung to Claude Sonnet 5. |
+| `LLM_USE_SONNET_5_5` | `true` | Optional, off by default (an explicit opt-in until proven in production). Moves only the primary rung to Claude Sonnet 5.5 and wins over `LLM_USE_SONNET_5`. Bedrock serves it only through the **global** inference profile, so requests may be processed outside the US regions. |
 | `FAQ_CACHE_ENABLED` / `FAQ_CACHE_SEMANTIC_MATCH` | `false` / `true` | Optional. The FAQ response cache is on by default (it needs Upstash); the first switches it off, the second adds the semantic (embedding) tier. |
 
 **Extra IAM by feature.** The policy in §3 covers the three default Anthropic profiles only. Add:
 - `LLM_USE_SONNET_5=true` → the `us.anthropic.claude-sonnet-5` inference profile (enable model access for it first).
+- `LLM_USE_SONNET_5_5=true` → the **global** inference profile `global.anthropic.claude-sonnet-5-5` (enable model access for Sonnet 5.5 first; there is no `us.` profile). AWS requires three allows for a global profile ([Global cross-Region inference](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)): the profile `arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/global.anthropic.claude-sonnet-5-5`, the regional model `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5-5`, and the region-less global model `arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-5-5` under the condition `aws:RequestedRegion` = `unspecified`. The `arn:aws:bedrock:*::foundation-model/anthropic.*` line in the policy above already covers the last two unless a region condition or an SCP blocks the `unspecified` region. If any is missing, the primary answers 403 and the chain silently falls to the next allowed rung (Haiku on the reference account, where Opus is denied).
 - `FAQ_CACHE_SEMANTIC_MATCH=true` → `bedrock:InvokeModel` on the foundation model `amazon.titan-embed-text-v2:0` (`foundation-model/anthropic.*` does not cover it). Without it the semantic tier silently misses; the exact-match tier is unaffected.
 
-**Opus caveat.** The `LLM_USE_SONNET_5` docblock in `src/lib/llm.ts` records Opus as IAM-denied on the reference AWS account. A 403 is a deterministic error, not fallback-eligible, so if your role cannot invoke the Opus profile the chain stops there with the apology tail and never reaches Haiku when Sonnet is unavailable. Grant the Opus profile, or accept that Sonnet is the only tier that will answer.
+**Opus caveat.** The `LLM_USE_SONNET_5` docblock in `src/lib/llm.ts` records Opus as IAM-denied on the reference AWS account. An IAM deny surfaces as a 403 whose message says `is not authorized to perform … with an explicit deny`, and that wording is fallback-eligible, so a denied Opus rung is skipped and the chain continues to Haiku when Sonnet is unavailable. Grant the Opus profile if you want it to answer; otherwise expect Sonnet, then Haiku. A 403 for bad or expired credentials is not eligible and still ends the chain at once with the apology tail.
 
 **Crons and deployment protection.** Schedules (UTC): health-check `0 5 * * *`, eval `0 9 * * 1`, github-sync `0 8 * * *`, seo-audit `0 6 * * 1`, content-audit `0 7 * * 1`. The health check probes `VERCEL_PROJECT_PRODUCTION_URL` (the public alias) and does not follow redirects, so it reports Vercel's SSO wall instead of scoring it healthy. The eval, seo-audit and github-sync crons, and `/api/chat`'s live GitHub-stats fetch, use the per-deployment `VERCEL_URL`; if deployment protection covers that host they can hit the SSO wall and report nothing useful (not verified live for these paths; only the health check was moved to the production alias). Look at the dashboard tiles after the first weekly run.

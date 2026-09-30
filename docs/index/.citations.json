@@ -233,20 +233,6 @@
       ],
       "preview": "# ANTHROPIC_API_KEY=sk-ant-..."
     },
-    ".env.example:27": {
-      "fp": "3e00800de8b1",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "# When \"true\", Claude Sonnet 5 replaces Sonnet 4.6 as the PRIMARY rung on"
-    },
-    ".env.example:32": {
-      "fp": "e4b87080e43b",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "# LLM_USE_SONNET_5=true"
-    },
     ".env.example:35": {
       "fp": "7643f3391428",
       "citedBy": [
@@ -1271,11 +1257,11 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "c08f1f9d87e0",
+      "fp": "28d5725b24f4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.7.0 (`package.jso"
+      "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.8.0 (`package.jso"
     },
     "ARCHITECTURE.md:99": {
       "fp": "ed771fd6ccde",
@@ -1284,7 +1270,23 @@
       ],
       "preview": "- **Feature flags.** `NEXT_PUBLIC_*` env vars gate experimental features (GRAPH_PHYSICS, MULTIMODAL_"
     },
-    "CHANGELOG.md:127": {
+    "CHANGELOG.md:1035": {
+      "fp": "5ca93d9cf04d",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0"
+    },
+    "CHANGELOG.md:1043": {
+      "fp": "07652699e8f2",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "[1.0.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.0.0"
+    },
+    "CHANGELOG.md:183": {
       "fp": "87a4c32b93f0",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1292,7 +1294,7 @@
       ],
       "preview": "## [3.6.0] — 2026-08-21"
     },
-    "CHANGELOG.md:131": {
+    "CHANGELOG.md:187": {
       "fp": "afe76b8d59a6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1300,49 +1302,49 @@
       ],
       "preview": "### Fixed"
     },
-    "CHANGELOG.md:148": {
+    "CHANGELOG.md:204": {
       "fp": "a2656816da7a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "**Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it instal"
     },
-    "CHANGELOG.md:171": {
+    "CHANGELOG.md:227": {
       "fp": "f7f3216c3072",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "not a constraint), so one omission would fall through `:59` and render a raw `devto`."
     },
-    "CHANGELOG.md:173": {
+    "CHANGELOG.md:229": {
       "fp": "2e16922cfc13",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "### Added"
     },
-    "CHANGELOG.md:183": {
+    "CHANGELOG.md:239": {
       "fp": "78c2d4537bb4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
     },
-    "CHANGELOG.md:191": {
+    "CHANGELOG.md:247": {
       "fp": "1c8fa42a05e3",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "correctly fails on one and names `--webpack` as the cause."
     },
-    "CHANGELOG.md:205": {
+    "CHANGELOG.md:261": {
       "fp": "5095a19adb55",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
     },
-    "CHANGELOG.md:217": {
+    "CHANGELOG.md:273": {
       "fp": "0c595a592a06",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1350,28 +1352,28 @@
       ],
       "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
     },
-    "CHANGELOG.md:219": {
+    "CHANGELOG.md:275": {
       "fp": "f8dc5506feac",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.5.0] — 2026-08-21"
     },
-    "CHANGELOG.md:233": {
+    "CHANGELOG.md:289": {
       "fp": "b10847c33a09",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the"
     },
-    "CHANGELOG.md:236": {
+    "CHANGELOG.md:292": {
       "fp": "a876bd2d0d1b",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "pointing them at nothing. **Public artifact change.**"
     },
-    "CHANGELOG.md:240": {
+    "CHANGELOG.md:296": {
       "fp": "907db8726a39",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1379,7 +1381,7 @@
       ],
       "preview": "- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`"
     },
-    "CHANGELOG.md:242": {
+    "CHANGELOG.md:298": {
       "fp": "c967c6044c37",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1387,35 +1389,35 @@
       ],
       "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
     },
-    "CHANGELOG.md:265": {
+    "CHANGELOG.md:321": {
       "fp": "b87d6402a897",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the"
     },
-    "CHANGELOG.md:270": {
+    "CHANGELOG.md:326": {
       "fp": "6904a0e277ed",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "is a latent fallback inconsistency, not a live bypass."
     },
-    "CHANGELOG.md:280": {
+    "CHANGELOG.md:336": {
       "fp": "e87c24791291",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- Corrected in-code comments that misdescribed their own code, including a banner claiming a test"
     },
-    "CHANGELOG.md:282": {
+    "CHANGELOG.md:338": {
       "fp": "c414e36c7415",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`@react-three/rapier` described as loaded when it is imported nowhere."
     },
-    "CHANGELOG.md:298": {
+    "CHANGELOG.md:354": {
       "fp": "0926a918ce91",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1425,7 +1427,7 @@
       ],
       "preview": "- **Node version pin:** `.nvmrc` (22) and `engines.node` (`>=22 <23`), matching the CI pin. Without"
     },
-    "CHANGELOG.md:301": {
+    "CHANGELOG.md:357": {
       "fp": "d5609bbaa648",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1434,7 +1436,7 @@
       ],
       "preview": "collides with vitest's happy-dom global injection."
     },
-    "CHANGELOG.md:304": {
+    "CHANGELOG.md:360": {
       "fp": "9b69baeb014e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1444,14 +1446,14 @@
       ],
       "preview": "- **pnpm settings moved to `pnpm-workspace.yaml`.** pnpm v11 no longer reads the `pnpm` field of"
     },
-    "CHANGELOG.md:308": {
+    "CHANGELOG.md:364": {
       "fp": "9199ac98b998",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "release, signalled only by a warning line that reads like boilerplate."
     },
-    "CHANGELOG.md:310": {
+    "CHANGELOG.md:366": {
       "fp": "f8f7365f53b0",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1459,7 +1461,7 @@
       ],
       "preview": "Both pnpm 10 and 11 read the new location. Verified by regenerating the lockfile with each"
     },
-    "CHANGELOG.md:314": {
+    "CHANGELOG.md:370": {
       "fp": "ce9c976af644",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1467,7 +1469,7 @@
       ],
       "preview": "0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9."
     },
-    "CHANGELOG.md:316": {
+    "CHANGELOG.md:372": {
       "fp": "742e82b0518b",
       "citedBy": [
         "07-components-3d.md",
@@ -1475,7 +1477,7 @@
       ],
       "preview": "### Removed"
     },
-    "CHANGELOG.md:317": {
+    "CHANGELOG.md:373": {
       "fp": "b8c3c33d4077",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1484,7 +1486,7 @@
       ],
       "preview": "- `@react-three/rapier` and `@react-three/offscreen` — declared dependencies with **zero imports**"
     },
-    "CHANGELOG.md:318": {
+    "CHANGELOG.md:374": {
       "fp": "8e6657d9183e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1492,7 +1494,7 @@
       ],
       "preview": "anywhere in `src/`. Deferred until the overrides migration made lockfile regeneration safe."
     },
-    "CHANGELOG.md:319": {
+    "CHANGELOG.md:375": {
       "fp": "3a0b2a614fe4",
       "citedBy": [
         "07-components-3d.md",
@@ -1500,7 +1502,7 @@
       ],
       "preview": "Measured impact: 3 packages removed, 0 added, 1 version change"
     },
-    "CHANGELOG.md:321": {
+    "CHANGELOG.md:377": {
       "fp": "d9ea6ad36d1f",
       "citedBy": [
         "07-components-3d.md",
@@ -1511,98 +1513,98 @@
       ],
       "preview": "was the only remaining consumer)."
     },
-    "CHANGELOG.md:323": {
+    "CHANGELOG.md:379": {
       "fp": "8b7a5c9e23e9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.4.2] — 2026-08-15"
     },
-    "CHANGELOG.md:326": {
+    "CHANGELOG.md:382": {
       "fp": "0aa70116c274",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "high severity. Also wires E2E into CI and makes the Playwright suite self-managing."
     },
-    "CHANGELOG.md:328": {
+    "CHANGELOG.md:384": {
       "fp": "533a2492391b",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "Until this release, production served the vulnerable versions — the fixes had been merged to"
     },
-    "CHANGELOG.md:329": {
+    "CHANGELOG.md:385": {
       "fp": "2dd0f67dda39",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "`develop` (Preview only) but not promoted."
     },
-    "CHANGELOG.md:331": {
+    "CHANGELOG.md:387": {
       "fp": "a4ff72c5e89e",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "### Security"
     },
-    "CHANGELOG.md:332": {
+    "CHANGELOG.md:388": {
       "fp": "e71e1c282194",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`pdfjs-dist` 6.0.227 -> 6.2.108** (high) — arbitrary JavaScript execution upon opening a"
     },
-    "CHANGELOG.md:334": {
+    "CHANGELOG.md:390": {
       "fp": "1ebceb043643",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "user-selected PDFs client-side."
     },
-    "CHANGELOG.md:335": {
+    "CHANGELOG.md:391": {
       "fp": "84f8bcd6d3bc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`ip-address` 10.2.0 -> 10.5.0** (high) — `Address4` decodes leading-zero octets as decimal"
     },
-    "CHANGELOG.md:337": {
+    "CHANGELOG.md:393": {
       "fp": "9957c7303189",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`mcp-handler` -> `@modelcontextprotocol/sdk` -> `express-rate-limit`; server-side only."
     },
-    "CHANGELOG.md:338": {
+    "CHANGELOG.md:394": {
       "fp": "6cef5f81b648",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`hono` 4.12.25 -> 4.13.2** (medium x3, low x1) — `memo()` retained SSR output across requests"
     },
-    "CHANGELOG.md:340": {
+    "CHANGELOG.md:396": {
       "fp": "9e87e4da5492",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "middleware, Proxy Helper header leak."
     },
-    "CHANGELOG.md:341": {
+    "CHANGELOG.md:397": {
       "fp": "4863beb796a6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`js-yaml` 4.2.0 -> 4.3.1** (high) — quadratic CPU consumption in `!!omap` resolution."
     },
-    "CHANGELOG.md:342": {
+    "CHANGELOG.md:398": {
       "fp": "1b691181626d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`fast-uri` 3.1.2 -> 3.1.5** (high) — host confusion via backslash authority introducer."
     },
-    "CHANGELOG.md:343": {
+    "CHANGELOG.md:399": {
       "fp": "2495da8e6183",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1611,7 +1613,7 @@
       ],
       "preview": "- **`brace-expansion` -> 1.1.18 and 5.0.9** (high) — two separate major lines, each patched within"
     },
-    "CHANGELOG.md:345": {
+    "CHANGELOG.md:401": {
       "fp": "5e8fcd724c24",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1620,49 +1622,49 @@
       ],
       "preview": "onto 5.x and broken the eslint chain."
     },
-    "CHANGELOG.md:346": {
+    "CHANGELOG.md:402": {
       "fp": "d3c528f5bdfa",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`sharp` 0.34.5 -> 0.35.3** (high) — only velite's build-time instance was affected; Next 16.3.0"
     },
-    "CHANGELOG.md:347": {
+    "CHANGELOG.md:403": {
       "fp": "6ab0f5a0e9c7",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "already carried the patched 0.35.3."
     },
-    "CHANGELOG.md:348": {
+    "CHANGELOG.md:404": {
       "fp": "4582bda8000e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`@hono/node-server` -> 1.19.17** (medium) — `serve-static` path traversal via `%5C` on Windows."
     },
-    "CHANGELOG.md:349": {
+    "CHANGELOG.md:405": {
       "fp": "96a9fda4290b",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`postcss` -> 8.5.23+** (medium/high) — attacker-controlled `sourceMappingURL` read arbitrary"
     },
-    "CHANGELOG.md:350": {
+    "CHANGELOG.md:406": {
       "fp": "85aef74adb7e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`.map` files when `from` is unset."
     },
-    "CHANGELOG.md:351": {
+    "CHANGELOG.md:407": {
       "fp": "9b6a6fd9c8da",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`body-parser` 2.2.2 -> 2.3.0** (low)."
     },
-    "CHANGELOG.md:353": {
+    "CHANGELOG.md:409": {
       "fp": "8e7bfd4cc727",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1671,7 +1673,7 @@
       ],
       "preview": "Six were transitive and lockfile-pinned, so `pnpm update` could not move them —"
     },
-    "CHANGELOG.md:355": {
+    "CHANGELOG.md:411": {
       "fp": "96a5b77bacc5",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1680,28 +1682,28 @@
       ],
       "preview": "`security_update_not_possible`. Fixed via `pnpm.overrides`."
     },
-    "CHANGELOG.md:358": {
+    "CHANGELOG.md:414": {
       "fp": "6fadeed9bf1b",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **E2E is now a CI gate.** `pnpm e2e` was referenced by no workflow, so the suite had rotted"
     },
-    "CHANGELOG.md:362": {
+    "CHANGELOG.md:418": {
       "fp": "12f193f55671",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "because the default `GITHUB_TOKEN` cannot read the Dependabot alerts API."
     },
-    "CHANGELOG.md:363": {
+    "CHANGELOG.md:419": {
       "fp": "8f99540d284a",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Playwright `webServer`** — the suite now starts and health-checks its own server. Previously a"
     },
-    "CHANGELOG.md:372": {
+    "CHANGELOG.md:428": {
       "fp": "b3318f770342",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1711,7 +1713,7 @@
       ],
       "preview": "- Dependabot ignores now live on `main`. Dependabot reads `dependabot.yml` from the DEFAULT BRANCH"
     },
-    "CHANGELOG.md:373": {
+    "CHANGELOG.md:429": {
       "fp": "382750558133",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1722,91 +1724,91 @@
       ],
       "preview": "only, so the `typescript`/`eslint` semver-major ignores added on `develop` had been inert."
     },
-    "CHANGELOG.md:383": {
+    "CHANGELOG.md:439": {
       "fp": "920375370fab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `react` / `react-dom` 19.2.7 -> **19.2.8** (patch)"
     },
-    "CHANGELOG.md:393": {
+    "CHANGELOG.md:449": {
       "fp": "783808ceb2d5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `@types/three` ^0.184.1 -> **^0.185.4**, finally tracking runtime `three@0.185.1`. Caret"
     },
-    "CHANGELOG.md:395": {
+    "CHANGELOG.md:451": {
       "fp": "abc4b971d2ca",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "follow the runtime bump on its own."
     },
-    "CHANGELOG.md:396": {
+    "CHANGELOG.md:452": {
       "fp": "f8379cf83c34",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- Dev tooling: `velite` ^0.3.1 -> ^0.4.0, `@types/node` ^20 -> ^26, `vitest` -> ^4.1.10,"
     },
-    "CHANGELOG.md:411": {
+    "CHANGELOG.md:467": {
       "fp": "8e54b98b74ac",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`typescript` major (7.x)** — `@typescript-eslint/typescript-estree` 8.61.0 crashes on load"
     },
-    "CHANGELOG.md:415": {
+    "CHANGELOG.md:471": {
       "fp": "e7b06f5096ab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "toolchain fails."
     },
-    "CHANGELOG.md:416": {
+    "CHANGELOG.md:472": {
       "fp": "e4e610a95c54",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`eslint` major (10.x)** — separately blocked upstream (`eslint-plugin-react` calls APIs"
     },
-    "CHANGELOG.md:419": {
+    "CHANGELOG.md:475": {
       "fp": "1bc184f28e2a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "patches still flow."
     },
-    "CHANGELOG.md:445": {
+    "CHANGELOG.md:501": {
       "fp": "df5cd9b282c9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,"
     },
-    "CHANGELOG.md:447": {
+    "CHANGELOG.md:503": {
       "fp": "132dd7e8a2d4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "uniformly: `/projects` uses `\"use cache\"` + `cacheLife(\"hours\")` because it awaits a live"
     },
-    "CHANGELOG.md:554": {
+    "CHANGELOG.md:610": {
       "fp": "f2d3f71a827e",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **`/llms-full.txt`** — full chatbot corpus (~6KB) as `text/plain` with"
     },
-    "CHANGELOG.md:575": {
+    "CHANGELOG.md:631": {
       "fp": "6c9694a6dced",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **2 new MCP tools** — `list_all_content` (all work/project/article/note items) and"
     },
-    "CHANGELOG.md:576": {
+    "CHANGELOG.md:632": {
       "fp": "2dee0866a4a4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1814,65 +1816,49 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
-    "CHANGELOG.md:697": {
+    "CHANGELOG.md:753": {
       "fp": "5bd4b1b4d54d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- `streamWithFallback` docblock claimed \"Opus 4.6 primary\" while the `BEDROCK_CHAIN` array"
     },
-    "CHANGELOG.md:699": {
+    "CHANGELOG.md:755": {
       "fp": "b1d0b68e19dc",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "ambiguous about the expected primary model."
     },
-    "CHANGELOG.md:979": {
-      "fp": "5ca93d9cf04d",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0"
-    },
-    "CHANGELOG.md:987": {
-      "fp": "07652699e8f2",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "[1.0.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.0.0"
-    },
-    "CLAUDE.md:241": {
+    "CLAUDE.md:242": {
       "fp": "826a4efde0f6",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
-    "CLAUDE.md:251": {
+    "CLAUDE.md:252": {
       "fp": "69784a891e97",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "| `get_resume_variant` | The canonical résumé PDF URL (`master`) |"
     },
-    "CLAUDE.md:340": {
+    "CLAUDE.md:341": {
       "fp": "15dadb9996db",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |"
     },
-    "CLAUDE.md:388": {
+    "CLAUDE.md:390": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:390": {
+    "CLAUDE.md:392": {
       "fp": "9b72df9920f2",
       "citedBy": [
         "02-api-routes.md"
@@ -1916,11 +1902,11 @@
       "preview": "that file is authoritative if this table ever disagrees with it."
     },
     "DEPLOY.md:5": {
-      "fp": "3dbc51fff616",
+      "fp": "9c1378e97a62",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "Claude on **AWS Bedrock**. Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` "
+      "preview": "Claude on **AWS Bedrock**. Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` "
     },
     "DEPLOY.md:94": {
       "fp": "0ef37997cd28",
@@ -1944,11 +1930,11 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "eb2e0c934efd",
+      "fp": "84bb186b2f27",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (`package.json"
+      "preview": "> **Scope:** describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` (`package.json"
     },
     "docs/README.md:29": {
       "fp": "3df16b7c843e",
@@ -3233,14 +3219,14 @@
       "preview": "\"@modelcontextprotocol/sdk\": \"1.26.0\","
     },
     "package.json:3": {
-      "fp": "6dc3ba77d248",
+      "fp": "555ea71bb1ca",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "\"version\": \"3.7.0\","
+      "preview": "\"version\": \"3.8.0\","
     },
     "package.json:33": {
       "fp": "aa55e91eacb8",
@@ -4946,7 +4932,7 @@
       ],
       "preview": "// Write-through: attempt.answerText is present iff this was a clean,"
     },
-    "src/app/api/chat/route.ts:479": {
+    "src/app/api/chat/route.ts:486": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -17593,28 +17579,28 @@
       ],
       "preview": "*   [answer text][TRACE_DELIMITER][TraceFrame JSON]"
     },
-    "src/lib/llm.test.ts:1011": {
+    "src/lib/llm.test.ts:1022": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/lib/llm.test.ts:263": {
+    "src/lib/llm.test.ts:274": {
       "fp": "d8ff266bf1e6",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"uses snake_case keys verbatim (regression guard against a silent SDK swap)\", async () => {"
     },
-    "src/lib/llm.test.ts:293": {
+    "src/lib/llm.test.ts:304": {
       "fp": "5a270444791b",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// Required snake_case keys."
     },
-    "src/lib/llm.test.ts:294": {
+    "src/lib/llm.test.ts:305": {
       "fp": "f23f675ed6dd",
       "citedBy": [
         "14-subsystems.md",
@@ -17622,7 +17608,7 @@
       ],
       "preview": "expect(Object.keys(usage)).toEqual("
     },
-    "src/lib/llm.test.ts:303": {
+    "src/lib/llm.test.ts:314": {
       "fp": "c28e6aa6c0a1",
       "citedBy": [
         "14-subsystems.md",
@@ -17631,49 +17617,49 @@
       ],
       "preview": "expect(usage).not.toHaveProperty(\"cacheReadInputTokens\");"
     },
-    "src/lib/llm.test.ts:304": {
+    "src/lib/llm.test.ts:315": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/lib/llm.test.ts:429": {
+    "src/lib/llm.test.ts:440": {
       "fp": "2e5e7c9117fe",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"strips literal protocol control bytes from a model completion, live AND in answerText\", async ()"
     },
-    "src/lib/llm.test.ts:680": {
+    "src/lib/llm.test.ts:691": {
       "fp": "f1d8ca83e053",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const liveReasoning = afterSentinel.slice(0, endIdx);"
     },
-    "src/lib/llm.test.ts:687": {
+    "src/lib/llm.test.ts:698": {
       "fp": "942a30795c8a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const [text, frameJson] = afterEnd.split(TRACE_DELIMITER);"
     },
-    "src/lib/llm.test.ts:71": {
+    "src/lib/llm.test.ts:77": {
       "fp": "6fa3481f1dcf",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "vi.mock(\"@anthropic-ai/bedrock-sdk\", () => {"
     },
-    "src/lib/llm.test.ts:887": {
+    "src/lib/llm.test.ts:898": {
       "fp": "dc2a1c7d21e8",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"streamWithFallback — adaptive thinking request shape (2026-09 migration)\", () => {"
     },
-    "src/lib/llm.test.ts:90": {
+    "src/lib/llm.test.ts:96": {
       "fp": "b3850b7cf776",
       "citedBy": [
         "13-dependencies-and-versions.md"
@@ -17687,7 +17673,84 @@
       ],
       "preview": "import Anthropic from \"@anthropic-ai/sdk\";"
     },
-    "src/lib/llm.ts:104": {
+    "src/lib/llm.ts:100": {
+      "fp": "5f42734cf1d1",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "14-subsystems.md"
+      ],
+      "preview": "pickPrimary({"
+    },
+    "src/lib/llm.ts:105": {
+      "fp": "e2bdfeb5b082",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "\"claude-opus-4-7\","
+    },
+    "src/lib/llm.ts:107": {
+      "fp": "358ba3f22237",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "];"
+    },
+    "src/lib/llm.ts:108": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:119": {
+      "fp": "0355f7ed5750",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "function thinkingOff(model: string): {"
+    },
+    "src/lib/llm.ts:125": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:131": {
+      "fp": "7297858f7f29",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const MODEL_UNAVAILABLE_MARKERS = ["
+    },
+    "src/lib/llm.ts:138": {
+      "fp": "358ba3f22237",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "];"
+    },
+    "src/lib/llm.ts:147": {
+      "fp": "28e482b4574c",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function getProvider(): LlmProvider {"
+    },
+    "src/lib/llm.ts:148": {
+      "fp": "4dbee38e3b8a",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "return process.env.LLM_PROVIDER === \"anthropic\" ? \"anthropic\" : \"bedrock\";"
+    },
+    "src/lib/llm.ts:149": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17696,7 +17759,46 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:111": {
+    "src/lib/llm.ts:158": {
+      "fp": "60816a809cd0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function decodeSecret(value: string | undefined): string {"
+    },
+    "src/lib/llm.ts:159": {
+      "fp": "4bbd342107f6",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (!value) return \"\";"
+    },
+    "src/lib/llm.ts:161": {
+      "fp": "f12c71bbf682",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const decoded = Buffer.from(value, \"base64\").toString(\"utf-8\");"
+    },
+    "src/lib/llm.ts:163": {
+      "fp": "e1dab912d8f6",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "return decoded;"
+    },
+    "src/lib/llm.ts:168": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:175": {
       "fp": "3cef92f00ee1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17704,7 +17806,7 @@
       ],
       "preview": "accessKeyId: decodeSecret(process.env.BEDROCK_ACCESS_KEY_ID),"
     },
-    "src/lib/llm.ts:112": {
+    "src/lib/llm.ts:176": {
       "fp": "10778a20d729",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17712,7 +17814,7 @@
       ],
       "preview": "secretAccessKey: decodeSecret(process.env.BEDROCK_SECRET_ACCESS_KEY),"
     },
-    "src/lib/llm.ts:113": {
+    "src/lib/llm.ts:177": {
       "fp": "830ed5dbac1d",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17720,21 +17822,21 @@
       ],
       "preview": "sessionToken: process.env.BEDROCK_SESSION_TOKEN"
     },
-    "src/lib/llm.ts:114": {
+    "src/lib/llm.ts:178": {
       "fp": "bc0e8d4025c6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "? decodeSecret(process.env.BEDROCK_SESSION_TOKEN)"
     },
-    "src/lib/llm.ts:115": {
+    "src/lib/llm.ts:179": {
       "fp": "f0d92e3cbaf6",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": ": undefined,"
     },
-    "src/lib/llm.ts:116": {
+    "src/lib/llm.ts:180": {
       "fp": "0a2e4b86b89d",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17743,7 +17845,7 @@
       ],
       "preview": "// Prefer BEDROCK_REGION: AWS_REGION is a RESERVED var on Vercel/Lambda and was"
     },
-    "src/lib/llm.ts:118": {
+    "src/lib/llm.ts:182": {
       "fp": "3d4226b4c238",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17751,7 +17853,7 @@
       ],
       "preview": "// platform mangling it. Fall back to AWS_REGION (local dev) then a sane default."
     },
-    "src/lib/llm.ts:119": {
+    "src/lib/llm.ts:183": {
       "fp": "128e81a4c7d8",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17760,14 +17862,14 @@
       ],
       "preview": "region: process.env.BEDROCK_REGION || process.env.AWS_REGION || \"us-east-1\","
     },
-    "src/lib/llm.ts:124": {
+    "src/lib/llm.ts:188": {
       "fp": "70b6c5759436",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "export function isConfigured(): boolean {"
     },
-    "src/lib/llm.ts:129": {
+    "src/lib/llm.ts:193": {
       "fp": "41a67112c993",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17775,104 +17877,12 @@
       ],
       "preview": "return Boolean(process.env.ANTHROPIC_API_KEY);"
     },
-    "src/lib/llm.ts:130": {
+    "src/lib/llm.ts:194": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
-    },
-    "src/lib/llm.ts:151": {
-      "fp": "7092669f0705",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "timeout: PER_ATTEMPT_TIMEOUT_MS,"
-    },
-    "src/lib/llm.ts:152": {
-      "fp": "76cbb0b1edd5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "providerChainResolver: async () => async () => ({"
-    },
-    "src/lib/llm.ts:156": {
-      "fp": "aa3733e58756",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}),"
-    },
-    "src/lib/llm.ts:159": {
-      "fp": "ab87c45e59ec",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "// anthropic: key read from ANTHROPIC_API_KEY in env."
-    },
-    "src/lib/llm.ts:160": {
-      "fp": "6a69212ea819",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "return new Anthropic({ timeout: PER_ATTEMPT_TIMEOUT_MS });"
-    },
-    "src/lib/llm.ts:169": {
-      "fp": "a2ff46aedeef",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "export function isFallbackEligible(err: unknown): boolean {"
-    },
-    "src/lib/llm.ts:170": {
-      "fp": "50ba1e9ae2a1",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass"
-    },
-    "src/lib/llm.ts:182": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:184": {
-      "fp": "8d64a30d9de1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/**"
-    },
-    "src/lib/llm.ts:192": {
-      "fp": "ed9623369ff0",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "*/"
-    },
-    "src/lib/llm.ts:195": {
-      "fp": "87df543ffd8c",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };"
-    },
-    "src/lib/llm.ts:197": {
-      "fp": "8d64a30d9de1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/**"
     },
     "src/lib/llm.ts:2": {
       "fp": "2c4b2c59b645",
@@ -17881,142 +17891,111 @@
       ],
       "preview": "import { AnthropicBedrock } from \"@anthropic-ai/bedrock-sdk\";"
     },
-    "src/lib/llm.ts:204": {
-      "fp": "ed9623369ff0",
+    "src/lib/llm.ts:215": {
+      "fp": "7092669f0705",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "timeout: PER_ATTEMPT_TIMEOUT_MS,"
+    },
+    "src/lib/llm.ts:216": {
+      "fp": "76cbb0b1edd5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "providerChainResolver: async () => async () => ({"
+    },
+    "src/lib/llm.ts:220": {
+      "fp": "aa3733e58756",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}),"
+    },
+    "src/lib/llm.ts:223": {
+      "fp": "ab87c45e59ec",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "*/"
+      "preview": "// anthropic: key read from ANTHROPIC_API_KEY in env."
     },
-    "src/lib/llm.ts:210": {
-      "fp": "df3982fd6101",
+    "src/lib/llm.ts:224": {
+      "fp": "6a69212ea819",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "04-lib-ai-voice-infra.md"
       ],
-      "preview": "};"
+      "preview": "return new Anthropic({ timeout: PER_ATTEMPT_TIMEOUT_MS });"
+    },
+    "src/lib/llm.ts:238": {
+      "fp": "a2ff46aedeef",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "export function isFallbackEligible(err: unknown): boolean {"
+    },
+    "src/lib/llm.ts:239": {
+      "fp": "50ba1e9ae2a1",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass"
     },
     "src/lib/llm.ts:259": {
-      "fp": "8db2f209cbd9",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const apologyTail = `\\n\\n[Sorry — something went wrong. Please email ${profile.email}.]`;"
-    },
-    "src/lib/llm.ts:260": {
-      "fp": "0a590f272b8d",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "// Trace frame extends the v1.6 {model, fellBack} shape with v1.8 fields. The"
-    },
-    "src/lib/llm.ts:261": {
-      "fp": "97dee7aa6df0",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and"
-    },
-    "src/lib/llm.ts:263": {
-      "fp": "163d58a6a61b",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// llm-trace.test.ts only pins the U+001E delimiter character, which is unchanged."
-    },
-    "src/lib/llm.ts:282": {
-      "fp": "4b797ccbd3d3",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
-    },
-    "src/lib/llm.ts:288": {
-      "fp": "df3982fd6101",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "};"
-    },
-    "src/lib/llm.ts:292": {
-      "fp": "d85ca4170ed1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "let emittedAny = false;"
-    },
-    "src/lib/llm.ts:299": {
-      "fp": "2f8673da0c7b",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "let thinkingSentinelEmitted = false;"
-    },
-    "src/lib/llm.ts:301": {
-      "fp": "ec4bd6281932",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const close = () => {"
-    },
-    "src/lib/llm.ts:306": {
-      "fp": "df3982fd6101",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "};"
-    },
-    "src/lib/llm.ts:309": {
-      "fp": "f5d350b44ec7",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "// SDK init error) becomes a graceful apology stream — not an uncaught 500 at"
-    },
-    "src/lib/llm.ts:311": {
-      "fp": "d845f1992f4d",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "let client: Anthropic;"
-    },
-    "src/lib/llm.ts:317": {
-      "fp": "be4088746726",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "model: \"client-init\","
-    },
-    "src/lib/llm.ts:318": {
-      "fp": "12c02075e40b",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "attempt_index: -1,"
-    },
-    "src/lib/llm.ts:320": {
-      "fp": "a649c792ffbb",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "latency_ms: 0,"
-    },
-    "src/lib/llm.ts:326": {
-      "fp": "54d1ad310c19",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "controller.enqueue(encoder.encode(apologyTail.replace(/^\\n\\n/, \"\")));"
-    },
-    "src/lib/llm.ts:329": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "14-subsystems.md"
       ],
       "preview": "}"
+    },
+    "src/lib/llm.ts:261": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:269": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/llm.ts:272": {
+      "fp": "87df543ffd8c",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };"
+    },
+    "src/lib/llm.ts:274": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:281": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/llm.ts:287": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "};"
     },
     "src/lib/llm.ts:33": {
       "fp": "0774905c8cf6",
@@ -18025,33 +18004,34 @@
       ],
       "preview": "const PER_ATTEMPT_TIMEOUT_MS = 15_000;"
     },
-    "src/lib/llm.ts:338": {
-      "fp": "baa9f9035b59",
+    "src/lib/llm.ts:336": {
+      "fp": "8db2f209cbd9",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "let usage: LlmUsage | undefined;"
+      "preview": "const apologyTail = `\\n\\n[Sorry — something went wrong. Please email ${profile.email}.]`;"
     },
-    "src/lib/llm.ts:346": {
-      "fp": "dd5a9f2167ee",
+    "src/lib/llm.ts:337": {
+      "fp": "0a590f272b8d",
       "citedBy": [
-        "14-subsystems.md"
+        "04-lib-ai-voice-infra.md"
       ],
-      "preview": "let answerText = \"\";"
+      "preview": "// Trace frame extends the v1.6 {model, fellBack} shape with v1.8 fields. The"
     },
-    "src/lib/llm.ts:348": {
-      "fp": "1c7c59f020b9",
+    "src/lib/llm.ts:338": {
+      "fp": "97dee7aa6df0",
       "citedBy": [
-        "02-api-routes.md"
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Extended thinking: only for non-Haiku models (Haiku doesn't support the"
+      "preview": "// shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and"
     },
-    "src/lib/llm.ts:349": {
-      "fp": "d7912666e51f",
+    "src/lib/llm.ts:340": {
+      "fp": "163d58a6a61b",
       "citedBy": [
-        "02-api-routes.md"
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "// `thinking` param at all — not even an explicit \"disabled\"). NOTE: If"
+      "preview": "// llm-trace.test.ts only pins the U+001E delimiter character, which is unchanged."
     },
     "src/lib/llm.ts:35": {
       "fp": "fbabacacf9bc",
@@ -18060,85 +18040,106 @@
       ],
       "preview": "/** Feature flag: when \"true\", Claude Sonnet 5 replaces Sonnet 4.6 as the"
     },
-    "src/lib/llm.ts:355": {
-      "fp": "ae29ea4279db",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const useThinking ="
-    },
-    "src/lib/llm.ts:356": {
-      "fp": "c4c603db2d2e",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "opts?.extendedThinking === true && !model.includes(\"haiku\");"
-    },
-    "src/lib/llm.ts:357": {
-      "fp": "d25c37fb3c32",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const modelSupportsThinking = !model.includes(\"haiku\");"
-    },
     "src/lib/llm.ts:359": {
-      "fp": "aac95f3d1ef6",
+      "fp": "4b797ccbd3d3",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
+    },
+    "src/lib/llm.ts:365": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/llm.ts:369": {
+      "fp": "d85ca4170ed1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
+        "14-subsystems.md"
+      ],
+      "preview": "let emittedAny = false;"
+    },
+    "src/lib/llm.ts:376": {
+      "fp": "2f8673da0c7b",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Adaptive thinking (`{type:\"adaptive\"}` + `output_config.effort`)"
+      "preview": "let thinkingSentinelEmitted = false;"
     },
-    "src/lib/llm.ts:379": {
-      "fp": "17390c5655aa",
+    "src/lib/llm.ts:378": {
+      "fp": "ec4bd6281932",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "// recognize the param."
+      "preview": "const close = () => {"
     },
     "src/lib/llm.ts:383": {
-      "fp": "d5cbd78edc45",
+      "fp": "df3982fd6101",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "...(useThinking"
+      "preview": "};"
     },
-    "src/lib/llm.ts:390": {
-      "fp": "00fa278ea019",
+    "src/lib/llm.ts:386": {
+      "fp": "f5d350b44ec7",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "// SDK init error) becomes a graceful apology stream — not an uncaught 500 at"
+    },
+    "src/lib/llm.ts:388": {
+      "fp": "d845f1992f4d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": ": {}),"
+      "preview": "let client: Anthropic;"
     },
-    "src/lib/llm.ts:401": {
-      "fp": "a9849ac2357a",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "} as Anthropic.MessageStreamParams & { model: string });"
-    },
-    "src/lib/llm.ts:407": {
-      "fp": "9f882be98cf4",
+    "src/lib/llm.ts:394": {
+      "fp": "be4088746726",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "if (useThinking && !emittedAny && !thinkingSentinelEmitted) {"
+      "preview": "model: \"client-init\","
     },
-    "src/lib/llm.ts:409": {
-      "fp": "f2eae6b3c0f9",
+    "src/lib/llm.ts:395": {
+      "fp": "12c02075e40b",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "thinkingSentinelEmitted = true;"
+      "preview": "attempt_index: -1,"
     },
-    "src/lib/llm.ts:417": {
-      "fp": "7179c2f4b390",
+    "src/lib/llm.ts:397": {
+      "fp": "a649c792ffbb",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "if (event.type === \"message_start\") {"
+      "preview": "latency_ms: 0,"
+    },
+    "src/lib/llm.ts:403": {
+      "fp": "54d1ad310c19",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "controller.enqueue(encoder.encode(apologyTail.replace(/^\\n\\n/, \"\")));"
+    },
+    "src/lib/llm.ts:406": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:415": {
+      "fp": "baa9f9035b59",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "let usage: LlmUsage | undefined;"
     },
     "src/lib/llm.ts:42": {
       "fp": "942cf6387001",
@@ -18147,21 +18148,64 @@
       ],
       "preview": "*  the old thinking.enabled+budget_tokens request shape outright (400). */"
     },
+    "src/lib/llm.ts:423": {
+      "fp": "dd5a9f2167ee",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "let answerText = \"\";"
+    },
+    "src/lib/llm.ts:425": {
+      "fp": "1c7c59f020b9",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "// Extended thinking: only for non-Haiku models (Haiku doesn't support the"
+    },
+    "src/lib/llm.ts:426": {
+      "fp": "d7912666e51f",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "// `thinking` param at all — not even an explicit \"disabled\"). NOTE: If"
+    },
     "src/lib/llm.ts:43": {
       "fp": "240224505f4b",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
-        "11-config-build-ci-infra.md",
         "14b-subsystems.md"
       ],
       "preview": "export function isSonnet5PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:437": {
-      "fp": "d10b36aa74a5",
+    "src/lib/llm.ts:432": {
+      "fp": "ae29ea4279db",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "}"
+      "preview": "const useThinking ="
+    },
+    "src/lib/llm.ts:433": {
+      "fp": "c4c603db2d2e",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "opts?.extendedThinking === true && !model.includes(\"haiku\");"
+    },
+    "src/lib/llm.ts:434": {
+      "fp": "d25c37fb3c32",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const modelSupportsThinking = !model.includes(\"haiku\");"
+    },
+    "src/lib/llm.ts:436": {
+      "fp": "aac95f3d1ef6",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Adaptive thinking (`{type:\"adaptive\"}` + `output_config.effort`)"
     },
     "src/lib/llm.ts:44": {
       "fp": "9a87a2140b36",
@@ -18172,20 +18216,6 @@
       ],
       "preview": "return process.env.LLM_USE_SONNET_5 === \"true\";"
     },
-    "src/lib/llm.ts:440": {
-      "fp": "bd764c92f214",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "if (event.type === \"message_delta\") {"
-    },
-    "src/lib/llm.ts:449": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "}"
-    },
     "src/lib/llm.ts:45": {
       "fp": "d10b36aa74a5",
       "citedBy": [
@@ -18194,29 +18224,92 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:450": {
+    "src/lib/llm.ts:456": {
+      "fp": "17390c5655aa",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "// recognize the param."
+    },
+    "src/lib/llm.ts:462": {
+      "fp": "d5cbd78edc45",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "...(useThinking"
+    },
+    "src/lib/llm.ts:469": {
+      "fp": "00fa278ea019",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": ": {}),"
+    },
+    "src/lib/llm.ts:480": {
+      "fp": "a9849ac2357a",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "} as Anthropic.MessageStreamParams & { model: string });"
+    },
+    "src/lib/llm.ts:486": {
+      "fp": "9f882be98cf4",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (useThinking && !emittedAny && !thinkingSentinelEmitted) {"
+    },
+    "src/lib/llm.ts:488": {
+      "fp": "f2eae6b3c0f9",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "thinkingSentinelEmitted = true;"
+    },
+    "src/lib/llm.ts:496": {
+      "fp": "7179c2f4b390",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (event.type === \"message_start\") {"
+    },
+    "src/lib/llm.ts:516": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:519": {
+      "fp": "bd764c92f214",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (event.type === \"message_delta\") {"
+    },
+    "src/lib/llm.ts:528": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:529": {
       "fp": "ee8c1cc9eb5b",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// Extended thinking: stream thinking_delta bytes live to the client."
     },
-    "src/lib/llm.ts:469": {
+    "src/lib/llm.ts:548": {
       "fp": "faded2ba2fbe",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (!useThinking) continue;"
     },
-    "src/lib/llm.ts:47": {
-      "fp": "8d64a30d9de1",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/**"
-    },
-    "src/lib/llm.ts:474": {
+    "src/lib/llm.ts:553": {
       "fp": "2ede4f7460e4",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18224,99 +18317,63 @@
       ],
       "preview": "const chunk = stripControlBytes("
     },
-    "src/lib/llm.ts:48": {
-      "fp": "afa2751ea73d",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "* Region-prefixed Bedrock inference-profile IDs (verified live in the reference"
-    },
-    "src/lib/llm.ts:480": {
+    "src/lib/llm.ts:559": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:483": {
+    "src/lib/llm.ts:562": {
       "fp": "20f32da3dcd3",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "event.delta.type === \"text_delta\""
     },
-    "src/lib/llm.ts:485": {
+    "src/lib/llm.ts:564": {
       "fp": "e236a00082d4",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (ttftMs == null) ttftMs = Date.now() - attemptStart;"
     },
-    "src/lib/llm.ts:49": {
-      "fp": "58f580389e09",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "* account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with"
-    },
-    "src/lib/llm.ts:490": {
+    "src/lib/llm.ts:569": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:496": {
+    "src/lib/llm.ts:575": {
       "fp": "e32dfcc1b73f",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "answerText += text;"
     },
-    "src/lib/llm.ts:497": {
+    "src/lib/llm.ts:576": {
       "fp": "873ab549ff72",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "emittedAny = true;"
     },
-    "src/lib/llm.ts:50": {
-      "fp": "0c088d5eb824",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "* \"model identifier is invalid\". Sonnet 4.6's and Sonnet 5's bare ids resolve fine."
-    },
-    "src/lib/llm.ts:503": {
+    "src/lib/llm.ts:582": {
       "fp": "2e164b8bb5bf",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// Loop ended with zero text_delta events (e.g. adaptive thinking"
     },
-    "src/lib/llm.ts:51": {
-      "fp": "ed9623369ff0",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "*/"
-    },
-    "src/lib/llm.ts:515": {
+    "src/lib/llm.ts:594": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:52": {
-      "fp": "b0b7b1059557",
-      "citedBy": [
-        "02-api-routes.md",
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "function bedrockChain(): string[] {"
-    },
-    "src/lib/llm.ts:529": {
+    "src/lib/llm.ts:608": {
       "fp": "6475e3f06871",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18324,7 +18381,7 @@
       ],
       "preview": "...(emittedAny ? { answerText } : {}),"
     },
-    "src/lib/llm.ts:535": {
+    "src/lib/llm.ts:614": {
       "fp": "cbb775d99a96",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18332,7 +18389,7 @@
       ],
       "preview": "if (emittedAny)"
     },
-    "src/lib/llm.ts:542": {
+    "src/lib/llm.ts:621": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18340,21 +18397,15 @@
       ],
       "preview": ");"
     },
-    "src/lib/llm.ts:55": {
-      "fp": "67247ff630a0",
+    "src/lib/llm.ts:64": {
+      "fp": "b87f3902e02a",
       "citedBy": [
-        "14-subsystems.md"
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
       ],
-      "preview": "? \"us.anthropic.claude-sonnet-5\""
+      "preview": "export function isSonnet55PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:56": {
-      "fp": "e456323ab692",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": ": \"us.anthropic.claude-sonnet-4-6\", // primary (fast, cost-effective)"
-    },
-    "src/lib/llm.ts:562": {
+    "src/lib/llm.ts:641": {
       "fp": "ab8795c5d95c",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18362,7 +18413,7 @@
       ],
       "preview": "const isLast = i === chain.length - 1;"
     },
-    "src/lib/llm.ts:563": {
+    "src/lib/llm.ts:642": {
       "fp": "3762952356a4",
       "citedBy": [
         "02-api-routes.md",
@@ -18372,130 +18423,96 @@
       ],
       "preview": "const goingToApology ="
     },
-    "src/lib/llm.ts:564": {
+    "src/lib/llm.ts:643": {
       "fp": "552a67dc6f92",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "emittedAny || isLast || !isFallbackEligible(err);"
     },
-    "src/lib/llm.ts:566": {
+    "src/lib/llm.ts:645": {
       "fp": "ec69082ed723",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// a fallback to a model that doesn't support thinking (Haiku) — the"
     },
-    "src/lib/llm.ts:58": {
-      "fp": "6b1d4da778af",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "\"us.anthropic.claude-haiku-4-5-20251001-v1:0\", // fallback"
-    },
-    "src/lib/llm.ts:585": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:590": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "02-api-routes.md",
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:60": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "02-api-routes.md",
-        "04-lib-ai-voice-infra.md",
-        "12-docs-knowledge-and-harness.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:63": {
-      "fp": "6ccd5985e450",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "function anthropicChain(): string[] {"
-    },
-    "src/lib/llm.ts:65": {
-      "fp": "555244ee7e23",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "14-subsystems.md"
-      ],
-      "preview": "isSonnet5PrimaryEnabled() ? \"claude-sonnet-5\" : \"claude-sonnet-4-6\","
-    },
     "src/lib/llm.ts:66": {
-      "fp": "e2bdfeb5b082",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "\"claude-opus-4-7\","
-    },
-    "src/lib/llm.ts:68": {
-      "fp": "358ba3f22237",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "];"
-    },
-    "src/lib/llm.ts:69": {
       "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:74": {
-      "fp": "7297858f7f29",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const MODEL_UNAVAILABLE_MARKERS = ["
-    },
-    "src/lib/llm.ts:81": {
-      "fp": "358ba3f22237",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "];"
-    },
-    "src/lib/llm.ts:83": {
-      "fp": "28e482b4574c",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export function getProvider(): LlmProvider {"
-    },
-    "src/lib/llm.ts:84": {
-      "fp": "4dbee38e3b8a",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md"
       ],
-      "preview": "return process.env.LLM_PROVIDER === \"anthropic\" ? \"anthropic\" : \"bedrock\";"
+      "preview": "}"
     },
-    "src/lib/llm.ts:85": {
+    "src/lib/llm.ts:664": {
       "fp": "d10b36aa74a5",
       "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:669": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
         "04-lib-ai-voice-infra.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
+    },
+    "src/lib/llm.ts:79": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:80": {
+      "fp": "afa2751ea73d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* Region-prefixed Bedrock inference-profile IDs (verified live in the reference"
+    },
+    "src/lib/llm.ts:81": {
+      "fp": "58f580389e09",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "* account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with"
+    },
+    "src/lib/llm.ts:82": {
+      "fp": "0c088d5eb824",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* \"model identifier is invalid\". Sonnet 4.6's and Sonnet 5's bare ids resolve fine."
+    },
+    "src/lib/llm.ts:84": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/llm.ts:85": {
+      "fp": "b0b7b1059557",
+      "citedBy": [
+        "02-api-routes.md",
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "function bedrockChain(): string[] {"
+    },
+    "src/lib/llm.ts:87": {
+      "fp": "5f42734cf1d1",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "14-subsystems.md"
+      ],
+      "preview": "pickPrimary({"
     },
     "src/lib/llm.ts:9": {
       "fp": "d9b68daf357a",
@@ -18504,35 +18521,29 @@
       ],
       "preview": "} from \"@/lib/llm-trace\";"
     },
-    "src/lib/llm.ts:94": {
-      "fp": "60816a809cd0",
+    "src/lib/llm.ts:93": {
+      "fp": "6b1d4da778af",
       "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "14-subsystems.md"
       ],
-      "preview": "function decodeSecret(value: string | undefined): string {"
+      "preview": "\"us.anthropic.claude-haiku-4-5-20251001-v1:0\", // fallback"
     },
     "src/lib/llm.ts:95": {
-      "fp": "4bbd342107f6",
+      "fp": "d10b36aa74a5",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "02-api-routes.md",
+        "04-lib-ai-voice-infra.md",
+        "12-docs-knowledge-and-harness.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "if (!value) return \"\";"
+      "preview": "}"
     },
-    "src/lib/llm.ts:97": {
-      "fp": "f12c71bbf682",
+    "src/lib/llm.ts:98": {
+      "fp": "6ccd5985e450",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "const decoded = Buffer.from(value, \"base64\").toString(\"utf-8\");"
-    },
-    "src/lib/llm.ts:99": {
-      "fp": "e1dab912d8f6",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "return decoded;"
+      "preview": "function anthropicChain(): string[] {"
     },
     "src/lib/llms-txt.test.ts:14": {
       "fp": "843d66dc8a70",
@@ -20771,11 +20782,11 @@
       "preview": "* before any route handler."
     },
     "TELEMETRY.md:7": {
-      "fp": "82c2576a0b12",
+      "fp": "eb68b3c6cc3c",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (v3.6.0) **plu"
+      "preview": "> **Scope:** describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` (v3.6.0) **plu"
     },
     "tsconfig.json:26": {
       "fp": "84bbcb60e727",

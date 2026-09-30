@@ -263,6 +263,27 @@ describe("/api/chat — write-through glue", () => {
     expect(faqCacheSetMock).not.toHaveBeenCalled();
   });
 
+  it("never calls faqCacheSet for an answer served by a fallback rung (a transient degradation must not be pinned in the 24 h cache)", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+        attempt_index: 2,
+        fell_back: true,
+        latency_ms: 400,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: "I mostly use TypeScript and Next.js.",
+      });
+      return new ReadableStream();
+    });
+
+    const res = await POST(
+      makeReq([{ role: "user", content: "What stack do you use?" }]),
+    );
+    expect(res.status).toBe(200);
+    expect(faqCacheSetMock).not.toHaveBeenCalled();
+  });
+
   it("never calls faqCacheSet on a multi-turn request (question is null, not cache-eligible)", async () => {
     streamWithFallbackMock.mockImplementation((_params, opts) => {
       opts?.onAttempt?.({

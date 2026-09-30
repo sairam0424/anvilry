@@ -3,14 +3,14 @@ kind: doc
 title: Routes & Pages (App Router UI surface)
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
 # Routes & Pages (App Router UI surface)
 
-> Part of the Anvilry v3.7.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> **Describes:** Anvilry v3.7.0 (`package.json` 3.7.0), i.e. main `a929932` plus five later fixes, described by behaviour — notes hidden at the data layer while `NOTES_ENABLED` is off (`allNotes` empty; `publishedNotes` keeps the raw list), per-class rate-limit buckets, admin auth through one shared `isAdminAuthorized` (proxy, `requireAdmin`, and the telemetry page itself), the command palette's talk-mode gated on the active voice view, and a `MIN_ROUTES = 17` bundle-budget floor with dead components removed. Only the first and third change anything in this doc's files.
+> **Describes:** Anvilry v3.8.0 (`package.json` 3.8.0), i.e. main `a929932` plus five later fixes, described by behaviour — notes hidden at the data layer while `NOTES_ENABLED` is off (`allNotes` empty; `publishedNotes` keeps the raw list), per-class rate-limit buckets, admin auth through one shared `isAdminAuthorized` (proxy, `requireAdmin`, and the telemetry page itself), the command palette's talk-mode gated on the active voice view, and a `MIN_ROUTES = 17` bundle-budget floor with dead components removed. Only the first and third change anything in this doc's files.
 
 **Scope:** every file under `src/app/**` that is NOT under `src/app/api/**` and is NOT a `route.ts`.
 Concretely: `src/app/{layout,page,error,global-error,not-found,opengraph-image,icon,apple-icon,manifest,robots,sitemap}.*`,

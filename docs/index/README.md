@@ -1,23 +1,23 @@
 ---
 kind: doc
-title: Anvilry v3.7.0 — Codebase Index
+title: Anvilry v3.8.0 — Codebase Index
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
-# Anvilry v3.7.0 — Codebase Index
+# Anvilry v3.8.0 — Codebase Index
 
 **Anvilry** is a personal portfolio and AI-powered developer showcase: one Next.js App Router app that
 serves multiple client-switchable experiences from a single URL, grounded on one MDX content source that
 also feeds a chatbot, an MCP server, a 3D knowledge graph, a keyboard terminal, and a machine-readable
 résumé.
 
-**Version:** `3.7.0` (`package.json:3`). The previous release, `v3.6.0` (tag `c734c14`, 2026-08-21), was a **correctness and
+**Version:** `3.8.0` (`package.json:3`). The previous release, `v3.7.0` (tag `8ba0be5`, 2026-09-30), was a hardening and correctness pass; the one before it, `v3.6.0` (tag `c734c14`, 2026-08-21), was a **correctness and
 CI-integrity** release: the pnpm 11 install failure CI could not see, all four article source-label maps
 type-enforced (two re-keyed by `ArticleSource`), a bundle gate that can actually fail replacing one that ran 222
-times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:127-217`). `main` @ `a929932` had moved 297
-commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` is the first bump since, so it
+times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:183-273`). `main` @ `a929932` had moved 297
+commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` was the first bump since, so `3.8.0`
 names the *declared* version of this tree, and the `v3.6.0` tag marks an older tree.
 
 **Stack:** Next.js 16.3.5 (App Router, `cacheComponents: true`) · React 19.3.0 · TypeScript 5.9 (strict) ·
@@ -25,7 +25,7 @@ Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) 
 Upstash Redis (rate limits, FAQ response cache, telemetry) · React Three Fiber + three.js 0.186 ·
 Vitest 5 + Playwright 1.62 · deployed on Vercel.
 
-**This index describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (2026-09-19) plus five later behavioural fixes.** It was measured in
+**This index describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` (2026-09-19) plus five later behavioural fixes, and two more in v3.8.0 (an IAM-denied model falls through to the next rung; `LLM_USE_SONNET_5_5` opts in to Claude Sonnet 5.5).** It was measured in
 the worktree at `8e9e73e` (branch `docs/fix-index-drift-post-v3-6`), whose non-`docs/` tree differs from
 `a929932` only by those fixes (`git diff a929932 8e9e73e -- . ':!docs'` lists exactly their files):
 
@@ -54,7 +54,7 @@ earlier pin (`release/v3.6.0` @ `c734c14`) predates it, so citations written aga
 | | |
 |---|---|
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
-| **Version** | `3.7.0` (`package.json:3`) — `main` @ `a929932` plus the five fixes above (`a929932` is 297 commits past the `v3.6.0` tag) |
+| **Version** | `3.8.0` (`package.json:3`) — `main` @ `a929932` plus the five fixes above and the two v3.8.0 changes (`a929932` is 297 commits past the `v3.6.0` tag) |
 | **Scale** | 322 `.ts`/`.tsx` files in `src/` totalling 42,185 lines (229 non-test files / 29,320 lines + 93 test files) · 39 files under `content/` · 61 route-defining files |
 | **Subsystems** | content pipeline (incl. the decisions ledger) · view system · chat/LLM (incl. the FAQ response cache) · voice · MCP (10 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:203`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
@@ -83,7 +83,7 @@ what the code says.
 | `content/` | 39 files / 2,097 lines — 35 `.mdx` + 3 `.md` + 1 `.gitkeep` | `find content -type f` |
 | `e2e/` | 2 files / 401 lines | `find e2e -type f` |
 | App Router route-defining files | **61** — 16 `page.tsx`, 27 `route.ts`, 5 `layout.tsx`, 5 `opengraph-image.tsx`, 8 special (`error`, `global-error`, `not-found`, `icon`, `apple-icon`, `manifest`, `robots`, `sitemap`). Of the 27 `route.ts`, 19 sit under `src/app/api` and 8 outside it | `find src/app -name …` |
-| Test / spec files | 95 — 93 under `src/` (61 in Vitest's `node` project, 32 `*.dom.test.*` in its `dom` project) + 2 Playwright specs. `npx vitest run` passes 817 tests (Vitest 5.0.0, ~27 s); Playwright runs two projects, `chromium` and `mobile-safari`, against `pnpm start` | `find src -name '*.test.*'`, `find e2e -name '*.spec.ts'`; `playwright.config.ts:15-38` |
+| Test / spec files | 95 — 93 under `src/` (61 in Vitest's `node` project, 32 `*.dom.test.*` in its `dom` project) + 2 Playwright specs. `npx vitest run` passes 859 tests (Vitest 5.0.0, ~27 s); Playwright runs two projects, `chromium` and `mobile-safari`, against `pnpm start` | `find src -name '*.test.*'`, `find e2e -name '*.spec.ts'`; `playwright.config.ts:15-38` |
 | Dependencies | **35 prod + 18 dev** — up from 33 + 17 at the `v3.6.0` tag: `@aws-sdk/client-bedrock-runtime` (Titan embeddings for the FAQ cache) and `@radix-ui/react-tooltip` joined prod, `tsx` (runs `scripts/seal-claims.ts`) joined dev. Plus **12** `overrides`, 1 `patchedDependencies` entry (`@react-three/fiber@9.7.0`), the legacy `onlyBuiltDependencies` (1) and `ignoredBuiltDependencies` (2) lists, and the live 3-entry `allowBuilds` map. **There is no `pnpm` field in `package.json`:** v3.5.0 moved every pnpm setting to `pnpm-workspace.yaml`, because pnpm 11 stopped reading that field and would have silently dropped the ten security overrides then in force (two more have been added since) | `package.json:24-58` (prod), `package.json:61-78` (dev); `pnpm-workspace.yaml:18-43` (overrides; the last of the 12, `qs`, sits on line 44), `pnpm-workspace.yaml:49-54` (patch), `pnpm-workspace.yaml:70-71` and `pnpm-workspace.yaml:74-76` (legacy lists), `pnpm-workspace.yaml:81-84` (`allowBuilds`) — see [13](./13-dependencies-and-versions.md) |
 | npm scripts | **13** — the 12 at the `v3.6.0` tag plus `seal-claims` (`tsx scripts/seal-claims.ts`). `build` is now `velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path public/pagefind`, so **a failing Vitest test blocks the deploy and Pagefind runs last**. `analyze` is `velite --clean && ANALYZE=true next build --webpack`; the `--webpack` flag is **mandatory**, because a bare `next build` in Next 16 is Turbopack and `@next/bundle-analyzer` is webpack-only. There is still no `search-index` script (that is a Makefile target) — see [11](./11-config-build-ci-infra.md) | the `scripts` block of `package.json` (13 entries; it opens on line 8, not line 5, since `engines` occupies lines 5–7); `build` is `package.json:11` and `analyze` is `package.json:12` |
 | Content items | 5 work · 11 projects · 7 notes · 15 articles (14 non-draft). 5 of the 7 notes carry `generatedBy: inkforge`; notes are hidden while `NOTES_ENABLED` is off (the default) | `find content -type f`, section [09](./09-content-and-schemas.md) |
@@ -95,10 +95,10 @@ what the code says.
 | Voice catalog | 18 voices — 6 curated + 12 extended, across 3 TTS engines | `src/lib/voice-catalog.ts:134-294` |
 | Cron jobs | 5, all fail-closed on `CRON_SECRET` through the shared constant-time `unauthorizedUnlessCron` (`src/lib/cron-auth.ts`) | `vercel.json:3-7` |
 | Rate limiting | **3 classes** — `chat`, `voice`, `beacon` — each its own Upstash sliding window of 8 requests / 60 s per IP (prefixes `anvilry:chat`, `anvilry:voice`, `anvilry:beacon`). `/api/chat` uses `chat`; `/api/tts`, `/api/tts-google` and `/api/transcribe` use `voice`; `/api/error` uses `beacon`. It fails open when Upstash is unconfigured or errors, and a valid `CRON_SECRET` bearer bypasses it. `/api/visit` keeps its own `slidingWindow(1, "30 m")` limiter; `/api/mcp/[transport]` and the admin purge route are not rate-limited | `src/lib/rate-limit.ts:21-31` (window, prefixes, class list; the `RateLimitClass` type sits just above), `src/lib/rate-limit.ts:95-110` (`checkRateLimit`); `src/app/api/visit/route.ts:41` |
-| FAQ response cache | First-turn `/api/chat` questions (exactly one string message, no `X-Chat-Skip-Cache` header): an exact tier keyed by the SHA-256 of the normalized question, plus an optional semantic tier (`FAQ_CACHE_SEMANTIC_MATCH=true`; Titan v2 embeddings, 512 dims, 5 s timeout; cosine ≥ 0.92). TTL 24 h; index capped at 500 entries and trimmed on 1-in-20 writes; answers ≤ 4,000 chars and only after a clean `end_turn`; entries written under an older `anvilry:corpus:built_at` stamp count as misses. Kill switch `FAQ_CACHE_ENABLED=false`; operator purge is `POST /api/admin/faq-cache/purge` | `src/lib/chat-cache.ts:63-79` (constants), `src/lib/chat-cache.ts:121-131` (env switches), `src/lib/chat-cache.ts:223` (threshold); `src/lib/faq-embeddings.ts:20-28`; `src/app/api/chat/route.ts:322-328` (eligibility); `src/instrumentation.ts:93-100` (corpus stamp) |
+| FAQ response cache | First-turn `/api/chat` questions (exactly one string message, no `X-Chat-Skip-Cache` header): an exact tier keyed by the SHA-256 of the normalized question, plus an optional semantic tier (`FAQ_CACHE_SEMANTIC_MATCH=true`; Titan v2 embeddings, 512 dims, 5 s timeout; cosine ≥ 0.92). TTL 24 h; index capped at 500 entries and trimmed on 1-in-20 writes; answers ≤ 4,000 chars and only after a clean `end_turn` served by the primary rung (a fallback-rung answer is never cached); entries written under an older `anvilry:corpus:built_at` stamp count as misses. Kill switch `FAQ_CACHE_ENABLED=false`; operator purge is `POST /api/admin/faq-cache/purge` | `src/lib/chat-cache.ts:63-79` (constants), `src/lib/chat-cache.ts:121-131` (env switches), `src/lib/chat-cache.ts:223` (threshold); `src/lib/faq-embeddings.ts:20-28`; `src/app/api/chat/route.ts:322-328` (eligibility); `src/instrumentation.ts:93-100` (corpus stamp) |
 | Telemetry span kinds | **8** — `http.request`, `llm.attempt`, `tts.request`, `transcribe.request`, `client.error`, `server.error`, `budget.tick`, `chat.cache`. Only five are emitted today; `tts.request`, `transcribe.request` and `budget.tick` appear only in the schema, the admin dashboard, the `scripts/replay-trace.mjs` kind list and tests, never at an emit site. Redis retention is 7 days, trimmed on 1-in-20 emits | `src/lib/telemetry/schema.ts:37-49`; `src/lib/telemetry/emit.ts:54` (sample rate), `src/lib/telemetry/emit.ts:85` (the sampled trim) |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-34`; `src/components/view-switcher.tsx:25-60`, `src/components/view-switcher.tsx:96-97`, `src/components/view-switcher.tsx:103` |
-| CHANGELOG version tags | 20 (still no `2.x`, no `3.1`–`3.3`) | `[3.7.0]` (2026-09-30) is the newest entry and `[3.6.0]` the one before it (`CHANGELOG.md:127`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 20 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284) |
+| CHANGELOG version tags | 21 (still no `2.x`, no `3.1`–`3.3`) | `[3.8.0]` (2026-09-30) is the newest entry, then `[3.7.0]` (2026-09-30) and `[3.6.0]` (`CHANGELOG.md:183`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 21 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284; `[3.8.0]` covers #287) |
 
 Recipe for the two coverage rows (bash; re-run it after editing any section's Coverage list — the figures above
 were taken from sections 01–13 as they stood when this file was last edited):
@@ -418,7 +418,7 @@ regeneration. The 2026-09-29 pass re-checked the claims in the thirteen area sec
 source, and rewrote the ones the code no longer supports — among them that `src/proxy.ts` is the app's one Edge
 file (a Next 16 Proxy runs on Node.js), that `/projects` alone uses `"use cache"`, that the sitemap never emits
 `lastModified`, the counts of commands, tests, routes, dependencies, overrides and workflows, and that a Vitest
-test enforces the citation check (it is a CI step). **Relabelled 2026-09-30 to v3.7.0** (`release/v3.7.0`, cut from `develop` @ `f1508b7`): the version metadata, the pin paragraphs and the statements about `CHANGELOG.md` were updated; the counts were not re-measured — they are still those taken at `8e9e73e`, and the code has changed since only in comments, messages and two test files (`notes.test.ts` now asserts over `publishedNotes`; `notes-dark.test.ts` no longer pins a content slug), with no test added or removed, plus the version bump.
+test enforces the citation check (it is a CI step). **Relabelled 2026-09-30 to v3.7.0** (`release/v3.7.0`, cut from `develop` @ `f1508b7`): the version metadata, the pin paragraphs and the statements about `CHANGELOG.md` were updated; the counts were not re-measured — they are still those taken at `8e9e73e`, and the code has changed since only in comments, messages and two test files (`notes.test.ts` now asserts over `publishedNotes`; `notes-dark.test.ts` no longer pins a content slug), with no test added or removed, plus the version bump. **Relabelled again 2026-09-30 to v3.8.0** (`release/v3.8.0`, cut from `develop` after #287): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way. The areas #287 touched (`llm.ts`, its tests, the model-chain and env-var docs) were updated in that PR; the counts elsewhere were not re-measured, and the per-area headers keep their original five-fix lists.
 
 **Method.** Thirteen per-area indexers ran in parallel, each assigned a disjoint slice of the tree and each
 required to read every file it claimed before writing about it, to cite `path:line`, to describe only the
@@ -479,8 +479,8 @@ all. Now that shows up as a red `ci` job with the exact list. Run the script for
 moves with every re-fingerprint.
 
 **Regenerate when** the next release tag is cut from `main`. This index is a *re-pin*, not a regeneration: it
-was cut for `release/v3.4.2` and has been re-pinned four times since (v3.5.0, v3.6.0, the 2026-09-29 pass over 297 commits at once, and the v3.7.0 relabel).
-The frontmatter reads `v3.7.0` because `package.json` does. On the next release, regenerate the
+was cut for `release/v3.4.2` and has been re-pinned five times since (v3.5.0, v3.6.0, the 2026-09-29 pass over 297 commits at once, and the v3.7.0 and v3.8.0 relabels).
+The frontmatter reads `v3.8.0` because `package.json` does. On the next release, regenerate the
 thirteen area sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all
 seventeen, then `--write` the fingerprints. Between releases the working tree is authoritative for anything
 newer — and the citation check tells you exactly where the index has fallen behind.

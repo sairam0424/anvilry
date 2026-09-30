@@ -4,7 +4,7 @@ End-to-end structured telemetry for the "Ask my portfolio" chatbot. Zero new ven
 all sinks are same-origin (Vercel Runtime Logs) or already-provisioned infra (Upstash Redis).
 Free text is redacted at the call site before storage (regex-only; §4 lists exactly what is and is not stored).
 
-> **Scope:** describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes**. Two touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
+> **Scope:** describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes** (v3.7.0) and two more in v3.8.0 (an IAM-denied model falls through to the next rung, so a 403 `llm.attempt` span can now be followed by a fallback attempt, with the same span shape; and the opt-in Sonnet 5.5 primary). Two of the five touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
 
 ---
 
@@ -100,7 +100,7 @@ The `usage` block on `llm.attempt` is the first place Anvilry has ever measured 
 
 `cache_read_input_tokens > 0` on turns 2+ of the same session means caching is working.
 If it stays 0 after 7 days, the cached prefix is expiring or changing between requests (see Notes, §9).
-`cost_usd` is only present when `usage` is; it comes from a three-entry Bedrock price table, so Sonnet 5 and every direct-Anthropic model id are priced as Sonnet 4.6.
+`cost_usd` is only present when `usage` is; it comes from a three-entry Bedrock price table, so Sonnet 5, Sonnet 5.5 and every direct-Anthropic model id are priced as Sonnet 4.6.
 
 ---
 

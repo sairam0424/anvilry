@@ -218,9 +218,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
       ).toBeGreaterThan(0),
     );
 
-    const livePre = container.querySelector(
-      'pre[aria-label="Claude\'s live reasoning"]',
-    );
+    const livePre = container.querySelector('pre[aria-label="Live reasoning"]');
     expect(livePre).toBeTruthy();
     expect(livePre?.getAttribute("aria-live")).toBe("off");
 

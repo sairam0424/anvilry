@@ -3,14 +3,14 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.8.0
+version: v3.9.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
+> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
 
 **Scope:** `src/lib/llm.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,
@@ -401,7 +401,7 @@ Every emitted event carries `attrs: { ipHash, uaHash, ...attrs }` plus `latency_
 - **Exports:** `useAutoScroll(opts?)` → `UseAutoScroll`.
 - **Consumed by:** `src/components/ask-portfolio.tsx:13`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
 - **Behaviour notes:** BOTH engine hooks are called unconditionally every render (:25-29) — required by the rules of hooks — and each is handed `enabled: callerEnabled && engine === "<its own>"` so the inactive engine attaches no observers/listeners (:24-29). The return is `engine === "library" ? library : custom` (:30), i.e. `custom` is the else-branch default.
-- **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:383` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
+- **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:374` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
 
 #### `src/lib/scroll/use-stick-to-bottom-custom.ts`
 - **Role:** The in-repo engine — intent-flag + ResizeObserver + programmatic-guard design.

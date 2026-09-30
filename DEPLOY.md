@@ -2,7 +2,7 @@
 
 Production deploy guide for the Anvilry portfolio. The site is a Next.js 16 app; the only
 runtime dependency beyond the static build is the **"Ask my portfolio" chatbot**, which calls
-Claude on **AWS Bedrock**. Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` @ `a929932` plus seven post-`a929932` behaviour changes (five in v3.7.0, two in v3.8.0: IAM-denied models fall through, and the opt-in Sonnet 5.5 primary); the code wins.
+Claude on **AWS Bedrock**. Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` @ `a929932` plus nine post-`a929932` behaviour changes (five in v3.7.0, two in v3.8.0: IAM-denied models fall through, and the opt-in Sonnet 5.5 primary; two in v3.9.0: the model line under chat answers and the Konami easter egg are removed); the code wins.
 
 ---
 

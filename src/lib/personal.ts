@@ -1,7 +1,7 @@
 /**
  * Owner-authored "beyond the résumé" content — the SINGLE source every personal-reveal
  * surface reads (the hidden `secret`/`uses`/`now` terminal commands, the visible
- * `about` command, the Konami disclosure card, and the chat corpus).
+ * `about` command, and the chat corpus).
  *
  * EMPTY BY DEFAULT. Every easter egg + reveal stays DARK until Sairam populates this —
  * so an unpopulated portfolio looks exactly as it does today, and a recruiter never

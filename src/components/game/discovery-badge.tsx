@@ -3,8 +3,8 @@
 import { useDiscoveries, DISCOVERY_TOTAL } from "@/lib/discovery-store";
 
 /**
- * Floating discovery progress badge — shows "★ N/5 discovered" in the bottom-right
- * when the visitor has unlocked at least 1 of the 5 exploration moments.
+ * Floating discovery progress badge — shows "★ N/4 discovered" in the bottom-right
+ * when the visitor has unlocked at least 1 of the 4 exploration moments.
  *
  * Design choices:
  * - Hidden until the first discovery (no badge on first visit = no clutter).
@@ -23,11 +23,10 @@ import { useDiscoveries, DISCOVERY_TOTAL } from "@/lib/discovery-store";
  *   so it started rendering *below* the trigger instead of above it.
  * - Gate: NEXT_PUBLIC_DISCOVERY_BADGES=true (default OFF).
  *
- * The 5 discovery keys are wired in their respective source files:
+ * The 4 discovery keys are wired in their respective source files:
  *   view-switch     → view-context.tsx setViewInternal()
  *   chat-question   → chat-messages.tsx first user message
  *   terminal-command→ use-terminal.ts first run()
- *   konami          → easter-eggs.tsx Konami sequence
  *   dossier-open    → dossier-card.tsx Link click
  */
 export function DiscoveryBadge() {

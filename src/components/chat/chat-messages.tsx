@@ -229,7 +229,7 @@ function ThinkingBlock({
             ref={liveEndRef}
             className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle"
             aria-live="off"
-            aria-label="Claude's live reasoning"
+            aria-label="Live reasoning"
           >
             {liveReasoning}
           </pre>
@@ -271,15 +271,6 @@ function ThinkingBlock({
       )}
     </div>
   );
-}
-
-/** Map a Bedrock/Anthropic model id to a readable name for the badge. */
-function friendlyModel(id: string): string {
-  const m = id.toLowerCase();
-  if (m.includes("opus")) return "Claude Opus";
-  if (m.includes("sonnet")) return "Claude Sonnet";
-  if (m.includes("haiku")) return "Claude Haiku";
-  return "Claude";
 }
 
 // Lazy-loaded so the ~46KB react-markdown tree stays OUT of the initial route
@@ -559,7 +550,6 @@ export function ChatMessages({
               }
               // Assistant: split into text + resolved cards. Cards render full-width below text.
               const segments = parseCards(m.content);
-              const showBadge = !!m.model && (!isStreaming || !isLast);
               // Plain prose for TTS = the text segments only (card tokens never spoken).
               // Read-aloud is offered once an answer is complete (not mid-stream).
               const spokenText = segments
@@ -631,24 +621,16 @@ export function ChatMessages({
                           </div>
                         ) : null /* cmd-view and cmd-highlight are side-effect-only; no DOM */,
                     )}
-                  {/* Answer footer: the honest model badge + the optional read-aloud
-                    toggle. The badge shows which model served the bytes (and if the
-                    Opus→Sonnet→Haiku fallback fired) — NOT a RAG citation. Read-aloud
-                    appears only when TTS is opted in + supported + the answer is done. */}
-                  {(showBadge || canRead) && (
+                  {/* Answer footer: the optional read-aloud toggle, offered only
+                    when TTS is opted in + supported + the answer is done. There is
+                    deliberately no model/provider line here (removed at the owner's
+                    request); the trace frame still records m.model / m.fellBack. */}
+                  {canRead && (
                     <div className="flex items-center gap-2 px-1">
-                      {showBadge && (
-                        <p className="font-mono text-[10px] text-fg-subtle">
-                          {m.fellBack ? "↳ primary unavailable · " : ""}Answered
-                          by {friendlyModel(m.model!)} · Bedrock
-                        </p>
-                      )}
-                      {canRead && (
-                        <ReadAloudButton
-                          speaking={activeIdx === i}
-                          onToggle={() => toggleRead(i, spokenText)}
-                        />
-                      )}
+                      <ReadAloudButton
+                        speaking={activeIdx === i}
+                        onToggle={() => toggleRead(i, spokenText)}
+                      />
                     </div>
                   )}
                 </div>

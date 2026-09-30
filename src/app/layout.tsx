@@ -156,7 +156,7 @@ export default async function RootLayout({
               banner + kill switch only while active, and only on the voice views. */}
           <WakeWordController />
           <ViewHint />
-          {/* Global "subtle delight" — console greeting + Konami reveal, every view. */}
+          {/* Global "subtle delight" — the DevTools console greeting, every view. */}
           <EasterEggs />
         </Providers>
         <Analytics />

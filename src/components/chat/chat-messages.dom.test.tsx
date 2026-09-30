@@ -2,7 +2,13 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, cleanup } from "@testing-library/react";
 import { ChatMessages } from "./chat-messages";
 import { ViewProvider } from "@/components/view-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/components/chat/use-chat";
+import {
+  DEFAULTS,
+  STORAGE_KEY,
+  __resetVoiceSettingsForTest,
+} from "@/lib/voice-settings-context";
 
 /**
  * Regression guard for the accidental double-announce bug found while
@@ -23,24 +29,34 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/",
 }));
 
+// Mutable so one test can turn speech support on; reset in afterEach.
+const tts = vi.hoisted(() => ({ supported: false }));
+
 vi.mock("@/components/chat/use-speech-synthesis", () => ({
   useSpeechSynthesis: () => ({
-    supported: false,
+    supported: tts.supported,
     isSpeaking: false,
     speak: vi.fn(),
-    stop: vi.fn(),
+    cancel: vi.fn(),
   }),
 }));
 
 afterEach(() => {
   cleanup();
+  tts.supported = false;
+  window.localStorage.clear();
+  __resetVoiceSettingsForTest();
 });
 
-function renderMessages(messages: ChatMessage[]) {
+// Production always has a TooltipProvider ancestor (src/components/providers.tsx);
+// the read-aloud button's Tooltip throws without one.
+function renderMessages(messages: ChatMessage[], isStreaming = false) {
   return render(
-    <ViewProvider>
-      <ChatMessages messages={messages} isStreaming={false} />
-    </ViewProvider>,
+    <TooltipProvider>
+      <ViewProvider>
+        <ChatMessages messages={messages} isStreaming={isStreaming} />
+      </ViewProvider>
+    </TooltipProvider>,
   );
 }
 
@@ -67,5 +83,85 @@ describe("ChatMessages — transcript container is not a live region", () => {
     const politeRegions = container.querySelectorAll('[aria-live="polite"]');
     expect(politeRegions).toHaveLength(1);
     expect(politeRegions[0].className).toContain("sr-only");
+  });
+});
+
+/**
+ * The owner removed the "Answered by Claude Sonnet · Bedrock" line that used to
+ * sit under every answer (2026-09-30), and asked that no visitor-facing text name
+ * the model or provider. The server still sends the model in the trace frame and
+ * the hook still stores it on the message; only the UI is gone, including the
+ * "primary unavailable" prefix that shared its <p> and the model family that was
+ * in the streaming reasoning block's accessible name.
+ */
+describe("ChatMessages — no model or provider attribution in the transcript", () => {
+  const answered = (fellBack: boolean): ChatMessage[] => [
+    { role: "user", content: "What stack do you use?" },
+    {
+      role: "assistant",
+      content: "TypeScript, mostly.",
+      model: "us.anthropic.claude-sonnet-4-6",
+      fellBack,
+    },
+  ];
+  // "Anthropic" is the other provider behind the LLM_PROVIDER toggle.
+  const LEAKS = [
+    "Answered by",
+    "Claude",
+    "Sonnet",
+    "Haiku",
+    "Opus",
+    "Bedrock",
+    "Anthropic",
+    "primary unavailable",
+  ];
+  // Read the serialised DOM, not textContent: a title=, aria-label or alt that
+  // names the model is visible to hover users and screen readers but has no text node.
+  const expectNoLeaks = (container: HTMLElement) => {
+    const html = container.innerHTML;
+    for (const leaked of LEAKS) expect(html).not.toContain(leaked);
+  };
+
+  it.each([false, true])(
+    "prints neither the model, the provider nor a fallback note (fellBack=%s)",
+    (fellBack) => {
+      const { container } = renderMessages(answered(fellBack));
+      // Positive control: the transcript rendered, so the absences are not an empty render.
+      expect(container.textContent).toContain("What stack do you use?");
+      expectNoLeaks(container);
+    },
+  );
+
+  it("names no model in the streaming reasoning block either", () => {
+    const { container } = renderMessages(
+      [
+        { role: "user", content: "What stack do you use?" },
+        {
+          role: "assistant",
+          content: "",
+          isThinking: true,
+          liveReasoning: "weighing options",
+        },
+      ],
+      true,
+    );
+    // Positive control: the live-reasoning <pre> is what carries the accessible name.
+    expect(container.textContent).toContain("weighing options");
+    expectNoLeaks(container);
+  });
+
+  it("still offers read-aloud when speech is opted in and supported", () => {
+    tts.supported = true;
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...DEFAULTS, ttsEnabled: true }),
+    );
+    const { container, getByRole } = renderMessages(answered(false));
+
+    expect(
+      getByRole("button", { name: "Read this answer aloud" }),
+    ).toBeTruthy();
+    expect(container.textContent).toContain("Listen");
+    expectNoLeaks(container);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import { CommandPaletteContent } from "./command-palette-content";
+import { DISCOVERY_TOTAL } from "@/lib/discovery-store";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -70,11 +71,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function renderPalette() {
+function renderPalette(discoveryBadgesEnabled = false) {
   const triggerRef = { current: null };
   return render(
     <CommandPaletteContent
-      discoveryBadgesEnabled={false}
+      discoveryBadgesEnabled={discoveryBadgesEnabled}
       open={true}
       onOpenChange={vi.fn()}
       triggerRef={triggerRef}
@@ -135,5 +136,14 @@ describe("command palette voice-conversation entry", () => {
     currentView.value = "voice";
     renderPalette();
     expect(screen.queryByText(TALK_LABEL)).toBeNull();
+  });
+});
+
+describe("command palette unlock-all-discoveries action", () => {
+  it("states the real badge total, not a hardcoded number", () => {
+    renderPalette(true);
+    expect(
+      screen.getByText(`★ reveal all ${DISCOVERY_TOTAL} exploration badges`),
+    ).toBeTruthy();
   });
 });

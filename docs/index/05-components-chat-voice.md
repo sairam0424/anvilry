@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.8.0
+version: v3.9.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
+> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 39
@@ -37,7 +37,7 @@ Excluded (tests, not indexed here — mapped to the module each guards in the ta
 | `chat/parse-cards.ts` | Splits assistant text into text / card / cmd segments; resolves slugs against the Velite allowlist (fail-closed) | `CardSegment`, `parseCards`, `hasCardToken`, `CMD_RE` | `parse-cards.test.ts` |
 | `chat/markdown-message.tsx` | Safe markdown renderer (react-markdown + `skipHtml` + rehype-sanitize) plus a streaming delimiter balancer | `closeOpenMarkdown`, `MarkdownMessage` | `markdown-message.test.ts` |
 | `chat/chat-card.tsx` | Renders a resolved project/work card entirely from Velite fields | `ChatCard` | — |
-| `chat/chat-messages.tsx` | Full transcript renderer: image lightbox, thinking block, model badge, read-aloud, cmd-token dispatch, autoscroll | `ChatMessages` | `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx` |
+| `chat/chat-messages.tsx` | Full transcript renderer: image lightbox, thinking block, read-aloud, cmd-token dispatch, autoscroll | `ChatMessages` | `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx` |
 | `chat/chat-view.tsx` | The `chat` view "concierge console": impact strip, chip rails, composer, mic, file picker, Stop, one-shot palette-query auto-send | `ChatView` | `chat-view.dom.test.tsx` |
 | `chat/chat-suggestions.ts` | Static chip prompt arrays for the Chat view | `RECRUITER_CHIPS`, `STARTER_CHIPS` | — |
 | `chat/attachment-preview-strip.tsx` | Pending-attachment thumbnails/badges above the composer with per-item remove | `AttachmentPreviewStrip` | — |
@@ -126,7 +126,7 @@ Three independent layers, all in scope, all fail-closed:
   allowlist is fixed at build time and cannot be influenced at runtime.
 - An unresolved token is **dropped entirely** — no card, no echoed literal (`parse-cards.ts:13-16` doc,
   `parse-cards.test.ts:41`). `cmd-*` segments produce **no DOM at all**; they are pure side-effect
-  triggers dispatched by `ChatMessages` (`chat-messages.tsx:337-346`).
+  triggers dispatched by `ChatMessages` (`chat-messages.tsx:328-337`).
 - Card fields are 100% server-sourced: `ChatCard` reads only `p.url / p.repo / p.name / p.tagline /
   p.tech / p.commits / p.group` and `w.url / w.register / w.name / w.summary / w.metrics`
   (`chat-card.tsx:12-77`) — the model influences only *which* card, never its contents or href.
@@ -145,7 +145,7 @@ Three independent layers, all in scope, all fail-closed:
 
 **3. Prompt-injection posture**
 - Card tokens never reach the markdown renderer: `parseCards()` extracts them first and only `type:"text"`
-  segments are passed to `MarkdownMessage` (`chat-messages.tsx:616-633`, `ask-portfolio.tsx:202-221`).
+  segments are passed to `MarkdownMessage` (`chat-messages.tsx:606-623`, `ask-portfolio.tsx:202-221`).
 - `parse-cards.test.ts` is the pinned contract ("a hostile model turn can neither inject markup nor conjure
   a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md` (Testing Notes) names
   `parse-cards.test.ts` as the prompt-injection/XSS guard and says not to weaken it; the next line there states that
@@ -201,7 +201,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - Thinking timing is latched from **byte arrival** in the read loop (:337-346), not from render deltas — coalescing can collapse the intermediate render.
   - Trailing `flushNow(acc)` after the loop is mandatory (:353-354). The `catch` path calls `flushPending()` **before** mutating messages so an abort can't append to a stale buffer (:360).
   - HTTP error copy is status-specific: 503 → "The chat isn't switched on yet…", 429 → "That's a lot of questions!…", else "Something went wrong." (:312-325). The 429 comes from the per-IP `chat` rate-limit bucket (`app/api/chat/route.ts:188`); the TTS/STT routes spend a separate `voice` bucket, so per-sentence Polly/Google fetches and Transcribe POSTs no longer eat chat's budget.
-  - `AbortError` is treated as a user action: the partial answer is kept and suffixed ` …[stopped]` (or `"[stopped]"` when empty), status returns to `"idle"` (:363-374). The rebuilt message keeps only `{ role, content }` — `model`, `fellBack`, `liveReasoning`, `isThinking` and the thinking timings are dropped, so the model badge and ThinkingBlock disappear after Stop.
+  - `AbortError` is treated as a user action: the partial answer is kept and suffixed ` …[stopped]` (or `"[stopped]"` when empty), status returns to `"idle"` (:363-374). The rebuilt message keeps only `{ role, content }` — `model`, `fellBack`, `liveReasoning`, `isThinking` and the thinking timings are dropped, so the ThinkingBlock disappears after Stop.
   - Any other thrown error replaces the placeholder with "Network error — please try again." and sets status `"error"` (:375-379).
   - Multi-modal payload: attachment blocks first, text block last; PDFs are sent as a `text` block `"[PDF: name]\n<pdfText>"` (no base64), images as `{type:"image",source:{type:"base64",...}}` (:275-293).
 - **Gotchas / invariants:**
@@ -215,7 +215,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/use-chat-a11y.ts`
 - **Role:** Produce one polite live-region string: "Answering…" while streaming, the settled answer once afterwards, or a short status when TTS owns the audio.
 - **Exports:** `useChatA11y` (hook).
-- **Consumed by:** `chat-messages.tsx:9` (called at :378 with `activeIdx !== null`) and `ask-portfolio.tsx` (called at :52; its own sr-only polite region at :138-140).
+- **Consumed by:** `chat-messages.tsx:9` (called at :369 with `activeIdx !== null`) and `ask-portfolio.tsx` (called at :52; its own sr-only polite region at :138-140).
 - **Behaviour notes:** All three branches set state **inside a timer callback**, never synchronously in the effect body (:36-45). Debounce is `0 ms` for "Answering…", `150 ms` for the settle/TTS branches.
 - **Gotchas / invariants:** When `disableLiveAnnounce` is true the region gets `"Speaking answer aloud."` instead of the answer text — this is the no-double-speak invariant (:19-23). Exactly one channel conveys the answer while TTS runs — but the effect keeps no memory of the flag: when `disableLiveAnnounce` flips back to false after read-aloud ends, it falls through to `setLiveMessage(lastText)` (:43-44) and the full answer is announced then (inferred from the effect logic, not browser-verified).
 
@@ -231,25 +231,25 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render one plain-text assistant segment as markdown, safe by construction.
 - **Exports:** `closeOpenMarkdown` (fn), `MarkdownMessage` (memoized component, prop `{ text: string }`).
 - **Reads / depends on:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
-- **Consumed by:** `chat-messages.tsx:287-291`, `ask-portfolio.tsx:18-22`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
+- **Consumed by:** `chat-messages.tsx:278-282`, `ask-portfolio.tsx:18-22`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
 - **Behaviour notes:** A `components` map overrides 17 element renderers (:47-84); `h1` and `h2` both render as `<h3>` (:54-55). Memoized on `text` so settled bubbles never re-parse (:20-22).
 - **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16).
 
 ### `chat/chat-messages.tsx`
-- **Role:** Render the whole transcript for the Chat view: attachments, lightbox, thinking block, answer segments, cards, model badge, read-aloud, and the a11y live region.
+- **Role:** Render the whole transcript for the Chat view: attachments, lightbox, thinking block, answer segments, cards, read-aloud, and the a11y live region.
 - **Exports:** `ChatMessages` (component, props `{ messages, isStreaming }`).
 - **Reads / depends on:** `parseCards`, `ChatCard`, `ReadAloudButton`, `useChatA11y`, `useSpeechSynthesis`, `useVoiceSettings`, `useAutoScroll`, `JumpToLatest`, `useView`, `highlightProject` (`@/lib/highlight-store`), `unlock` (`@/lib/discovery-store`), `SkeletonMarkdownLine`; env `NEXT_PUBLIC_EXTENDED_THINKING`.
 - **Consumed by:** `chat-view.tsx:11` (rendered at :158).
 - **Behaviour notes:**
   - `ThinkingBlock` is disabled when `process.env.NEXT_PUBLIC_EXTENDED_THINKING === "false"` (:165, early return :196) — i.e. **enabled by default**. Ctrl/Cmd+O toggles the settled reasoning panel (:183-194).
-  - `cmd-view` / `cmd-highlight` tokens are dispatched only from **settled** messages (`if (isStreaming) return;` :337) and de-duplicated per message index via a ref-held `Set` (:331, :345).
-  - Discovery side effect: `unlock("chat-question")` once any user message has non-empty content (:333-336).
-  - One `useSpeechSynthesis` instance for the whole transcript (:354-358); `speakingIdx` tracks which message is being read, and `activeIdx` collapses to `null` when the engine stops on its own (:362).
-  - Spoken text = the `type:"text"` segments joined — card tokens are never spoken (:563-571). Read-aloud is offered only when `settings.ttsEnabled && tts.supported` (:359) and the answer is complete (:572-573).
-  - Model badge reads `Answered by <friendlyModel(m.model)> · Bedrock` (the provider word is hard-coded), prefixed with `"↳ primary unavailable · "` when `fellBack`; shown only when `m.model` is set and the message is not the streaming last one (`showBadge`, :562, :640-644). `friendlyModel` maps on substring: opus → "Claude Opus", sonnet → "Claude Sonnet", haiku → "Claude Haiku", else "Claude" (:277-283). The read-aloud toggle sits in the same footer row.
-  - Attachment mosaic grid class is chosen by image count 1/2/3/3+ (:482-490); `count === 3` gives the first image `row-span-2` (:507-508).
+  - `cmd-view` / `cmd-highlight` tokens are dispatched only from **settled** messages (`if (isStreaming) return;` :328) and de-duplicated per message index via a ref-held `Set` (:322, :336).
+  - Discovery side effect: `unlock("chat-question")` once any user message has non-empty content (:324-327).
+  - One `useSpeechSynthesis` instance for the whole transcript (:345-349); `speakingIdx` tracks which message is being read, and `activeIdx` collapses to `null` when the engine stops on its own (:353).
+  - Spoken text = the `type:"text"` segments joined — card tokens are never spoken (:553-561). Read-aloud is offered only when `settings.ttsEnabled && tts.supported` (:350) and the answer is complete (:562-563).
+  - There is **no model or provider line** under an answer. The `Answered by <model> · Bedrock` badge (with its `"↳ primary unavailable · "` prefix) and its `friendlyModel` helper were removed on 2026-09-30 at the owner's request. `m.model` and `m.fellBack` are still filled from the trace frame (`use-chat.ts:188-189`) but nothing renders them; `chat-messages.dom.test.tsx` pins that neither the model, the provider nor the fallback note reaches the DOM, including attributes such as the streaming reasoning block's `aria-label` (now "Live reasoning", previously "Claude's live reasoning"). The answer footer is only the read-aloud toggle, rendered when `canRead` (:624-635).
+  - Attachment mosaic grid class is chosen by image count 1/2/3/3+ (:473-481); `count === 3` gives the first image `row-span-2` (:498-499).
   - `ImageLightbox` binds Escape / ArrowLeft / ArrowRight on `document` (:40-48) and renders `role="dialog" aria-modal="true"` without a focus trap (:51-57).
-- **Gotchas / invariants:** Model output reaches the DOM only as React text nodes; cards come from the slug allowlist (:293-299 doc). The container carries `[overflow-anchor:none]` to stop browser scroll-anchoring fighting the JS pin (:440-449). As of 2026-09-18, `useChatA11y` (`liveMessage`, rendered `aria-live="polite" aria-atomic="true"` at `:403`) is the ONLY deliberate `aria-live="polite"` announcer on this surface — both the transcript scroll container (`:448`) and `ThinkingBlock`'s live-reasoning `<pre>` (`:231`) explicitly carry `aria-live="off"`, each fixed after a real double-announce bug. Transcript container: PR #257/#258. Live-reasoning: PR #262 — originally DISCOVERED via a live Playwright-MCP E2E sweep, because at the time the existing regression-test mock never sent a THINKING_SENTINEL and so never exercised the thinking phase; `chat-surface-live-region.dom.test.tsx` now DOES exercise it and is the current regression guard for this specific fix. Also covered by `chat-messages.dom.test.tsx`. Latent hazards: `dispatchedRef` is keyed by message index and never cleared (`useChat().reset()` empties `messages` but cannot reach this ref, and `ChatView` never calls `reset`), and every settled ThinkingBlock registers its own Ctrl/Cmd+O `keydown` (:184-194), so one keypress toggles all blocks and `preventDefault`s the browser's Open shortcut.
+- **Gotchas / invariants:** Model output reaches the DOM only as React text nodes; cards come from the slug allowlist (:284-290 doc). The container carries `[overflow-anchor:none]` to stop browser scroll-anchoring fighting the JS pin (:431-440). As of 2026-09-18, `useChatA11y` (`liveMessage`, rendered `aria-live="polite" aria-atomic="true"` at `:394`) is the ONLY deliberate `aria-live="polite"` announcer on this surface — both the transcript scroll container (`:439`) and `ThinkingBlock`'s live-reasoning `<pre>` (`:231`) explicitly carry `aria-live="off"`, each fixed after a real double-announce bug. Transcript container: PR #257/#258. Live-reasoning: PR #262 — originally DISCOVERED via a live Playwright-MCP E2E sweep, because at the time the existing regression-test mock never sent a THINKING_SENTINEL and so never exercised the thinking phase; `chat-surface-live-region.dom.test.tsx` now DOES exercise it and is the current regression guard for this specific fix. Also covered by `chat-messages.dom.test.tsx`. Latent hazards: `dispatchedRef` is keyed by message index and never cleared (`useChat().reset()` empties `messages` but cannot reach this ref, and `ChatView` never calls `reset`), and every settled ThinkingBlock registers its own Ctrl/Cmd+O `keydown` (:184-194), so one keypress toggles all blocks and `preventDefault`s the browser's Open shortcut.
 
 ### `chat/chat-view.tsx`
 - **Role:** The `chat` view — a bounded-height "concierge console" around `useChat`.
@@ -479,7 +479,7 @@ See **Store & hook map** above. All three are structurally identical: module `op
   - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:66-70).
   - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:202-221) — the widget never dispatches `cmd-view`/`cmd-highlight` side effects (that lives only in `ChatMessages`), so a model-emitted `[[cmd:view:…]]` is silently dropped here. An empty assistant message shows "Thinking…" only while streaming (:193-200).
   - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:16-22). On mobile the panel re-measures `window.visualViewport` (feature-detected, `resize` listener) and lifts itself above the on-screen keyboard via `keyboardInset` (:72-91, style at :115-122). Accessibility: `useChatA11y` (:52) feeds its own sr-only `aria-live="polite"` region (:138-140); the transcript is `role="log"` with an explicit `aria-live="off"` (:146-155) so it does not double-announce.
-- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:249). The widget does **not** render attachments, thinking blocks, model badges, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:49`) and surfaces the 503 message (`:84`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
+- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:249). The widget does **not** render attachments, thinking blocks, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:49`) and surfaces the 503 message (`:84`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
 - **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:167-221`).

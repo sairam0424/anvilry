@@ -80,12 +80,7 @@ export function DeveloperView() {
         {hasPersonalContent && (
           <p className="mt-2 font-mono text-xs text-fg-subtle">
             psst — this terminal keeps a few secrets.{" "}
-            <code className="text-fg-muted">help</code> is a good start, and the
-            Konami code (<span aria-hidden="true">↑↑↓↓←→←→ B A</span>
-            <span className="sr-only">
-              up up down down left right left right B A
-            </span>
-            ) works anywhere.
+            <code className="text-fg-muted">help</code> is a good start.
           </p>
         )}
       </header>

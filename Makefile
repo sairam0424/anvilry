@@ -216,7 +216,7 @@ flags-beast: ## Print all beast-mode flag commands to unlock every visual effect
 	@printf "  NEXT_PUBLIC_SKILL_TREE=true           # RPG skill tree in Play view\n"
 	@printf "  NEXT_PUBLIC_404_ORB=true              # Distressed orb on 404 page\n"
 	@printf "  NEXT_PUBLIC_VISITOR_COUNTER=true      # Footer visitor count badge\n"
-	@printf "  NEXT_PUBLIC_DISCOVERY_BADGES=true     # ★ N/5 discovered badge\n"
+	@printf "  NEXT_PUBLIC_DISCOVERY_BADGES=true     # ★ N/4 discovered badge\n"
 	@echo ""
 	@printf "$(WHITE)Or add to .env.local to test locally before deploying.$(RESET)\n"
 	@echo ""

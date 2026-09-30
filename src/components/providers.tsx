@@ -15,7 +15,7 @@ const InkTransition = dynamic(
   { ssr: false },
 );
 
-// DiscoveryBadge shows "★ N/5 discovered" once the visitor unlocks exploration moments.
+// DiscoveryBadge shows "★ N/4 discovered" once the visitor unlocks exploration moments.
 // Always imported lazily; conditionally mounted based on the `discoveryBadgesEnabled` prop
 // resolved server-side in layout.tsx via getDiscoveryBadgesEnabled().
 const DiscoveryBadgeComponent = dynamic(
@@ -56,7 +56,7 @@ export function Providers({
         </TooltipProvider>
         {/* Ink canvas — fixed overlay, hidden until a view switch fires */}
         <InkTransition />
-        {/* Discovery badge — shows "★ N/5 discovered" when exploration milestones are unlocked */}
+        {/* Discovery badge — shows "★ N/4 discovered" when exploration milestones are unlocked */}
         {discoveryBadgesEnabled && <DiscoveryBadgeComponent />}
       </ViewProvider>
     </MotionConfig>

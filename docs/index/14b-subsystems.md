@@ -341,7 +341,7 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 | `NEXT_PUBLIC_EXTENDED_THINKING` | `chat-messages.tsx:165` | the thinking block (`!== "false"`, default ON) |
 | `NEXT_PUBLIC_LLM_SDK` | `llm-sdk-mode.ts:26` | **nothing** — `llm-sdk-mode.ts` has zero importers (only its test); the `aws-sdk-bedrock` branch is unbuilt (`:13-15`) |
 | `NEXT_PUBLIC_BUILD_YEAR` | written `next.config.ts:127`, read `site-footer.tsx:239` | the footer copyright year (an in-render `new Date()` fails the prerender under `cacheComponents`) — a constant, not a flag |
-| `NEXT_PUBLIC_DISCOVERY_BADGES` | `flags.ts:58,65` | the ★ N/5 badge — the one flag on Mechanism B |
+| `NEXT_PUBLIC_DISCOVERY_BADGES` | `flags.ts:58,65` | the ★ N/4 badge — the one flag on Mechanism B |
 
 **Server-side, non-prefixed**
 
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 93 test files (61 node + 32 dom), 863 tests, all passing at this tree (vitest 5.0.0, ~27 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 94 test files (61 node + 33 dom), 864 tests, all passing at this tree (vitest 5.0.0, ~27 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -625,8 +625,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 93 test files
-(863 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 94 test files
+(864 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -825,7 +825,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:25-31`), `src/app/admin/telemetry/page.tsx:472`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:32`. The matcher (`proxy.ts:21-23`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
 | Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:124,127`) are what the bypass and `chat/route.ts:322` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
 | Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:188`, `tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`, `error/route.ts:101`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:198-204` — but a new route is pinned by nothing |
-| Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:122-139`, the orb gate by no test). A fourth surface must be added to all of them |
+| Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:123-140`, the orb gate by no test). A fourth surface must be added to all of them |
 | Dark notes | `src/lib/content.ts:47-56` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:25`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers) |
 | Decisions ledger | Velite fields (`decisions` on Project, `constraints` / `tradeoffs` on Work — `velite.config.ts:40,68-69`) → `src/lib/decisions.ts:23-65` (`allDecisions`, one flat typed ledger) → the `/decisions` client page (`src/app/decisions/page.tsx:7,33-34`) and MCP `list_decisions` (`mcp-tools.ts:214-226`, registered at `api/mcp/[transport]/route.ts:109-118`); gate `src/lib/decisions.test.ts:15-93` — every populated source field has an entry, every entry matches its source verbatim, hrefs match `/^\/(work\|projects)\/[a-z0-9-]+$/`, ids are unique — and it is build-blocking |
 
@@ -1074,8 +1074,7 @@ record the outcome rather than the original open question.
   caller gates it, `layout.tsx:134`); `home/resume-view.tsx:13-16` "ViewEscapeHatch auto-rendered by
   view-router" (`view-router.tsx` never renders it; the non-classic views mount it themselves — `chat-view.tsx:84`,
   `anvil-view.tsx:35`, `developer-view.tsx:45`, `game-view.tsx:32` — and `resume-view.tsx` does not);
-  `anvil-core-surface.tsx:26` "~200px reactive orb"; `easter-eggs.tsx:72-83` "once per session" (it is a
-  module-level flag, so once per page load); `use-trace-runner.ts:69-70` "Reset when the scenario changes";
+  `anvil-core-surface.tsx:26` "~200px reactive orb"; `use-trace-runner.ts:69-70` "Reset when the scenario changes";
   the ReadyPlayerMe wording in `avatar-mesh.tsx:13,94` and `rig.ts:47,54` (the shipped asset is an Avaturn
   export); `avatar-mesh.tsx:19-21` ("only runs when invalidate() is called (mousemove or touchmove from
   AvatarControls)" — `useAvatarIdle` also invalidates every frame, `use-avatar-idle.ts:27`);

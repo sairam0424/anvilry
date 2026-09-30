@@ -17,7 +17,7 @@ export async function GET(request: Request) {
         origin:
           "https://vercel.com/sairams-projects-d50d7437/anvilry/flag/NEXT_PUBLIC_DISCOVERY_BADGES",
         description:
-          "Show the ★ N/5 discovered exploration badge (bottom-right)",
+          "Show the ★ N/4 discovered exploration badge (bottom-right)",
         defaultValue: false,
       },
     }),

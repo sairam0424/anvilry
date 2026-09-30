@@ -593,7 +593,7 @@ cancels TTS (`use-voice-session.ts:238-244`).
 
 | Failure | Mechanism |
 |---|---|
-| Two live mics at once | A surface opening without `claimVoiceSurface`, `WakeWordController` armed outside `ACTIVE_VIEWS` (`wake-word-controller.tsx:22-29`), or an overlay entry point that skips the `isVoiceViewActive` gate — the header orb (`header-orb-trigger.tsx:68,71`) and the ⌘K "Start voice conversation" item (`command-palette-content.tsx:437-439`, pinned by `command-palette-content.dom.test.tsx:134`). The mutex itself is guarded by `voice-surface-mutex.test.ts:15,35,58`. |
+| Two live mics at once | A surface opening without `claimVoiceSurface`, `WakeWordController` armed outside `ACTIVE_VIEWS` (`wake-word-controller.tsx:22-29`), or an overlay entry point that skips the `isVoiceViewActive` gate — the header orb (`header-orb-trigger.tsx:68,71`) and the ⌘K "Start voice conversation" item (`command-palette-content.tsx:437-439`, pinned by `command-palette-content.dom.test.tsx:135`). The mutex itself is guarded by `voice-surface-mutex.test.ts:15,35,58`. |
 | **Total silence** (documented past bug) | Listing `[recognition, tts]` on `useVoiceSession`'s unmount effect — both are fresh objects every render, so `tts.cancel()` fires on every render (`use-voice-session.ts:226-244`). |
 | **Permanent silence** (documented past bug) | Listing `[cancel]` on `useSpeechSynthesis`' visibilitychange/unmount effect — it wipes `spokenCountRef` (`use-speech-synthesis.ts:608-631`). |
 | Whole answer re-spoken on settle | Using `speak()` instead of `speakChunk()` in the settle finalizer (`use-voice-session.ts:184-188`). |

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Discovery badge store — tracks which of 5 exploration moments a visitor has
+ * Discovery badge store — tracks which of 4 exploration moments a visitor has
  * unlocked. Nothing is ever gated (the badge is celebratory, not a paywall).
  * Backed by localStorage for persistence across refreshes; resets on browser clear.
  *
@@ -13,7 +13,6 @@ export type DiscoveryKey =
   | "view-switch"
   | "chat-question"
   | "terminal-command"
-  | "konami"
   | "dossier-open";
 
 const STORAGE_KEY = "anvilry:discoveries";
@@ -21,7 +20,6 @@ const ALL_KEYS: DiscoveryKey[] = [
   "view-switch",
   "chat-question",
   "terminal-command",
-  "konami",
   "dossier-open",
 ];
 
@@ -70,7 +68,7 @@ export function unlock(key: DiscoveryKey) {
   emit();
 }
 
-/** Unlock all 5 keys at once (escape hatch via Cmd+K). */
+/** Unlock all 4 keys at once (escape hatch via Cmd+K). */
 export function unlockAll() {
   discovered = new Set(ALL_KEYS);
   writeStorage(discovered);

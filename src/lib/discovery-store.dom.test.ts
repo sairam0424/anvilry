@@ -26,8 +26,13 @@ describe("discovery-store", () => {
     store.unlockAll();
     expect(store.getDiscoveryCount()).toBe(4);
     expect(
-      JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "[]"),
-    ).not.toContain("konami");
+      JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null"),
+    ).toEqual([
+      "view-switch",
+      "chat-question",
+      "terminal-command",
+      "dossier-open",
+    ]);
   });
 
   it("ignores a legacy konami unlock from a returning visitor and needs no migration", async () => {

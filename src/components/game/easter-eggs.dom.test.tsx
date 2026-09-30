@@ -124,8 +124,10 @@ describe("EasterEggs — the Konami code is gone", () => {
     const EasterEggs = await loadEasterEggs();
     const { container } = render(<EasterEggs />);
     for (const key of KONAMI) {
+      // A real key press targets the focused element (body here) and bubbles through
+      // document, then window, so a listener on either one would see it.
       act(() => {
-        window.dispatchEvent(
+        document.body.dispatchEvent(
           new KeyboardEvent("keydown", { key, bubbles: true }),
         );
       });

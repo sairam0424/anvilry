@@ -389,7 +389,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    (`src/lib/llm.ts:56-60`, Haiku fallback at `:58`) and `anthropicChain()` (`src/lib/llm.ts:65-69`). They
    are functions rather than module-level consts because the primary rung is conditional on
    `isSonnet5PrimaryEnabled()` (`src/lib/llm.ts:44`), i.e. `LLM_USE_SONNET_5 === "true"`, which swaps the
-   primary to `us.anthropic.claude-sonnet-5` / `claude-sonnet-5`. The same edit added a standing rule at
+   primary to `us.anthropic.claude-sonnet-5` / `claude-sonnet-5` (`LLM_USE_SONNET_5_5 === "true"` wins over it and swaps in `global.anthropic.claude-sonnet-5-5` / `claude-sonnet-5-5`). The same edit added a standing rule at
    `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is
    authoritative if this table ever disagrees with it". `CLAUDE.md` § LLM / Chat Architecture and
    `docs/configuration.md` §1 (the "Model fallback chain" block) always stated the correct order. The earlier residual gaps are closed too:

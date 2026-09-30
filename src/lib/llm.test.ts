@@ -124,6 +124,7 @@ beforeEach(() => {
   STATE.lastStreamParams = undefined;
   STATE.streamParamsByCall = [];
   delete process.env.LLM_USE_SONNET_5;
+  delete process.env.LLM_USE_SONNET_5_5;
 });
 
 afterEach(() => {
@@ -1432,5 +1433,135 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     expect(body).toContain("Sorry");
     expect(body).not.toContain(TRACE_DELIMITER);
     expect(STATE.callCount).toBe(3);
+  });
+});
+
+describe("LLM_USE_SONNET_5_5 toggle", () => {
+  const params = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 100,
+    system: "test",
+  };
+  const answer = (text: string) => [
+    { type: "content_block_delta", delta: { type: "text_delta", text } },
+  ];
+  /** Errors the first two rungs so all three ids of the active chain are observed. */
+  async function chainModels(): Promise<string[]> {
+    STATE.throwsOn = [0, 1];
+    STATE.events = [[], [], answer("Fallback.")];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { onAttempt }));
+    return onAttempt.mock.calls.map((c) => c[0].model);
+  }
+
+  it("moves ONLY the primary rung to the GLOBAL Sonnet 5.5 profile on Bedrock (there is no us. profile)", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    expect(await chainModels()).toEqual([
+      "global.anthropic.claude-sonnet-5-5",
+      "us.anthropic.claude-opus-4-6-v1",
+      "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+    ]);
+  });
+
+  it("moves ONLY the primary rung to claude-sonnet-5-5 on the direct Anthropic chain", async () => {
+    process.env.LLM_PROVIDER = "anthropic";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    expect(await chainModels()).toEqual([
+      "claude-sonnet-5-5",
+      "claude-opus-4-7",
+      "claude-haiku-4-5",
+    ]);
+  });
+
+  it("wins over LLM_USE_SONNET_5 when both flags are set", async () => {
+    process.env.LLM_USE_SONNET_5 = "true";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    expect((await chainModels())[0]).toBe("global.anthropic.claude-sonnet-5-5");
+  });
+
+  it("is off by default, and only the exact string 'true' turns it on", async () => {
+    const { isSonnet55PrimaryEnabled } = await import("./llm");
+    expect(isSonnet55PrimaryEnabled()).toBe(false);
+    for (const value of ["1", "TRUE", "yes", ""]) {
+      process.env.LLM_USE_SONNET_5_5 = value;
+      expect(isSonnet55PrimaryEnabled()).toBe(false);
+    }
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    expect(isSonnet55PrimaryEnabled()).toBe(true);
+  });
+});
+
+describe("streamWithFallback — thinking-off shape is chosen per model (Sonnet 5.5 rejects 'disabled')", () => {
+  const params = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 100,
+    system: "test",
+  };
+  const answer = (text: string) => [
+    { type: "content_block_delta", delta: { type: "text_delta", text } },
+  ];
+  type Sent = { model: string; thinking?: unknown; output_config?: unknown };
+
+  // Bedrock answers `thinking: {type:"disabled"}` on Sonnet 5.5 with a 400 whose
+  // text contains "is not supported". isFallbackEligible reads that as "model
+  // unavailable", so the wrong shape would not fail loudly: it would silently skip
+  // the primary rung on every request. These tests are the only guard.
+  it("sends {type:'between_tools'}, never {type:'disabled'}, when extended thinking is off", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe("global.anthropic.claude-sonnet-5-5");
+    expect(sent.thinking).toEqual({ type: "between_tools" });
+    expect(sent.output_config).toBeUndefined();
+  });
+
+  it("sends adaptive thinking with effort 'low' when extended thinking is on", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe("global.anthropic.claude-sonnet-5-5");
+    expect(sent.thinking).toEqual({ type: "adaptive" });
+    expect(sent.output_config).toEqual({ effort: "low" });
+  });
+
+  it("uses between_tools on the direct Anthropic chain too", async () => {
+    process.env.LLM_PROVIDER = "anthropic";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe("claude-sonnet-5-5");
+    expect(sent.thinking).toEqual({ type: "between_tools" });
+  });
+
+  it("picks the shape per attempt: 5.5 gets between_tools, the fallback rung gets disabled", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.throwsOn = [0];
+    STATE.events = [[], answer("Opus answer.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    const [first, second] = STATE.streamParamsByCall as Sent[];
+    expect(first.thinking).toEqual({ type: "between_tools" });
+    expect(second.model).toBe("us.anthropic.claude-opus-4-6-v1");
+    expect(second.thinking).toEqual({ type: "disabled" });
+  });
+
+  it.each([
+    ["Sonnet 4.6 (default)", {}, "us.anthropic.claude-sonnet-4-6"],
+    ["Sonnet 5", { LLM_USE_SONNET_5: "true" }, "us.anthropic.claude-sonnet-5"],
+  ])("keeps {type:'disabled'} for %s", async (_label, env, expectedModel) => {
+    Object.assign(process.env, env);
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe(expectedModel);
+    expect(sent.thinking).toEqual({ type: "disabled" });
   });
 });

@@ -17,8 +17,8 @@ import {
  * AWS Bedrock <-> the direct Anthropic API is an env change (LLM_PROVIDER), not
  * a code change.
  *
- * Owner directive: Sonnet (4.6, or 5 when LLM_USE_SONNET_5 is set) primary ->
- * Opus 4.6 secondary -> Haiku 4.5 fallback.
+ * Owner directive: Sonnet (4.6, 5 when LLM_USE_SONNET_5 is set, or 5.5 when
+ * LLM_USE_SONNET_5_5 is set) primary -> Opus 4.6 secondary -> Haiku 4.5 fallback.
  * (Updated 2026-06-17 to match the BEDROCK_CHAIN order below — earlier wording said
  * "Opus primary" while the array shipped Sonnet-first since v1.6, leaving log
  * analysis ambiguous about which model was the "expected primary" on a given turn.)
@@ -44,16 +44,48 @@ export function isSonnet5PrimaryEnabled(): boolean {
   return process.env.LLM_USE_SONNET_5 === "true";
 }
 
+/** Feature flag: when "true", Claude Sonnet 5.5 becomes the PRIMARY rung on both
+ *  chains, taking precedence over LLM_USE_SONNET_5. Opus and Haiku are left
+ *  untouched. Default OFF, for the same reason as the Sonnet 5 flag: a
+ *  capability upgrade stays an explicit opt-in until proven in production.
+ *
+ *  Three things a naive "swap the id" change gets wrong (verified live against
+ *  Bedrock, 2026-09-30):
+ *  - Bedrock serves 5.5 ONLY through the GLOBAL inference profile. There is no
+ *    `us.` profile: that id answers "model identifier is invalid", which
+ *    isFallbackEligible reads as "model unavailable", so a wrong id would not
+ *    fail loudly, it would skip the primary on every request. Global routing
+ *    means a request may be processed outside the US regions.
+ *  - It rejects `thinking: {type:"disabled"}`; see thinkingOff().
+ *  - It rejects `temperature`; this module sends no sampling parameters. */
+export function isSonnet55PrimaryEnabled(): boolean {
+  return process.env.LLM_USE_SONNET_5_5 === "true";
+}
+
+/** The primary rung's id: 5.5 (LLM_USE_SONNET_5_5) beats 5 (LLM_USE_SONNET_5),
+ *  which beats the 4.6 default. */
+function pickPrimary(ids: {
+  sonnet46: string;
+  sonnet5: string;
+  sonnet55: string;
+}): string {
+  if (isSonnet55PrimaryEnabled()) return ids.sonnet55;
+  return isSonnet5PrimaryEnabled() ? ids.sonnet5 : ids.sonnet46;
+}
+
 /**
  * Region-prefixed Bedrock inference-profile IDs (verified live in the reference
  * account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with
  * "model identifier is invalid". Sonnet 4.6's and Sonnet 5's bare ids resolve fine.
+ * Sonnet 5.5 has NO `us.` profile: only `global.anthropic.claude-sonnet-5-5`.
  */
 function bedrockChain(): string[] {
   return [
-    isSonnet5PrimaryEnabled()
-      ? "us.anthropic.claude-sonnet-5"
-      : "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+    pickPrimary({
+      sonnet46: "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
+      sonnet5: "us.anthropic.claude-sonnet-5",
+      sonnet55: "global.anthropic.claude-sonnet-5-5",
+    }),
     "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
     "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
   ];
@@ -62,10 +94,27 @@ function bedrockChain(): string[] {
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
 function anthropicChain(): string[] {
   return [
-    isSonnet5PrimaryEnabled() ? "claude-sonnet-5" : "claude-sonnet-4-6",
+    pickPrimary({
+      sonnet46: "claude-sonnet-4-6",
+      sonnet5: "claude-sonnet-5",
+      sonnet55: "claude-sonnet-5-5",
+    }),
     "claude-opus-4-7",
     "claude-haiku-4-5",
   ];
+}
+
+/** The explicit "thinking off" request shape for a thinking-capable model.
+ *  Sonnet 5.5 rejects `{type:"disabled"}` with a 400 (`"thinking.type.disabled"
+ *  is not supported for this model`) and names `between_tools` as its lowest
+ *  setting; every other thinking-capable rung takes "disabled". Keep this
+ *  per-model: that 400 contains "is not supported" (see
+ *  MODEL_UNAVAILABLE_MARKERS), so the wrong shape would silently skip the
+ *  primary instead of failing. */
+function thinkingOff(model: string): { type: string } {
+  return model.includes("sonnet-5-5")
+    ? { type: "between_tools" }
+    : { type: "disabled" };
 }
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
@@ -397,6 +446,8 @@ export function streamWithFallback(
         // it) the moment LLM_USE_SONNET_5 flips on, even with extendedThinking
         // false. Haiku gets no `thinking` key at all, since it doesn't
         // recognize the param.
+        // (Sonnet 5.5 rejects "disabled" and takes `between_tools` instead:
+        // see thinkingOff().)
         const stream = client.messages.stream({
           ...params,
           model,
@@ -412,7 +463,7 @@ export function streamWithFallback(
             ? {
                 thinking: useThinking
                   ? ({ type: "adaptive" } as const)
-                  : ({ type: "disabled" } as const),
+                  : thinkingOff(model),
                 ...(useThinking
                   ? { output_config: { effort: "low" as const } }
                   : {}),

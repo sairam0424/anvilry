@@ -31,7 +31,7 @@ Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`co
 
 | File | Role | Key exports |
 |---|---|---|
-| `src/lib/llm.ts` | Single source of truth for the chatbot AI layer: provider toggle, client construction, model fallback chain, AWS credential decoding, streaming-with-fallback ReadableStream. | `LlmProvider`, `LlmUsage`, `LlmAttempt` (types); `isSonnet5PrimaryEnabled`, `getProvider`, `bedrockCreds`, `isConfigured`, `modelChain`, `makeClient`, `isFallbackEligible`, `streamWithFallback`; re-exports `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` |
+| `src/lib/llm.ts` | Single source of truth for the chatbot AI layer: provider toggle, client construction, model fallback chain, AWS credential decoding, streaming-with-fallback ReadableStream. | `LlmProvider`, `LlmUsage`, `LlmAttempt` (types); `isSonnet5PrimaryEnabled`, `isSonnet55PrimaryEnabled`, `getProvider`, `bedrockCreds`, `isConfigured`, `modelChain`, `makeClient`, `isFallbackEligible`, `streamWithFallback`; re-exports `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` |
 | `src/lib/llm-trace.ts` | Client-safe stream-protocol constants + trace-frame type, split out so the chat client never imports the Bedrock SDK. | `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END`, `stripControlBytes`; `LlmUsage`, `TraceFrame` (types) |
 | `src/lib/llm-sdk-mode.ts` | Build-time flag naming which Bedrock SDK `/api/chat` should use. Currently declared but **imported by nothing** — the `aws-sdk-bedrock` branch is unbuilt. | `LlmSdkMode` (type), `getLlmSdkMode`, `LLM_SDK_MODE` |
 | `src/lib/agent-trace.ts` | Hardcoded deterministic multi-agent "glass box" demo script; ships dark behind a placeholder sentinel gate. | `PLACEHOLDER_SENTINEL`, `AgentName`, `AGENTS`, `AgentStep`, `Scenario`, `scenarios`, `allReferencedSlugs`, `traceApproved`, `linkForSlug` |
@@ -64,8 +64,8 @@ Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`co
 ### `src/lib/llm.ts`
 
 - **Role:** The chatbot's entire AI layer — provider selection, credential decoding, model fallback chain, and the streaming `ReadableStream` that falls through models on availability errors.
-- **Exports:** `LlmProvider` (type) — `"bedrock" | "anthropic"`; `LlmUsage` (type) — snake_case token block; `LlmAttempt` (type) — per-attempt observability span (carries optional `answerText`); `isSonnet5PrimaryEnabled()`; `getProvider()`; `bedrockCreds()`; `isConfigured()`; `modelChain()`; `makeClient()`; `isFallbackEligible(err)`; `streamWithFallback(params, opts?)`; plus a re-export of `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` (llm.ts:195).
-- **Reads / depends on:** `@anthropic-ai/sdk`, `@anthropic-ai/bedrock-sdk`, `@/lib/profile` (for the apology email), `@/lib/llm-trace` (constants plus `stripControlBytes`). Env: `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY`.
+- **Exports:** `LlmProvider` (type) — `"bedrock" | "anthropic"`; `LlmUsage` (type) — snake_case token block; `LlmAttempt` (type) — per-attempt observability span (carries optional `answerText`); `isSonnet5PrimaryEnabled()`; `isSonnet55PrimaryEnabled()`; `getProvider()`; `bedrockCreds()`; `isConfigured()`; `modelChain()`; `makeClient()`; `isFallbackEligible(err)`; `streamWithFallback(params, opts?)`; plus a re-export of `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` (llm.ts:195).
+- **Reads / depends on:** `@anthropic-ai/sdk`, `@anthropic-ai/bedrock-sdk`, `@/lib/profile` (for the apology email), `@/lib/llm-trace` (constants plus `stripControlBytes`). Env: `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY`.
 - **Consumed by:** `src/app/api/chat/route.ts` (`isConfigured`, `streamWithFallback`, `TRACE_DELIMITER`); `bedrockCreds` only (same AWS account/region reuse) by `src/app/api/tts/route.ts:2`, `src/app/api/transcribe/route.ts:6` and `src/lib/faq-embeddings.ts:5`.
 
 **Exact provider toggle** (`getProvider`, llm.ts:83-85):
@@ -76,14 +76,14 @@ return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
 
 Bedrock is the default for *any* value other than the exact string `"anthropic"` (including unset).
 
-**Full model fallback chains** (exact IDs). The PRIMARY rung on both chains is conditional on `isSonnet5PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5 === "true"`, default false) — Opus and Haiku are never affected by this flag:
+**Full model fallback chains** (exact IDs). The PRIMARY rung on both chains is picked by `pickPrimary()` from two flags: `isSonnet55PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5_5 === "true"`, wins) then `isSonnet5PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5 === "true"`), both default false — Opus and Haiku are never affected by either flag:
 
 | Provider | Index 0 (primary) | Index 1 (secondary) | Index 2 (fallback) | Cite |
 |---|---|---|---|---|
-| `bedrock` | `us.anthropic.claude-sonnet-4-6` (or `-sonnet-5` when the flag is on) | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | `bedrockChain()`, llm.ts:52-60 |
-| `anthropic` | `claude-sonnet-4-6` (or `claude-sonnet-5` when the flag is on) | `claude-opus-4-7` | `claude-haiku-4-5` | `anthropicChain()`, llm.ts:63-69 |
+| `bedrock` | `us.anthropic.claude-sonnet-4-6` (or `-sonnet-5` when `LLM_USE_SONNET_5` is on; `global.anthropic.claude-sonnet-5-5` when `LLM_USE_SONNET_5_5` is on, which wins) | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | `bedrockChain()`, llm.ts:52-60 |
+| `anthropic` | `claude-sonnet-4-6` (or `claude-sonnet-5` / `claude-sonnet-5-5` when the matching flag is on) | `claude-opus-4-7` | `claude-haiku-4-5` | `anthropicChain()`, llm.ts:63-69 |
 
-Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:48-50). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:66). The source comment at llm.ts:35-42 records that Opus is IAM-denied on the reference account whichever generation is named. Whether a denied Opus attempt then falls through to Haiku depends on how Bedrock reports the deny: `isFallbackEligible` only advances on a connection error, 429/404/5xx, or a 400 carrying one of the six markers, and a plain 403 would end the chain with the apology tail.
+Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:48-50). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:66). The source comment at llm.ts:35-42 records that Opus is IAM-denied on the reference account whichever generation is named. Whether a denied Opus attempt then falls through to Haiku depends on how Bedrock reports the deny: `isFallbackEligible` only advances on a connection error, 429/404/5xx, or a 400 carrying one of the six markers, and a plain 403 would end the chain with the apology tail. Sonnet 5.5 is the odd one out the other way: it has **no** `us.` profile at all, only `global.anthropic.claude-sonnet-5-5` (verified live 2026-09-30).
 
 **`decodeSecret`'s base64 round-trip check** (llm.ts:94-104) — private, not exported:
 
@@ -101,6 +101,7 @@ Re-encoding the decode and comparing to the original is the discriminator; a pla
 |---|---|---|
 | `LLM_PROVIDER` | llm.ts:84 | `"anthropic"` → direct API; anything else → bedrock |
 | `LLM_USE_SONNET_5` | llm.ts:43-45 | `"true"` → Sonnet 5 replaces Sonnet 4.6 as PRIMARY on both chains; default false |
+| `LLM_USE_SONNET_5_5` | llm.ts (`isSonnet55PrimaryEnabled`) | `"true"` → Sonnet 5.5 replaces the Sonnet primary on both chains and wins over `LLM_USE_SONNET_5`; on Bedrock it is `global.anthropic.claude-sonnet-5-5` (no `us.` profile exists); default false |
 | `BEDROCK_ACCESS_KEY_ID` | llm.ts:111 | base64-or-raw via `decodeSecret` |
 | `BEDROCK_SECRET_ACCESS_KEY` | llm.ts:112 | base64-or-raw via `decodeSecret` |
 | `BEDROCK_SESSION_TOKEN` | llm.ts:113-115 | optional (STS temp creds); `undefined` when unset |

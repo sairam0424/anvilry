@@ -318,10 +318,10 @@ SERVER  /api/chat  (maxDuration = 30, route.ts:18)
                      (live GitHub stats ride in a SEPARATE, uncached system block)
    → streamWithFallback(...)
         modelChain(): provider-dependent (LLM_PROVIDER, default bedrock) —
-          bedrock: us.anthropic.claude-sonnet-4-6 (or -sonnet-5 if
-                   LLM_USE_SONNET_5=true) → us.anthropic.claude-opus-4-6-v1
+          bedrock: us.anthropic.claude-sonnet-4-6 (or -sonnet-5 if LLM_USE_SONNET_5,
+                   global.anthropic.claude-sonnet-5-5 if LLM_USE_SONNET_5_5) → us.anthropic.claude-opus-4-6-v1
                    → us.anthropic.claude-haiku-4-5-20251001-v1:0         llm.ts:55-58
-          anthropic: claude-sonnet-4-6 (or claude-sonnet-5) → claude-opus-4-7
+          anthropic: claude-sonnet-4-6 (or claude-sonnet-5 / -5-5) → claude-opus-4-7
                    → claude-haiku-4-5                                    llm.ts:65-68
         makeClient() INSIDE start() so a ctor failure becomes an apology
                      stream, emitted as model:"client-init", attempt_index:-1  llm.ts:309-329
@@ -354,7 +354,7 @@ CLIENT
 | 3 | `src/lib/telemetry/with-trace.ts:200-221` | Mints the traceId, stamps `x-anvilry-trace-id` on a **reconstructed** Response that passes `res.body` through so streaming survives; emits exactly one span. |
 | 4 | `src/lib/rate-limit.ts:15-17,19-51,95-110` | `RateLimitClass = "chat" \| "voice" \| "beacon"` (declared `:19`, rationale in the docblock `:15-17`); one `slidingWindow(8, "60 s")` limiter **per class** (`:22-23,33-46`) under prefixes `anvilry:chat` / `anvilry:voice` / `anvilry:beacon` (`:25-29`); `cls` is a required argument (`:95-98`). A valid `CRON_SECRET` bearer skips the limiter (`rate-limit.ts:100`, via `hasValidCronSecret`, `src/lib/cron-auth.ts:15-20`). **Fails open** twice over (`rate-limit.ts:99`, `:106-109`). |
 | 5 | `src/lib/corpus.ts:13` | Grounding document, rebuilt per request from build-time Velite data. |
-| 6 | `src/lib/llm.ts:83-85` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. `LLM_USE_SONNET_5 === "true"` (`:43-45`) swaps the primary rung on both chains. |
+| 6 | `src/lib/llm.ts:83-85` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. `LLM_USE_SONNET_5 === "true"` (`:43-45`) swaps the primary rung on both chains; `LLM_USE_SONNET_5_5 === "true"` does the same for Sonnet 5.5 (the global Bedrock profile) and wins. |
 | 7 | `src/lib/llm.ts:94-104` | `decodeSecret`: base64-vs-raw discrimination by re-encoding the decode and comparing (`:97-99`). |
 | 8 | `src/lib/llm.ts:170-182` | `isFallbackEligible`: connection error, 429/404, ≥500, a 400 whose message hits one of six `MODEL_UNAVAILABLE_MARKERS` (`:74-81`), or a 403 that names a per-model deny (those markers or `MODEL_DENIED_MARKERS`). |
 | 9 | `src/lib/llm.ts:292,407,497,535,564` | `emittedAny` — declared, then gating THINKING_SENTINEL emission, being set on the first `text_delta`, gating trace-frame emission, and gating fallback. |
@@ -447,7 +447,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | 429 | The caller's per-IP `chat` budget (8 per 60 s, prefix `anvilry:chat`) is exhausted. Only `/api/chat` charges it; `/api/tts`, `/api/tts-google` and `/api/transcribe` charge the separate `voice` bucket (`anvilry:voice`) and `/api/error` the `beacon` bucket (`anvilry:beacon`), so a burst of per-sentence TTS or an error-beacon loop can no longer 429 the visitor's chat (`rate-limit.ts:15-17`, buckets `:25-29`; call sites `chat/route.ts:188`, `tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`, `error/route.ts:101`). `src/lib/rate-limit.test.ts:227,239` pins the isolation. |
 | Eval cron self-throttles | It fires 12 sequential chats; without the bypass it would trip the 8/min limit. A valid `Authorization: Bearer ${CRON_SECRET}` skips the limiter (`rate-limit.ts:100`, `hasValidCronSecret` in `cron-auth.ts:15-20`); a wrong or unset secret does not — `rate-limit.test.ts:262` (valid), `:274` (wrong), `:288` (unset). |
 | Unbounded spend when Upstash is down | `checkRateLimit` fails open: `{ ok: true }` when unconfigured (`rate-limit.ts:99`) and on any thrown error (`:106-109`). The only signal is a production-only module-load warning (`:62-68`). |
-| Wrong `cost_usd` for a new model id | `BEDROCK_PRICE` (`route.ts:29-52`) is a hardcoded table of three ids; unknown models silently fall back to Sonnet 4.6 pricing (`:55-56`) — non-zero but wrong. This includes `us.anthropic.claude-sonnet-5`, the primary when `LLM_USE_SONNET_5=true`, which has no entry. |
+| Wrong `cost_usd` for a new model id | `BEDROCK_PRICE` (`route.ts:29-52`) is a hardcoded table of three ids; unknown models silently fall back to Sonnet 4.6 pricing (`:55-56`) — non-zero but wrong. This includes `us.anthropic.claude-sonnet-5` (the primary when `LLM_USE_SONNET_5=true`) and `global.anthropic.claude-sonnet-5-5` (the primary when `LLM_USE_SONNET_5_5=true`), which have no entry. |
 | Token telemetry silently zeroes | An SDK returning camelCase usage keys. Pinned by `src/lib/llm.test.ts:294-303`. |
 | Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:116-118` explains it; the expression is `:119`) is what shields it. |
 | Opus 4.6 400s "model identifier is invalid" | Dropping the `-v1` suffix (`llm.ts:47-49`, chain entry `:57`). |
@@ -464,7 +464,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 
 ### Flags / env that alter it
 
-`LLM_PROVIDER`, `LLM_USE_SONNET_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`,
+`LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`,
 `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` (the eight `llm.ts` reads);
 `EXTENDED_THINKING` (server, **not** `NEXT_PUBLIC_`-prefixed, default ON, `route.ts:385`);
 `NEXT_PUBLIC_EXTENDED_THINKING` (client thinking-block rendering, `chat-messages.tsx:165`);

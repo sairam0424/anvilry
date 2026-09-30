@@ -10352,14 +10352,14 @@
       ],
       "preview": "import { useVoiceSettings } from \"@/lib/voice-settings-context\";"
     },
-    "src/components/command-palette-content.dom.test.tsx:122": {
+    "src/components/command-palette-content.dom.test.tsx:123": {
       "fp": "30e54902db11",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"command palette voice-conversation entry\", () => {"
     },
-    "src/components/command-palette-content.dom.test.tsx:137": {
+    "src/components/command-palette-content.dom.test.tsx:138": {
       "fp": "caa239b5f04b",
       "citedBy": [
         "15-invariants-and-gotchas.md"

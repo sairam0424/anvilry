@@ -70,7 +70,8 @@ function anthropicChain(): string[] {
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
  *  un-enabled / mistyped inference-profile id as a 400, not a 404). Only these
- *  400s trigger fallback; every other 400 is a deterministic input error. */
+ *  400s trigger fallback; every other 400 is a deterministic input error. A 403
+ *  saying the same (model access not granted) advances the chain too. */
 const MODEL_UNAVAILABLE_MARKERS = [
   "model identifier is invalid",
   "model id is invalid",
@@ -79,6 +80,13 @@ const MODEL_UNAVAILABLE_MARKERS = [
   "don't have access to the model",
   "is not supported",
 ];
+
+/** 403 messages that mean "this principal may not use THIS model": an IAM
+ *  identity-policy deny (this account hard-denies the whole Opus family) or a
+ *  missing allow. The next rung may still be permitted, so these advance the
+ *  chain. A bad-credential 403 (invalid/expired token, signature mismatch) says
+ *  none of this and stays terminal — every rung would fail the same way. */
+const MODEL_DENIED_MARKERS = ["is not authorized to perform", "explicit deny"];
 
 export function getProvider(): LlmProvider {
   return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
@@ -165,19 +173,31 @@ export function makeClient(): Anthropic {
  * for deterministic input errors (malformed prompt/schema, bad creds) that fail
  * identically on every model. status+message-driven so it survives even a
  * hypothetical double-install of the SDK where `instanceof` could break.
+ *
+ * A 403 is eligible only when its message names a per-model deny
+ * (MODEL_DENIED_MARKERS / MODEL_UNAVAILABLE_MARKERS). Without that, the
+ * IAM-denied Opus rung would end the chain in the apology and Haiku, the last
+ * rung, would never be reached.
  */
 export function isFallbackEligible(err: unknown): boolean {
   if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass
   const status = (err as { status?: number })?.status;
   if (status === 429 || status === 404) return true;
   if (typeof status === "number" && status >= 500) return true;
-  if (status === 400) {
-    const msg = String(
-      (err as { message?: string })?.message ?? "",
-    ).toLowerCase();
-    return MODEL_UNAVAILABLE_MARKERS.some((m) => msg.includes(m));
+  if (status === 400 || status === 403) {
+    // AWS emits typographic apostrophes ("don’t", "isn’t"); fold them so the
+    // ASCII markers match either spelling.
+    const msg = String((err as { message?: string })?.message ?? "")
+      .toLowerCase()
+      .replace(/[\u2018\u2019]/g, "'");
+    const markers =
+      status === 403
+        ? [...MODEL_UNAVAILABLE_MARKERS, ...MODEL_DENIED_MARKERS]
+        : MODEL_UNAVAILABLE_MARKERS;
+    return markers.some((m) => msg.includes(m));
   }
-  // plain 400, 422, 401, 403 -> deterministic -> NOT eligible
+  // plain 400, 422, 401, and a 403 that is not a per-model deny (bad or expired
+  // credentials, signature mismatch) -> deterministic -> NOT eligible
   return false;
 }
 

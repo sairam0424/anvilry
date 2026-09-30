@@ -44,7 +44,7 @@ These must be set before the chatbot works. Everything else degrades gracefully.
 ```
 Bedrock (default): Sonnet 4.6 → Opus 4.6 → Haiku 4.5   |   Direct Anthropic: Sonnet 4.6 → Opus 4.7 → Haiku 4.5
 ```
-`LLM_USE_SONNET_5=true` swaps only the primary rung to Claude Sonnet 5 on whichever chain is active (default off; see "Server Toggles, Caches & Crons" below). Each attempt has a 15 s timeout. Fall-through happens only on availability errors (429 / 404 / 5xx / connection errors, or a 400 whose message says the model is invalid or inaccessible) and only while no text has been streamed; other 400s and 401 / 403 / 422 are deterministic, so they end the chain with the apology tail instead. Ids and rules live in `bedrockChain()`, `anthropicChain()` and `isFallbackEligible()` in `src/lib/llm.ts`.
+`LLM_USE_SONNET_5=true` swaps only the primary rung to Claude Sonnet 5 on whichever chain is active (default off; see "Server Toggles, Caches & Crons" below). Each attempt has a 15 s timeout. Fall-through happens only on availability errors (429 / 404 / 5xx / connection errors, a 400 whose message says the model is invalid or inaccessible, or a 403 whose message names an IAM or model-access deny) and only while no text has been streamed; other 400s, 401 / 422 and a credential 403 (invalid or expired token, signature mismatch) are deterministic, so they end the chain with the apology tail instead. Ids and rules live in `bedrockChain()`, `anthropicChain()` and `isFallbackEligible()` in `src/lib/llm.ts`.
 
 ---
 

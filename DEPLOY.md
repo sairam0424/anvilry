@@ -86,8 +86,8 @@ Upstash Redis sliding window — distributed, so it holds across Vercel instance
 ## 3. Verified model chain (tested live against this AWS account, us-east-1)
 
 The chatbot tries these in order (15 s timeout per attempt), falling through **only** on availability errors
-(429 / 404 / 5xx / connection-timeout, or a 400 that means "model unavailable") and only before any text has
-streamed; deterministic errors (malformed prompt, bad creds, 401 / 403 / 422) end the chain with the apology tail instead of burning it.
+(429 / 404 / 5xx / connection-timeout, a 400 that means "model unavailable", or a 403 that names an IAM or model-access deny) and only before any text has
+streamed; deterministic errors (malformed prompt, bad or expired creds, 401 / 422, a credential 403) end the chain with the apology tail instead of burning it.
 
 | Tier | Bedrock inference-profile ID | Status |
 |---|---|---|
@@ -232,6 +232,6 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 - `LLM_USE_SONNET_5=true` → the `us.anthropic.claude-sonnet-5` inference profile (enable model access for it first).
 - `FAQ_CACHE_SEMANTIC_MATCH=true` → `bedrock:InvokeModel` on the foundation model `amazon.titan-embed-text-v2:0` (`foundation-model/anthropic.*` does not cover it). Without it the semantic tier silently misses; the exact-match tier is unaffected.
 
-**Opus caveat.** The `LLM_USE_SONNET_5` docblock in `src/lib/llm.ts` records Opus as IAM-denied on the reference AWS account. A 403 is a deterministic error, not fallback-eligible, so if your role cannot invoke the Opus profile the chain stops there with the apology tail and never reaches Haiku when Sonnet is unavailable. Grant the Opus profile, or accept that Sonnet is the only tier that will answer.
+**Opus caveat.** The `LLM_USE_SONNET_5` docblock in `src/lib/llm.ts` records Opus as IAM-denied on the reference AWS account. An IAM deny surfaces as a 403 whose message says `is not authorized to perform … with an explicit deny`, and that wording is fallback-eligible, so a denied Opus rung is skipped and the chain continues to Haiku when Sonnet is unavailable. Grant the Opus profile if you want it to answer; otherwise expect Sonnet, then Haiku. A 403 for bad or expired credentials is not eligible and still ends the chain at once with the apology tail.
 
 **Crons and deployment protection.** Schedules (UTC): health-check `0 5 * * *`, eval `0 9 * * 1`, github-sync `0 8 * * *`, seo-audit `0 6 * * 1`, content-audit `0 7 * * 1`. The health check probes `VERCEL_PROJECT_PRODUCTION_URL` (the public alias) and does not follow redirects, so it reports Vercel's SSO wall instead of scoring it healthy. The eval, seo-audit and github-sync crons, and `/api/chat`'s live GitHub-stats fetch, use the per-deployment `VERCEL_URL`; if deployment protection covers that host they can hit the SSO wall and report nothing useful (not verified live for these paths; only the health check was moved to the production alias). Look at the dashboard tiles after the first weekly run.

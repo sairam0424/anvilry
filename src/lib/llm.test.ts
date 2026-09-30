@@ -33,6 +33,9 @@ const { STATE, fakeStream } = vi.hoisted(() => {
      *  which is fallback-eligible). Set an entry to 400 to simulate a
      *  deterministic, NOT-fallback-eligible error. */
     throwStatus: Record<number, number>;
+    /** Per-index override for the thrown error's message. 400/403 eligibility
+     *  is decided by the message text, so tests need to control it. */
+    throwMessage: Record<number, string>;
     callCount: number;
     /** Captures the params object passed to the most recent messages.stream()
      *  call — lets tests assert on the actual request shape (thinking config,
@@ -43,6 +46,7 @@ const { STATE, fakeStream } = vi.hoisted(() => {
     events: [],
     throwsOn: [],
     throwStatus: {},
+    throwMessage: {},
     callCount: 0,
     lastStreamParams: undefined,
     streamParamsByCall: [],
@@ -56,7 +60,9 @@ const { STATE, fakeStream } = vi.hoisted(() => {
       async *[Symbol.asyncIterator]() {
         for (const event of events) yield event;
         if (willThrow) {
-          const err = new Error("simulated bedrock error");
+          const err = new Error(
+            STATE.throwMessage[idx] ?? "simulated bedrock error",
+          );
           (err as { status?: number }).status = STATE.throwStatus[idx] ?? 500;
           throw err;
         }
@@ -113,6 +119,7 @@ beforeEach(() => {
   STATE.events = [];
   STATE.throwsOn = [];
   STATE.throwStatus = {};
+  STATE.throwMessage = {};
   STATE.callCount = 0;
   STATE.lastStreamParams = undefined;
   STATE.streamParamsByCall = [];
@@ -1245,5 +1252,185 @@ describe("LLM_USE_SONNET_5 toggle", () => {
     expect(isSonnet5PrimaryEnabled()).toBe(false);
     process.env.LLM_USE_SONNET_5 = "true";
     expect(isSonnet5PrimaryEnabled()).toBe(true);
+  });
+});
+
+// The wording AWS returns when an identity policy hard-denies a model, as the
+// Anthropic SDK surfaces it ("<status> <body.message>"). This account denies the
+// whole Opus family this way. Account, user and policy names are anonymised.
+const IAM_DENY_MESSAGE =
+  "403 User: arn:aws:iam::123456789012:user/example-bedrock-user is not authorized to perform: " +
+  "bedrock:InvokeModelWithResponseStream on resource: " +
+  "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-6-v1 " +
+  "with an explicit deny in an identity-based policy: " +
+  "arn:aws:iam::123456789012:policy/example-opus-deny";
+const BAD_TOKEN_MESSAGE =
+  "403 The security token included in the request is invalid.";
+
+describe("isFallbackEligible — status/message truth table", () => {
+  const errWith = (status: number | undefined, message: string) =>
+    Object.assign(new Error(message), status === undefined ? {} : { status });
+
+  const eligible: Array<[string, number, string]> = [
+    ["429 rate limit", 429, "429 Too many requests"],
+    ["404 not found", 404, "404 not found"],
+    ["500", 500, "500 internal error"],
+    ["503", 503, "503 service unavailable"],
+    [
+      "400 invalid model id",
+      400,
+      "400 The provided model identifier is invalid.",
+    ],
+    [
+      "400 no access to model",
+      400,
+      "400 You don't have access to the model with the specified model ID.",
+    ],
+    [
+      "400 no access to model (typographic apostrophe)",
+      400,
+      "400 You don’t have access to the model with the specified model ID.",
+    ],
+    ["403 IAM explicit deny", 403, IAM_DENY_MESSAGE],
+    [
+      "403 no identity policy allows the action",
+      403,
+      "403 User: arn:aws:iam::123456789012:user/example is not authorized to perform: " +
+        "bedrock:InvokeModel on resource: arn:aws:bedrock:us-east-1::foundation-model/x " +
+        "because no identity-based policy allows the bedrock:InvokeModel action",
+    ],
+    [
+      "403 model access not granted",
+      403,
+      "403 You don't have access to the model with the specified model ID.",
+    ],
+    [
+      "403 model access not granted (typographic apostrophe)",
+      403,
+      "403 You don’t have access to the model with the specified model ID.",
+    ],
+  ];
+
+  const terminal: Array<[string, number | undefined, string]> = [
+    [
+      "400 malformed request",
+      400,
+      "400 messages.0.content: Input should be a valid list",
+    ],
+    ["401 unauthorized", 401, "401 invalid x-api-key"],
+    ["403 invalid security token", 403, BAD_TOKEN_MESSAGE],
+    [
+      "403 expired security token",
+      403,
+      "403 The security token included in the request is expired",
+    ],
+    [
+      "403 signature mismatch",
+      403,
+      "403 The request signature we calculated does not match the signature you provided. " +
+        "Check your AWS Secret Access Key and signing method.",
+    ],
+    ["403 with no message", 403, ""],
+    ["422 unprocessable", 422, "422 unprocessable entity"],
+    ["an error with no status", undefined, "boom"],
+  ];
+
+  it.each(eligible)("falls back on %s", async (_label, status, message) => {
+    const { isFallbackEligible } = await import("./llm");
+    expect(isFallbackEligible(errWith(status, message))).toBe(true);
+  });
+
+  it.each(terminal)("stays terminal on %s", async (_label, status, message) => {
+    const { isFallbackEligible } = await import("./llm");
+    expect(isFallbackEligible(errWith(status, message))).toBe(false);
+  });
+
+  it("falls back on a connection error (which includes timeouts)", async () => {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const { isFallbackEligible } = await import("./llm");
+    expect(
+      isFallbackEligible(
+        new Anthropic.APIConnectionError({ message: "timed out" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("stays terminal on a non-object throw", async () => {
+    const { isFallbackEligible } = await import("./llm");
+    for (const thrown of [null, undefined, "boom", 42]) {
+      expect(isFallbackEligible(thrown)).toBe(false);
+    }
+  });
+});
+
+describe("streamWithFallback — an IAM-denied rung falls through instead of ending the chain", () => {
+  const chainParams = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 100,
+    system: "test",
+  };
+  const answer = (text: string) => [
+    { type: "content_block_delta", delta: { type: "text_delta", text } },
+  ];
+
+  it("skips a hard-denied Opus rung and lets Haiku answer (Sonnet 503 → Opus 403 → Haiku)", async () => {
+    STATE.events = [[], [], answer("Haiku answer.")];
+    STATE.throwsOn = [0, 1];
+    STATE.throwStatus = { 0: 503, 1: 403 };
+    STATE.throwMessage = { 1: IAM_DENY_MESSAGE };
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams, { onAttempt }));
+    const [text, frameJson] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("Haiku answer.");
+    const frame = JSON.parse(frameJson);
+    expect(frame.model).toBe("us.anthropic.claude-haiku-4-5-20251001-v1:0");
+    expect(frame.fellBack).toBe(true);
+    expect(onAttempt.mock.calls.map((c) => c[0].error?.status)).toEqual([
+      503,
+      403,
+      undefined,
+    ]);
+  });
+
+  it("lets the next rung answer when the PRIMARY is IAM-denied (Sonnet 403 → Opus answers)", async () => {
+    STATE.events = [[], answer("Opus answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 403 };
+    STATE.throwMessage = { 0: IAM_DENY_MESSAGE };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams));
+    const [text, frameJson] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("Opus answer.");
+    expect(JSON.parse(frameJson).model).toBe("us.anthropic.claude-opus-4-6-v1");
+  });
+
+  it("does NOT fall through on a bad-credentials 403: one attempt, then the apology", async () => {
+    STATE.events = [[], answer("must never be reached")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 403 };
+    STATE.throwMessage = { 0: BAD_TOKEN_MESSAGE };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams));
+    expect(body).toContain("Sorry");
+    expect(body).not.toContain("must never be reached");
+    expect(body).not.toContain(TRACE_DELIMITER);
+    expect(STATE.callCount).toBe(1);
+  });
+
+  it("ends in the apology after all three fast attempts when every rung is denied", async () => {
+    STATE.events = [[], [], []];
+    STATE.throwsOn = [0, 1, 2];
+    STATE.throwStatus = { 0: 403, 1: 403, 2: 403 };
+    STATE.throwMessage = {
+      0: IAM_DENY_MESSAGE,
+      1: IAM_DENY_MESSAGE,
+      2: IAM_DENY_MESSAGE,
+    };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams));
+    expect(body).toContain("Sorry");
+    expect(body).not.toContain(TRACE_DELIMITER);
+    expect(STATE.callCount).toBe(3);
   });
 });

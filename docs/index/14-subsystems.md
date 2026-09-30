@@ -356,7 +356,7 @@ CLIENT
 | 5 | `src/lib/corpus.ts:13` | Grounding document, rebuilt per request from build-time Velite data. |
 | 6 | `src/lib/llm.ts:83-85` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. `LLM_USE_SONNET_5 === "true"` (`:43-45`) swaps the primary rung on both chains. |
 | 7 | `src/lib/llm.ts:94-104` | `decodeSecret`: base64-vs-raw discrimination by re-encoding the decode and comparing (`:97-99`). |
-| 8 | `src/lib/llm.ts:170-182` | `isFallbackEligible`: connection error, 429/404, ≥500, or a 400 whose message hits one of six `MODEL_UNAVAILABLE_MARKERS` (`:74-81`). |
+| 8 | `src/lib/llm.ts:170-182` | `isFallbackEligible`: connection error, 429/404, ≥500, a 400 whose message hits one of six `MODEL_UNAVAILABLE_MARKERS` (`:74-81`), or a 403 that names a per-model deny (those markers or `MODEL_DENIED_MARKERS`). |
 | 9 | `src/lib/llm.ts:292,407,497,535,564` | `emittedAny` — declared, then gating THINKING_SENTINEL emission, being set on the first `text_delta`, gating trace-frame emission, and gating fallback. |
 | 10 | `src/lib/llm-trace.ts:23-55` | `TRACE_DELIMITER` U+001E, `THINKING_SENTINEL` U+001E U+0001, `THINKING_END` U+001E U+0002, `stripControlBytes` (`:34-38` — applied to every model-generated chunk so a completion can never smuggle in framing bytes), `LlmUsage`, `TraceFrame`. |
 | 11 | `src/components/chat/parse-cards.ts:29-33,54-68` | Token grammar with a locked `[a-z0-9-]+` slug charset; every token resolved against the build-time allowlist or dropped. |

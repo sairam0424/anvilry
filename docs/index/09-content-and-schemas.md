@@ -3,14 +3,14 @@ kind: doc
 title: Content Corpus & Velite Schemas
 domain: [content]
 status: current
-version: v3.7.0
+version: v3.8.0
 ---
 
 # Content Corpus & Velite Schemas
 
-> Part of the Anvilry v3.7.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.8.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.7.0 (`package.json` 3.7.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope.
+> Describes Anvilry v3.8.0 (`package.json` 3.8.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope.
 
 **Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (11), `content/notes/*.{md,mdx}` (7) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
 **Files indexed:** 40 (39 content/config files + `.gitkeep`)

@@ -4,6 +4,62 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] — 2026-09-30
+
+**Minor** — one behaviour fix in the chat model chain, one consequence of it that the chat route now
+guards against, and one new opt-in setting. With `LLM_USE_SONNET_5_5` unset, which is the default, the
+request sent to every model in the chain is unchanged; what changes is what happens after a rung fails.
+It is a minor rather than a patch because an operator can observe that change, and because it adds a
+setting.
+
+### Fixed
+- **A failing primary model no longer ends in "Sorry, something went wrong" when a rung in the middle of
+  the chain is IAM-denied** (#287). This account hard-denies the whole Opus family with an identity-policy
+  deny, which Bedrock reports as a `403` whose message says `… is not authorized to perform … with an
+  explicit deny …`. `isFallbackEligible` treated every 403 as terminal, so the Opus rung ended the chain
+  and the Haiku rung was never tried: any Sonnet failure (429, 5xx, timeout) surfaced the apology.
+  A 403 now advances the chain when its message names a per-model deny (`MODEL_DENIED_MARKERS`, or an
+  existing `MODEL_UNAVAILABLE_MARKERS` entry). A credential 403 (invalid or expired token, signature
+  mismatch) still ends the chain at once, and once any text has been sent an error is still terminal.
+  Marker matching also folds typographic apostrophes, which AWS uses in some messages.
+  **Operator-visible:** the failure is now quiet. The reply comes from Haiku, the UI shows "primary
+  unavailable" and the trace frame carries `fellBack: true`; watch `fell_back` and `attrs.status` 403 in
+  `llm.attempt`, because a primary that is misconfigured for IAM degrades to Haiku answers instead of
+  failing loudly. The apostrophe fold applies to 400s as well, so a 400 reading `You don’t have access
+  to the model…` with a typographic apostrophe now falls through where it used to end the chain.
+- **An answer served by a fallback rung is no longer written to the FAQ cache** (#287). The write-through
+  cached any clean success, and a cache hit replays it for 24 hours as the normal answer (trace frame
+  `fellBack: false`). Haiku was unreachable on this account before the fix above, so this never mattered;
+  with it, one Sonnet 429 or 503 on a first-turn FAQ question would have stored Haiku's answer and served
+  it to every visitor for a day, after Sonnet had recovered. Only an answer from the primary rung is
+  written through now. The visitor who triggered the fallback still gets their answer.
+
+### Added
+- **`LLM_USE_SONNET_5_5=true` makes Claude Sonnet 5.5 the primary rung** (#287). It is off by default, only
+  the exact string `"true"` enables it, and it takes precedence over `LLM_USE_SONNET_5`. The Opus and Haiku
+  rungs are unchanged.
+  - Bedrock serves 5.5 only through the global inference profile: the id is
+    `global.anthropic.claude-sonnet-5-5`, there is no `us.` profile, and a request may be processed outside
+    the US regions. The direct-API id is `claude-sonnet-5-5`; that path is unverified because no
+    `ANTHROPIC_API_KEY` is provisioned.
+  - Sonnet 5.5 rejects `thinking: {type: "disabled"}` with a 400, so the thinking-off request is now chosen
+    per model (`thinkingOff()`): `{type: "between_tools"}` for 5.5 and `{type: "disabled"}` for every other
+    model, as before. Both mistakes (a `us.` id, the `disabled` shape) would have been read as "model
+    unavailable" and skipped the primary silently, which is why the tests pin them.
+  - IAM: a global profile needs three allows — the profile, the regional model, and the region-less model
+    under `aws:RequestedRegion` = `unspecified` (`DEPLOY.md`). Without them the primary answers 403 and
+    Haiku answers every request.
+  - There is no `BEDROCK_PRICE` row for 5.5 (or for Sonnet 5), so `cost_usd` is priced as Sonnet 4.6.
+
+### Changed
+- `make env-check` prints both Sonnet flags. The example IAM policies in `DEPLOY.md` and `VOICE.md` now
+  show the account id in inference-profile ARNs, which they omitted.
+- `llm.test.ts` grows from 30 to 71 tests (an eligibility truth table, IAM fall-through chains, a 403 that
+  stays terminal once bytes are sent, and the per-model thinking shape), `route.test.ts` from 9 to 10 (the
+  cache gate), and the suite from 817 to 859 tests.
+- The docs index is relabelled to 3.8.0; the areas #287 touched were updated, the counts elsewhere were not
+  re-measured.
+
 ## [3.7.0] — 2026-09-30
 
 **Minor** — a hardening and correctness pass. No new features, dependency changes or content changes;

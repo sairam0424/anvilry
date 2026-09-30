@@ -17703,6 +17703,20 @@
       ],
       "preview": "}"
     },
+    "src/lib/llm.ts:119": {
+      "fp": "0355f7ed5750",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "function thinkingOff(model: string): {"
+    },
+    "src/lib/llm.ts:125": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/llm.ts:131": {
       "fp": "7297858f7f29",
       "citedBy": [
@@ -18384,7 +18398,8 @@
     "src/lib/llm.ts:64": {
       "fp": "b87f3902e02a",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
       ],
       "preview": "export function isSonnet55PrimaryEnabled(): boolean {"
     },
@@ -18423,7 +18438,8 @@
     "src/lib/llm.ts:66": {
       "fp": "d10b36aa74a5",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
       ],
       "preview": "}"
     },

@@ -110,16 +110,16 @@ that file is authoritative if this table ever disagrees with it.
     "Effect": "Allow",
     "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
     "Resource": [
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-opus-4-6-v1",
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-sonnet-4-6",
-      "arn:aws:bedrock:us-east-1::inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-opus-4-6-v1",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-sonnet-4-6",
+      "arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/us.anthropic.claude-haiku-4-5-20251001-v1:0",
       "arn:aws:bedrock:*::foundation-model/anthropic.*"
     ]
   }]
 }
 ```
 (Cross-region inference profiles fan out to regional foundation models, hence the
-`foundation-model/anthropic.*` resource alongside the profiles.)
+`foundation-model/anthropic.*` resource alongside the profiles. Inference-profile ARNs carry your account id; foundation-model ARNs do not.)
 
 ### Optional: voice upgrades (Polly TTS / Transcribe STT)
 Only needed if you turn on the in-app voice flags ("Use higher-quality voice (Polly)"
@@ -231,7 +231,7 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 
 **Extra IAM by feature.** The policy in §3 covers the three default Anthropic profiles only. Add:
 - `LLM_USE_SONNET_5=true` → the `us.anthropic.claude-sonnet-5` inference profile (enable model access for it first).
-- `LLM_USE_SONNET_5_5=true` → the **global** inference profile `global.anthropic.claude-sonnet-5-5` (enable model access for Sonnet 5.5 first; there is no `us.` profile). Add its profile ARN next to the `us.` ones in the policy above (`arn:aws:bedrock:us-east-1::inference-profile/global.anthropic.claude-sonnet-5-5`). A global profile also routes through the region-less foundation-model ARN `arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-5-5`, which `arn:aws:bedrock:*::foundation-model/anthropic.*` matches but a statement pinned to one region does not.
+- `LLM_USE_SONNET_5_5=true` → the **global** inference profile `global.anthropic.claude-sonnet-5-5` (enable model access for Sonnet 5.5 first; there is no `us.` profile). AWS requires three allows for a global profile ([Global cross-Region inference](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)): the profile `arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/global.anthropic.claude-sonnet-5-5`, the regional model `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5-5`, and the region-less global model `arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-5-5` under the condition `aws:RequestedRegion` = `unspecified`. The `arn:aws:bedrock:*::foundation-model/anthropic.*` line in the policy above already covers the last two unless a region condition or an SCP blocks the `unspecified` region. If any is missing, the primary answers 403 and the chain silently falls back to Haiku.
 - `FAQ_CACHE_SEMANTIC_MATCH=true` → `bedrock:InvokeModel` on the foundation model `amazon.titan-embed-text-v2:0` (`foundation-model/anthropic.*` does not cover it). Without it the semantic tier silently misses; the exact-match tier is unaffected.
 
 **Opus caveat.** The `LLM_USE_SONNET_5` docblock in `src/lib/llm.ts` records Opus as IAM-denied on the reference AWS account. An IAM deny surfaces as a 403 whose message says `is not authorized to perform … with an explicit deny`, and that wording is fallback-eligible, so a denied Opus rung is skipped and the chain continues to Haiku when Sonnet is unavailable. Grant the Opus profile if you want it to answer; otherwise expect Sonnet, then Haiku. A 403 for bad or expired credentials is not eligible and still ends the chain at once with the apology tail.

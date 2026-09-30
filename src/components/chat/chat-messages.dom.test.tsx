@@ -37,7 +37,7 @@ vi.mock("@/components/chat/use-speech-synthesis", () => ({
     supported: tts.supported,
     isSpeaking: false,
     speak: vi.fn(),
-    stop: vi.fn(),
+    cancel: vi.fn(),
   }),
 }));
 
@@ -50,11 +50,11 @@ afterEach(() => {
 
 // Production always has a TooltipProvider ancestor (src/components/providers.tsx);
 // the read-aloud button's Tooltip throws without one.
-function renderMessages(messages: ChatMessage[]) {
+function renderMessages(messages: ChatMessage[], isStreaming = false) {
   return render(
     <TooltipProvider>
       <ViewProvider>
-        <ChatMessages messages={messages} isStreaming={false} />
+        <ChatMessages messages={messages} isStreaming={isStreaming} />
       </ViewProvider>
     </TooltipProvider>,
   );
@@ -88,11 +88,13 @@ describe("ChatMessages — transcript container is not a live region", () => {
 
 /**
  * The owner removed the "Answered by Claude Sonnet · Bedrock" line that used to
- * sit under every answer (2026-09-30). The server still sends the model in the
- * trace frame and the hook still stores it on the message; only the UI text is
- * gone, including the "primary unavailable" prefix that shared its <p>.
+ * sit under every answer (2026-09-30), and asked that no visitor-facing text name
+ * the model or provider. The server still sends the model in the trace frame and
+ * the hook still stores it on the message; only the UI is gone, including the
+ * "primary unavailable" prefix that shared its <p> and the model family that was
+ * in the streaming reasoning block's accessible name.
  */
-describe("ChatMessages — no model or provider attribution under an answer", () => {
+describe("ChatMessages — no model or provider attribution in the transcript", () => {
   const answered = (fellBack: boolean): ChatMessage[] => [
     { role: "user", content: "What stack do you use?" },
     {
@@ -102,6 +104,7 @@ describe("ChatMessages — no model or provider attribution under an answer", ()
       fellBack,
     },
   ];
+  // "Anthropic" is the other provider behind the LLM_PROVIDER toggle.
   const LEAKS = [
     "Answered by",
     "Claude",
@@ -109,17 +112,43 @@ describe("ChatMessages — no model or provider attribution under an answer", ()
     "Haiku",
     "Opus",
     "Bedrock",
+    "Anthropic",
     "primary unavailable",
   ];
+  // Read the serialised DOM, not textContent: a title=, aria-label or alt that
+  // names the model is visible to hover users and screen readers but has no text node.
+  const expectNoLeaks = (container: HTMLElement) => {
+    const html = container.innerHTML;
+    for (const leaked of LEAKS) expect(html).not.toContain(leaked);
+  };
 
   it.each([false, true])(
     "prints neither the model, the provider nor a fallback note (fellBack=%s)",
     (fellBack) => {
       const { container } = renderMessages(answered(fellBack));
-      const text = container.textContent ?? "";
-      for (const leaked of LEAKS) expect(text).not.toContain(leaked);
+      // Positive control: the transcript rendered, so the absences are not an empty render.
+      expect(container.textContent).toContain("What stack do you use?");
+      expectNoLeaks(container);
     },
   );
+
+  it("names no model in the streaming reasoning block either", () => {
+    const { container } = renderMessages(
+      [
+        { role: "user", content: "What stack do you use?" },
+        {
+          role: "assistant",
+          content: "",
+          isThinking: true,
+          liveReasoning: "weighing options",
+        },
+      ],
+      true,
+    );
+    // Positive control: the live-reasoning <pre> is what carries the accessible name.
+    expect(container.textContent).toContain("weighing options");
+    expectNoLeaks(container);
+  });
 
   it("still offers read-aloud when speech is opted in and supported", () => {
     tts.supported = true;
@@ -132,8 +161,7 @@ describe("ChatMessages — no model or provider attribution under an answer", ()
     expect(
       getByRole("button", { name: "Read this answer aloud" }),
     ).toBeTruthy();
-    const text = container.textContent ?? "";
-    expect(text).toContain("Listen");
-    for (const leaked of LEAKS) expect(text).not.toContain(leaked);
+    expect(container.textContent).toContain("Listen");
+    expectNoLeaks(container);
   });
 });

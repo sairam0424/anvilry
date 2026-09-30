@@ -229,7 +229,7 @@ function ThinkingBlock({
             ref={liveEndRef}
             className="mt-2 max-h-32 overflow-y-auto whitespace-pre-wrap border-l-2 border-accent/30 pl-3 font-mono text-xs text-fg-subtle"
             aria-live="off"
-            aria-label="Claude's live reasoning"
+            aria-label="Live reasoning"
           >
             {liveReasoning}
           </pre>

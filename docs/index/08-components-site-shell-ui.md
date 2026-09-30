@@ -344,7 +344,7 @@ Two named transition groups exist in the tree:
 ### `src/components/scroll/jump-to-latest.tsx`
 - **Role:** Presentational "Jump to latest" pill — the visible resume control for the autoscroll state machine (WCAG 2.2.2).
 - **Exports:** `JumpToLatest({ show, onClick, label = "Jump to latest" })`.
-- **Consumed by:** `ask-portfolio.tsx:226`, `chat/chat-messages.tsx:660`.
+- **Consumed by:** `ask-portfolio.tsx:226`, `chat/chat-messages.tsx:642`.
 - **Behaviour notes:** Returns `null` when `!show` (`:28`). Floats bottom-centre of a `relative` parent (`pointer-events-none absolute inset-x-0 bottom-3`, `:30`); visibility and the snap-to-bottom are owned by the autoscroll hook, the caller supplies `onClick`. Target height `h-9` (36 px) with visible focus ring (`:34`).
 
 ## Coverage

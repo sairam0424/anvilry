@@ -8434,7 +8434,7 @@
       ],
       "preview": "const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== \"false\";"
     },
-    "src/components/chat/chat-messages.tsx:287": {
+    "src/components/chat/chat-messages.tsx:278": {
       "fp": "1a8f6f036163",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -8442,35 +8442,35 @@
       ],
       "preview": "const MarkdownMessage = dynamic("
     },
-    "src/components/chat/chat-messages.tsx:289": {
+    "src/components/chat/chat-messages.tsx:280": {
       "fp": "bf5b8bfbf6cd",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "import(\"@/components/chat/markdown-message\").then((m) => m.MarkdownMessage),"
     },
-    "src/components/chat/chat-messages.tsx:291": {
+    "src/components/chat/chat-messages.tsx:282": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": ");"
     },
-    "src/components/chat/chat-messages.tsx:331": {
+    "src/components/chat/chat-messages.tsx:322": {
       "fp": "072be0f9848e",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const dispatchedRef = useRef<Set<number>>(new Set());"
     },
-    "src/components/chat/chat-messages.tsx:332": {
+    "src/components/chat/chat-messages.tsx:323": {
       "fp": "f28ea927c74f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "useEffect(() => {"
     },
-    "src/components/chat/chat-messages.tsx:335": {
+    "src/components/chat/chat-messages.tsx:326": {
       "fp": "b44b761ccd50",
       "citedBy": [
         "03-lib-content-data.md",
@@ -8478,28 +8478,28 @@
       ],
       "preview": "unlock(\"chat-question\");"
     },
-    "src/components/chat/chat-messages.tsx:337": {
+    "src/components/chat/chat-messages.tsx:328": {
       "fp": "e0edc500050c",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "if (isStreaming) return; // Only dispatch cmd tokens from settled messages."
     },
-    "src/components/chat/chat-messages.tsx:343": {
+    "src/components/chat/chat-messages.tsx:334": {
       "fp": "04381da76a70",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "if (seg.type === \"cmd-highlight\") highlightProject(seg.slug);"
     },
-    "src/components/chat/chat-messages.tsx:346": {
+    "src/components/chat/chat-messages.tsx:337": {
       "fp": "29576b54e255",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "});"
     },
-    "src/components/chat/chat-messages.tsx:347": {
+    "src/components/chat/chat-messages.tsx:338": {
       "fp": "f1f463e16654",
       "citedBy": [
         "14-subsystems.md",
@@ -8507,14 +8507,14 @@
       ],
       "preview": "}, [messages, isStreaming, setView]);"
     },
-    "src/components/chat/chat-messages.tsx:383": {
+    "src/components/chat/chat-messages.tsx:374": {
       "fp": "4502285aa683",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const { scrollRef, contentRef, anchorRef, isAtBottom, scrollToBottom } ="
     },
-    "src/components/chat/chat-messages.tsx:403": {
+    "src/components/chat/chat-messages.tsx:394": {
       "fp": "174c16601aa9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -8528,13 +8528,6 @@
       ],
       "preview": "import type { ChatMessage } from \"@/components/chat/use-chat\";"
     },
-    "src/components/chat/chat-messages.tsx:562": {
-      "fp": "80946a3b9a68",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const showBadge = !!m.model && (!isStreaming || !isLast);"
-    },
     "src/components/chat/chat-messages.tsx:6": {
       "fp": "8d281e623f61",
       "citedBy": [
@@ -8542,21 +8535,35 @@
       ],
       "preview": "import { parseCards } from \"@/components/chat/parse-cards\";"
     },
-    "src/components/chat/chat-messages.tsx:616": {
+    "src/components/chat/chat-messages.tsx:606": {
       "fp": "0d6a09c32d37",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "{!(m.isThinking && isStreaming && isLast) &&"
     },
-    "src/components/chat/chat-messages.tsx:633": {
+    "src/components/chat/chat-messages.tsx:623": {
       "fp": "8532178deab6",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": ")}"
     },
-    "src/components/chat/chat-messages.tsx:660": {
+    "src/components/chat/chat-messages.tsx:624": {
+      "fp": "186a79c03e1b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{/* Answer footer: the optional read-aloud toggle, offered only"
+    },
+    "src/components/chat/chat-messages.tsx:628": {
+      "fp": "dd87473ac360",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{canRead && ("
+    },
+    "src/components/chat/chat-messages.tsx:642": {
       "fp": "a609ef5ae6cd",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -9357,6 +9364,20 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const BACKGROUND_FLUSH_MS = 250;"
+    },
+    "src/components/chat/use-chat.ts:188": {
+      "fp": "c4962183efa0",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "model: trace?.model,"
+    },
+    "src/components/chat/use-chat.ts:189": {
+      "fp": "773ed4305d35",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "fellBack: trace?.fellBack,"
     },
     "src/components/chat/use-chat.ts:190": {
       "fp": "64def9a2121d",

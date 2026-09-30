@@ -464,11 +464,18 @@ export async function POST(req: Request) {
           });
 
           // Write-through: attempt.answerText is present iff this was a clean,
-          // complete success (see llm.ts) — every error/fallback path leaves it
+          // complete success (see llm.ts) — every failed attempt leaves it
           // undefined, so this can never cache a partial or apology-tail reply.
+          // A success from a fallback rung (fell_back) is NOT cached either: it
+          // is a transient degradation (the primary was throttled or denied),
+          // and a cache hit would replay it for 24 h as the normal answer.
           // faqCacheSet applies its own additional completion-integrity gate on
           // finish_reason (only "end_turn" is cacheable) — passed through here.
-          if (question != null && attempt.answerText != null) {
+          if (
+            question != null &&
+            attempt.answerText != null &&
+            !attempt.fell_back
+          ) {
             void faqCacheSet(
               question,
               attempt.answerText,

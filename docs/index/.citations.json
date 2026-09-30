@@ -4932,7 +4932,7 @@
       ],
       "preview": "// Write-through: attempt.answerText is present iff this was a clean,"
     },
-    "src/app/api/chat/route.ts:479": {
+    "src/app/api/chat/route.ts:486": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -17706,6 +17706,7 @@
     "src/lib/llm.ts:119": {
       "fp": "0355f7ed5750",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md"
       ],
       "preview": "function thinkingOff(model: string): {"
@@ -17713,6 +17714,7 @@
     "src/lib/llm.ts:125": {
       "fp": "d10b36aa74a5",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md"
       ],
       "preview": "}"

@@ -100,7 +100,7 @@ The `usage` block on `llm.attempt` is the first place Anvilry has ever measured 
 
 `cache_read_input_tokens > 0` on turns 2+ of the same session means caching is working.
 If it stays 0 after 7 days, the cached prefix is expiring or changing between requests (see Notes, §9).
-`cost_usd` is only present when `usage` is; it comes from a three-entry Bedrock price table, so Sonnet 5 and every direct-Anthropic model id are priced as Sonnet 4.6.
+`cost_usd` is only present when `usage` is; it comes from a three-entry Bedrock price table, so Sonnet 5, Sonnet 5.5 and every direct-Anthropic model id are priced as Sonnet 4.6.
 
 ---
 

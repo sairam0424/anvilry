@@ -328,10 +328,10 @@ SERVER  /api/chat  (maxDuration = 30, route.ts:18)
         per attempt: client.messages.stream() w/ adaptive thinking; 15_000 ms timeout
                      set on the client                                    llm.ts:215,:224,:459
         onAttempt → one llm.attempt span incl. cost_usd from BEDROCK_PRICE route.ts:29-65,:425-464
-                  → clean end_turn answer ⇒ void faqCacheSet(...)         route.ts:466-479
+                  → clean end_turn !fell_back ⇒ void faqCacheSet(...)     route.ts:466-486
    → WIRE: [THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]
                                                                           llm-trace.ts:6-9
-   → Response(stream, "Cache-Control: no-store")                          route.ts:485-490
+   → Response(stream, "Cache-Control: no-store")                          route.ts:492-497
      withTrace then re-wraps it and stamps x-anvilry-trace-id             with-trace.ts:202-207
 CLIENT
    → read loop → parseAccumulated() → scheduleFlush() → ≤1 commit / animation frame
@@ -382,13 +382,13 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 
 `const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
 append `apologyTail` and close (`src/lib/llm.ts:642-669`, read directly — as of 2026-09-18 also closes
-the thinking phase with `THINKING_END` first if one was open, `:576-585`). Fallback to the next model is possible
-**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:497`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:261-269`: streaming errors surface
+the thinking phase with `THINKING_END` first if one was open, `:655-664`). Fallback to the next model is possible
+**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:576`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:261-269`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
 are indistinguishable by call site — whether a `text_delta` has already arrived is the only reliable
 discriminator. The same flag also keeps an attempt with no `text_delta` from materialising a trace frame
-(`:533-542`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
-(`thinkingSentinelEmitted`, declared `:299`, checked `:407-409`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
+(`:612-621`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
+(`thinkingSentinelEmitted`, declared `:376`, checked `:486-488`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
 writeup.
 
 ### Telemetry spans emitted on this path
@@ -405,7 +405,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 ### FAQ response cache (first-turn questions)
 
 `src/lib/chat-cache.ts` + `src/lib/faq-embeddings.ts`, wired into `/api/chat` (`src/app/api/chat/route.ts:310-378` read,
-`:466-479` write-through). A repeat first-turn question is answered from Upstash with no model call.
+`:466-486` write-through). A repeat first-turn question is answered from Upstash with no model call.
 
 - **Eligibility** (`route.ts:322-332`): no `x-chat-skip-cache` header, exactly one message, string content,
   non-blank. Scoped to turn 1 because a later turn can legitimately warrant a different persona/depth
@@ -425,7 +425,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
   match, so local dev caches without a deploy stamp.
 - **Write gate** (`faqCacheSet`, `:265`): only `finish_reason === "end_turn"`, control bytes stripped, 1–4000
   chars (`MAX_CACHEABLE_ANSWER_CHARS`, `:79`). `answerText` reaches the route only for a clean, complete
-  answer (`llm.ts:423,575,608`), so an apology tail or partial fallback can never be cached. Index trimming is
+  answer (`llm.ts:423,575,608`), so an apology tail or a partial answer can never be cached; a clean answer from a fallback rung does reach the route, which declines to write it through (`!attempt.fell_back`, `route.ts:477`), so a transient primary outage is not pinned for 24 h. Index trimming is
   sampled 1-in-20 (`TRIM_SAMPLE_EVERY`, `:72`).
 - **Accepted gap:** the gate proves completion cleanliness, not content safety — a jailbreak that finishes with
   `end_turn` would be replayed until TTL, a corpus change, or a purge (`chat-cache.ts:25-32`).
@@ -465,7 +465,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 ### Flags / env that alter it
 
 `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`,
-`BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` (the eight `llm.ts` reads);
+`BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` (the nine `llm.ts` reads);
 `EXTENDED_THINKING` (server, **not** `NEXT_PUBLIC_`-prefixed, default ON, `route.ts:385`);
 `NEXT_PUBLIC_EXTENDED_THINKING` (client thinking-block rendering, `chat-messages.tsx:165`);
 `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` (`chat-view.tsx:255`); `NEXT_PUBLIC_PDF_ATTACHMENTS`

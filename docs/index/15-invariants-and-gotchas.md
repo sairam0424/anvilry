@@ -490,7 +490,7 @@ failure, and no runtime exception.
 | `send`'s dep array includes `messages`, so its identity changes every message — callers must not memoize on it | `src/components/chat/use-chat.ts:384` |
 | `useStt`'s Transcribe fallback is keyed on `transcribe.error`, so a *transient* failure sticks for the rest of the hook's life (`error` is cleared only inside `start()`) | `src/components/chat/use-stt.ts:25-27`; `src/components/chat/use-transcribe-recognition.ts:112` |
 | `use-transcribe-recognition.ts` has **no** unmount cleanup effect, unlike its browser sibling; teardown happens only via `start` failure or `stop` | `src/components/chat/use-transcribe-recognition.ts` vs `src/components/chat/use-speech-recognition.ts:224` |
-| `getServerSnapshot` in `discovery-store.ts` returns a fresh `new Set()` on every call, so the server snapshot is never referentially stable; `getDiscoveryCount()` reads module state **without** subscribing, so a component using only it never re-renders on unlock | `src/lib/discovery-store.ts:63`, `:86-88` |
+| `getServerSnapshot` in `discovery-store.ts` returns a fresh `new Set()` on every call, so the server snapshot is never referentially stable; `getDiscoveryCount()` reads module state **without** subscribing, so a component using only it never re-renders on unlock | `src/lib/discovery-store.ts:61`, `:84-86` |
 | `clearHighlight()` must be used rather than nulling the module variable, otherwise the pending timer leaks and a stale timeout nulls a newer highlight | `src/lib/highlight-store.ts:40-47` |
 | `inkTransitionRef` is a module-level mutable export assigned in an effect with **no** dependency array, so it re-assigns on every render | `src/components/ui/ink-transition.tsx:213-216` |
 | `github-stats-strip.tsx`'s `stats!` non-null assertions are only safe because `fetchState === "ready"` implies `stats` was set in the same `.then` | `src/components/github-stats-strip.tsx:90-119` |
@@ -519,8 +519,6 @@ failure, and no runtime exception.
 | Unknown `NEXT_PUBLIC_AVATAR_POSITION` values silently render the `hero-top` layout rather than erroring | `src/components/hero-avatar/index.tsx:102-110` |
 | `graph-index.tsx` promotes the **last** card to `sm:col-span-2` when a group has an odd node count — a layout rule keyed off `g.nodes.length % 2` | `src/components/game/graph-index.tsx:26` |
 | `mobile-nav.tsx`'s focus trap queries only inside `panelRef`; adding focusable chrome outside the panel while open escapes the trap | `src/components/mobile-nav.tsx:26-53` |
-| `easter-eggs.tsx`'s dismiss button is explicitly sized `h-7 w-7` because Tailwind preflight zeroes button padding and it would otherwise collapse to ~15 px (WCAG 2.5.8) | `src/components/game/easter-eggs.tsx:158-161` |
-| Tailwind v4 here has no `tailwindcss-animate`, so `animate-in` utilities silently no-op — `.hero-rise` is reused instead | `src/components/game/easter-eggs.tsx:150-152` |
 | `:focus-visible:not(.no-focus-ring)` is a deliberately **unlayered** rule that beats any Tailwind utility regardless of specificity; `.no-focus-ring` is the only opt-out | `src/app/globals.css:287-298` |
 | `Reveal`'s `!mounted` branch is the no-JS safety net — removing it makes every below-fold section permanently invisible whenever hydration fails | `src/components/ui/reveal.tsx:28`, `:8-15` |
 | Each standalone page must pass `titleAs="h1"` to its first `<Section>`, or the page's highest heading is an `h2` | `src/components/ui/section.tsx:4-11` |
@@ -556,7 +554,7 @@ failure, and no runtime exception.
 | There is **no `make e2e` target** — Playwright is reachable only via `pnpm e2e`/`pnpm e2e:ui` or the CI job | `Makefile` (verified absent, [11 § Makefile targets](./11-config-build-ci-infra.md#makefile-targets)) |
 | Actual PDF text extraction under `pdfjs-dist@6.2.108` was explicitly flagged NOT VERIFIED in the release commit — build and typecheck pass but the extraction path was never exercised post-bump | `src/components/chat/file-picker-button.tsx:77-104`; commit `2f309d2` per section 13 |
 | The `/api/error` `console.warn` breadcrumb and `anvilry:errors:recent` write are fire-and-forget with `.catch(() => {})` | `src/app/api/error/route.ts:174-180` |
-| `easter-eggs.tsx`'s console greeting is guarded by a module-level `let consoleGreeted` with no storage, so a reload re-prints it despite the "once per session" wording | `src/components/game/easter-eggs.tsx:38`, `:72-84` |
+| `easter-eggs.tsx`'s console greeting is guarded by a module-level `let consoleGreeted` with no storage, so the greeting prints once per page load, not once per session: a reload re-prints it | `src/components/game/easter-eggs.tsx:21`, `:24-35` |
 
 ### Modules with no direct unit-test guard
 
@@ -588,7 +586,7 @@ Both cites given. Plan and spec files under `docs/superpowers/` are excluded as 
 or in the code comments themselves (`graph-data.ts`, `game-model.ts`, `scene.tsx`, `agent-trace.ts`). They are
 retained as history because they are what sent earlier readings of this codebase wrong, but the cite now resolves
 to the corrected text, not to the defect. **Do not read a struck-through row as a live contradiction — the work is
-already done.** The other fourteen rows stand: each was re-checked against the current text of both sides for this
+already done.** The other thirteen rows stand: each was re-checked against the current text of both sides for this
 revision.
 
 Root docs are cited by section heading or quoted text, not by line number: they are rewritten far more often than
@@ -624,7 +622,6 @@ and are gated by `scripts/check-index-citations.mjs`.
 | `ViewEscapeHatch` is "auto-rendered by view-router for non-classic views" | `src/components/home/resume-view.tsx:14-16` | `src/components/view-router.tsx` renders no escape hatch and `ResumeView` renders none either, so the resume view has no in-page back-to-Classic control. Each other view imports it itself (`chat/anvil-view.tsx`, `chat/chat-view.tsx`, `game/game-view.tsx`, `game/developer-view.tsx`) |
 | `project-card.tsx` subscribes to the highlight store via `useSyncExternalStore` | `src/lib/highlight-store.ts:9-10` | `project-card.tsx` does not import the module; nothing subscribes |
 | "enlarged reactive orb (~200px)" | `src/components/chat/anvil-core-surface.tsx:26-27` | The implementation renders a CSS-only `anvil-orb-idle` blob at `h-16 w-16` (`:158-162`) |
-| Console greeting is "once per session" | `src/components/game/easter-eggs.tsx:72-84` | The only guard is a module-level `let consoleGreeted` (`:38`) with no sessionStorage/localStorage; a reload re-prints |
 | "Reset when the scenario changes" | `src/components/game/use-trace-runner.ts:69-70` | `reset`'s identity is stable (it depends only on `clearTimers`, `[]` deps), so the effect cleanup fires on unmount only. Scenario changes are reset explicitly by the `<select>` `onChange` at `src/components/game/glass-box-demo.tsx:58-61` |
 | "Hourly GitHub stats cache warm" | `src/app/api/cron/github-sync/route.ts:9` | `vercel.json` schedules it `0 8 * * *` — daily |
 | ~~"the 5 flagship work systems + 8 OSS repos"~~ — **corrected** | `src/lib/graph-data.ts:3-4` | The stale `8` is gone. The docblock is now de-numbered — "Nodes = every flagship work system + every OSS repo (see `graphNodes` below for the count — game-model.ts asserts a bijection with real content, so it moves with the content)" (`src/lib/graph-data.ts:3-4`) — so it cannot go stale again. The array still holds 5 work + **11** project nodes (`:18-81`) |

@@ -10872,21 +10872,14 @@
       ],
       "preview": "import { DeveloperRail } from \"@/components/game/developer-rail\";"
     },
-    "src/components/game/developer-view.tsx:84": {
-      "fp": "3f482989d5c7",
-      "citedBy": [
-        "06-components-game-terminal.md"
-      ],
-      "preview": "Konami code (<span aria-hidden=\"true\">↑↑↓↓←→←→ B A</span>"
-    },
     "src/components/game/discovery-badge.tsx:26": {
-      "fp": "bab516217f97",
+      "fp": "de5583736c6b",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
-      "preview": "* The 5 discovery keys are wired in their respective source files:"
+      "preview": "* The 4 discovery keys are wired in their respective source files:"
     },
-    "src/components/game/discovery-badge.tsx:31": {
+    "src/components/game/discovery-badge.tsx:30": {
       "fp": "631e1d341b63",
       "citedBy": [
         "06-components-game-terminal.md"
@@ -10908,78 +10901,12 @@
       ],
       "preview": "onClick={() => unlock(\"dossier-open\")}"
     },
-    "src/components/game/easter-eggs.tsx:100": {
-      "fp": "76c2d20b3c9f",
-      "citedBy": [
-        "03-lib-content-data.md",
-        "06-components-game-terminal.md"
-      ],
-      "preview": "unlock(\"konami\");"
-    },
-    "src/components/game/easter-eggs.tsx:14": {
-      "fp": "922b41c43755",
-      "citedBy": [
-        "06-components-game-terminal.md"
-      ],
-      "preview": "*     (once per session), now hinting BOTH the Konami code AND the hidden `secret`"
-    },
-    "src/components/game/easter-eggs.tsx:150": {
-      "fp": "3c98b4b189a9",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// .hero-rise is an existing CSS keyframe (rise + fade) that is itself"
-    },
-    "src/components/game/easter-eggs.tsx:152": {
-      "fp": "4572e4193478",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// utility (Tailwind v4 here has no tailwindcss-animate, so those silently no-op)."
-    },
-    "src/components/game/easter-eggs.tsx:158": {
-      "fp": "67c01e488f86",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "aria-label=\"Dismiss\""
-    },
-    "src/components/game/easter-eggs.tsx:161": {
-      "fp": "75a5d71971fd",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "className=\"absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded text-fg-su"
-    },
-    "src/components/game/easter-eggs.tsx:38": {
+    "src/components/game/easter-eggs.tsx:21": {
       "fp": "b0effc3b6de7",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "let consoleGreeted = false;"
-    },
-    "src/components/game/easter-eggs.tsx:72": {
-      "fp": "a6df3ec09c1d",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// 1. Console greeting (once per session) — extended with both breadcrumbs."
-    },
-    "src/components/game/easter-eggs.tsx:83": {
-      "fp": "9d8b2b5670d1",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": ");"
-    },
-    "src/components/game/easter-eggs.tsx:84": {
-      "fp": "27c7e19d1e11",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}, []);"
     },
     "src/components/game/game-view.tsx:10": {
       "fp": "0748ad1f9879",
@@ -16536,28 +16463,28 @@
       ],
       "preview": "};"
     },
-    "src/lib/discovery-store.ts:19": {
+    "src/lib/discovery-store.ts:18": {
       "fp": "9dc173021198",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "const STORAGE_KEY = \"anvilry:discoveries\";"
     },
-    "src/lib/discovery-store.ts:20": {
+    "src/lib/discovery-store.ts:19": {
       "fp": "cd02d428f936",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "const ALL_KEYS: DiscoveryKey[] = ["
     },
-    "src/lib/discovery-store.ts:26": {
+    "src/lib/discovery-store.ts:24": {
       "fp": "358ba3f22237",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "];"
     },
-    "src/lib/discovery-store.ts:63": {
+    "src/lib/discovery-store.ts:61": {
       "fp": "063a5e7d541b",
       "citedBy": [
         "15-invariants-and-gotchas.md"

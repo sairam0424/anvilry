@@ -124,7 +124,7 @@ Two named transition groups exist in the tree:
 
 **`view-escape-hatch.tsx`** — "Back to Classic" is a `<button>` calling `setView("classic")`; "Résumé" is a real `<a href="/resume">` so it survives a failed view bundle (`:6-12`, `:17-31`). Documented contract: it is rendered as the FIRST focusable element of each non-classic view so neither the gamified nor chat experience becomes a keyboard trap. Real importers: `chat/chat-view.tsx:84`, `chat/anvil-view.tsx:35`, `game/game-view.tsx:32`, `game/developer-view.tsx:45`. `view-router.tsx` does **not** render it, and neither does `home/resume-view.tsx` (its docblock at `:14-16` claims otherwise — stale), so the `?view=resume` view has no in-page "back to Classic" control.
 
-**Discovery side effect:** any deliberate view switch calls `unlock("view-switch")` from `@/lib/discovery-store` (`view-context.tsx:213`), the first of 5 exploration badges.
+**Discovery side effect:** any deliberate view switch calls `unlock("view-switch")` from `@/lib/discovery-store` (`view-context.tsx:213`), the first of 4 exploration badges.
 
 ---
 

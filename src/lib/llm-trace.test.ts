@@ -4,7 +4,7 @@ import type { TraceFrame } from "./llm-trace";
 
 /**
  * The trace delimiter must be the U+001E RECORD SEPARATOR control char (not an empty
- * string — a regression that silently disabled the model badge), so it cleanly splits
+ * string — a regression that silently disabled trace-frame parsing), so it cleanly splits
  * the visible answer from the trailing {model, fellBack} frame and never collides with
  * model prose.
  */

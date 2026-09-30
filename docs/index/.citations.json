@@ -1520,6 +1520,13 @@
       ],
       "preview": "## [3.4.2] — 2026-08-15"
     },
+    "CHANGELOG.md:421": {
+      "fp": "559cc1eadd9a",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "**Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them"
+    },
     "CHANGELOG.md:422": {
       "fp": "0aa70116c274",
       "citedBy": [
@@ -1930,7 +1937,7 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "7fe572f79153",
+      "fp": "81cd2554357d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],

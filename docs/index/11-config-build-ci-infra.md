@@ -571,7 +571,7 @@ one (`pnpm why <pkg>` plus the 3.4.2 CHANGELOG entry). The YAML carries those co
 Its header at `:5` still says "the ten security `overrides` shipped in v3.4.2" — historically accurate, because it
 is talking about that release. The lockfile mirrors all twelve ranges verbatim at `pnpm-lock.yaml:7-19`. The advisories
 for the first ten are transcribed from `CHANGELOG.md:422-451` (release 3.4.2, "resolves all 23 open Dependabot
-advisories across 10 packages, 11 of them high severity", `:325-326`); the last two are transcribed from the YAML
+advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:421-422`); the last two are transcribed from the YAML
 comments, because no CHANGELOG entry covers them.
 
 | Override | Range pinned | Advisory / reason as stated in the source |

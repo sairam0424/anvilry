@@ -58,7 +58,7 @@ export function isSonnet5PrimaryEnabled(): boolean {
  *    means a request may be processed outside the US regions.
  *  - The principal needs IAM on the global profile. Without it 5.5 answers 403
  *    (eligible), Opus 403s too, and Haiku answers EVERY request: no error, only
- *    fell_back / error.status 403 in llm.attempt. Check fellBack after enabling.
+ *    fell_back / attrs.status 403 in llm.attempt. Check fellBack after enabling.
  *  - It rejects `thinking: {type:"disabled"}`; see thinkingOff().
  *  - It rejects `temperature`; this module sends no sampling parameters. */
 export function isSonnet55PrimaryEnabled(): boolean {
@@ -241,9 +241,9 @@ export function isFallbackEligible(err: unknown): boolean {
   if (status === 429 || status === 404) return true;
   if (typeof status === "number" && status >= 500) return true;
   if (status === 400 || status === 403) {
-    // AWS emits typographic apostrophes in some messages (observed: "isn’t
-    // supported"); fold them so an ASCII-apostrophe marker such as "don't have
-    // access to the model" matches either spelling.
+    // AWS may spell an apostrophe typographically where the markers use the
+    // ASCII one; fold it so "don't have access to the model" matches either
+    // spelling. Only the listed markers count: "isn't supported" would not.
     const msg = String((err as { message?: string })?.message ?? "")
       .toLowerCase()
       .replace(/[\u2018\u2019]/g, "'");
@@ -603,8 +603,8 @@ export function streamWithFallback(
             usage,
             // Present iff a trace frame is about to be appended below — i.e. iff
             // the client will render a fully-formed assistant message. Never set
-            // on the catch-block's safeOnAttempt call, so a partial/fallback
-            // path can never be cached, by construction.
+            // on the catch-block's safeOnAttempt call, so a partial answer is
+            // never cached (the route also skips fell_back successes).
             ...(emittedAny ? { answerText } : {}),
           });
           // Clean finish — append the honest trace frame (which model served the bytes,

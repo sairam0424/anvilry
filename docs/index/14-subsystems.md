@@ -383,13 +383,13 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 
 `const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
 append `apologyTail` and close (`src/lib/llm.ts:742-769`, read directly — as of 2026-09-18 also closes
-the thinking phase with `THINKING_END` first if one was open, `:731-740`). Fallback to the next model is possible
-**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:652`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:360-368`: streaming errors surface
+the thinking phase with `THINKING_END` first if one was open, `:755-764`). Fallback to the next model is possible
+**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:676`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:360-368`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
 are indistinguishable by call site — whether a `text_delta` has already arrived is the only reliable
 discriminator. The same flag also keeps an attempt with no `text_delta` from materialising a trace frame
-(`:688-697`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
-(`thinkingSentinelEmitted`, declared `:451`, checked `:562-564`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
+(`:712-721`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
+(`thinkingSentinelEmitted`, declared `:475`, checked `:586-588`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
 writeup.
 
 ### Telemetry spans emitted on this path
@@ -453,7 +453,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:277-279` explains it; the expression is `:280`) is what shields it. |
 | Opus 4.6 400s "model identifier is invalid" | Dropping the `-v1` suffix (`llm.ts:112-114`, chain entry `:123`). |
 | Sonnet 5 / Opus 5 400s on extended thinking | Still sending the old `thinking:{type:"enabled",budget_tokens}` shape — deprecated on 4.6, hard-rejected on 5. Must be `thinking:{type:"adaptive"}` + `output_config:{effort:...}` (`llm.ts:535-580`). |
-| Reasoning panel stays empty on Sonnet 5.x | Dropping `display: "summarized"` (`adaptiveThinking()`, `llm.ts:215-222`) — the thinking block then has empty text, though the thinking tokens are billed — or lowering the effort to `low` (`thinkingEffort()`, `llm.ts:182-189`), at which Sonnet 5.5 did not reason on any of 8 measured questions (`medium` reasons on the hard ones only, `xhigh` on every question). Both pinned by `llm.test.ts` ("thinking a visitor can actually see"). |
+| Reasoning panel stays empty on Sonnet 5.x | Dropping `display: "summarized"` (`adaptiveThinking()`, `llm.ts:215-222`) — the thinking block then has empty text, though the thinking tokens are billed — or lowering the effort to `low` (`thinkingEffort()`, `llm.ts:182-189`), at which Sonnet 5.5 did not reason on any of 8 measured questions (`medium` reasons mostly on the hard ones, `xhigh` on every question). Both pinned by `llm.test.ts` ("thinking a visitor can actually see"). |
 | Unsolicited/unframed reasoning bytes in the visible chat | If a model ever defaults thinking ON when the field is omitted (true for Sonnet 5/Opus 5) and the explicit `disabled` send were ever removed, `thinking_delta` bytes would need to stay gated on `useThinking` and `thinkingEndEmitted` (`llm.ts:648`) or they'd stream raw with no `THINKING_SENTINEL`. |
 | Dropped tail token / frozen background tab | Removing the trailing `flushNow(acc)` (`use-chat.ts:352-354`) or the `BACKGROUND_FLUSH_MS` timer (`:124,:229`). |
 | Card fabricated for nonexistent content | Structurally impossible: locked slug charset, build-time allowlist, unresolved tokens dropped. `src/components/chat/parse-cards.test.ts:41-75` is the gate. |

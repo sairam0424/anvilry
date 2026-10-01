@@ -476,3 +476,32 @@ describe("/api/chat — llm.attempt cost telemetry", () => {
     });
   });
 });
+
+describe("/api/chat — the extended-thinking switch that LLM_THINKING_EFFORT depends on", () => {
+  const original = process.env.EXTENDED_THINKING;
+  afterEach(() => {
+    if (original === undefined) delete process.env.EXTENDED_THINKING;
+    else process.env.EXTENDED_THINKING = original;
+  });
+
+  // llm.ts only sends an effort when the route asks for extended thinking, so a route that stops
+  // passing it turns every LLM_THINKING_EFFORT setting into a silent no-op.
+  it.each([
+    [undefined, true],
+    ["true", true],
+    ["", true],
+    ["FALSE", true],
+    ["false", false],
+  ])("EXTENDED_THINKING=%j reaches streamWithFallback as extendedThinking: %s", async (value, expected) => {
+    if (value === undefined) delete process.env.EXTENDED_THINKING;
+    else process.env.EXTENDED_THINKING = value;
+    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+    const opts = streamWithFallbackMock.mock.calls[0]![1] as { extendedThinking: boolean };
+    expect(opts.extendedThinking).toBe(expected);
+  });
+
+  it("allows a 60 s function budget: a 5.5 run at max plus a fallback run on 4.6 can pass 30 s", async () => {
+    const mod = await import("./route");
+    expect(mod.maxDuration).toBeGreaterThanOrEqual(60);
+  });
+});

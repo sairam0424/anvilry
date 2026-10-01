@@ -159,9 +159,9 @@ function isSonnet5Family(model: string): boolean {
   return model.includes("sonnet-5");
 }
 
-type ThinkingEffort = "low" | "medium" | "high" | "xhigh" | "max";
+const THINKING_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
-const THINKING_EFFORTS: readonly string[] = ["low", "medium", "high", "xhigh", "max"];
+type ThinkingEffort = (typeof THINKING_EFFORTS)[number];
 
 /** How hard the model may think. LLM_THINKING_EFFORT (exactly one of "low", "medium", "high",
  *  "xhigh" or "max", lower case; anything else is ignored) overrides every thinking-capable
@@ -170,19 +170,19 @@ const THINKING_EFFORTS: readonly string[] = ["low", "medium", "high", "xhigh", "
  *  Which levels a model takes was read off Bedrock's own 400 on the streaming action
  *  (2026-10-01): Sonnet 5 and 5.5 accept all five, Sonnet 4.6 accepts "low", "medium", "high"
  *  and "max" and answers 400 to "xhigh". A 400 is not fallback-eligible, so "xhigh" is never
- *  sent to a model that is not Sonnet 5.x: it becomes "max" there (the nearest level above it).
+ *  sent to a model that is not Sonnet 5.x: it becomes "max", the level above (Opus 4.7 may take it).
  *
  *  What the levels do on Sonnet 5.5 (production prompt, 90 calls over 15 recruiter-style
  *  questions, 2026-10-01): "low" reasoned on 1 of 15 calls, "medium" on 3 of 15, "high" on 16 of
  *  25 (it skipped "hi", "What is your current role?" and "What is Pensieve?" every time),
- *  "xhigh" on 30 of 30 (first answer text after 4.1 s on average, 7.7 s at most) and "max" on
- *  5 of 5 (10 s on average, 20.5 s at most). So "medium", the default, shows reasoning on the
- *  hard questions only and adds the fewest seconds; "xhigh" shows it on every question.
+ *  "xhigh" on 30 of 30 (first answer text after 4.1 s on average, 7.6 s at most) and "max" on
+ *  5 of 5 (10 s on average, 20.5 s at most). So "medium", the default, reasons mostly on the
+ *  hard questions (2 of its 3 reasoned calls); "xhigh" shows reasoning on every question.
  *  Sonnet 4.6 keeps the "low" it has always been sent. */
 function thinkingEffort(model: string): ThinkingEffort {
   const override = process.env.LLM_THINKING_EFFORT;
-  if (override !== undefined && THINKING_EFFORTS.includes(override)) {
-    const level = override as ThinkingEffort;
+  const level = THINKING_EFFORTS.find((known) => known === override);
+  if (level !== undefined) {
     return level === "xhigh" && !isSonnet5Family(model) ? "max" : level;
   }
   return isSonnet5Family(model) ? "medium" : "low";

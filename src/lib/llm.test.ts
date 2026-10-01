@@ -1350,6 +1350,16 @@ describe("isFallbackEligible — status/message truth table", () => {
       400,
       "400 messages.0.content: Input should be a valid list",
     ],
+    [
+      "400 effort Sonnet 4.6 does not take (xhigh)",
+      400,
+      "400 output_config.effort: Input should be 'low', 'medium', 'high' or 'max'",
+    ],
+    [
+      "400 effort Sonnet 5.x does not take",
+      400,
+      "400 unknown variant `bogus`, expected one of `low`, `medium`, `high`, `xhigh`, `max`, `Unhandled` at line 1 column 148",
+    ],
     ["401 unauthorized", 401, "401 invalid x-api-key"],
     ["403 invalid security token", 403, BAD_TOKEN_MESSAGE],
     [
@@ -2085,7 +2095,7 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
   });
 
   // Only the five lower-case levels Bedrock accepts count; everything else is ignored.
-  it.each(["extreme", "HIGH", "Medium", "XHIGH", "Max", "xhigh ", " low", "none", "minimal", ""])(
+  it.each(["extreme", "HIGH", "Medium", "XHIGH", "Max", "xhigh ", " low", "none", "minimal", "constructor", "__proto__", "toString", ""])(
     "ignores the invalid LLM_THINKING_EFFORT value %j and uses the per-model default",
     async (value) => {
       process.env.LLM_THINKING_EFFORT = value;
@@ -2174,10 +2184,10 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
   });
 
   it.each([
-    ["direct-API Sonnet 5.5", { LLM_USE_SONNET_5_5: "true" }, DIRECT_IDS.s55, "xhigh"],
-    ["direct-API Sonnet 5", { LLM_USE_SONNET_5: "true" }, DIRECT_IDS.s5, "xhigh"],
-    ["direct-API Sonnet 4.6", {}, DIRECT_IDS.s46, "max"],
-  ])("sends xhigh to %s as %s on the direct chain", async (_label, env, model, expected) => {
+    ["direct-API Sonnet 5.5", "xhigh", { LLM_USE_SONNET_5_5: "true" }, DIRECT_IDS.s55],
+    ["direct-API Sonnet 5", "xhigh", { LLM_USE_SONNET_5: "true" }, DIRECT_IDS.s5],
+    ["direct-API Sonnet 4.6", "max", {}, DIRECT_IDS.s46],
+  ])("sends xhigh to %s as %s on the direct chain", async (_label, expected, env, model) => {
     Object.assign(process.env, { LLM_PROVIDER: "anthropic", LLM_THINKING_EFFORT: "xhigh", ...env });
     STATE.events = [answer("Hi.")];
     const { streamWithFallback } = await import("./llm");
@@ -2185,6 +2195,36 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     const sent = STATE.streamParamsByCall[0] as Sent;
     expect(sent.model).toBe(model);
     expect(sent.output_config).toEqual({ effort: expected });
+  });
+
+  // Every rung of the longest chain (5.5, Opus opt-in, 4.6, Haiku), each failing but the last, at
+  // xhigh: only Sonnet 5.x may be sent it, Opus and 4.6 get max (and the ceiling that goes with
+  // max), and Haiku gets neither an effort nor a bigger ceiling.
+  it.each([
+    ["Bedrock", {}, BEDROCK_IDS],
+    ["direct-API", { LLM_PROVIDER: "anthropic" }, DIRECT_IDS],
+  ])("at xhigh on the %s chain each rung gets the request its model accepts", async (_label, env, ids) => {
+    Object.assign(process.env, {
+      LLM_THINKING_EFFORT: "xhigh",
+      LLM_USE_SONNET_5_5: "true",
+      LLM_USE_OPUS_FALLBACK: "true",
+      ...env,
+    });
+    STATE.events = [[], [], [], answer("Haiku answer.")];
+    STATE.throwsOn = [0, 1, 2];
+    STATE.throwStatus = { 0: 503, 1: 503, 2: 503 };
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall as Array<Sent & { max_tokens?: number }>;
+    expect(sent.map((s) => s.model)).toEqual([ids.s55, ids.opus, ids.s46, ids.haiku]);
+    expect(sent.map((s) => s.output_config?.effort)).toEqual(["xhigh", "max", "max", undefined]);
+    expect(sent.map((s) => s.max_tokens)).toEqual([16000, 32000, 32000, 100]);
+    expect(sent.map((s) => s.thinking)).toEqual([
+      { type: "adaptive", display: "summarized" },
+      { type: "adaptive" },
+      { type: "adaptive" },
+      undefined,
+    ]);
   });
 
   // `max_tokens` counts reasoning and answer together. Output measured on Sonnet 5.5 over 90 calls:
@@ -2205,13 +2245,14 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     expect((STATE.streamParamsByCall[0] as Sent & { max_tokens?: number }).max_tokens).toBe(floor);
   });
 
+  // xhigh is clamped to max before the ceiling is taken, so its row is max's 32000.
   it.each([
     ["low", 2048],
     ["medium", 2048],
     ["high", 8192],
     ["xhigh", 32000],
     ["max", 32000],
-  ])("sizes the Sonnet 4.6 ceiling for effort %s at %d tokens (xhigh is clamped to max first)", async (value, floor) => {
+  ])("sizes the Sonnet 4.6 ceiling for effort %s at %d tokens", async (value, floor) => {
     process.env.LLM_THINKING_EFFORT = value;
     STATE.events = [answer("Hi.")];
     const { streamWithFallback } = await import("./llm");

@@ -55,7 +55,7 @@ earlier pin (`release/v3.6.0` @ `c734c14`) predates it, so citations written aga
 |---|---|
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
 | **Version** | `3.11.0` (`package.json:3`) — `main` @ `a929932` plus the five fixes above, the two v3.8.0 changes, the two v3.9.0 removals, the two v3.10.0 changes and the v3.11.0 effort levels (`a929932` is 297 commits past the `v3.6.0` tag) |
-| **Scale** | 328 `.ts`/`.tsx` files in `src/` totalling 46,023 lines (232 non-test files / 29,635 lines + 96 test files) · 39 files under `content/` · 61 route-defining files |
+| **Scale** | 328 `.ts`/`.tsx` files in `src/` totalling 46,026 lines (232 non-test files / 29,635 lines + 96 test files) · 39 files under `content/` · 61 route-defining files |
 | **Subsystems** | content pipeline (incl. the decisions ledger) · view system · chat/LLM (incl. the FAQ response cache) · voice · MCP (10 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:203`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
 | **Strongest guard** | `game-model.test.ts` asserts a bijection between 3D graph nodes and real content — it blocks the deploy |
@@ -78,8 +78,8 @@ what the code says.
 | Coverage reconciliation | **457 of 461** tracked files outside `docs/index/` have a Coverage entry. The 4 without one are `src/lib/health-expectations.ts`, `src/lib/metadata-colors.ts`, `src/lib/theme-context.tsx` and `src/lib/use-theme-colors.ts` — a gap in the `src/lib` sections, not a measurement artifact | `git ls-files` minus the union of the Coverage lists (recipe under the table) |
 | `src/app` | 78 files / 10,054 lines | `find src/app -type f` |
 | `src/lib` | 91 files / 14,525 lines | `find src/lib -type f` |
-| `src/components` | 156 files / 21,631 lines | `find src/components -type f` |
-| `src/**/*.{ts,tsx}` | 328 files / **46,023 lines** — 232 non-test files (117 `.tsx`, 115 `.ts`) / 29,635 lines, plus 96 test files. The other 4 top-level `src/` files are `proxy.ts`, `proxy.test.ts`, `instrumentation.ts` and `instrumentation-client.ts` | `find src -name '*.ts' -o -name '*.tsx'` |
+| `src/components` | 156 files / 21,634 lines | `find src/components -type f` |
+| `src/**/*.{ts,tsx}` | 328 files / **46,026 lines** — 232 non-test files (117 `.tsx`, 115 `.ts`) / 29,635 lines, plus 96 test files. The other 4 top-level `src/` files are `proxy.ts`, `proxy.test.ts`, `instrumentation.ts` and `instrumentation-client.ts` | `find src -name '*.ts' -o -name '*.tsx'` |
 | `content/` | 39 files / 2,097 lines — 35 `.mdx` + 3 `.md` + 1 `.gitkeep` | `find content -type f` |
 | `e2e/` | 2 files / 458 lines | `find e2e -type f` |
 | App Router route-defining files | **61** — 16 `page.tsx`, 27 `route.ts`, 5 `layout.tsx`, 5 `opengraph-image.tsx`, 8 special (`error`, `global-error`, `not-found`, `icon`, `apple-icon`, `manifest`, `robots`, `sitemap`). Of the 27 `route.ts`, 19 sit under `src/app/api` and 8 outside it | `find src/app -name …` |

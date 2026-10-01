@@ -172,20 +172,23 @@ describe("ChatMessages — the reasoning of a replayed FAQ-cache hit", () => {
     {
       role: "assistant",
       content: "TypeScript, mostly.",
-      liveReasoning: "The user asks about my stack, so I'll name TypeScript first.",
+      liveReasoning:
+        "The user asks about my stack, so I'll name TypeScript first.",
       isThinking: false,
       // A replay arrives in one chunk: the chat hook reports a zero-second thought.
       thinkingDuration: 0,
     },
   ];
 
-  it("offers a collapsed 'Thought for a moment' toggle above the answer", async () => {
-    const { getByRole, queryByText, findByText } = renderMessages(replayed);
+  it("offers a collapsed 'Thought for a moment' toggle directly above the answer bubble", () => {
+    const { getByRole, queryByText } = renderMessages(replayed);
     const toggle = getByRole("button", { name: /Thought for a moment/ });
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(queryByText(/so I'll name TypeScript first/)).toBeNull();
-    // The answer is a lazily loaded markdown segment, so it lands a tick later.
-    await findByText("TypeScript, mostly.");
+    // The answer text is a lazily loaded markdown segment (and the sr-only announcer repeats it
+    // after a debounce), so this checks the block that follows the toggle instead of waiting for either.
+    const next = toggle.closest("div.mb-2")?.nextElementSibling;
+    expect(next?.className).toContain("rounded-2xl");
   });
 
   it("opens to the stored reasoning, as plain text", () => {

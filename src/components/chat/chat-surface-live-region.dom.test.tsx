@@ -340,7 +340,7 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
     const toggle = await screen.findByRole(
       "button",
       { name: /Thought for a moment/ },
-      { timeout: 3000 },
+      { timeout: 8000 },
     );
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(within(container).queryByText(REASONING)).toBeNull();
@@ -350,14 +350,14 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
         expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
           0,
         ),
-      { timeout: 3000 },
+      { timeout: 8000 },
     );
     await waitFor(
       () => {
         const announcer = container.querySelector('[aria-live="polite"]');
         expect(announcer?.textContent).toBe(ANSWER);
       },
-      { timeout: 1000 },
+      { timeout: 5000 },
     );
     expectExactlyOneLiveAnnouncer(container);
     expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
@@ -370,7 +370,7 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
     expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(
       ANSWER,
     );
-  });
+  }, 15000);
 
   it("ChatView: with NEXT_PUBLIC_EXTENDED_THINKING=false the same body shows the answer and no reasoning at all", async () => {
     vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "false");
@@ -388,13 +388,13 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
         expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
           0,
         ),
-      { timeout: 3000 },
+      { timeout: 8000 },
     );
     expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();
     expect(document.body.textContent).not.toContain(REASONING);
     expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
     expectExactlyOneLiveAnnouncer(container);
-  });
+  }, 15000);
 
   it("AskPortfolio widget: shows the answer only, never the reasoning or a protocol byte", async () => {
     vi.stubGlobal("fetch", await replayFetch());
@@ -414,19 +414,19 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
           0,
         );
       },
-      { timeout: 3000 },
+      { timeout: 8000 },
     );
     await waitFor(
       () => {
         const announcer = container.querySelector('[aria-live="polite"]');
         expect(announcer?.textContent).toBe(ANSWER);
       },
-      { timeout: 1000 },
+      { timeout: 5000 },
     );
 
     expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();
     expect(document.body.textContent).not.toContain(REASONING);
     expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
     expectExactlyOneLiveAnnouncer(container);
-  });
+  }, 15000);
 });

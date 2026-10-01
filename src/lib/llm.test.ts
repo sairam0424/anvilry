@@ -1028,7 +1028,10 @@ describe("streamWithFallback — thinking-phase closure across a fallback (CodeR
   it("closes the thinking phase with THINKING_END before a terminal apology when the primary throws mid-reasoning with a non-eligible error", async () => {
     // A plain 400 is NOT fallback-eligible: the apology fires immediately,
     // without ever trying the remaining models, even though this is not the
-    // last attempt.
+    // last attempt. Sonnet 5.5 on top puts a thinking-capable rung (Sonnet 4.6)
+    // behind the primary, the only chain where the apology alone has to close the
+    // phase: with the default chain the next rung is Haiku, which closes it anyway.
+    process.env.LLM_USE_SONNET_5_5 = "true";
     STATE.events = [
       [
         {
@@ -1057,6 +1060,7 @@ describe("streamWithFallback — thinking-phase closure across a fallback (CodeR
     const endIdx = body.indexOf(THINKING_END);
     expect(endIdx).toBeGreaterThan(0);
     expect(body.slice(endIdx + THINKING_END.length)).toContain("Sorry");
+    expect(STATE.callCount).toBe(1); // no retry: the error was not eligible
   });
 
   it("does NOT close the thinking phase when falling back to another thinking-capable model — reasoning continues the same open framing", async () => {
@@ -1921,6 +1925,42 @@ describe("streamWithFallback — a failing Sonnet 5.5 is backed up by Sonnet 4.6
       "Tombstone.",
     );
   });
+
+  // route.ts skips the 24 h FAQ write-through when fell_back is set and the dashboard
+  // counts it as a fallback, so the flag must be false on the primary and true on every
+  // later rung, on the success path and on the error path alike.
+  it("reports the rung on each attempt: a throttled 5.5, then a 4.6 that answers", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], answer("4.6 answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 429 };
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { onAttempt }));
+    expect(
+      onAttempt.mock.calls.map((c) => [c[0].attempt_index, c[0].fell_back]),
+    ).toEqual([
+      [0, false],
+      [1, true],
+    ]);
+  });
+
+  it("marks a failed attempt on rung 1 as a fallback too, when two rungs fail before Haiku answers", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], [], answer("Haiku answer.")];
+    STATE.throwsOn = [0, 1];
+    STATE.throwStatus = { 0: 503, 1: 503 };
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { onAttempt }));
+    expect(
+      onAttempt.mock.calls.map((c) => [c[0].attempt_index, c[0].fell_back]),
+    ).toEqual([
+      [0, false],
+      [1, true],
+      [2, true],
+    ]);
+  });
 });
 
 describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x reasoning summaries)", () => {
@@ -1948,6 +1988,17 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
   it.each([
     ["Sonnet 5.5", { LLM_USE_SONNET_5_5: "true" }, BEDROCK_IDS.s55],
     ["Sonnet 5", { LLM_USE_SONNET_5: "true" }, BEDROCK_IDS.s5],
+    // isSonnet5Family() matches every id form, the direct-API ones included.
+    [
+      "direct-API Sonnet 5.5",
+      { LLM_PROVIDER: "anthropic", LLM_USE_SONNET_5_5: "true" },
+      DIRECT_IDS.s55,
+    ],
+    [
+      "direct-API Sonnet 5",
+      { LLM_PROVIDER: "anthropic", LLM_USE_SONNET_5: "true" },
+      DIRECT_IDS.s5,
+    ],
   ])(
     "%s asks for summarized reasoning at effort 'medium'",
     async (_label, env, model) => {
@@ -1988,6 +2039,27 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     expect(second.output_config).toEqual({ effort: "low" });
   });
 
+  it("keeps an opted-in Opus rung on the request it has always had: adaptive, no display, effort 'low' (or the override)", async () => {
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
+    STATE.throwsOn = [0];
+    STATE.events = [[], answer("Opus answer.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    let [, opus] = STATE.streamParamsByCall as Sent[];
+    expect(opus.model).toBe(BEDROCK_IDS.opus);
+    expect(opus.thinking).toEqual({ type: "adaptive" });
+    expect(opus.output_config).toEqual({ effort: "low" });
+
+    STATE.callCount = 0;
+    STATE.streamParamsByCall = [];
+    STATE.events = [[], answer("Opus answer.")];
+    process.env.LLM_THINKING_EFFORT = "medium";
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    [, opus] = STATE.streamParamsByCall as Sent[];
+    expect(opus.output_config).toEqual({ effort: "medium" });
+    expect(opus.thinking).toEqual({ type: "adaptive" });
+  });
+
   it("LLM_THINKING_EFFORT overrides the default on every thinking-capable rung", async () => {
     process.env.LLM_THINKING_EFFORT = "low";
     process.env.LLM_USE_SONNET_5_5 = "true";
@@ -2008,6 +2080,8 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     sent = STATE.streamParamsByCall[0] as Sent;
     expect(sent.model).toBe(BEDROCK_IDS.s46);
     expect(sent.output_config).toEqual({ effort: "medium" });
+    // the raised effort is all that changes: still no 5.x-only display field
+    expect(sent.thinking).toEqual({ type: "adaptive" });
   });
 
   // "high" is rejected on purpose: the shared 2048-token thinking-plus-answer ceiling
@@ -2022,6 +2096,26 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
       await drain(streamWithFallback(params, { extendedThinking: true }));
       const sent = STATE.streamParamsByCall[0] as Sent;
       expect(sent.output_config).toEqual({ effort: "medium" });
+    },
+  );
+
+  // The "Medium" row above cannot tell "ignored" from "lower-cased": on Sonnet 5.5 both
+  // give 'medium'. These rows can, because the per-model default differs from the value.
+  it.each([
+    ["Sonnet 4.6, default low", "MEDIUM", {}, "low"],
+    ["Sonnet 4.6, default low", "Medium", {}, "low"],
+    ["Sonnet 5.5, default medium", "LOW", { LLM_USE_SONNET_5_5: "true" }, "medium"],
+  ])(
+    "%s ignores the mis-cased LLM_THINKING_EFFORT %j rather than lower-casing it",
+    async (_label, value, env, expected) => {
+      Object.assign(process.env, env);
+      process.env.LLM_THINKING_EFFORT = value;
+      STATE.events = [answer("Hi.")];
+      const { streamWithFallback } = await import("./llm");
+      await drain(streamWithFallback(params, { extendedThinking: true }));
+      expect((STATE.streamParamsByCall[0] as Sent).output_config).toEqual({
+        effort: expected,
+      });
     },
   );
 

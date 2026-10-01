@@ -84,7 +84,11 @@ describe("TelemetryDashboard — page-level auth", () => {
 });
 
 describe("TelemetryDashboard — cost tiles use each model's own verified price", () => {
-  function attempt(model: string, usage: Record<string, number>, cost?: number) {
+  function attempt(
+    model: string,
+    usage?: Record<string, number>,
+    cost?: number,
+  ) {
     return {
       ts: Date.now(),
       kind: "llm.attempt",
@@ -94,19 +98,37 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
       attrs: {
         model,
         latency_ms: 900,
-        usage,
+        ...(usage === undefined ? {} : { usage }),
         ...(cost === undefined ? {} : { cost_usd: cost }),
       },
     };
   }
 
-  async function renderWith(events: unknown[]): Promise<string> {
+  async function renderWith(
+    events: unknown[],
+    otherKinds: Record<string, unknown[]> = {},
+  ): Promise<string> {
     configure(ADMIN_SECRET);
     headerStore.authorization = basic(ADMIN_SECRET);
     redisMock.zrange.mockImplementation(async (key: string) =>
-      key === "anvilry:trace:llm.attempt" ? events : [],
+      key === "anvilry:trace:llm.attempt"
+        ? events
+        : (otherKinds[key.replace("anvilry:trace:", "")] ?? []),
     );
     return renderToStaticMarkup(await TelemetryDashboard());
+  }
+
+  /** The value and sub line of a <Tile>, read from the markup, so an assertion cannot
+   *  be satisfied by the same figure showing up somewhere else on the page. */
+  function tile(html: string, label: string): { value: string; sub: string } {
+    const escaped = label.replace(/[()]/g, "\\$&");
+    const m = html.match(
+      new RegExp(
+        `${escaped}</span><span[^>]*>([^<]*)</span>(?:<span[^>]*>([^<]*)</span>)?`,
+      ),
+    );
+    if (!m) throw new Error(`tile "${label}" not found`);
+    return { value: m[1], sub: m[2] ?? "" };
   }
 
   it("adds the cost of each attempt and the input cost its cache reads avoided", async () => {
@@ -118,8 +140,10 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
         0.0045,
       ),
     ]);
-    expect(html).toContain("$0.0045");
-    expect(html).toContain("saved $0.0094 by caching");
+    expect(tile(html, "Est. cost (24h)")).toEqual({
+      value: "$0.0045",
+      sub: "saved $0.0094 by caching",
+    });
   });
 
   it("does not price an unpriced model's cache reads at Sonnet 4.6's rate", async () => {
@@ -161,5 +185,58 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
       }), // $2.97
     ]);
     expect(html).toContain("saved $4.7700 by caching");
+  });
+
+  it("the Est. cost tile is the sum of cost_usd over the attempts, not just any dollar figure on the page", async () => {
+    // $0.0045 also shows in the model cost table and the recent-events feed, so a
+    // substring check on the whole page cannot tell the tile from them.
+    const html = await renderWith([
+      attempt(
+        "global.anthropic.claude-sonnet-5-5",
+        { input_tokens: 10 },
+        0.0045,
+      ),
+      attempt("us.anthropic.claude-sonnet-4-6", { input_tokens: 10 }, 0.003),
+    ]);
+    expect(tile(html, "Est. cost (24h)").value).toBe("$0.0075");
+  });
+
+  it("renders an attempt that failed before any usage arrived (a 429 at connect has no usage block)", async () => {
+    const html = await renderWith([
+      attempt("global.anthropic.claude-sonnet-5-5"),
+      attempt(
+        "us.anthropic.claude-sonnet-4-6",
+        { cache_read_input_tokens: 1_000_000 },
+        0.0005,
+      ),
+    ]);
+    expect(tile(html, "Est. cost (24h)")).toEqual({
+      value: "$0.0005",
+      sub: "saved $2.9700 by caching",
+    });
+  });
+
+  it("shortens global. model ids in the FAQ-cache rows of the events feed too", async () => {
+    const html = await renderWith([], {
+      "chat.cache": [
+        {
+          ts: Date.now(),
+          kind: "chat.cache",
+          level: "info",
+          traceId: "t2",
+          spanId: "s2",
+          attrs: {
+            outcome: "hit",
+            tier: "exact",
+            model: "global.anthropic.claude-sonnet-5-5",
+            saved_usd: 0.0123,
+          },
+        },
+      ],
+    });
+    expect(html).not.toContain("global.anthropic.claude-");
+    expect(html).toContain(
+      "hit  ·  tier:exact  ·  sonnet-5-5  ·  saved:$0.0123",
+    );
   });
 });

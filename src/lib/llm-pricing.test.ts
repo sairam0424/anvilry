@@ -74,6 +74,18 @@ describe("priceFor — rows copied from the AWS Price List", () => {
     expect(priceFor("claude-sonnet-4-6")).toBeNull();
     expect(priceFor("")).toBeNull();
   });
+
+  // An own-property check, not `in` or a bare lookup: "constructor" is a key on every object.
+  it.each(["constructor", "toString", "hasOwnProperty", "valueOf", "__proto__"])(
+    "never serves the inherited Object property %s as a price row",
+    (key) => {
+      expect(priceFor(key)).toBeNull();
+      expect(costUsd(key, { input_tokens: 1 })).toBeNull();
+      expect(
+        cacheReadSavingsUsd(key, { cache_read_input_tokens: 1 }),
+      ).toBeNull();
+    },
+  );
 });
 
 describe("costUsd", () => {

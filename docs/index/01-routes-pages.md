@@ -52,7 +52,7 @@ Excluded by rule: `src/app/api/**`, `src/app/.well-known/vercel/flags/route.ts`,
 | `src/app/stats/page.tsx` | `/stats` — 6 "by the numbers" tiles: 4 derived from Velite + `profile`, 2 hand-written "Daily users" literals | default `StatsPage` (server) |
 | `src/app/stats/layout.tsx` | Metadata carrier for `/stats` | `metadata`, default `StatsLayout` |
 | `src/app/admin/telemetry/page.tsx` | `/admin/telemetry` — request-time Redis telemetry dashboard; Basic auth at the proxy AND re-checked in the page (`notFound()` when unauthorized) | `instant = false`, default `TelemetryDashboard` (async server) |
-| `src/app/admin/telemetry/page.test.tsx` | Vitest guard: the telemetry page re-checks Basic auth itself (`notFound()` before any Redis read) | Vitest `describe`/`it` only |
+| `src/app/admin/telemetry/page.test.tsx` | Vitest guard: the telemetry page re-checks Basic auth itself (`notFound()` before any Redis read), and its cost tiles are priced per model | Vitest `describe`/`it` only |
 | `src/app/articles/page.tsx` | `/articles` — client page: platform filter pills, featured hero, deduped group grid | default `ArticlesPage` (client) |
 | `src/app/articles/layout.tsx` | Metadata + `ARTICLES_ENABLED` route gate (404 when off) | `metadata`, default `ArticlesLayout` |
 | `src/app/articles/[slug]/page.tsx` | Article detail; redirects to `/notes/<linkedNote>` or the external publication; native articles render MDX + BlogPosting/Breadcrumb JSON-LD | `generateStaticParams`, `generateMetadata`, default `ArticlePage` |

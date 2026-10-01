@@ -310,7 +310,11 @@ describe("/api/chat — write-through glue", () => {
 });
 
 describe("/api/chat — llm.attempt cost telemetry", () => {
-  type EmitArg = { kind: string; attrs: Record<string, unknown> };
+  type EmitArg = {
+    kind: string;
+    level?: string;
+    attrs: Record<string, unknown>;
+  };
 
   async function emittedAttempts(): Promise<EmitArg[]> {
     const { emit } = await import("@/lib/telemetry/emit");
@@ -318,6 +322,27 @@ describe("/api/chat — llm.attempt cost telemetry", () => {
       .map(([e]) => e)
       .filter((e) => e.kind === "llm.attempt");
   }
+
+  /** One mocked rung reporting `a` on top of a Sonnet 5.5 attempt. */
+  function attemptOf(a: Record<string, unknown>): void {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 900,
+        ...a,
+      });
+      return new ReadableStream();
+    });
+  }
+
+  const ask = () =>
+    POST(makeReq([{ role: "user", content: "What do you build?" }]));
+
+  afterEach(() => {
+    vi.doUnmock("@/lib/llm-pricing"); // a doMock outlives the test that made it
+  });
 
   it("records the verified price of the model that answered, not Sonnet 4.6's", async () => {
     streamWithFallbackMock.mockImplementation((_params, opts) => {
@@ -368,16 +393,86 @@ describe("/api/chat — llm.attempt cost telemetry", () => {
     expect(faqCacheSetMock.mock.calls[0]![3]).toBe(0);
   });
 
-  it("asks for the cache TTL that llm-pricing prices cache writes at", async () => {
-    const { CACHE_WRITE_TTL } = await import("@/lib/llm-pricing");
-    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+  it("records cost_usd: 0, not nothing, for a priced model whose usage block is empty (free is not unknown)", async () => {
+    attemptOf({ usage: {}, finish_reason: "end_turn", answerText: "ok" });
+    await ask();
+    const [attempt] = await emittedAttempts();
+    expect(attempt.attrs).toHaveProperty("cost_usd", 0);
+    expect(attempt.level).toBe("info");
+  });
+
+  it("leaves cost_usd out of an attempt that failed before any usage arrived, and logs it as an error", async () => {
+    attemptOf({
+      error: { name: "ThrottlingException", message: "429", status: 429 },
+    });
+    await ask();
+    const [attempt] = await emittedAttempts();
+    expect(attempt.attrs).not.toHaveProperty("cost_usd");
+    expect(attempt.level).toBe("error");
+  });
+
+  it("still records what an attempt spent when it failed after message_start", async () => {
+    attemptOf({
+      usage: { input_tokens: 29, cache_read_input_tokens: 5247 },
+      error: { name: "APIError", message: "stream died", status: 500 },
+    });
+    await ask();
+    const [attempt] = await emittedAttempts();
+    expect(attempt.attrs.cost_usd).toBeCloseTo(
+      (29 * 2.0 + 5247 * 0.2) / 1_000_000,
+      10,
+    );
+  });
+
+  it("prices cache WRITES at the 1-hour rate end to end: every usage field reaches costUsd", async () => {
+    attemptOf({
+      usage: {
+        input_tokens: 29,
+        cache_creation_input_tokens: 5247,
+        cache_read_input_tokens: 0,
+        output_tokens: 286,
+      },
+      finish_reason: "end_turn",
+      answerText: "ok",
+    });
+    await ask();
+    const [attempt] = await emittedAttempts();
+    // $2 in / $4 cache write (1 h) / $10 out per million (Sonnet 5.5, global profile).
+    expect(attempt.attrs.cost_usd).toBeCloseTo(
+      (29 * 2.0 + 5247 * 4.0 + 286 * 10.0) / 1_000_000,
+      10,
+    );
+  });
+
+  it("puts the model id and the usage block on the event: the dashboard prices its savings from them", async () => {
+    const usage = {
+      input_tokens: 29,
+      cache_read_input_tokens: 5247,
+      output_tokens: 286,
+    };
+    attemptOf({ usage, finish_reason: "end_turn", answerText: "ok" });
+    await ask();
+    const [attempt] = await emittedAttempts();
+    expect(attempt.attrs).toMatchObject({
+      model: "global.anthropic.claude-sonnet-5-5",
+      usage,
+    });
+  });
+
+  it("takes the cache_control TTL from CACHE_WRITE_TTL, not from a literal that could drift from the price", async () => {
+    vi.doMock("@/lib/llm-pricing", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("@/lib/llm-pricing")>()),
+      CACHE_WRITE_TTL: "5m" as const,
+    }));
+    await importRoute(); // resets the module registry, so the route binds to the mock above
+    await ask();
 
     const params = streamWithFallbackMock.mock.calls[0]![0] as {
       system: Array<{ cache_control?: { type: string; ttl: string } }>;
     };
     expect(params.system[0].cache_control).toEqual({
       type: "ephemeral",
-      ttl: CACHE_WRITE_TTL,
+      ttl: "5m",
     });
   });
 });

@@ -61,8 +61,8 @@ export type TraceFrame = {
  *
  * THINKING_SENTINEL and THINKING_END both start with the byte TRACE_DELIMITER is made
  * of, so the delimiter must be searched for only AFTER the reasoning block. Searching
- * the whole body finds the sentinel at index 0 and returns an empty answer whenever the
- * model reasoned. A reasoning block that never closed leaves no answer.
+ * the whole body finds the sentinel at index 0 and returns an empty answer whenever
+ * extended thinking is on (the sentinel goes out first, reasoning or not). An unclosed block leaves no answer.
  */
 export function answerFromBody(body: string): string {
   let rest = body;

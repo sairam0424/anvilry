@@ -90,15 +90,22 @@ describe("eval cron scoring", () => {
     return res.json();
   }
 
-  it("passes 12 of 12 when the answers carry no reasoning", async () => {
+  it("passes 12 of 12 when extended thinking is off (no sentinel at all)", async () => {
     answerWith(() => null);
     expect(await run()).toMatchObject({ passed: 12, total: 12 });
   });
 
+  it("passes 12 of 12 with extended thinking on when the model reasoned nothing: the body the chat route really sends", async () => {
+    // Every /api/chat body opens with the thinking sentinel while extended thinking is on (the
+    // default), reasoning or not; production answers start U+001E U+0001 U+001E U+0002. The
+    // sentinel shares the trace delimiter's first byte, so cutting at the first such byte scored
+    // every pair as an empty answer (0 of 12, the injection pairs too).
+    answerWith(() => "");
+    expect(await run()).toMatchObject({ passed: 12, total: 12 });
+  });
+
   it("scores the answer, not the empty string, when the model reasoned first", async () => {
-    // Sonnet 5.x now streams a reasoning summary ahead of a hard question's answer. The
-    // body then starts with the thinking sentinel, which shares the trace delimiter's
-    // first byte: cutting at the first such byte scored every one of these as empty.
+    // Sonnet 5.x streams a reasoning summary ahead of a hard question's answer.
     answerWith(() => "Weighing what the recruiter wants to know.");
     expect(await run()).toMatchObject({ passed: 12, total: 12 });
   });

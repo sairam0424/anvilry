@@ -162,7 +162,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:336-344): s
 - **Reads / depends on:** nothing (pure constants and two pure functions).
 - **Consumed by:** `src/lib/llm.ts:9` (constants + `stripControlBytes`), `src/lib/chat-cache.ts:5` (`stripControlBytes` before a cache write); `src/components/chat/use-chat.ts:8`; `src/app/api/cron/eval/route.ts:2` (`answerFromBody`).
 - **Behaviour notes:** Wire layout (llm-trace.ts:6-9): `[THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]`, or `[answer][TRACE_DELIMITER][JSON]` without extended thinking.
-- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first, and a server-side reader must use `answerFromBody` (cutting at the first `TRACE_DELIMITER` returns an empty answer whenever the model reasoned; the eval cron did exactly that).
+- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first, and a server-side reader must use `answerFromBody` (cutting at the first `TRACE_DELIMITER` returns an empty answer whenever extended thinking is on, because the sentinel is sent first even if the model never reasons; the eval cron did exactly that).
 
 ### `src/lib/llm-sdk-mode.ts`
 

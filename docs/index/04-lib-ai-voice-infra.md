@@ -3,14 +3,14 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
+> Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
 
 **Scope:** `src/lib/llm.ts`, `src/lib/llm-pricing.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,
@@ -162,7 +162,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:336-344): s
 - **Reads / depends on:** nothing (pure constants and two pure functions).
 - **Consumed by:** `src/lib/llm.ts:9` (constants + `stripControlBytes`), `src/lib/chat-cache.ts:5` (`stripControlBytes` before a cache write); `src/components/chat/use-chat.ts:8`; `src/app/api/cron/eval/route.ts:2` (`answerFromBody`).
 - **Behaviour notes:** Wire layout (llm-trace.ts:6-9): `[THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]`, or `[answer][TRACE_DELIMITER][JSON]` without extended thinking.
-- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first, and a server-side reader must use `answerFromBody` (cutting at the first `TRACE_DELIMITER` returns an empty answer whenever the model reasoned; the eval cron did exactly that).
+- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first, and a server-side reader must use `answerFromBody` (cutting at the first `TRACE_DELIMITER` returns an empty answer whenever extended thinking is on, because the sentinel is sent first even if the model never reasons; the eval cron did exactly that).
 
 ### `src/lib/llm-sdk-mode.ts`
 

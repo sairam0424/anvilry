@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
+> Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40
@@ -254,7 +254,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 
 ### `chat/ai-disclosure.ts`
 - **Role:** One module for the line that says the answers are AI-generated, so the three chat surfaces cannot drift apart. It exists because v3.9.0 (#291) removed the "Answered by <model> · <provider>" line, which had been the only visible text on phones saying so (the header label is icon-only below `sm`).
-- **Exports:** `AI_CAPTION` = "AI assistant · grounded in real work · may simplify details" (ai-disclosure.ts:10-11); `AI_VOICE_HINT` = "AI assistant, grounded in real work" (:15); `NAMES_A_MODEL_OR_VENDOR` (:22-23), the neutrality contract as a word-bounded pattern over 27 model, vendor and host names, which the tests run every piece of disclosure copy through.
+- **Exports:** `AI_CAPTION` = "AI assistant · grounded in real work · may simplify details" (ai-disclosure.ts:10-11); `AI_VOICE_HINT` = "AI assistant, grounded in real work" (:15); `NAMES_A_MODEL_OR_VENDOR` (:22-23), the neutrality contract as a word-bounded pattern over 27 model, vendor and host names, which the tests run the caption, the hint, the Chat view intro and the widget greeting through (the voice dialog's screen-reader description is a plain literal in `talk-mode-overlay.tsx` that no test reads).
 - **Reads / depends on:** nothing.
 - **Consumed by:** `chat-view.tsx:16` (the caption under the composer), `ask-portfolio.tsx:9` (the caption under the widget's composer), `talk-mode.tsx:20` (the idle hint on the voice surface).
 - **Behaviour notes:**
@@ -368,7 +368,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - `isChromeTtsBuggy()` = `/Chrome\//` and **not** Brave (`navigator.brave`) and **not** `/Edg\//` (:102-110). The banner shows only when `CHROME_TTS_BANNER_ENABLED` (`NEXT_PUBLIC_CHROME_TTS_BANNER === "true"`, `writing-flags.ts:92-93`) **and** buggy Chrome **and** `ttsEngine === "browser"` (:349-351).
   - `TtsTestButton` renders only when `NEXT_PUBLIC_VOICE_TEST_AUDIO === "true"` (:494) and makes exactly one synchronous `speak()` attempt — no retries, because Chrome's user-activation window expires (:45-47).
   - Picking a voice also syncs `ttsEngine` to that voice's engine, so a stale `polly` in localStorage doesn't strand a browser-voice pick on the remote path (:559-565).
-  - The idle hint reads "Tap the orb or press Space to start · AI assistant, grounded in real work" (`AI_VOICE_HINT`, :517); the in-conversation hint ("… to take your turn · Esc to close") is unchanged. The idle hint is what the phone modal shows until the first tap. The desktop inline panel mounts `TalkMode` with `autoStart` (`anvil-inline-panel.tsx:133`), which opens the mic on mount (:211-217), so there the in-conversation hint is on screen from the first paint and the AI wording is carried by the header label and the captions, not by this hint.
+  - The idle hint reads "Tap the orb or press Space to start · AI assistant, grounded in real work" (`AI_VOICE_HINT`, :517); the in-conversation hint ("… to take your turn · Esc to close") is unchanged. The idle hint is what the phone modal shows until the first tap. The desktop inline panel mounts `TalkMode` with `autoStart` (`anvil-inline-panel.tsx:133`), which opens the mic on mount (:211-217), so there the in-conversation hint is on screen from the first paint and the panel itself carries no AI wording (an open owner decision, see CHANGELOG [3.10.0] "Left alone"); what tells a desktop visitor the answers are AI-generated depends on the view behind the panel.
   - Focus rescue: when the prompt chips unmount on the first turn and `document.activeElement === document.body`, focus moves to `primaryRef` (:218-230).
 - **Gotchas / invariants:** The orb is `aria-hidden` and decorative — meaning is carried by the visible label + live region (:320-337). `VoicePicker` is mounted **inside** `TalkMode` so opening it inherits the settings store and does not tear down the session (:168-170).
 

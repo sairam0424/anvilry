@@ -94,8 +94,9 @@ describe("TraceFrame type", () => {
 
 /**
  * answerFromBody: what the eval cron scores. THINKING_SENTINEL, THINKING_END and
- * TRACE_DELIMITER share their first byte, so a parse that cuts the body at the first
- * U+001E returns "" for every answer that follows a reasoning block.
+ * TRACE_DELIMITER share their first byte, and every body opens with the sentinel while
+ * extended thinking is on, reasoning or not, so a parse that cuts the body at the first
+ * U+001E returns "" for every answer.
  */
 describe("answerFromBody", () => {
   const frame = `${TRACE_DELIMITER}{"model":"us.anthropic.claude-sonnet-4-6","fellBack":false}`;
@@ -109,6 +110,13 @@ describe("answerFromBody", () => {
   it("returns a body with no trace frame whole (trimmed)", () => {
     expect(answerFromBody("  No frame here.\n")).toBe("No frame here.");
     expect(answerFromBody("")).toBe("");
+  });
+
+  it("returns the answer of a body whose reasoning block is empty (what production sends for a plain answer)", () => {
+    // Checked against production on 2026-10-01: the first bytes are U+001E U+0001 U+001E U+0002.
+    const body = `${THINKING_SENTINEL}${THINKING_END}I'm a GenAI & Backend Engineer at Ascendion.${frame}`;
+    expect(answerFromBody(body)).toBe("I'm a GenAI & Backend Engineer at Ascendion.");
+    expect(body.slice(0, body.indexOf(TRACE_DELIMITER))).toBe("");
   });
 
   it("drops a leading reasoning block and returns only the answer", () => {

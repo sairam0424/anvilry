@@ -3,13 +3,13 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
 > post-a929932 fixes, each described by behaviour — notes are hidden at the data layer when `NOTES_ENABLED` is
 > off; rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 96 test files (63 node + 33 dom), 1019 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 96 test files (63 node + 33 dom), 1021 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -626,7 +626,7 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
 is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 96 test files
-(1019 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+(1021 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -735,7 +735,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:468-469`).
+(`CHANGELOG.md:559-560`).
 
 ### The Pagefind search-index step
 
@@ -772,8 +772,8 @@ pagefind failure fails the Vercel build.
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:439-441`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:449-451`) — the situation the `pnpm-workspace.yaml` overrides work around. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:530-532`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:540-542`) — the situation the `pnpm-workspace.yaml` overrides work around. |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4128`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -991,7 +991,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:301`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:392`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.)
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:145-147`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not
@@ -1017,7 +1017,7 @@ record the outcome rather than the original open question.
   platform behaviour was not verified.
 - **Whether Vercel deployment protection also blocks the four `VERCEL_URL`-derived fetches** (chat live stats,
   `eval`, `github-sync`, `seo-audit` — listed above). Only `health-check` was moved to `probeBase()`; the SSO-wall
-  effect on the others is inferred from the health-check finding, not observed.
+  effect on `eval` was observed on 2026-10-01 (the generated host answers `POST /api/chat` with 401 while the alias reaches the app), and on the other three is inferred from the health-check finding, not observed.
 - **Runtime cache/CDN behaviour of the statically-eligible routes** (`/llms.txt`, `/llms-full.txt`,
   `/feed.xml`, `/sitemap.xml`, `/robots.txt`, `/api/resume.json`). None sets `Cache-Control` and none reads
   the request, so all are prerenderable under `cacheComponents`, but no build manifest was inspected to

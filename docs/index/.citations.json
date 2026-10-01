@@ -1257,7 +1257,7 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "88df05bedefd",
+      "fp": "132f91386fa3",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -18368,6 +18368,13 @@
       ],
       "preview": "...(useThinking"
     },
+    "src/lib/llm.ts:542": {
+      "fp": "2109a68c018a",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "isSonnet5Family(model) ? 4096 : 2048,"
+    },
     "src/lib/llm.ts:545": {
       "fp": "00fa278ea019",
       "citedBy": [
@@ -18433,11 +18440,11 @@
       "preview": "// Extended thinking: stream thinking_delta bytes live to the client."
     },
     "src/lib/llm.ts:624": {
-      "fp": "faded2ba2fbe",
+      "fp": "3929c23b4a56",
       "citedBy": [
         "14-subsystems.md"
       ],
-      "preview": "if (!useThinking) continue;"
+      "preview": "if (!useThinking || thinkingEndEmitted) continue;"
     },
     "src/lib/llm.ts:629": {
       "fp": "2ede4f7460e4",

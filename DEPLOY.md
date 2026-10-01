@@ -9,7 +9,7 @@ Claude on **AWS Bedrock**. Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e.
 ## 0. Prerequisites
 - A GitHub repo (recommended: `github.com/sairam0424/anvilry`) with this code pushed.
 - A [Vercel](https://vercel.com) account.
-- AWS credentials with **Bedrock InvokeModel** access, and the three Anthropic models
+- AWS credentials with **Bedrock InvokeModel** access, and the default Anthropic models (Sonnet 4.6, Haiku 4.5; Opus only with `LLM_USE_OPUS_FALLBACK`)
   **enabled in `us-east-1`** (verified live — see §3).
 
 ---
@@ -235,7 +235,7 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 | `LLM_THINKING_EFFORT` | `low` / `medium` | Optional. Overrides the reasoning effort on every thinking-capable rung. Unset → `medium` for Sonnet 5.x (which at `low` never reasons on this app's prompts, so the reasoning panel stays empty) and `low` for the rest. Anything else, `high` included, is ignored. |
 | `FAQ_CACHE_ENABLED` / `FAQ_CACHE_SEMANTIC_MATCH` | `false` / `true` | Optional. The FAQ response cache is on by default (it needs Upstash); the first switches it off, the second adds the semantic (embedding) tier. |
 
-**Extra IAM by feature.** The policy in §3 covers the three default Anthropic profiles only. Add:
+**Extra IAM by feature.** The policy in §3 covers the two default Anthropic profiles (Sonnet 4.6, Haiku 4.5) and the opt-in Opus profile only. Add:
 - `LLM_USE_SONNET_5=true` → the `us.anthropic.claude-sonnet-5` inference profile (enable model access for it first).
 - `LLM_USE_SONNET_5_5=true` → the **global** inference profile `global.anthropic.claude-sonnet-5-5` (enable model access for Sonnet 5.5 first; there is no `us.` profile). AWS requires three allows for a global profile ([Global cross-Region inference](https://docs.aws.amazon.com/bedrock/latest/userguide/global-cross-region-inference.html)): the profile `arn:aws:bedrock:us-east-1:<ACCOUNT_ID>:inference-profile/global.anthropic.claude-sonnet-5-5`, the regional model `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-5-5`, and the region-less global model `arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-5-5` under the condition `aws:RequestedRegion` = `unspecified`. The `arn:aws:bedrock:*::foundation-model/anthropic.*` line in the policy above already covers the last two unless a region condition or an SCP blocks the `unspecified` region. If any is missing, the primary answers 403 and the chain silently falls to Sonnet 4.6 (watch `fell_back` in the `llm.attempt` telemetry after enabling).
 - `FAQ_CACHE_SEMANTIC_MATCH=true` → `bedrock:InvokeModel` on the foundation model `amazon.titan-embed-text-v2:0` (`foundation-model/anthropic.*` does not cover it). Without it the semantic tier silently misses; the exact-match tier is unaffected.

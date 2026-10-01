@@ -435,7 +435,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
   **not** cover `/api/admin/*`, so the route authenticates itself. 4 KB body cap checked before *and* after
   parse, question ≤ 2000 chars, deliberately not rate-limited.
 - **Fail-open:** every function guards `redis === null` and turns a Redis error into a miss (a no-op for
-  `faqCacheSet`) plus a `server.error` span (`emitCacheError`, `:222-240`; its message is cut at Upstash's `, command was:` echo, which for a failed SET is the whole entry, and capped at 300 characters, `:212-214`). The one deliberate exception is
+  `faqCacheSet`) plus a `server.error` span (`emitCacheError`, `:222-240`; its message is cut at Upstash's `, command was:` echo, which for a failed SET is the whole entry, and capped at 300 characters, `:212-214`; the purge result's message is cut the same way, `:466`). The one deliberate exception is
   `faqCachePurge`, an operator action: it emits the same span but returns a distinguishable `error` result (also when
   Redis is unconfigured), which the purge route maps to HTTP 503 (`chat-cache.ts:433-436,449-468`;
   `purge/route.ts:70-72`).
@@ -461,7 +461,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | XSS via streamed markdown | Removing `skipHtml` or overriding `urlTransform` (`markdown-message.tsx:10-16`). |
 | Abort loses the partial answer | `AbortError` is treated as a user action — partial kept, suffixed ` …[stopped]` (`use-chat.ts:363-374`); the catch path flushes **before** mutating messages (`:360`). |
 | A repeat question replays a stale or unsafe answer | Serving from the FAQ cache is bounded by the 24 h TTL, the corpus-build tag, and the purge route — but a jailbreak that ends `end_turn` passes the write gate. Remedy: `POST /api/admin/faq-cache/purge` with the question text (`chat-cache.ts:449`). |
-| Eval cron silently tests the cache instead of the model | Dropping `X-Chat-Skip-Cache` from the cron's request (`eval/route.ts:123`); `route.ts:284` is the only reader. |
+| Eval cron silently tests the cache instead of the model | Dropping `X-Chat-Skip-Cache` from the cron's request (`eval/route.ts:123`); `route.ts:284` is the only reader. Each side is pinned by its own test (`cron/eval/route.test.ts`, `chat/route.test.ts`), so only a rename of one side together with its own test stays silent. |
 | Broken cache looks like a normal miss | Swallowing the Redis error instead of `emitCacheError` (`chat-cache.ts:222-240`) — the `server.error` with `source: "chat-cache"` is the only signal. |
 
 ### Flags / env that alter it

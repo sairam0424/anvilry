@@ -97,9 +97,9 @@ export const MAX_REASONING_QUESTION_CHARS = 200;
 export type FaqCacheEntry = {
   answer: string;
   /** The reasoning summary the model streamed before this answer (sanitized, at most
-   *  MAX_CACHEABLE_REASONING_CHARS). Absent on entries written before it was stored, when
-   *  the model did not reason, and when the summary failed the bound. Replayed by the
-   *  chat route on an exact-tier hit only. */
+   *  MAX_CACHEABLE_REASONING_CHARS). Absent on entries written before it was stored, when the
+   *  model did not reason, when the summary failed the bound, and when the normalized question
+   *  was over MAX_REASONING_QUESTION_CHARS. Replayed by the chat route on an exact hit only. */
   reasoning?: string;
   model: string;
   costUsd: number;
@@ -209,9 +209,9 @@ function isSameCorpusBuild(
  *  For a failed SET that is the entire cache entry, the answer and its reasoning
  *  summary, so what follows the marker must never be copied into a telemetry event
  *  or a log line. Also bounded, so one message cannot bloat the trace sink. */
-function withoutCommandEcho(message: string): string {
-  const cut = message.indexOf(", command was:");
-  return (cut === -1 ? message : message.slice(0, cut)).slice(0, 300);
+function withoutCommandEcho(message: unknown): string {
+  const [head] = String(message).split(", command was:");
+  return head.slice(0, 300);
 }
 
 /** Logs AND emits a distinguishable server.error telemetry event for a cache
@@ -463,7 +463,7 @@ export async function faqCachePurge(
     return {
       status: "error",
       key,
-      message: (err as Error)?.message ?? "unknown error",
+      message: withoutCommandEcho((err as Error)?.message ?? "unknown error"),
     };
   }
 }

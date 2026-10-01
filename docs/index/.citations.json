@@ -16025,20 +16025,20 @@
       "preview": "}"
     },
     "src/lib/chat-cache.ts:212": {
-      "fp": "1b2eb42b1c0c",
+      "fp": "8e9d970e2ba3",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "function withoutCommandEcho(message: string): string {"
+      "preview": "function withoutCommandEcho(message: unknown): string {"
     },
     "src/lib/chat-cache.ts:214": {
-      "fp": "794f3b809470",
+      "fp": "b88f20db2196",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "return (cut === -1 ? message : message.slice(0, cut)).slice(0, 300);"
+      "preview": "return head.slice(0, 300);"
     },
     "src/lib/chat-cache.ts:222": {
       "fp": "f7abf6452803",

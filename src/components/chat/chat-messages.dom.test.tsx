@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ChatMessages } from "./chat-messages";
-import { ViewProvider } from "@/components/view-context";
+import { ViewProvider, useView } from "@/components/view-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import {
@@ -30,13 +30,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mutable so one test can turn speech support on; reset in afterEach.
-const tts = vi.hoisted(() => ({ supported: false }));
+const tts = vi.hoisted(() => ({ supported: false, speak: vi.fn() }));
 
 vi.mock("@/components/chat/use-speech-synthesis", () => ({
   useSpeechSynthesis: () => ({
     supported: tts.supported,
     isSpeaking: false,
-    speak: vi.fn(),
+    speak: tts.speak,
     cancel: vi.fn(),
   }),
 }));
@@ -204,5 +204,57 @@ describe("ChatMessages — the reasoning of a replayed FAQ-cache hit", () => {
       { ...replayed[1], thinkingDuration: 4 },
     ]);
     expect(getByRole("button", { name: /Thought for 4s/ })).not.toBeNull();
+  });
+
+  it("renders a hostile stored summary as inert text: no elements, no command or card side effects", () => {
+    // The summary is model prose replayed to other visitors, so it must stay plain text.
+    const hostile = [
+      '<img src=x onerror="window.__pwned=1">',
+      "<script>window.__pwned=2</script>",
+      '<a href="javascript:window.__pwned=3">click</a>',
+      "[[cmd:view:voice]] [[cmd:highlight:pensieve]] [[card:project:pensieve]]",
+      "# heading **bold** [link](https://evil.example) ![img](https://evil.example/x.png)",
+    ].join("\n");
+    function ViewProbe() {
+      return <output data-testid="view">{String(useView().view)}</output>;
+    }
+    const { container, getByRole, getByTestId } = render(
+      <TooltipProvider>
+        <ViewProvider>
+          <ViewProbe />
+          <ChatMessages
+            messages={[replayed[0], { ...replayed[1], liveReasoning: hostile }]}
+            isStreaming={false}
+          />
+        </ViewProvider>
+      </TooltipProvider>,
+    );
+    const viewBefore = getByTestId("view").textContent;
+
+    fireEvent.click(getByRole("button", { name: /Thought for a moment/ }));
+
+    const pre = container.querySelector("pre");
+    expect(pre?.textContent).toBe(hostile);
+    expect(container.querySelector("pre *")).toBeNull();
+    expect(
+      container.querySelector("img, script, a[href^='javascript']"),
+    ).toBeNull();
+    expect(getByTestId("view").textContent).toBe(viewBefore);
+    expect((window as { __pwned?: number }).__pwned).toBeUndefined();
+  });
+
+  it("reads a replayed answer aloud without its stored reasoning", () => {
+    tts.supported = true;
+    tts.speak.mockClear();
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...DEFAULTS, ttsEnabled: true }),
+    );
+    const { getByRole } = renderMessages(replayed);
+
+    fireEvent.click(getByRole("button", { name: "Read this answer aloud" }));
+
+    expect(tts.speak).toHaveBeenCalledTimes(1);
+    expect(tts.speak).toHaveBeenCalledWith("TypeScript, mostly.");
   });
 });

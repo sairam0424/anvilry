@@ -381,24 +381,42 @@ describe("useChat streaming loop — a FAQ-cache replay arrives as one thinking-
     expect(last.thinkingStartedAt).toBeUndefined();
   });
 
-  it("never commits a thinking state, so no 'Thinking…' block flashes for a replay", async () => {
+  it("never commits a thinking state, so no 'Thinking…' block flashes for a replay (a live thinking phase does)", async () => {
     stubRealisticRaf();
-    stubFetch(() => streamOf([replay]));
+    async function committedThinkingStates(chunks: string[], gapMs: number) {
+      stubFetch(() => streamOf(chunks, gapMs));
+      const seen: Array<boolean | undefined> = [];
+      const { result, unmount } = renderHook(() => {
+        const chat = useChat();
+        seen.push(chat.messages[chat.messages.length - 1]?.isThinking);
+        return chat;
+      });
+      // Not `await act(async () => send())`: that scope defers every render until it exits,
+      // which would hide each intermediate commit from this recorder.
+      act(() => {
+        void result.current.send("q");
+      });
+      await waitFor(() => expect(result.current.status).toBe("idle"), {
+        timeout: 5000,
+      });
+      unmount();
+      return seen;
+    }
 
-    const seen: Array<boolean | undefined> = [];
-    const { result } = renderHook(() => {
-      const chat = useChat();
-      seen.push(chat.messages[chat.messages.length - 1]?.isThinking);
-      return chat;
-    });
-    await act(async () => {
-      await result.current.send("q");
-    });
-    await waitFor(() => expect(result.current.status).toBe("idle"));
+    // Control: with a real thinking phase the recorder does see a committed `true`.
+    const live = await committedThinkingStates(
+      [
+        `${THINKING_SENTINEL}Weighing it.`,
+        ` More.${THINKING_END}Done.${TRACE_DELIMITER}${trace}`,
+      ],
+      150,
+    );
+    expect(live).toContain(true);
 
-    expect(seen).not.toContain(true);
-    expect(seen[seen.length - 1]).toBe(false);
-  });
+    const replayed = await committedThinkingStates([replay], 1);
+    expect(replayed).not.toContain(true);
+    expect(replayed[replayed.length - 1]).toBe(false);
+  }, 15000);
 
   it("lands on the same final message when the replay is split mid-reasoning", async () => {
     stubRealisticRaf();

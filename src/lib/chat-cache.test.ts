@@ -932,12 +932,136 @@ describe("FAQ cache — the over-bound warning agrees with what is stored", () =
     await faqCacheSet("q", "a", "m", 0, "end_turn", raw);
 
     const [, json] = redisMock.set.mock.calls[0];
-    expect((JSON.parse(json as string) as { reasoning?: string }).reasoning).toBe(
-      fits,
-    );
+    expect(
+      (JSON.parse(json as string) as { reasoning?: string }).reasoning,
+    ).toBe(fits);
     const warnings = vi
       .mocked(console.warn)
       .mock.calls.map((c) => String(c[0]));
     expect(warnings.filter((w) => w.includes("is over the"))).toEqual([]);
   });
+});
+
+describe("FAQ cache — the Upstash command echo stays out of error events and purge results", () => {
+  const CLEAN = "end_turn";
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** Just enough of the Upstash REST protocol for the real client: a SET of a cache entry is
+   *  refused the way an exhausted quota is (HTTP 400 plus a JSON error), everything else
+   *  succeeds. Returns the ZADDs that reached the server.error trace set. */
+  function stubUpstashRest() {
+    const traceWrites: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: { body: string }) => {
+        const body = JSON.parse(init.body) as unknown;
+        const isPipeline = String(url).endsWith("/pipeline");
+        const commands = isPipeline
+          ? (body as unknown[][])
+          : [body as unknown[]];
+        const refused = commands.some(
+          (c) =>
+            String(c[0]).toLowerCase() === "set" &&
+            String(c[1]).startsWith("anvilry:chat:cache:"),
+        );
+        if (refused) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "ERR max daily request limit exceeded. Limit: 10000, Usage: 10000",
+            }),
+            { status: 400 },
+          );
+        }
+        const results = commands.map((c) => {
+          if (
+            String(c[0]).toLowerCase() === "zadd" &&
+            c[1] === "anvilry:trace:server.error"
+          )
+            traceWrites.push(JSON.stringify(c));
+          return { result: null };
+        });
+        return new Response(JSON.stringify(isPipeline ? results : results[0]), {
+          status: 200,
+        });
+      }),
+    );
+    return traceWrites;
+  }
+
+  it("keeps a refused write's entry out of the server.error event, in the wording the real client produces", async () => {
+    const traceWrites = stubUpstashRest();
+    const { Redis } = await import("@upstash/redis");
+    const real = new Redis({
+      url: "https://example.upstash.io",
+      token: "test",
+    });
+    redisStateRef.current = real as unknown as typeof redisMock;
+
+    // Precondition that pins the SDK's wording: the marker the cut looks for is really there.
+    const direct = await real
+      .set("anvilry:chat:cache:probe", "x")
+      .catch((e: Error) => e.message);
+    expect(direct).toContain(", command was:");
+
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet(
+      "q",
+      "ANSWER-TYPED-BY-THE-MODEL",
+      "m",
+      0,
+      CLEAN,
+      "REASONING-QUOTING-THE-VISITOR",
+    );
+
+    await vi.waitFor(() => expect(traceWrites).toHaveLength(1));
+    const written = traceWrites[0];
+    expect(written).toContain("max daily request limit exceeded");
+    expect(written).not.toContain("command was");
+    expect(written).not.toContain("ANSWER-TYPED-BY-THE-MODEL");
+    expect(written).not.toContain("REASONING-QUOTING-THE-VISITOR");
+  });
+
+  it("bounds a long error message that has no marker to 300 characters", async () => {
+    // Words, not one long run: redact() masks any 32+ character token before it is recorded.
+    redisMock.set.mockRejectedValueOnce(new Error("word ".repeat(600)));
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, CLEAN);
+    const traceWrites = redisMock.zadd.mock.calls.filter(
+      ([key]) => key === "anvilry:trace:server.error",
+    );
+    expect(traceWrites).toHaveLength(1);
+    const kept = (JSON.stringify(traceWrites[0]).match(/word/g) ?? []).length;
+    expect(kept).toBe(60);
+  });
+
+  it("returns the purge failure without the echo, so the admin response never carries an entry", async () => {
+    redisMock.del.mockRejectedValueOnce(
+      new Error('ERR boom, command was: [["del","k"]] ENTRY-TEXT'),
+    );
+    const { faqCachePurge } = await import("./chat-cache");
+    const result = await faqCachePurge("q");
+    expect(result).toMatchObject({ status: "error", message: "ERR boom" });
+    expect(JSON.stringify(result)).not.toContain("ENTRY-TEXT");
+  });
+
+  it.each([
+    ["a number", 123],
+    ["an object", { a: 1 }],
+  ])(
+    "fails open, rather than throwing, when a cache error carries %s as its message",
+    async (_label, message) => {
+      const err = Object.assign(new Error("x"), { message });
+      redisMock.mget.mockRejectedValueOnce(err);
+      redisMock.del.mockRejectedValueOnce(err);
+      const { faqCacheGet, faqCachePurge } = await import("./chat-cache");
+      await expect(faqCacheGet("q")).resolves.toBeNull();
+      await expect(faqCachePurge("q")).resolves.toMatchObject({
+        status: "error",
+      });
+    },
+  );
 });

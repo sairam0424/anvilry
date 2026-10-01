@@ -12,7 +12,7 @@ import { renderHook, act } from "@testing-library/react";
 
 // --- mock the three dependency hooks (hoisted: vi.mock runs before imports) ---
 const chat = {
-  messages: [] as { role: string; content: string }[],
+  messages: [] as { role: string; content: string; liveReasoning?: string }[],
   send: vi.fn(),
   stop: vi.fn(),
   isStreaming: false,
@@ -253,5 +253,26 @@ describe("useVoiceSession", () => {
     act(() => result.current.start());
     expect(result.current.active).toBe(false);
     expect(recog.start).not.toHaveBeenCalled();
+  });
+
+  it("speaks a replayed FAQ-cache hit's answer only, never its stored reasoning", () => {
+    chat.isStreaming = true;
+    const { result, rerender } = renderHook(() => useVoiceSession());
+    act(() => result.current.start());
+    chat.messages = [
+      { role: "user", content: "q" },
+      {
+        role: "assistant",
+        content: "TypeScript, mostly.",
+        liveReasoning: "SECRET-REASONING-OF-THE-MODEL",
+      },
+    ];
+    act(() => rerender()); // the streaming path speaks the chunk
+    chat.isStreaming = false;
+    act(() => rerender()); // the settle finalizer flushes the rest
+
+    const spoken = synth.speakChunk.mock.calls.map((call) => String(call[0]));
+    expect(spoken).toContain("TypeScript, mostly.");
+    expect(spoken.join(" ")).not.toContain("SECRET-REASONING-OF-THE-MODEL");
   });
 });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within, cleanup } from "@testing-library/react";
 import { AskPortfolio } from "./ask-portfolio";
+import { AI_CAPTION } from "@/components/chat/ai-disclosure";
 import { ViewProvider } from "@/components/view-context";
 
 // ViewProvider mounts ViewQuerySync (reads useSearchParams() — null outside a Next
@@ -97,5 +98,14 @@ describe("AskPortfolio widget (unified onto useChat)", () => {
     await waitFor(() =>
       expect(screen.getByText(/chat isn't switched on yet/i)).toBeTruthy(),
     );
+  });
+});
+
+describe("AskPortfolio widget AI disclosure", () => {
+  it("captions the open panel with the same neutral AI line the Chat view uses", () => {
+    renderWidget();
+    fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
+    // One shared constant, so the two surfaces cannot drift apart (test name: shares the AI caption).
+    expect(screen.getByText(AI_CAPTION)).toBeTruthy();
   });
 });

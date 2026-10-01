@@ -13,6 +13,7 @@ import { MicButton } from "@/components/chat/mic-button";
 import { TalkLaunchButton } from "@/components/chat/talk-launch-button";
 import { FilePickerButton } from "@/components/chat/file-picker-button";
 import { AttachmentPreviewStrip } from "@/components/chat/attachment-preview-strip";
+import { AI_CAPTION } from "@/components/chat/ai-disclosure";
 import { ViewEscapeHatch } from "@/components/view-escape-hatch";
 import { profile, impactMetrics } from "@/lib/profile";
 import { OPEN_TO_WORK } from "@/lib/writing-flags";
@@ -89,7 +90,10 @@ export function ChatView() {
           {/* Icon-only below `sm` (matches ViewSwitcher's compact-pill pattern in
               view-switcher.tsx: icon always visible, label collapses to sr-only) — at
               390px this row (Back to Classic / Résumé / Talk / this badge) has no room
-              for the full "AI Concierge" text without clipping past the viewport edge. */}
+              for the full "AI Concierge" text without clipping past the viewport edge.
+              A bare "AI" beside the icon was tried and rejected: it made "Back to
+              Classic" wrap onto two lines at 390px. Phones get their AI cue from the
+              intro below and the caption under the composer instead. */}
           <p className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-widest text-accent">
             <Sparkles size={13} aria-hidden="true" />
             <span className="hidden sm:inline">AI Concierge</span>
@@ -123,9 +127,9 @@ export function ChatView() {
                 Ask me anything about {profile.name.split(" ")[0]}&apos;s work
               </h1>
               <p className="mt-2 max-w-xl text-sm text-fg-muted">
-                Grounded in real projects and production systems — GenAI,
-                backend, and open source. I answer in the first person and never
-                invent details.
+                I&apos;m an AI assistant grounded in real projects and production
+                systems — GenAI, backend, and open source. I answer in the first
+                person and never invent details.
               </p>
               <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {impactMetrics.map((m) => (
@@ -280,7 +284,7 @@ export function ChatView() {
           )}
         </form>
         <p className="mt-2 shrink-0 text-center text-[11px] text-fg-subtle">
-          Grounded in real work · may simplify details
+          {AI_CAPTION}
         </p>
       </section>
     </main>

@@ -6,6 +6,7 @@ import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 import { useView } from "@/components/view-context";
 import { useChat } from "@/components/chat/use-chat";
+import { AI_CAPTION } from "@/components/chat/ai-disclosure";
 import { useChatA11y } from "@/components/chat/use-chat-a11y";
 import { MicButton } from "@/components/chat/mic-button";
 import { parseCards } from "@/components/chat/parse-cards";
@@ -257,8 +258,7 @@ function AskPortfolioWidget() {
             </button>
           </form>
           <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-subtle">
-            <CornerDownLeft size={10} /> Grounded in real work · may simplify
-            details
+            <CornerDownLeft size={10} /> {AI_CAPTION}
           </p>
         </div>
       )}

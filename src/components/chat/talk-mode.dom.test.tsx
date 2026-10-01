@@ -30,6 +30,7 @@ vi.mock("@/components/chat/use-voice-session", async (orig) => {
 });
 
 import { TalkMode } from "./talk-mode";
+import { AI_VOICE_HINT } from "./ai-disclosure";
 
 beforeEach(() => {
   session.supported = true;
@@ -135,5 +136,23 @@ describe("TalkMode", () => {
     fireEvent.click(screen.getByRole("button", { name: "End voice conversation" }));
     expect(session.stop).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe("TalkMode AI disclosure", () => {
+  it("says it is an AI assistant in the idle hint, before the visitor starts talking", () => {
+    render(<TalkMode onClose={vi.fn()} />);
+    expect(
+      screen.getByText(`Tap the orb or press Space to start · ${AI_VOICE_HINT}`),
+    ).toBeTruthy();
+  });
+
+  it("keeps the in-conversation hint about turns and Esc unchanged", () => {
+    session.active = true;
+    session.state = "listening";
+    render(<TalkMode onClose={vi.fn()} />);
+    expect(
+      screen.getByText("Tap the orb or press Space to take your turn · Esc to close"),
+    ).toBeTruthy();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ChatMessages } from "./chat-messages";
 import { ViewProvider } from "@/components/view-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -163,5 +163,43 @@ describe("ChatMessages — no model or provider attribution in the transcript", 
     ).toBeTruthy();
     expect(container.textContent).toContain("Listen");
     expectNoLeaks(container);
+  });
+});
+
+describe("ChatMessages — the reasoning of a replayed FAQ-cache hit", () => {
+  const replayed: ChatMessage[] = [
+    { role: "user", content: "What stack do you use?" },
+    {
+      role: "assistant",
+      content: "TypeScript, mostly.",
+      liveReasoning: "The user asks about my stack, so I'll name TypeScript first.",
+      isThinking: false,
+      // A replay arrives in one chunk: the chat hook reports a zero-second thought.
+      thinkingDuration: 0,
+    },
+  ];
+
+  it("offers a collapsed 'Thought for a moment' toggle above the answer", async () => {
+    const { getByRole, queryByText, findByText } = renderMessages(replayed);
+    const toggle = getByRole("button", { name: /Thought for a moment/ });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(queryByText(/so I'll name TypeScript first/)).toBeNull();
+    // The answer is a lazily loaded markdown segment, so it lands a tick later.
+    await findByText("TypeScript, mostly.");
+  });
+
+  it("opens to the stored reasoning, as plain text", () => {
+    const { getByRole, getByText } = renderMessages(replayed);
+    fireEvent.click(getByRole("button", { name: /Thought for a moment/ }));
+    const pre = getByText(/so I'll name TypeScript first/);
+    expect(pre.tagName).toBe("PRE");
+  });
+
+  it("names the real duration when there is one", () => {
+    const { getByRole } = renderMessages([
+      replayed[0],
+      { ...replayed[1], thinkingDuration: 4 },
+    ]);
+    expect(getByRole("button", { name: /Thought for 4s/ })).not.toBeNull();
   });
 });

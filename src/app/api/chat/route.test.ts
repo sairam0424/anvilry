@@ -492,16 +492,438 @@ describe("/api/chat — the extended-thinking switch that LLM_THINKING_EFFORT de
     ["", true],
     ["FALSE", true],
     ["false", false],
-  ])("EXTENDED_THINKING=%j reaches streamWithFallback as extendedThinking: %s", async (value, expected) => {
-    if (value === undefined) delete process.env.EXTENDED_THINKING;
-    else process.env.EXTENDED_THINKING = value;
-    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
-    const opts = streamWithFallbackMock.mock.calls[0]![1] as { extendedThinking: boolean };
-    expect(opts.extendedThinking).toBe(expected);
-  });
+  ])(
+    "EXTENDED_THINKING=%j reaches streamWithFallback as extendedThinking: %s",
+    async (value, expected) => {
+      if (value === undefined) delete process.env.EXTENDED_THINKING;
+      else process.env.EXTENDED_THINKING = value;
+      await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+      const opts = streamWithFallbackMock.mock.calls[0]![1] as {
+        extendedThinking: boolean;
+      };
+      expect(opts.extendedThinking).toBe(expected);
+    },
+  );
 
   it("allows a 60 s function budget: a 5.5 run at max plus a fallback run on 4.6 can pass 30 s", async () => {
     const mod = await import("./route");
     expect(mod.maxDuration).toBeGreaterThanOrEqual(60);
+  });
+});
+
+describe("/api/chat — an exact FAQ-cache hit replays the reasoning summary stored with the answer", () => {
+  const QUESTION = "What stack do you use?";
+  const ANSWER = "I mostly use TypeScript and Next.js.";
+  const REASONING =
+    "The user asks about my stack, so I'll name TypeScript and Next.js first.";
+  const originalThinking = process.env.EXTENDED_THINKING;
+
+  afterEach(() => {
+    if (originalThinking === undefined) delete process.env.EXTENDED_THINKING;
+    else process.env.EXTENDED_THINKING = originalThinking;
+  });
+
+  const entry = (extra: Record<string, unknown> = {}) => ({
+    answer: ANSWER,
+    model: "global.anthropic.claude-sonnet-5-5",
+    costUsd: 0.004,
+    cachedAt: Date.now(),
+    corpusBuiltAt: null,
+    ...extra,
+  });
+  const ask = () => POST(makeReq([{ role: "user", content: QUESTION }]));
+  const frameJson = () =>
+    JSON.stringify({
+      model: "global.anthropic.claude-sonnet-5-5",
+      fellBack: false,
+      cacheHit: true,
+      traceId: "test-trace-id",
+    });
+
+  type EmitArg = { kind: string; attrs: Record<string, unknown> };
+  async function emitted(kind: string): Promise<EmitArg[]> {
+    const { emit } = await import("@/lib/telemetry/emit");
+    return (emit as unknown as { mock: { calls: [EmitArg][] } }).mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.kind === kind);
+  }
+
+  it("answers with the same framing a live stream has: sentinel, reasoning, end, answer, trace frame", async () => {
+    const { THINKING_SENTINEL, THINKING_END, TRACE_DELIMITER } =
+      await import("@/lib/llm-trace");
+    faqCacheGetMock.mockResolvedValue({
+      tier: "exact" as const,
+      entry: entry({ reasoning: REASONING }),
+    });
+
+    const res = await ask();
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("X-Chat-Cache")).toBe("hit");
+    expect(await res.text()).toBe(
+      `${THINKING_SENTINEL}${REASONING}${THINKING_END}${ANSWER}${TRACE_DELIMITER}${frameJson()}`,
+    );
+    expect(streamWithFallbackMock).not.toHaveBeenCalled();
+  });
+
+  it("is readable by the server-side parser exactly as a live body is: answerFromBody returns the answer alone", async () => {
+    const { answerFromBody } = await import("@/lib/llm-trace");
+    faqCacheGetMock.mockResolvedValue({
+      tier: "exact" as const,
+      entry: entry({ reasoning: REASONING }),
+    });
+    const body = await (await ask()).text();
+    expect(answerFromBody(body)).toBe(ANSWER);
+  });
+
+  it("leaves a hit whose entry has no reasoning byte-identical to what it always was", async () => {
+    const { THINKING_SENTINEL, THINKING_END, TRACE_DELIMITER } =
+      await import("@/lib/llm-trace");
+    faqCacheGetMock.mockResolvedValue({
+      tier: "exact" as const,
+      entry: entry(),
+    });
+    const body = await (await ask()).text();
+    expect(body).toBe(`${ANSWER}${TRACE_DELIMITER}${frameJson()}`);
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    expect(body).not.toContain(THINKING_END);
+  });
+
+  it("never replays reasoning on a semantic hit: it paraphrases a different, merely similar, question", async () => {
+    isSemanticMatchEnabledMock.mockReturnValue(true);
+    faqCacheGetMock.mockResolvedValue(null);
+    faqCacheSemanticGetMock.mockResolvedValue({
+      tier: "semantic" as const,
+      similarity: 0.95,
+      // The type leaves `reasoning` off a semantic entry; a stray one must still be ignored.
+      entry: entry({ reasoning: REASONING }),
+    });
+    const { TRACE_DELIMITER } = await import("@/lib/llm-trace");
+
+    const res = await ask();
+
+    expect(res.headers.get("X-Chat-Cache")).toBe("hit");
+    const body = await res.text();
+    expect(body).toBe(`${ANSWER}${TRACE_DELIMITER}${frameJson()}`);
+    expect(body).not.toContain(REASONING);
+  });
+
+  it("honours the EXTENDED_THINKING kill switch the live path honours: no reasoning while it is off", async () => {
+    process.env.EXTENDED_THINKING = "false";
+    const { TRACE_DELIMITER } = await import("@/lib/llm-trace");
+    faqCacheGetMock.mockResolvedValue({
+      tier: "exact" as const,
+      entry: entry({ reasoning: REASONING }),
+    });
+    const body = await (await ask()).text();
+    expect(body).toBe(`${ANSWER}${TRACE_DELIMITER}${frameJson()}`);
+    // The span must not claim a replay that did not happen.
+    const [span] = await emitted("chat.cache");
+    expect(span.attrs).toMatchObject({
+      outcome: "hit",
+      reasoning_replayed: false,
+    });
+  });
+
+  it.each([
+    ["only whitespace", "  \n ", null],
+    ["only control bytes", "\u001e\u0002", null],
+    ["a value that is not a string", 42, null],
+    // One embedded THINKING_END would end the reasoning early and turn the rest into "the answer".
+    [
+      "control bytes inside real text",
+      `safe${"\u001e\u0002"}INJECTED`,
+      "safeINJECTED",
+    ],
+  ])(
+    "treats stored reasoning that is %s as untrusted",
+    async (_label, stored, expectedReasoning) => {
+      const {
+        THINKING_SENTINEL,
+        THINKING_END,
+        TRACE_DELIMITER,
+        answerFromBody,
+      } = await import("@/lib/llm-trace");
+      faqCacheGetMock.mockResolvedValue({
+        tier: "exact" as const,
+        entry: entry({ reasoning: stored }),
+      });
+
+      const body = await (await ask()).text();
+
+      expect(answerFromBody(body)).toBe(ANSWER);
+      expect(body.split(THINKING_END).length - 1).toBe(
+        expectedReasoning === null ? 0 : 1,
+      );
+      expect(body).toBe(
+        expectedReasoning === null
+          ? `${ANSWER}${TRACE_DELIMITER}${frameJson()}`
+          : `${THINKING_SENTINEL}${expectedReasoning}${THINKING_END}${ANSWER}${TRACE_DELIMITER}${frameJson()}`,
+      );
+    },
+  );
+
+  it("records whether reasoning was replayed as a boolean on the chat.cache span, and never the text", async () => {
+    faqCacheGetMock.mockResolvedValueOnce({
+      tier: "exact" as const,
+      entry: entry({ reasoning: REASONING }),
+    });
+    await ask();
+    faqCacheGetMock.mockResolvedValueOnce({
+      tier: "exact" as const,
+      entry: entry(),
+    });
+    await ask();
+    faqCacheGetMock.mockResolvedValueOnce(null);
+    await ask();
+
+    const [replayed, plain, miss] = await emitted("chat.cache");
+    expect(replayed.attrs).toMatchObject({
+      outcome: "hit",
+      tier: "exact",
+      reasoning_replayed: true,
+    });
+    expect(plain.attrs).toMatchObject({
+      outcome: "hit",
+      reasoning_replayed: false,
+    });
+    expect(miss.attrs).toMatchObject({ outcome: "miss" });
+    expect(miss.attrs).not.toHaveProperty("reasoning_replayed");
+    const { emit } = await import("@/lib/telemetry/emit");
+    expect(
+      JSON.stringify((emit as unknown as { mock: unknown }).mock),
+    ).not.toContain(REASONING);
+  });
+
+  it("writes the reasoning of a clean primary-rung answer through to the cache, as the last argument", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: ANSWER,
+        reasoningText: REASONING,
+      });
+      return new ReadableStream();
+    });
+
+    await ask();
+
+    expect(faqCacheSetMock).toHaveBeenCalledTimes(1);
+    const args = faqCacheSetMock.mock.calls[0]!;
+    expect(args).toHaveLength(6);
+    expect(args[4]).toBe("end_turn");
+    expect(args[5]).toBe(REASONING);
+  });
+
+  it("passes undefined, not an empty string, when the model did not reason", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        answerText: ANSWER,
+      });
+      return new ReadableStream();
+    });
+    await ask();
+    expect(faqCacheSetMock.mock.calls[0]![5]).toBeUndefined();
+  });
+
+  it("writes nothing for an answer served by a fallback rung, reasoning or not", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "us.anthropic.claude-sonnet-4-6",
+        attempt_index: 1,
+        fell_back: true,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        answerText: ANSWER,
+        reasoningText: REASONING,
+      });
+      return new ReadableStream();
+    });
+    await ask();
+    expect(faqCacheSetMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the reasoning out of the llm.attempt event", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: ANSWER,
+        reasoningText: REASONING,
+      });
+      return new ReadableStream();
+    });
+    await ask();
+    const attempts = await emitted("llm.attempt");
+    expect(attempts).toHaveLength(1);
+    expect(JSON.stringify(attempts)).not.toContain(REASONING);
+  });
+});
+
+describe("/api/chat — a miss writes what the next exact hit replays (real chat-cache over an in-memory Redis)", () => {
+  const QUESTION = "What stack do you use?";
+  const ANSWER = "I mostly use TypeScript and Next.js.";
+  const REASONING =
+    "The user asks about my stack, so I'll name TypeScript and Next.js first.";
+
+  afterEach(() => {
+    // The rest of this file runs against the mocked cache; put that registration back.
+    vi.doUnmock("@/lib/redis");
+    vi.doMock("@/lib/chat-cache", () => ({
+      faqCacheGet: faqCacheGetMock,
+      faqCacheSemanticGet: faqCacheSemanticGetMock,
+      faqCacheSet: faqCacheSetMock,
+      isSemanticMatchEnabled: isSemanticMatchEnabledMock,
+    }));
+  });
+
+  /** The parts of the Upstash client chat-cache uses. Like the real client, it hands back a
+   *  JSON string as the parsed value. */
+  function inMemoryRedis() {
+    const strings = new Map<string, string>();
+    const parse = (raw: string | undefined) => {
+      if (raw === undefined) return null;
+      try {
+        return JSON.parse(raw) as unknown;
+      } catch {
+        return raw;
+      }
+    };
+    return {
+      strings,
+      client: {
+        get: async (key: string) => parse(strings.get(key)),
+        mget: async (...keys: string[]) =>
+          keys.map((k) => parse(strings.get(k))),
+        set: async (key: string, value: string) => {
+          strings.set(key, value);
+          return "OK";
+        },
+        del: async (key: string) => (strings.delete(key) ? 1 : 0),
+        zadd: async () => 1,
+        zrem: async () => 1,
+        zrange: async () => [],
+        zremrangebyscore: async () => 0,
+        zremrangebyrank: async () => 0,
+      },
+    };
+  }
+
+  async function routeOverRealCache() {
+    const redis = inMemoryRedis();
+    vi.doUnmock("@/lib/chat-cache");
+    vi.doMock("@/lib/redis", () => ({
+      redis: redis.client,
+      isRedisConfigured: () => true,
+    }));
+    await importRoute();
+    return redis;
+  }
+
+  function liveAnswer(extra: Record<string, unknown>) {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: ANSWER,
+        ...extra,
+      });
+      return new ReadableStream();
+    });
+  }
+
+  const ask = () => POST(makeReq([{ role: "user", content: QUESTION }]));
+
+  it("replays the reasoning of a live answer, in the live framing, without calling the model again", async () => {
+    const { THINKING_SENTINEL, THINKING_END, TRACE_DELIMITER, answerFromBody } =
+      await import("@/lib/llm-trace");
+    const redis = await routeOverRealCache();
+    liveAnswer({ reasoningText: `  ${REASONING}\n\n` });
+
+    const first = await ask();
+    expect(first.headers.get("X-Chat-Cache")).toBeNull();
+    await vi.waitFor(() => expect(redis.strings.size).toBe(1));
+
+    const second = await ask();
+
+    expect(second.headers.get("X-Chat-Cache")).toBe("hit");
+    expect(streamWithFallbackMock).toHaveBeenCalledTimes(1);
+    const body = await second.text();
+    expect(
+      body.startsWith(
+        `${THINKING_SENTINEL}${REASONING}${THINKING_END}${ANSWER}${TRACE_DELIMITER}`,
+      ),
+    ).toBe(true);
+    expect(answerFromBody(body)).toBe(ANSWER);
+  });
+
+  it("replays a plain answer when the live answer had no reasoning", async () => {
+    const { THINKING_SENTINEL } = await import("@/lib/llm-trace");
+    const redis = await routeOverRealCache();
+    liveAnswer({});
+
+    await ask();
+    await vi.waitFor(() => expect(redis.strings.size).toBe(1));
+    const body = await (await ask()).text();
+
+    expect(body.startsWith(ANSWER)).toBe(true);
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+  });
+
+  it("replays nothing when the question is longer than the reasoning bound: the answer is still served from the cache", async () => {
+    const { THINKING_SENTINEL } = await import("@/lib/llm-trace");
+    const redis = await routeOverRealCache();
+    // Only after the un-mock: before it, this import would resolve to the file-level mock.
+    const { MAX_REASONING_QUESTION_CHARS } = await import("@/lib/chat-cache");
+    liveAnswer({ reasoningText: REASONING });
+    const long = `What stack do you use ${"really ".repeat(MAX_REASONING_QUESTION_CHARS)}?`;
+    const askLong = () =>
+      POST(makeReq([{ role: "user", content: long.slice(0, 600) }]));
+
+    await askLong();
+    await vi.waitFor(() => expect(redis.strings.size).toBe(1));
+    const second = await askLong();
+
+    expect(second.headers.get("X-Chat-Cache")).toBe("hit");
+    const body = await second.text();
+    expect(body.startsWith(ANSWER)).toBe(true);
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    expect(body).not.toContain(REASONING);
+  });
+
+  it("stops replaying the moment EXTENDED_THINKING is switched off, with the entry still in the cache", async () => {
+    const { THINKING_SENTINEL } = await import("@/lib/llm-trace");
+    const redis = await routeOverRealCache();
+    liveAnswer({ reasoningText: REASONING });
+    await ask();
+    await vi.waitFor(() => expect(redis.strings.size).toBe(1));
+
+    const original = process.env.EXTENDED_THINKING;
+    process.env.EXTENDED_THINKING = "false";
+    try {
+      const body = await (await ask()).text();
+      expect(body.startsWith(ANSWER)).toBe(true);
+      expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.EXTENDED_THINKING;
+      else process.env.EXTENDED_THINKING = original;
+    }
   });
 });

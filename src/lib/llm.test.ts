@@ -2427,3 +2427,127 @@ describe("streamWithFallback — reasoning that must never reach the answer or s
     expect((STATE.streamParamsByCall[0] as Sent).max_tokens).toBe(1024);
   });
 });
+
+describe("streamWithFallback — reasoningText capture (FAQ-cache replay source)", () => {
+  const think = (thinking: string) => ({
+    type: "content_block_delta",
+    index: 0,
+    delta: { type: "thinking_delta", thinking },
+  });
+  const say = (text: string) => ({
+    type: "content_block_delta",
+    index: 1,
+    delta: { type: "text_delta", text },
+  });
+  const done = {
+    type: "message_delta",
+    delta: { stop_reason: "end_turn" },
+    usage: { output_tokens: 3 },
+  };
+  const params = {
+    messages: [{ role: "user" as const, content: "ping" }],
+    max_tokens: 100,
+    system: "test",
+  };
+
+  async function run(opts: { extendedThinking: boolean }) {
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { onAttempt, ...opts }),
+    );
+    return { body, attempts: onAttempt.mock.calls.map((c) => c[0]) };
+  }
+
+  it("equals the reasoning the client was sent between THINKING_SENTINEL and THINKING_END", async () => {
+    STATE.events = [
+      [think("I need to "), think("think carefully."), say("Here is my answer."), done],
+    ];
+    const { body, attempts } = await run({ extendedThinking: true });
+    expect(attempts).toHaveLength(1);
+    expect(attempts[0].reasoningText).toBe("I need to think carefully.");
+    expect(attempts[0].answerText).toBe("Here is my answer.");
+    const sent = body.slice(
+      THINKING_SENTINEL.length,
+      body.indexOf(THINKING_END),
+    );
+    expect(attempts[0].reasoningText).toBe(sent);
+  });
+
+  it("joins several thinking blocks in arrival order", async () => {
+    STATE.events = [
+      [
+        think("First block. "),
+        { type: "content_block_stop", index: 0 },
+        think("Second block."),
+        say("Answer."),
+        done,
+      ],
+    ];
+    const { attempts } = await run({ extendedThinking: true });
+    expect(attempts[0].reasoningText).toBe("First block. Second block.");
+  });
+
+  it("is absent (no key at all) when the model did not reason", async () => {
+    STATE.events = [[say("No reasoning here."), done]];
+    const { attempts } = await run({ extendedThinking: true });
+    expect(attempts[0].answerText).toBe("No reasoning here.");
+    expect(attempts[0]).not.toHaveProperty("reasoningText");
+  });
+
+  it("is absent when extended thinking is off, even if a thinking_delta arrives anyway", async () => {
+    STATE.events = [[think("unsolicited reasoning"), say("Answer."), done]];
+    const { body, attempts } = await run({ extendedThinking: false });
+    expect(body).not.toContain("unsolicited reasoning");
+    expect(attempts[0].answerText).toBe("Answer.");
+    expect(attempts[0]).not.toHaveProperty("reasoningText");
+  });
+
+  it("leaves out a reasoning block that arrives after the answer has started", async () => {
+    STATE.events = [
+      [think("early reasoning. "), say("Answer."), think("late reasoning"), done],
+    ];
+    const { body, attempts } = await run({ extendedThinking: true });
+    expect(attempts[0].reasoningText).toBe("early reasoning. ");
+    expect(body).not.toContain("late reasoning");
+  });
+
+  it("strips the protocol's control bytes from the reasoning, live and in reasoningText", async () => {
+    STATE.events = [
+      [think(`part one${"\u001e\u0002"}part two`), say("Answer."), done],
+    ];
+    const { body, attempts } = await run({ extendedThinking: true });
+    expect(attempts[0].reasoningText).toBe("part onepart two");
+    expect(
+      body.slice(THINKING_SENTINEL.length, body.indexOf(THINKING_END)),
+    ).toBe("part onepart two");
+  });
+
+  it("is absent on a thinking-only completion: no answer, so nothing to cache", async () => {
+    STATE.events = [[think("reasoned, then ran out of tokens"), done]];
+    const { attempts } = await run({ extendedThinking: true });
+    expect(attempts[0].answerText).toBeUndefined();
+    expect(attempts[0]).not.toHaveProperty("reasoningText");
+  });
+
+  it("is absent on a failed attempt; a fallback rung's record holds only that rung's own reasoning", async () => {
+    // Two thinking-capable rungs: Sonnet 5.5, then Sonnet 4.6.
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [think("first rung thought")],
+      [think("second rung thought"), say("OK"), done],
+    ];
+    STATE.throwsOn = [0];
+    const { body, attempts } = await run({ extendedThinking: true });
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0].error).toBeDefined();
+    expect(attempts[0]).not.toHaveProperty("reasoningText");
+    expect(attempts[1].fell_back).toBe(true);
+    expect(attempts[1].reasoningText).toBe("second rung thought");
+    // The client saw BOTH rungs' reasoning in one framing, which is exactly why the route
+    // never caches a fell-back answer: only the first rung's record equals what was shown.
+    expect(
+      body.slice(THINKING_SENTINEL.length, body.indexOf(THINKING_END)),
+    ).toBe("first rung thoughtsecond rung thought");
+  });
+});

@@ -119,3 +119,20 @@ describe("eval cron scoring", () => {
     expect(await run()).toMatchObject({ passed: 12, total: 12 });
   });
 });
+
+describe("eval cron cache bypass", () => {
+  it("asks /api/chat to skip the FAQ cache on every call, so a replayed hit never stands in for the live model", async () => {
+    const { GET } = await import("./route");
+    await GET(
+      new Request("https://anvilry.test/api/cron/eval", {
+        headers: { authorization: `Bearer ${TEST_CRON_VALUE}` },
+      }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(12);
+    for (const call of fetchMock.mock.calls as unknown as [string, RequestInit][]) {
+      const headers = call[1].headers as Record<string, string>;
+      expect(headers["X-Chat-Skip-Cache"]).toBe("1");
+    }
+  });
+});

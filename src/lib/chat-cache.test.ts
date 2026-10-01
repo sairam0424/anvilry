@@ -576,3 +576,347 @@ describe("faqCachePurge", () => {
     ]);
   });
 });
+
+describe("FAQ cache — the reasoning summary stored beside the answer", () => {
+  const CLEAN = "end_turn";
+  const REASONING =
+    "The user asks about Pensieve, so I'll lead with its 2K+ daily users.";
+
+  function storedEntry(call = 0): Record<string, unknown> {
+    const [, json] = redisMock.set.mock.calls[call];
+    return JSON.parse(json as string) as Record<string, unknown>;
+  }
+
+  it("stores the reasoning next to the answer, trimmed", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, CLEAN, `  ${REASONING}\n\n`);
+    expect(storedEntry().reasoning).toBe(REASONING);
+    expect(storedEntry().answer).toBe("a");
+  });
+
+  it("strips the protocol's control bytes from the reasoning before storing it", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    // U+001E U+0002 would end the thinking block early on replay; U+0001 reopens it.
+    await faqCacheSet(
+      "q",
+      "a",
+      "m",
+      0,
+      CLEAN,
+      `before${"\u001e\u0002"}after${"\u0001"}`,
+    );
+    expect(storedEntry().reasoning).toBe("beforeafter");
+  });
+
+  it("writes no reasoning key when none was given: the entry is exactly what it was before", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, CLEAN);
+    expect(Object.keys(storedEntry()).sort()).toEqual([
+      "answer",
+      "cachedAt",
+      "corpusBuiltAt",
+      "costUsd",
+      "model",
+    ]);
+  });
+
+  it.each([
+    ["an empty string", ""],
+    ["only whitespace", " \n\t "],
+    ["only control bytes", "\u001e\u0002\u0001"],
+    ["a value that is not a string", 42 as unknown as string],
+  ])(
+    "stores no reasoning for %s, and still caches the answer (without throwing)",
+    async (_label, reasoning) => {
+      const { faqCacheSet } = await import("./chat-cache");
+      await expect(
+        faqCacheSet("q", "a", "m", 0, CLEAN, reasoning),
+      ).resolves.toBeUndefined();
+      expect(storedEntry().answer).toBe("a");
+      expect(storedEntry()).not.toHaveProperty("reasoning");
+    },
+  );
+
+  it("stores no reasoning when it is longer than the bound, and still caches the answer", async () => {
+    const { faqCacheSet, MAX_CACHEABLE_REASONING_CHARS } =
+      await import("./chat-cache");
+    await faqCacheSet(
+      "q",
+      "a",
+      "m",
+      0,
+      CLEAN,
+      "x".repeat(MAX_CACHEABLE_REASONING_CHARS + 1),
+    );
+    expect(storedEntry().answer).toBe("a");
+    expect(storedEntry()).not.toHaveProperty("reasoning");
+  });
+
+  it("stores reasoning right at the bound", async () => {
+    const { faqCacheSet, MAX_CACHEABLE_REASONING_CHARS } =
+      await import("./chat-cache");
+    await faqCacheSet(
+      "q",
+      "a",
+      "m",
+      0,
+      CLEAN,
+      "x".repeat(MAX_CACHEABLE_REASONING_CHARS),
+    );
+    expect(storedEntry().reasoning).toHaveLength(MAX_CACHEABLE_REASONING_CHARS);
+  });
+
+  it("stores nothing at all, reasoning included, for a completion that is not clean", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, "max_tokens", REASONING);
+    expect(redisMock.set).not.toHaveBeenCalled();
+  });
+
+  it("stores nothing when the answer is unusable, even with reasoning", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "  ", "m", 0, CLEAN, REASONING);
+    expect(redisMock.set).not.toHaveBeenCalled();
+  });
+
+  it("keeps the reasoning in the embedding-augmented second write", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([0.1, 0.2, 0.3]);
+    const { faqCacheSet } = await import("./chat-cache");
+    redisMock.get.mockImplementation(async (key: string) => {
+      if (key === CORPUS_BUILT_AT_KEY) return null;
+      const [, storedJson] = redisMock.set.mock.calls[0] ?? [];
+      return storedJson ?? null;
+    });
+    await faqCacheSet("q", "a", "m", 0, CLEAN, REASONING);
+    expect(redisMock.set).toHaveBeenCalledTimes(2);
+    expect(storedEntry(1).reasoning).toBe(REASONING);
+    expect(storedEntry(1).embedding).toEqual([0.1, 0.2, 0.3]);
+  });
+
+  it("hands the stored reasoning back on an exact hit", async () => {
+    const entry = {
+      answer: "It's a...",
+      reasoning: REASONING,
+      model: "sonnet",
+      costUsd: 0.001,
+      cachedAt: 1,
+      corpusBuiltAt: null,
+    };
+    mockGetByKey(JSON.stringify(entry), null);
+    const { faqCacheGet } = await import("./chat-cache");
+    await expect(faqCacheGet("What is Pensieve?")).resolves.toEqual({
+      entry,
+      tier: "exact",
+    });
+  });
+
+  it("still serves an entry written before the reasoning was stored", async () => {
+    const legacy = {
+      answer: "It's a...",
+      model: "sonnet",
+      costUsd: 0.001,
+      cachedAt: 1,
+      corpusBuiltAt: null,
+    };
+    mockGetByKey(JSON.stringify(legacy), null);
+    const { faqCacheGet } = await import("./chat-cache");
+    const hit = await faqCacheGet("What is Pensieve?");
+    expect(hit?.tier).toBe("exact");
+    expect(hit?.entry.answer).toBe("It's a...");
+    expect(hit?.entry).not.toHaveProperty("reasoning");
+  });
+
+  it("never hands reasoning back on a semantic hit: it paraphrases a different, merely similar, question", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([1, 0]);
+    const { cosineSimilarity } = await import("./faq-embeddings");
+    vi.mocked(cosineSimilarity).mockReturnValue(0.95);
+    const stored = {
+      answer: "It's a...",
+      reasoning: REASONING,
+      model: "sonnet",
+      costUsd: 0.001,
+      cachedAt: 1,
+      corpusBuiltAt: null,
+      embedding: [1, 0],
+    };
+    redisMock.zrange.mockResolvedValue(["k1"]);
+    redisMock.mget.mockResolvedValue([JSON.stringify(stored)]);
+    const { faqCacheSemanticGet } = await import("./chat-cache");
+    const hit = await faqCacheSemanticGet("What is Pensieve exactly?");
+    expect(hit?.tier).toBe("semantic");
+    expect(hit?.entry.answer).toBe("It's a...");
+    expect(hit?.entry).not.toHaveProperty("reasoning");
+    expect(JSON.stringify(hit)).not.toContain(REASONING);
+  });
+
+  it("does not copy the stored entry into a server.error event when a write fails (Upstash echoes the whole command in its message)", async () => {
+    const QUOTED = "QUOTED-FROM-THE-VISITORS-QUESTION";
+    redisMock.set.mockRejectedValueOnce(
+      new Error(
+        `ERR max daily request limit exceeded, command was: ["set","k","{\\"answer\\":\\"a\\",\\"reasoning\\":\\"${QUOTED}\\"}"]`,
+      ),
+    );
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, CLEAN, QUOTED);
+    const traceWrites = redisMock.zadd.mock.calls.filter(
+      ([key]) => key === "anvilry:trace:server.error",
+    );
+    expect(traceWrites).toHaveLength(1);
+    const written = JSON.stringify(traceWrites[0]);
+    expect(written).toContain("max daily request limit exceeded");
+    expect(written).not.toContain(QUOTED);
+    expect(written).not.toContain("command was");
+    expect(console.warn).not.toHaveBeenCalledWith(
+      expect.stringContaining(QUOTED),
+    );
+  });
+});
+
+describe("FAQ cache — reasoning: the question-length bound, the read side and the round trip", () => {
+  const CLEAN = "end_turn";
+  const REASONING =
+    "The user asks about Pensieve, so I'll lead with its 2K+ daily users.";
+
+  function storedEntry(call = 0): Record<string, unknown> {
+    const [, json] = redisMock.set.mock.calls[call];
+    return JSON.parse(json as string) as Record<string, unknown>;
+  }
+
+  it("stores reasoning for a question right at the length bound and drops it one character over, caching the answer either way", async () => {
+    const { faqCacheSet, MAX_REASONING_QUESTION_CHARS } =
+      await import("./chat-cache");
+    await faqCacheSet(
+      "q".repeat(MAX_REASONING_QUESTION_CHARS),
+      "a",
+      "m",
+      0,
+      CLEAN,
+      REASONING,
+    );
+    await faqCacheSet(
+      "q".repeat(MAX_REASONING_QUESTION_CHARS + 1),
+      "a",
+      "m",
+      0,
+      CLEAN,
+      REASONING,
+    );
+    expect(storedEntry(0).reasoning).toBe(REASONING);
+    expect(storedEntry(1).answer).toBe("a");
+    expect(storedEntry(1)).not.toHaveProperty("reasoning");
+  });
+
+  it("measures the bound on the NORMALIZED question (case, spacing and trailing punctuation do not count)", async () => {
+    const { faqCacheSet, MAX_REASONING_QUESTION_CHARS } =
+      await import("./chat-cache");
+    const padded = `  ${"Q".repeat(MAX_REASONING_QUESTION_CHARS)}???  `;
+    await faqCacheSet(padded, "a", "m", 0, CLEAN, REASONING);
+    expect(storedEntry().reasoning).toBe(REASONING);
+  });
+
+  it("warns, with the length only and never the text, when a summary is over the bound", async () => {
+    const { faqCacheSet, MAX_CACHEABLE_REASONING_CHARS } =
+      await import("./chat-cache");
+    const long = "SUMMARY-TEXT-".repeat(400);
+    expect(long.length).toBeGreaterThan(MAX_CACHEABLE_REASONING_CHARS);
+    await faqCacheSet("q", "a", "m", 0, CLEAN, long);
+    const warnings = vi
+      .mocked(console.warn)
+      .mock.calls.map((c) => String(c[0]));
+    const bound = warnings.find((w) => w.includes("is over the"));
+    expect(bound).toContain(String(long.length));
+    expect(warnings.join("\n")).not.toContain("SUMMARY-TEXT-");
+  });
+
+  it("does not warn when the summary is merely empty or absent", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet("q", "a", "m", 0, CLEAN, "   ");
+    await faqCacheSet("q", "a", "m", 0, CLEAN);
+    const warnings = vi
+      .mocked(console.warn)
+      .mock.calls.map((c) => String(c[0]));
+    expect(warnings.filter((w) => w.includes("is over the"))).toEqual([]);
+  });
+
+  it.each([
+    ["a number", 42, undefined],
+    ["an object", { nested: "text" }, undefined],
+    ["only whitespace", "  \n ", undefined],
+    ["only control bytes", "\u001e\u0002\u0001", undefined],
+    [
+      "text with an embedded end marker",
+      `safe${"\u001e\u0002"}INJECTED`,
+      "safeINJECTED",
+    ],
+    ["text past the bound", "x".repeat(4001), undefined],
+    ["text with padding", `  ${REASONING}\n`, REASONING],
+  ])(
+    "normalizes stored reasoning that is %s on an exact hit, so the hit path never sees a bad value",
+    async (_label, stored, expected) => {
+      const entry = {
+        answer: "It's a...",
+        reasoning: stored,
+        model: "sonnet",
+        costUsd: 0.001,
+        cachedAt: 1,
+        corpusBuiltAt: null,
+      };
+      mockGetByKey(JSON.stringify(entry), null);
+      const { faqCacheGet } = await import("./chat-cache");
+      const hit = await faqCacheGet("What is Pensieve?");
+      expect(hit?.tier).toBe("exact");
+      expect(hit?.entry.answer).toBe("It's a...");
+      if (expected === undefined) {
+        expect(hit?.entry).not.toHaveProperty("reasoning");
+      } else {
+        expect(hit?.entry).toHaveProperty("reasoning", expected);
+      }
+    },
+  );
+
+  it.each([
+    ["the JSON string Redis stores", (json: string) => json],
+    [
+      "the parsed object the Upstash client returns",
+      (json: string) => JSON.parse(json),
+    ],
+  ])(
+    "replays through faqCacheGet exactly what faqCacheSet wrote (%s)",
+    async (_label, asRead) => {
+      const { faqCacheSet, faqCacheGet } = await import("./chat-cache");
+      await faqCacheSet(
+        "What is Pensieve?",
+        "It's a...",
+        "m",
+        0.5,
+        CLEAN,
+        `  ${REASONING}\n\n`,
+      );
+      const [, written] = redisMock.set.mock.calls[0];
+      mockGetByKey(asRead(written as string), null);
+      const hit = await faqCacheGet("what is pensieve");
+      expect(hit?.tier).toBe("exact");
+      expect(hit?.entry).toMatchObject({
+        answer: "It's a...",
+        reasoning: REASONING,
+        model: "m",
+        costUsd: 0.5,
+      });
+    },
+  );
+
+  it("still writes no question field when a reasoning summary is stored", async () => {
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet(
+      "What is my email PII test@example.com?",
+      "answer",
+      "m",
+      0,
+      CLEAN,
+      REASONING,
+    );
+    expect(storedEntry()).not.toHaveProperty("question");
+    expect(JSON.stringify(storedEntry())).not.toContain("test@example.com");
+  });
+});

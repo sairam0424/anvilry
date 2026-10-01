@@ -350,3 +350,70 @@ describe("useChat streaming loop — error paths unchanged", () => {
     ).toContain("a lot of questions");
   });
 });
+
+describe("useChat streaming loop — a FAQ-cache replay arrives as one thinking-framed chunk", () => {
+  const trace = JSON.stringify({
+    model: "global.anthropic.claude-sonnet-5-5",
+    fellBack: false,
+    cacheHit: true,
+  });
+  const replay = `${THINKING_SENTINEL}The user asks about my stack.${THINKING_END}TypeScript, mostly.${TRACE_DELIMITER}${trace}`;
+
+  it("settles on the stored reasoning, the answer and the frame, with a zero duration", async () => {
+    stubRealisticRaf();
+    stubFetch(() => streamOf([replay]));
+
+    const { result } = renderRecordingCommits();
+    await act(async () => {
+      await result.current.send("q");
+    });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    const last = result.current.messages[result.current.messages.length - 1];
+    expect(last.isThinking).toBe(false);
+    expect(last.liveReasoning).toBe("The user asks about my stack.");
+    expect(last.content).toBe("TypeScript, mostly.");
+    expect(last.model).toBe("global.anthropic.claude-sonnet-5-5");
+    expect(last.fellBack).toBe(false);
+    // Start and end latch on the same read, so the duration is 0: the Chat view words that
+    // "Thought for a moment" (chat-messages.dom.test.tsx pins the label).
+    expect(last.thinkingDuration).toBe(0);
+    expect(last.thinkingStartedAt).toBeUndefined();
+  });
+
+  it("never commits a thinking state, so no 'Thinking…' block flashes for a replay", async () => {
+    stubRealisticRaf();
+    stubFetch(() => streamOf([replay]));
+
+    const seen: Array<boolean | undefined> = [];
+    const { result } = renderHook(() => {
+      const chat = useChat();
+      seen.push(chat.messages[chat.messages.length - 1]?.isThinking);
+      return chat;
+    });
+    await act(async () => {
+      await result.current.send("q");
+    });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    expect(seen).not.toContain(true);
+    expect(seen[seen.length - 1]).toBe(false);
+  });
+
+  it("lands on the same final message when the replay is split mid-reasoning", async () => {
+    stubRealisticRaf();
+    const cut = THINKING_SENTINEL.length + 10;
+    stubFetch(() => streamOf([replay.slice(0, cut), replay.slice(cut)]));
+
+    const { result } = renderRecordingCommits();
+    await act(async () => {
+      await result.current.send("q");
+    });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    const last = result.current.messages[result.current.messages.length - 1];
+    expect(last.isThinking).toBe(false);
+    expect(last.liveReasoning).toBe("The user asks about my stack.");
+    expect(last.content).toBe("TypeScript, mostly.");
+  });
+});

@@ -4780,6 +4780,13 @@
       ],
       "preview": "});"
     },
+    "src/app/api/chat/route.test.ts:639": {
+      "fp": "ef4826b698c4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"treats stored reasoning that is %s as untrusted\","
+    },
     "src/app/api/chat/route.ts:1": {
       "fp": "30c95feae9f5",
       "citedBy": [
@@ -4826,12 +4833,13 @@
       ],
       "preview": "}"
     },
-    "src/app/api/chat/route.ts:17": {
-      "fp": "993ce4acbf5f",
+    "src/app/api/chat/route.ts:22": {
+      "fp": "d9b68daf357a",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md"
       ],
-      "preview": "import { randomUUID } from \"node:crypto\";"
+      "preview": "} from \"@/lib/llm-trace\";"
     },
     "src/app/api/chat/route.ts:26": {
       "fp": "105c20d18ff6",
@@ -4895,12 +4903,54 @@
       ],
       "preview": "(isSemanticMatchEnabled() ? await faqCacheSemanticGet(question) : null);"
     },
+    "src/app/api/chat/route.ts:309": {
+      "fp": "4a983d4358d5",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const replayedReasoning ="
+    },
     "src/app/api/chat/route.ts:31": {
       "fp": "eb7163fe2078",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
+    },
+    "src/app/api/chat/route.ts:311": {
+      "fp": "ba8c1dcee8ed",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "extendedThinking &&"
+    },
+    "src/app/api/chat/route.ts:312": {
+      "fp": "555256516a36",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "typeof hit.entry.reasoning === \"string\""
+    },
+    "src/app/api/chat/route.ts:313": {
+      "fp": "92c414a1c34e",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "? stripControlBytes(hit.entry.reasoning).trim()"
+    },
+    "src/app/api/chat/route.ts:314": {
+      "fp": "b7a0e76f28fa",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ": \"\";"
     },
     "src/app/api/chat/route.ts:317": {
       "fp": "807d36fd6b30",
@@ -4916,6 +4966,22 @@
       ],
       "preview": "const WORK_SLUGS = allWork.map((w) => w.slug).join(\", \");"
     },
+    "src/app/api/chat/route.ts:336": {
+      "fp": "2bcd6325311d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// A boolean only: the summary text itself never goes to telemetry."
+    },
+    "src/app/api/chat/route.ts:337": {
+      "fp": "74efaaec9095",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "README.md"
+      ],
+      "preview": "reasoning_replayed: replayedReasoning.length > 0,"
+    },
     "src/app/api/chat/route.ts:345": {
       "fp": "f5b40af4e8c5",
       "citedBy": [
@@ -4929,6 +4995,34 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const responseBody = `${hit.entry.answer}${TRACE_DELIMITER}${JSON.stringify(frame)}`;"
+    },
+    "src/app/api/chat/route.ts:352": {
+      "fp": "ce2cea4db093",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "05-components-chat-voice.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const body = replayedReasoning"
+    },
+    "src/app/api/chat/route.ts:353": {
+      "fp": "dd5c54f7285f",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "? `${THINKING_SENTINEL}${replayedReasoning}${THINKING_END}${responseBody}`"
+    },
+    "src/app/api/chat/route.ts:354": {
+      "fp": "fdd12c1e9cce",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "05-components-chat-voice.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ": responseBody;"
     },
     "src/app/api/chat/route.ts:363": {
       "fp": "d10b36aa74a5",
@@ -5003,6 +5097,13 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Write-through: attempt.answerText is present iff this was a clean,"
+    },
+    "src/app/api/chat/route.ts:474": {
+      "fp": "540955851fa9",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "attempt.reasoningText,"
     },
     "src/app/api/chat/route.ts:476": {
       "fp": "d10b36aa74a5",
@@ -5106,6 +5207,20 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
+    },
+    "src/app/api/cron/eval/route.test.ts:124": {
+      "fp": "7edc06d6f1b3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"asks /api/chat to skip the FAQ cache on every call, so a replayed hit never stands in for the li"
+    },
+    "src/app/api/cron/eval/route.test.ts:135": {
+      "fp": "6b2b8576a58a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(headers[\"X-Chat-Skip-Cache\"]).toBe(\"1\");"
     },
     "src/app/api/cron/eval/route.test.ts:27": {
       "fp": "28e18cc726a7",
@@ -8501,6 +8616,15 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== \"false\";"
+    },
+    "src/components/chat/chat-messages.tsx:260": {
+      "fp": "a6257e4dcaeb",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "README.md"
+      ],
+      "preview": "{duration > 0 ? `${duration}s` : \"a moment\"}"
     },
     "src/components/chat/chat-messages.tsx:278": {
       "fp": "1a8f6f036163",
@@ -15119,6 +15243,13 @@
       ],
       "preview": "if (process.env.NEXT_RUNTIME === \"edge\") return;"
     },
+    "src/instrumentation.ts:4": {
+      "fp": "92c8f9ba25ea",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* `register()` is called ONCE per server process start (cold start in serverless)."
+    },
     "src/instrumentation.ts:41": {
       "fp": "48453da2375d",
       "citedBy": [
@@ -15227,6 +15358,9 @@
     "src/instrumentation.ts:97": {
       "fp": "40b5321a7261",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -15757,6 +15891,27 @@
       ],
       "preview": "});"
     },
+    "src/lib/chat-cache.test.ts:597": {
+      "fp": "17f670d4f664",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"strips the protocol's control bytes from the reasoning before storing it\", async () => {"
+    },
+    "src/lib/chat-cache.test.ts:753": {
+      "fp": "9389765d81d2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"does not copy the stored entry into a server.error event when a write fails (Upstash echoes the "
+    },
+    "src/lib/chat-cache.ts:123": {
+      "fp": "1709130b7d10",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "entry: Omit<FaqCacheEntry, \"reasoning\">;"
+    },
     "src/lib/chat-cache.ts:132": {
       "fp": "91381355200f",
       "citedBy": [
@@ -15792,7 +15947,8 @@
       "fp": "eb2ca9152a38",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "13-dependencies-and-versions.md"
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md"
       ],
       "preview": "return process.env.FAQ_CACHE_SEMANTIC_MATCH === \"true\";"
     },
@@ -15818,6 +15974,27 @@
       ],
       "preview": "}"
     },
+    "src/lib/chat-cache.ts:172": {
+      "fp": "2af8afa71ffa",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "function replayableReasoning(value: unknown): string | undefined {"
+    },
+    "src/lib/chat-cache.ts:174": {
+      "fp": "7ce2eb6a6721",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const clean = stripControlBytes(value).trim();"
+    },
+    "src/lib/chat-cache.ts:181": {
+      "fp": "88a9f07164ff",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {"
+    },
     "src/lib/chat-cache.ts:189": {
       "fp": "acb13c2c01b0",
       "citedBy": [
@@ -15832,12 +16009,36 @@
       ],
       "preview": "import { redis } from \"@/lib/redis\";"
     },
+    "src/lib/chat-cache.ts:201": {
+      "fp": "b0ee52712e8d",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "function isSameCorpusBuild("
+    },
     "src/lib/chat-cache.ts:206": {
       "fp": "d10b36aa74a5",
       "citedBy": [
+        "02-api-routes.md",
         "14-subsystems.md"
       ],
       "preview": "}"
+    },
+    "src/lib/chat-cache.ts:212": {
+      "fp": "1b2eb42b1c0c",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function withoutCommandEcho(message: string): string {"
+    },
+    "src/lib/chat-cache.ts:214": {
+      "fp": "794f3b809470",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return (cut === -1 ? message : message.slice(0, cut)).slice(0, 300);"
     },
     "src/lib/chat-cache.ts:222": {
       "fp": "f7abf6452803",
@@ -15882,6 +16083,13 @@
       ],
       "preview": "const [raw, currentTag] = await redis.mget<"
     },
+    "src/lib/chat-cache.ts:264": {
+      "fp": "7bb0ddb44122",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "if (!isSameCorpusBuild(entry, currentTag)) return null;"
+    },
     "src/lib/chat-cache.ts:28": {
       "fp": "28fd8f1c0603",
       "citedBy": [
@@ -15913,6 +16121,21 @@
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
+    "src/lib/chat-cache.ts:310": {
+      "fp": "a7afb87402f4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const entry: Omit<FaqCacheEntry, \"reasoning\"> & { reasoning?: string } = {"
+    },
+    "src/lib/chat-cache.ts:313": {
+      "fp": "6ea0672b9cf8",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "delete entry.reasoning;"
+    },
     "src/lib/chat-cache.ts:32": {
       "fp": "888fb36efc5b",
       "citedBy": [
@@ -15920,6 +16143,20 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "*    a moderation layer."
+    },
+    "src/lib/chat-cache.ts:331": {
+      "fp": "d009fe25d93e",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "export async function faqCacheSet("
+    },
+    "src/lib/chat-cache.ts:337": {
+      "fp": "6e866e63df89",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "reasoning?: string,"
     },
     "src/lib/chat-cache.ts:345": {
       "fp": "3e313951ec89",
@@ -16039,6 +16276,21 @@
         "README.md"
       ],
       "preview": "export const MAX_CACHEABLE_ANSWER_CHARS = 4000;"
+    },
+    "src/lib/chat-cache.ts:89": {
+      "fp": "8ffea9ea7dcb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "export const MAX_CACHEABLE_REASONING_CHARS = 4000;"
+    },
+    "src/lib/chat-cache.ts:95": {
+      "fp": "7181fb8eedb8",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "export const MAX_REASONING_QUESTION_CHARS = 200;"
     },
     "src/lib/claims-integrity.ts:1": {
       "fp": "8d64a30d9de1",
@@ -17692,6 +17944,13 @@
       ],
       "preview": "});"
     },
+    "src/lib/llm.test.ts:2515": {
+      "fp": "237d7312a0b2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"strips the protocol's control bytes from the reasoning, live and in reasoningText\", async () => "
+    },
     "src/lib/llm.test.ts:278": {
       "fp": "d8ff266bf1e6",
       "citedBy": [
@@ -18243,6 +18502,20 @@
       ],
       "preview": "};"
     },
+    "src/lib/llm.ts:410": {
+      "fp": "7a529142b870",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "answerText?: string;"
+    },
+    "src/lib/llm.ts:419": {
+      "fp": "701da4b4b46e",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "reasoningText?: string;"
+    },
     "src/lib/llm.ts:444": {
       "fp": "8db2f209cbd9",
       "citedBy": [
@@ -18405,6 +18678,14 @@
       ],
       "preview": "let answerText = \"\";"
     },
+    "src/lib/llm.ts:534": {
+      "fp": "b47ecd75170b",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "let reasoningText = \"\";"
+    },
     "src/lib/llm.ts:536": {
       "fp": "1c7c59f020b9",
       "citedBy": [
@@ -18449,10 +18730,18 @@
       ],
       "preview": "// Adaptive thinking (`{type:\"adaptive\"}` + `output_config.effort`)"
     },
+    "src/lib/llm.ts:561": {
+      "fp": "996950386198",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when"
+    },
     "src/lib/llm.ts:568": {
       "fp": "17390c5655aa",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "// recognize the param."
     },
@@ -18545,6 +18834,7 @@
     "src/lib/llm.ts:660": {
       "fp": "3929c23b4a56",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "14-subsystems.md"
       ],
       "preview": "if (!useThinking || thinkingEndEmitted) continue;"
@@ -18556,6 +18846,28 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const chunk = stripControlBytes("
+    },
+    "src/lib/llm.ts:669": {
+      "fp": "e18f1434a507",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "if (chunk) {"
+    },
+    "src/lib/llm.ts:671": {
+      "fp": "72ba8b103da1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "reasoningText += chunk;"
+    },
+    "src/lib/llm.ts:672": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "}"
     },
     "src/lib/llm.ts:674": {
       "fp": "d10b36aa74a5",
@@ -18628,6 +18940,14 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "...(emittedAny ? { answerText } : {}),"
+    },
+    "src/lib/llm.ts:725": {
+      "fp": "f6089c079b31",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "...(emittedAny && reasoningText ? { reasoningText } : {}),"
     },
     "src/lib/llm.ts:731": {
       "fp": "cbb775d99a96",

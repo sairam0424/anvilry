@@ -2162,6 +2162,10 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     expect(body.slice(endIdx + THINKING_END.length).split(TRACE_DELIMITER)[0]).toBe(
       "I'd pick Tombstone.",
     );
+    // and the server-side reader (the eval cron) gets just the answer out of what this
+    // producer really emits
+    const { answerFromBody } = await import("./llm-trace");
+    expect(answerFromBody(body)).toBe("I'd pick Tombstone.");
   });
 });
 

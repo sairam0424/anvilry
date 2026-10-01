@@ -370,7 +370,7 @@ CLIENT
 ### Entry point
 
 `useChat.send()` from one of three surfaces; or a direct `POST /api/chat` (the eval cron does exactly
-this, 12× per run, `src/app/api/cron/eval/route.ts:116`, sending `X-Chat-Skip-Cache: 1` so it always exercises
+this, 12× per run, `src/app/api/cron/eval/route.ts:115`, sending `X-Chat-Skip-Cache: 1` so it always exercises
 the live model and its `Authorization: Bearer ${CRON_SECRET}` so it skips the 8/min limiter).
 
 ### Exit point
@@ -461,7 +461,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | XSS via streamed markdown | Removing `skipHtml` or overriding `urlTransform` (`markdown-message.tsx:10-16`). |
 | Abort loses the partial answer | `AbortError` is treated as a user action — partial kept, suffixed ` …[stopped]` (`use-chat.ts:363-374`); the catch path flushes **before** mutating messages (`:360`). |
 | A repeat question replays a stale or unsafe answer | Serving from the FAQ cache is bounded by the 24 h TTL, the corpus-build tag, and the purge route — but a jailbreak that ends `end_turn` passes the write gate. Remedy: `POST /api/admin/faq-cache/purge` with the question text (`chat-cache.ts:368`). |
-| Eval cron silently tests the cache instead of the model | Dropping `X-Chat-Skip-Cache` from the cron's request (`eval/route.ts:124`); `route.ts:276` is the only reader. |
+| Eval cron silently tests the cache instead of the model | Dropping `X-Chat-Skip-Cache` from the cron's request (`eval/route.ts:123`); `route.ts:276` is the only reader. |
 | Broken cache looks like a normal miss | Swallowing the Redis error instead of `emitCacheError` (`chat-cache.ts:163-181`) — the `server.error` with `source: "chat-cache"` is the only signal. |
 
 ### Flags / env that alter it
@@ -807,7 +807,7 @@ CLIENT SIDE
 
 Any `/api/*` request wrapped in `withTrace` (chat, tts, tts-google, transcribe, error); any browser error
 or unhandled rejection; the five cron routes that write their own `anvilry:*:latest` snapshots
-(`health-check/route.ts:221` · `eval/route.ts:178` · `github-sync/route.ts:53` · `seo-audit/route.ts:66` ·
+(`health-check/route.ts:221` · `eval/route.ts:176` · `github-sync/route.ts:53` · `seo-audit/route.ts:66` ·
 `content-audit/route.ts:43`; the health check also clears its `anvilry:health:alert:active` flag on recovery,
 `health-check/route.ts:216`).
 

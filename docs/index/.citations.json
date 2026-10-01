@@ -5093,22 +5093,14 @@
       ],
       "preview": "});"
     },
-    "src/app/api/cron/eval/route.test.ts:26": {
+    "src/app/api/cron/eval/route.test.ts:27": {
       "fp": "28e18cc726a7",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"carries the cron secret as a bearer token on every /api/chat call\", async () => {"
     },
-    "src/app/api/cron/eval/route.ts:100": {
-      "fp": "5d7c609f46fb",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const TRACE_DELIMITER = \"\\x1e\";"
-    },
-    "src/app/api/cron/eval/route.ts:103": {
+    "src/app/api/cron/eval/route.ts:102": {
       "fp": "ea37bcf36987",
       "citedBy": [
         "02-api-routes.md",
@@ -5117,14 +5109,14 @@
       ],
       "preview": "const denied = unauthorizedUnlessCron(req);"
     },
-    "src/app/api/cron/eval/route.ts:104": {
+    "src/app/api/cron/eval/route.ts:103": {
       "fp": "fbac95b3c1e5",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "if (denied) return denied;"
     },
-    "src/app/api/cron/eval/route.ts:106": {
+    "src/app/api/cron/eval/route.ts:105": {
       "fp": "11ee9afb1588",
       "citedBy": [
         "02-api-routes.md",
@@ -5132,7 +5124,7 @@
       ],
       "preview": "const base = process.env.VERCEL_URL"
     },
-    "src/app/api/cron/eval/route.ts:107": {
+    "src/app/api/cron/eval/route.ts:106": {
       "fp": "1b32486d8bfa",
       "citedBy": [
         "14b-subsystems.md",
@@ -5140,14 +5132,14 @@
       ],
       "preview": "? `https://${process.env.VERCEL_URL}`"
     },
-    "src/app/api/cron/eval/route.ts:108": {
+    "src/app/api/cron/eval/route.ts:107": {
       "fp": "76ada8d1d9b2",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": ": \"http://localhost:3000\";"
     },
-    "src/app/api/cron/eval/route.ts:116": {
+    "src/app/api/cron/eval/route.ts:115": {
       "fp": "0eb4a9f31c29",
       "citedBy": [
         "02-api-routes.md",
@@ -5155,14 +5147,14 @@
       ],
       "preview": "const chatRes = await fetch(`${base}/api/chat`, {"
     },
-    "src/app/api/cron/eval/route.ts:122": {
+    "src/app/api/cron/eval/route.ts:121": {
       "fp": "ca7b0cd2c8dc",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "headers: {"
     },
-    "src/app/api/cron/eval/route.ts:124": {
+    "src/app/api/cron/eval/route.ts:123": {
       "fp": "ad913a9b772b",
       "citedBy": [
         "02-api-routes.md",
@@ -5173,14 +5165,14 @@
       ],
       "preview": "\"X-Chat-Skip-Cache\": \"1\","
     },
-    "src/app/api/cron/eval/route.ts:125": {
+    "src/app/api/cron/eval/route.ts:124": {
       "fp": "6bd42639a4aa",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// Already verified by unauthorizedUnlessCron above; lets /api/chat's"
     },
-    "src/app/api/cron/eval/route.ts:127": {
+    "src/app/api/cron/eval/route.ts:126": {
       "fp": "72b58fa9ce15",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -5188,14 +5180,28 @@
       ],
       "preview": "Authorization: `Bearer ${process.env.CRON_SECRET}`,"
     },
-    "src/app/api/cron/eval/route.ts:128": {
+    "src/app/api/cron/eval/route.ts:127": {
       "fp": "e52a1813c460",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "},"
     },
-    "src/app/api/cron/eval/route.ts:13": {
+    "src/app/api/cron/eval/route.ts:131": {
+      "fp": "512e56ba298a",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "signal: AbortSignal.timeout(25_000),"
+    },
+    "src/app/api/cron/eval/route.ts:138": {
+      "fp": "ec29becef3b0",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "responseText = answerFromBody(await chatRes.text());"
+    },
+    "src/app/api/cron/eval/route.ts:14": {
       "fp": "c737be8195e4",
       "citedBy": [
         "14b-subsystems.md",
@@ -5203,14 +5209,7 @@
       ],
       "preview": "* Auth: Authorization: Bearer ${CRON_SECRET}. Vercel Cron sets this automatically"
     },
-    "src/app/api/cron/eval/route.ts:132": {
-      "fp": "512e56ba298a",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "signal: AbortSignal.timeout(25_000),"
-    },
-    "src/app/api/cron/eval/route.ts:14": {
+    "src/app/api/cron/eval/route.ts:15": {
       "fp": "08af1e552a33",
       "citedBy": [
         "14b-subsystems.md",
@@ -5218,14 +5217,7 @@
       ],
       "preview": "* when CRON_SECRET is in env. Manually triggerable with the same header."
     },
-    "src/app/api/cron/eval/route.ts:17": {
-      "fp": "e068c8f22289",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "* Cost: ~12 Bedrock calls ≈ $0.012 per weekly run. Negligible."
-    },
-    "src/app/api/cron/eval/route.ts:178": {
+    "src/app/api/cron/eval/route.ts:176": {
       "fp": "f67df8fb6751",
       "citedBy": [
         "14-subsystems.md",
@@ -5234,7 +5226,22 @@
       ],
       "preview": "await redis.set(\"anvilry:eval:latest\", JSON.stringify(summary), {"
     },
-    "src/app/api/cron/eval/route.ts:4": {
+    "src/app/api/cron/eval/route.ts:18": {
+      "fp": "e068c8f22289",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* Cost: ~12 Bedrock calls ≈ $0.012 per weekly run. Negligible."
+    },
+    "src/app/api/cron/eval/route.ts:2": {
+      "fp": "fc8d81e0ded3",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { answerFromBody } from \"@/lib/llm-trace\";"
+    },
+    "src/app/api/cron/eval/route.ts:5": {
       "fp": "34439e19a17b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -17584,6 +17591,22 @@
       ],
       "preview": "* Protocol layout (bytes in order):"
     },
+    "src/lib/llm-trace.ts:67": {
+      "fp": "104fb8e44642",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function answerFromBody(body: string): string {"
+    },
+    "src/lib/llm-trace.ts:75": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/llm-trace.ts:9": {
       "fp": "95345216204b",
       "citedBy": [
@@ -17820,7 +17843,8 @@
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md",
-        "14-subsystems.md"
+        "14-subsystems.md",
+        "14b-subsystems.md"
       ],
       "preview": "function thinkingEffort(model: string): ThinkingEffort {"
     },
@@ -17829,7 +17853,8 @@
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md",
-        "14-subsystems.md"
+        "14-subsystems.md",
+        "14b-subsystems.md"
       ],
       "preview": "}"
     },
@@ -18603,7 +18628,8 @@
       "fp": "e9216f3a66d8",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
-        "11-config-build-ci-infra.md"
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
       ],
       "preview": "export function isOpusFallbackEnabled(): boolean {"
     },
@@ -18611,7 +18637,8 @@
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
-        "11-config-build-ci-infra.md"
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
       ],
       "preview": "}"
     },

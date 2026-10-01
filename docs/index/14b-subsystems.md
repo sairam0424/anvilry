@@ -128,7 +128,7 @@ export function unauthorizedUnlessCron(req: Request): Response | null { // :23-2
 ```
 
 Call sites (each is `const denied = unauthorizedUnlessCron(req); if (denied) return denied;`):
-`eval/route.ts:103`, `health-check/route.ts:151-153` (the `GET` signature, then the two-line guard),
+`eval/route.ts:102`, `health-check/route.ts:151-153` (the `GET` signature, then the two-line guard),
 `github-sync/route.ts:19`, `seo-audit/route.ts:17`, `content-audit/route.ts:20`. Properties exactly as implemented: **fail-closed** (unset or empty `CRON_SECRET`
 ⇒ 401, never open — `cron-auth.ts:11-12`), **constant-time** (both sides hashed to 32 bytes first, so length
 never leaks and `timingSafeEqual` never throws, `:3-6,:19`), the `Bearer ` scheme is matched exactly (no
@@ -139,7 +139,7 @@ regardless and immediately 401 when the secret is unset. Guards: `src/lib/cron-a
 The same predicate is the **rate-limiter bypass**: `checkRateLimit` returns `{ ok: true }` for any request that
 passes `hasValidCronSecret` (`src/lib/rate-limit.ts:100`). The eval cron relies on it — it fires 12 sequential
 `/api/chat` calls carrying `Authorization: Bearer ${CRON_SECRET}` and `X-Chat-Skip-Cache: 1`
-(`eval/route.ts:122-128`; `src/app/api/cron/eval/route.test.ts` asserts the bearer on all 12 calls) and would
+(`eval/route.ts:121-127`; `src/app/api/cron/eval/route.test.ts` asserts the bearer on all 12 calls) and would
 otherwise self-throttle against the 8/min budget.
 
 ### Headers and CSP
@@ -229,7 +229,7 @@ limiter.
 | A new `/api/admin/*` route is open | It is outside the matcher (`proxy.ts:21-23`); only an explicit `requireAdmin(req)` (as at `purge/route.ts:32`) protects it, and no test or lint rule catches a missing call. |
 | `/admin` locked out entirely | `ADMIN_PASSWORD` unset — deliberate (`admin-auth.ts:26-31`); the client sees a bare 401 challenge, the server logs `[admin-auth]`. |
 | All five crons 401 | `CRON_SECRET` unset — deliberate fail-closed (`cron-auth.ts:11-12`). Nothing then refreshes the health result, whose Redis key `anvilry:health:latest` expires 90,000 s (25 h) after the last run that reached the write (`health-check/route.ts:220-221`), so the dashboard's "Site health" tile falls back to its "run /api/cron/health-check to populate" placeholder (`admin/telemetry/page.tsx:829-842`) about a day later. |
-| Eval cron self-throttles | The `CRON_SECRET` bearer removed from the eval cron's `/api/chat` calls (`eval/route.ts:125-127`), or `hasValidCronSecret` dropped from `checkRateLimit` (`rate-limit.ts:100`) — 12 sequential chats then hit the 8/min chat bucket. Both halves are pinned (`eval/route.test.ts`: the bearer on all 12 calls; `rate-limit.test.ts:255-`: the bypass). A separate budget risk remains: each call is bounded by `AbortSignal.timeout(25_000)` (`eval/route.ts:132`) inside `maxDuration = 60` (`:4`), so a slow chain can outlive the function before the Redis write (`:178`). |
+| Eval cron self-throttles | The `CRON_SECRET` bearer removed from the eval cron's `/api/chat` calls (`eval/route.ts:124-126`), or `hasValidCronSecret` dropped from `checkRateLimit` (`rate-limit.ts:100`) — 12 sequential chats then hit the 8/min chat bucket. Both halves are pinned (`eval/route.test.ts`: the bearer on all 12 calls; `rate-limit.test.ts:255-`: the bypass). A separate budget risk remains: each call is bounded by `AbortSignal.timeout(25_000)` (`eval/route.ts:131`) inside `maxDuration = 60` (`:5`), so a slow chain can outlive the function before the Redis write (`:176`). |
 | Wrong bucket charged | A route calling `checkRateLimit` with the wrong class — TypeScript demands *a* class but cannot tell which is right. The five existing call sites are each pinned by a test (voice ×3 in `voice-rate-limit-class.test.ts`; `chat` in `chat/route.test.ts:131-137`; `beacon` in `error/route.test.ts:198-204`); a **new** route is pinned by nothing. |
 | Every MDX page crashes | `'unsafe-eval'` removed from `script-src`. |
 | Voice permanently broken in production | The Chrome speech WebSocket host removed from `connect-src`. |
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 95 test files (62 node + 33 dom), 944 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 95 test files (62 node + 33 dom), 954 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -626,7 +626,7 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
 is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 95 test files
-(944 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+(954 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -811,7 +811,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:34` · `src/instrumentation-client.ts:68-69` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
 | Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:47` (fetch loop over `KIND_LITERALS`) and its render switches (`:384,:414-416`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:729-762`) stay on their empty placeholders |
-| Redis key literals | `src/app/admin/telemetry/page.tsx:29,244,278,281,284,287,293` · the five `api/cron/*` writers (`eval/route.ts:178`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:97` and `src/lib/chat-cache.ts:52-54` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
+| Redis key literals | `src/app/admin/telemetry/page.tsx:29,244,278,281,284,287,293` · the five `api/cron/*` writers (`eval/route.ts:176`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:97` and `src/lib/chat-cache.ts:52-54` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
 | Nav height `3.5rem` / `h-14`, and the open-to-work banner height `2.3125rem` | `src/components/site-nav.tsx:67,70` · `src/components/ui/skeleton.tsx:106` (`SkeletonViewTransition`) · `chat-view.tsx:78-80` · `game/developer-view.tsx:38-41` · `globals.css:94-97` (`scroll-padding-top`) · the banner literal in `chat-view.tsx:79` / `developer-view.tsx:40` must equal `OPEN_TO_WORK_BANNER_HEIGHT_REM` (exported from `src/lib/writing-flags.ts`, `:34`) — spelled out as literal Tailwind classes because the JIT scanner cannot see interpolated ones |
 | View-transition names | `view-router.tsx:56` (`view-body`) · `site-nav.tsx:68` (`site-header`) · `globals.css:360-402`; direction is stamped on `<html data-view-dir>` at `view-context.tsx:207-210` and consumed at `globals.css:373-385` |
 | Résumé label / variants | `src/lib/profile.ts:136-142` (`resumeVariants`, one entry) · `src/lib/mcp-tools.ts:24` (`RESUME_ROLES`) and `:28-34` (`ROLE_TO_LABEL`) · the PDF `public/resume/Sairam_Resume_MX_E.pdf` — re-adding a role is a three-place edit or `get_resume_variant` returns `notFound` (`mcp-tools.ts:30-32`) |
@@ -823,7 +823,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | `MDXContent` ↔ CSP | `src/components/mdx-content.tsx:14-17` · `next.config.ts:43-51` (`'unsafe-eval'`) |
 | `.md` passthrough (two implementations) | `next.config.ts:240-248` (4 rewrites → `/api/md/*`) · `src/app/<collection>/[slug].md/route.ts` (4 filesystem handlers) and `src/app/api/md/<collection>/[slug]/route.ts` (the rewrite targets). Same helpers (frontmatter strip, `content/` read from disk, 404 when the slug is not in the content layer); resolution order not exercised. In all eight handlers the collection lookup (`api/md/*/[slug]/route.ts:28`, `<collection>/[slug].md/route.ts:33`) runs before the `readFileSync`, which is the only path-traversal guard — convention, not tested. |
 | Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:25-31`), `src/app/admin/telemetry/page.tsx:470`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:32`. The matcher (`proxy.ts:21-23`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
-| Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:124,127`) are what the bypass and `chat/route.ts:276` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
+| Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:123,126`) are what the bypass and `chat/route.ts:276` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
 | Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:142`, `tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`, `error/route.ts:101`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:198-204` — but a new route is pinned by nothing |
 | Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:123-140`, the orb gate by no test). A fourth surface must be added to all of them |
 | Dark notes | `src/lib/content.ts:47-56` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:25`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers) |
@@ -847,7 +847,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change chat request limits / validation | `src/app/api/chat/route.ts:21-22,155-158,167-252` | `MAX_MESSAGES`, `MAX_CHARS`, the 2 MB declared-length ceiling (header only), the 10000-char PDF-block cap, the mediatype allowlists. |
 | Change the FAQ response cache | `src/lib/chat-cache.ts` (TTL `:63`, index cap `:66`, answer bound `:79`, semantic threshold `:223`, kill switch `:129-131`) | Lookup `chat/route.ts:276-332` (first-turn string questions only; hit frame carries `cacheHit: true`, header `X-Chat-Cache: hit`), write-through `:423-443` (skipped for an answer from a fallback rung); embeddings in `src/lib/faq-embeddings.ts` (Titan v2, 512 dims); emits telemetry kind `chat.cache`; `chat-cache.test.ts`. The eval cron bypasses it with `X-Chat-Skip-Cache`. |
 | Purge a bad cached answer | `POST /api/admin/faq-cache/purge` with Basic auth and `{ "question": "…" }` (`purge/route.ts:31-74`) | Removes the entry (and its index member) keyed by the normalised question (`chat-cache.ts:105-119`); returns 503 when Redis errors or is not configured, 200 `not_found` when nothing matched (`chat-cache.ts:368-388`). |
-| Change the chat wire protocol | `src/lib/llm-trace.ts:19-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:59-116` parses it; `api/cron/eval/route.ts:100` duplicates `TRACE_DELIMITER` as a literal. |
+| Change the chat wire protocol | `src/lib/llm-trace.ts:19-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:59-116` parses it; `api/cron/eval/route.ts:138` parses a complete body with `answerFromBody` (`llm-trace.ts:67-75`). |
 | Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:29-33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:323-338`. Gate: `parse-cards.test.ts`. |
 | Change markdown rendering of assistant text | `src/components/chat/markdown-message.tsx:47-95` | Do not remove `skipHtml` or override `urlTransform` — that is the XSS posture (`:9-16`). |
 | Add or reorder a **view** | `src/components/view-context.tsx:24-45` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:62-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:25-59,101-104`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
@@ -943,7 +943,7 @@ record the outcome rather than the original open question.
   `expected-status.test.ts` are **deleted**, and the caveat comment names `health-expectations.test.ts`
   as what pins the mcp-handler version (`health-expectations.ts:26`). **Not fixed elsewhere:** four other
   fetches still derive their base from `VERCEL_URL` — the chat route's live-stats fetch
-  (`chat/route.ts:34-35`) and the `eval`, `github-sync` and `seo-audit` crons (`eval/route.ts:106-107`,
+  (`chat/route.ts:34-35`) and the `eval`, `github-sync` and `seo-audit` crons (`eval/route.ts:105-106`,
   `github-sync/route.ts:32-33`, `seo-audit/route.ts:21`, each the `https://${process.env.VERCEL_URL}` ternary) —
   see *Still open*.
 - **`/mcp` as `(force-static)`** — the documentation/source mismatch this index recorded is gone.
@@ -1013,7 +1013,7 @@ record the outcome rather than the original open question.
   (`readFileSync(join(process.cwd(), "content", …))`), and `next.config.ts` has no `outputFileTracingIncludes`,
   so whether `content/` ships inside the deployed function bundle is not established from the tree.
 - **That Vercel Cron injects `Authorization: Bearer ${CRON_SECRET}` automatically.** The claim comes from
-  the route docstring (`src/app/api/cron/eval/route.ts:13-14`) and is assumed by the other four crons;
+  the route docstring (`src/app/api/cron/eval/route.ts:14-15`) and is assumed by the other four crons;
   platform behaviour was not verified.
 - **Whether Vercel deployment protection also blocks the four `VERCEL_URL`-derived fetches** (chat live stats,
   `eval`, `github-sync`, `seo-audit` — listed above). Only `health-check` was moved to `probeBase()`; the SSO-wall

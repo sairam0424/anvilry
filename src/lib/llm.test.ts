@@ -125,6 +125,8 @@ beforeEach(() => {
   STATE.streamParamsByCall = [];
   delete process.env.LLM_USE_SONNET_5;
   delete process.env.LLM_USE_SONNET_5_5;
+  delete process.env.LLM_USE_OPUS_FALLBACK;
+  delete process.env.LLM_THINKING_EFFORT;
 });
 
 afterEach(() => {
@@ -132,6 +134,8 @@ afterEach(() => {
   // A flag a test set must not outlive it (beforeEach resets them too).
   delete process.env.LLM_USE_SONNET_5;
   delete process.env.LLM_USE_SONNET_5_5;
+  delete process.env.LLM_USE_OPUS_FALLBACK;
+  delete process.env.LLM_THINKING_EFFORT;
 });
 
 /** Read the entire ReadableStream into one decoded string. */
@@ -384,8 +388,8 @@ describe("streamWithFallback — answerText capture (FAQ-cache write-through sou
   });
 
   it("is undefined on every attempt when all fail (apology path, nothing to cache)", async () => {
-    STATE.events = [[], [], []];
-    STATE.throwsOn = [0, 1, 2];
+    STATE.events = [[], []];
+    STATE.throwsOn = [0, 1];
     const onAttempt = vi.fn<(a: LlmAttempt) => void>();
     const { streamWithFallback } = await import("./llm");
     await drain(
@@ -398,7 +402,7 @@ describe("streamWithFallback — answerText capture (FAQ-cache write-through sou
         { onAttempt },
       ),
     );
-    expect(onAttempt).toHaveBeenCalledTimes(3);
+    expect(onAttempt).toHaveBeenCalledTimes(2);
     expect(
       onAttempt.mock.calls.every((c) => c[0].answerText === undefined),
     ).toBe(true);
@@ -506,8 +510,8 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
     const [text, frameJson] = body.split(TRACE_DELIMITER);
     expect(text).toBe("OK");
     const frame = JSON.parse(frameJson);
-    // Trace frame shows the SECOND model in the chain (Opus) and fellBack: true.
-    expect(frame.model).toBe("us.anthropic.claude-opus-4-6-v1");
+    // Trace frame shows the SECOND model in the chain (Haiku) and fellBack: true.
+    expect(frame.model).toBe("us.anthropic.claude-haiku-4-5-20251001-v1:0");
     expect(frame.fellBack).toBe(true);
     // Both attempts produced an onAttempt event (one error, one success).
     expect(onAttempt).toHaveBeenCalledTimes(2);
@@ -518,8 +522,8 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
   it("does NOT emit a trace frame when ALL attempts error before any byte (returns apology)", async () => {
     // Every attempt throws status=500 BEFORE any delta. Output should be the
     // apology tail with NO trace frame appended.
-    STATE.events = [[], [], []];
-    STATE.throwsOn = [0, 1, 2];
+    STATE.events = [[], []];
+    STATE.throwsOn = [0, 1];
 
     const onAttempt = vi.fn<(a: LlmAttempt) => void>();
     const { streamWithFallback } = await import("./llm");
@@ -535,8 +539,8 @@ describe("streamWithFallback — emittedAny invariant (load-bearing)", () => {
     );
     expect(body).not.toContain(TRACE_DELIMITER);
     expect(body).toContain("Sorry");
-    // All three attempts should have produced an onAttempt event.
-    expect(onAttempt).toHaveBeenCalledTimes(3);
+    // Both attempts of the default chain (Sonnet 4.6, Haiku) should have produced an onAttempt event.
+    expect(onAttempt).toHaveBeenCalledTimes(2);
     expect(
       onAttempt.mock.calls.every((c) => c[0].error?.name === "Error"),
     ).toBe(true);
@@ -960,10 +964,9 @@ describe("streamWithFallback — adaptive thinking request shape (2026-09 migrat
   });
 
   it("omits the thinking field entirely for Haiku (Haiku does not recognize the param at all)", async () => {
-    // Force fallthrough past Sonnet + Opus so the 3rd attempt (index 2) is Haiku.
-    STATE.throwsOn = [0, 1];
+    // Force fallthrough past Sonnet so the 2nd attempt (index 1) is Haiku.
+    STATE.throwsOn = [0];
     STATE.events = [
-      [],
       [],
       [
         {
@@ -984,8 +987,8 @@ describe("streamWithFallback — adaptive thinking request shape (2026-09 migrat
       ),
     );
 
-    expect(STATE.streamParamsByCall).toHaveLength(3);
-    const haikuParams = STATE.streamParamsByCall[2] as { thinking?: unknown };
+    expect(STATE.streamParamsByCall).toHaveLength(2);
+    const haikuParams = STATE.streamParamsByCall[1] as { thinking?: unknown };
     expect(haikuParams).not.toHaveProperty("thinking");
   });
 
@@ -1059,7 +1062,9 @@ describe("streamWithFallback — thinking-phase closure across a fallback (CodeR
   it("does NOT close the thinking phase when falling back to another thinking-capable model — reasoning continues the same open framing", async () => {
     // Primary (Sonnet, thinking-capable) throws a fallback-ELIGIBLE error
     // (500) after only a thinking_delta. Secondary (Opus, also
-    // thinking-capable) then succeeds with real text.
+    // thinking-capable; opted in, it is not in the default chain) then
+    // succeeds with real text.
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
     STATE.events = [
       [
         {
@@ -1108,10 +1113,12 @@ describe("streamWithFallback — thinking-phase closure across a fallback (CodeR
   });
 
   it("closes the thinking phase before falling back to Haiku, so Haiku's real answer is not swallowed as reasoning", async () => {
-    // Both thinking-capable models (Sonnet, Opus) throw fallback-eligible
-    // errors after only a thinking_delta; Haiku (not thinking-capable) then
-    // succeeds. THINKING_END must appear BEFORE Haiku's answer text, or the
-    // client's parser would misclassify "Haiku answer." as more reasoning.
+    // Both thinking-capable models (Sonnet, Opus; opted in) throw
+    // fallback-eligible errors after only a thinking_delta; Haiku (not
+    // thinking-capable) then succeeds. THINKING_END must appear BEFORE Haiku's
+    // answer text, or the client's parser would misclassify "Haiku answer." as
+    // more reasoning.
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
     STATE.events = [
       [
         {
@@ -1184,7 +1191,7 @@ describe("LLM_USE_SONNET_5 toggle", () => {
     );
   });
 
-  it("switches ONLY the primary rung to Sonnet 5 when LLM_USE_SONNET_5=true (Bedrock chain) — Opus/Haiku rungs unchanged", async () => {
+  it("puts Sonnet 5 first when LLM_USE_SONNET_5=true (Bedrock chain), backed up by Sonnet 4.6, then Haiku", async () => {
     process.env.LLM_USE_SONNET_5 = "true";
     STATE.throwsOn = [0, 1]; // fall through primary + secondary to see all 3 rungs
     STATE.events = [
@@ -1212,12 +1219,12 @@ describe("LLM_USE_SONNET_5 toggle", () => {
     const models = onAttempt.mock.calls.map((c) => c[0].model);
     expect(models).toEqual([
       "us.anthropic.claude-sonnet-5",
-      "us.anthropic.claude-opus-4-6-v1",
+      "us.anthropic.claude-sonnet-4-6",
       "us.anthropic.claude-haiku-4-5-20251001-v1:0",
     ]);
   });
 
-  it("switches ONLY the primary rung to claude-sonnet-5 when LLM_USE_SONNET_5=true (direct Anthropic chain) — Opus/Haiku rungs unchanged", async () => {
+  it("puts claude-sonnet-5 first when LLM_USE_SONNET_5=true (direct Anthropic chain), backed up by Sonnet 4.6, then Haiku", async () => {
     process.env.LLM_PROVIDER = "anthropic";
     process.env.LLM_USE_SONNET_5 = "true";
     STATE.throwsOn = [0, 1];
@@ -1246,7 +1253,7 @@ describe("LLM_USE_SONNET_5 toggle", () => {
     const models = onAttempt.mock.calls.map((c) => c[0].model);
     expect(models).toEqual([
       "claude-sonnet-5",
-      "claude-opus-4-7",
+      "claude-sonnet-4-6",
       "claude-haiku-4-5",
     ]);
   });
@@ -1270,6 +1277,14 @@ const IAM_DENY_MESSAGE =
   "arn:aws:iam::123456789012:policy/example-opus-deny";
 const BAD_TOKEN_MESSAGE =
   "403 The security token included in the request is invalid.";
+// The implicit-deny wording AWS returns when the principal's policy simply does not
+// list the GLOBAL inference profile Sonnet 5.5 is served from (no explicit deny
+// statement anywhere). Anonymised.
+const GLOBAL_PROFILE_DENY_MESSAGE =
+  "403 User: arn:aws:iam::123456789012:user/example-bedrock-user is not authorized to perform: " +
+  "bedrock:InvokeModelWithResponseStream on resource: " +
+  "arn:aws:bedrock:us-east-1:123456789012:inference-profile/global.anthropic.claude-sonnet-5-5 " +
+  "because no identity-based policy allows the bedrock:InvokeModelWithResponseStream action";
 
 describe("isFallbackEligible — status/message truth table", () => {
   const errWith = (status: number | undefined, message: string) =>
@@ -1392,7 +1407,8 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     { type: "content_block_delta", delta: { type: "text_delta", text } },
   ];
 
-  it("skips a hard-denied Opus rung and lets Haiku answer (Sonnet 503 → Opus 403 → Haiku)", async () => {
+  it("skips a hard-denied Opus rung and lets Haiku answer (Opus opted in: Sonnet 503 → Opus 403 → Haiku)", async () => {
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
     STATE.events = [[], [], answer("Haiku answer.")];
     STATE.throwsOn = [0, 1];
     STATE.throwStatus = { 0: 503, 1: 403 };
@@ -1412,16 +1428,31 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     ]);
   });
 
-  it("lets the next rung answer when the PRIMARY is IAM-denied (Sonnet 403 → Opus answers)", async () => {
-    STATE.events = [[], answer("Opus answer.")];
+  it("lets Sonnet 4.6 answer when the PRIMARY is IAM-denied (Sonnet 5.5 403 → Sonnet 4.6 answers)", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], answer("4.6 answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 403 };
+    STATE.throwMessage = { 0: GLOBAL_PROFILE_DENY_MESSAGE };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(chainParams));
+    const [text, frameJson] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("4.6 answer.");
+    const frame = JSON.parse(frameJson);
+    expect(frame.model).toBe("us.anthropic.claude-sonnet-4-6");
+    expect(frame.fellBack).toBe(true);
+  });
+
+  it("lets Haiku answer when the default primary (Sonnet 4.6) is IAM-denied", async () => {
+    STATE.events = [[], answer("Haiku answer.")];
     STATE.throwsOn = [0];
     STATE.throwStatus = { 0: 403 };
     STATE.throwMessage = { 0: IAM_DENY_MESSAGE };
     const { streamWithFallback } = await import("./llm");
     const body = await drain(streamWithFallback(chainParams));
     const [text, frameJson] = body.split(TRACE_DELIMITER);
-    expect(text).toBe("Opus answer.");
-    expect(JSON.parse(frameJson).model).toBe("us.anthropic.claude-opus-4-6-v1");
+    expect(text).toBe("Haiku answer.");
+    expect(JSON.parse(frameJson).model).toBe("us.anthropic.claude-haiku-4-5-20251001-v1:0");
   });
 
   it("does NOT fall through on a bad-credentials 403: one attempt, then the apology", async () => {
@@ -1437,12 +1468,13 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
     expect(STATE.callCount).toBe(1);
   });
 
-  it("ends in the apology after all three fast attempts when every rung is denied", async () => {
+  it("ends in the apology after all three fast attempts when every rung is denied (Sonnet 5.5, Sonnet 4.6, Haiku)", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
     STATE.events = [[], [], []];
     STATE.throwsOn = [0, 1, 2];
     STATE.throwStatus = { 0: 403, 1: 403, 2: 403 };
     STATE.throwMessage = {
-      0: IAM_DENY_MESSAGE,
+      0: GLOBAL_PROFILE_DENY_MESSAGE,
       1: IAM_DENY_MESSAGE,
       2: IAM_DENY_MESSAGE,
     };
@@ -1454,7 +1486,10 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
   });
 
   it("keeps the thinking framing intact on the 403 path with extended thinking on, the production default", async () => {
+    // The longest chain: 5.5 fails mid-reasoning (503), the opted-in Opus rung is
+    // IAM-denied (403), Sonnet 4.6 fails (503), and Haiku finally answers.
     process.env.LLM_USE_SONNET_5_5 = "true";
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
     STATE.events = [
       [
         {
@@ -1463,10 +1498,11 @@ describe("streamWithFallback — an IAM-denied rung falls through instead of end
         },
       ],
       [],
+      [],
       answer("Haiku answer."),
     ];
-    STATE.throwsOn = [0, 1];
-    STATE.throwStatus = { 0: 503, 1: 403 };
+    STATE.throwsOn = [0, 1, 2];
+    STATE.throwStatus = { 0: 503, 1: 403, 2: 503 };
     STATE.throwMessage = { 1: IAM_DENY_MESSAGE };
     const { streamWithFallback } = await import("./llm");
     const body = await drain(
@@ -1528,21 +1564,21 @@ describe("LLM_USE_SONNET_5_5 toggle", () => {
     return onAttempt.mock.calls.map((c) => c[0].model);
   }
 
-  it("moves ONLY the primary rung to the GLOBAL Sonnet 5.5 profile on Bedrock (there is no us. profile)", async () => {
+  it("puts the GLOBAL Sonnet 5.5 profile first on Bedrock (there is no us. profile), backed up by Sonnet 4.6", async () => {
     process.env.LLM_USE_SONNET_5_5 = "true";
     expect(await chainModels()).toEqual([
       "global.anthropic.claude-sonnet-5-5",
-      "us.anthropic.claude-opus-4-6-v1",
+      "us.anthropic.claude-sonnet-4-6",
       "us.anthropic.claude-haiku-4-5-20251001-v1:0",
     ]);
   });
 
-  it("moves ONLY the primary rung to claude-sonnet-5-5 on the direct Anthropic chain", async () => {
+  it("puts claude-sonnet-5-5 first on the direct Anthropic chain, backed up by Sonnet 4.6", async () => {
     process.env.LLM_PROVIDER = "anthropic";
     process.env.LLM_USE_SONNET_5_5 = "true";
     expect(await chainModels()).toEqual([
       "claude-sonnet-5-5",
-      "claude-opus-4-7",
+      "claude-sonnet-4-6",
       "claude-haiku-4-5",
     ]);
   });
@@ -1591,15 +1627,15 @@ describe("streamWithFallback — thinking-off shape is chosen per model (Sonnet 
     expect(sent.output_config).toBeUndefined();
   });
 
-  it("sends adaptive thinking with effort 'low' when extended thinking is on", async () => {
+  it("sends summarized adaptive thinking at effort 'medium' when extended thinking is on", async () => {
     process.env.LLM_USE_SONNET_5_5 = "true";
     STATE.events = [answer("Hi.")];
     const { streamWithFallback } = await import("./llm");
     await drain(streamWithFallback(params, { extendedThinking: true }));
     const sent = STATE.streamParamsByCall[0] as Sent;
     expect(sent.model).toBe("global.anthropic.claude-sonnet-5-5");
-    expect(sent.thinking).toEqual({ type: "adaptive" });
-    expect(sent.output_config).toEqual({ effort: "low" });
+    expect(sent.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(sent.output_config).toEqual({ effort: "medium" });
   });
 
   it("uses between_tools on the direct Anthropic chain too", async () => {
@@ -1616,12 +1652,12 @@ describe("streamWithFallback — thinking-off shape is chosen per model (Sonnet 
   it("picks the shape per attempt: 5.5 gets between_tools, the fallback rung gets disabled", async () => {
     process.env.LLM_USE_SONNET_5_5 = "true";
     STATE.throwsOn = [0];
-    STATE.events = [[], answer("Opus answer.")];
+    STATE.events = [[], answer("4.6 answer.")];
     const { streamWithFallback } = await import("./llm");
     await drain(streamWithFallback(params, { extendedThinking: false }));
     const [first, second] = STATE.streamParamsByCall as Sent[];
     expect(first.thinking).toEqual({ type: "between_tools" });
-    expect(second.model).toBe("us.anthropic.claude-opus-4-6-v1");
+    expect(second.model).toBe("us.anthropic.claude-sonnet-4-6");
     expect(second.thinking).toEqual({ type: "disabled" });
   });
 
@@ -1656,5 +1692,381 @@ describe("streamWithFallback — thinking-off shape is chosen per model (Sonnet 
     expect(body).not.toContain("unsolicited reasoning");
     expect(body.startsWith(THINKING_SENTINEL)).toBe(false);
     expect(body.split(TRACE_DELIMITER)[0]).toBe("Answer only.");
+  });
+});
+
+// ---------------------------------------------------------------------------------
+// Sonnet 5.5 mitigations (2026-10-01): a Sonnet 4.6 rung behind a 5.x primary, Opus
+// opt-in, and 5.x thinking that is actually visible.
+// ---------------------------------------------------------------------------------
+
+const BEDROCK_IDS = {
+  s46: "us.anthropic.claude-sonnet-4-6",
+  s5: "us.anthropic.claude-sonnet-5",
+  s55: "global.anthropic.claude-sonnet-5-5",
+  opus: "us.anthropic.claude-opus-4-6-v1",
+  haiku: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+};
+const DIRECT_IDS = {
+  s46: "claude-sonnet-4-6",
+  s5: "claude-sonnet-5",
+  s55: "claude-sonnet-5-5",
+  opus: "claude-opus-4-7",
+  haiku: "claude-haiku-4-5",
+};
+
+describe("modelChain — Sonnet 4.6 backs up a Sonnet 5.x primary, and Opus is opt-in", () => {
+  // This account IAM-denies the whole Opus family, so the old second rung could only
+  // ever answer 403, costing a round trip on every fallback before Haiku (a weaker
+  // model) got the request. Opus now has to be asked for.
+  it.each([
+    ["default", {}, [BEDROCK_IDS.s46, BEDROCK_IDS.haiku]],
+    [
+      "Sonnet 5",
+      { LLM_USE_SONNET_5: "true" },
+      [BEDROCK_IDS.s5, BEDROCK_IDS.s46, BEDROCK_IDS.haiku],
+    ],
+    [
+      "Sonnet 5.5",
+      { LLM_USE_SONNET_5_5: "true" },
+      [BEDROCK_IDS.s55, BEDROCK_IDS.s46, BEDROCK_IDS.haiku],
+    ],
+    [
+      "both Sonnet flags (5.5 wins)",
+      { LLM_USE_SONNET_5: "true", LLM_USE_SONNET_5_5: "true" },
+      [BEDROCK_IDS.s55, BEDROCK_IDS.s46, BEDROCK_IDS.haiku],
+    ],
+    [
+      "Opus opt-in (the chain this module always shipped)",
+      { LLM_USE_OPUS_FALLBACK: "true" },
+      [BEDROCK_IDS.s46, BEDROCK_IDS.opus, BEDROCK_IDS.haiku],
+    ],
+    [
+      "Sonnet 5.5 + Opus opt-in",
+      { LLM_USE_SONNET_5_5: "true", LLM_USE_OPUS_FALLBACK: "true" },
+      [BEDROCK_IDS.s55, BEDROCK_IDS.opus, BEDROCK_IDS.s46, BEDROCK_IDS.haiku],
+    ],
+  ])("Bedrock chain: %s", async (_label, env, expected) => {
+    Object.assign(process.env, env);
+    const { modelChain } = await import("./llm");
+    expect(modelChain()).toEqual(expected);
+  });
+
+  it.each([
+    ["default", {}, [DIRECT_IDS.s46, DIRECT_IDS.haiku]],
+    [
+      "Sonnet 5.5",
+      { LLM_USE_SONNET_5_5: "true" },
+      [DIRECT_IDS.s55, DIRECT_IDS.s46, DIRECT_IDS.haiku],
+    ],
+    [
+      "Opus opt-in",
+      { LLM_USE_OPUS_FALLBACK: "true" },
+      [DIRECT_IDS.s46, DIRECT_IDS.opus, DIRECT_IDS.haiku],
+    ],
+  ])("direct Anthropic chain: %s", async (_label, env, expected) => {
+    process.env.LLM_PROVIDER = "anthropic";
+    Object.assign(process.env, env);
+    const { modelChain } = await import("./llm");
+    expect(modelChain()).toEqual(expected);
+  });
+
+  it("only the exact string 'true' turns the Opus rung on", async () => {
+    const { isOpusFallbackEnabled, modelChain } = await import("./llm");
+    expect(isOpusFallbackEnabled()).toBe(false);
+    for (const value of ["1", "TRUE", "yes", ""]) {
+      process.env.LLM_USE_OPUS_FALLBACK = value;
+      expect(isOpusFallbackEnabled()).toBe(false);
+      expect(modelChain()).not.toContain(BEDROCK_IDS.opus);
+    }
+    process.env.LLM_USE_OPUS_FALLBACK = "true";
+    expect(isOpusFallbackEnabled()).toBe(true);
+  });
+
+  it("never lists a model twice, whatever the flags", async () => {
+    const { modelChain } = await import("./llm");
+    for (const provider of ["bedrock", "anthropic"]) {
+      for (const s5 of [false, true]) {
+        for (const s55 of [false, true]) {
+          for (const opus of [false, true]) {
+            process.env.LLM_PROVIDER = provider;
+            for (const [k, on] of [
+              ["LLM_USE_SONNET_5", s5],
+              ["LLM_USE_SONNET_5_5", s55],
+              ["LLM_USE_OPUS_FALLBACK", opus],
+            ] as const) {
+              if (on) process.env[k] = "true";
+              else delete process.env[k];
+            }
+            const chain = modelChain();
+            expect(new Set(chain).size).toBe(chain.length);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe("streamWithFallback — a failing Sonnet 5.5 is backed up by Sonnet 4.6, not by Haiku", () => {
+  const params = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 100,
+    system: "test",
+  };
+  const answer = (text: string) => [
+    { type: "content_block_delta", delta: { type: "text_delta", text } },
+  ];
+
+  it("answers from Sonnet 4.6 when 5.5 is throttled (429), and reports the fallback", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], answer("4.6 answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 429 };
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(streamWithFallback(params, { onAttempt }));
+    const [text, frameJson] = body.split(TRACE_DELIMITER);
+    expect(text).toBe("4.6 answer.");
+    const frame = JSON.parse(frameJson);
+    expect(frame.model).toBe(BEDROCK_IDS.s46);
+    expect(frame.fellBack).toBe(true);
+    expect(onAttempt.mock.calls.map((c) => c[0].model)).toEqual([
+      BEDROCK_IDS.s55,
+      BEDROCK_IDS.s46,
+    ]);
+  });
+
+  it("goes straight from Sonnet 4.6 to Haiku by default: no Opus attempt, so no guaranteed 403", async () => {
+    STATE.events = [[], answer("Haiku answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 503 };
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { onAttempt }));
+    expect(onAttempt.mock.calls.map((c) => c[0].model)).toEqual([
+      BEDROCK_IDS.s46,
+      BEDROCK_IDS.haiku,
+    ]);
+    expect(STATE.callCount).toBe(2);
+  });
+
+  it("closes the reasoning phase before Haiku answers after a 5.5 AND a 4.6 both fail mid-thinking", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "5.5 reasoning. " },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "4.6 reasoning." },
+        },
+      ],
+      answer("Haiku answer."),
+    ];
+    STATE.throwsOn = [0, 1];
+    STATE.throwStatus = { 0: 503, 1: 503 };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { extendedThinking: true }),
+    );
+    // One open phase across both thinking-capable rungs, closed BEFORE Haiku's text,
+    // or the client would read "Haiku answer." as more reasoning.
+    expect(body.split(THINKING_SENTINEL)).toHaveLength(2);
+    expect(body.split(THINKING_END)).toHaveLength(2);
+    const endIdx = body.indexOf(THINKING_END);
+    expect(body.slice(THINKING_SENTINEL.length, endIdx)).toBe(
+      "5.5 reasoning. 4.6 reasoning.",
+    );
+    const [text, frameJson] = body
+      .slice(endIdx + THINKING_END.length)
+      .split(TRACE_DELIMITER);
+    expect(text).toBe("Haiku answer.");
+    expect(JSON.parse(frameJson).model).toBe(BEDROCK_IDS.haiku);
+  });
+
+  it("carries one unbroken reasoning phase from a 5.5 that fails mid-thinking into the 4.6 retry", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "weighing banks. " },
+        },
+      ],
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "Tombstone fits." },
+        },
+        ...answer("Tombstone."),
+      ],
+    ];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 503 };
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { extendedThinking: true }),
+    );
+    expect(body.split(THINKING_SENTINEL)).toHaveLength(2);
+    expect(body.split(THINKING_END)).toHaveLength(2);
+    const endIdx = body.indexOf(THINKING_END);
+    expect(body.slice(THINKING_SENTINEL.length, endIdx)).toBe(
+      "weighing banks. Tombstone fits.",
+    );
+    expect(body.slice(endIdx + THINKING_END.length).split(TRACE_DELIMITER)[0]).toBe(
+      "Tombstone.",
+    );
+  });
+});
+
+describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x reasoning summaries)", () => {
+  const params = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 100,
+    system: "test",
+  };
+  const answer = (text: string) => [
+    { type: "content_block_delta", delta: { type: "text_delta", text } },
+  ];
+  type Sent = {
+    model: string;
+    thinking?: Record<string, unknown>;
+    output_config?: { effort?: string };
+  };
+
+  // Measured live on Bedrock (2026-10-01, the production prompt, 8 recruiter questions):
+  // Sonnet 5.5 at effort "low" never reasoned (0 thinking tokens in 8 of 8), so the
+  // reasoning panel stayed empty whatever `display` said. At "medium" it reasoned on the
+  // harder questions (90 to 390 thinking tokens, a 300 to 700 character summary) at about
+  // $0.0006 more per question on average. `display: "summarized"` costs nothing: the
+  // default ("omitted") returns a thinking block with EMPTY text while billing the same
+  // thinking tokens.
+  it.each([
+    ["Sonnet 5.5", { LLM_USE_SONNET_5_5: "true" }, BEDROCK_IDS.s55],
+    ["Sonnet 5", { LLM_USE_SONNET_5: "true" }, BEDROCK_IDS.s5],
+  ])(
+    "%s asks for summarized reasoning at effort 'medium'",
+    async (_label, env, model) => {
+      Object.assign(process.env, env);
+      STATE.events = [answer("Hi.")];
+      const { streamWithFallback } = await import("./llm");
+      await drain(streamWithFallback(params, { extendedThinking: true }));
+      const sent = STATE.streamParamsByCall[0] as Sent;
+      expect(sent.model).toBe(model);
+      expect(sent.thinking).toEqual({ type: "adaptive", display: "summarized" });
+      expect(sent.output_config).toEqual({ effort: "medium" });
+    },
+  );
+
+  it("keeps Sonnet 4.6 on exactly the request it has always sent: adaptive, no display field, effort 'low'", async () => {
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe(BEDROCK_IDS.s46);
+    expect(sent.thinking).toEqual({ type: "adaptive" });
+    expect(sent.thinking).not.toHaveProperty("display");
+    expect(sent.output_config).toEqual({ effort: "low" });
+  });
+
+  it("picks the shape per attempt: 5.5 summarized/medium, then the 4.6 fallback adaptive/low", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], answer("4.6 answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 503 };
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const [first, second] = STATE.streamParamsByCall as Sent[];
+    expect(first.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(first.output_config).toEqual({ effort: "medium" });
+    expect(second.model).toBe(BEDROCK_IDS.s46);
+    expect(second.thinking).toEqual({ type: "adaptive" });
+    expect(second.output_config).toEqual({ effort: "low" });
+  });
+
+  it("LLM_THINKING_EFFORT overrides the default on every thinking-capable rung", async () => {
+    process.env.LLM_THINKING_EFFORT = "low";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    let sent = STATE.streamParamsByCall[0] as Sent;
+    // cheaper and faster, and still summarized for the questions where it does think
+    expect(sent.thinking).toEqual({ type: "adaptive", display: "summarized" });
+    expect(sent.output_config).toEqual({ effort: "low" });
+
+    STATE.callCount = 0;
+    STATE.streamParamsByCall = [];
+    STATE.events = [answer("Hi.")];
+    delete process.env.LLM_USE_SONNET_5_5;
+    process.env.LLM_THINKING_EFFORT = "medium";
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe(BEDROCK_IDS.s46);
+    expect(sent.output_config).toEqual({ effort: "medium" });
+  });
+
+  // "high" is rejected on purpose: the shared 2048-token thinking-plus-answer ceiling
+  // was sized for low and medium (see thinkingEffort() in llm.ts).
+  it.each(["high", "extreme", "HIGH", "Medium", "max", " low", ""])(
+    "ignores the invalid LLM_THINKING_EFFORT value %j and uses the per-model default",
+    async (value) => {
+      process.env.LLM_THINKING_EFFORT = value;
+      process.env.LLM_USE_SONNET_5_5 = "true";
+      STATE.events = [answer("Hi.")];
+      const { streamWithFallback } = await import("./llm");
+      await drain(streamWithFallback(params, { extendedThinking: true }));
+      const sent = STATE.streamParamsByCall[0] as Sent;
+      expect(sent.output_config).toEqual({ effort: "medium" });
+    },
+  );
+
+  it("sends neither display nor effort when extended thinking is off, whatever LLM_THINKING_EFFORT says", async () => {
+    process.env.LLM_THINKING_EFFORT = "medium";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.thinking).toEqual({ type: "between_tools" });
+    expect(sent.output_config).toBeUndefined();
+  });
+
+  it("streams a 5.5 reasoning summary to the client ahead of the answer", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: {
+            type: "thinking_delta",
+            thinking: "Tombstone's blast-radius gating fits a bank. ",
+          },
+        },
+        // The signature arrives after the summary; the client must ignore it.
+        {
+          type: "content_block_delta",
+          delta: { type: "signature_delta", signature: "EuYBCkYIBhgC" },
+        },
+        ...answer("I'd pick Tombstone."),
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { extendedThinking: true }),
+    );
+    expect(body.startsWith(THINKING_SENTINEL)).toBe(true);
+    const endIdx = body.indexOf(THINKING_END);
+    expect(body.slice(THINKING_SENTINEL.length, endIdx)).toBe(
+      "Tombstone's blast-radius gating fits a bank. ",
+    );
+    expect(body).not.toContain("EuYBCkYIBhgC");
+    expect(body.slice(endIdx + THINKING_END.length).split(TRACE_DELIMITER)[0]).toBe(
+      "I'd pick Tombstone.",
+    );
   });
 });

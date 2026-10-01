@@ -308,3 +308,76 @@ describe("/api/chat — write-through glue", () => {
     expect(faqCacheSetMock).not.toHaveBeenCalled();
   });
 });
+
+describe("/api/chat — llm.attempt cost telemetry", () => {
+  type EmitArg = { kind: string; attrs: Record<string, unknown> };
+
+  async function emittedAttempts(): Promise<EmitArg[]> {
+    const { emit } = await import("@/lib/telemetry/emit");
+    return (emit as unknown as { mock: { calls: [EmitArg][] } }).mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.kind === "llm.attempt");
+  }
+
+  it("records the verified price of the model that answered, not Sonnet 4.6's", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 900,
+        finish_reason: "end_turn",
+        usage: {
+          input_tokens: 29,
+          cache_read_input_tokens: 5247,
+          output_tokens: 286,
+        },
+        answerText: "I build production multi-agent LLM systems.",
+      });
+      return new ReadableStream();
+    });
+
+    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+
+    const [attempt] = await emittedAttempts();
+    // $2 / $10 / $0.20 per million tokens (Sonnet 5.5, global profile).
+    expect(attempt.attrs.cost_usd).toBeCloseTo(
+      (29 * 2.0 + 5247 * 0.2 + 286 * 10.0) / 1_000_000,
+      10,
+    );
+  });
+
+  it("leaves cost_usd out, and caches a zero saving, for a model with no verified price", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "claude-sonnet-5-5", // direct-API id: not on the Bedrock price list
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 900,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: "I build agent infrastructure.",
+      });
+      return new ReadableStream();
+    });
+
+    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+
+    const [attempt] = await emittedAttempts();
+    expect(attempt.attrs).not.toHaveProperty("cost_usd");
+    expect(faqCacheSetMock.mock.calls[0]![3]).toBe(0);
+  });
+
+  it("asks for the cache TTL that llm-pricing prices cache writes at", async () => {
+    const { CACHE_WRITE_TTL } = await import("@/lib/llm-pricing");
+    await POST(makeReq([{ role: "user", content: "What do you build?" }]));
+
+    const params = streamWithFallbackMock.mock.calls[0]![0] as {
+      system: Array<{ cache_control?: { type: string; ttl: string } }>;
+    };
+    expect(params.system[0].cache_control).toEqual({
+      type: "ephemeral",
+      ttl: CACHE_WRITE_TTL,
+    });
+  });
+});

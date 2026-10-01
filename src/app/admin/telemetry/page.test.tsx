@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -79,5 +80,64 @@ describe("TelemetryDashboard — page-level auth", () => {
     headerStore.authorization = basic(ADMIN_SECRET);
     await expect(TelemetryDashboard()).resolves.toBeTruthy();
     expect(redisMock.zrange).toHaveBeenCalled();
+  });
+});
+
+describe("TelemetryDashboard — cost tiles use each model's own verified price", () => {
+  function attempt(model: string, usage: Record<string, number>, cost?: number) {
+    return {
+      ts: Date.now(),
+      kind: "llm.attempt",
+      level: "info",
+      traceId: "t",
+      spanId: "s",
+      attrs: {
+        model,
+        latency_ms: 900,
+        usage,
+        ...(cost === undefined ? {} : { cost_usd: cost }),
+      },
+    };
+  }
+
+  async function renderWith(events: unknown[]): Promise<string> {
+    configure(ADMIN_SECRET);
+    headerStore.authorization = basic(ADMIN_SECRET);
+    redisMock.zrange.mockImplementation(async (key: string) =>
+      key === "anvilry:trace:llm.attempt" ? events : [],
+    );
+    return renderToStaticMarkup(await TelemetryDashboard());
+  }
+
+  it("adds the cost of each attempt and the input cost its cache reads avoided", async () => {
+    const html = await renderWith([
+      // Sonnet 5.5 (global): 5247 cache-read tokens avoid 5247 x ($2.00 - $0.20) / 1e6 = $0.0094
+      attempt(
+        "global.anthropic.claude-sonnet-5-5",
+        { input_tokens: 29, cache_read_input_tokens: 5247, output_tokens: 286 },
+        0.0045,
+      ),
+    ]);
+    expect(html).toContain("$0.0045");
+    expect(html).toContain("saved $0.0094 by caching");
+  });
+
+  it("does not price an unpriced model's cache reads at Sonnet 4.6's rate", async () => {
+    const html = await renderWith([
+      attempt("claude-sonnet-5-5", { cache_read_input_tokens: 5247 }),
+    ]);
+    expect(html).toContain("saved $0.0000 by caching");
+  });
+
+  it("sums savings across models at their own rates", async () => {
+    const html = await renderWith([
+      attempt("global.anthropic.claude-sonnet-5-5", {
+        cache_read_input_tokens: 1_000_000,
+      }), // $1.80
+      attempt("us.anthropic.claude-sonnet-4-6", {
+        cache_read_input_tokens: 1_000_000,
+      }), // $2.97
+    ]);
+    expect(html).toContain("saved $4.7700 by caching");
   });
 });

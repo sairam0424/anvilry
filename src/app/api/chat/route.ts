@@ -3,6 +3,7 @@ import { buildCorpus } from "@/lib/corpus";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
 import { isConfigured, streamWithFallback, TRACE_DELIMITER } from "@/lib/llm";
+import { CACHE_WRITE_TTL, costUsd } from "@/lib/llm-pricing";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { withTrace } from "@/lib/telemetry/with-trace";
 import { emit } from "@/lib/telemetry/emit";
@@ -16,53 +17,6 @@ import {
 import { randomUUID } from "node:crypto";
 
 export const maxDuration = 30;
-
-/* ----------------------------- Cost estimation ----------------------------- */
-
-type LlmUsageAttrs = {
-  input_tokens?: number;
-  output_tokens?: number;
-  cache_creation_input_tokens?: number;
-  cache_read_input_tokens?: number;
-};
-
-// Bedrock pricing per million tokens (as of 2026-06-17)
-const BEDROCK_PRICE: Record<
-  string,
-  { input: number; output: number; cacheWrite: number; cacheRead: number }
-> = {
-  "us.anthropic.claude-sonnet-4-6": {
-    input: 3.0,
-    output: 15.0,
-    cacheWrite: 3.75,
-    cacheRead: 0.3,
-  },
-  "us.anthropic.claude-opus-4-6-v1": {
-    input: 15.0,
-    output: 75.0,
-    cacheWrite: 18.75,
-    cacheRead: 1.5,
-  },
-  "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
-    input: 0.8,
-    output: 4.0,
-    cacheWrite: 1.0,
-    cacheRead: 0.08,
-  },
-};
-
-function costUsd(model: string, usage: LlmUsageAttrs): number {
-  const price =
-    BEDROCK_PRICE[model] ?? BEDROCK_PRICE["us.anthropic.claude-sonnet-4-6"];
-  const M = 1_000_000;
-  return (
-    ((usage.input_tokens ?? 0) * price.input +
-      (usage.output_tokens ?? 0) * price.output +
-      (usage.cache_creation_input_tokens ?? 0) * price.cacheWrite +
-      (usage.cache_read_input_tokens ?? 0) * price.cacheRead) /
-    M
-  );
-}
 
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 600;
@@ -113,7 +67,7 @@ async function getLiveGithubStats(): Promise<string | null> {
  * Sairam, refuse off-topic / injection attempts, never invent facts or metrics.
  *
  * The LLM provider (AWS Bedrock by default, direct Anthropic API as a toggle) and
- * the Sonnet 4.6 -> Opus 4.6 -> Haiku 4.5 fallback chain live in src/lib/llm.ts.
+ * the Sonnet -> Haiku 4.5 fallback chain (Opus is an opt-in rung) live in src/lib/llm.ts.
  *
  * Deliberately takes ONLY `corpus` — no githubStats param. This template is the
  * system block that gets `cache_control`'d (see the `system:` array below); it
@@ -400,7 +354,7 @@ export async function POST(req: Request) {
           {
             type: "text",
             text: staticSystemPrompt(buildCorpus()),
-            cache_control: { type: "ephemeral", ttl: "1h" },
+            cache_control: { type: "ephemeral", ttl: CACHE_WRITE_TTL },
           },
           ...(githubStats
             ? [
@@ -423,6 +377,11 @@ export async function POST(req: Request) {
             `[chat] model ${model} failed: ${(err as Error)?.name ?? "error"}`,
           ),
         onAttempt: (attempt) => {
+          // null = no verified price for this model id (see llm-pricing.ts): the
+          // event then carries no cost_usd rather than an invented one.
+          const attemptCost = attempt.usage
+            ? costUsd(attempt.model, attempt.usage)
+            : null;
           // Per-attempt structured span. usage carries the prompt-cache signal
           // we just unlocked in Phase 0.2 (cache_read_input_tokens).
           // No PII in attrs — only token counts, model id, and (on error)
@@ -449,9 +408,7 @@ export async function POST(req: Request) {
                 ? { finish_reason: attempt.finish_reason }
                 : {}),
               ...(attempt.usage ? { usage: attempt.usage } : {}),
-              ...(attempt.usage
-                ? { cost_usd: costUsd(attempt.model, attempt.usage) }
-                : {}),
+              ...(attemptCost != null ? { cost_usd: attemptCost } : {}),
               ...(attempt.error
                 ? {
                     error_name: attempt.error.name,
@@ -480,7 +437,7 @@ export async function POST(req: Request) {
               question,
               attempt.answerText,
               attempt.model,
-              attempt.usage ? costUsd(attempt.model, attempt.usage) : 0,
+              attemptCost ?? 0,
               attempt.finish_reason,
             );
           }

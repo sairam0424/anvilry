@@ -283,7 +283,7 @@ export function ChatView() {
             </button>
           )}
         </form>
-        <p className="mt-2 shrink-0 text-center text-[11px] text-fg-subtle">
+        <p className="mt-2 shrink-0 text-center text-[11px] text-fg-muted">
           {AI_CAPTION}
         </p>
       </section>

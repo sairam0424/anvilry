@@ -10,6 +10,14 @@
 export const AI_CAPTION =
   "AI assistant · grounded in real work · may simplify details";
 
-/** Idle hint on the voice surface. Spoken answers are a synthetic voice reading the
- *  assistant's text, so the voice surface says so before the visitor starts talking. */
+/** Idle hint on the voice surface: spoken answers are a synthetic voice. Shown until the
+ *  mic opens (the phone modal); the desktop panel auto-starts, so it shows the active hint. */
 export const AI_VOICE_HINT = "AI assistant, grounded in real work";
+
+/**
+ * The contract above as a pattern: a model, a vendor or a host must never appear in the copy.
+ * Word-bounded, so "flaws" or "laws" do not trip "aws". The tests run every piece of
+ * disclosure copy, rendered or not, through it.
+ */
+export const NAMES_A_MODEL_OR_VENDOR =
+  /\b(?:claude|anthropic|bedrock|sonnet|haiku|opus|chatgpt|gpt\d*|openai|gemini|llama|ollama|mistral|cohere|deepseek|copilot|bard|grok|qwen|kimi|amazon|aws|azure|google|vertex|vercel|railway)\b/i;

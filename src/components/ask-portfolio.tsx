@@ -163,8 +163,8 @@ function AskPortfolioWidget() {
                 {messages.length === 0 && (
                   <div className="space-y-3">
                     <p className="text-sm text-fg-muted">
-                      Hi! 👋 Ask me anything about Sairam&apos;s work, projects,
-                      or what he&apos;s looking for.
+                      Hi! 👋 I&apos;m an AI assistant. Ask me anything about
+                      Sairam&apos;s work, projects, or what he&apos;s looking for.
                     </p>
                     <div className="flex flex-col gap-2">
                       {SUGGESTED.map((s) => (
@@ -257,7 +257,7 @@ function AskPortfolioWidget() {
               <Send size={15} />
             </button>
           </form>
-          <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-subtle">
+          <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-muted">
             <CornerDownLeft size={10} /> {AI_CAPTION}
           </p>
         </div>

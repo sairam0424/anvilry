@@ -22,8 +22,8 @@ Excluded (tests, not indexed here — mapped to the module each guards in the ta
 `use-speech-synthesis.dom.test.tsx`, `use-stt.dom.test.tsx`, `use-voice-session.dom.test.tsx`,
 `voice-picker.dom.test.tsx`, `voice-pitfalls.test.ts`, `voice-pitfalls.dom.test.ts`,
 `voice-surface-mutex.test.ts`, `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx`,
-`chat-view.dom.test.tsx`, `wake-word-controller.dom.test.tsx`, `ai-disclosure.test.ts`, and
-`src/components/ask-portfolio.dom.test.tsx` (21 test files under `chat/` plus the widget test).
+`chat-view.dom.test.tsx`, `wake-word-controller.dom.test.tsx`, `ai-disclosure.test.ts`, the helper
+`hidden-by.test-support.ts`, and `src/components/ask-portfolio.dom.test.tsx` (21 test files under `chat/` plus the widget test).
 
 > There is **no** `use-chat-stream.ts` module. `use-chat-stream.dom.test.tsx` imports `./use-chat`
 > (`use-chat-stream.dom.test.tsx:3`) — it is the streaming/coalescing guard for `use-chat.ts`.
@@ -38,7 +38,7 @@ Excluded (tests, not indexed here — mapped to the module each guards in the ta
 | `chat/markdown-message.tsx` | Safe markdown renderer (react-markdown + `skipHtml` + rehype-sanitize) plus a streaming delimiter balancer | `closeOpenMarkdown`, `MarkdownMessage` | `markdown-message.test.ts` |
 | `chat/chat-card.tsx` | Renders a resolved project/work card entirely from Velite fields | `ChatCard` | — |
 | `chat/chat-messages.tsx` | Full transcript renderer: image lightbox, thinking block, read-aloud, cmd-token dispatch, autoscroll | `ChatMessages` | `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx` |
-| `chat/ai-disclosure.ts` | The neutral copy that tells a visitor the answers are AI-generated (names no model, vendor or provider); shared by the Chat view, the Classic widget and the voice surface | `AI_CAPTION`, `AI_VOICE_HINT` | `ai-disclosure.test.ts` |
+| `chat/ai-disclosure.ts` | The neutral copy that tells a visitor the answers are AI-generated (names no model, vendor or provider); shared by the Chat view, the Classic widget and the voice surface | `AI_CAPTION`, `AI_VOICE_HINT`, `NAMES_A_MODEL_OR_VENDOR` | `ai-disclosure.test.ts` |
 | `chat/chat-view.tsx` | The `chat` view "concierge console": impact strip, chip rails, composer, mic, file picker, Stop, one-shot palette-query auto-send; says in its intro and its caption that the visitor is talking to an AI assistant | `ChatView` | `chat-view.dom.test.tsx` |
 | `chat/chat-suggestions.ts` | Static chip prompt arrays for the Chat view | `RECRUITER_CHIPS`, `STARTER_CHIPS` | — |
 | `chat/attachment-preview-strip.tsx` | Pending-attachment thumbnails/badges above the composer with per-item remove | `AttachmentPreviewStrip` | — |
@@ -150,7 +150,7 @@ Three independent layers, all in scope, all fail-closed:
 - `parse-cards.test.ts` is the pinned contract ("a hostile model turn can neither inject markup nor conjure
   a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md` (Testing Notes) names
   `parse-cards.test.ts` as the prompt-injection/XSS guard and says not to weaken it; the next line there states that
-  `ask-portfolio.dom.test.tsx` is **not** that guard (three tests: shared-transport streaming, the 503 message and the AI caption).
+  `ask-portfolio.dom.test.tsx` is **not** that guard (five tests: shared-transport streaming, the 503 message, and three pinning the AI disclosure: the caption, the greeting and the caption surviving an answer).
 - The spoken/caption path has its own stripper: `toCaptionText()` runs `parseCards` then removes markdown
   markers **and** a dangling unclosed `[[card:` fragment mid-stream (`use-voice-session.ts:48-63`), so a
   half-written `[[card:` token is never spoken or shown. Only a fragment that has reached `[[card:` is handled: a
@@ -254,13 +254,13 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 
 ### `chat/ai-disclosure.ts`
 - **Role:** One module for the line that says the answers are AI-generated, so the three chat surfaces cannot drift apart. It exists because v3.9.0 (#291) removed the "Answered by <model> · <provider>" line, which had been the only visible text on phones saying so (the header label is icon-only below `sm`).
-- **Exports:** `AI_CAPTION` = "AI assistant · grounded in real work · may simplify details" (ai-disclosure.ts:10-11); `AI_VOICE_HINT` = "AI assistant, grounded in real work" (:15).
+- **Exports:** `AI_CAPTION` = "AI assistant · grounded in real work · may simplify details" (ai-disclosure.ts:10-11); `AI_VOICE_HINT` = "AI assistant, grounded in real work" (:15); `NAMES_A_MODEL_OR_VENDOR` (:22-23), the neutrality contract as a word-bounded pattern over 27 model, vendor and host names, which the tests run every piece of disclosure copy through.
 - **Reads / depends on:** nothing.
 - **Consumed by:** `chat-view.tsx:16` (the caption under the composer), `ask-portfolio.tsx:9` (the caption under the widget's composer), `talk-mode.tsx:20` (the idle hint on the voice surface).
 - **Behaviour notes:**
-  - Deliberately neutral: no model, vendor or provider name. `ai-disclosure.test.ts` fails on `claude`, `anthropic`, `bedrock`, `sonnet`, `haiku`, `opus`, `gpt`, `openai`, `gemini`, `llama`, `mistral`, `amazon` or `aws` in either string, and requires the word `AI` and the old caption's caveats ("grounded in real work", "may simplify details").
-  - The caption is 59 characters: one line at 390px, two lines at 320px (measured in a browser, 2026-10-01). The old caption, "Grounded in real work · may simplify details", was 44.
-- **Gotchas / invariants:** Do not add a bare "AI" beside the sparkles icon in the Chat view header to make the cue louder: at 390px the row (Back to Classic / Résumé / Talk / badge) has no slack, and the extra 23px made "Back to Classic" wrap onto two lines (tried and reverted; `chat-view.dom.test.tsx` pins that no bare "AI" text sits there).
+  - Deliberately neutral: no model, vendor or provider name. `ai-disclosure.test.ts` fails when either string matches `NAMES_A_MODEL_OR_VENDOR` (`claude`, `anthropic`, `bedrock`, `sonnet`, `haiku`, `opus`, `chatgpt`, `gpt`, `openai`, `gemini`, `llama`, `ollama`, `mistral`, `cohere`, `deepseek`, `copilot`, `bard`, `grok`, `qwen`, `kimi`, `amazon`, `aws`, `azure`, `google`, `vertex`, `vercel`, `railway`, on word boundaries, so "flaws" and "laws" pass), and requires the word `AI` and the old caption's caveats ("grounded in real work", "may simplify details"). A second block tests the pattern itself: it must catch each of the names and must not trip on "flaws", "laws", "draws" or "Claudette".
+  - The caption is 59 characters (the old one, "Grounded in real work · may simplify details", was 44). Measured in a browser on 2026-10-01 at 280-414px: the Chat view caption is two lines up to 375px and one line from 390px; the widget caption is one line from 320px (two at 280px); the voice idle hint is two lines at every phone width; nothing overflows or clips. Both captions use `text-fg-muted` (about 7.4-7.9:1, measured in the review); the first version used `text-fg-subtle`, which measured 4.7-4.9:1 and passed AA by only 0.2-0.4.
+- **Gotchas / invariants:** Do not add a bare "AI" beside the sparkles icon in the Chat view header to make the cue louder: at 390px the row (Back to Classic / Résumé / Talk / badge) has no slack, and the extra 23px made "Back to Classic" wrap onto two lines (tried and reverted; `chat-view.dom.test.tsx` pins that no bare "AI" text or extra element sits there, and the `chat view header` test in `e2e/views.spec.ts` pins the one-line button at 390px). The header is already tight below that width: at 320-375px "Back to Classic" wraps even without a chip (46px instead of 30px) and the row overflows its box (20px at 320px, 60px at 280px, where the page scrolls sideways), so any header-based cue would first need a layout fix (nowrap, or hide Résumé on phones).
 
 ### `chat/chat-view.tsx`
 - **Role:** The `chat` view — a bounded-height "concierge console" around `useChat`.
@@ -273,7 +273,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - Chip rails are single-row horizontal scrollers (`overflow-x-auto`, edge fade, `role="group"`), not wrapped grids: `RECRUITER_CHIPS` always (:171-198), `STARTER_CHIPS` only in the empty state (:199-225); a chip is a no-op while streaming (`ask`, :58-62).
   - `FilePickerButton` renders only when `process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === "true"` (:259) and new files are appended then `.slice(0, 3)` (:262).
   - Removing a pending attachment revokes its `previewUrl` (:232-238).
-  - The visitor is told it is an AI assistant twice, in words a phone shows: the empty-state intro ("I'm an AI assistant grounded in real projects and production systems …", :130-132) and the caption under the composer, `{AI_CAPTION}` (:287), which stays after the first message. The header label is unchanged ("AI Concierge" from `sm` up, screen-reader-only below it, :99-100).
+  - The visitor is told it is an AI assistant twice, in words a phone shows: the empty-state intro ("I'm an AI assistant grounded in real projects and production systems …", :130-132) and the caption under the composer, `{AI_CAPTION}` (:287, `text-fg-muted`), which stays after the first message (`chat-view.dom.test.tsx` renders a non-empty transcript to pin that, and `e2e/views.spec.ts` checks both are visible, not only in the DOM). The header label is unchanged ("AI Concierge" from `sm` up, screen-reader-only below it, `chat-view.tsx:99-100`).
   - The Send/Stop button swaps on `isStreaming` (:267-284); Send is disabled unless there is text or a pending file (:278).
 - **Gotchas / invariants:** The `min-h-0` / `shrink-0` layout comments (:107-108, :110-114, :164-170, :241-242) document real regressions — the composer previously escaped the bordered `<section>` on short viewports. `ViewEscapeHatch` is the first focusable element (:28-29 doc, :85). The text input is not disabled while streaming, so Enter still submits the form: `onSubmit` calls `send` (which returns early, `use-chat.ts:262`) and then clears the input and pending files (:51-56), silently discarding them (inferred from the code and the HTML implicit-submission rule; not browser-verified).
 
@@ -368,7 +368,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - `isChromeTtsBuggy()` = `/Chrome\//` and **not** Brave (`navigator.brave`) and **not** `/Edg\//` (:102-110). The banner shows only when `CHROME_TTS_BANNER_ENABLED` (`NEXT_PUBLIC_CHROME_TTS_BANNER === "true"`, `writing-flags.ts:92-93`) **and** buggy Chrome **and** `ttsEngine === "browser"` (:349-351).
   - `TtsTestButton` renders only when `NEXT_PUBLIC_VOICE_TEST_AUDIO === "true"` (:494) and makes exactly one synchronous `speak()` attempt — no retries, because Chrome's user-activation window expires (:45-47).
   - Picking a voice also syncs `ttsEngine` to that voice's engine, so a stale `polly` in localStorage doesn't strand a browser-voice pick on the remote path (:559-565).
-  - The idle hint reads "Tap the orb or press Space to start · AI assistant, grounded in real work" (`AI_VOICE_HINT`, :517); the in-conversation hint ("… to take your turn · Esc to close") is unchanged.
+  - The idle hint reads "Tap the orb or press Space to start · AI assistant, grounded in real work" (`AI_VOICE_HINT`, :517); the in-conversation hint ("… to take your turn · Esc to close") is unchanged. The idle hint is what the phone modal shows until the first tap. The desktop inline panel mounts `TalkMode` with `autoStart` (`anvil-inline-panel.tsx:133`), which opens the mic on mount (:211-217), so there the in-conversation hint is on screen from the first paint and the AI wording is carried by the header label and the captions, not by this hint.
   - Focus rescue: when the prompt chips unmount on the first turn and `document.activeElement === document.body`, focus moves to `primaryRef` (:218-230).
 - **Gotchas / invariants:** The orb is `aria-hidden` and decorative — meaning is carried by the visible label + live region (:320-337). `VoicePicker` is mounted **inside** `TalkMode` so opening it inherits the settings store and does not tear down the session (:168-170).
 
@@ -376,7 +376,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Radix Dialog modal wrapper for `TalkMode` (the default `talkSurface`).
 - **Exports:** `TalkModeOverlay` (component, props `{ open, onOpenChange, getOpener? }`).
 - **Consumed by:** `talk-mode-mount.tsx:3`.
-- **Behaviour notes:** `onOpenAutoFocus` redirects focus to the first `button[type="button"]` inside the content so a keyboard user can start talking immediately (:35-46). `onCloseAutoFocus` restores focus to `getOpener()` because this is a *controlled* dialog Radix has no trigger for (:47-53). Visually-hidden `Dialog.Title`/`Description` satisfy Radix's a11y contract (:76-81). Entrance is a single in-portal Motion spring — deliberately **not** a cross-portal layout morph, which would churn the WebGL context (:56-60).
+- **Behaviour notes:** `onOpenAutoFocus` redirects focus to the first `button[type="button"]` inside the content so a keyboard user can start talking immediately (:35-46). `onCloseAutoFocus` restores focus to `getOpener()` because this is a *controlled* dialog Radix has no trigger for (:47-53). Visually-hidden `Dialog.Title`/`Description` satisfy Radix's a11y contract (:76-81); the description says "the portfolio's AI assistant" (:78). Entrance is a single in-portal Motion spring — deliberately **not** a cross-portal layout morph, which would churn the WebGL context (:56-60).
 - **Gotchas / invariants:** `max-h-[90vh] overflow-y-auto` on the inner motion div is the safety net for short viewports where banner + primer + chips stack above the already-scrollable captions (:70-74).
 
 ### `chat/anvil-inline-panel.tsx`
@@ -456,7 +456,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/voice-orb.tsx` / `voice-orb-canvas.tsx` / `voice-orb-3d.tsx`
 - **Role:** The orb renderer stack. `VoiceOrb` selects; `VoiceOrbCanvas` is the universal baseline; `VoiceOrb3D` is the desktop R3F enhancement.
 - **Exports:** `VoiceOrb`, `VoiceOrbCanvas`, `VoiceOrb3D` — all take `{ level: React.RefObject<number>, state: VoiceSessionState, size? }`; `VoiceOrb3D` additionally takes `errorMode?`.
-- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :328). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
+- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
 - **Behaviour notes:**
   - `use3D = isDesktop && webgl && !reduced && !glFailed` (`voice-orb.tsx:42`); the 3D orb is wrapped in `WebGLBoundary` whose `onFail` flips permanently to the canvas orb (:44-50). `VoiceOrb3D` is lazy so three/R3F never enters the talk-mode bundle on mobile / reduced-motion / no-WebGL (:11-16).
   - `VoiceOrbCanvas` draws a single static ring and returns early (no rAF loop) under `prefers-reduced-motion` (:54-63). Otherwise one rAF loop reads `level.current` directly — never through React state (:69-118). DPR is capped at 2 (:45). Accent is hard-coded `#38e1ff` to match `--accent` (:19).
@@ -489,11 +489,11 @@ See **Store & hook map** above. All three are structurally identical: module `op
   - The inner widget is keyed by `view` (:42), so any view change remounts it and resets `useChat`'s message list — transcript/open state never leaks across a classic↔gamified switch, with no setState-in-effect (:32-38).
   - Its own four `SUGGESTED` prompts (:25-30) are **separate** from `chat-suggestions.ts` — the two lists overlap but are not shared.
   - Autoscroll uses `useAutoScroll({ threshold: 120, enabled: open, surface: "widget", mode: "bottom-pin" })` — bottom-pin only, and attaches nothing while closed (:60-65).
-  - The caption under the composer is the shared `AI_CAPTION` (:261), the same line the Chat view uses.
+  - The caption under the composer is the shared `AI_CAPTION` (:261, `text-fg-muted`), the same line the Chat view uses, and the empty-state greeting opens "Hi! 👋 I'm an AI assistant." (:166-167); the caption is what stays once a message is sent (`ask-portfolio.dom.test.tsx` and `e2e/views.spec.ts` pin both).
   - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:67-71).
   - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:203-222) — the widget never dispatches `cmd-view`/`cmd-highlight` side effects (that lives only in `ChatMessages`), so a model-emitted `[[cmd:view:…]]` is silently dropped here. An empty assistant message shows "Thinking…" only while streaming (:194-201).
   - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:17-23). On mobile the panel re-measures `window.visualViewport` (feature-detected, `resize` listener) and lifts itself above the on-screen keyboard via `keyboardInset` (:73-92, style at :116-123). Accessibility: `useChatA11y` (:53) feeds its own sr-only `aria-live="polite"` region (:139-141); the transcript is `role="log"` with an explicit `aria-live="off"` (:147-156) so it does not double-announce.
-- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:250). The widget does **not** render attachments, thinking blocks, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:50`), surfaces the 503 message (`:85`) and shows the shared AI caption (`:105`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
+- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:250). The widget does **not** render attachments, thinking blocks, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:51`), surfaces the 503 message (`:86`), shows the shared AI caption (`:106`), opens with "I'm an AI assistant" (`:114`) and keeps the caption once an answer streams (`:121`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
 - **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:171-225`).

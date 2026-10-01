@@ -2062,28 +2062,28 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
-    "e2e/views.spec.ts:157": {
+    "e2e/views.spec.ts:214": {
       "fp": "19f5206389e0",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:180": {
+    "e2e/views.spec.ts:237": {
       "fp": "29576b54e255",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "});"
     },
-    "e2e/views.spec.ts:184": {
+    "e2e/views.spec.ts:241": {
       "fp": "8e5c494d0c11",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:189": {
+    "e2e/views.spec.ts:246": {
       "fp": "7ba9677d7b80",
       "citedBy": [
         "02-api-routes.md"
@@ -8150,7 +8150,7 @@
       ],
       "preview": "import { render, screen, fireEvent, waitFor, within, cleanup } from \"@testing-library/react\";"
     },
-    "src/components/ask-portfolio.dom.test.tsx:82": {
+    "src/components/ask-portfolio.dom.test.tsx:83": {
       "fp": "91109d4c8598",
       "citedBy": [
         "02-api-routes.md"
@@ -8327,6 +8327,13 @@
         "05-components-chat-voice.md"
       ],
       "preview": "useVoiceSession();"
+    },
+    "src/components/chat/anvil-inline-panel.tsx:133": {
+      "fp": "371372636169",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "<TalkMode onClose={close} autoStart />"
     },
     "src/components/chat/anvil-inline-panel.tsx:5": {
       "fp": "db89c9bb8e6b",
@@ -8619,6 +8626,13 @@
       ],
       "preview": "}"
     },
+    "src/components/chat/chat-view.tsx:100": {
+      "fp": "d0e7bd3076ad",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "<span className=\"sr-only sm:hidden\">AI Concierge</span>"
+    },
     "src/components/chat/chat-view.tsx:11": {
       "fp": "5ff2a6b3985c",
       "citedBy": [
@@ -8719,6 +8733,13 @@
         "14b-subsystems.md"
       ],
       "preview": "<ViewEscapeHatch />"
+    },
+    "src/components/chat/chat-view.tsx:99": {
+      "fp": "0bce50770013",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "<span className=\"hidden sm:inline\">AI Concierge</span>"
     },
     "src/components/chat/file-picker-button.tsx:104": {
       "fp": "e1be4fdef077",

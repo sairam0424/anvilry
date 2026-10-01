@@ -8150,28 +8150,28 @@
       ],
       "preview": "import { render, screen, fireEvent, waitFor, within, cleanup } from \"@testing-library/react\";"
     },
-    "src/components/ask-portfolio.dom.test.tsx:81": {
+    "src/components/ask-portfolio.dom.test.tsx:82": {
       "fp": "91109d4c8598",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "expect(fetchMock).toHaveBeenCalledWith(\"/api/chat\", expect.objectContaining({ method: \"POST\" }));"
     },
-    "src/components/ask-portfolio.tsx:11": {
+    "src/components/ask-portfolio.tsx:12": {
       "fp": "8d281e623f61",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "import { parseCards } from \"@/components/chat/parse-cards\";"
     },
-    "src/components/ask-portfolio.tsx:13": {
+    "src/components/ask-portfolio.tsx:14": {
       "fp": "dc2b18fdd7a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { useAutoScroll } from \"@/lib/scroll/use-auto-scroll\";"
     },
-    "src/components/ask-portfolio.tsx:18": {
+    "src/components/ask-portfolio.tsx:19": {
       "fp": "1a8f6f036163",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -8179,49 +8179,49 @@
       ],
       "preview": "const MarkdownMessage = dynamic("
     },
-    "src/components/ask-portfolio.tsx:20": {
-      "fp": "bf5b8bfbf6cd",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "import(\"@/components/chat/markdown-message\").then((m) => m.MarkdownMessage),"
-    },
-    "src/components/ask-portfolio.tsx:202": {
+    "src/components/ask-portfolio.tsx:203": {
       "fp": "fc4c1868f34c",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "return ("
     },
-    "src/components/ask-portfolio.tsx:22": {
-      "fp": "9d8b2b5670d1",
+    "src/components/ask-portfolio.tsx:21": {
+      "fp": "bf5b8bfbf6cd",
       "citedBy": [
-        "05-components-chat-voice.md"
+        "13-dependencies-and-versions.md"
       ],
-      "preview": ");"
+      "preview": "import(\"@/components/chat/markdown-message\").then((m) => m.MarkdownMessage),"
     },
-    "src/components/ask-portfolio.tsx:221": {
+    "src/components/ask-portfolio.tsx:222": {
       "fp": "aac32651b10f",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "</div>"
     },
-    "src/components/ask-portfolio.tsx:226": {
+    "src/components/ask-portfolio.tsx:227": {
       "fp": "9a85f1c662c0",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<JumpToLatest"
     },
-    "src/components/ask-portfolio.tsx:249": {
+    "src/components/ask-portfolio.tsx:23": {
+      "fp": "9d8b2b5670d1",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": ");"
+    },
+    "src/components/ask-portfolio.tsx:250": {
       "fp": "39b561ffad32",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "<MicButton onText={setInput} disabled={isStreaming} compact />"
     },
-    "src/components/ask-portfolio.tsx:41": {
+    "src/components/ask-portfolio.tsx:42": {
       "fp": "b68f190b795d",
       "citedBy": [
         "14-subsystems.md"
@@ -8234,6 +8234,27 @@
         "05-components-chat-voice.md"
       ],
       "preview": "import { useChat } from \"@/components/chat/use-chat\";"
+    },
+    "src/components/ask-portfolio.tsx:9": {
+      "fp": "0655203a537d",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "import { AI_CAPTION } from \"@/components/chat/ai-disclosure\";"
+    },
+    "src/components/chat/ai-disclosure.ts:10": {
+      "fp": "90a24a03427d",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "export const AI_CAPTION ="
+    },
+    "src/components/chat/ai-disclosure.ts:11": {
+      "fp": "cd197988ee36",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "\"AI assistant · grounded in real work · may simplify details\";"
     },
     "src/components/chat/anvil-core-store.ts:22": {
       "fp": "77d0d4ccbf0a",
@@ -8619,35 +8640,42 @@
       ],
       "preview": "import { FilePickerButton } from \"@/components/chat/file-picker-button\";"
     },
-    "src/components/chat/chat-view.tsx:167": {
+    "src/components/chat/chat-view.tsx:16": {
+      "fp": "0655203a537d",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "import { AI_CAPTION } from \"@/components/chat/ai-disclosure\";"
+    },
+    "src/components/chat/chat-view.tsx:171": {
       "fp": "8166d4dd5522",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "<div className=\"mt-4 shrink-0\">"
     },
-    "src/components/chat/chat-view.tsx:221": {
+    "src/components/chat/chat-view.tsx:225": {
       "fp": "8532178deab6",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": ")}"
     },
-    "src/components/chat/chat-view.tsx:226": {
+    "src/components/chat/chat-view.tsx:230": {
       "fp": "dc2ebcb60cc8",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "<AttachmentPreviewStrip"
     },
-    "src/components/chat/chat-view.tsx:235": {
+    "src/components/chat/chat-view.tsx:239": {
       "fp": "cc80a2b0dd23",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "/>"
     },
-    "src/components/chat/chat-view.tsx:255": {
+    "src/components/chat/chat-view.tsx:259": {
       "fp": "1b8545939f1c",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -8663,28 +8691,28 @@
       ],
       "preview": "import { useChat } from \"@/components/chat/use-chat\";"
     },
-    "src/components/chat/chat-view.tsx:78": {
+    "src/components/chat/chat-view.tsx:79": {
       "fp": "2215c92a570f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "OPEN_TO_WORK"
     },
-    "src/components/chat/chat-view.tsx:79": {
+    "src/components/chat/chat-view.tsx:80": {
       "fp": "196d86a4b930",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "? \"h-[calc(100dvh-3.5rem-2.3125rem)]\""
     },
-    "src/components/chat/chat-view.tsx:80": {
+    "src/components/chat/chat-view.tsx:81": {
       "fp": "f0e43575f9f2",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": ": \"h-[calc(100dvh-3.5rem)]\","
     },
-    "src/components/chat/chat-view.tsx:84": {
+    "src/components/chat/chat-view.tsx:85": {
       "fp": "50d0f08b90fc",
       "citedBy": [
         "08-components-site-shell-ui.md",
@@ -9154,41 +9182,41 @@
       "preview": "import { VoicePicker } from \"@/components/chat/voice-picker\";"
     },
     "src/components/chat/talk-mode.tsx:20": {
+      "fp": "047ee443dbb6",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "import { AI_VOICE_HINT } from \"@/components/chat/ai-disclosure\";"
+    },
+    "src/components/chat/talk-mode.tsx:21": {
       "fp": "8be6cbcc6da8",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { useVoiceSettings } from \"@/lib/voice-settings-context\";"
     },
-    "src/components/chat/talk-mode.tsx:21": {
+    "src/components/chat/talk-mode.tsx:22": {
       "fp": "a72b91774ecf",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { getDefaultVoiceId, getVoiceById } from \"@/lib/voice-catalog\";"
     },
-    "src/components/chat/talk-mode.tsx:23": {
-      "fp": "e0cbdab30393",
-      "citedBy": [
-        "05-components-chat-voice.md"
-      ],
-      "preview": "import {"
-    },
-    "src/components/chat/talk-mode.tsx:236": {
+    "src/components/chat/talk-mode.tsx:237": {
       "fp": "7b423feca616",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "onClose();"
     },
-    "src/components/chat/talk-mode.tsx:26": {
-      "fp": "c8cc157d8b97",
+    "src/components/chat/talk-mode.tsx:24": {
+      "fp": "e0cbdab30393",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
-      "preview": "} from \"@/components/chat/voice-pitfalls\";"
+      "preview": "import {"
     },
-    "src/components/chat/talk-mode.tsx:263": {
+    "src/components/chat/talk-mode.tsx:264": {
       "fp": "951e0d602d4e",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -9196,21 +9224,28 @@
       ],
       "preview": "const answerText = toCaptionText(lastAssistantText(messages));"
     },
-    "src/components/chat/talk-mode.tsx:273": {
+    "src/components/chat/talk-mode.tsx:27": {
+      "fp": "c8cc157d8b97",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "} from \"@/components/chat/voice-pitfalls\";"
+    },
+    "src/components/chat/talk-mode.tsx:274": {
       "fp": "91f55af2a2e6",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (!supported) {"
     },
-    "src/components/chat/talk-mode.tsx:289": {
+    "src/components/chat/talk-mode.tsx:290": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/components/chat/talk-mode.tsx:348": {
+    "src/components/chat/talk-mode.tsx:349": {
       "fp": "6559c07b0c49",
       "citedBy": [
         "14-subsystems.md",
@@ -9218,7 +9253,7 @@
       ],
       "preview": "{CHROME_TTS_BANNER_ENABLED &&"
     },
-    "src/components/chat/talk-mode.tsx:350": {
+    "src/components/chat/talk-mode.tsx:351": {
       "fp": "366c812f80b3",
       "citedBy": [
         "14-subsystems.md",
@@ -9226,35 +9261,35 @@
       ],
       "preview": "settings.ttsEngine === \"browser\" && ("
     },
-    "src/components/chat/talk-mode.tsx:362": {
+    "src/components/chat/talk-mode.tsx:363": {
       "fp": "411e69eaabdc",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "{/* Live captions — both sides of the turn as text so voice is never the only"
     },
-    "src/components/chat/talk-mode.tsx:380": {
+    "src/components/chat/talk-mode.tsx:381": {
       "fp": "0f36ab173b90",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "className=\"flex max-h-[40vh] min-h-[3.5rem] w-full max-w-md flex-col items-center gap-1.5 overflow-y"
     },
-    "src/components/chat/talk-mode.tsx:459": {
+    "src/components/chat/talk-mode.tsx:460": {
       "fp": "56e4d6577600",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "onClick={() => {"
     },
-    "src/components/chat/talk-mode.tsx:462": {
+    "src/components/chat/talk-mode.tsx:463": {
       "fp": "2f86e39b0fe2",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "}}"
     },
-    "src/components/chat/talk-mode.tsx:493": {
+    "src/components/chat/talk-mode.tsx:494": {
       "fp": "2dca153ad497",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -9263,14 +9298,14 @@
       ],
       "preview": "{process.env.NEXT_PUBLIC_VOICE_TEST_AUDIO === \"true\" && <TtsTestButton />}"
     },
-    "src/components/chat/talk-mode.tsx:558": {
+    "src/components/chat/talk-mode.tsx:559": {
       "fp": "b0549c0d6b9f",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "onPick={(id) => {"
     },
-    "src/components/chat/talk-mode.tsx:564": {
+    "src/components/chat/talk-mode.tsx:565": {
       "fp": "2f86e39b0fe2",
       "citedBy": [
         "05-components-chat-voice.md"

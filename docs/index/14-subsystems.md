@@ -350,7 +350,7 @@ CLIENT
 | # | File | Exact role |
 |---|---|---|
 | 1 | `src/components/chat/use-chat.ts` | The one transport for **every** surface: message list, stream read loop, rAF coalescing, thinking-phase timing, abort. |
-| 2 | `src/components/chat/chat-view.tsx` / `src/components/ask-portfolio.tsx` / `src/components/chat/use-voice-session.ts` | The three `useChat` call sites. `ask-portfolio.tsx:41` keys the widget by `view` so a view change resets the transcript. |
+| 2 | `src/components/chat/chat-view.tsx` / `src/components/ask-portfolio.tsx` / `src/components/chat/use-voice-session.ts` | The three `useChat` call sites. `ask-portfolio.tsx:42` keys the widget by `view` so a view change resets the transcript. |
 | 3 | `src/lib/telemetry/with-trace.ts:200-221` | Mints the traceId, stamps `x-anvilry-trace-id` on a **reconstructed** Response that passes `res.body` through so streaming survives; emits exactly one span. |
 | 4 | `src/lib/rate-limit.ts:15-17,19-51,95-110` | `RateLimitClass = "chat" \| "voice" \| "beacon"` (declared `:19`, rationale in the docblock `:15-17`); one `slidingWindow(8, "60 s")` limiter **per class** (`:22-23,33-46`) under prefixes `anvilry:chat` / `anvilry:voice` / `anvilry:beacon` (`:25-29`); `cls` is a required argument (`:95-98`). A valid `CRON_SECRET` bearer skips the limiter (`rate-limit.ts:100`, via `hasValidCronSecret`, `src/lib/cron-auth.ts:15-20`). **Fails open** twice over (`rate-limit.ts:99`, `:106-109`). |
 | 5 | `src/lib/corpus.ts:13` | Grounding document, rebuilt per request from build-time Velite data. |
@@ -468,7 +468,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY` (the nine `llm.ts` reads);
 `EXTENDED_THINKING` (server, **not** `NEXT_PUBLIC_`-prefixed, default ON, `route.ts:385`);
 `NEXT_PUBLIC_EXTENDED_THINKING` (client thinking-block rendering, `chat-messages.tsx:165`);
-`NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` (`chat-view.tsx:255`); `NEXT_PUBLIC_PDF_ATTACHMENTS`
+`NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` (`chat-view.tsx:259`); `NEXT_PUBLIC_PDF_ATTACHMENTS`
 (`file-picker-button.tsx:7`); `FAQ_CACHE_ENABLED` (kill switch, default on) and `FAQ_CACHE_SEMANTIC_MATCH`
 (default off) (`chat-cache.ts:121,129`); `CRON_SECRET` (rate-limit bypass for the eval cron);
 `UPSTASH_REDIS_REST_URL`/`_TOKEN` (rate limit + FAQ cache + telemetry sink); `VERCEL_URL` (self-fetch base for
@@ -586,7 +586,7 @@ cancels TTS (`use-voice-session.ts:238-244`).
 | Server snapshot | `DEFAULTS` — SSR HTML is always "all off" | `:191` |
 | Toggle semantics | Toggles record **intent** only; runtime capability detection always wins | `:19-22` |
 | Mic consent | First click with `micEnabled === false` shows a disclosure and does **not** listen | `mic-button.tsx:61-64` |
-| Unsupported browser | `MicButton` returns `null`; `TalkMode` renders a "type instead" panel; `HeaderOrbTrigger` returns `null` | `src/components/chat/mic-button.tsx:41` · `src/components/chat/talk-mode.tsx:273-289` · `src/components/chat/header-orb-trigger.tsx:63` |
+| Unsupported browser | `MicButton` returns `null`; `TalkMode` renders a "type instead" panel; `HeaderOrbTrigger` returns `null` | `src/components/chat/mic-button.tsx:41` · `src/components/chat/talk-mode.tsx:274-290` · `src/components/chat/header-orb-trigger.tsx:63` |
 | Remote TTS/STT failure | Non-2xx is the signal to cascade to the browser engine | `src/app/api/tts/route.ts:29-30` · `src/app/api/transcribe/route.ts:27` |
 
 ### Failure modes
@@ -603,7 +603,7 @@ cancels TTS (`use-voice-session.ts:238-244`).
 | AWS 5xx from a tier mismatch | Sending a Neural voice with `tier=generative`. `validateVoiceForEngine` (`voice-catalog.ts:350-367`) rejects it; the route accepts no `tier` field at all (`api/tts/route.ts:92-97`). |
 | Visitor B hears visitor A's audio | A cache key not varying by voice **and** tier. Pinned by `src/app/api/tts/cache.test.ts`. |
 | Self-hearing / echo | Structurally impossible: `continuous = false` (`use-speech-recognition.ts:162`) means the mic is already closed during thinking and speaking; barge-in is a UI interrupt (tap/Space), not voice (`use-voice-session.ts:26-31`). |
-| Screen-reader double-speak | `useChatA11y` swaps the answer text for `"Speaking answer aloud."` while TTS owns the audio (`use-chat-a11y.ts:19-23`); the captions block is `aria-hidden={speaking}` (`talk-mode.tsx:362-380`). |
+| Screen-reader double-speak | `useChatA11y` swaps the answer text for `"Speaking answer aloud."` while TTS owns the audio (`use-chat-a11y.ts:19-23`); the captions block is `aria-hidden={speaking}` (`talk-mode.tsx:363-381`). |
 | Raw `[[card:` fragment spoken or shown | `toCaptionText` strips both complete tokens and a dangling mid-stream fragment (`use-voice-session.ts:48-63`). Note `anvil-core-surface.tsx:196` does **not** use it. |
 | Transcript text in telemetry | Never emitted — only `audio_bytes`, derived `audio_seconds`, `transcript_chars` (`api/transcribe/route.ts:105-112`). |
 
@@ -613,7 +613,7 @@ Build-time: `NEXT_PUBLIC_ANVIL_ORB_MODE` (`inplace \| modal \| off`, default `in
 `NEXT_PUBLIC_ENABLE_ANVIL_ORB` (legacy `"false"` → `off`), `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE`
 (`core \| classic`) — all three at `header-orb-trigger.tsx:35-46`; `NEXT_PUBLIC_VOICE_PICKER_MODE`
 (`voice-picker-mode.ts:20`); `NEXT_PUBLIC_CHROME_TTS_BANNER` (`writing-flags.ts:92-93`, consumed at
-`talk-mode.tsx:348-350`); `NEXT_PUBLIC_VOICE_TEST_AUDIO` (`talk-mode.tsx:493`);
+`talk-mode.tsx:349-351`); `NEXT_PUBLIC_VOICE_TEST_AUDIO` (`talk-mode.tsx:494`);
 `NEXT_PUBLIC_ORB_POSTPROCESSING` (`voice-orb-3d.tsx:300`, additionally gated on `getDeviceTier() === "high"`).
 Server: `GOOGLE_TTS_API_KEY` (`api/tts-google/route.ts:39` — unset ⇒ 503 ⇒ the client speaks the rest of the turn with the browser voice; nothing hides the Google voices from the picker), the Bedrock
 credentials reused by Polly/Transcribe via `bedrockCreds` (`api/tts/route.ts:2`,

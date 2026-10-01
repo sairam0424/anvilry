@@ -735,7 +735,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:537-538`).
+(`CHANGELOG.md:559-560`).
 
 ### The Pagefind search-index step
 
@@ -772,8 +772,8 @@ pagefind failure fails the Vercel build.
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:508-510`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:518-520`) — the situation the `pnpm-workspace.yaml` overrides work around. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:530-532`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:540-542`) — the situation the `pnpm-workspace.yaml` overrides work around. |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4128`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -991,7 +991,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:370`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:392`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.)
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:145-147`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not
@@ -1017,7 +1017,7 @@ record the outcome rather than the original open question.
   platform behaviour was not verified.
 - **Whether Vercel deployment protection also blocks the four `VERCEL_URL`-derived fetches** (chat live stats,
   `eval`, `github-sync`, `seo-audit` — listed above). Only `health-check` was moved to `probeBase()`; the SSO-wall
-  effect on the others is inferred from the health-check finding, not observed.
+  effect on `eval` was observed on 2026-10-01 (the generated host answers `POST /api/chat` with 401 while the alias reaches the app), and on the other three is inferred from the health-check finding, not observed.
 - **Runtime cache/CDN behaviour of the statically-eligible routes** (`/llms.txt`, `/llms-full.txt`,
   `/feed.xml`, `/sitemap.xml`, `/robots.txt`, `/api/resume.json`). None sets `Cache-Control` and none reads
   the request, so all are prerenderable under `cacheComponents`, but no build manifest was inspected to

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within, cleanup } from "@testing-library/react";
 import { AskPortfolio } from "./ask-portfolio";
-import { AI_CAPTION } from "@/components/chat/ai-disclosure";
+import { AI_CAPTION, NAMES_A_MODEL_OR_VENDOR } from "@/components/chat/ai-disclosure";
 import { hiddenBy } from "@/components/chat/hidden-by.test-support";
 import { ViewProvider } from "@/components/view-context";
 
@@ -111,11 +111,12 @@ describe("AskPortfolio widget AI disclosure", () => {
     expect(hiddenBy(caption)).toBeNull();
   });
 
-  it("greets the visitor as an AI assistant", () => {
+  it("greets the visitor as an AI assistant that names no model or vendor", () => {
     renderWidget();
     fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
     const greeting = screen.getByText(/I'm an AI assistant\. Ask me anything/);
     expect(hiddenBy(greeting)).toBeNull();
+    expect(greeting.textContent ?? "").not.toMatch(NAMES_A_MODEL_OR_VENDOR);
   });
 
   it("keeps the caption once an answer has streamed in", async () => {

@@ -133,8 +133,8 @@ async function runEval(req: Request) {
 
       let responseText = "";
       if (chatRes.ok) {
-        // The visible answer only: a model that reasoned puts a reasoning block
-        // (whose markers start with the trace delimiter's byte) ahead of it.
+        // The visible answer only: while extended thinking is on, every body opens with the
+        // thinking sentinel (its first byte is the trace delimiter's), reasoning or not.
         responseText = answerFromBody(await chatRes.text());
       }
 

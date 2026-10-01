@@ -16,8 +16,8 @@ export const AI_VOICE_HINT = "AI assistant, grounded in real work";
 
 /**
  * The contract above as a pattern: a model, a vendor or a host must never appear in the copy.
- * Word-bounded, so "flaws" or "laws" do not trip "aws". The tests run every piece of
- * disclosure copy, rendered or not, through it.
+ * Word-bounded, so "flaws" or "laws" do not trip "aws". The tests run the caption, the hint, the
+ * Chat view intro and the widget greeting through it (not the voice dialog description).
  */
 export const NAMES_A_MODEL_OR_VENDOR =
   /\b(?:claude|anthropic|bedrock|sonnet|haiku|opus|chatgpt|gpt\d*|openai|gemini|llama|ollama|mistral|cohere|deepseek|copilot|bard|grok|qwen|kimi|amazon|aws|azure|google|vertex|vercel|railway)\b/i;

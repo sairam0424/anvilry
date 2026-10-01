@@ -152,7 +152,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   its mock never triggered the thinking phase) — fixed and covered in PR #262 (`0639a3d`).
   This session found **two real, live aria-live double-announce bugs** that the full existing
   CI (lint/typecheck/vitest/E2E) missed — a distinct second generation of a bug class the
-  codebase already fixed once before (`CHANGELOG.md:942-943,1082`, the "NO DOUBLE-SPEAK" logic in
+  codebase already fixed once before (`CHANGELOG.md:964-965,1104`, the "NO DOUBLE-SPEAK" logic in
   `use-chat-a11y.ts`). The repo already has the right pattern for this kind of fail-closed
   regression pin (`use-chat-a11y.dom.test.tsx`, `parse-cards.test.ts`, both build-blocking via
   `pnpm build`). Once the two live bugs are fixed, add/extend a DOM test asserting exactly one
@@ -160,8 +160,8 @@ already shipped to real users with a confirmed, sourced failure mode.
   just `useChatA11y` in isolation) — this is a more reliable regression guard for this exact
   defect class than any generic scanner (see the P1 axe-core item below, which would **not** have
   caught this).
-  *Sources:* `docs/index/05-components-chat-voice.md:236` ("Two live regions coexist..."); direct
-  read of `src/components/chat/use-chat-a11y.ts`; `CHANGELOG.md:942-943,1082`.
+  *Sources:* `docs/index/05-components-chat-voice.md` (its live-region notes; the line number and the quoted phrase this cite carried no longer match); direct
+  read of `src/components/chat/use-chat-a11y.ts`; `CHANGELOG.md:964-965,1104`.
   *Risk:* None — additive test only. Must be written against the **fixed** behavior, or it will
   codify the bug rather than prevent it.
 
@@ -195,7 +195,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   output with a `max_tokens` budget sized for a no-thinking response.
 
 - **[P1 / S] Fix `BEDROCK_PRICE`'s cache-write multiplier for Sonnet 4.6 to reflect the 1-hour
-  TTL actually used** — *(stream: bedrock-prompt-caching-best-practices)*
+  TTL actually used** — *(stream: bedrock-prompt-caching-best-practices)* — **✅ SHIPPED in v3.10.0, PR #296** (`src/lib/llm-pricing.ts`)
   `route.ts`'s own inline comment already asserts a "2x write premium" for its 1-hour-TTL cache
   block, and its stated break-even math ("breaks even after just 2 reads") is only internally
   consistent with a 2x multiplier — yet `BEDROCK_PRICE.cacheWrite` for Sonnet 4.6 is set to
@@ -367,7 +367,7 @@ already shipped to real users with a confirmed, sourced failure mode.
 ### Actionable
 
 - **[P2 / S] Bump the secondary/fallback Opus rung on both model chains and align generations**
-  — *(stream: claude-model-chain-currency)*
+  — *(stream: claude-model-chain-currency)* — **superseded in v3.10.0, PR #296**: Opus is no longer in the default chain (opt-in via `LLM_USE_OPUS_FALLBACK`)
   Bump `BEDROCK_CHAIN`'s secondary to `us.anthropic.claude-opus-5`, matching Anthropic's actual
   current Opus-tier model, and fix the small pre-existing inconsistency where `ANTHROPIC_CHAIN`
   already uses a newer Opus (4.7) than `BEDROCK_CHAIN` (4.6-v1). Since the account's Opus IAM
@@ -381,7 +381,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   documentation accurate.
 
 - **[P2 / S] Re-derive the Opus 4.6 and Haiku 4.5 rows in `BEDROCK_PRICE`** — *(stream:
-  bedrock-prompt-caching-best-practices)*
+  bedrock-prompt-caching-best-practices)* — **✅ SHIPPED in v3.10.0, PR #296** (`src/lib/llm-pricing.ts`)
   Both rows currently match older model generations' rate cards (Opus 4.1 and Haiku 3.5,
   respectively) rather than the models actually named in the row. Opus's row is dormant
   (IAM-denied), but Haiku 4.5 is the real, reachable fallback tier — its mispriced row distorts
@@ -392,7 +392,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   a sanity check (see "Does NOT cover" below).
 
 - **[P2 / S] Make `cacheWrite` TTL-aware in the pricing table** (e.g.
-  `cacheWrite5m`/`cacheWrite1h`) — *(stream: bedrock-prompt-caching-best-practices)*
+  `cacheWrite5m`/`cacheWrite1h`) — *(stream: bedrock-prompt-caching-best-practices)* — **✅ SHIPPED in v3.10.0, PR #296** (`src/lib/llm-pricing.ts`)
   Cheap to bundle with the item above; prevents the same class of staleness recurring if a
   future change adds a second, shorter-TTL checkpoint. Not urgent — Anvilry uses only one TTL
   today.

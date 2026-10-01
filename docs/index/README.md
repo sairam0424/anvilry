@@ -16,7 +16,7 @@ résumé.
 **Version:** `3.10.0` (`package.json:3`). The previous release, `v3.9.0` (tag `96f393e`, 2026-10-01), removed two things a visitor could see; before it, `v3.8.0` (tag `ce0ee10`, 2026-09-30), was one behaviour fix and one opt-in setting; before it, `v3.7.0` (tag `8ba0be5`, 2026-09-30) was a hardening and correctness pass, and `v3.6.0` (tag `c734c14`, 2026-08-21) was a **correctness and
 CI-integrity** release: the pnpm 11 install failure CI could not see, all four article source-label maps
 type-enforced (two re-keyed by `ArticleSource`), a bundle gate that can actually fail replacing one that ran 222
-times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:292-382`). `main` @ `a929932` had moved 297
+times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:314-404`). `main` @ `a929932` had moved 297
 commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` was the first bump since, so `3.10.0`
 names the *declared* version of this tree, and the `v3.6.0` tag marks an older tree.
 
@@ -98,7 +98,7 @@ what the code says.
 | FAQ response cache | First-turn `/api/chat` questions (exactly one string message, no `X-Chat-Skip-Cache` header): an exact tier keyed by the SHA-256 of the normalized question, plus an optional semantic tier (`FAQ_CACHE_SEMANTIC_MATCH=true`; Titan v2 embeddings, 512 dims, 5 s timeout; cosine ≥ 0.92). TTL 24 h; index capped at 500 entries and trimmed on 1-in-20 writes; answers ≤ 4,000 chars and only after a clean `end_turn` served by the primary rung (a fallback-rung answer is never cached); entries written under an older `anvilry:corpus:built_at` stamp count as misses. Kill switch `FAQ_CACHE_ENABLED=false`; operator purge is `POST /api/admin/faq-cache/purge` | `src/lib/chat-cache.ts:63-79` (constants), `src/lib/chat-cache.ts:121-131` (env switches), `src/lib/chat-cache.ts:223` (threshold); `src/lib/faq-embeddings.ts:20-28`; `src/app/api/chat/route.ts:276-282` (eligibility); `src/instrumentation.ts:93-100` (corpus stamp) |
 | Telemetry span kinds | **8** — `http.request`, `llm.attempt`, `tts.request`, `transcribe.request`, `client.error`, `server.error`, `budget.tick`, `chat.cache`. Only five are emitted today; `tts.request`, `transcribe.request` and `budget.tick` appear only in the schema, the admin dashboard, the `scripts/replay-trace.mjs` kind list and tests, never at an emit site. Redis retention is 7 days, trimmed on 1-in-20 emits | `src/lib/telemetry/schema.ts:37-49`; `src/lib/telemetry/emit.ts:54` (sample rate), `src/lib/telemetry/emit.ts:85` (the sampled trim) |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-34`; `src/components/view-switcher.tsx:25-60`, `src/components/view-switcher.tsx:96-97`, `src/components/view-switcher.tsx:103` |
-| CHANGELOG version tags | 23 (still no `2.x`, no `3.1`–`3.3`) | `[3.10.0]` (2026-10-01) is the newest entry, then `[3.9.0]` (2026-10-01), `[3.8.0]` (2026-09-30), `[3.7.0]` (2026-09-30) and `[3.6.0]` (`CHANGELOG.md:292`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 23 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284; `[3.8.0]` covers #287; `[3.9.0]` covers #291 and #292; `[3.10.0]` covers #296 and #297) |
+| CHANGELOG version tags | 23 (still no `2.x`, no `3.1`–`3.3`) | `[3.10.0]` (2026-10-01) is the newest entry, then `[3.9.0]` (2026-10-01), `[3.8.0]` (2026-09-30), `[3.7.0]` (2026-09-30) and `[3.6.0]` (`CHANGELOG.md:314`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 23 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284; `[3.8.0]` covers #287; `[3.9.0]` covers #291 and #292; `[3.10.0]` covers #296 and #297) |
 
 Recipe for the two coverage rows (bash; re-run it after editing any section's Coverage list — the figures above
 were taken from sections 01–13 as they stood when this file was last edited):
@@ -109,6 +109,7 @@ cov() { for f in docs/index/{0[1-9],1[0-3]}-*.md; do
 cov | wc -l                                                     # Coverage bullets, duplicates included
 cov | sort -u | wc -l                                           # distinct paths
 comm -23 <(git ls-files | grep -v '^docs/index/' | sort) <(cov | sort -u)   # tracked files with no entry
+for f in docs/index/{0[1-9],1[0-3]}-*.md; do awk '/^## Coverage/{c=1;next} /^## /{c=0} c && /^- `/{sub(/^- `/,""); sub(/`.*/,""); print}' "$f" | sort -u; done | sort | uniq -c | awk '$1>1{n++; s+=$1-1} END{print n, s}'   # paths in more than one section, surplus
 ```
 
 **79** distinct paths are covered by more than one section (81 surplus occurrences — `src/lib/r3f.ts` and

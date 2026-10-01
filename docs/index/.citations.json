@@ -2062,6 +2062,20 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
+    "e2e/views.spec.ts:134": {
+      "fp": "e613c6c8961d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "test.skip("
+    },
+    "e2e/views.spec.ts:137": {
+      "fp": "9d8b2b5670d1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ");"
+    },
     "e2e/views.spec.ts:214": {
       "fp": "19f5206389e0",
       "citedBy": [

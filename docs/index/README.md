@@ -1,23 +1,23 @@
 ---
 kind: doc
-title: Anvilry v3.10.0 — Codebase Index
+title: Anvilry v3.11.0 — Codebase Index
 domain: [content]
 status: current
-version: v3.10.0
+version: v3.11.0
 ---
 
-# Anvilry v3.10.0 — Codebase Index
+# Anvilry v3.11.0 — Codebase Index
 
 **Anvilry** is a personal portfolio and AI-powered developer showcase: one Next.js App Router app that
 serves multiple client-switchable experiences from a single URL, grounded on one MDX content source that
 also feeds a chatbot, an MCP server, a 3D knowledge graph, a keyboard terminal, and a machine-readable
 résumé.
 
-**Version:** `3.10.0` (`package.json:3`). The previous release, `v3.9.0` (tag `96f393e`, 2026-10-01), removed two things a visitor could see; before it, `v3.8.0` (tag `ce0ee10`, 2026-09-30), was one behaviour fix and one opt-in setting; before it, `v3.7.0` (tag `8ba0be5`, 2026-09-30) was a hardening and correctness pass, and `v3.6.0` (tag `c734c14`, 2026-08-21) was a **correctness and
+**Version:** `3.11.0` (`package.json:3`). The previous release, `v3.10.0` (tag `0f359d3`, 2026-10-01), changed the chat model's chain, reasoning and prices and added a neutral AI cue; before it, `v3.9.0` (tag `96f393e`, 2026-10-01), removed two things a visitor could see; before it, `v3.8.0` (tag `ce0ee10`, 2026-09-30), was one behaviour fix and one opt-in setting; before it, `v3.7.0` (tag `8ba0be5`, 2026-09-30) was a hardening and correctness pass, and `v3.6.0` (tag `c734c14`, 2026-08-21) was a **correctness and
 CI-integrity** release: the pnpm 11 install failure CI could not see, all four article source-label maps
 type-enforced (two re-keyed by `ArticleSource`), a bundle gate that can actually fail replacing one that ran 222
-times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:314-404`). `main` @ `a929932` had moved 297
-commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` was the first bump since, so `3.10.0`
+times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:349-439`). `main` @ `a929932` had moved 297
+commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` was the first bump since, so `3.11.0`
 names the *declared* version of this tree, and the `v3.6.0` tag marks an older tree.
 
 **Stack:** Next.js 16.3.5 (App Router, `cacheComponents: true`) · React 19.3.0 · TypeScript 5.9 (strict) ·
@@ -25,7 +25,7 @@ Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) 
 Upstash Redis (rate limits, FAQ response cache, telemetry) · React Three Fiber + three.js 0.186 ·
 Vitest 5 + Playwright 1.62 · deployed on Vercel.
 
-**This index describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` @ `a929932` (2026-09-19) plus five later behavioural fixes, two more in v3.8.0 (an IAM-denied model falls through to the next rung; `LLM_USE_SONNET_5_5` opts in to Claude Sonnet 5.5), two in v3.9.0 (the model and provider line under chat answers, and the Konami-code easter egg, are removed) and two in v3.10.0 (Sonnet 4.6 backs up a Sonnet 5.x primary and Opus is opt-in, Sonnet 5.x streams a reasoning summary, `cost_usd` comes from a verified per-model price table and the eval cron reads the answer correctly; a neutral AI cue says the answers are AI-generated).** It was measured in
+**This index describes Anvilry v3.11.0 (`package.json` 3.11.0), i.e. `main` @ `a929932` (2026-09-19) plus five later behavioural fixes, two more in v3.8.0 (an IAM-denied model falls through to the next rung; `LLM_USE_SONNET_5_5` opts in to Claude Sonnet 5.5), two in v3.9.0 (the model and provider line under chat answers, and the Konami-code easter egg, are removed) and two in v3.10.0 (Sonnet 4.6 backs up a Sonnet 5.x primary and Opus is opt-in, Sonnet 5.x streams a reasoning summary, `cost_usd` comes from a verified per-model price table and the eval cron reads the answer correctly; a neutral AI cue says the answers are AI-generated) and one in v3.11.0 (`LLM_THINKING_EFFORT` takes all five effort levels, so Sonnet 5.5 can be made to reason on every question).** It was measured in
 the worktree at `8e9e73e` (branch `docs/fix-index-drift-post-v3-6`), whose non-`docs/` tree differs from
 `a929932` only by those fixes (`git diff a929932 8e9e73e -- . ':!docs'` lists exactly their files):
 
@@ -54,7 +54,7 @@ earlier pin (`release/v3.6.0` @ `c734c14`) predates it, so citations written aga
 | | |
 |---|---|
 | **What it is** | One Next.js App Router app presenting six `View` union members from `/`, all derived from one Velite MDX corpus |
-| **Version** | `3.10.0` (`package.json:3`) — `main` @ `a929932` plus the five fixes above, the two v3.8.0 changes, the two v3.9.0 removals and the two v3.10.0 changes (`a929932` is 297 commits past the `v3.6.0` tag) |
+| **Version** | `3.11.0` (`package.json:3`) — `main` @ `a929932` plus the five fixes above, the two v3.8.0 changes, the two v3.9.0 removals, the two v3.10.0 changes and the v3.11.0 effort levels (`a929932` is 297 commits past the `v3.6.0` tag) |
 | **Scale** | 328 `.ts`/`.tsx` files in `src/` totalling 44,724 lines (232 non-test files / 29,504 lines + 96 test files) · 39 files under `content/` · 61 route-defining files |
 | **Subsystems** | content pipeline (incl. the decisions ledger) · view system · chat/LLM (incl. the FAQ response cache) · voice · MCP (10 tools) · telemetry · auth/security · feature flags · 3D/WebGL · build & deploy |
 | **Hardest constraint** | `cacheComponents: true` (`next.config.ts:203`) — no route may export `runtime`, `revalidate` or `dynamic`; every page builds `PARTIALLY_STATIC` |
@@ -67,7 +67,7 @@ earlier pin (`release/v3.6.0` @ `c734c14`) predates it, so citations written aga
 ## By the numbers
 
 Measured from the working tree at `8e9e73e` (`main` @ `a929932` plus the five fixes above) unless a row says
-otherwise; the file-coverage, line-count and test-count rows were re-measured at the v3.10.0 cut. A claim in `CLAUDE.md`, `README.md`, `ARCHITECTURE.md` and friends that the code contradicts is
+otherwise; the file-coverage, line-count and test-count rows were re-measured at the v3.11.0 cut. A claim in `CLAUDE.md`, `README.md`, `ARCHITECTURE.md` and friends that the code contradicts is
 ledgered in [12 § Doc-vs-code drift](./12-docs-knowledge-and-harness.md#doc-vs-code-drift) and
 [15 § Documented-but-unconfirmed](./15-invariants-and-gotchas.md#documented-but-unconfirmed); this table states
 what the code says.
@@ -98,7 +98,7 @@ what the code says.
 | FAQ response cache | First-turn `/api/chat` questions (exactly one string message, no `X-Chat-Skip-Cache` header): an exact tier keyed by the SHA-256 of the normalized question, plus an optional semantic tier (`FAQ_CACHE_SEMANTIC_MATCH=true`; Titan v2 embeddings, 512 dims, 5 s timeout; cosine ≥ 0.92). TTL 24 h; index capped at 500 entries and trimmed on 1-in-20 writes; answers ≤ 4,000 chars and only after a clean `end_turn` served by the primary rung (a fallback-rung answer is never cached); entries written under an older `anvilry:corpus:built_at` stamp count as misses. Kill switch `FAQ_CACHE_ENABLED=false`; operator purge is `POST /api/admin/faq-cache/purge` | `src/lib/chat-cache.ts:63-79` (constants), `src/lib/chat-cache.ts:121-131` (env switches), `src/lib/chat-cache.ts:223` (threshold); `src/lib/faq-embeddings.ts:20-28`; `src/app/api/chat/route.ts:276-282` (eligibility); `src/instrumentation.ts:93-100` (corpus stamp) |
 | Telemetry span kinds | **8** — `http.request`, `llm.attempt`, `tts.request`, `transcribe.request`, `client.error`, `server.error`, `budget.tick`, `chat.cache`. Only five are emitted today; `tts.request`, `transcribe.request` and `budget.tick` appear only in the schema, the admin dashboard, the `scripts/replay-trace.mjs` kind list and tests, never at an emit site. Redis retention is 7 days, trimmed on 1-in-20 emits | `src/lib/telemetry/schema.ts:37-49`; `src/lib/telemetry/emit.ts:54` (sample rate), `src/lib/telemetry/emit.ts:85` (the sampled trim) |
 | `View` union members | **6** (`classic`, `gamified`, `chat`, `developer`, `voice`, `resume`); the switcher renders **4 pills server-side → 5 on desktop after hydration** on a default build, and the compact/mobile instance stays at 4; `resume` is never a pill | `src/components/view-context.tsx:24-34`; `src/components/view-switcher.tsx:25-60`, `src/components/view-switcher.tsx:96-97`, `src/components/view-switcher.tsx:103` |
-| CHANGELOG version tags | 23 (still no `2.x`, no `3.1`–`3.3`) | `[3.10.0]` (2026-10-01) is the newest entry, then `[3.9.0]` (2026-10-01), `[3.8.0]` (2026-09-30), `[3.7.0]` (2026-09-30) and `[3.6.0]` (`CHANGELOG.md:314`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 23 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284; `[3.8.0]` covers #287; `[3.9.0]` covers #291 and #292; `[3.10.0]` covers #296 and #297) |
+| CHANGELOG version tags | 24 (still no `2.x`, no `3.1`–`3.3`) | `[3.11.0]` (2026-10-01) is the newest entry, then `[3.10.0]` (2026-10-01), `[3.9.0]` (2026-10-01), `[3.8.0]` (2026-09-30), `[3.7.0]` (2026-09-30) and `[3.6.0]` (`CHANGELOG.md:349`); `grep -c '^## \[[0-9]' CHANGELOG.md`. A bare `^## \[` also returns 24 — there is no live `[Unreleased]` section, and no entry describes the 297 commits between the `v3.6.0` tag and `a929932` (`[3.7.0]` covers what changed after `a929932`, #279–#284; `[3.8.0]` covers #287; `[3.9.0]` covers #291 and #292; `[3.10.0]` covers #296 and #297; `[3.11.0]` covers #300) |
 
 Recipe for the two coverage rows (bash; re-run it after editing any section's Coverage list — the figures above
 were taken from sections 01–13 as they stood when this file was last edited):
@@ -419,7 +419,7 @@ regeneration. The 2026-09-29 pass re-checked the claims in the thirteen area sec
 source, and rewrote the ones the code no longer supports — among them that `src/proxy.ts` is the app's one Edge
 file (a Next 16 Proxy runs on Node.js), that `/projects` alone uses `"use cache"`, that the sitemap never emits
 `lastModified`, the counts of commands, tests, routes, dependencies, overrides and workflows, and that a Vitest
-test enforces the citation check (it is a CI step). **Relabelled 2026-09-30 to v3.7.0** (`release/v3.7.0`, cut from `develop` @ `f1508b7`): the version metadata, the pin paragraphs and the statements about `CHANGELOG.md` were updated; the counts were not re-measured — they are still those taken at `8e9e73e`, and the code has changed since only in comments, messages and two test files (`notes.test.ts` now asserts over `publishedNotes`; `notes-dark.test.ts` no longer pins a content slug), with no test added or removed, plus the version bump. **Relabelled again 2026-09-30 to v3.8.0** (`release/v3.8.0`, cut from `develop` after #287): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way. The areas #287 touched (`llm.ts`, its tests, the model-chain and env-var docs) were updated in that PR; the counts elsewhere were not re-measured, and the per-area headers keep their original five-fix lists. **Relabelled again 2026-10-01 to v3.9.0** (`release/v3.9.0`, cut from `develop` after #291 and #292): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way. The areas #291 and #292 touched (the chat answer footer, the easter-egg, discovery-badge and Developer-view sections, and the file and test counts they change) were updated in those PRs; the counts elsewhere were not re-measured. **Relabelled again 2026-10-01 to v3.10.0** (`release/v3.10.0`, cut from `develop` after #296 and #297): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way, the areas #296 and #297 touched were updated in those PRs, and the scale and coverage rows of this file were re-measured at the cut.
+test enforces the citation check (it is a CI step). **Relabelled 2026-09-30 to v3.7.0** (`release/v3.7.0`, cut from `develop` @ `f1508b7`): the version metadata, the pin paragraphs and the statements about `CHANGELOG.md` were updated; the counts were not re-measured — they are still those taken at `8e9e73e`, and the code has changed since only in comments, messages and two test files (`notes.test.ts` now asserts over `publishedNotes`; `notes-dark.test.ts` no longer pins a content slug), with no test added or removed, plus the version bump. **Relabelled again 2026-09-30 to v3.8.0** (`release/v3.8.0`, cut from `develop` after #287): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way. The areas #287 touched (`llm.ts`, its tests, the model-chain and env-var docs) were updated in that PR; the counts elsewhere were not re-measured, and the per-area headers keep their original five-fix lists. **Relabelled again 2026-10-01 to v3.9.0** (`release/v3.9.0`, cut from `develop` after #291 and #292): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way. The areas #291 and #292 touched (the chat answer footer, the easter-egg, discovery-badge and Developer-view sections, and the file and test counts they change) were updated in those PRs; the counts elsewhere were not re-measured. **Relabelled again 2026-10-01 to v3.10.0** (`release/v3.10.0`, cut from `develop` after #296 and #297): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way, the areas #296 and #297 touched were updated in those PRs, and the scale and coverage rows of this file were re-measured at the cut. **Relabelled again 2026-10-01 to v3.11.0** (`release/v3.11.0`, cut from `develop` after #300): the version metadata, the pin paragraphs and the `CHANGELOG.md` statements were updated the same way, the areas #300 touched were updated in that PR, and the scale rows of this file were re-measured at the cut.
 
 **Method.** Thirteen per-area indexers ran in parallel, each assigned a disjoint slice of the tree and each
 required to read every file it claimed before writing about it, to cite `path:line`, to describe only the
@@ -480,8 +480,8 @@ all. Now that shows up as a red `ci` job with the exact list. Run the script for
 moves with every re-fingerprint.
 
 **Regenerate when** the next release tag is cut from `main`. This index is a *re-pin*, not a regeneration: it
-was cut for `release/v3.4.2` and has been re-pinned seven times since (v3.5.0, v3.6.0, the 2026-09-29 pass over 297 commits at once, and the v3.7.0, v3.8.0, v3.9.0 and v3.10.0 relabels).
-The frontmatter reads `v3.10.0` because `package.json` does. On the next release, regenerate the
+was cut for `release/v3.4.2` and has been re-pinned eight times since (v3.5.0, v3.6.0, the 2026-09-29 pass over 297 commits at once, and the v3.7.0, v3.8.0, v3.9.0, v3.10.0 and v3.11.0 relabels).
+The frontmatter reads `v3.11.0` because `package.json` does. On the next release, regenerate the
 thirteen area sections, re-run the two synthesis passes and this file, bump the `version:` frontmatter in all
 seventeen, then `--write` the fingerprints. Between releases the working tree is authoritative for anything
 newer — and the citation check tells you exactly where the index has fallen behind.

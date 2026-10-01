@@ -3,14 +3,14 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.10.0
+version: v3.11.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.11.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
+> Describes Anvilry v3.11.0 (`package.json` 3.11.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
 
 **Scope:** `src/lib/llm.ts`, `src/lib/llm-pricing.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,

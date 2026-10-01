@@ -4,6 +4,41 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.11.0] — 2026-10-01
+
+**Minor** — `LLM_THINKING_EFFORT` takes all five effort levels Bedrock accepts, so Sonnet 5.5 can be made to
+show its reasoning on every question (`xhigh`), and the chat route may run for 60 s. Nothing changes until the
+variable is set: without it every request is the one v3.10.0 sent. It is a minor rather than a patch because it
+adds accepted values and changes two limits, the `max_tokens` ceiling at the higher efforts and the route's
+`maxDuration`.
+
+### Added
+- **`LLM_THINKING_EFFORT` accepts `high`, `xhigh` and `max`** (#300), next to `low` and `medium` (exact, lower
+  case; anything else is ignored). Bedrock's own 400 on the streaming action lists the levels each model takes
+  (read 2026-10-01): Sonnet 5 and 5.5 accept all five, Sonnet 4.6 accepts all but `xhigh`. A 400 is not
+  fallback-eligible, so `xhigh` is sent as `max` to any model that is not Sonnet 5.x instead of ending every
+  request in the apology. Measured on Sonnet 5.5 with the production prompt (90 calls over 15 recruiter-style
+  questions): `low` reasoned on 1 of 15 calls, `medium` on 3 of 15, `high` on 16 of 25 (never on "hi", "What is
+  your current role?" or "What is Pensieve?"), `xhigh` on 30 of 30 (first answer text after 4.1 s on average,
+  7.6 s at most) and `max` on 5 of 5 (10 s on average, 20.5 s at most).
+  **Operator-visible:** `LLM_THINKING_EFFORT=xhigh` makes Sonnet 5.5 show a reasoning summary on every question
+  and start its answer about 2-3 s later; the time-to-first-token and latency tiles count that time, and a
+  first-turn question answered from the FAQ cache still carries no reasoning. Without the variable nothing
+  changes.
+
+### Changed
+- **The `max_tokens` ceiling that reasoning and answer share follows the effort** (#300): 2048 (4096 on Sonnet
+  5.x) at `low` and `medium` as before, 8192 at `high`, 16000 at `xhigh` and 32000 at `max`, and a larger value
+  from the caller is never lowered. The 16000 applies on Sonnet 5.x; a model that gets `xhigh` clamped to `max`
+  uses 32000. Measured output stayed under 1,000 tokens up to `xhigh` and reached 2,902 at `max`.
+- **The chat route's `maxDuration` goes from 30 to 60 s** (#300), so a long reasoning run plus a fallback to
+  Sonnet 4.6 at `max` fits. The 15 s attempt timeout covers only the wait for the response headers, the SDK
+  makes up to three tries per rung, and after the headers only `maxDuration` ends a stalled stream; `CLAUDE.md`
+  and `DEPLOY.md` now say so.
+- The suite goes from 1021 to 1064 tests across 96 files (`llm.test.ts` 114 to 151, `route.test.ts` 18 to 24),
+  and the docs index is relabelled to 3.11.0; the areas #300 touched were updated, and the scale rows in
+  `docs/index/README.md` were re-measured.
+
 ## [3.10.0] — 2026-10-01
 
 **Minor** — Sonnet 5.5 (the production primary) shows its reasoning, the fallback chain stops spending a request

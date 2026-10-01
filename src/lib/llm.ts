@@ -169,8 +169,8 @@ type ThinkingEffort = "low" | "medium";
  *  question at high effort could spend it all on reasoning and cut the answer off.
  *
  *  Why 5.x is "medium": measured live on Bedrock (2026-10-01, the production prompt,
- *  8 recruiter questions), Sonnet 5.5 at "low" never thought (0 thinking tokens in 8
- *  of 8), so the reasoning panel stayed empty. At "medium" it thought on the harder
+ *  8 recruiter questions), Sonnet 5.5 at "low" did not think on any of the 8 (0 thinking
+ *  tokens), so the reasoning panel stayed empty. At "medium" it thought on the harder
  *  questions only (90 to 390 thinking tokens, a 300 to 700 character summary, +2 to
  *  3 s), about $0.0006 more per question on average, and still skipped the easy ones.
  *  Sonnet 4.6 keeps the "low" it has always been sent. */
@@ -518,7 +518,7 @@ export function streamWithFallback(
         // for the budget itself; "effort" bounds thinking cost directly. "low"
         // approximates this route's prior small 1024-token budget's intent (a
         // quick portfolio-bot answer, not a deep research task); Sonnet 5.x gets
-        // "medium" because at "low" it never thinks (see thinkingEffort()). The
+        // "medium" because at "low" it did not think when measured (see thinkingEffort()). The
         // max_tokens bump below is shared thinking+answer headroom: 2048, or 4096 on
         // Sonnet 5.x (it reasons at medium, and its tokenizer emits ~30% more tokens).
         //

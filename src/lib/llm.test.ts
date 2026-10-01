@@ -1939,7 +1939,7 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
   };
 
   // Measured live on Bedrock (2026-10-01, the production prompt, 8 recruiter questions):
-  // Sonnet 5.5 at effort "low" never reasoned (0 thinking tokens in 8 of 8), so the
+  // Sonnet 5.5 at effort "low" did not reason (0 thinking tokens in 8 of 8), so the
   // reasoning panel stayed empty whatever `display` said. At "medium" it reasoned on the
   // harder questions (90 to 390 thinking tokens, a 300 to 700 character summary) at about
   // $0.0006 more per question on average. `display: "summarized"` costs nothing: the

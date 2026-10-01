@@ -12,7 +12,7 @@
  *
  * WHICH RATE A MODEL ID GETS:
  *  - `us.` ids are the geographic cross-region profile, billed at the "Regional CRIS"
- *    rate, which is 10% above the Global rate;
+ *    rate (the price file calls the Sonnet 5 / 5.5 rows just "Standard"), 10% above Global;
  *  - `global.` ids are billed at the Global rate.
  * That is why Sonnet 5.5 (global, $2 / $10) is not dearer than Sonnet 4.6 (us., $3.30 /
  * $16.50) although it needs ~45% more prompt tokens for the same text (5247 vs 3618

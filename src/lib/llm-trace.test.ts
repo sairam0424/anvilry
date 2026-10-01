@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END } from "./llm-trace";
+import {
+  TRACE_DELIMITER,
+  THINKING_SENTINEL,
+  THINKING_END,
+  answerFromBody,
+} from "./llm-trace";
 import type { TraceFrame } from "./llm-trace";
 
 /**
@@ -84,5 +89,55 @@ describe("TraceFrame type", () => {
     };
     // reasoning is no longer in TraceFrame — confirm it is not present
     expect(frame).not.toHaveProperty("reasoning");
+  });
+});
+
+/**
+ * answerFromBody: what the eval cron scores. THINKING_SENTINEL, THINKING_END and
+ * TRACE_DELIMITER share their first byte, so a parse that cuts the body at the first
+ * U+001E returns "" for every answer that follows a reasoning block.
+ */
+describe("answerFromBody", () => {
+  const frame = `${TRACE_DELIMITER}{"model":"us.anthropic.claude-sonnet-4-6","fellBack":false}`;
+
+  it("returns the text ahead of the trace frame", () => {
+    expect(answerFromBody(`Sairam works at Ascendion.${frame}`)).toBe(
+      "Sairam works at Ascendion.",
+    );
+  });
+
+  it("returns a body with no trace frame whole (trimmed)", () => {
+    expect(answerFromBody("  No frame here.\n")).toBe("No frame here.");
+    expect(answerFromBody("")).toBe("");
+  });
+
+  it("drops a leading reasoning block and returns only the answer", () => {
+    const body = `${THINKING_SENTINEL}The user wants a role. Keep it short.${THINKING_END}GenAI engineer.${frame}`;
+    expect(answerFromBody(body)).toBe("GenAI engineer.");
+    // The naive cut at the first delimiter byte, which this replaces, finds the sentinel.
+    expect(body.slice(0, body.indexOf(TRACE_DELIMITER))).toBe("");
+  });
+
+  it("never scores the reasoning text as part of the answer", () => {
+    const body = `${THINKING_SENTINEL}They say HELLO_INJECTED; I will not.${THINKING_END}I can't do that.${frame}`;
+    expect(answerFromBody(body)).not.toContain("HELLO_INJECTED");
+  });
+
+  it("returns the answer of a reasoned body that has no trace frame", () => {
+    expect(
+      answerFromBody(`${THINKING_SENTINEL}thinking${THINKING_END}Done.`),
+    ).toBe("Done.");
+  });
+
+  it("returns nothing when the reasoning block never closed", () => {
+    expect(answerFromBody(`${THINKING_SENTINEL}still thinking`)).toBe("");
+  });
+
+  it("only a body that BEGINS with the sentinel has a reasoning block, like the client's parser", () => {
+    // Protocol-wise a sentinel can only be the first bytes (model text is stripped of control
+    // bytes); mid-body it is just a record separator, which ends the answer.
+    expect(answerFromBody(`Answer.${THINKING_SENTINEL}junk${frame}`)).toBe(
+      "Answer.",
+    );
   });
 });

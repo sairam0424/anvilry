@@ -80,13 +80,13 @@ GET /admin/telemetry
         Buffer.from(b64,"base64").toString("utf-8") — never throws, garbage just fails compare   :35-37
         supplied = everything after the FIRST ":" (or the whole value when there is no colon)    :39-41
         constantTimeEqual(supplied, ADMIN_PASSWORD) = SHA-256 both sides + timingSafeEqual       :43,:52-59
-   → src/app/admin/telemetry/page.tsx  re-runs the SAME predicate on (await headers())           :472
-        false → notFound() before any Redis read (a page cannot emit a 401 challenge)            :467-472
-        then `await connection()` (request-time, required by cacheComponents)                    :480
+   → src/app/admin/telemetry/page.tsx  re-runs the SAME predicate on (await headers())           :470
+        false → notFound() before any Redis read (a page cannot emit a 401 challenge)            :465-470
+        then `await connection()` (request-time, required by cacheComponents)                    :478
 ```
 
 One predicate, three callers: `proxy()` (`src/proxy.ts:25-31`), `requireAdmin(req)` (`admin-auth.ts:48-50`, whose deny
-response adds `WWW-Authenticate` + `Cache-Control: no-store`, `:61-69`), and the telemetry page (`:472`). The
+response adds `WWW-Authenticate` + `Cache-Control: no-store`, `:61-69`), and the telemetry page (`:470`). The
 Proxy docblock (`proxy.ts:6-19`) states the runtime and the layering plainly: Node by default (the Next docs
 say `runtime` is not configurable in Proxy files — `file-conventions/proxy.md`, § Runtime, in the docs bundled under `node_modules/next/dist/docs/`),
 and the Proxy is "the first filter, not the only gate" — the page re-checks, so the dashboard stays protected
@@ -128,7 +128,7 @@ export function unauthorizedUnlessCron(req: Request): Response | null { // :23-2
 ```
 
 Call sites (each is `const denied = unauthorizedUnlessCron(req); if (denied) return denied;`):
-`eval/route.ts:103`, `health-check/route.ts:151-153` (the `GET` signature, then the two-line guard),
+`eval/route.ts:102`, `health-check/route.ts:151-153` (the `GET` signature, then the two-line guard),
 `github-sync/route.ts:19`, `seo-audit/route.ts:17`, `content-audit/route.ts:20`. Properties exactly as implemented: **fail-closed** (unset or empty `CRON_SECRET`
 ⇒ 401, never open — `cron-auth.ts:11-12`), **constant-time** (both sides hashed to 32 bytes first, so length
 never leaks and `timingSafeEqual` never throws, `:3-6,:19`), the `Bearer ` scheme is matched exactly (no
@@ -139,7 +139,7 @@ regardless and immediately 401 when the secret is unset. Guards: `src/lib/cron-a
 The same predicate is the **rate-limiter bypass**: `checkRateLimit` returns `{ ok: true }` for any request that
 passes `hasValidCronSecret` (`src/lib/rate-limit.ts:100`). The eval cron relies on it — it fires 12 sequential
 `/api/chat` calls carrying `Authorization: Bearer ${CRON_SECRET}` and `X-Chat-Skip-Cache: 1`
-(`eval/route.ts:122-128`; `src/app/api/cron/eval/route.test.ts` asserts the bearer on all 12 calls) and would
+(`eval/route.ts:121-127`; `src/app/api/cron/eval/route.test.ts` asserts the bearer on all 12 calls) and would
 otherwise self-throttle against the 8/min budget.
 
 ### Headers and CSP
@@ -191,7 +191,7 @@ at `:42`). `checkRateLimit(req, cls)` **requires** the class (`:95-98`), so a ro
 another class's bucket. The key is the **raw** client IP, not the salted hash telemetry stores —
 `x-vercel-forwarded-for`, else the LAST `x-forwarded-for` segment, else `x-real-ip`, else the literal
 `anonymous` (`clientIp`, `:74-80`) — so requests carrying none of those headers all share one `anonymous`
-bucket. Route → class: `/api/chat` → `chat` (`chat/route.ts:188`); `/api/tts`, `/api/tts-google`,
+bucket. Route → class: `/api/chat` → `chat` (`chat/route.ts:142`); `/api/tts`, `/api/tts-google`,
 `/api/transcribe` → `voice` (`tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`);
 `/api/error` → `beacon` (`error/route.ts:101`). A burst of per-sentence TTS or error beacons therefore no
 longer 429s the visitor's chat — but each class is still only an 8/min per-IP budget. All five call sites are
@@ -211,7 +211,7 @@ limiter.
 
 | Boundary | What it enforces | Cite |
 |---|---|---|
-| **Inbound chat payload** | Declared `Content-Length` ≤ 2 MB (header only — no post-read backstop); 12 messages max, 600 chars per string block, image mediatype allowlist, `application/pdf` only, 10000-char cap on `"[PDF:"` text blocks, last message must be `user` | `src/app/api/chat/route.ts:67-68,201-204,213-298` |
+| **Inbound chat payload** | Declared `Content-Length` ≤ 2 MB (header only — no post-read backstop); 12 messages max, 600 chars per string block, image mediatype allowlist, `application/pdf` only, 10000-char cap on `"[PDF:"` text blocks, last message must be `user` | `src/app/api/chat/route.ts:21-22,155-158,167-252` |
 | **Model output → card tokens** | Locked `[a-z0-9-]+` slug charset; resolution against the build-time Velite allowlist; unresolved tokens **dropped**, never echoed | `src/components/chat/parse-cards.ts:29-33,54-68`; gate `parse-cards.test.ts:40-75` |
 | **Model output → markdown** | react-markdown vdom (never `dangerouslySetInnerHTML`) + `skipHtml` + default `urlTransform` + `rehype-sanitize` as defense-in-depth. Markdown **images are not stripped** — the component map has no `img` override and rehype-sanitize's default schema keeps `<img src="http(s)…">` — so the CSP `img-src` allowlist (`next.config.ts:53`) is the only barrier to a model-emitted image beacon. No test exercises this pipeline: `markdown-message.test.ts` covers only `closeOpenMarkdown` | `src/components/chat/markdown-message.tsx:9-16,47-84,88-95` |
 | **Telemetry egress** | `redact()` on `message` and `stack` before `emit()`; salted 16-hex IP/UA hashes; transcript text and prompt text never emitted | `src/lib/telemetry/schema.ts:88-111,129-136`; `api/error/route.ts:150-166`; `api/transcribe/route.ts:105-112` |
@@ -219,23 +219,23 @@ limiter.
 | **JSON-LD** | `safeJsonLd` = `JSON.stringify(data).replace(/<\//g, "<\\/")`, because `JSON.stringify` alone does not escape `</script>` | `src/components/json-ld.tsx:4-10` |
 | **Voice engine params** | `validateVoiceForEngine` rejects unknown ids, engine mismatches, and tier disagreements server-side; no `tier` field is accepted from the client | `src/lib/voice-catalog.ts:346-367`; `api/tts/route.ts:103-108`, `api/tts-google/route.ts:101-106` |
 | **Analytics** | `commandEventName` returns the registered command word or the literal `"unknown"` — never raw input or args | `src/components/game/terminal/commands.ts:755-758` |
-| **FAQ cache write** | Only a clean `end_turn` completion from the primary rung is cached (a `fell_back` answer never is), after control-byte stripping and a 1–4000-character bound; first-turn string questions only; 24 h TTL; entries are tagged with the corpus build stamp, so a content deploy invalidates them. It checks completion *cleanliness*, not content safety — a jailbreak that finishes cleanly would be cached, which is why the purge route exists | `src/lib/chat-cache.ts:23-50,63,79,265-282`; `chat/route.ts:322-332` |
+| **FAQ cache write** | Only a clean `end_turn` completion from the primary rung is cached (a `fell_back` answer never is), after control-byte stripping and a 1–4000-character bound; first-turn string questions only; 24 h TTL; entries are tagged with the corpus build stamp, so a content deploy invalidates them. It checks completion *cleanliness*, not content safety — a jailbreak that finishes cleanly would be cached, which is why the purge route exists | `src/lib/chat-cache.ts:23-50,63,79,265-282`; `chat/route.ts:276-286` |
 
 ### Failure modes
 
 | Failure | Mechanism |
 |---|---|
-| `/admin` open | Both `src/proxy.ts` not executing (matcher edited, file moved) **and** the page's own re-check removed (`admin/telemetry/page.tsx:472`). Either alone still denies; with only the page check, an unauthorised request gets a `404`, not a `401` challenge. |
+| `/admin` open | Both `src/proxy.ts` not executing (matcher edited, file moved) **and** the page's own re-check removed (`admin/telemetry/page.tsx:470`). Either alone still denies; with only the page check, an unauthorised request gets a `404`, not a `401` challenge. |
 | A new `/api/admin/*` route is open | It is outside the matcher (`proxy.ts:21-23`); only an explicit `requireAdmin(req)` (as at `purge/route.ts:32`) protects it, and no test or lint rule catches a missing call. |
 | `/admin` locked out entirely | `ADMIN_PASSWORD` unset — deliberate (`admin-auth.ts:26-31`); the client sees a bare 401 challenge, the server logs `[admin-auth]`. |
-| All five crons 401 | `CRON_SECRET` unset — deliberate fail-closed (`cron-auth.ts:11-12`). Nothing then refreshes the health result, whose Redis key `anvilry:health:latest` expires 90,000 s (25 h) after the last run that reached the write (`health-check/route.ts:220-221`), so the dashboard's "Site health" tile falls back to its "run /api/cron/health-check to populate" placeholder (`admin/telemetry/page.tsx:831-844`) about a day later. |
-| Eval cron self-throttles | The `CRON_SECRET` bearer removed from the eval cron's `/api/chat` calls (`eval/route.ts:125-127`), or `hasValidCronSecret` dropped from `checkRateLimit` (`rate-limit.ts:100`) — 12 sequential chats then hit the 8/min chat bucket. Both halves are pinned (`eval/route.test.ts`: the bearer on all 12 calls; `rate-limit.test.ts:255-`: the bypass). A separate budget risk remains: each call is bounded by `AbortSignal.timeout(25_000)` (`eval/route.ts:132`) inside `maxDuration = 60` (`:4`), so a slow chain can outlive the function before the Redis write (`:178`). |
+| All five crons 401 | `CRON_SECRET` unset — deliberate fail-closed (`cron-auth.ts:11-12`). Nothing then refreshes the health result, whose Redis key `anvilry:health:latest` expires 90,000 s (25 h) after the last run that reached the write (`health-check/route.ts:220-221`), so the dashboard's "Site health" tile falls back to its "run /api/cron/health-check to populate" placeholder (`admin/telemetry/page.tsx:829-842`) about a day later. |
+| Eval cron self-throttles | The `CRON_SECRET` bearer removed from the eval cron's `/api/chat` calls (`eval/route.ts:124-126`), or `hasValidCronSecret` dropped from `checkRateLimit` (`rate-limit.ts:100`) — 12 sequential chats then hit the 8/min chat bucket. Both halves are pinned (`eval/route.test.ts`: the bearer on all 12 calls; `rate-limit.test.ts:255-`: the bypass). A separate budget risk remains: each call is bounded by `AbortSignal.timeout(25_000)` (`eval/route.ts:131`) inside `maxDuration = 60` (`:5`), so a slow chain can outlive the function before the Redis write (`:176`). |
 | Wrong bucket charged | A route calling `checkRateLimit` with the wrong class — TypeScript demands *a* class but cannot tell which is right. The five existing call sites are each pinned by a test (voice ×3 in `voice-rate-limit-class.test.ts`; `chat` in `chat/route.test.ts:131-137`; `beacon` in `error/route.test.ts:198-204`); a **new** route is pinned by nothing. |
 | Every MDX page crashes | `'unsafe-eval'` removed from `script-src`. |
 | Voice permanently broken in production | The Chrome speech WebSocket host removed from `connect-src`. |
 | Résumé PDF iframe blank | The `frame-ancestors` string replace no longer matching `next.config.ts:41`. |
 | Local WebKit runs no client JS | `upgrade-insecure-requests` made unconditional (`next.config.ts:84`). |
-| Unbounded AWS spend | Rate limiting fails open in both failure modes; `/api/chat` is the cost-bearing endpoint. `x-chat-skip-cache` is a presence-only header any client can send to bypass the FAQ cache (`chat/route.ts:322`) — it forfeits the saving for that request but is still limited; the one exception is a request carrying the valid `CRON_SECRET` bearer, which skips the limiter altogether (`rate-limit.ts:100`). |
+| Unbounded AWS spend | Rate limiting fails open in both failure modes; `/api/chat` is the cost-bearing endpoint. `x-chat-skip-cache` is a presence-only header any client can send to bypass the FAQ cache (`chat/route.ts:276`) — it forfeits the saving for that request but is still limited; the one exception is a request carrying the valid `CRON_SECRET` bearer, which skips the limiter altogether (`rate-limit.ts:100`). |
 | A bad answer replayed for 24 h | A jailbreak that finishes with `end_turn` passes the FAQ write gate (`chat-cache.ts:278`); remediate with the purge route. |
 | `/admin/*` crawled | `src/app/robots.ts:3-17` is allow-all (`userAgent: "*"`, `allow: "/"`) with **no** `disallow` entries; the protection is the Proxy, not robots. |
 
@@ -345,10 +345,10 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 
 **Server-side, non-prefixed**
 
-`EXTENDED_THINKING` (`api/chat/route.ts:385`, default ON) is the server half of the pair whose client half is
+`EXTENDED_THINKING` (`api/chat/route.ts:339`, default ON) is the server half of the pair whose client half is
 `NEXT_PUBLIC_EXTENDED_THINKING` above — one decides whether the model is asked to think, the other whether the
-block renders, and they are independent; `LLM_USE_SONNET_5` (`llm.ts:43-45`, default OFF — swaps the primary
-rung of both model chains to Sonnet 5); `LLM_USE_SONNET_5_5` (default OFF, the same swap to Sonnet 5.5, which wins over it); `FAQ_CACHE_ENABLED` (default ON) and `FAQ_CACHE_SEMANTIC_MATCH`
+block renders, and they are independent; `LLM_USE_SONNET_5` (`llm.ts:45-47`, default OFF — swaps the primary
+rung of both model chains to Sonnet 5); `LLM_USE_SONNET_5_5` (default OFF, the same swap to Sonnet 5.5, which wins over it); `LLM_USE_OPUS_FALLBACK` (`llm.ts:75-77`, default OFF — puts Opus 4.6 back as a rung behind the primary); `LLM_THINKING_EFFORT` (`llm.ts:177-183`, exactly `low` or `medium`; unset → `medium` on Sonnet 5.x, `low` elsewhere); `FAQ_CACHE_ENABLED` (default ON) and `FAQ_CACHE_SEMANTIC_MATCH`
 (default OFF) (`chat-cache.ts:121-131`); `TELEMETRY_ENABLED` (`api/error/route.ts:92`); `FLAG_DRIVER`, `FLAGS`,
 `FLAGS_SECRET`.
 
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 94 test files (61 node + 33 dom), 864 tests, all passing at this tree (vitest 5.0.0, ~27 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 95 test files (62 node + 33 dom), 954 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -625,13 +625,13 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 94 test files
-(864 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 95 test files
+(954 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
 - the 1.5 MB avatar budget + compression/rig assertions — `src/lib/avatar-glb.test.ts:21,58-130`
-- snake_case Anthropic usage keys — `src/lib/llm.test.ts:304-314`
+- snake_case Anthropic usage keys — `src/lib/llm.test.ts:308-318`
 - card-token fail-closed behaviour — `src/components/chat/parse-cards.test.ts:40-75`
 - redact-before-emit — `src/app/api/error/route.test.ts:225-264`
 - the auth surface — `src/proxy.test.ts`, `src/lib/admin-auth.test.ts`, `src/app/admin/telemetry/page.test.tsx`,
@@ -761,7 +761,7 @@ pagefind failure fails the Vercel build.
 | Playwright tests a stale build | Without the `webServer` block, a leftover process on :3000 is silently tested — recorded as having produced 5 phantom failures during a release audit (`playwright.config.ts:25-36`). |
 | `Executable doesn't exist at .../chromium_headless_shell-<rev>` (or the same for `webkit-<rev>/pw_run.sh` now that `playwright.config.ts` has the `mobile-safari` project) | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium webkit`, which pins to the installed `@playwright/test` (`ci.yml:166-173`). Omitting `webkit` here installs cleanly and passes silently — it only breaks the instant a `mobile-safari` spec actually runs. |
 | Dev server dies with "Can't resolve './projects.json'" | Passing `--clean` to Velite in dev, or setting `clean: true` in `velite.config.ts:153` (rationale `:149-152`). |
-| Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:127` → `site-footer.tsx:239`) and `/admin/telemetry`'s `export const instant = false` (`:13`) **plus** `await connection()` (`:480`) — the comment at `:473-476` records that `instant=false` alone does **not** clear it. |
+| Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:127` → `site-footer.tsx:239`) and `/admin/telemetry`'s `export const instant = false` (`:13`) **plus** `await connection()` (`:478`) — the comment at `:471-474` records that `instant=false` alone does **not** clear it. |
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true` (`next.config.ts:175-194,203`). The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. (A grep of `src/` for `export const (runtime\|revalidate\|dynamic)` finds no actual export — only comments recording their removal.) |
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:16-26` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders every *published* note slug (`publishedNotes`, `lib/content.ts:47-52`) as a 404 via `notFound()` at `:51`. |
 | GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:114`, recorded at `route.ts:3-7` — whose text still says line 101 of `github.ts`). |
@@ -810,8 +810,8 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Base URL `https://anvilry.vercel.app` (**20 non-test files / 25 lines** at this tree, prose and comments included; 24 files / 33 lines with tests) | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,143,171,207,220,266` (6 lines, one of them inside FAQ prose at `:266`). One site is **functional, not cosmetic**: `OWN_NOTES_URL_PREFIX` (`src/lib/content.ts:69`) is how `isNoteOnlyArticle` recognises an article whose `externalUrl` is one of its own note URLs — change the domain without it and note-only articles stop being dropped while notes are dark (`content.ts:82`). `src/lib/mcp-tools.test.ts:86,99` asserts against the same host |
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:34` · `src/instrumentation-client.ts:68-69` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
-| Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:46` (fetch loop over `KIND_LITERALS`) and its render switches (`:386,:416-418`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:731-764`) stay on their empty placeholders |
-| Redis key literals | `src/app/admin/telemetry/page.tsx:28,246,280,283,286,289,295` · the five `api/cron/*` writers (`eval/route.ts:178`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:97` and `src/lib/chat-cache.ts:52-54` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
+| Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:47` (fetch loop over `KIND_LITERALS`) and its render switches (`:384,:414-416`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:729-762`) stay on their empty placeholders |
+| Redis key literals | `src/app/admin/telemetry/page.tsx:29,244,278,281,284,287,293` · the five `api/cron/*` writers (`eval/route.ts:176`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:97` and `src/lib/chat-cache.ts:52-54` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
 | Nav height `3.5rem` / `h-14`, and the open-to-work banner height `2.3125rem` | `src/components/site-nav.tsx:67,70` · `src/components/ui/skeleton.tsx:106` (`SkeletonViewTransition`) · `chat-view.tsx:78-80` · `game/developer-view.tsx:38-41` · `globals.css:94-97` (`scroll-padding-top`) · the banner literal in `chat-view.tsx:79` / `developer-view.tsx:40` must equal `OPEN_TO_WORK_BANNER_HEIGHT_REM` (exported from `src/lib/writing-flags.ts`, `:34`) — spelled out as literal Tailwind classes because the JIT scanner cannot see interpolated ones |
 | View-transition names | `view-router.tsx:56` (`view-body`) · `site-nav.tsx:68` (`site-header`) · `globals.css:360-402`; direction is stamped on `<html data-view-dir>` at `view-context.tsx:207-210` and consumed at `globals.css:373-385` |
 | Résumé label / variants | `src/lib/profile.ts:136-142` (`resumeVariants`, one entry) · `src/lib/mcp-tools.ts:24` (`RESUME_ROLES`) and `:28-34` (`ROLE_TO_LABEL`) · the PDF `public/resume/Sairam_Resume_MX_E.pdf` — re-adding a role is a three-place edit or `get_resume_variant` returns `notFound` (`mcp-tools.ts:30-32`) |
@@ -822,9 +822,9 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Palette `value` pinning | `command-palette-content.tsx:361` (`copy-email`), `:478` (`voice-tts`), plus six other voice actions (`voice-pick` `:415`, `voice-settings` `:429`, `voice-engine` `:506`, `voice-stt-engine` `:534`, `voice-surface` `:563`, `voice-wake` `:588`) — cmdk re-scores when a label mutates |
 | `MDXContent` ↔ CSP | `src/components/mdx-content.tsx:14-17` · `next.config.ts:43-51` (`'unsafe-eval'`) |
 | `.md` passthrough (two implementations) | `next.config.ts:240-248` (4 rewrites → `/api/md/*`) · `src/app/<collection>/[slug].md/route.ts` (4 filesystem handlers) and `src/app/api/md/<collection>/[slug]/route.ts` (the rewrite targets). Same helpers (frontmatter strip, `content/` read from disk, 404 when the slug is not in the content layer); resolution order not exercised. In all eight handlers the collection lookup (`api/md/*/[slug]/route.ts:28`, `<collection>/[slug].md/route.ts:33`) runs before the `readFileSync`, which is the only path-traversal guard — convention, not tested. |
-| Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:25-31`), `src/app/admin/telemetry/page.tsx:472`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:32`. The matcher (`proxy.ts:21-23`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
-| Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:124,127`) are what the bypass and `chat/route.ts:322` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
-| Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:188`, `tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`, `error/route.ts:101`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:198-204` — but a new route is pinned by nothing |
+| Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:25-31`), `src/app/admin/telemetry/page.tsx:470`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:32`. The matcher (`proxy.ts:21-23`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
+| Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:123,126`) are what the bypass and `chat/route.ts:276` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
+| Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:142`, `tts/route.ts:69`, `tts-google/route.ts:67`, `transcribe/route.ts:63`, `error/route.ts:101`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:198-204` — but a new route is pinned by nothing |
 | Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:123-140`, the orb gate by no test). A fourth surface must be added to all of them |
 | Dark notes | `src/lib/content.ts:47-56` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:25`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers) |
 | Decisions ledger | Velite fields (`decisions` on Project, `constraints` / `tradeoffs` on Work — `velite.config.ts:40,68-69`) → `src/lib/decisions.ts:23-65` (`allDecisions`, one flat typed ledger) → the `/decisions` client page (`src/app/decisions/page.tsx:7,33-34`) and MCP `list_decisions` (`mcp-tools.ts:214-226`, registered at `api/mcp/[transport]/route.ts:109-118`); gate `src/lib/decisions.test.ts:15-93` — every populated source field has an entry, every entry matches its source verbatim, hrefs match `/^\/(work\|projects)\/[a-z0-9-]+$/`, ids are unique — and it is build-blocking |
@@ -842,12 +842,12 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add or change a content **field** | `velite.config.ts` (the relevant `defineCollection`) | Make it `.optional()` or every existing file fails validation at once. Then `src/lib/content.ts`, plus any projection that should surface it. |
 | Change how content is sorted / filtered / subsetted | `src/lib/content.ts:19-86` | `pinned` without `pinRank` is dropped (`:27-29`); notes/articles sort by ISO **string** compare (`:52,:83`). Notes are hidden here, at the data layer: `allNotes` is `[]` while `NOTES_ENABLED` is off (`:56`) and note-only articles are dropped (`:82`). |
 | Change what the chatbot knows | `src/lib/corpus.ts:13-96` | Guarded by `src/lib/corpus.test.ts`. `register` flows verbatim from `:17`. Also feeds `/llms-full.txt` and the terminal `grep` (`commands.ts:180`). |
-| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:43-45` (the `LLM_USE_SONNET_5` toggle, with `isSonnet55PrimaryEnabled()` right after it), `:85-108` (both chains), `:147-149` (provider), `:158-185` (creds/region) | `src/lib/llm.test.ts` pins model ids across both providers and both toggle states (`describe("LLM_USE_SONNET_5 toggle")`, `:1160`). Update `BEDROCK_PRICE` (`api/chat/route.ts:30-52`) or `cost_usd` will be wrong-but-non-zero: only three Bedrock ids are priced and everything else — Sonnet 5, the direct-API ids — falls back to the Sonnet 4.6 row (`:55-56`); see the pricing-accuracy items in `docs/next-upgrade-plan-2026-09.md`. |
-| Change the streaming fallback rule | `src/lib/llm.ts:641-643` (`goingToApology = emittedAny \|\| isLast \|\| !isFallbackEligible(err)`; `isFallbackEligible` `:238`) | `emittedAny` (declared `:369`, set `:576`) also gates trace-frame emission (`:614`), the FAQ-cache `answerText` (`:608`) and the thinking sentinel (`:486`). Pinned by `src/lib/llm.test.ts`'s "emittedAny invariant (load-bearing)" (`:474`), "v1.8 usage capture" (`:150`) and "extended thinking" (`:631`) describe blocks. |
-| Change chat request limits / validation | `src/app/api/chat/route.ts:67-68,201-204,213-298` | `MAX_MESSAGES`, `MAX_CHARS`, the 2 MB declared-length ceiling (header only), the 10000-char PDF-block cap, the mediatype allowlists. |
-| Change the FAQ response cache | `src/lib/chat-cache.ts` (TTL `:63`, index cap `:66`, answer bound `:79`, semantic threshold `:223`, kill switch `:129-131`) | Lookup `chat/route.ts:322-378` (first-turn string questions only; hit frame carries `cacheHit: true`, header `X-Chat-Cache: hit`), write-through `:466-486` (skipped for an answer from a fallback rung); embeddings in `src/lib/faq-embeddings.ts` (Titan v2, 512 dims); emits telemetry kind `chat.cache`; `chat-cache.test.ts`. The eval cron bypasses it with `X-Chat-Skip-Cache`. |
+| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:45-47` (the `LLM_USE_SONNET_5` toggle, with `isSonnet55PrimaryEnabled()` right after it and `isOpusFallbackEnabled()` at `:75-77`), `:102-137` (`buildChain()` and both chains), `:177-198` (`thinkingEffort()`, `adaptiveThinking()`), `:220-222` (provider), `:231-258` (creds/region) | `src/lib/llm.test.ts` pins model ids across both providers and both toggle states (`describe("LLM_USE_SONNET_5 toggle")`, `:1171`). Add a row to `PRICES` (`src/lib/llm-pricing.ts:57-95`) for any new Bedrock id: without one `llm-pricing.test.ts` fails, and at runtime the event omits `cost_usd` instead of guessing. |
+| Change the streaming fallback rule | `src/lib/llm.ts:717-719` (`goingToApology = emittedAny \|\| isLast \|\| !isFallbackEligible(err)`; `isFallbackEligible` `:313`) | `emittedAny` (declared `:444`, set `:652`) also gates trace-frame emission (`:690`), the FAQ-cache `answerText` (`:684`) and the thinking sentinel (`:562`). Pinned by `src/lib/llm.test.ts`'s "emittedAny invariant (load-bearing)" (`:478`), "v1.8 usage capture" (`:154`) and "extended thinking" (`:635`) describe blocks. |
+| Change chat request limits / validation | `src/app/api/chat/route.ts:21-22,155-158,167-252` | `MAX_MESSAGES`, `MAX_CHARS`, the 2 MB declared-length ceiling (header only), the 10000-char PDF-block cap, the mediatype allowlists. |
+| Change the FAQ response cache | `src/lib/chat-cache.ts` (TTL `:63`, index cap `:66`, answer bound `:79`, semantic threshold `:223`, kill switch `:129-131`) | Lookup `chat/route.ts:276-332` (first-turn string questions only; hit frame carries `cacheHit: true`, header `X-Chat-Cache: hit`), write-through `:423-443` (skipped for an answer from a fallback rung); embeddings in `src/lib/faq-embeddings.ts` (Titan v2, 512 dims); emits telemetry kind `chat.cache`; `chat-cache.test.ts`. The eval cron bypasses it with `X-Chat-Skip-Cache`. |
 | Purge a bad cached answer | `POST /api/admin/faq-cache/purge` with Basic auth and `{ "question": "…" }` (`purge/route.ts:31-74`) | Removes the entry (and its index member) keyed by the normalised question (`chat-cache.ts:105-119`); returns 503 when Redis errors or is not configured, 200 `not_found` when nothing matched (`chat-cache.ts:368-388`). |
-| Change the chat wire protocol | `src/lib/llm-trace.ts:19-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:59-116` parses it; `api/cron/eval/route.ts:100` duplicates `TRACE_DELIMITER` as a literal. |
+| Change the chat wire protocol | `src/lib/llm-trace.ts:19-25` | Pinned byte-for-byte by `src/lib/llm-trace.test.ts`. `use-chat.ts:59-116` parses it; `api/cron/eval/route.ts:138` parses a complete body with `answerFromBody` (`llm-trace.ts:67-75`). |
 | Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:29-33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:323-338`. Gate: `parse-cards.test.ts`. |
 | Change markdown rendering of assistant text | `src/components/chat/markdown-message.tsx:47-95` | Do not remove `skipHtml` or override `urlTransform` — that is the XSS posture (`:9-16`). |
 | Add or reorder a **view** | `src/components/view-context.tsx:24-45` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:62-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:25-59,101-104`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
@@ -859,12 +859,12 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Change how the mic opens | `src/components/chat/use-speech-recognition.ts:162` | `continuous = false` is load-bearing for the whole half-duplex loop (`use-voice-session.ts:26-31`). `mic-button.tsx:59-64` is the consent gate. |
 | Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`, via `T.wrapToolResult()`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:40-60`. The count has drifted and been fixed twice: 7→9 (`list_all_content`/`get_content_item` were live but undocumented), then 9→10 (`list_decisions` shipped the same way). The page now documents all ten and `route.ts:12` says 10 too. It is enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (helpers `:25-42`, assertions `:52-`), so it cannot silently drift again. If the new tool's data function returns an array, `wrapToolResult` wraps it in `{ items }` automatically — a bare array fails the MCP SDK's `structuredContent` validation. Never import `personal.ts` (`mcp-tools.test.ts:24-46`). |
 | Change the MCP not-found contract | `src/lib/mcp-tools.ts:59-71` | `mcp-tools.ts:241` (`wrapToolResult`, moved here from the route file) keys `isError` on the literal `notFound` property (`:242,:249`); renaming it turns errors into successes. |
-| Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-50` | The dashboard fetches every kind in `KIND_LITERALS` (`page.tsx:46`) but colours/summarises through switches (`:386,:416-418`), and `scripts/replay-trace.mjs:47-55` has its own hardcoded `KINDS` (already missing `chat.cache`). `schema.test.ts:138-155` pins the 8-kind union. |
+| Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-50` | The dashboard fetches every kind in `KIND_LITERALS` (`page.tsx:47`) but colours/summarises through switches (`:384,:414-416`), and `scripts/replay-trace.mjs:47-55` has its own hardcoded `KINDS` (already missing `chat.cache`). `schema.test.ts:138-155` pins the 8-kind union. |
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:88-111` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
 | Change telemetry retention | `src/lib/telemetry/emit.ts:42` (`SEVEN_DAYS_MS`) | The trim itself runs on only 1-in-20 writes (`TRIM_SAMPLE_EVERY`, `:54`; trim at `:85-94`). Also `scripts/replay-trace.mjs:64`, which computes its own `since` from the same window. |
-| Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:495-`; every fetch helper must stay fail-soft (`:21-40,231-241,292-300`). Warn thresholds are inline magic numbers (`:550,600,622,744,763,774`). |
-| Change `/admin` auth | `src/lib/admin-auth.ts:24-59` (the predicate) | One predicate, three callers: `proxy()` (`src/proxy.ts:25-31`), `requireAdmin`, and the telemetry page (`:472`) — edit the predicate, not the callers. Guards: `proxy.test.ts`, `admin-auth.test.ts`, `admin/telemetry/page.test.tsx`. |
-| Add an authenticated route | `/admin/*` page: nothing to do — `src/proxy.ts:21-23` (`config.matcher = ["/admin/:path*"]`) already covers it (and re-check in the page as `telemetry/page.tsx:472` does). `/api/admin/*` route: call `requireAdmin(req)` first (`purge/route.ts:32`). | The matcher does **not** cover `/api/admin/*`; nothing enforces the call. |
+| Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:493-`; every fetch helper must stay fail-soft (`:22-41,229-239,290-298`). Warn thresholds are inline magic numbers (`:548,598,620,742,761,772`). |
+| Change `/admin` auth | `src/lib/admin-auth.ts:24-59` (the predicate) | One predicate, three callers: `proxy()` (`src/proxy.ts:25-31`), `requireAdmin`, and the telemetry page (`:470`) — edit the predicate, not the callers. Guards: `proxy.test.ts`, `admin-auth.test.ts`, `admin/telemetry/page.test.tsx`. |
+| Add an authenticated route | `/admin/*` page: nothing to do — `src/proxy.ts:21-23` (`config.matcher = ["/admin/:path*"]`) already covers it (and re-check in the page as `telemetry/page.tsx:470` does). `/api/admin/*` route: call `requireAdmin(req)` first (`purge/route.ts:32`). | The matcher does **not** cover `/api/admin/*`; nothing enforces the call. |
 | Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Start the handler with `const denied = unauthorizedUnlessCron(req); if (denied) return denied;` (e.g. `github-sync/route.ts:19-20`), add the route to `cron-auth.routes.test.ts:19-25`, and set `maxDuration`. All five existing crons are fail-closed on `CRON_SECRET`. |
 | Change the CSP or a security header | `next.config.ts:37-115` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41` (at `:224-227`). HSTS is deliberately absent. |
 | Change rate limits | `src/lib/rate-limit.ts:21-29` (budget, classes, prefixes) | A new route calls `checkRateLimit(req, cls)` with the right class **and** gets a test pinning it, as each of the five existing routes has. `/api/visit` has its own (`api/visit/route.ts:38-45`). Both fail-open paths are deliberate (`:99,:106-109`); a valid `CRON_SECRET` bearer bypasses (`:100`). |
@@ -884,7 +884,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add or bump a dependency | `package.json:23-79` (35 prod + 18 dev) | Respect the exact pins (`next` `16.3.5` / `eslint-config-next` `16.3.4`, `react`/`react-dom` `19.3.0`, `@modelcontextprotocol/sdk` `1.26.0`, `@react-three/postprocessing` `3.1.1`), the `three < 0.187.0` ceiling from `postprocessing` (`pnpm-lock.yaml:4128`), and the 12 overrides — which live in `pnpm-workspace.yaml:18-44`, **not** a `pnpm` field in `package.json`. A new dependency with an install script needs an `allowBuilds` decision (`pnpm-workspace.yaml:81-84`) or `pnpm-build-allowlist-consistency.test.ts` fails the deploy. |
 | Add a Dependabot hold | `.github/dependabot.yml` | It is read from the **default branch only** — on any other branch it is inert. `ignore` entries accept a version-scoped `versions: ["x.y.z"]` form as well as a bare package name. |
 | Replay one request end to end | `make trace TRACE_ID=…` → `scripts/replay-trace.mjs` | The id comes from the `x-anvilry-trace-id` response header (`with-trace.ts:207`). Needs both Upstash vars; window is 7 days; FAQ-cache spans are not replayed (see the coupling table). |
-| Audit which env vars are set | `make env-check` / `make flags-show` | Both read the **process** environment, not `.env.local`, so they under-report locally (`Makefile:289-319,155-180`). |
+| Audit which env vars are set | `make env-check` / `make flags-show` | Both read the **process** environment, not `.env.local`, so they under-report locally (`Makefile:289-321,155-180`). |
 
 ---
 
@@ -902,10 +902,10 @@ source, by the fix branches, by the v3.5.0 dependency removals, or by the a92993
 record the outcome rather than the original open question.
 
 - `budget.tick` has **no producer** in `src/` — declared at `src/lib/telemetry/schema.ts:44`, asserted at
-  `schema.test.ts:151`, styled by the dashboard's `kindBadge` at `src/app/admin/telemetry/page.tsx:416`, and
+  `schema.test.ts:151`, styled by the dashboard's `kindBadge` at `src/app/admin/telemetry/page.tsx:414`, and
   emitted nowhere (grep of `src/` for `budget.tick` returns only those sites plus a mention in the
   `schema.ts:60` comment). Section 04 left this open. The same grep shows `tts.request` and
-  `transcribe.request` are also declared (`schema.ts:40-41`) and consumed (`fetchKind` at `page.tsx:497-498`,
+  `transcribe.request` are also declared (`schema.ts:40-41`) and consumed (`fetchKind` at `page.tsx:495-496`,
   `kindBadge` at `:414`) but never emitted: TTS/STT failures surface as `server.error` (`tts/route.ts:191`,
   `tts-google/route.ts:171,222`, `transcribe/route.ts:121`) and no success-path event exists, so the dashboard's
   four voice-latency tiles never leave their "no TTS requests yet" / "no transcribe yet" state.
@@ -943,7 +943,7 @@ record the outcome rather than the original open question.
   `expected-status.test.ts` are **deleted**, and the caveat comment names `health-expectations.test.ts`
   as what pins the mcp-handler version (`health-expectations.ts:26`). **Not fixed elsewhere:** four other
   fetches still derive their base from `VERCEL_URL` — the chat route's live-stats fetch
-  (`chat/route.ts:80-81`) and the `eval`, `github-sync` and `seo-audit` crons (`eval/route.ts:106-107`,
+  (`chat/route.ts:34-35`) and the `eval`, `github-sync` and `seo-audit` crons (`eval/route.ts:105-106`,
   `github-sync/route.ts:32-33`, `seo-audit/route.ts:21`, each the `https://${process.env.VERCEL_URL}` ternary) —
   see *Still open*.
 - **`/mcp` as `(force-static)`** — the documentation/source mismatch this index recorded is gone.
@@ -1013,7 +1013,7 @@ record the outcome rather than the original open question.
   (`readFileSync(join(process.cwd(), "content", …))`), and `next.config.ts` has no `outputFileTracingIncludes`,
   so whether `content/` ships inside the deployed function bundle is not established from the tree.
 - **That Vercel Cron injects `Authorization: Bearer ${CRON_SECRET}` automatically.** The claim comes from
-  the route docstring (`src/app/api/cron/eval/route.ts:13-14`) and is assumed by the other four crons;
+  the route docstring (`src/app/api/cron/eval/route.ts:14-15`) and is assumed by the other four crons;
   platform behaviour was not verified.
 - **Whether Vercel deployment protection also blocks the four `VERCEL_URL`-derived fetches** (chat live stats,
   `eval`, `github-sync`, `seo-audit` — listed above). Only `health-check` was moved to `probeBase()`; the SSO-wall
@@ -1078,7 +1078,7 @@ record the outcome rather than the original open question.
   the ReadyPlayerMe wording in `avatar-mesh.tsx:13,94` and `rig.ts:47,54` (the shipped asset is an Avaturn
   export); `avatar-mesh.tsx:19-21` ("only runs when invalidate() is called (mousemove or touchmove from
   AvatarControls)" — `useAvatarIdle` also invalidates every frame, `use-avatar-idle.ts:27`);
-  `.env.example:116-117`
+  `.env.example:126-127`
   (an unset `GOOGLE_TTS_API_KEY` "hides" the Google engine option from settings — nothing client-side reads the
   key, `voice-settings-dialog.tsx` lists every `TtsEngine`, and `tts-google/route.ts:39` only turns the request
   into a 503); the `github-sync/route.ts:6-17` docstring ("Hourly GitHub stats cache warm", "1 GitHub API call per hour") against

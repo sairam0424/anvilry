@@ -4,7 +4,7 @@ End-to-end structured telemetry for the "Ask my portfolio" chatbot. Zero new ven
 all sinks are same-origin (Vercel Runtime Logs) or already-provisioned infra (Upstash Redis).
 Free text is redacted at the call site before storage (regex-only; §4 lists exactly what is and is not stored).
 
-> **Scope:** describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes** (v3.7.0) and two more in v3.8.0 (an IAM-denied model falls through to the next rung, so a 403 `llm.attempt` span can now be followed by a fallback attempt, with the same span shape; and the opt-in Sonnet 5.5 primary); v3.9.0 changes nothing here (the chat UI stopped showing the model and provider line, but the trace frame and `llm.attempt` still record `model` and `fell_back`). Two of the five touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
+> **Scope:** describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` @ `a929932` (v3.6.0) **plus five post-`a929932` behaviour changes** (v3.7.0) and two more in v3.8.0 (an IAM-denied model falls through to the next rung, so a 403 `llm.attempt` span can now be followed by a fallback attempt, with the same span shape; and the opt-in Sonnet 5.5 primary); v3.9.0 changes nothing here (the chat UI stopped showing the model and provider line, but the trace frame and `llm.attempt` still record `model` and `fell_back`). An unreleased change on `develop` replaces the three-entry price table with the verified per-model table in `src/lib/llm-pricing.ts` (so `cost_usd` is right for Sonnet 5 / 5.5 and absent, not approximated, for an unpriced model) and makes the dashboard's "saved by caching" tile price each attempt by its own model. Two of the five touch telemetry: `/api/error` now draws on its own `beacon` rate-limit bucket (`chat`, `voice` and `beacon` are independent), and `src/proxy.ts`, the dashboard page and `requireAdmin` share one `isAdminAuthorized` check. The `(v1.8)` in the title records where the design started. When this file and the code disagree, the code wins.
 
 ---
 
@@ -93,14 +93,14 @@ The `usage` block on `llm.attempt` is the first place Anvilry has ever measured 
       "cache_creation_input_tokens": 4096,
       "cache_read_input_tokens": 0
     },
-    "cost_usd": 0.0175
+    "cost_usd": 0.0294
   }
 }
 ```
 
 `cache_read_input_tokens > 0` on turns 2+ of the same session means caching is working.
 If it stays 0 after 7 days, the cached prefix is expiring or changing between requests (see Notes, §9).
-`cost_usd` is only present when `usage` is; it comes from a three-entry Bedrock price table, so Sonnet 5, Sonnet 5.5 and every direct-Anthropic model id are priced as Sonnet 4.6.
+`cost_usd` is only present when `usage` is and the model has a verified price (`src/lib/llm-pricing.ts`: AWS's own list prices for the five Bedrock ids the chain can use); a direct-Anthropic model id has no row, so those events carry no `cost_usd` and the dashboard's cost tiles read $0.0000 (unknown, not free).
 
 ---
 
@@ -149,7 +149,7 @@ Everything is read from Redis over a rolling 24 h window (about 16 commands per 
 
 | Group | Tiles |
 |---|---|
-| Volume, cache, cost | **Events (24h)**; **Cache hit rate** (`cache_read_input_tokens` / total input incl. cache read and creation, from `llm.attempt`); **FAQ cache hit rate** (`chat.cache` hits / total, plus dollars saved); **Total tokens**; **Fallback rate** (% of `llm.attempt` with `fell_back`); **Est. cost (24h)** (sum of `cost_usd`; "saved" is cache-read tokens × $0.30/MTok, flat for every model) |
+| Volume, cache, cost | **Events (24h)**; **Cache hit rate** (`cache_read_input_tokens` / total input incl. cache read and creation, from `llm.attempt`); **FAQ cache hit rate** (`chat.cache` hits / total, plus dollars saved); **Total tokens**; **Fallback rate** (% of `llm.attempt` with `fell_back`); **Est. cost (24h)** (sum of `cost_usd`; "saved" is the input cost the cache reads avoided, per model: cache-read tokens × (input price − cache-read price), before the cache-write premium) |
 | Latency, errors, visitors | **Avg LLM latency** (+ TTFT); **Error rate** ((`client.error` + `server.error`) / all events — error-level `llm.attempt` spans do not count); **Client errors**; **Server errors**; **Visitors (24h)** (distinct `session_id`; shows "—" until `TELEMETRY_IP_SALT` is set) |
 | Voice | **TTS P50 / P95** and **Transcribe P50 / P95** — read the never-emitted `tts.request` / `transcribe.request` kinds, so they always show "—" today |
 | Cron-fed | **Eval pass rate**, **GitHub stars**, **SEO health**, **Stale content**, **Corpus age**, **Site health** — each reads a Redis key written by a cron (see `docs/configuration.md`), except **Corpus age**, which reads the `anvilry:corpus:built_at` timestamp that `src/instrumentation.ts` stamps on a production cold start |

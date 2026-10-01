@@ -920,3 +920,24 @@ describe("FAQ cache — reasoning: the question-length bound, the read side and 
     expect(JSON.stringify(storedEntry())).not.toContain("test@example.com");
   });
 });
+
+describe("FAQ cache — the over-bound warning agrees with what is stored", () => {
+  it("neither warns nor drops a summary that is over the bound only before control bytes and padding are removed", async () => {
+    const { faqCacheSet, MAX_CACHEABLE_REASONING_CHARS } =
+      await import("./chat-cache");
+    const fits = "x".repeat(MAX_CACHEABLE_REASONING_CHARS);
+    const raw = `  ${fits}\u001e\u0002  `;
+    expect(raw.length).toBeGreaterThan(MAX_CACHEABLE_REASONING_CHARS);
+
+    await faqCacheSet("q", "a", "m", 0, "end_turn", raw);
+
+    const [, json] = redisMock.set.mock.calls[0];
+    expect((JSON.parse(json as string) as { reasoning?: string }).reasoning).toBe(
+      fits,
+    );
+    const warnings = vi
+      .mocked(console.warn)
+      .mock.calls.map((c) => String(c[0]));
+    expect(warnings.filter((w) => w.includes("is over the"))).toEqual([]);
+  });
+});

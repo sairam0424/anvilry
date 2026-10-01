@@ -358,7 +358,7 @@ export async function faqCacheSet(
       : undefined;
   if (
     typeof reasoning === "string" &&
-    reasoning.length > MAX_CACHEABLE_REASONING_CHARS
+    stripControlBytes(reasoning).trim().length > MAX_CACHEABLE_REASONING_CHARS
   ) {
     // Length only, never the text: an over-long summary is dropped silently otherwise.
     console.warn(

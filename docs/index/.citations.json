@@ -1,6 +1,13 @@
 {
   "generated": "manual",
   "citations": {
+    ".env.example:101": {
+      "fp": "521e40331db5",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "#   NEXT_PUBLIC_ENABLED_VIEWS=                                (Classic only)"
+    },
     ".env.example:12": {
       "fp": "ebd9a9d067e3",
       "citedBy": [
@@ -8,21 +15,21 @@
       ],
       "preview": "# never picks up the encoded values by mistake."
     },
-    ".env.example:122": {
+    ".env.example:124": {
       "fp": "1b6650157ae6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# ─── Google Cloud TTS (optional, v1.7) — permanent-free hedge ────────────────"
     },
-    ".env.example:126": {
+    ".env.example:128": {
       "fp": "644614d263bc",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "# (extended). When unset, the picker still works — Google voices just don't appear"
     },
-    ".env.example:127": {
+    ".env.example:129": {
       "fp": "8069e298882a",
       "citedBy": [
         "14b-subsystems.md"
@@ -36,21 +43,21 @@
       ],
       "preview": "BEDROCK_ACCESS_KEY_ID=BASE64_OR_RAW_ACCESS_KEY_ID"
     },
-    ".env.example:130": {
+    ".env.example:132": {
       "fp": "e4f75f574268",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# GOOGLE_TTS_API_KEY=AIzaSy..."
     },
-    ".env.example:132": {
+    ".env.example:134": {
       "fp": "4b56201e2d41",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# ─── Vercel Cron authentication ──────────────────────────────────────────────"
     },
-    ".env.example:137": {
+    ".env.example:139": {
       "fp": "16822c356634",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -64,7 +71,7 @@
       ],
       "preview": "BEDROCK_SECRET_ACCESS_KEY=BASE64_OR_RAW_SECRET_ACCESS_KEY"
     },
-    ".env.example:145": {
+    ".env.example:147": {
       "fp": "624a60618457",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -73,27 +80,12 @@
       ],
       "preview": "#   TELEMETRY_ENABLED=false   — browser-beacon kill switch only (/api/error -> 204); default: on"
     },
-    ".env.example:146": {
+    ".env.example:148": {
       "fp": "fda9ab317f5c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "#   TELEMETRY_IP_SALT=...     — salt for SHA-256 IP hashing. Without this,"
-    },
-    ".env.example:148": {
-      "fp": "e5ac26f2c46a",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "#                               Generate: openssl rand -base64 16"
-    },
-    ".env.example:149": {
-      "fp": "2bca0ecdb1c0",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "#   ADMIN_PASSWORD=...        — HTTP Basic Auth for /admin/telemetry + the FAQ-cache purge route."
     },
     ".env.example:15": {
       "fp": "db12ce48b2e3",
@@ -103,6 +95,21 @@
       "preview": "# BEDROCK_SESSION_TOKEN=        # optional, only for temporary STS credentials"
     },
     ".env.example:150": {
+      "fp": "e5ac26f2c46a",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "#                               Generate: openssl rand -base64 16"
+    },
+    ".env.example:151": {
+      "fp": "2bca0ecdb1c0",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "#   ADMIN_PASSWORD=...        — HTTP Basic Auth for /admin/telemetry + the FAQ-cache purge route."
+    },
+    ".env.example:152": {
       "fp": "5eaa5a762697",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -118,21 +125,21 @@
       ],
       "preview": "# Region: prefer BEDROCK_REGION. AWS_REGION is a RESERVED var on Vercel/Lambda and"
     },
-    ".env.example:164": {
+    ".env.example:166": {
       "fp": "4563562548a0",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "#   aws-sdk-bedrock              — reserved for a v1.8.x follow-up that adds"
     },
-    ".env.example:169": {
+    ".env.example:171": {
       "fp": "acf5cb0b49eb",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "#                                 ships in the follow-up. Safe to set early."
     },
-    ".env.example:171": {
+    ".env.example:173": {
       "fp": "10080f70413e",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -140,19 +147,12 @@
       ],
       "preview": "# NEXT_PUBLIC_LLM_SDK=anthropic-bedrock"
     },
-    ".env.example:177": {
+    ".env.example:179": {
       "fp": "325ca0bd86c3",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_ORB_POSTPROCESSING=true   # Bloom + Vignette + Noise + CA + cursor Fluid on 3D orb"
-    },
-    ".env.example:178": {
-      "fp": "ef0ff6776270",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "#                                        # (high-tier devices only: ≥4 GB RAM + ≥4 cores)"
     },
     ".env.example:18": {
       "fp": "31aad4348a14",
@@ -162,14 +162,21 @@
       ],
       "preview": "# the platform mangling it. Code reads BEDROCK_REGION first, then AWS_REGION, then default."
     },
-    ".env.example:187": {
+    ".env.example:180": {
+      "fp": "ef0ff6776270",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "#                                        # (high-tier devices only: ≥4 GB RAM + ≥4 cores)"
+    },
+    ".env.example:189": {
       "fp": "53d248459b89",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_VISITOR_COUNTER=true       # \"↑ N engineers visited\" badge in the footer"
     },
-    ".env.example:188": {
+    ".env.example:190": {
       "fp": "183b0c165263",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -191,35 +198,35 @@
       ],
       "preview": "AWS_REGION=us-east-1"
     },
-    ".env.example:217": {
+    ".env.example:219": {
       "fp": "a24733f17840",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_CHROME_TTS_BANNER=true     # Show Chrome TTS bug warning in talk mode (default off — C"
     },
-    ".env.example:219": {
+    ".env.example:221": {
       "fp": "d6c6d11c877c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_ARTICLE_DEDUP_KEY — controls which frontmatter field is the primary"
     },
-    ".env.example:224": {
+    ".env.example:226": {
       "fp": "50fb409854eb",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_ARTICLE_DEDUP_KEY=canonicalUrl"
     },
-    ".env.example:233": {
+    ".env.example:235": {
       "fp": "8e1590f9a23e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# FLAGS_SECRET — required when FLAG_DRIVER=vercel. Signs override cookies."
     },
-    ".env.example:235": {
+    ".env.example:237": {
       "fp": "15e1e441829b",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -240,35 +247,35 @@
       ],
       "preview": "LLM_PROVIDER=bedrock"
     },
-    ".env.example:45": {
+    ".env.example:47": {
       "fp": "7643f3391428",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# Per-IP limit on /api/chat, /api/tts, /api/transcribe (8 req/min) so bots can't run"
     },
-    ".env.example:46": {
+    ".env.example:48": {
       "fp": "aced204b32f4",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# up Bedrock/Polly/Transcribe cost. FAILS OPEN: if these are unset, the limiter is a"
     },
-    ".env.example:48": {
+    ".env.example:50": {
       "fp": "213caddad033",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# https://console.upstash.com/ and add both values in Vercel Project Settings →"
     },
-    ".env.example:53": {
+    ".env.example:55": {
       "fp": "1542688a1e8d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# ─── FAQ cache — semantic-match tier (optional, default OFF) ─────────────────"
     },
-    ".env.example:56": {
+    ".env.example:58": {
       "fp": "115d528937a1",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -282,14 +289,14 @@
       ],
       "preview": "# ─── AWS Bedrock (used when LLM_PROVIDER=bedrock) ─────────────────────────────"
     },
-    ".env.example:63": {
+    ".env.example:65": {
       "fp": "4f2a9249b911",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# FAQ_CACHE_SEMANTIC_MATCH=true"
     },
-    ".env.example:89": {
+    ".env.example:91": {
       "fp": "006b4e5ccf14",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -297,26 +304,19 @@
       ],
       "preview": "# is always available regardless of this flag. (Legacy: NEXT_PUBLIC_ENABLE_ANVIL_ORB=\"false\""
     },
-    ".env.example:90": {
+    ".env.example:92": {
       "fp": "5a0054d40c3b",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# still maps to off.)"
     },
-    ".env.example:92": {
+    ".env.example:94": {
       "fp": "7888667a3210",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# Comma-separated list of views to enable BEYOND Classic (which is always on)."
-    },
-    ".env.example:99": {
-      "fp": "521e40331db5",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "#   NEXT_PUBLIC_ENABLED_VIEWS=                                (Classic only)"
     },
     ".github/CONTRIBUTING.md:19": {
       "fp": "303521714815",
@@ -17908,7 +17908,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:177": {
+    "src/lib/llm.ts:182": {
       "fp": "900ef2b2d5d3",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -17918,29 +17918,13 @@
       ],
       "preview": "function thinkingEffort(model: string): ThinkingEffort {"
     },
-    "src/lib/llm.ts:183": {
+    "src/lib/llm.ts:189": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md",
         "14-subsystems.md",
         "14b-subsystems.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:191": {
-      "fp": "1c5e14995f9f",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "function adaptiveThinking(model: string): {"
-    },
-    "src/lib/llm.ts:198": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
       ],
       "preview": "}"
     },
@@ -17958,75 +17942,35 @@
       ],
       "preview": "* Chain: Sonnet (4.6, 5 when LLM_USE_SONNET_5 is set, or 5.5 when LLM_USE_SONNET_5_5"
     },
-    "src/lib/llm.ts:204": {
+    "src/lib/llm.ts:215": {
+      "fp": "1c5e14995f9f",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "function adaptiveThinking(model: string): {"
+    },
+    "src/lib/llm.ts:222": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:228": {
       "fp": "7297858f7f29",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const MODEL_UNAVAILABLE_MARKERS = ["
     },
-    "src/lib/llm.ts:211": {
+    "src/lib/llm.ts:235": {
       "fp": "358ba3f22237",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "];"
-    },
-    "src/lib/llm.ts:220": {
-      "fp": "28e482b4574c",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export function getProvider(): LlmProvider {"
-    },
-    "src/lib/llm.ts:221": {
-      "fp": "4dbee38e3b8a",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "return process.env.LLM_PROVIDER === \"anthropic\" ? \"anthropic\" : \"bedrock\";"
-    },
-    "src/lib/llm.ts:222": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:231": {
-      "fp": "60816a809cd0",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "function decodeSecret(value: string | undefined): string {"
-    },
-    "src/lib/llm.ts:232": {
-      "fp": "4bbd342107f6",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "if (!value) return \"\";"
-    },
-    "src/lib/llm.ts:234": {
-      "fp": "f12c71bbf682",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const decoded = Buffer.from(value, \"base64\").toString(\"utf-8\");"
-    },
-    "src/lib/llm.ts:236": {
-      "fp": "e1dab912d8f6",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "return decoded;"
     },
     "src/lib/llm.ts:24": {
       "fp": "cd560c120280",
@@ -18035,7 +17979,24 @@
       ],
       "preview": "* ever answer 403 before Haiku (a weaker model) got the request."
     },
-    "src/lib/llm.ts:241": {
+    "src/lib/llm.ts:244": {
+      "fp": "28e482b4574c",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function getProvider(): LlmProvider {"
+    },
+    "src/lib/llm.ts:245": {
+      "fp": "4dbee38e3b8a",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "return process.env.LLM_PROVIDER === \"anthropic\" ? \"anthropic\" : \"bedrock\";"
+    },
+    "src/lib/llm.ts:246": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18044,7 +18005,46 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:248": {
+    "src/lib/llm.ts:255": {
+      "fp": "60816a809cd0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function decodeSecret(value: string | undefined): string {"
+    },
+    "src/lib/llm.ts:256": {
+      "fp": "4bbd342107f6",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (!value) return \"\";"
+    },
+    "src/lib/llm.ts:258": {
+      "fp": "f12c71bbf682",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const decoded = Buffer.from(value, \"base64\").toString(\"utf-8\");"
+    },
+    "src/lib/llm.ts:260": {
+      "fp": "e1dab912d8f6",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "return decoded;"
+    },
+    "src/lib/llm.ts:265": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:272": {
       "fp": "3cef92f00ee1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18052,7 +18052,7 @@
       ],
       "preview": "accessKeyId: decodeSecret(process.env.BEDROCK_ACCESS_KEY_ID),"
     },
-    "src/lib/llm.ts:249": {
+    "src/lib/llm.ts:273": {
       "fp": "10778a20d729",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18060,7 +18060,7 @@
       ],
       "preview": "secretAccessKey: decodeSecret(process.env.BEDROCK_SECRET_ACCESS_KEY),"
     },
-    "src/lib/llm.ts:250": {
+    "src/lib/llm.ts:274": {
       "fp": "830ed5dbac1d",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18068,21 +18068,21 @@
       ],
       "preview": "sessionToken: process.env.BEDROCK_SESSION_TOKEN"
     },
-    "src/lib/llm.ts:251": {
+    "src/lib/llm.ts:275": {
       "fp": "bc0e8d4025c6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "? decodeSecret(process.env.BEDROCK_SESSION_TOKEN)"
     },
-    "src/lib/llm.ts:252": {
+    "src/lib/llm.ts:276": {
       "fp": "f0d92e3cbaf6",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": ": undefined,"
     },
-    "src/lib/llm.ts:253": {
+    "src/lib/llm.ts:277": {
       "fp": "0a2e4b86b89d",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18091,7 +18091,7 @@
       ],
       "preview": "// Prefer BEDROCK_REGION: AWS_REGION is a RESERVED var on Vercel/Lambda and was"
     },
-    "src/lib/llm.ts:255": {
+    "src/lib/llm.ts:279": {
       "fp": "3d4226b4c238",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18099,7 +18099,7 @@
       ],
       "preview": "// platform mangling it. Fall back to AWS_REGION (local dev) then a sane default."
     },
-    "src/lib/llm.ts:256": {
+    "src/lib/llm.ts:280": {
       "fp": "128e81a4c7d8",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18108,14 +18108,14 @@
       ],
       "preview": "region: process.env.BEDROCK_REGION || process.env.AWS_REGION || \"us-east-1\","
     },
-    "src/lib/llm.ts:261": {
+    "src/lib/llm.ts:285": {
       "fp": "70b6c5759436",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "export function isConfigured(): boolean {"
     },
-    "src/lib/llm.ts:266": {
+    "src/lib/llm.ts:290": {
       "fp": "41a67112c993",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18123,21 +18123,21 @@
       ],
       "preview": "return Boolean(process.env.ANTHROPIC_API_KEY);"
     },
-    "src/lib/llm.ts:267": {
+    "src/lib/llm.ts:291": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:289": {
+    "src/lib/llm.ts:313": {
       "fp": "7092669f0705",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "timeout: PER_ATTEMPT_TIMEOUT_MS,"
     },
-    "src/lib/llm.ts:290": {
+    "src/lib/llm.ts:314": {
       "fp": "76cbb0b1edd5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18145,7 +18145,7 @@
       ],
       "preview": "providerChainResolver: async () => async () => ({"
     },
-    "src/lib/llm.ts:294": {
+    "src/lib/llm.ts:318": {
       "fp": "aa3733e58756",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18153,81 +18153,41 @@
       ],
       "preview": "}),"
     },
-    "src/lib/llm.ts:297": {
+    "src/lib/llm.ts:321": {
       "fp": "ab87c45e59ec",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// anthropic: key read from ANTHROPIC_API_KEY in env."
     },
-    "src/lib/llm.ts:298": {
+    "src/lib/llm.ts:322": {
       "fp": "6a69212ea819",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "return new Anthropic({ timeout: PER_ATTEMPT_TIMEOUT_MS });"
     },
-    "src/lib/llm.ts:313": {
+    "src/lib/llm.ts:337": {
       "fp": "a2ff46aedeef",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "export function isFallbackEligible(err: unknown): boolean {"
     },
-    "src/lib/llm.ts:314": {
+    "src/lib/llm.ts:338": {
       "fp": "50ba1e9ae2a1",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass"
     },
-    "src/lib/llm.ts:334": {
+    "src/lib/llm.ts:358": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "14-subsystems.md"
       ],
       "preview": "}"
-    },
-    "src/lib/llm.ts:336": {
-      "fp": "8d64a30d9de1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/**"
-    },
-    "src/lib/llm.ts:344": {
-      "fp": "ed9623369ff0",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "*/"
-    },
-    "src/lib/llm.ts:347": {
-      "fp": "87df543ffd8c",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };"
-    },
-    "src/lib/llm.ts:349": {
-      "fp": "8d64a30d9de1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/**"
-    },
-    "src/lib/llm.ts:356": {
-      "fp": "ed9623369ff0",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "*/"
     },
     "src/lib/llm.ts:36": {
       "fp": "0774905c8cf6",
@@ -18236,63 +18196,81 @@
       ],
       "preview": "const PER_ATTEMPT_TIMEOUT_MS = 15_000;"
     },
-    "src/lib/llm.ts:362": {
+    "src/lib/llm.ts:360": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:368": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/llm.ts:371": {
+      "fp": "87df543ffd8c",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "export { TRACE_DELIMITER, THINKING_SENTINEL, THINKING_END };"
+    },
+    "src/lib/llm.ts:373": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/llm.ts:380": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/llm.ts:386": {
       "fp": "df3982fd6101",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "};"
     },
-    "src/lib/llm.ts:411": {
+    "src/lib/llm.ts:435": {
       "fp": "8db2f209cbd9",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const apologyTail = `\\n\\n[Sorry — something went wrong. Please email ${profile.email}.]`;"
     },
-    "src/lib/llm.ts:412": {
+    "src/lib/llm.ts:436": {
       "fp": "0a590f272b8d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// Trace frame extends the v1.6 {model, fellBack} shape with v1.8 fields. The"
     },
-    "src/lib/llm.ts:413": {
+    "src/lib/llm.ts:437": {
       "fp": "97dee7aa6df0",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and"
     },
-    "src/lib/llm.ts:415": {
+    "src/lib/llm.ts:439": {
       "fp": "163d58a6a61b",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// llm-trace.test.ts only pins the U+001E delimiter character, which is unchanged."
-    },
-    "src/lib/llm.ts:434": {
-      "fp": "4b797ccbd3d3",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
-    },
-    "src/lib/llm.ts:440": {
-      "fp": "df3982fd6101",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "};"
-    },
-    "src/lib/llm.ts:444": {
-      "fp": "d85ca4170ed1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "let emittedAny = false;"
     },
     "src/lib/llm.ts:45": {
       "fp": "240224505f4b",
@@ -18302,27 +18280,12 @@
       ],
       "preview": "export function isSonnet5PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:451": {
-      "fp": "2f8673da0c7b",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "let thinkingSentinelEmitted = false;"
-    },
-    "src/lib/llm.ts:453": {
-      "fp": "ec4bd6281932",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const close = () => {"
-    },
     "src/lib/llm.ts:458": {
-      "fp": "df3982fd6101",
+      "fp": "4b797ccbd3d3",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "};"
+      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
     },
     "src/lib/llm.ts:46": {
       "fp": "9a87a2140b36",
@@ -18333,26 +18296,20 @@
       ],
       "preview": "return process.env.LLM_USE_SONNET_5 === \"true\";"
     },
-    "src/lib/llm.ts:461": {
-      "fp": "f5d350b44ec7",
+    "src/lib/llm.ts:464": {
+      "fp": "df3982fd6101",
       "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/llm.ts:468": {
+      "fp": "d85ca4170ed1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "14-subsystems.md"
       ],
-      "preview": "// SDK init error) becomes a graceful apology stream — not an uncaught 500 at"
-    },
-    "src/lib/llm.ts:463": {
-      "fp": "d845f1992f4d",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "let client: Anthropic;"
-    },
-    "src/lib/llm.ts:469": {
-      "fp": "be4088746726",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "model: \"client-init\","
+      "preview": "let emittedAny = false;"
     },
     "src/lib/llm.ts:47": {
       "fp": "d10b36aa74a5",
@@ -18362,28 +18319,71 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:470": {
+    "src/lib/llm.ts:475": {
+      "fp": "2f8673da0c7b",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "let thinkingSentinelEmitted = false;"
+    },
+    "src/lib/llm.ts:477": {
+      "fp": "ec4bd6281932",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const close = () => {"
+    },
+    "src/lib/llm.ts:482": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/llm.ts:485": {
+      "fp": "f5d350b44ec7",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "// SDK init error) becomes a graceful apology stream — not an uncaught 500 at"
+    },
+    "src/lib/llm.ts:487": {
+      "fp": "d845f1992f4d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "let client: Anthropic;"
+    },
+    "src/lib/llm.ts:493": {
+      "fp": "be4088746726",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "model: \"client-init\","
+    },
+    "src/lib/llm.ts:494": {
       "fp": "12c02075e40b",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "attempt_index: -1,"
     },
-    "src/lib/llm.ts:472": {
+    "src/lib/llm.ts:496": {
       "fp": "a649c792ffbb",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "latency_ms: 0,"
     },
-    "src/lib/llm.ts:478": {
+    "src/lib/llm.ts:502": {
       "fp": "54d1ad310c19",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "controller.enqueue(encoder.encode(apologyTail.replace(/^\\n\\n/, \"\")));"
     },
-    "src/lib/llm.ts:481": {
+    "src/lib/llm.ts:505": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18391,56 +18391,56 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:490": {
+    "src/lib/llm.ts:514": {
       "fp": "baa9f9035b59",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "let usage: LlmUsage | undefined;"
     },
-    "src/lib/llm.ts:498": {
+    "src/lib/llm.ts:522": {
       "fp": "dd5a9f2167ee",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "let answerText = \"\";"
     },
-    "src/lib/llm.ts:500": {
+    "src/lib/llm.ts:524": {
       "fp": "1c7c59f020b9",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "// Extended thinking: only for non-Haiku models (Haiku doesn't support the"
     },
-    "src/lib/llm.ts:501": {
+    "src/lib/llm.ts:525": {
       "fp": "d7912666e51f",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "// `thinking` param at all — not even an explicit \"disabled\"). NOTE: If"
     },
-    "src/lib/llm.ts:507": {
+    "src/lib/llm.ts:531": {
       "fp": "ae29ea4279db",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const useThinking ="
     },
-    "src/lib/llm.ts:508": {
+    "src/lib/llm.ts:532": {
       "fp": "c4c603db2d2e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "opts?.extendedThinking === true && !model.includes(\"haiku\");"
     },
-    "src/lib/llm.ts:509": {
+    "src/lib/llm.ts:533": {
       "fp": "d25c37fb3c32",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const modelSupportsThinking = !model.includes(\"haiku\");"
     },
-    "src/lib/llm.ts:511": {
+    "src/lib/llm.ts:535": {
       "fp": "aac95f3d1ef6",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18449,35 +18449,35 @@
       ],
       "preview": "// Adaptive thinking (`{type:\"adaptive\"}` + `output_config.effort`)"
     },
-    "src/lib/llm.ts:532": {
+    "src/lib/llm.ts:556": {
       "fp": "17390c5655aa",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// recognize the param."
     },
-    "src/lib/llm.ts:538": {
+    "src/lib/llm.ts:562": {
       "fp": "d5cbd78edc45",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "...(useThinking"
     },
-    "src/lib/llm.ts:542": {
-      "fp": "2109a68c018a",
+    "src/lib/llm.ts:566": {
+      "fp": "ce2fee23e247",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "isSonnet5Family(model) ? 4096 : 2048,"
+      "preview": "thinkingTokenFloor(model, thinkingEffort(model)),"
     },
-    "src/lib/llm.ts:545": {
+    "src/lib/llm.ts:569": {
       "fp": "00fa278ea019",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": ": {}),"
     },
-    "src/lib/llm.ts:556": {
+    "src/lib/llm.ts:580": {
       "fp": "a9849ac2357a",
       "citedBy": [
         "14-subsystems.md",
@@ -18485,63 +18485,63 @@
       ],
       "preview": "} as Anthropic.MessageStreamParams & { model: string });"
     },
-    "src/lib/llm.ts:562": {
+    "src/lib/llm.ts:586": {
       "fp": "9f882be98cf4",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (useThinking && !emittedAny && !thinkingSentinelEmitted) {"
     },
-    "src/lib/llm.ts:564": {
+    "src/lib/llm.ts:588": {
       "fp": "f2eae6b3c0f9",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "thinkingSentinelEmitted = true;"
     },
-    "src/lib/llm.ts:572": {
+    "src/lib/llm.ts:596": {
       "fp": "7179c2f4b390",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (event.type === \"message_start\") {"
     },
-    "src/lib/llm.ts:592": {
+    "src/lib/llm.ts:616": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:595": {
+    "src/lib/llm.ts:619": {
       "fp": "bd764c92f214",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (event.type === \"message_delta\") {"
     },
-    "src/lib/llm.ts:604": {
+    "src/lib/llm.ts:628": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:605": {
+    "src/lib/llm.ts:629": {
       "fp": "ee8c1cc9eb5b",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// Extended thinking: stream thinking_delta bytes live to the client."
     },
-    "src/lib/llm.ts:624": {
+    "src/lib/llm.ts:648": {
       "fp": "3929c23b4a56",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (!useThinking || thinkingEndEmitted) continue;"
     },
-    "src/lib/llm.ts:629": {
+    "src/lib/llm.ts:653": {
       "fp": "2ede4f7460e4",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18549,54 +18549,12 @@
       ],
       "preview": "const chunk = stripControlBytes("
     },
-    "src/lib/llm.ts:635": {
+    "src/lib/llm.ts:659": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
-    },
-    "src/lib/llm.ts:638": {
-      "fp": "20f32da3dcd3",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "event.delta.type === \"text_delta\""
-    },
-    "src/lib/llm.ts:640": {
-      "fp": "e236a00082d4",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "if (ttftMs == null) ttftMs = Date.now() - attemptStart;"
-    },
-    "src/lib/llm.ts:645": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:651": {
-      "fp": "e32dfcc1b73f",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "answerText += text;"
-    },
-    "src/lib/llm.ts:652": {
-      "fp": "873ab549ff72",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "emittedAny = true;"
-    },
-    "src/lib/llm.ts:658": {
-      "fp": "2e164b8bb5bf",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "// Loop ended with zero text_delta events (e.g. adaptive thinking"
     },
     "src/lib/llm.ts:66": {
       "fp": "b87f3902e02a",
@@ -18606,12 +18564,40 @@
       ],
       "preview": "export function isSonnet55PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:670": {
+    "src/lib/llm.ts:662": {
+      "fp": "20f32da3dcd3",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "event.delta.type === \"text_delta\""
+    },
+    "src/lib/llm.ts:664": {
+      "fp": "e236a00082d4",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "if (ttftMs == null) ttftMs = Date.now() - attemptStart;"
+    },
+    "src/lib/llm.ts:669": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
+    },
+    "src/lib/llm.ts:675": {
+      "fp": "e32dfcc1b73f",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "answerText += text;"
+    },
+    "src/lib/llm.ts:676": {
+      "fp": "873ab549ff72",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "emittedAny = true;"
     },
     "src/lib/llm.ts:68": {
       "fp": "d10b36aa74a5",
@@ -18621,7 +18607,21 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:684": {
+    "src/lib/llm.ts:682": {
+      "fp": "2e164b8bb5bf",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "// Loop ended with zero text_delta events (e.g. adaptive thinking"
+    },
+    "src/lib/llm.ts:694": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:708": {
       "fp": "6475e3f06871",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18629,7 +18629,7 @@
       ],
       "preview": "...(emittedAny ? { answerText } : {}),"
     },
-    "src/lib/llm.ts:690": {
+    "src/lib/llm.ts:714": {
       "fp": "cbb775d99a96",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18637,7 +18637,7 @@
       ],
       "preview": "if (emittedAny)"
     },
-    "src/lib/llm.ts:697": {
+    "src/lib/llm.ts:721": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18645,7 +18645,7 @@
       ],
       "preview": ");"
     },
-    "src/lib/llm.ts:717": {
+    "src/lib/llm.ts:741": {
       "fp": "ab8795c5d95c",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18653,7 +18653,7 @@
       ],
       "preview": "const isLast = i === chain.length - 1;"
     },
-    "src/lib/llm.ts:718": {
+    "src/lib/llm.ts:742": {
       "fp": "3762952356a4",
       "citedBy": [
         "02-api-routes.md",
@@ -18663,36 +18663,19 @@
       ],
       "preview": "const goingToApology ="
     },
-    "src/lib/llm.ts:719": {
+    "src/lib/llm.ts:743": {
       "fp": "552a67dc6f92",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "emittedAny || isLast || !isFallbackEligible(err);"
     },
-    "src/lib/llm.ts:721": {
+    "src/lib/llm.ts:745": {
       "fp": "ec69082ed723",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// a fallback to a model that doesn't support thinking (Haiku) — the"
-    },
-    "src/lib/llm.ts:740": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:745": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "02-api-routes.md",
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
     },
     "src/lib/llm.ts:75": {
       "fp": "e9216f3a66d8",
@@ -18702,6 +18685,23 @@
         "14b-subsystems.md"
       ],
       "preview": "export function isOpusFallbackEnabled(): boolean {"
+    },
+    "src/lib/llm.ts:764": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:769": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
     },
     "src/lib/llm.ts:77": {
       "fp": "d10b36aa74a5",

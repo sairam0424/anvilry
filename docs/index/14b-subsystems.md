@@ -348,7 +348,7 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 `EXTENDED_THINKING` (`api/chat/route.ts:339`, default ON) is the server half of the pair whose client half is
 `NEXT_PUBLIC_EXTENDED_THINKING` above — one decides whether the model is asked to think, the other whether the
 block renders, and they are independent; `LLM_USE_SONNET_5` (`llm.ts:45-47`, default OFF — swaps the primary
-rung of both model chains to Sonnet 5); `LLM_USE_SONNET_5_5` (default OFF, the same swap to Sonnet 5.5, which wins over it); `LLM_USE_OPUS_FALLBACK` (`llm.ts:75-77`, default OFF — puts Opus 4.6 back as a rung behind the primary); `LLM_THINKING_EFFORT` (`llm.ts:177-183`, exactly `low` or `medium`; unset → `medium` on Sonnet 5.x, `low` elsewhere); `FAQ_CACHE_ENABLED` (default ON) and `FAQ_CACHE_SEMANTIC_MATCH`
+rung of both model chains to Sonnet 5); `LLM_USE_SONNET_5_5` (default OFF, the same swap to Sonnet 5.5, which wins over it); `LLM_USE_OPUS_FALLBACK` (`llm.ts:75-77`, default OFF — puts Opus 4.6 back as a rung behind the primary); `LLM_THINKING_EFFORT` (`llm.ts:182-189`, exactly one of `low`, `medium`, `high`, `xhigh`, `max`, with `xhigh` sent as `max` off Sonnet 5.x; unset → `medium` on Sonnet 5.x, `low` elsewhere); `FAQ_CACHE_ENABLED` (default ON) and `FAQ_CACHE_SEMANTIC_MATCH`
 (default OFF) (`chat-cache.ts:121-131`); `TELEMETRY_ENABLED` (`api/error/route.ts:92`); `FLAG_DRIVER`, `FLAGS`,
 `FLAGS_SECRET`.
 
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 96 test files (63 node + 33 dom), 1021 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 96 test files (63 node + 33 dom), 1051 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -626,7 +626,7 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
 is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 96 test files
-(1021 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+(1051 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -842,8 +842,8 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add or change a content **field** | `velite.config.ts` (the relevant `defineCollection`) | Make it `.optional()` or every existing file fails validation at once. Then `src/lib/content.ts`, plus any projection that should surface it. |
 | Change how content is sorted / filtered / subsetted | `src/lib/content.ts:19-86` | `pinned` without `pinRank` is dropped (`:27-29`); notes/articles sort by ISO **string** compare (`:52,:83`). Notes are hidden here, at the data layer: `allNotes` is `[]` while `NOTES_ENABLED` is off (`:56`) and note-only articles are dropped (`:82`). |
 | Change what the chatbot knows | `src/lib/corpus.ts:13-96` | Guarded by `src/lib/corpus.test.ts`. `register` flows verbatim from `:17`. Also feeds `/llms-full.txt` and the terminal `grep` (`commands.ts:180`). |
-| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:45-47` (the `LLM_USE_SONNET_5` toggle, with `isSonnet55PrimaryEnabled()` right after it and `isOpusFallbackEnabled()` at `:75-77`), `:102-137` (`buildChain()` and both chains), `:177-198` (`thinkingEffort()`, `adaptiveThinking()`), `:220-222` (provider), `:231-258` (creds/region) | `src/lib/llm.test.ts` pins model ids across both providers and both toggle states (`describe("LLM_USE_SONNET_5 toggle")`, `:1171`). Add a row to `PRICES` (`src/lib/llm-pricing.ts:57-95`) for any new Bedrock id: without one `llm-pricing.test.ts` fails, and at runtime the event omits `cost_usd` instead of guessing. |
-| Change the streaming fallback rule | `src/lib/llm.ts:717-719` (`goingToApology = emittedAny \|\| isLast \|\| !isFallbackEligible(err)`; `isFallbackEligible` `:313`) | `emittedAny` (declared `:444`, set `:652`) also gates trace-frame emission (`:690`), the FAQ-cache `answerText` (`:684`) and the thinking sentinel (`:562`). Pinned by `src/lib/llm.test.ts`'s "emittedAny invariant (load-bearing)" (`:478`), "v1.8 usage capture" (`:154`) and "extended thinking" (`:635`) describe blocks. |
+| Change the LLM model chain, provider, or credentials | `src/lib/llm.ts:45-47` (the `LLM_USE_SONNET_5` toggle, with `isSonnet55PrimaryEnabled()` right after it and `isOpusFallbackEnabled()` at `:75-77`), `:102-137` (`buildChain()` and both chains), `:182-222` (`thinkingEffort()`, `adaptiveThinking()`), `:244-246` (provider), `:255-282` (creds/region) | `src/lib/llm.test.ts` pins model ids across both providers and both toggle states (`describe("LLM_USE_SONNET_5 toggle")`, `:1171`). Add a row to `PRICES` (`src/lib/llm-pricing.ts:57-95`) for any new Bedrock id: without one `llm-pricing.test.ts` fails, and at runtime the event omits `cost_usd` instead of guessing. |
+| Change the streaming fallback rule | `src/lib/llm.ts:741-743` (`goingToApology = emittedAny \|\| isLast \|\| !isFallbackEligible(err)`; `isFallbackEligible` `:337`) | `emittedAny` (declared `:468`, set `:676`) also gates trace-frame emission (`:714`), the FAQ-cache `answerText` (`:708`) and the thinking sentinel (`:586`). Pinned by `src/lib/llm.test.ts`'s "emittedAny invariant (load-bearing)" (`:478`), "v1.8 usage capture" (`:154`) and "extended thinking" (`:635`) describe blocks. |
 | Change chat request limits / validation | `src/app/api/chat/route.ts:21-22,155-158,167-252` | `MAX_MESSAGES`, `MAX_CHARS`, the 2 MB declared-length ceiling (header only), the 10000-char PDF-block cap, the mediatype allowlists. |
 | Change the FAQ response cache | `src/lib/chat-cache.ts` (TTL `:63`, index cap `:66`, answer bound `:79`, semantic threshold `:223`, kill switch `:129-131`) | Lookup `chat/route.ts:276-332` (first-turn string questions only; hit frame carries `cacheHit: true`, header `X-Chat-Cache: hit`), write-through `:423-443` (skipped for an answer from a fallback rung); embeddings in `src/lib/faq-embeddings.ts` (Titan v2, 512 dims); emits telemetry kind `chat.cache`; `chat-cache.test.ts`. The eval cron bypasses it with `X-Chat-Skip-Cache`. |
 | Purge a bad cached answer | `POST /api/admin/faq-cache/purge` with Basic auth and `{ "question": "…" }` (`purge/route.ts:31-74`) | Removes the entry (and its index member) keyed by the normalised question (`chat-cache.ts:105-119`); returns 503 when Redis errors or is not configured, 200 `not_found` when nothing matched (`chat-cache.ts:368-388`). |
@@ -1078,7 +1078,7 @@ record the outcome rather than the original open question.
   the ReadyPlayerMe wording in `avatar-mesh.tsx:13,94` and `rig.ts:47,54` (the shipped asset is an Avaturn
   export); `avatar-mesh.tsx:19-21` ("only runs when invalidate() is called (mousemove or touchmove from
   AvatarControls)" — `useAvatarIdle` also invalidates every frame, `use-avatar-idle.ts:27`);
-  `.env.example:126-127`
+  `.env.example:128-129`
   (an unset `GOOGLE_TTS_API_KEY` "hides" the Google engine option from settings — nothing client-side reads the
   key, `voice-settings-dialog.tsx` lists every `TtsEngine`, and `tts-google/route.ts:39` only turns the request
   into a 503); the `github-sync/route.ts:6-17` docstring ("Hourly GitHub stats cache warm", "1 GitHub API call per hour") against

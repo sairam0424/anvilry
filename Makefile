@@ -298,7 +298,7 @@ env-check: ## Show which environment variables are set vs unset (secrets masked)
 	@printf "  ANTHROPIC_API_KEY           = %s\n" "$(if $(ANTHROPIC_API_KEY),SET (masked),unset)"
 	@printf "  LLM_USE_SONNET_5 / _5_5     = %s / %s   (both default false; 'true' makes that Sonnet the primary rung with Sonnet 4.6 behind it; if both, 5.5 is used)\n" "$${LLM_USE_SONNET_5:-false}" "$${LLM_USE_SONNET_5_5:-false}"
 	@printf "  LLM_USE_OPUS_FALLBACK       = %s   (default false; 'true' adds Opus behind the primary — leave off when IAM denies Opus)\n" "$${LLM_USE_OPUS_FALLBACK:-false}"
-	@printf "  LLM_THINKING_EFFORT         = %s   (low|medium; unset = medium on Sonnet 5.x, low elsewhere)\n" "$${LLM_THINKING_EFFORT:-unset}"
+	@printf "  LLM_THINKING_EFFORT         = %s   (low|medium|high|xhigh|max; unset = medium on Sonnet 5.x, low elsewhere)\n" "$${LLM_THINKING_EFFORT:-unset}"
 	@echo ""
 	@printf "$(YELLOW)Rate Limiting$(RESET)\n"
 	@printf "  UPSTASH_REDIS_REST_URL      = %s\n" "$(if $(UPSTASH_REDIS_REST_URL),SET,unset — rate limiter disabled)"

@@ -188,7 +188,7 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
 
 ## 6. Notes & gotchas
 - **`/api/chat` runtime and budget:** Node.js (Next's default: no route exports `runtime`, because
-  `cacheComponents` rejects the export, and the Bedrock SDK needs Node anyway), `maxDuration = 30`.
+  `cacheComponents` rejects the export, and the Bedrock SDK needs Node anyway), `maxDuration = 60` (it was 30 until reasoning at the higher efforts could run past it).
   Each attempt has a 15s timeout, so two slow attempts already consume the budget: fast failures
   (429 / 5xx) walk the whole chain, but three sequential timeouts (3 × 15s) would hit the platform
   limit before the apology tail is sent.
@@ -232,7 +232,7 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 | `LLM_USE_SONNET_5` | `true` | Optional, off by default (the `src/lib/llm.ts` docblock keeps it an explicit opt-in until proven in production). Makes Claude Sonnet 5 the primary rung, with Sonnet 4.6 behind it. |
 | `LLM_USE_SONNET_5_5` | `true` | Optional, off by default (an explicit opt-in until proven in production). Makes Claude Sonnet 5.5 the primary rung, with Sonnet 4.6 behind it, and wins over `LLM_USE_SONNET_5`. Bedrock serves it only through the **global** inference profile, so requests may be processed outside the US regions. |
 | `LLM_USE_OPUS_FALLBACK` | `true` | Optional, off by default. Adds Opus right behind the primary. Leave it off unless the IAM policy grants the Opus profile: the reference account denies it, so with the rung on every fallback would first spend a round trip on a 403. |
-| `LLM_THINKING_EFFORT` | `low` / `medium` | Optional. Overrides the reasoning effort on every thinking-capable rung. Unset → `medium` for Sonnet 5.x (which at `low` did not reason on any of 8 measured questions, so the reasoning panel stayed empty) and `low` for the rest. Anything else, `high` included, is ignored. |
+| `LLM_THINKING_EFFORT` | `low` / `medium` / `high` / `xhigh` / `max` | Optional. Overrides the reasoning effort on every thinking-capable rung (Sonnet 4.6 has no `xhigh` and gets `max`). Unset → `medium` for Sonnet 5.x (it reasons on the hard questions only; at `low` it did not reason on any of 8 measured questions, so the reasoning panel stayed empty) and `low` for the rest. `xhigh` makes Sonnet 5.5 reason on every question: measured 2026-10-01, first answer text after about 4 s on average (7.7 s at most), against about 1.6 s at `medium`. Anything else is ignored. |
 | `FAQ_CACHE_ENABLED` / `FAQ_CACHE_SEMANTIC_MATCH` | `false` / `true` | Optional. The FAQ response cache is on by default (it needs Upstash); the first switches it off, the second adds the semantic (embedding) tier. |
 
 **Extra IAM by feature.** The policy in §3 covers the two default Anthropic profiles (Sonnet 4.6, Haiku 4.5) and the opt-in Opus profile only. Add:

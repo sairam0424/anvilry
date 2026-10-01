@@ -3,13 +3,13 @@ kind: doc
 title: Cross-cutting subsystem maps (part 1 of 2)
 domain: [content]
 status: current
-version: v3.10.0
+version: v3.11.0
 ---
 
 # Cross-cutting subsystem maps — part 1 of 2
 
-> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` at a929932 plus five post-a929932 fixes, each described by behaviour — notes are
+> Part of the Anvilry v3.11.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.11.0 (`package.json` 3.11.0), i.e. `main` at a929932 plus five post-a929932 fixes, each described by behaviour — notes are
 > hidden at the data layer when `NOTES_ENABLED` is off; rate limiting has per-class buckets (`chat` / `voice` /
 > `beacon`) with an eval-cron bypass, built on `src/lib/cron-auth.ts`; admin auth goes through the shared
 > `isAdminAuthorized` (`src/proxy.ts`, `requireAdmin`, the telemetry page); overlay voice entry points are gated
@@ -293,7 +293,7 @@ CLIENT
    → useChat.send(text, files?)         (use-chat.ts:262 — early-returns while status==="streaming")
    → attachment blocks first, text block LAST; PDFs as "[PDF: name]\n<text>", images as base64
    → fetch POST /api/chat  { AbortController }                            use-chat.ts:305
-SERVER  /api/chat  (maxDuration = 30, route.ts:19)
+SERVER  /api/chat  (maxDuration = 60, route.ts:19)
    → withTrace(req, "chat")                                               route.ts:132
    → isConfigured()            ─ false → 503                              :133-138
    → checkRateLimit(req, "chat") ─ deny → 429 + Retry-After              :140-148
@@ -325,9 +325,9 @@ SERVER  /api/chat  (maxDuration = 30, route.ts:19)
           anthropic: claude-sonnet-4-6 (or claude-sonnet-5 / -5-5, 4.6 behind it)
                    → claude-haiku-4-5                                    llm.ts:129-137
         makeClient() INSIDE start() so a ctor failure becomes an apology
-                     stream, emitted as model:"client-init", attempt_index:-1  llm.ts:461-481
+                     stream, emitted as model:"client-init", attempt_index:-1  llm.ts:485-505
         per attempt: client.messages.stream() w/ adaptive thinking; 15_000 ms timeout
-                     set on the client                                    llm.ts:289,:298,:535
+                     set on the client                                    llm.ts:313,:322,:559
         onAttempt → one llm.attempt span incl. cost_usd from costUsd() llm-pricing.ts:107-119, route.ts:379-421
                   → clean end_turn !fell_back ⇒ void faqCacheSet(...)     route.ts:423-443
    → WIRE: [THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]
@@ -355,10 +355,10 @@ CLIENT
 | 3 | `src/lib/telemetry/with-trace.ts:200-221` | Mints the traceId, stamps `x-anvilry-trace-id` on a **reconstructed** Response that passes `res.body` through so streaming survives; emits exactly one span. |
 | 4 | `src/lib/rate-limit.ts:15-17,19-51,95-110` | `RateLimitClass = "chat" \| "voice" \| "beacon"` (declared `:19`, rationale in the docblock `:15-17`); one `slidingWindow(8, "60 s")` limiter **per class** (`:22-23,33-46`) under prefixes `anvilry:chat` / `anvilry:voice` / `anvilry:beacon` (`:25-29`); `cls` is a required argument (`:95-98`). A valid `CRON_SECRET` bearer skips the limiter (`rate-limit.ts:100`, via `hasValidCronSecret`, `src/lib/cron-auth.ts:15-20`). **Fails open** twice over (`rate-limit.ts:99`, `:106-109`). |
 | 5 | `src/lib/corpus.ts:13` | Grounding document, rebuilt per request from build-time Velite data. |
-| 6 | `src/lib/llm.ts:220-222` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. `LLM_USE_SONNET_5 === "true"` (`:45-47`) swaps the primary rung on both chains; `LLM_USE_SONNET_5_5 === "true"` does the same for Sonnet 5.5 (the global Bedrock profile) and wins. |
-| 7 | `src/lib/llm.ts:231-241` | `decodeSecret`: base64-vs-raw discrimination by re-encoding the decode and comparing (`:234-236`). |
-| 8 | `src/lib/llm.ts:314-334` | `isFallbackEligible`: connection error, 429/404, ≥500, a 400 whose message hits one of six `MODEL_UNAVAILABLE_MARKERS` (`:204-211`), or a 403 that names a per-model deny (those markers or `MODEL_DENIED_MARKERS`). |
-| 9 | `src/lib/llm.ts:444,562,652,690,719` | `emittedAny` — declared, then gating THINKING_SENTINEL emission, being set on the first `text_delta`, gating trace-frame emission, and gating fallback. |
+| 6 | `src/lib/llm.ts:244-246` | Provider toggle: `LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock"` — anything else, including unset, is Bedrock. `LLM_USE_SONNET_5 === "true"` (`:45-47`) swaps the primary rung on both chains; `LLM_USE_SONNET_5_5 === "true"` does the same for Sonnet 5.5 (the global Bedrock profile) and wins. |
+| 7 | `src/lib/llm.ts:255-265` | `decodeSecret`: base64-vs-raw discrimination by re-encoding the decode and comparing (`:258-260`). |
+| 8 | `src/lib/llm.ts:338-358` | `isFallbackEligible`: connection error, 429/404, ≥500, a 400 whose message hits one of six `MODEL_UNAVAILABLE_MARKERS` (`:228-235`), or a 403 that names a per-model deny (those markers or `MODEL_DENIED_MARKERS`). |
+| 9 | `src/lib/llm.ts:468,586,676,714,743` | `emittedAny` — declared, then gating THINKING_SENTINEL emission, being set on the first `text_delta`, gating trace-frame emission, and gating fallback. |
 | 10 | `src/lib/llm-trace.ts:23-55` | `TRACE_DELIMITER` U+001E, `THINKING_SENTINEL` U+001E U+0001, `THINKING_END` U+001E U+0002, `stripControlBytes` (`:34-38` — applied to every model-generated chunk so a completion can never smuggle in framing bytes), `LlmUsage`, `TraceFrame`. |
 | 11 | `src/components/chat/parse-cards.ts:29-33,54-68` | Token grammar with a locked `[a-z0-9-]+` slug charset; every token resolved against the build-time allowlist or dropped. |
 | 12 | `src/components/chat/markdown-message.tsx:88-93` | `remarkGfm` + `rehypeSanitize` + `skipHtml`, default `urlTransform` left in place. |
@@ -382,14 +382,14 @@ client, committed `ChatMessage`s rendered as sanitized markdown + resolved cards
 ### The `emittedAny` fallback invariant
 
 `const goingToApology = emittedAny || isLast || !isFallbackEligible(err); ... if (goingToApology)` →
-append `apologyTail` and close (`src/lib/llm.ts:718-745`, read directly — as of 2026-09-18 also closes
-the thinking phase with `THINKING_END` first if one was open, `:731-740`). Fallback to the next model is possible
-**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:652`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:336-344`: streaming errors surface
+append `apologyTail` and close (`src/lib/llm.ts:742-769`, read directly — as of 2026-09-18 also closes
+the thinking phase with `THINKING_END` first if one was open, `:755-764`). Fallback to the next model is possible
+**only before any `text_delta` event has been received** — NOT literally "zero bytes sent": `emittedAny` is set unconditionally inside the `text_delta` branch (`:676`), before any content check, so a `text_delta` whose text strips to empty would still set it and suppress any later fallback. Thinking bytes never count either way (`thinking_delta` is a different branch). The load-bearing reason is at `src/lib/llm.ts:360-368`: streaming errors surface
 *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream failures
 are indistinguishable by call site — whether a `text_delta` has already arrived is the only reliable
 discriminator. The same flag also keeps an attempt with no `text_delta` from materialising a trace frame
-(`:688-697`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
-(`thinkingSentinelEmitted`, declared `:451`, checked `:562-564`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
+(`:712-721`). `THINKING_SENTINEL`'s own one-shot behavior is a SEPARATE, stream-scoped guard
+(`thinkingSentinelEmitted`, declared `:475`, checked `:586-588`), not `emittedAny` — see `04-lib-ai-voice-infra.md`'s fuller
 writeup.
 
 ### Telemetry spans emitted on this path
@@ -426,7 +426,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
   match, so local dev caches without a deploy stamp.
 - **Write gate** (`faqCacheSet`, `:265`): only `finish_reason === "end_turn"`, control bytes stripped, 1–4000
   chars (`MAX_CACHEABLE_ANSWER_CHARS`, `:79`). `answerText` reaches the route only for a clean, complete
-  answer (`llm.ts:498,651,684`), so an apology tail or a partial answer can never be cached; a clean answer from a fallback rung does reach the route, which declines to write it through (`!attempt.fell_back`, `route.ts:434`), so a transient primary outage is not pinned for 24 h. Index trimming is
+  answer (`llm.ts:522,675,708`), so an apology tail or a partial answer can never be cached; a clean answer from a fallback rung does reach the route, which declines to write it through (`!attempt.fell_back`, `route.ts:434`), so a transient primary outage is not pinned for 24 h. Index trimming is
   sampled 1-in-20 (`TRIM_SAMPLE_EVERY`, `:72`).
 - **Accepted gap:** the gate proves completion cleanliness, not content safety — a jailbreak that finishes with
   `end_turn` would be replayed until TTL, a corpus change, or a purge (`chat-cache.ts:25-32`).
@@ -450,11 +450,11 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | Unbounded spend when Upstash is down | `checkRateLimit` fails open: `{ ok: true }` when unconfigured (`rate-limit.ts:99`) and on any thrown error (`:106-109`). The only signal is a production-only module-load warning (`:62-68`). |
 | Wrong `cost_usd` for a new model id | `costUsd()` (`llm-pricing.ts:107-119`) looks the id up in a five-row table (`llm-pricing.ts:57-95`) and returns `null` for any other id, so the `llm.attempt` event carries no `cost_usd` rather than a wrong one; a direct-API id has no row by design. `llm-pricing.test.ts` fails the build when a Bedrock id `modelChain()` can produce has no row. |
 | Token telemetry silently zeroes | An SDK returning camelCase usage keys. Pinned by `src/lib/llm.test.ts:309-318`. |
-| Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:253-255` explains it; the expression is `:256`) is what shields it. |
+| Region signed wrong in production | `AWS_REGION` is reserved on Vercel and was observed as `"s-east-1"`. Resolution order `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"` (`llm.ts:277-279` explains it; the expression is `:280`) is what shields it. |
 | Opus 4.6 400s "model identifier is invalid" | Dropping the `-v1` suffix (`llm.ts:112-114`, chain entry `:123`). |
-| Sonnet 5 / Opus 5 400s on extended thinking | Still sending the old `thinking:{type:"enabled",budget_tokens}` shape — deprecated on 4.6, hard-rejected on 5. Must be `thinking:{type:"adaptive"}` + `output_config:{effort:...}` (`llm.ts:511-556`). |
-| Reasoning panel stays empty on Sonnet 5.x | Dropping `display: "summarized"` (`adaptiveThinking()`, `llm.ts:191-198`) — the thinking block then has empty text, though the thinking tokens are billed — or lowering the effort to `low` (`thinkingEffort()`, `llm.ts:177-183`), at which Sonnet 5.5 did not reason on any of 8 measured questions. Both pinned by `llm.test.ts` ("thinking a visitor can actually see"). |
-| Unsolicited/unframed reasoning bytes in the visible chat | If a model ever defaults thinking ON when the field is omitted (true for Sonnet 5/Opus 5) and the explicit `disabled` send were ever removed, `thinking_delta` bytes would need to stay gated on `useThinking` and `thinkingEndEmitted` (`llm.ts:624`) or they'd stream raw with no `THINKING_SENTINEL`. |
+| Sonnet 5 / Opus 5 400s on extended thinking | Still sending the old `thinking:{type:"enabled",budget_tokens}` shape — deprecated on 4.6, hard-rejected on 5. Must be `thinking:{type:"adaptive"}` + `output_config:{effort:...}` (`llm.ts:535-580`). |
+| Reasoning panel stays empty on Sonnet 5.x | Dropping `display: "summarized"` (`adaptiveThinking()`, `llm.ts:215-222`) — the thinking block then has empty text, though the thinking tokens are billed — or lowering the effort to `low` (`thinkingEffort()`, `llm.ts:182-189`), at which Sonnet 5.5 reasoned on 0 of 8 questions in the first probe and 1 of 15 calls in the later matrix (`medium` reasons mostly on the hard ones, `xhigh` on every question). Both pinned by `llm.test.ts` ("thinking a visitor can actually see"). |
+| Unsolicited/unframed reasoning bytes in the visible chat | If a model ever defaults thinking ON when the field is omitted (true for Sonnet 5/Opus 5) and the explicit `disabled` send were ever removed, `thinking_delta` bytes would need to stay gated on `useThinking` and `thinkingEndEmitted` (`llm.ts:648`) or they'd stream raw with no `THINKING_SENTINEL`. |
 | Dropped tail token / frozen background tab | Removing the trailing `flushNow(acc)` (`use-chat.ts:352-354`) or the `BACKGROUND_FLUSH_MS` timer (`:124,:229`). |
 | Card fabricated for nonexistent content | Structurally impossible: locked slug charset, build-time allowlist, unresolved tokens dropped. `src/components/chat/parse-cards.test.ts:41-75` is the gate. |
 | Model navigates to a view the prompt never offered | The `[[cmd:view:<x>]]` parser accepts every `VIEWS` member (all six, including `resume` — `parse-cards.ts:62`), while the system prompt lists five (`chat/route.ts:104`). Harmless — `ViewRouter` still gates on `isViewEnabled` — but the grammar and the prompt are two separate copies. |
@@ -667,7 +667,7 @@ Registration sites: `route.ts:20, 30, 40, 49, 59, 68, 78, 88, 98, 109` (`list_de
 (`src/app/api/mcp/[transport]/route.ts:12`), `CLAUDE.md` (its MCP Server section and Key Files table) says 10 in both places, the hand-written
 `TOOLS` table on `/mcp` lists all ten rows (`src/app/mcp/page.tsx:40-60`), and `src/lib/mcp-tools.ts` exports
 ten `*Data` functions (`:73,99,111,127,139,155,193,214,253,287`). History: the server grew 7 → 9 at v3.0.0
-(`CHANGELOG.md:762-763`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:427-429`); the tenth
+(`CHANGELOG.md:797-798`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:462-464`); the tenth
 tool has **no CHANGELOG entry** yet.
 
 ### Participating files, in flow order
@@ -680,7 +680,7 @@ tool has **no CHANGELOG entry** yet.
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
 | 5 | `src/lib/decisions.ts` | Source of `list_decisions` (`allDecisions`, project `decisions[]` + work `constraints`/`tradeoffs`). |
 | 6 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:40-60`) is a hand-maintained duplicate, but it is **enforced** rather than trusted — the comment at `:37-39` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
-| 7 | `src/lib/llms-txt.ts:75` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:420-423`). |
+| 7 | `src/lib/llms-txt.ts:75` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:455-458`). |
 | 8 | `src/app/api/cron/health-check/route.ts:62` | Probes `/api/mcp/mcp` as a P2 check. The expected status is per-check (`expectedStatus`, `:107`, gated by `isExpectedStatus` at `:109`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30-32`). |
 
 ### Entry point
@@ -723,7 +723,7 @@ pinned by `mcp-tools.test.ts:107`); `content[0].text` keeps the raw array.
 | `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:6-8`). |
 | `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:28-34`) hardcodes the exact string `"Sairam Resume"` for the only role, `master`. Adding a role needs three edits (the `RESUME_ROLES` keyword, its exact label, the PDF in `public/resume/`) or it returns `notFound` (`:29-33`). `mcp-tools.test.ts:82` asserts every role resolves to a PDF that exists on disk. |
 | Tool list drifts from content | `mcp-tools.test.ts:48` asserts `list_projects`/`list_work` cover the whole content layer; `:93` covers `list_decisions`. |
-| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:75` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:420-423`), and `src/lib/llms-txt.test.ts:25` pins the live path and `:29` the absence of `/api/mcp/sse`. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:75` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:455-458`), and `src/lib/llms-txt.test.ts:25` pins the live path and `:29` the absence of `/api/mcp/sse`. |
 | `/mcp` docs drift | `src/app/mcp/page.tsx:40-60` is hand-maintained, but **guarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
 | Health check flaps on MCP | The cron probes `GET /api/mcp/mcp`, which `mcp-handler` answers **405** by itself, so `mcp_get` must expect 405 (`health-expectations.ts:30-32`); `health-expectations.test.ts:27,41` pins it and `:161,173` pin the installed `mcp-handler` behaviour it depends on. |
 
@@ -831,7 +831,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Failure | Mechanism |
 |---|---|
 | Every error double-beacons | Renaming `DEDUPE_FLAG = "__anvilry_error_recently__"` in one of its three homes: `src/app/error.tsx:39`, `src/app/global-error.tsx:34`, `src/instrumentation-client.ts:65-71` (100 ms window). |
-| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:452-457`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
+| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:487-492`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
 | Secrets in the trace log | A producer emitting without `redact()` first — `emit` does none (`emit.ts:30-35`). `src/app/api/error/route.test.ts:226-263` pins redact-before-emit. `componentStack` is deliberately **not** redacted (React-internal, `api/error/route.ts:147-165`). |
 | Retention stops trimming | The trim is piggybacked on writes **and** sampled: it runs only when `event.ts % 20 === 0` (`emit.ts:54,85-87`), so a kind that stops receiving events is never trimmed again, and even a busy kind is trimmed on ~5% of writes (each cheap `ZADD` is unconditional; the `ZREMRANGEBYSCORE` is what was cut to spare Upstash's command quota). |
 | Telemetry failure becomes request failure | Removing a `.catch()` from either Redis promise, or awaiting `emit` (it returns `void` by design, `emit.ts:25-35,56`). |
@@ -853,7 +853,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` (both or neither — sink 2 and the whole dashboard);
 `TELEMETRY_IP_SALT` (unset ⇒ every IP stored as `"anonymous"`, `with-trace.ts:157`);
 `TELEMETRY_ENABLED` — **opt-out, and only the exact string `"false"`**, read at exactly one place,
-`src/app/api/error/route.ts:92` (`.env.example:145` used to describe it as disabling "all event emission",
+`src/app/api/error/route.ts:92` (`.env.example:147` used to describe it as disabling "all event emission",
 which is broader than the single read; it and the `TELEMETRY_ENABLED` row of `docs/configuration.md` now state
 the narrow, beacon-only behaviour); `ADMIN_PASSWORD` (Basic auth for
 `/admin/*` — checked first by `src/proxy.ts:21-35` and again by the page `:470`; unset ⇒ locked out for
@@ -868,7 +868,7 @@ cron).
 `src/lib/telemetry/schema.test.ts:151`, and consumed by the dashboard's `case "budget.tick"`
 (`src/app/admin/telemetry/page.tsx:414`) — but a grep of `src/` for `budget.tick` returns only those
 four sites (`schema.ts:60` is a docblock mention; `scripts/replay-trace.mjs:54` lists it in `KINDS`).
-**No producer emits it at v3.10.0.** (Section 04 left this open; resolved by direct grep.)
+**No producer emits it at v3.11.0.** (Section 04 left this open; resolved by direct grep.)
 
 `tts.request` and `transcribe.request` are in the same state, which the earlier pass missed: declared
 (`schema.ts:40-41`), fetched by the dashboard (`page.tsx:495-496`, feeding the two latency tiles at

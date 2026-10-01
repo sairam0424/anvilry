@@ -2,7 +2,7 @@
 
 Production deploy guide for the Anvilry portfolio. The site is a Next.js 16 app; the only
 runtime dependency beyond the static build is the **"Ask my portfolio" chatbot**, which calls
-Claude on **AWS Bedrock**. Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` @ `a929932` plus eleven post-`a929932` behaviour changes (five in v3.7.0, two in v3.8.0: IAM-denied models fall through, and the opt-in Sonnet 5.5 primary; two in v3.9.0: the model line under chat answers and the Konami easter egg are removed; two in v3.10.0: Sonnet 4.6 backs up a 5.x primary and Opus is opt-in, and a neutral AI cue replaces the model line); the code wins.
+Claude on **AWS Bedrock**. Describes Anvilry v3.11.0 (`package.json` 3.11.0), i.e. `main` @ `a929932` plus twelve post-`a929932` behaviour changes (five in v3.7.0, two in v3.8.0: IAM-denied models fall through, and the opt-in Sonnet 5.5 primary; two in v3.9.0: the model line under chat answers and the Konami easter egg are removed; two in v3.10.0: Sonnet 4.6 backs up a 5.x primary and Opus is opt-in, and a neutral AI cue replaces the model line; one in v3.11.0: `LLM_THINKING_EFFORT` takes all five effort levels, so `xhigh` can make Sonnet 5.5 reason on every question); the code wins.
 
 ---
 
@@ -85,7 +85,7 @@ Upstash Redis sliding window — distributed, so it holds across Vercel instance
 
 ## 3. Verified model chain (tested live against this AWS account, us-east-1)
 
-The chatbot tries these in order (15 s timeout per attempt), falling through **only** on availability errors
+The chatbot tries these in order (15 s to the response headers per HTTP try, up to three tries per model), falling through **only** on availability errors
 (429 / 404 / 5xx / connection-timeout, a 400 that means "model unavailable", or a 403 that names an IAM or model-access deny) and only before any text has
 streamed; deterministic errors (malformed prompt, bad or expired creds, 401 / 422, a credential 403) end the chain with the apology tail instead of burning it.
 
@@ -188,10 +188,10 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
 
 ## 6. Notes & gotchas
 - **`/api/chat` runtime and budget:** Node.js (Next's default: no route exports `runtime`, because
-  `cacheComponents` rejects the export, and the Bedrock SDK needs Node anyway), `maxDuration = 30`.
-  Each attempt has a 15s timeout, so two slow attempts already consume the budget: fast failures
-  (429 / 5xx) walk the whole chain, but three sequential timeouts (3 × 15s) would hit the platform
-  limit before the apology tail is sent.
+  `cacheComponents` rejects the export, and the Bedrock SDK needs Node anyway), `maxDuration = 60` (it was 30 until reasoning at the higher efforts could run past it).
+  Each attempt has a 15s timeout on the response starting (not on the whole stream: a max-effort run
+  measured 20.5s), and the SDK makes up to three tries per rung, so fast failures (429 / 5xx) walk the
+  whole chain inside 60s but a rung that never answers costs about 46s before the next one starts.
 - **Region var gotcha (real prod incident):** on the first prod deploy, `AWS_REGION` arrived in the
   Lambda corrupted as `s-east-1` (missing `u`) → an invalid Bedrock endpoint → all 3 models failed
   with `Connection error` (status=undefined) → the apology tail. `AWS_REGION` is a Vercel/Lambda
@@ -232,7 +232,7 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 | `LLM_USE_SONNET_5` | `true` | Optional, off by default (the `src/lib/llm.ts` docblock keeps it an explicit opt-in until proven in production). Makes Claude Sonnet 5 the primary rung, with Sonnet 4.6 behind it. |
 | `LLM_USE_SONNET_5_5` | `true` | Optional, off by default (an explicit opt-in until proven in production). Makes Claude Sonnet 5.5 the primary rung, with Sonnet 4.6 behind it, and wins over `LLM_USE_SONNET_5`. Bedrock serves it only through the **global** inference profile, so requests may be processed outside the US regions. |
 | `LLM_USE_OPUS_FALLBACK` | `true` | Optional, off by default. Adds Opus right behind the primary. Leave it off unless the IAM policy grants the Opus profile: the reference account denies it, so with the rung on every fallback would first spend a round trip on a 403. |
-| `LLM_THINKING_EFFORT` | `low` / `medium` | Optional. Overrides the reasoning effort on every thinking-capable rung. Unset → `medium` for Sonnet 5.x (which at `low` did not reason on any of 8 measured questions, so the reasoning panel stayed empty) and `low` for the rest. Anything else, `high` included, is ignored. |
+| `LLM_THINKING_EFFORT` | `low` / `medium` / `high` / `xhigh` / `max` | Optional. Overrides the reasoning effort on every thinking-capable rung (Sonnet 4.6 has no `xhigh` and gets `max`). Unset → `medium` for Sonnet 5.x (it reasons mostly on the hard questions; at `low` it did not reason on any of 8 questions in the first probe, 1 of 15 calls in the later matrix, so the reasoning panel stayed empty) and `low` for the rest. `xhigh` makes Sonnet 5.5 reason on every question, except a first-turn question answered from the FAQ cache (`FAQ_CACHE_ENABLED=false` shows reasoning everywhere): measured 2026-10-01, first answer text after about 4 s on average (7.6 s at most), against about 1.6 s at `medium`. Anything else is ignored. |
 | `FAQ_CACHE_ENABLED` / `FAQ_CACHE_SEMANTIC_MATCH` | `false` / `true` | Optional. The FAQ response cache is on by default (it needs Upstash); the first switches it off, the second adds the semantic (embedding) tier. |
 
 **Extra IAM by feature.** The policy in §3 covers the two default Anthropic profiles (Sonnet 4.6, Haiku 4.5) and the opt-in Opus profile only. Add:
@@ -242,4 +242,4 @@ Set these in **Project → Settings → Environment Variables** (Production, plu
 
 **Opus caveat.** The reference AWS account IAM-denies the whole Opus family, so Opus is **not in the default chain**: set `LLM_USE_OPUS_FALLBACK=true` only where the Opus profile is granted. A denied Opus rung used to be skipped (an IAM deny surfaces as a 403 whose message says `is not authorized to perform … with an explicit deny`, which is fallback-eligible), but every fallback paid a round trip on it before Haiku got the request. The same 403 wording still advances the chain for any other denied rung, for example the global Sonnet 5.5 profile when the policy lacks it. A 403 for bad or expired credentials is not eligible and still ends the chain at once with the apology tail.
 
-**Crons and deployment protection.** Schedules (UTC): health-check `0 5 * * *`, eval `0 9 * * 1`, github-sync `0 8 * * *`, seo-audit `0 6 * * 1`, content-audit `0 7 * * 1`. The health check probes `VERCEL_PROJECT_PRODUCTION_URL` (the public alias) and does not follow redirects, so it reports Vercel's SSO wall instead of scoring it healthy. The eval, seo-audit and github-sync crons, and `/api/chat`'s live GitHub-stats fetch, use the per-deployment `VERCEL_URL`; if deployment protection covers that host they can hit the SSO wall and report nothing useful (checked for the eval cron on 2026-10-01: the generated host answers `POST /api/chat` with 401 "Protected by Vercel Authentication", so its 12 requests never reach the app and the "Eval pass rate" tile records 0 of 12 until it is moved to the production alias; not checked for github-sync, seo-audit or the live-stats fetch; only the health check has been moved). Look at the dashboard tiles after the first weekly run.
+**Crons and deployment protection.** Schedules (UTC): health-check `0 5 * * *`, eval `0 9 * * 1`, github-sync `0 8 * * *`, seo-audit `0 6 * * 1`, content-audit `0 7 * * 1`. The health check probes `VERCEL_PROJECT_PRODUCTION_URL` (the public alias) and does not follow redirects, so it reports Vercel's SSO wall instead of scoring it healthy. The eval, seo-audit and github-sync crons, and `/api/chat`'s live GitHub-stats fetch, use the per-deployment `VERCEL_URL`; if deployment protection covers that host they can hit the SSO wall and report nothing useful (checked for the eval cron on 2026-10-01: the generated host answers `POST /api/chat` with 401 "Protected by Vercel Authentication", so its 12 requests never reach the app and the "Eval pass rate" tile records 0 of 12 until it is moved to the production alias (with `LLM_THINKING_EFFORT=xhigh` its 12 sequential chats then take 45-60 s against the cron's 60 s `maxDuration`, and a run cut off by `maxDuration` stores nothing, so move it together with concurrency or a longer limit); not checked for github-sync, seo-audit or the live-stats fetch; only the health check has been moved). Look at the dashboard tiles after the first weekly run.

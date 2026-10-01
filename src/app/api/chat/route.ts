@@ -16,7 +16,7 @@ import {
 } from "@/lib/chat-cache";
 import { randomUUID } from "node:crypto";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 600;

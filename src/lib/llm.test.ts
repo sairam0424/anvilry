@@ -1350,6 +1350,16 @@ describe("isFallbackEligible — status/message truth table", () => {
       400,
       "400 messages.0.content: Input should be a valid list",
     ],
+    [
+      "400 effort Sonnet 4.6 does not take (xhigh)",
+      400,
+      "400 output_config.effort: Input should be 'low', 'medium', 'high' or 'max'",
+    ],
+    [
+      "400 effort Sonnet 5.x does not take",
+      400,
+      "400 unknown variant `bogus`, expected one of `low`, `medium`, `high`, `xhigh`, `max`, `Unhandled` at line 1 column 148",
+    ],
     ["401 unauthorized", 401, "401 invalid x-api-key"],
     ["403 invalid security token", 403, BAD_TOKEN_MESSAGE],
     [
@@ -2084,9 +2094,8 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     expect(sent.thinking).toEqual({ type: "adaptive" });
   });
 
-  // "high" is rejected on purpose: the shared 2048-token thinking-plus-answer ceiling
-  // was sized for low and medium (see thinkingEffort() in llm.ts).
-  it.each(["high", "extreme", "HIGH", "Medium", "max", " low", ""])(
+  // Only the five lower-case levels Bedrock accepts count; everything else is ignored.
+  it.each(["extreme", "HIGH", "Medium", "XHIGH", "Max", "xhigh ", " low", "none", "minimal", "constructor", "__proto__", "toString", ""])(
     "ignores the invalid LLM_THINKING_EFFORT value %j and uses the per-model default",
     async (value) => {
       process.env.LLM_THINKING_EFFORT = value;
@@ -2105,6 +2114,8 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     ["Sonnet 4.6, default low", "MEDIUM", {}, "low"],
     ["Sonnet 4.6, default low", "Medium", {}, "low"],
     ["Sonnet 5.5, default medium", "LOW", { LLM_USE_SONNET_5_5: "true" }, "medium"],
+    ["Sonnet 5.5, default medium", "XHIGH", { LLM_USE_SONNET_5_5: "true" }, "medium"],
+    ["Sonnet 4.6, default low", "Max", {}, "low"],
   ])(
     "%s ignores the mis-cased LLM_THINKING_EFFORT %j rather than lower-casing it",
     async (_label, value, env, expected) => {
@@ -2118,6 +2129,145 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
       });
     },
   );
+
+  // What Bedrock itself accepts, read from its own 400 on the streaming action (2026-10-01):
+  // Sonnet 5 and 5.5 take low, medium, high, xhigh and max; Sonnet 4.6 takes all but xhigh.
+  // Measured on Sonnet 5.5 (production prompt, 90 calls): xhigh reasoned on 30 of 30, high on
+  // 16 of 25, medium on 3 of 15, low on 1 of 15.
+  it.each(["low", "medium", "high", "xhigh", "max"])(
+    "LLM_THINKING_EFFORT=%s goes to Sonnet 5.5 as it is, with summarized reasoning",
+    async (value) => {
+      process.env.LLM_THINKING_EFFORT = value;
+      process.env.LLM_USE_SONNET_5_5 = "true";
+      STATE.events = [answer("Hi.")];
+      const { streamWithFallback } = await import("./llm");
+      await drain(streamWithFallback(params, { extendedThinking: true }));
+      const sent = STATE.streamParamsByCall[0] as Sent;
+      expect(sent.model).toBe(BEDROCK_IDS.s55);
+      expect(sent.thinking).toEqual({ type: "adaptive", display: "summarized" });
+      expect(sent.output_config).toEqual({ effort: value });
+    },
+  );
+
+  // Sonnet 4.6 has no xhigh (Bedrock: "Input should be 'low', 'medium', 'high' or 'max'"), and a
+  // 400 is not fallback-eligible, so sending it would end every request in the apology.
+  it.each([
+    ["low", "low"],
+    ["medium", "medium"],
+    ["high", "high"],
+    ["xhigh", "max"],
+    ["max", "max"],
+  ])("LLM_THINKING_EFFORT=%s reaches Sonnet 4.6 as %s", async (value, expected) => {
+    process.env.LLM_THINKING_EFFORT = value;
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe(BEDROCK_IDS.s46);
+    expect(sent.thinking).toEqual({ type: "adaptive" });
+    expect(sent.output_config).toEqual({ effort: expected });
+  });
+
+  it("keeps xhigh on a Sonnet 5.5 primary and clamps it to max on the Sonnet 4.6 rung behind it", async () => {
+    process.env.LLM_THINKING_EFFORT = "xhigh";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [[], answer("4.6 answer.")];
+    STATE.throwsOn = [0];
+    STATE.throwStatus = { 0: 503 };
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const [first, second] = STATE.streamParamsByCall as Sent[];
+    expect(first.model).toBe(BEDROCK_IDS.s55);
+    expect(first.output_config).toEqual({ effort: "xhigh" });
+    expect(second.model).toBe(BEDROCK_IDS.s46);
+    expect(second.output_config).toEqual({ effort: "max" });
+  });
+
+  it.each([
+    ["direct-API Sonnet 5.5", "xhigh", { LLM_USE_SONNET_5_5: "true" }, DIRECT_IDS.s55],
+    ["direct-API Sonnet 5", "xhigh", { LLM_USE_SONNET_5: "true" }, DIRECT_IDS.s5],
+    ["direct-API Sonnet 4.6", "max", {}, DIRECT_IDS.s46],
+  ])("sends xhigh to %s as %s on the direct chain", async (_label, expected, env, model) => {
+    Object.assign(process.env, { LLM_PROVIDER: "anthropic", LLM_THINKING_EFFORT: "xhigh", ...env });
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall[0] as Sent;
+    expect(sent.model).toBe(model);
+    expect(sent.output_config).toEqual({ effort: expected });
+  });
+
+  // Every rung of the longest chain (5.5, Opus opt-in, 4.6, Haiku), each failing but the last, at
+  // xhigh: only Sonnet 5.x may be sent it, Opus and 4.6 get max (and the ceiling that goes with
+  // max), and Haiku gets neither an effort nor a bigger ceiling.
+  it.each([
+    ["Bedrock", {}, BEDROCK_IDS],
+    ["direct-API", { LLM_PROVIDER: "anthropic" }, DIRECT_IDS],
+  ])("at xhigh on the %s chain each rung gets the request its model accepts", async (_label, env, ids) => {
+    Object.assign(process.env, {
+      LLM_THINKING_EFFORT: "xhigh",
+      LLM_USE_SONNET_5_5: "true",
+      LLM_USE_OPUS_FALLBACK: "true",
+      ...env,
+    });
+    STATE.events = [[], [], [], answer("Haiku answer.")];
+    STATE.throwsOn = [0, 1, 2];
+    STATE.throwStatus = { 0: 503, 1: 503, 2: 503 };
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    const sent = STATE.streamParamsByCall as Array<Sent & { max_tokens?: number }>;
+    expect(sent.map((s) => s.model)).toEqual([ids.s55, ids.opus, ids.s46, ids.haiku]);
+    expect(sent.map((s) => s.output_config?.effort)).toEqual(["xhigh", "max", "max", undefined]);
+    expect(sent.map((s) => s.max_tokens)).toEqual([16000, 32000, 32000, 100]);
+    expect(sent.map((s) => s.thinking)).toEqual([
+      { type: "adaptive", display: "summarized" },
+      { type: "adaptive" },
+      { type: "adaptive" },
+      undefined,
+    ]);
+  });
+
+  // `max_tokens` counts reasoning and answer together. Output measured on Sonnet 5.5 over 90 calls:
+  // at most 593 tokens at low, 578 at medium, 694 at high, 960 at xhigh and 2,902 at max, for
+  // answers of two to four sentences; every floor leaves several times that.
+  it.each([
+    ["low", 4096],
+    ["medium", 4096],
+    ["high", 8192],
+    ["xhigh", 16000],
+    ["max", 32000],
+  ])("sizes the Sonnet 5.5 ceiling for effort %s at %d tokens", async (value, floor) => {
+    process.env.LLM_THINKING_EFFORT = value;
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    expect((STATE.streamParamsByCall[0] as Sent & { max_tokens?: number }).max_tokens).toBe(floor);
+  });
+
+  // xhigh is clamped to max before the ceiling is taken, so its row is max's 32000.
+  it.each([
+    ["low", 2048],
+    ["medium", 2048],
+    ["high", 8192],
+    ["xhigh", 32000],
+    ["max", 32000],
+  ])("sizes the Sonnet 4.6 ceiling for effort %s at %d tokens", async (value, floor) => {
+    process.env.LLM_THINKING_EFFORT = value;
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback(params, { extendedThinking: true }));
+    expect((STATE.streamParamsByCall[0] as Sent & { max_tokens?: number }).max_tokens).toBe(floor);
+  });
+
+  it("never lowers a caller max_tokens that is already above the effort's floor", async () => {
+    process.env.LLM_THINKING_EFFORT = "xhigh";
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [answer("Hi.")];
+    const { streamWithFallback } = await import("./llm");
+    await drain(streamWithFallback({ ...params, max_tokens: 50000 }, { extendedThinking: true }));
+    expect((STATE.streamParamsByCall[0] as Sent & { max_tokens?: number }).max_tokens).toBe(50000);
+  });
 
   it("sends neither display nor effort when extended thinking is off, whatever LLM_THINKING_EFFORT says", async () => {
     process.env.LLM_THINKING_EFFORT = "medium";

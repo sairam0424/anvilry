@@ -36,8 +36,13 @@ describe("the neutrality pattern itself", () => {
   // A pattern that silently stops catching a name would let the copy drift back to naming one.
   it.each([
     "Claude",
+    "Sonnet",
+    "Haiku",
+    "Opus",
     "Claude Sonnet 5.5",
     "Anthropic",
+    "Bedrock",
+    "Amazon",
     "Amazon Bedrock",
     "AWS",
     "GPT-4",

@@ -127,3 +127,47 @@ describe("ChatView AI disclosure (a neutral cue that still shows on phones)", ()
     expect(text).not.toMatch(NAMES_A_MODEL_OR_VENDOR);
   });
 });
+
+describe("hiddenBy, the check the AI-cue tests lean on", () => {
+  /** A <p> inside a <div> carrying `classes` (and any attributes). */
+  function inside(classes: string, attrs: Record<string, string> = {}): Element {
+    const outer = document.createElement("div");
+    outer.className = classes;
+    for (const [name, value] of Object.entries(attrs)) {
+      outer.setAttribute(name, value);
+    }
+    const inner = document.createElement("p");
+    outer.appendChild(inner);
+    return inner;
+  }
+
+  it.each([
+    "hidden",
+    "sr-only",
+    "invisible",
+    "sm:hidden",
+    "max-sm:hidden",
+    "md:max-lg:hidden",
+    "!hidden",
+    "sm:sr-only",
+    "mt-2 text-center hidden sm:block",
+  ])("flags an ancestor with the class %j", (classes) => {
+    expect(hiddenBy(inside(classes))).not.toBeNull();
+  });
+
+  it("flags the hidden attribute and aria-hidden", () => {
+    expect(hiddenBy(inside("", { hidden: "" }))).toBe("div[hidden]");
+    expect(hiddenBy(inside("", { "aria-hidden": "true" }))).toBe(
+      "div[aria-hidden]",
+    );
+  });
+
+  it.each([
+    "",
+    "mt-2 shrink-0 text-center text-[11px] text-fg-muted",
+    "flex items-center gap-1 sm:flex-row",
+    "hover:text-fg not-hidden-anywhere",
+  ])("lets %j through", (classes) => {
+    expect(hiddenBy(inside(classes))).toBeNull();
+  });
+});

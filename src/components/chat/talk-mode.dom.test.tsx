@@ -30,6 +30,8 @@ vi.mock("@/components/chat/use-voice-session", async (orig) => {
 });
 
 import { TalkMode } from "./talk-mode";
+import { AI_VOICE_HINT } from "./ai-disclosure";
+import { hiddenBy } from "./hidden-by.test-support";
 
 beforeEach(() => {
   session.supported = true;
@@ -135,5 +137,27 @@ describe("TalkMode", () => {
     fireEvent.click(screen.getByRole("button", { name: "End voice conversation" }));
     expect(session.stop).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe("TalkMode AI disclosure", () => {
+  // The phone modal mounts TalkMode without autoStart, so the idle hint is what a phone
+  // visitor reads until they tap the orb. The desktop inline panel auto-starts the mic, so it
+  // shows the in-conversation hint below from the first paint.
+  it("says it is an AI assistant in the idle hint, until the mic opens", () => {
+    render(<TalkMode onClose={vi.fn()} />);
+    const hint = screen.getByText(
+      `Tap the orb or press Space to start · ${AI_VOICE_HINT}`,
+    );
+    expect(hiddenBy(hint)).toBeNull();
+  });
+
+  it("keeps the in-conversation hint about turns and Esc unchanged", () => {
+    session.active = true;
+    session.state = "listening";
+    render(<TalkMode onClose={vi.fn()} />);
+    expect(
+      screen.getByText("Tap the orb or press Space to take your turn · Esc to close"),
+    ).toBeTruthy();
   });
 });

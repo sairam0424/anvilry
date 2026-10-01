@@ -6,6 +6,7 @@ import { Sparkles, X, Send, CornerDownLeft } from "lucide-react";
 import { SkeletonMarkdownLine } from "@/components/ui/skeleton";
 import { useView } from "@/components/view-context";
 import { useChat } from "@/components/chat/use-chat";
+import { AI_CAPTION } from "@/components/chat/ai-disclosure";
 import { useChatA11y } from "@/components/chat/use-chat-a11y";
 import { MicButton } from "@/components/chat/mic-button";
 import { parseCards } from "@/components/chat/parse-cards";
@@ -162,8 +163,8 @@ function AskPortfolioWidget() {
                 {messages.length === 0 && (
                   <div className="space-y-3">
                     <p className="text-sm text-fg-muted">
-                      Hi! 👋 Ask me anything about Sairam&apos;s work, projects,
-                      or what he&apos;s looking for.
+                      Hi! 👋 I&apos;m an AI assistant. Ask me anything about
+                      Sairam&apos;s work, projects, or what he&apos;s looking for.
                     </p>
                     <div className="flex flex-col gap-2">
                       {SUGGESTED.map((s) => (
@@ -256,9 +257,8 @@ function AskPortfolioWidget() {
               <Send size={15} />
             </button>
           </form>
-          <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-subtle">
-            <CornerDownLeft size={10} /> Grounded in real work · may simplify
-            details
+          <p className="flex items-center justify-center gap-1 pb-2 text-[10px] text-fg-muted">
+            <CornerDownLeft size={10} /> {AI_CAPTION}
           </p>
         </div>
       )}

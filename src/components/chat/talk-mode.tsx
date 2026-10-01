@@ -17,6 +17,7 @@ import {
 import { useVoiceLevel } from "@/components/chat/use-voice-level";
 import { VoiceOrb } from "@/components/chat/voice-orb";
 import { VoicePicker } from "@/components/chat/voice-picker";
+import { AI_VOICE_HINT } from "@/components/chat/ai-disclosure";
 import { useVoiceSettings } from "@/lib/voice-settings-context";
 import { getDefaultVoiceId, getVoiceById } from "@/lib/voice-catalog";
 import { CHROME_TTS_BANNER_ENABLED } from "@/lib/writing-flags";
@@ -513,7 +514,7 @@ export function TalkMode({
       <p className="text-center text-[11px] text-fg-subtle">
         {active
           ? "Tap the orb or press Space to take your turn · Esc to close"
-          : "Tap the orb or press Space to start · grounded in real work"}
+          : `Tap the orb or press Space to start · ${AI_VOICE_HINT}`}
       </p>
 
       {/* First-run primer — one-time hint surfacing the picker affordance. Dismissed

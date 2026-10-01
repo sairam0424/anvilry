@@ -187,7 +187,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:336-344): s
 - **Role:** The one static catalog of voices for all three TTS engines, plus lookups, the server-side allowlist validator, and engine-native parameter resolvers.
 - **Exports:** types `VoiceEngine` (`"browser" | "polly" | "google"`, :24), `PollyTier` (`"neural" | "generative"`, :25), `VoiceGender`, `VoiceAccent` (`"us" | "gb" | "au" | "in"`, :27), `VoiceEntry`; data `CURATED_VOICES` (6, :134-141), `EXTENDED_VOICES` (12, :283-287), `ALL_VOICES` (18, :291-294); functions `getDefaultVoiceId`, `getVoiceById`, `getVoiceByPollyId`, `getVoiceByGoogleName`, `getVoicesForEngine`, `validateVoiceForEngine`, `resolvePollyParams`, `resolveGoogleVoiceName`, `findBrowserVoice`.
 - **Reads / depends on:** nothing — pure data + Map lookups, no React, no I/O (voice-catalog.ts:16-21).
-- **Consumed by:** `src/app/api/tts/route.ts:8`, `src/app/api/tts-google/route.ts:5`, `src/components/command-palette-content.tsx:60`, `src/components/chat/voice-picker.tsx:12`, `src/components/chat/use-speech-synthesis.ts:15`, `src/components/chat/voice-settings-dialog.tsx:19`, `src/components/chat/talk-mode.tsx:21`, `src/lib/voice-settings-context.tsx:4`.
+- **Consumed by:** `src/app/api/tts/route.ts:8`, `src/app/api/tts-google/route.ts:5`, `src/components/command-palette-content.tsx:60`, `src/components/chat/voice-picker.tsx:12`, `src/components/chat/use-speech-synthesis.ts:15`, `src/components/chat/voice-settings-dialog.tsx:19`, `src/components/chat/talk-mode.tsx:22`, `src/lib/voice-settings-context.tsx:4`.
 - **Behaviour notes:**
   - Curated 6: Polly Neural `Joanna`, `Matthew`; Polly Generative `Stephen`, `Ruth`; Google Chirp3-HD `en-US-Chirp3-HD-Aoede`, `en-US-Chirp3-HD-Charon` (voice-catalog.ts:61-141).
   - Extended: 5 Polly Neural (`Danielle`, `Gregory`, `Brian` gb, `Amy` gb, `Olivia` au — :145-201), 3 Google Chirp3-HD (`Puck`, `Kore`, `Fenrir` — :203-234), 4 browser voices keyed by `voiceURI` prefix (`Microsoft Aria Online`, `Microsoft Guy Online`, `com.apple.voice.premium.en-US.Samantha`, `com.apple.voice.premium.en-US.Tom` — :239-280).
@@ -201,7 +201,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:336-344): s
 - **Role:** Persisted voice preferences as a module-level external store, so a returning visitor's choices apply on the first client render without a flash of defaults.
 - **Exports:** types `SttEngine` (`"browser" | "transcribe"`), `TtsEngine` (`"browser" | "polly" | "google"`), `TalkSurface` (`"modal" | "view"`), `VoiceCharacterSpeed/Tone/Pause`, `VoiceCharacter`, `VoiceSettings`; `DEFAULT_VOICE_CHARACTER`; `useVoiceSettings()` → `{ settings, set, toggle }`; and (for tests / non-React callers) `DEFAULTS`, `STORAGE_KEY`, `parse`, `__resetVoiceSettingsForTest`.
 - **Reads / depends on:** `react` (`useCallback`, `useSyncExternalStore`), `getVoiceById` from `@/lib/voice-catalog`, `window.localStorage`. `"use client"` (:1).
-- **Consumed by:** `src/components/command-palette-content.tsx:57`, and under `src/components/chat/`: `chat-messages.tsx:11`, `use-voice-session.ts:7`, `talk-launch-button.tsx:6`, `voice-settings-dialog.tsx:18`, `use-speech-synthesis.ts:20`, `talk-mode.tsx:20`, `wake-word-controller.tsx:6`, `mic-button.tsx:6`.
+- **Consumed by:** `src/components/command-palette-content.tsx:57`, and under `src/components/chat/`: `chat-messages.tsx:11`, `use-voice-session.ts:7`, `talk-launch-button.tsx:6`, `voice-settings-dialog.tsx:18`, `use-speech-synthesis.ts:20`, `talk-mode.tsx:21`, `wake-word-controller.tsx:6`, `mic-button.tsx:6`.
 - **Behaviour notes:**
   - **Fail-closed defaults** (voice-settings-context.tsx:77-88): `micEnabled: false`, `ttsEnabled: false`, `wakeWord: false`, `captions: true` (a11y), `sttEngine: "browser"`, `ttsEngine: "browser"`, `talkSurface: "modal"`, `voiceId` intentionally omitted, `voiceCharacter: { speed: "natural", tone: "neutral", pause: "normal" }` (:71-75).
   - `STORAGE_KEY = "anvilry:voice:settings"` (:90).
@@ -416,7 +416,7 @@ Every emitted event carries `attrs: { ipHash, uaHash, ...attrs }` plus `latency_
 #### `src/lib/scroll/use-auto-scroll.ts`
 - **Role:** Engine-agnostic entry point.
 - **Exports:** `useAutoScroll(opts?)` → `UseAutoScroll`.
-- **Consumed by:** `src/components/ask-portfolio.tsx:13`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
+- **Consumed by:** `src/components/ask-portfolio.tsx:14`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
 - **Behaviour notes:** BOTH engine hooks are called unconditionally every render (:25-29) — required by the rules of hooks — and each is handed `enabled: callerEnabled && engine === "<its own>"` so the inactive engine attaches no observers/listeners (:24-29). The return is `engine === "library" ? library : custom` (:30), i.e. `custom` is the else-branch default.
 - **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:374` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
 

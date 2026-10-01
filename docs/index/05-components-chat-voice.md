@@ -13,7 +13,7 @@ version: v3.9.0
 > Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
-**Files indexed:** 39
+**Files indexed:** 40
 
 Excluded (tests, not indexed here — mapped to the module each guards in the table below):
 `anvil-inline-panel.dom.test.tsx`, `markdown-message.test.ts`, `mic-button.dom.test.tsx`,
@@ -22,8 +22,8 @@ Excluded (tests, not indexed here — mapped to the module each guards in the ta
 `use-speech-synthesis.dom.test.tsx`, `use-stt.dom.test.tsx`, `use-voice-session.dom.test.tsx`,
 `voice-picker.dom.test.tsx`, `voice-pitfalls.test.ts`, `voice-pitfalls.dom.test.ts`,
 `voice-surface-mutex.test.ts`, `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx`,
-`chat-view.dom.test.tsx`, `wake-word-controller.dom.test.tsx`, and
-`src/components/ask-portfolio.dom.test.tsx` (20 test files under `chat/` plus the widget test).
+`chat-view.dom.test.tsx`, `wake-word-controller.dom.test.tsx`, `ai-disclosure.test.ts`, the helper
+`hidden-by.test-support.ts`, and `src/components/ask-portfolio.dom.test.tsx` (21 test files under `chat/` plus the widget test).
 
 > There is **no** `use-chat-stream.ts` module. `use-chat-stream.dom.test.tsx` imports `./use-chat`
 > (`use-chat-stream.dom.test.tsx:3`) — it is the streaming/coalescing guard for `use-chat.ts`.
@@ -38,7 +38,8 @@ Excluded (tests, not indexed here — mapped to the module each guards in the ta
 | `chat/markdown-message.tsx` | Safe markdown renderer (react-markdown + `skipHtml` + rehype-sanitize) plus a streaming delimiter balancer | `closeOpenMarkdown`, `MarkdownMessage` | `markdown-message.test.ts` |
 | `chat/chat-card.tsx` | Renders a resolved project/work card entirely from Velite fields | `ChatCard` | — |
 | `chat/chat-messages.tsx` | Full transcript renderer: image lightbox, thinking block, read-aloud, cmd-token dispatch, autoscroll | `ChatMessages` | `chat-messages.dom.test.tsx`, `chat-surface-live-region.dom.test.tsx` |
-| `chat/chat-view.tsx` | The `chat` view "concierge console": impact strip, chip rails, composer, mic, file picker, Stop, one-shot palette-query auto-send | `ChatView` | `chat-view.dom.test.tsx` |
+| `chat/ai-disclosure.ts` | The neutral copy that tells a visitor the answers are AI-generated (names no model, vendor or provider); shared by the Chat view, the Classic widget and the voice surface | `AI_CAPTION`, `AI_VOICE_HINT`, `NAMES_A_MODEL_OR_VENDOR` | `ai-disclosure.test.ts` |
+| `chat/chat-view.tsx` | The `chat` view "concierge console": impact strip, chip rails, composer, mic, file picker, Stop, one-shot palette-query auto-send; says in its intro and its caption that the visitor is talking to an AI assistant | `ChatView` | `chat-view.dom.test.tsx` |
 | `chat/chat-suggestions.ts` | Static chip prompt arrays for the Chat view | `RECRUITER_CHIPS`, `STARTER_CHIPS` | — |
 | `chat/attachment-preview-strip.tsx` | Pending-attachment thumbnails/badges above the composer with per-item remove | `AttachmentPreviewStrip` | — |
 | `chat/file-picker-button.tsx` | Flag-gated attachment picker: base64 for images, pdf.js text extraction for PDFs, type+size validation | `FilePickerButton` | — |
@@ -145,11 +146,11 @@ Three independent layers, all in scope, all fail-closed:
 
 **3. Prompt-injection posture**
 - Card tokens never reach the markdown renderer: `parseCards()` extracts them first and only `type:"text"`
-  segments are passed to `MarkdownMessage` (`chat-messages.tsx:606-623`, `ask-portfolio.tsx:202-221`).
+  segments are passed to `MarkdownMessage` (`chat-messages.tsx:606-623`, `ask-portfolio.tsx:203-222`).
 - `parse-cards.test.ts` is the pinned contract ("a hostile model turn can neither inject markup nor conjure
   a card/href for content that doesn't exist", `parse-cards.test.ts:6-11`). `CLAUDE.md` (Testing Notes) names
   `parse-cards.test.ts` as the prompt-injection/XSS guard and says not to weaken it; the next line there states that
-  `ask-portfolio.dom.test.tsx` is **not** that guard (two tests: shared-transport streaming and the 503 message).
+  `ask-portfolio.dom.test.tsx` is **not** that guard (five tests: shared-transport streaming, the 503 message, and three pinning the AI disclosure: the caption, the greeting and the caption surviving an answer).
 - The spoken/caption path has its own stripper: `toCaptionText()` runs `parseCards` then removes markdown
   markers **and** a dangling unclosed `[[card:` fragment mid-stream (`use-voice-session.ts:48-63`), so a
   half-written `[[card:` token is never spoken or shown. Only a fragment that has reached `[[card:` is handled: a
@@ -215,7 +216,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/use-chat-a11y.ts`
 - **Role:** Produce one polite live-region string: "Answering…" while streaming, the settled answer once afterwards, or a short status when TTS owns the audio.
 - **Exports:** `useChatA11y` (hook).
-- **Consumed by:** `chat-messages.tsx:9` (called at :369 with `activeIdx !== null`) and `ask-portfolio.tsx` (called at :52; its own sr-only polite region at :138-140).
+- **Consumed by:** `chat-messages.tsx:9` (called at :369 with `activeIdx !== null`) and `ask-portfolio.tsx` (called at :53; its own sr-only polite region at :139-141).
 - **Behaviour notes:** All three branches set state **inside a timer callback**, never synchronously in the effect body (:36-45). Debounce is `0 ms` for "Answering…", `150 ms` for the settle/TTS branches.
 - **Gotchas / invariants:** When `disableLiveAnnounce` is true the region gets `"Speaking answer aloud."` instead of the answer text — this is the no-double-speak invariant (:19-23). Exactly one channel conveys the answer while TTS runs — but the effect keeps no memory of the flag: when `disableLiveAnnounce` flips back to false after read-aloud ends, it falls through to `setLiveMessage(lastText)` (:43-44) and the full answer is announced then (inferred from the effect logic, not browser-verified).
 
@@ -223,7 +224,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Turn one assistant message into ordered `text` / `project` / `work` / `cmd-view` / `cmd-highlight` segments.
 - **Exports:** `CardSegment` (union type), `parseCards`, `hasCardToken`, `CMD_RE` (re-exported at :87, unused internally).
 - **Reads / depends on:** `getProject`, `getWork`, `Project`, `Work` from `@/lib/content`; `VIEWS`, `View` from `@/components/view-context`.
-- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:11`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:4`.
+- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:12`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:4`.
 - **Behaviour notes:** Uses `content.matchAll(ALL_RE)` after resetting `ALL_RE.lastIndex = 0` (:38). `hasCardToken` resets `CARD_RE.lastIndex` before `.test()` (:82-83).
 - **Gotchas / invariants:** `CARD_RE`, `CMD_RE`, `ALL_RE` are module-level `/g` regexes — the explicit `lastIndex` resets are what keep repeated calls stateless (pinned by `parse-cards.test.ts:77`). This module never produces HTML (:19-20).
 
@@ -231,7 +232,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render one plain-text assistant segment as markdown, safe by construction.
 - **Exports:** `closeOpenMarkdown` (fn), `MarkdownMessage` (memoized component, prop `{ text: string }`).
 - **Reads / depends on:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
-- **Consumed by:** `chat-messages.tsx:278-282`, `ask-portfolio.tsx:18-22`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
+- **Consumed by:** `chat-messages.tsx:278-282`, `ask-portfolio.tsx:19-23`, and `anvil-core-surface.tsx:16-19` — all three via `next/dynamic` with `ssr:false` (as of 2026-09; `anvil-core-surface.tsx` statically imported it before that, the last of the three surfaces to switch).
 - **Behaviour notes:** A `components` map overrides 17 element renderers (:47-84); `h1` and `h2` both render as `<h3>` (:54-55). Memoized on `text` so settled bubbles never re-parse (:20-22).
 - **Gotchas / invariants:** Removing `skipHtml` or overriding `urlTransform` breaks the XSS posture (:10-16).
 
@@ -239,7 +240,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Render the whole transcript for the Chat view: attachments, lightbox, thinking block, answer segments, cards, read-aloud, and the a11y live region.
 - **Exports:** `ChatMessages` (component, props `{ messages, isStreaming }`).
 - **Reads / depends on:** `parseCards`, `ChatCard`, `ReadAloudButton`, `useChatA11y`, `useSpeechSynthesis`, `useVoiceSettings`, `useAutoScroll`, `JumpToLatest`, `useView`, `highlightProject` (`@/lib/highlight-store`), `unlock` (`@/lib/discovery-store`), `SkeletonMarkdownLine`; env `NEXT_PUBLIC_EXTENDED_THINKING`.
-- **Consumed by:** `chat-view.tsx:11` (rendered at :158).
+- **Consumed by:** `chat-view.tsx:11` (rendered at :162).
 - **Behaviour notes:**
   - `ThinkingBlock` is disabled when `process.env.NEXT_PUBLIC_EXTENDED_THINKING === "false"` (:165, early return :196) — i.e. **enabled by default**. Ctrl/Cmd+O toggles the settled reasoning panel (:183-194).
   - `cmd-view` / `cmd-highlight` tokens are dispatched only from **settled** messages (`if (isStreaming) return;` :328) and de-duplicated per message index via a ref-held `Set` (:322, :336).
@@ -251,19 +252,30 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - `ImageLightbox` binds Escape / ArrowLeft / ArrowRight on `document` (:40-48) and renders `role="dialog" aria-modal="true"` without a focus trap (:51-57).
 - **Gotchas / invariants:** Model output reaches the DOM only as React text nodes; cards come from the slug allowlist (:284-290 doc). The container carries `[overflow-anchor:none]` to stop browser scroll-anchoring fighting the JS pin (:431-440). As of 2026-09-18, `useChatA11y` (`liveMessage`, rendered `aria-live="polite" aria-atomic="true"` at `:394`) is the ONLY deliberate `aria-live="polite"` announcer on this surface — both the transcript scroll container (`:439`) and `ThinkingBlock`'s live-reasoning `<pre>` (`:231`) explicitly carry `aria-live="off"`, each fixed after a real double-announce bug. Transcript container: PR #257/#258. Live-reasoning: PR #262 — originally DISCOVERED via a live Playwright-MCP E2E sweep, because at the time the existing regression-test mock never sent a THINKING_SENTINEL and so never exercised the thinking phase; `chat-surface-live-region.dom.test.tsx` now DOES exercise it and is the current regression guard for this specific fix. Also covered by `chat-messages.dom.test.tsx`. Latent hazards: `dispatchedRef` is keyed by message index and never cleared (`useChat().reset()` empties `messages` but cannot reach this ref, and `ChatView` never calls `reset`), and every settled ThinkingBlock registers its own Ctrl/Cmd+O `keydown` (:184-194), so one keypress toggles all blocks and `preventDefault`s the browser's Open shortcut.
 
+### `chat/ai-disclosure.ts`
+- **Role:** One module for the line that says the answers are AI-generated, so the three chat surfaces cannot drift apart. It exists because v3.9.0 (#291) removed the "Answered by <model> · <provider>" line, which had been the only visible text on phones saying so (the header label is icon-only below `sm`).
+- **Exports:** `AI_CAPTION` = "AI assistant · grounded in real work · may simplify details" (ai-disclosure.ts:10-11); `AI_VOICE_HINT` = "AI assistant, grounded in real work" (:15); `NAMES_A_MODEL_OR_VENDOR` (:22-23), the neutrality contract as a word-bounded pattern over 27 model, vendor and host names, which the tests run every piece of disclosure copy through.
+- **Reads / depends on:** nothing.
+- **Consumed by:** `chat-view.tsx:16` (the caption under the composer), `ask-portfolio.tsx:9` (the caption under the widget's composer), `talk-mode.tsx:20` (the idle hint on the voice surface).
+- **Behaviour notes:**
+  - Deliberately neutral: no model, vendor or provider name. `ai-disclosure.test.ts` fails when either string matches `NAMES_A_MODEL_OR_VENDOR` (`claude`, `anthropic`, `bedrock`, `sonnet`, `haiku`, `opus`, `chatgpt`, `gpt`, `openai`, `gemini`, `llama`, `ollama`, `mistral`, `cohere`, `deepseek`, `copilot`, `bard`, `grok`, `qwen`, `kimi`, `amazon`, `aws`, `azure`, `google`, `vertex`, `vercel`, `railway`, on word boundaries, so "flaws" and "laws" pass), and requires the word `AI` and the old caption's caveats ("grounded in real work", "may simplify details"). A second block tests the pattern itself: it must catch each of the names and must not trip on "flaws", "laws", "draws" or "Claudette".
+  - The caption is 59 characters (the old one, "Grounded in real work · may simplify details", was 44). Measured in a browser on 2026-10-01 at 280-414px: the Chat view caption is two lines up to 375px and one line from 390px; the widget caption is one line from 320px (two at 280px); the voice idle hint is two lines at every phone width; nothing overflows or clips. Both captions use `text-fg-muted` (about 7.4-7.9:1, measured in the review); the first version used `text-fg-subtle`, which measured 4.7-4.9:1 and passed AA by only 0.2-0.4.
+- **Gotchas / invariants:** Do not add a bare "AI" beside the sparkles icon in the Chat view header to make the cue louder: at 390px the row (Back to Classic / Résumé / Talk / badge) has no slack, and the extra 23px made "Back to Classic" wrap onto two lines (tried and reverted; `chat-view.dom.test.tsx` pins that no bare "AI" text or extra element sits there, and the `chat view header` test in `e2e/views.spec.ts` pins the one-line button at 390px). The header is already tight below that width: at 320-375px "Back to Classic" wraps even without a chip (46px instead of 30px) and the row overflows its box (20px at 320px, 60px at 280px, where the page scrolls sideways), so any header-based cue would first need a layout fix (nowrap, or hide Résumé on phones).
+
 ### `chat/chat-view.tsx`
 - **Role:** The `chat` view — a bounded-height "concierge console" around `useChat`.
 - **Exports:** `ChatView` (component, no props).
 - **Reads / depends on:** `useChat`, `RECRUITER_CHIPS`/`STARTER_CHIPS`, `ChatMessages`, `MicButton`, `TalkLaunchButton`, `FilePickerButton`, `AttachmentPreviewStrip`, `ViewEscapeHatch`, `profile`/`impactMetrics` (`@/lib/profile`), `consumePendingChatQuery` (`view-context.tsx:62`), `OPEN_TO_WORK` (`@/lib/writing-flags`); env `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS`.
-- **Consumed by:** `view-router.tsx:25` via `next/dynamic`, rendered when `view === "chat" && isViewEnabled("chat")` (:64).
+- **Consumed by:** `view-router.tsx:25` via `next/dynamic`, rendered when `view === "chat" && isViewEnabled("chat")` (:65).
 - **Behaviour notes:**
-  - Root is a **fixed** height, not `min-h`, so the transcript scrolls internally (:63-74 comment): `h-[calc(100dvh-3.5rem-2.3125rem)]` when `OPEN_TO_WORK` (subtracting the banner's height) else `h-[calc(100dvh-3.5rem)]` (:75-82). Both are literal class strings so the Tailwind scanner sees them. `dvh` keeps the composer clear of iOS Safari chrome.
-  - On mount, a one-shot effect calls `consumePendingChatQuery()` and `send(query, [])` if the command palette parked a query (:42-48; one-shot store: `consumePendingChatQuery` at `view-context.tsx:62`); guarded by `chat-view.dom.test.tsx`.
-  - Chip rails are single-row horizontal scrollers (`overflow-x-auto`, edge fade, `role="group"`), not wrapped grids: `RECRUITER_CHIPS` always (:167-194), `STARTER_CHIPS` only in the empty state (:195-221); a chip is a no-op while streaming (`ask`, :57-61).
-  - `FilePickerButton` renders only when `process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === "true"` (:255) and new files are appended then `.slice(0, 3)` (:258).
-  - Removing a pending attachment revokes its `previewUrl` (:228-234).
-  - The Send/Stop button swaps on `isStreaming` (:263-280); Send is disabled unless there is text or a pending file (:274).
-- **Gotchas / invariants:** The `min-h-0` / `shrink-0` layout comments (:103-104, :106-110, :160-166, :237-238) document real regressions — the composer previously escaped the bordered `<section>` on short viewports. `ViewEscapeHatch` is the first focusable element (:27-28 doc, :84). The text input is not disabled while streaming, so Enter still submits the form: `onSubmit` calls `send` (which returns early, `use-chat.ts:262`) and then clears the input and pending files (:50-55), silently discarding them (inferred from the code and the HTML implicit-submission rule; not browser-verified).
+  - Root is a **fixed** height, not `min-h`, so the transcript scrolls internally (:64-75 comment): `h-[calc(100dvh-3.5rem-2.3125rem)]` when `OPEN_TO_WORK` (subtracting the banner's height) else `h-[calc(100dvh-3.5rem)]` (:76-83). Both are literal class strings so the Tailwind scanner sees them. `dvh` keeps the composer clear of iOS Safari chrome.
+  - On mount, a one-shot effect calls `consumePendingChatQuery()` and `send(query, [])` if the command palette parked a query (:43-49; one-shot store: `consumePendingChatQuery` at `view-context.tsx:62`); guarded by `chat-view.dom.test.tsx`.
+  - Chip rails are single-row horizontal scrollers (`overflow-x-auto`, edge fade, `role="group"`), not wrapped grids: `RECRUITER_CHIPS` always (:171-198), `STARTER_CHIPS` only in the empty state (:199-225); a chip is a no-op while streaming (`ask`, :58-62).
+  - `FilePickerButton` renders only when `process.env.NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS === "true"` (:259) and new files are appended then `.slice(0, 3)` (:262).
+  - Removing a pending attachment revokes its `previewUrl` (:232-238).
+  - The visitor is told it is an AI assistant twice, in words a phone shows: the empty-state intro ("I'm an AI assistant grounded in real projects and production systems …", :130-132) and the caption under the composer, `{AI_CAPTION}` (:287, `text-fg-muted`), which stays after the first message (`chat-view.dom.test.tsx` renders a non-empty transcript to pin that, and `e2e/views.spec.ts` checks both are visible, not only in the DOM). The header label is unchanged ("AI Concierge" from `sm` up, screen-reader-only below it, `chat-view.tsx:99-100`).
+  - The Send/Stop button swaps on `isStreaming` (:267-284); Send is disabled unless there is text or a pending file (:278).
+- **Gotchas / invariants:** The `min-h-0` / `shrink-0` layout comments (:107-108, :110-114, :164-170, :241-242) document real regressions — the composer previously escaped the bordered `<section>` on short viewports. `ViewEscapeHatch` is the first focusable element (:28-29 doc, :85). The text input is not disabled while streaming, so Enter still submits the form: `onSubmit` calls `send` (which returns early, `use-chat.ts:262`) and then clears the input and pending files (:51-56), silently discarding them (inferred from the code and the HTML implicit-submission rule; not browser-verified).
 
 ### `chat/file-picker-button.tsx`
 - **Role:** Read, validate, and encode composer attachments into `FileUIPart[]`.
@@ -277,7 +289,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Push-to-talk composer mic with a one-time privacy disclosure gate.
 - **Exports:** `MicButton` (component, props `{ onText, disabled?, compact? }`).
 - **Reads / depends on:** `useStt(settings.sttEngine)`, `useVoiceSettings`.
-- **Consumed by:** `chat-view.tsx:12` (`<MicButton onText={setInput} …/>` :252), `ask-portfolio.tsx:249` (`compact`).
+- **Consumed by:** `chat-view.tsx:12` (`<MicButton onText={setInput} …/>` :256), `ask-portfolio.tsx:250` (`compact`).
 - **Behaviour notes:** Returns `null` when `!supported` (:41) — the text composer is untouched. First click with `settings.micEnabled === false` shows the disclosure instead of listening (:61-64); accepting persists `micEnabled: true` then starts (:68-72). Both interim and final transcripts call `onText`, i.e. fill-for-review (:46-51). Press-to-toggle, deliberately not press-and-hold (:12 comment). The button is wrapped in `ui/tooltip` (:108-145).
 - **Gotchas / invariants:** Disclosure copy is engine-specific — "Sairam's own AWS" for `transcribe`, "your browser … Google or Apple" otherwise (:85-87). Listening state is signalled by an icon swap + pulsing dot, not colour alone (WCAG 1.4.1, :132-143). `micEnabled` doubles as "consent accepted" here while the settings dialog labels it "Show push-to-talk mic", so toggling it off re-triggers the disclosure rather than hiding the mic.
 
@@ -339,7 +351,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - `toCaptionText` is the single source for both the spoken text and the visible caption (:36-63); `stripForSpeech` is a deprecated local alias for it (:66).
 - **Gotchas / invariants:**
   - The unmount teardown effect **must** keep empty deps and read `teardownRef` — `recognition`/`tts` are fresh objects every render, so listing them re-runs the cleanup (`tts.cancel()`) on every render, which is the documented "no audio" bug (:226-244).
-  - The unmount teardown stops recognition and TTS but does **not** call `stopStream()` (the `useChat` abort) — only explicit `stop()` (:133-139) and `interrupt()` (:144-148) abort the fetch. The End button calls `stop()` before `onClose` (`talk-mode.tsx:459-462`), but Esc (`talk-mode.tsx:236`) and the inline panel's outside-pointerdown close (`anvil-inline-panel.tsx:61-65`) only flip the store flag, so `TalkMode` unmounts and the `/api/chat` request finishes unheard (inferred from the code paths, not measured).
+  - The unmount teardown stops recognition and TTS but does **not** call `stopStream()` (the `useChat` abort) — only explicit `stop()` (:133-139) and `interrupt()` (:144-148) abort the fetch. The End button calls `stop()` before `onClose` (`talk-mode.tsx:460-463`), but Esc (`talk-mode.tsx:237`) and the inline panel's outside-pointerdown close (`anvil-inline-panel.tsx:61-65`) only flip the store flag, so `TalkMode` unmounts and the `/api/chat` request finishes unheard (inferred from the code paths, not measured).
   - Voice barge-in is explicitly *not* supported — barge-in is a UI interrupt (tap/Space) because `continuous=false` keeps the mic closed during playback (:26-31).
 
 ### `chat/talk-mode.tsx`
@@ -348,22 +360,23 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Reads / depends on:** `useVoiceSession`, `toCaptionText`, `useVoiceLevel`, `VoiceOrb`, `VoicePicker`, `useVoiceSettings`, `getDefaultVoiceId`/`getVoiceById`, `CHROME_TTS_BANNER_ENABLED` (`@/lib/writing-flags`), `hasSeenFirstRunPrimer`/`markFirstRunPrimerSeen`; env `NEXT_PUBLIC_VOICE_TEST_AUDIO`.
 - **Consumed by:** `talk-mode-overlay.tsx:5`, `anvil-inline-panel.tsx:5` (with `autoStart`), `anvil-view.tsx:4` (with `prompts`).
 - **Behaviour notes:**
-  - `!supported` renders a "Voice conversation isn't available in this browser" panel with a Back-to-chat button (:273-289).
-  - `STATUS_LABEL` maps each state to visible + `sr-only` copy (:111-117); the live region is `aria-live="polite" aria-atomic="true"` (:315-317).
-  - Space is the turn toggle but **only** when focus is inside `containerRef` and the target isn't a button — so it can't hijack the page's Space behind the non-modal inline panel; Esc stays window-wide (:232-254).
-  - `autoStart` fires once via `autoStarted` ref (:210-216); the JSDoc records that iOS Safari's first permission grant may lapse the user-activation window and degrade to "paused — tap to talk" (:144-149).
-  - Captions block is `aria-hidden={speaking}` so a screen reader doesn't double-announce text being read aloud; the visible caption stays (:362-380). It is `max-h-[40vh] overflow-y-auto` with `[overflow-anchor:none]` and auto-scrolled on caption change (:268-271).
-  - `isChromeTtsBuggy()` = `/Chrome\//` and **not** Brave (`navigator.brave`) and **not** `/Edg\//` (:101-109). The banner shows only when `CHROME_TTS_BANNER_ENABLED` (`NEXT_PUBLIC_CHROME_TTS_BANNER === "true"`, `writing-flags.ts:92-93`) **and** buggy Chrome **and** `ttsEngine === "browser"` (:348-350).
-  - `TtsTestButton` renders only when `NEXT_PUBLIC_VOICE_TEST_AUDIO === "true"` (:493) and makes exactly one synchronous `speak()` attempt — no retries, because Chrome's user-activation window expires (:44-46).
-  - Picking a voice also syncs `ttsEngine` to that voice's engine, so a stale `polly` in localStorage doesn't strand a browser-voice pick on the remote path (:558-564).
-  - Focus rescue: when the prompt chips unmount on the first turn and `document.activeElement === document.body`, focus moves to `primaryRef` (:217-229).
-- **Gotchas / invariants:** The orb is `aria-hidden` and decorative — meaning is carried by the visible label + live region (:319-336). `VoicePicker` is mounted **inside** `TalkMode` so opening it inherits the settings store and does not tear down the session (:167-169).
+  - `!supported` renders a "Voice conversation isn't available in this browser" panel with a Back-to-chat button (:274-290).
+  - `STATUS_LABEL` maps each state to visible + `sr-only` copy (:112-118); the live region is `aria-live="polite" aria-atomic="true"` (:316-318).
+  - Space is the turn toggle but **only** when focus is inside `containerRef` and the target isn't a button — so it can't hijack the page's Space behind the non-modal inline panel; Esc stays window-wide (:233-255).
+  - `autoStart` fires once via `autoStarted` ref (:211-217); the JSDoc records that iOS Safari's first permission grant may lapse the user-activation window and degrade to "paused — tap to talk" (:145-150).
+  - Captions block is `aria-hidden={speaking}` so a screen reader doesn't double-announce text being read aloud; the visible caption stays (:363-381). It is `max-h-[40vh] overflow-y-auto` with `[overflow-anchor:none]` and auto-scrolled on caption change (:269-272).
+  - `isChromeTtsBuggy()` = `/Chrome\//` and **not** Brave (`navigator.brave`) and **not** `/Edg\//` (:102-110). The banner shows only when `CHROME_TTS_BANNER_ENABLED` (`NEXT_PUBLIC_CHROME_TTS_BANNER === "true"`, `writing-flags.ts:92-93`) **and** buggy Chrome **and** `ttsEngine === "browser"` (:349-351).
+  - `TtsTestButton` renders only when `NEXT_PUBLIC_VOICE_TEST_AUDIO === "true"` (:494) and makes exactly one synchronous `speak()` attempt — no retries, because Chrome's user-activation window expires (:45-47).
+  - Picking a voice also syncs `ttsEngine` to that voice's engine, so a stale `polly` in localStorage doesn't strand a browser-voice pick on the remote path (:559-565).
+  - The idle hint reads "Tap the orb or press Space to start · AI assistant, grounded in real work" (`AI_VOICE_HINT`, :517); the in-conversation hint ("… to take your turn · Esc to close") is unchanged. The idle hint is what the phone modal shows until the first tap. The desktop inline panel mounts `TalkMode` with `autoStart` (`anvil-inline-panel.tsx:133`), which opens the mic on mount (:211-217), so there the in-conversation hint is on screen from the first paint and the AI wording is carried by the header label and the captions, not by this hint.
+  - Focus rescue: when the prompt chips unmount on the first turn and `document.activeElement === document.body`, focus moves to `primaryRef` (:218-230).
+- **Gotchas / invariants:** The orb is `aria-hidden` and decorative — meaning is carried by the visible label + live region (:320-337). `VoicePicker` is mounted **inside** `TalkMode` so opening it inherits the settings store and does not tear down the session (:168-170).
 
 ### `chat/talk-mode-overlay.tsx`
 - **Role:** Radix Dialog modal wrapper for `TalkMode` (the default `talkSurface`).
 - **Exports:** `TalkModeOverlay` (component, props `{ open, onOpenChange, getOpener? }`).
 - **Consumed by:** `talk-mode-mount.tsx:3`.
-- **Behaviour notes:** `onOpenAutoFocus` redirects focus to the first `button[type="button"]` inside the content so a keyboard user can start talking immediately (:35-46). `onCloseAutoFocus` restores focus to `getOpener()` because this is a *controlled* dialog Radix has no trigger for (:47-53). Visually-hidden `Dialog.Title`/`Description` satisfy Radix's a11y contract (:76-81). Entrance is a single in-portal Motion spring — deliberately **not** a cross-portal layout morph, which would churn the WebGL context (:56-60).
+- **Behaviour notes:** `onOpenAutoFocus` redirects focus to the first `button[type="button"]` inside the content so a keyboard user can start talking immediately (:35-46). `onCloseAutoFocus` restores focus to `getOpener()` because this is a *controlled* dialog Radix has no trigger for (:47-53). Visually-hidden `Dialog.Title`/`Description` satisfy Radix's a11y contract (:76-81); the description says "the portfolio's AI assistant" (:78). Entrance is a single in-portal Motion spring — deliberately **not** a cross-portal layout morph, which would churn the WebGL context (:56-60).
 - **Gotchas / invariants:** `max-h-[90vh] overflow-y-auto` on the inner motion div is the safety net for short viewports where banner + primer + chips stack above the already-scrollable captions (:70-74).
 
 ### `chat/anvil-inline-panel.tsx`
@@ -379,7 +392,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Reads / depends on:** `useVoiceSession`, `MarkdownMessage` (as of 2026-09-18, lazy via `next/dynamic` with `ssr:false`, `SkeletonMarkdownLine` loading fallback — was a static import before the bundle-size fix in PR #260), `anvil-core-store`.
 - **Consumed by:** `app/layout.tsx:11` (import), mounted at `:154`.
 - **Behaviour notes:** Self-gates — returns `null` when closed (:114). Auto-starts once per open and resets `autoStarted` on close (:48-54). `close()` stops the session, clears the store flag, and focuses the opener (:58-62). Esc (window) and capture-phase outside `pointerdown` both close, excluding the orb (:67-89). `aria-expanded`/`aria-controls` are set imperatively on the opener with id `anvil-core-surface` (:92-98). Renders the CSS-only `anvil-orb-idle` blob at `h-16 w-16` (:161) — **not** the reactive 3D orb, despite the header comment describing a ~200px reactive orb (:26).
-- **Gotchas / invariants:** `posRef` is read inside a Motion `style` object with an eslint disable for `react-hooks/refs` — as of 2026-09-18 THREE separate disable comments (:137, :140, :142), not one two-line span, after a formatter reflowed the JSX attribute onto multiple lines and broke a single shared suppression. The answer card renders the **raw** `messages[i].content` through `MarkdownMessage` (:196) — card tokens are *not* stripped here (contrast `talk-mode.tsx:263`, which uses `toCaptionText`). The surface is mounted unconditionally in the root layout, so `useVoiceSession()` (→ `useChat` + STT + TTS hooks) is instantiated on every page even while closed (`anvil-core-surface.tsx:44-45`); and `stop()` does not clear `messages` (`use-voice-session.ts:133-139`), so a reopened card can show the previous answer until the next turn.
+- **Gotchas / invariants:** `posRef` is read inside a Motion `style` object with an eslint disable for `react-hooks/refs` — as of 2026-09-18 THREE separate disable comments (:137, :140, :142), not one two-line span, after a formatter reflowed the JSX attribute onto multiple lines and broke a single shared suppression. The answer card renders the **raw** `messages[i].content` through `MarkdownMessage` (:196) — card tokens are *not* stripped here (contrast `talk-mode.tsx:264`, which uses `toCaptionText`). The surface is mounted unconditionally in the root layout, so `useVoiceSession()` (→ `useChat` + STT + TTS hooks) is instantiated on every page even while closed (`anvil-core-surface.tsx:44-45`); and `stop()` does not clear `messages` (`use-voice-session.ts:133-139`), so a reopened card can show the previous answer until the next turn.
 
 ### `chat/anvil-view.tsx`
 - **Role:** The `?view=voice` "Anvil" view — a lean voice hero wrapped around `TalkMode`.
@@ -423,7 +436,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Reads / depends on:** `CURATED_VOICES`, `EXTENDED_VOICES`, `getVoiceById`, `VoiceEntry` (`@/lib/voice-catalog`); `VOICE_PICKER_MODE` (`@/lib/voice-picker-mode`); `useSpeechSynthesis`; `applePremiumIsMissing`, `getVoicesRaceHardened`.
 - **Consumed by:** `talk-mode.tsx:19` (`mode="dialog"`), `voice-settings-dialog.tsx:7` (`mode="inline"`), `command-palette-content.tsx:61` (rendered at :734).
 - **Behaviour notes:** Layout is `GenderColumns` when `VOICE_PICKER_MODE === "gender"`, else `DescriptorGrid` (:347); the mode comes from `NEXT_PUBLIC_VOICE_PICKER_MODE` (default `"descriptor"` at `voice-picker-mode.ts:18`, env read at `:20`, resolved at `:22`). One TTS hook instance flips engine + voiceId via state, and `speak()` is deferred with `queueMicrotask` so the hook has re-rendered on the new engine (:299-301, :340-343). A second tap on the previewing card is Stop (:327-331). `previewingId` clears 250 ms after `isSpeaking` drops, to avoid flicker between sentences (:309-315). `getVoicesRaceHardened()` populates `browserVoices`, which drives the per-card Apple-Premium download hint (:281-289, :189). Overflow "More voices…" is a nested Radix Dialog at `z-[60]` over the parent's `z-50` (:366-414). The pick and preview buttons on each card, and the dialog Close buttons, are wrapped in `ui/tooltip` (:92-118, :391-398, :462-469).
-- **Gotchas / invariants:** Preview is cancelled on unmount via a `ttsRef` snapshot taken in an effect (:317-323) so a half-played preview never leaks into the chat session. In `dialog` mode `onCloseAutoFocus` restores focus to `getOpener()` (:436-442). The picker is stateless about settings: the three mount sites own persistence, and only two of them keep the engine in step — `talk-mode.tsx:558-564` and `voice-settings-dialog.tsx:268-271` set `ttsEngine` with the picked voice, whereas the palette's `onPick` sets only `voiceId` (`command-palette-content.tsx:739`), so a saved `polly`/`google` engine can outlive a browser-voice pick until the next settings load reconciles it.
+- **Gotchas / invariants:** Preview is cancelled on unmount via a `ttsRef` snapshot taken in an effect (:317-323) so a half-played preview never leaks into the chat session. In `dialog` mode `onCloseAutoFocus` restores focus to `getOpener()` (:436-442). The picker is stateless about settings: the three mount sites own persistence, and only two of them keep the engine in step — `talk-mode.tsx:559-565` and `voice-settings-dialog.tsx:268-271` set `ttsEngine` with the picked voice, whereas the palette's `onPick` sets only `voiceId` (`command-palette-content.tsx:739`), so a saved `polly`/`google` engine can outlive a browser-voice pick until the next settings load reconciles it.
 
 ### `chat/voice-settings-dialog.tsx`
 - **Role:** The canonical all-in-one voice settings dialog.
@@ -436,14 +449,14 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/voice-pitfalls.ts`
 - **Role:** Small, independent workarounds for documented browser-voice landmines, plus the first-run-primer storage key.
 - **Exports:** `detectScreenReader`, `isIOS`, `isLinuxESpeak`, `voiceURIToGender`, `localeFallbackChain`, `applePremiumIsMissing`, `getVoicesRaceHardened`, `normalizeVoiceURI`, `isAndroid`, `isFirefox`, `FIRST_RUN_PRIMER_STORAGE_KEY`, `hasSeenFirstRunPrimer`, `markFirstRunPrimerSeen`.
-- **Consumed by:** `voice-picker.tsx:15-18` (`applePremiumIsMissing`, `getVoicesRaceHardened`), `voice-settings-dialog.tsx:20-25` (`getVoicesRaceHardened`, `isAndroid`, `isFirefox`, `isLinuxESpeak`), `talk-mode.tsx:23-26` (`hasSeenFirstRunPrimer`, `markFirstRunPrimerSeen`).
+- **Consumed by:** `voice-picker.tsx:15-18` (`applePremiumIsMissing`, `getVoicesRaceHardened`), `voice-settings-dialog.tsx:20-25` (`getVoicesRaceHardened`, `isAndroid`, `isFirefox`, `isLinuxESpeak`), `talk-mode.tsx:24-27` (`hasSeenFirstRunPrimer`, `markFirstRunPrimerSeen`).
 - **Behaviour notes:** `FIRST_RUN_PRIMER_STORAGE_KEY = "anvilry:voice:first-run-seen-v1"` (:223); both accessors are try/caught so private mode degrades to "show it once more" (:227-246). `getVoicesRaceHardened(timeoutMs = 2000)` resolves on a non-empty sync read, else on `voiceschanged`, else after the timeout (:158-188). `normalizeVoiceURI` strips trailing Linux speech-dispatcher modifiers `/\+[mf]\d+$/i` (:196-199). `voiceURIToGender` is a curated 15-entry prefix allowlist because `voice.gender` is deprecated and unreliable (:79-104). `localeFallbackChain` has hard-coded neighbour chains for 7 English locales (:111-127).
 - **Gotchas / invariants:** `detectScreenReader` appends and removes a probe div on `document.body` (:32-36) — a real DOM side effect, and it is heuristic by design; the header states the practical effect is only that `ttsEnabled` stays default-OFF for likely SR users (:20-23). Note the module is **not** marked `"use client"`, but the side-effecting helpers are guarded by `typeof window`/`typeof navigator` checks. **UNVERIFIED:** `detectScreenReader`, `isIOS`, `voiceURIToGender`, `localeFallbackChain`, and `normalizeVoiceURI` have no importer anywhere under `src/` outside the two test files — I could not find a production caller.
 
 ### `chat/voice-orb.tsx` / `voice-orb-canvas.tsx` / `voice-orb-3d.tsx`
 - **Role:** The orb renderer stack. `VoiceOrb` selects; `VoiceOrbCanvas` is the universal baseline; `VoiceOrb3D` is the desktop R3F enhancement.
 - **Exports:** `VoiceOrb`, `VoiceOrbCanvas`, `VoiceOrb3D` — all take `{ level: React.RefObject<number>, state: VoiceSessionState, size? }`; `VoiceOrb3D` additionally takes `errorMode?`.
-- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :328). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
+- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
 - **Behaviour notes:**
   - `use3D = isDesktop && webgl && !reduced && !glFailed` (`voice-orb.tsx:42`); the 3D orb is wrapped in `WebGLBoundary` whose `onFail` flips permanently to the canvas orb (:44-50). `VoiceOrb3D` is lazy so three/R3F never enters the talk-mode bundle on mobile / reduced-motion / no-WebGL (:11-16).
   - `VoiceOrbCanvas` draws a single static ring and returns early (no rAF loop) under `prefers-reduced-motion` (:54-63). Otherwise one rAF loop reads `level.current` directly — never through React state (:69-118). DPR is capped at 2 (:45). Accent is hard-coded `#38e1ff` to match `--accent` (:19).
@@ -455,7 +468,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/use-voice-level.ts`
 - **Role:** Produce a smoothed 0..1 amplitude in a ref for the orb's draw loop.
 - **Exports:** `useVoiceLevel`.
-- **Consumed by:** `talk-mode.tsx:17` (:195).
+- **Consumed by:** `talk-mode.tsx:17` (:196).
 - **Behaviour notes:** `SMOOTH = 0.18` ease factor (:30). Per-state envelopes: listening `0.26 + 0.12·sin(1.6t)` plus a `0.1·sin(7.3t+1.1)` shimmer; thinking `0.18 + 0.08·sin(2.2t)`; speaking `0.45 + 0.14·sin(2.1t)` plus a syllabic transient, clamped to `[0.18, 1]`; idle/paused `0` (:32-52). `dt` is clamped to 0.05 s to survive tab refocus (:72).
 - **Gotchas / invariants:** The envelope is **synthetic on purpose** — `speechSynthesis` exposes no MediaStream/AudioNode in any shipping browser, and a second `getUserMedia` analyser would conflict with the mic the STT hook already holds (:11-20). The loop self-stops at rest and restarts only because a `state` change remounts the effect (:81-88, :97).
 
@@ -470,22 +483,23 @@ See **Store & hook map** above. All three are structurally identical: module `op
 - **Role:** The floating "Ask my portfolio" widget available on every non-chat view.
 - **Exports:** `AskPortfolio` (component). Internal: `AskPortfolioWidget`, `SUGGESTED`.
 - **Reads / depends on:** `useView`, `useChat`, `MicButton`, `parseCards`, `ChatCard`, lazy `MarkdownMessage`, `useAutoScroll`, `JumpToLatest`, `SkeletonMarkdownLine`.
-- **Consumed by:** `app/layout.tsx:8` (rendered at :144).
+- **Consumed by:** `app/layout.tsx:8` (rendered at :145).
 - **Behaviour notes:**
-  - Returns `null` when `view === "chat"` — the Chat view *is* the concierge (:39-40).
-  - The inner widget is keyed by `view` (:41), so any view change remounts it and resets `useChat`'s message list — transcript/open state never leaks across a classic↔gamified switch, with no setState-in-effect (:31-37).
-  - Its own four `SUGGESTED` prompts (:24-29) are **separate** from `chat-suggestions.ts` — the two lists overlap but are not shared.
-  - Autoscroll uses `useAutoScroll({ threshold: 120, enabled: open, surface: "widget", mode: "bottom-pin" })` — bottom-pin only, and attaches nothing while closed (:59-64).
-  - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:66-70).
-  - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:202-221) — the widget never dispatches `cmd-view`/`cmd-highlight` side effects (that lives only in `ChatMessages`), so a model-emitted `[[cmd:view:…]]` is silently dropped here. An empty assistant message shows "Thinking…" only while streaming (:193-200).
-  - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:16-22). On mobile the panel re-measures `window.visualViewport` (feature-detected, `resize` listener) and lifts itself above the on-screen keyboard via `keyboardInset` (:72-91, style at :115-122). Accessibility: `useChatA11y` (:52) feeds its own sr-only `aria-live="polite"` region (:138-140); the transcript is `role="log"` with an explicit `aria-live="off"` (:146-155) so it does not double-announce.
-- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:249). The widget does **not** render attachments, thinking blocks, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:49`) and surfaces the 503 message (`:84`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
+  - Returns `null` when `view === "chat"` — the Chat view *is* the concierge (:40-41).
+  - The inner widget is keyed by `view` (:42), so any view change remounts it and resets `useChat`'s message list — transcript/open state never leaks across a classic↔gamified switch, with no setState-in-effect (:32-38).
+  - Its own four `SUGGESTED` prompts (:25-30) are **separate** from `chat-suggestions.ts` — the two lists overlap but are not shared.
+  - Autoscroll uses `useAutoScroll({ threshold: 120, enabled: open, surface: "widget", mode: "bottom-pin" })` — bottom-pin only, and attaches nothing while closed (:60-65).
+  - The caption under the composer is the shared `AI_CAPTION` (:261, `text-fg-muted`), the same line the Chat view uses, and the empty-state greeting opens "Hi! 👋 I'm an AI assistant." (:166-167); the caption is what stays once a message is sent (`ask-portfolio.dom.test.tsx` and `e2e/views.spec.ts` pin both).
+  - Focus returns to the trigger button when the panel closes, tracked via a `wasOpen` ref (:67-71).
+  - Assistant rendering mirrors the full view: `parseCards` → markdown for text segments, `ChatCard` for resolved cards, `null` for `cmd-*` (:203-222) — the widget never dispatches `cmd-view`/`cmd-highlight` side effects (that lives only in `ChatMessages`), so a model-emitted `[[cmd:view:…]]` is silently dropped here. An empty assistant message shows "Thinking…" only while streaming (:194-201).
+  - `MarkdownMessage` is lazy (`ssr:false`, skeleton fallback) so react-markdown stays off the initial bundle (:17-23). On mobile the panel re-measures `window.visualViewport` (feature-detected, `resize` listener) and lifts itself above the on-screen keyboard via `keyboardInset` (:73-92, style at :116-123). Accessibility: `useChatA11y` (:53) feeds its own sr-only `aria-live="polite"` region (:139-141); the transcript is `role="log"` with an explicit `aria-live="off"` (:147-156) so it does not double-announce.
+- **Gotchas / invariants:** `MicButton` is rendered `compact` here to match the smaller controls (:250). The widget does **not** render attachments, thinking blocks, or read-aloud — those are Chat-view-only. Guarded by `ask-portfolio.dom.test.tsx`, which pins only that the widget rides the shared `useChat` stream (`:51`), surfaces the 503 message (`:86`), shows the shared AI caption (`:106`), opens with "I'm an AI assistant" (`:114`) and keeps the caption once an answer streams (`:121`) — `CLAUDE.md` (Testing Notes) states it is **not** the injection/XSS guard (that is `parse-cards.test.ts`). The single-live-region behaviour of this widget is pinned by `chat-surface-live-region.dom.test.tsx` (`:253`).
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
-- **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:167-221`).
+- **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:171-225`).
 - **`chat-card.tsx`** — project branch renders name/tagline/`tech.slice(0,5)`/commit count (or `group` when `commits == null`) and links to `p.url` + `p.repo`; work branch is a single `Link` to `w.url` with `register`, `name`, `summary`, and every `w.metrics` entry. Every value is Velite-sourced (:6-11 doc).
 - **`read-aloud-button.tsx`** — stateless; `aria-pressed` + icon swap (speaker↔stop), visible label "Listen"/"Stop", tooltip via `ui/tooltip` (:4, :22-39). The single TTS engine lives in `ChatMessages`, not here (:7-10).
-- **`attachment-preview-strip.tsx`** — returns `null` on an empty list so there is no layout shift (:19). PDFs show a 📄 badge plus an approximate extracted-character count (`Math.round(pdfText.length / 1000)`k, :37); images show a 48×48 `object-cover` thumbnail from `previewUrl`. `role="list"`/`role="listitem"` are set explicitly (:24-30). Removal is delegated to `onRemove(index)`; the **caller** revokes the object URL (`chat-view.tsx:226-235`).
+- **`attachment-preview-strip.tsx`** — returns `null` on an empty list so there is no layout shift (:19). PDFs show a 📄 badge plus an approximate extracted-character count (`Math.round(pdfText.length / 1000)`k, :37); images show a 48×48 `object-cover` thumbnail from `previewUrl`. `role="list"`/`role="listitem"` are set explicitly (:24-30). Removal is delegated to `onRemove(index)`; the **caller** revokes the object URL (`chat-view.tsx:230-239`).
 
 ## Coverage
 
@@ -500,6 +514,7 @@ See **Store & hook map** above. All three are structurally identical: module `op
 - `src/components/chat/chat-messages.tsx`
 - `src/components/chat/chat-suggestions.ts`
 - `src/components/chat/chat-view.tsx`
+- `src/components/chat/ai-disclosure.ts`
 - `src/components/chat/file-picker-button.tsx`
 - `src/components/chat/header-orb-trigger.tsx`
 - `src/components/chat/markdown-message.tsx`

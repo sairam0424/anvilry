@@ -120,7 +120,7 @@ sequential chats do not self-throttle. Class assignment: `chat` = `/api/chat`; `
 - **Role:** The site's LLM endpoint — validates and bounds a chat history, serves repeat first-turn questions from the FAQ response cache, otherwise assembles a grounded system prompt from the Velite corpus, and returns a plain-text byte stream with a trailing trace frame.
 - **Exports:** `maxDuration` (`= 30`, :19) — segment config; `POST` (async route handler).
 - **Reads / depends on:** `@/lib/corpus` (`buildCorpus`), `@/lib/profile`, `@/lib/content` (`allProjects`, `allWork`), `@/lib/llm` (`isConfigured`, `streamWithFallback`, `TRACE_DELIMITER`), `@/lib/rate-limit`, `@/lib/chat-cache` (`faqCacheGet`, `faqCacheSemanticGet`, `faqCacheSet`, `isSemanticMatchEnabled`), `@/lib/telemetry/{with-trace,emit,schema}`, `node:crypto`. Env: `VERCEL_URL` (:34), `EXTENDED_THINKING` (:339) — plus everything `src/lib/llm.ts` reads (`LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `LLM_USE_OPUS_FALLBACK`, `LLM_THINKING_EFFORT`, `BEDROCK_*`) and the cache switches `FAQ_CACHE_ENABLED` / `FAQ_CACHE_SEMANTIC_MATCH` read inside `chat-cache.ts`.
-- **Consumed by:** `src/components/chat/use-chat.ts:305` (`fetch("/api/chat", …)`); asserted in `src/components/ask-portfolio.dom.test.tsx:81`; hammered 12× per run by `src/app/api/cron/eval/route.ts:115`.
+- **Consumed by:** `src/components/chat/use-chat.ts:305` (`fetch("/api/chat", …)`); asserted in `src/components/ask-portfolio.dom.test.tsx:83`; hammered 12× per run by `src/app/api/cron/eval/route.ts:115`.
 - **Request → cache → stream → fallback → telemetry path:**
   1. Whole body wrapped in `withTrace(req, "chat", …)` (:132) — mints `traceId`/`spanId`, stamps `x-anvilry-trace-id` on the response, and emits exactly one `http.request` span after the stream finishes (`src/lib/telemetry/with-trace.ts`, `withTrace` / `afterSafeEmit`).
   2. `isConfigured()` → **503** `{ error: "Chat is not configured." }` (:133-138).
@@ -298,7 +298,7 @@ Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 - **Role:** Flag-aware sitemap generator (`/sitemap.xml`).
 - **Exports:** `default sitemap(): MetadataRoute.Sitemap`.
 - **Reads / depends on:** `@/lib/content` (all four collections), `@/lib/writing-flags` (`ARTICLES_ENABLED`, `NOTES_ENABLED`, `STATS_ENABLED`, `SEARCH_ENABLED`).
-- **Consumed by:** `robots.ts:16` points at it; `e2e/views.spec.ts:189`; probed by `seo-audit` and `health-check` (P1).
+- **Consumed by:** `robots.ts:16` points at it; `e2e/views.spec.ts:246`; probed by `seo-audit` and `health-check` (P1).
 - **Behaviour notes:** static routes are `["", "/work", "/projects", "/about", "/resume", "/mcp"]` (:13-19) with `priority` 1 for `""` and 0.8 otherwise. Priorities: work 0.7, projects 0.6, listing pages 0.6, note/article detail 0.5, `/stats` 0.6, `/search` 0.5. `changeFrequency` is `"monthly"` everywhere except the `/notes` and `/articles` listing pages (`"weekly"`). `lastModified` is set only on note and article entries, from the item's real `date` (the listing page uses the newest entry's date, :38-57, :59-85); static, work, project, `/stats` and `/search` entries carry none.
 - **Gotchas / invariants:** notes and articles are included only when the flag **and** non-empty content both hold (`NOTES_ENABLED && allNotes.length`, :41; `ARTICLES_ENABLED && indexableArticles.length`, :68). Articles that only point at a note (`linkedNote` set, no `externalUrl`) are filtered out while `NOTES_ENABLED` is false (:64-66) so the sitemap never lists a URL that 404s; `allArticles` itself already drops these at the data layer (`isNoteOnlyArticle` in `src/lib/content.ts`, a superset that also covers an `externalUrl` pointing at an own `/notes/` URL). `base` is hardcoded (:10). `.md` passthrough URLs are not listed.
 
@@ -310,7 +310,7 @@ Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 ### `src/app/llms.txt/route.ts` and `src/app/llms-full.txt/route.ts`
 - **Roles:** `/llms.txt` returns `buildLlmsTxt()` — the curated index (~1-2KB); `/llms-full.txt` returns `buildCorpus()` — the full chatbot grounding corpus (~4-8KB).
 - **Exports:** `GET` in both; both set `Content-Type: text/plain; charset=utf-8`.
-- **Consumed by:** `/llms.txt` linked from `src/components/site-footer.tsx:105`, checked by `e2e/views.spec.ts:184`; both probed by `health-check/route.ts:63-64` with a **`< 1000` chars ⇒ fail** body-length assertion.
+- **Consumed by:** `/llms.txt` linked from `src/components/site-footer.tsx:105`, checked by `e2e/views.spec.ts:241`; both probed by `health-check/route.ts:63-64` with a **`< 1000` chars ⇒ fail** body-length assertion.
 - **Gotchas / invariants:** `llms-full.txt`'s docblock (:13-18) records that `dynamic = "force-dynamic"` was removed both because `cacheComponents` rejects it and because the original rationale was wrong — `buildCorpus()` reads build-time Velite content, so a static route already regenerates on every deploy.
 
 ### `src/proxy.ts`

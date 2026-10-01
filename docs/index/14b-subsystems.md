@@ -302,13 +302,13 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 |---|---|---|---|---|
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **true** | `!== "false"` (the only opt-out) `:19-20` | `/articles` subtree via `articles/layout.tsx:12`; nav link (`site-nav.tsx:45`); sitemap (`sitemap.ts:68`); `WritingPreview` (`home/writing-preview.tsx:11`) |
 | `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | false | `=== "true"` `:22` | **The data layer:** `allNotes` is `[]` while off (`lib/content.ts:56`), so llms.txt, the RSS feed, the MCP tools, the chat corpus and both `.md` handler sets publish no notes, and articles whose only destination is a note are dropped (`content.ts:82`). Route layer: `/notes` via `notes/page.tsx:21`; `/notes/[slug]` via `notFound()` at `notes/[slug]/page.tsx:51` (its `generateStaticParams` still prerenders every *published* slug as a 404, `:16-26`); article `linkedNote` redirects (`articles/[slug]/page.tsx:71`); nav (`site-nav.tsx:48`); sitemap (`sitemap.ts:41`). The `linkedNote` → `/notes/<slug>` link is chosen only while the flag is on in `article-group-card.tsx:21`, `related-writing.tsx:13`, `articles/page.tsx:199,272` and `llms-txt.ts:29` (otherwise the entry uses `externalUrl`). Two older per-surface filters for note-only articles remain (`sitemap.ts:64-66`, `articles/[slug]/page.tsx:43`, with a matching guard at `:84`) and are now subsumed by `allArticles`. Pinned by `src/lib/notes-dark.test.ts` |
-| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:24` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:134`); the chat and developer views also subtract the banner's height (`OPEN_TO_WORK_BANNER_HEIGHT_REM`, `:34`) from their exact-height `<main>` (`chat-view.tsx:78-80`, `developer-view.tsx:39-41`) |
+| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:24` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:134`); the chat and developer views also subtract the banner's height (`OPEN_TO_WORK_BANNER_HEIGHT_REM`, `:34`) from their exact-height `<main>` (`chat-view.tsx:79-81`, `developer-view.tsx:39-41`) |
 | `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | false | `:38` | **Nav + sitemap only** (`site-nav.tsx:53`, `sitemap.ts:87`) — `/stats` still renders and prerenders |
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | false | `:40` | **Nav + sitemap only** (`site-nav.tsx:54`, `sitemap.ts:97`) — same as `/stats` |
 | `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | false | `:44-45` | `home/testimonials.tsx:13` — the only gate; with the flag on and an empty `testimonials` array it renders a "recommendations coming soon" card (`:15-36`). (`hasTestimonials` is consumed by the chat corpus, `corpus.ts:69`, not by this component.) |
 | `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | `INKFORGE_ARTICLES_ENABLED` | false | `:49-50` | `articles/page.tsx:44` (`visibleInkforge`) |
 | `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | `GITHUB_STATS_ENABLED` | false | `:54-55` | `GithubStatsStrip` on `/`, mounted from `home/hero.tsx:159-165` |
-| `NEXT_PUBLIC_CHROME_TTS_BANNER` | `CHROME_TTS_BANNER_ENABLED` | false | `:92-93` | Chrome TTS advisory in `talk-mode.tsx:348-350` |
+| `NEXT_PUBLIC_CHROME_TTS_BANNER` | `CHROME_TTS_BANNER_ENABLED` | false | `:92-93` | Chrome TTS advisory in `talk-mode.tsx:349-351` |
 | `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | `ARTICLE_DEDUP_KEY` | `"linkedNote"` | enum `:76-80` | `article-grouping.ts:30` `DEFAULT_CONFIG.primaryKey`; only matters for articles with **both** `linkedNote` and `canonicalUrl` |
 
 **`src/lib/enabled-views.ts`**
@@ -326,7 +326,7 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 | `NEXT_PUBLIC_ENABLE_ANVIL_ORB` | `header-orb-trigger.tsx:38` | legacy `"false"` → `off` |
 | `NEXT_PUBLIC_ANVIL_ORB_EXPERIENCE` | `header-orb-trigger.tsx:46` | `core \| classic` panel chrome |
 | `NEXT_PUBLIC_VOICE_PICKER_MODE` | `voice-picker-mode.ts:20` | `descriptor` (default) \| `gender` layout |
-| `NEXT_PUBLIC_VOICE_TEST_AUDIO` | `talk-mode.tsx:493` | the "🔊 Test audio" button |
+| `NEXT_PUBLIC_VOICE_TEST_AUDIO` | `talk-mode.tsx:494` | the "🔊 Test audio" button |
 | `NEXT_PUBLIC_ORB_POSTPROCESSING` | `voice-orb-3d.tsx:300` | Fluid/Bloom/Vignette/Noise/CA — **and** `getDeviceTier() === "high"` (`:301,:327`) |
 | `NEXT_PUBLIC_INK_TRANSITION` | `view-context.tsx:123-126` (read at `:125`) | WebGL2 ink-burn view-transition path |
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
@@ -336,7 +336,7 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:25` (branched `:30`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:10` (**module scope**) | `./scene-physics` vs `./scene` |
-| `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | `chat-view.tsx:255` | the file picker |
+| `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | `chat-view.tsx:259` | the file picker |
 | `NEXT_PUBLIC_PDF_ATTACHMENTS` | `file-picker-button.tsx:7` | `application/pdf` in the accept list |
 | `NEXT_PUBLIC_EXTENDED_THINKING` | `chat-messages.tsx:165` | the thinking block (`!== "false"`, default ON) |
 | `NEXT_PUBLIC_LLM_SDK` | `llm-sdk-mode.ts:26` | **nothing** — `llm-sdk-mode.ts` has zero importers (only its test); the `aws-sdk-bedrock` branch is unbuilt (`:13-15`) |
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 95 test files (62 node + 33 dom), 954 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 96 test files (63 node + 33 dom), 1019 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -625,8 +625,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 95 test files
-(954 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 96 test files
+(1019 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -812,7 +812,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
 | Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:47` (fetch loop over `KIND_LITERALS`) and its render switches (`:384,:414-416`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:729-762`) stay on their empty placeholders |
 | Redis key literals | `src/app/admin/telemetry/page.tsx:29,244,278,281,284,287,293` · the five `api/cron/*` writers (`eval/route.ts:176`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:97` and `src/lib/chat-cache.ts:52-54` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
-| Nav height `3.5rem` / `h-14`, and the open-to-work banner height `2.3125rem` | `src/components/site-nav.tsx:67,70` · `src/components/ui/skeleton.tsx:106` (`SkeletonViewTransition`) · `chat-view.tsx:78-80` · `game/developer-view.tsx:38-41` · `globals.css:94-97` (`scroll-padding-top`) · the banner literal in `chat-view.tsx:79` / `developer-view.tsx:40` must equal `OPEN_TO_WORK_BANNER_HEIGHT_REM` (exported from `src/lib/writing-flags.ts`, `:34`) — spelled out as literal Tailwind classes because the JIT scanner cannot see interpolated ones |
+| Nav height `3.5rem` / `h-14`, and the open-to-work banner height `2.3125rem` | `src/components/site-nav.tsx:67,70` · `src/components/ui/skeleton.tsx:106` (`SkeletonViewTransition`) · `chat-view.tsx:79-81` · `game/developer-view.tsx:38-41` · `globals.css:94-97` (`scroll-padding-top`) · the banner literal in `chat-view.tsx:80` / `developer-view.tsx:40` must equal `OPEN_TO_WORK_BANNER_HEIGHT_REM` (exported from `src/lib/writing-flags.ts`, `:34`) — spelled out as literal Tailwind classes because the JIT scanner cannot see interpolated ones |
 | View-transition names | `view-router.tsx:56` (`view-body`) · `site-nav.tsx:68` (`site-header`) · `globals.css:360-402`; direction is stamped on `<html data-view-dir>` at `view-context.tsx:207-210` and consumed at `globals.css:373-385` |
 | Résumé label / variants | `src/lib/profile.ts:136-142` (`resumeVariants`, one entry) · `src/lib/mcp-tools.ts:24` (`RESUME_ROLES`) and `:28-34` (`ROLE_TO_LABEL`) · the PDF `public/resume/Sairam_Resume_MX_E.pdf` — re-adding a role is a three-place edit or `get_resume_variant` returns `notFound` (`mcp-tools.ts:30-32`) |
 | Article `source` enum | `velite.config.ts:123-130` · `src/components/platform-badge.tsx:5-23` (`ArticleSource`, `SOURCE_CONFIG`) · `src/app/articles/page.tsx:34-41` (`SOURCE_LABELS`) · `src/app/articles/[slug]/page.tsx:30-37` (its own `SOURCE_LABELS`, rendered at `:108`) · `articles/[slug]/opengraph-image.tsx:20-27` (`SOURCE_LABEL`). **All four maps are keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind (`devto` and `hashnode` missing; the file's own comment counts 8 of 14 published articles, 9 of 15 files, rendering the generic `> article`). Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
@@ -1072,7 +1072,7 @@ record the outcome rather than the original open question.
   (`chat-messages.tsx:334`), so the `[[cmd:highlight:<slug>]]` token drives a store nothing reads;
   `open-to-work-banner.tsx:6-8` "Hidden via CSS (h-0) when the flag is off" (the banner has no such CSS; the
   caller gates it, `layout.tsx:134`); `home/resume-view.tsx:13-16` "ViewEscapeHatch auto-rendered by
-  view-router" (`view-router.tsx` never renders it; the non-classic views mount it themselves — `chat-view.tsx:84`,
+  view-router" (`view-router.tsx` never renders it; the non-classic views mount it themselves — `chat-view.tsx:85`,
   `anvil-view.tsx:35`, `developer-view.tsx:45`, `game-view.tsx:32` — and `resume-view.tsx` does not);
   `anvil-core-surface.tsx:26` "~200px reactive orb"; `use-trace-runner.ts:69-70` "Reset when the scenario changes";
   the ReadyPlayerMe wording in `avatar-mesh.tsx:13,94` and `rig.ts:47,54` (the shipped asset is an Avaturn

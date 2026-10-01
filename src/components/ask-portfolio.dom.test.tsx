@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within, cleanup } from "@testing-library/react";
 import { AskPortfolio } from "./ask-portfolio";
 import { AI_CAPTION } from "@/components/chat/ai-disclosure";
+import { hiddenBy } from "@/components/chat/hidden-by.test-support";
 import { ViewProvider } from "@/components/view-context";
 
 // ViewProvider mounts ViewQuerySync (reads useSearchParams() — null outside a Next
@@ -105,7 +106,36 @@ describe("AskPortfolio widget AI disclosure", () => {
   it("captions the open panel with the same neutral AI line the Chat view uses", () => {
     renderWidget();
     fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
-    // One shared constant, so the two surfaces cannot drift apart (test name: shares the AI caption).
-    expect(screen.getByText(AI_CAPTION)).toBeTruthy();
+    // One shared constant, so the two surfaces cannot drift apart.
+    const caption = screen.getByText(AI_CAPTION);
+    expect(hiddenBy(caption)).toBeNull();
+  });
+
+  it("greets the visitor as an AI assistant", () => {
+    renderWidget();
+    fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
+    const greeting = screen.getByText(/I'm an AI assistant\. Ask me anything/);
+    expect(hiddenBy(greeting)).toBeNull();
+  });
+
+  it("keeps the caption once an answer has streamed in", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => streamingResponse(["Hello ", "from ", "the corpus."])),
+    );
+    renderWidget();
+    fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
+    fireEvent.change(screen.getByLabelText("Ask a question about Sairam"), {
+      target: { value: "What did you build?" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    const transcript = screen.getByRole("log", { name: "Chat transcript" });
+    await waitFor(
+      () => expect(within(transcript).getByText("Hello from the corpus.")).toBeTruthy(),
+      { timeout: 3000 },
+    );
+    // The greeting is gone with the first message; the caption is the cue that stays.
+    expect(screen.queryByText(/I'm an AI assistant\. Ask me anything/)).toBeNull();
+    expect(hiddenBy(screen.getByText(AI_CAPTION))).toBeNull();
   });
 });

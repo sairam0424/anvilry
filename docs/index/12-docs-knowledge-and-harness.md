@@ -128,10 +128,10 @@ and a fresh worktree resets all of them), so the in-document version marker is t
 
 ## Version history
 
-Read in full from `CHANGELOG.md`. **23 released version entries** are present, and NO live `[Unreleased]`
+Read in full from `CHANGELOG.md`. **24 released version entries** are present, and NO live `[Unreleased]`
 section — the last one was cut as `[3.11.0] — 2026-10-01`; the one before it was `[3.10.0] — 2026-10-01`, then `[3.9.0] — 2026-10-01` and `[3.8.0] — 2026-09-30`, then `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:349-439`). The release before that,
 `[3.5.0]` (`CHANGELOG.md:441-543`), covered six live defects and the documentation corrections listed in
-§Doc-vs-code drift. Count entries with `grep -c '^## \[[0-9]' CHANGELOG.md` (23).
+§Doc-vs-code drift. Count entries with `grep -c '^## \[[0-9]' CHANGELOG.md` (24).
 
 **Do not trust a stated line-shift; re-derive it.** Prepending a release entry moves every line below it
 and the offset compounds across releases. The reliable check is `node scripts/check-index-citations.mjs`,

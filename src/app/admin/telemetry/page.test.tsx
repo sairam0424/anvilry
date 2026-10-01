@@ -121,7 +121,7 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
   /** The value and sub line of a <Tile>, read from the markup, so an assertion cannot
    *  be satisfied by the same figure showing up somewhere else on the page. */
   function tile(html: string, label: string): { value: string; sub: string } {
-    const escaped = label.replace(/[()]/g, "\\$&");
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const m = html.match(
       new RegExp(
         `${escaped}</span><span[^>]*>([^<]*)</span>(?:<span[^>]*>([^<]*)</span>)?`,

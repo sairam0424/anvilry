@@ -4,6 +4,97 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.10.0] — 2026-10-01
+
+**Minor** — Sonnet 5.5 (the production primary) shows its reasoning, the fallback chain stops spending a request
+on a model this account cannot invoke, `cost_usd` becomes correct, phone visitors get a neutral "AI" line again,
+and the eval cron's answer parsing is corrected (the cron itself still cannot reach the app; see Fixed). Two
+settings are added, and nothing changes in dependencies or content. It is a minor rather than a patch because an
+operator can observe the chain, the reasoning and the cost figures change.
+
+### Added
+- **Reasoning summaries from Sonnet 5.x** (#296). Sonnet 5 and 5.5 return a `thinking` block with empty text
+  unless the request says `display: "summarized"` (the default is `"omitted"`; the thinking tokens are billed
+  either way), and at effort `low` Sonnet 5.5 did not reason on any of 8 measured questions, so the reasoning
+  panel stayed empty. Sonnet 5.x now sends `{type: "adaptive", display: "summarized"}` with effort `medium`;
+  every other model receives exactly the request it received before. That request was verified live for
+  `global.anthropic.claude-sonnet-5-5` only: after enabling `LLM_USE_SONNET_5` or the direct API, ask one
+  question and check that `fell_back` stays false. The `max_tokens` floor with thinking on is 4096 on Sonnet 5.x
+  (2048 elsewhere, never lowered, reasoning and answer share it), and a `thinking_delta` that arrives after the
+  answer has started is dropped.
+  **Operator-visible:** easy questions are unchanged; harder ones show a summary and take a few seconds longer,
+  about $0.0006 more per question on average, and the dashboard's time-to-first-token and average LLM latency
+  tiles read higher on those questions because they count the reasoning time. Nothing changes while
+  `EXTENDED_THINKING=false`.
+- **`LLM_THINKING_EFFORT`** (#296): exactly `low` or `medium` (lower case) overrides the effort on every
+  thinking-capable rung; anything else, `high` included, is ignored. Set `low` to make Sonnet 5.5 stop reasoning
+  in practice. Unset means `medium` on Sonnet 5.x and `low` elsewhere. `make env-check` reports it.
+- **`LLM_USE_OPUS_FALLBACK=true`** (#296) puts Opus back as a rung right behind the primary. It is off by
+  default, only the exact string `"true"` enables it, and the IAM policy needs the Opus profile only with it.
+  `make env-check` reports it.
+- **`src/lib/llm-pricing.ts`** (#296): the five Bedrock model ids the chat can call under any flag combination
+  (two of them in the default chain) priced from AWS's own on-demand list prices (AWS Price List offer
+  `AmazonBedrockFoundationModels`, version 20260930001912, us-east-1, USD per million tokens). `us.` ids are
+  billed at the Regional CRIS rate, exactly 1.10 times Global, and `global.` ids at the Global rate; cache
+  writes are priced at the 1-hour rate the chat route requests. A model without a row, which includes every
+  direct-API id, returns nothing and the `llm.attempt` event carries no `cost_usd` instead of a figure at
+  another model's rate.
+- **A neutral "AI assistant" cue** (#297). v3.9.0 removed the only visible text on a phone saying the answers
+  are AI-generated. Five pieces of copy now say it without naming a model, vendor or host: the Chat view intro
+  opens "I'm an AI assistant grounded in real projects …", the caption under the composer (Chat view and the
+  Classic "Ask my portfolio" widget) reads "AI assistant · grounded in real work · may simplify details", the
+  widget greeting opens "Hi! 👋 I'm an AI assistant.", the voice idle hint says it, and the voice dialog's
+  screen-reader description says "the portfolio's AI assistant". The caption, the hint and the name check are in
+  `src/components/chat/ai-disclosure.ts`; the intro, the greeting and the dialog description are inline in their
+  own components. A bare "AI" beside the header icon was tried and rejected: at 390px it wrapped "Back to
+  Classic" onto two lines. Left alone: the desktop voice panel starts listening at once, so it shows the
+  in-conversation hint and no AI wording of its own; and the system prompt, which still says to answer "as if
+  you are Sairam" (a production probe on 2026-10-01 had the bot say it is an AI when asked, which is model
+  behaviour, not a guarantee).
+- **`answerFromBody()`** in `src/lib/llm-trace.ts` (#296): the visible answer of a complete `/api/chat` body
+  (drop the reasoning block, then the trailing trace frame), for server-side readers.
+
+### Changed
+- **Opus is no longer in the default fallback chain** (#296). The default is Sonnet 4.6 then Haiku, and with a
+  Sonnet 5 or 5.5 primary it is the primary, Sonnet 4.6, then Haiku. This account denies the Opus family, so the
+  old second rung spent a round trip on a guaranteed 403 before Haiku got the request.
+  **Operator-visible:** no more 403 `llm.attempt` events for Opus, and a failing 5.5 is now backed up by Sonnet
+  4.6 instead of Haiku.
+- **`cost_usd` and the dashboard's cost tiles use the verified prices** (#296). Sonnet 5 and 5.5 were priced as
+  Sonnet 4.6; Sonnet 4.6 was priced at the Global rate although its `us.` profile bills 10% more, Haiku 4.5 at
+  Haiku 3.5 numbers and Opus 4.6 at Opus 4 numbers; cache writes were priced at the 5-minute rate although the
+  route asks for 1 hour.
+  **Operator-visible:** the 24 h window mixes old and new `cost_usd` for a day. Sonnet 4.6 reads about 10%
+  higher on cache-read turns and about 60% higher on turns that write the cache (the 1-hour write rate is $6.60
+  per million, it was priced at $3.75); Sonnet 5.5 reads about a third lower on cache-read turns and about the
+  same on cache-write turns. The "Est. cost (24h)" tile shows $0.0000 for an unpriced model (unknown, not free).
+  Its "saved … by caching" figure is recomputed from usage, so it changes for the whole window at once: it is
+  now summed per attempt at that model's own rate (full input price minus the cache-read price) instead of a
+  flat $0.30 per million tokens, which raises it about 6 times on Sonnet 5.5 traffic and about 10 times on
+  Sonnet 4.6. `global.` model ids are shortened in the dashboard like `us.` ones.
+- Both chat captions use `text-fg-muted` (#297; about 7.4-7.9:1 contrast, where `text-fg-subtle` measured
+  4.7-4.9:1).
+- The suite goes from 864 to 1021 tests across 96 files (94 before), and the docs index is relabelled to 3.10.0;
+  the areas #296 and #297 touched were updated, and the scale, coverage and test counts in
+  `docs/index/README.md` were re-measured.
+
+### Fixed
+- **The eval cron's answer parser read every answer as empty while extended thinking is on, which is the
+  default** (#296). It cut the `/api/chat` body at the first `U+001E`, but every body starts with the thinking
+  sentinel (`U+001E U+0001`) whether or not the model reasons, so a run that reached the app scored each of the
+  12 golden pairs, the two injection pairs included, as an empty answer and failed. The cron now uses
+  `answerFromBody()`. Checked end to end against a mock model: the old parser scored 0 of 12, this one 12 of 12.
+  (The mock answered the email question with the string that pair expects. The pair expects "sairamugge", which
+  the published address `uggesairam0000@gmail.com` does not contain, so a healthy run against the real site
+  would score 11 of 12.)
+  **Operator-visible: nothing yet.** The cron builds its base URL from `VERCEL_URL`, the generated deployment
+  host, and this project protects those hosts with Vercel Authentication: a probe on 2026-10-01 got 401
+  "Protected by Vercel Authentication" from that host for `POST /api/chat`, while a GET on the public alias gets
+  the route's 405, so the alias does reach the app. So the 12 requests are refused before they reach the app,
+  and the admin "Eval pass rate" tile will keep recording 0 of 12 (the next run is Monday 2026-10-05 09:00 UTC)
+  until the cron calls the production alias, as the health-check cron already does (`probeBase()` in
+  `src/lib/health-expectations.ts`). That change is not in this release (`DEPLOY.md` section 7).
+
 ## [3.9.0] — 2026-10-01
 
 **Minor** — two things a visitor could see are removed, and one accessibility label stops naming the

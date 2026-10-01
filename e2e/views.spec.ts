@@ -96,6 +96,63 @@ test("chat view: typing a message and submitting works", async ({ page }) => {
   );
 });
 
+// ── AI disclosure (v3.9.0 removed the "Answered by <model>" line, the only AI text a phone saw) ──
+//
+// The unit tests cannot evaluate CSS, so whether a PHONE actually shows the words is only
+// checkable here (the mobile-safari project is an iPhone 13, 390px wide).
+const AI_INTRO = /I'm an AI assistant grounded in real projects/;
+const AI_CAPTION_TEXT =
+  "AI assistant · grounded in real work · may simplify details";
+
+test("chat view: the AI intro and caption are visible, not just in the DOM", async ({
+  page,
+}) => {
+  await page.goto("/?view=chat");
+  await expect(page.getByLabel("Ask a question about Sairam")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByText(AI_INTRO)).toBeVisible();
+  await expect(page.getByText(AI_CAPTION_TEXT, { exact: true })).toBeVisible();
+});
+
+test("chat view: the caption is still visible after the first message", async ({
+  page,
+}) => {
+  await page.goto("/?view=chat");
+  const input = page.getByLabel("Ask a question about Sairam");
+  await expect(input).toBeVisible({ timeout: 15000 });
+  await input.fill("What projects have you worked on?");
+  await page.keyboard.press("Enter");
+  // The intro belongs to the empty state; the caption is what stays.
+  await expect(page.getByText(AI_INTRO)).toHaveCount(0);
+  await expect(page.getByText(AI_CAPTION_TEXT, { exact: true })).toBeVisible();
+});
+
+test("chat view header: Back to Classic stays on one line at the iPhone 13 width", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-safari",
+    "the 390px row is a phone constraint",
+  );
+  // A visible "AI" chip beside the header icon was tried and wrapped this button onto two
+  // lines (46px instead of 30px) at 390px, which is why the cue lives in the body instead.
+  await page.goto("/?view=chat");
+  const back = page.getByRole("button", { name: "Back to Classic" });
+  await expect(back).toBeVisible({ timeout: 15000 });
+  const box = await back.boundingBox();
+  expect(box!.height).toBeLessThan(40);
+});
+
+test("classic widget: the open panel says it is an AI assistant", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Ask my portfolio" }).click();
+  await expect(page.getByText(AI_CAPTION_TEXT, { exact: true })).toBeVisible();
+  await expect(page.getByText(/I'm an AI assistant\. Ask me anything/)).toBeVisible();
+});
+
 // ── Phase 3: cross-route view switching (view-context.tsx setViewInternal fix) ──
 
 test("switching views via ⌘K from a non-home route navigates home with ?view= applied", async ({

@@ -3,14 +3,14 @@ kind: doc
 title: Content Corpus & Velite Schemas
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # Content Corpus & Velite Schemas
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope.
+> Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope.
 
 **Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (11), `content/notes/*.{md,mdx}` (7) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
 **Files indexed:** 40 (39 content/config files + `.gitkeep`)
@@ -365,7 +365,7 @@ anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metri
 `src/lib/corpus.test.ts:13-18` asserts the corpus always contains `profile.name`,
 `## Production Work`, and `## Skills`; `:20-28` asserts `## Personal` appears iff `personal.ts` is
 populated. The `register` string reaching the LLM verbatim is also reinforced in the chat system
-prompt at `src/app/api/chat/route.ts:131`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
+prompt at `src/app/api/chat/route.ts:85`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
 stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11,437 with notes on.
 
 ### 3. Resume → content

@@ -53,3 +53,23 @@ export type TraceFrame = {
   latencyMs?: number;
   // reasoning is no longer in the trace frame — it streams live via THINKING_END protocol
 };
+
+/**
+ * The visible answer in a COMPLETE /api/chat body, for server-side callers that only
+ * score the text (the eval cron): drops the leading reasoning block, then the trailing
+ * trace frame.
+ *
+ * THINKING_SENTINEL and THINKING_END both start with the byte TRACE_DELIMITER is made
+ * of, so the delimiter must be searched for only AFTER the reasoning block. Searching
+ * the whole body finds the sentinel at index 0 and returns an empty answer whenever
+ * extended thinking is on (the sentinel goes out first, reasoning or not). An unclosed block leaves no answer.
+ */
+export function answerFromBody(body: string): string {
+  let rest = body;
+  if (rest.startsWith(THINKING_SENTINEL)) {
+    const endIdx = rest.indexOf(THINKING_END);
+    rest = endIdx === -1 ? "" : rest.slice(endIdx + THINKING_END.length);
+  }
+  const delimIdx = rest.indexOf(TRACE_DELIMITER);
+  return (delimIdx === -1 ? rest : rest.slice(0, delimIdx)).trim();
+}

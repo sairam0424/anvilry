@@ -3,14 +3,14 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-> **Baseline.** Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more.
+> **Baseline.** Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more.
 
 **Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`. The `?scroll=` flag store (`src/lib/scroll/*`) is owned by [04](./04-lib-ai-voice-infra.md); the persisted theme store (`src/lib/theme-context.tsx`) is not indexed by any section (see the coverage reconciliation in the [README](./README.md)); this doc covers only their component touchpoints (`ThemeToggle`, `ScrollFlagsSync` in `Providers`).
 **Files indexed:** 39
@@ -122,7 +122,7 @@ Two named transition groups exist in the tree:
 
 **`view-hint.tsx`** — its own tiny `useSyncExternalStore` over `localStorage["anvilry-hint-seen"]` (`:9`, `:23-55`). Dismissal stores `String(Date.now())` (`:26`) and sticks for `DISMISS_TTL_MS` = 24 h (`:13`); a legacy literal `"1"` is honoured as a permanent dismissal (`:45`); an unparseable value counts as dismissed (`:47`). Server snapshot is `() => true`, i.e. "dismissed", so SSR/no-JS never flashes the hint (`:53`); a `localStorage` throw also returns `true` ("can't persist → don't nag", `:50`). The hint additionally waits `SHOW_DELAY_MS` = 7 s after mount (`:18`, `:85-88`) and renders `null` unless `pathname === "/"` **and** `view === "classic"` (`:90-91`) — the pathname check matters because the view store defaults to classic on every standalone route. Placement is top-anchored under the nav below `sm`, bottom-right above it (`:94`), and the copy switches on `useMediaQuery("(min-width: 640px)")` between "use the … switcher up top" and "tap the menu" (`:83`, `:106-117`; guarded by `view-hint.dom.test.tsx:49-74`). Mounted once from `src/app/layout.tsx:158`.
 
-**`view-escape-hatch.tsx`** — "Back to Classic" is a `<button>` calling `setView("classic")`; "Résumé" is a real `<a href="/resume">` so it survives a failed view bundle (`:6-12`, `:17-31`). Documented contract: it is rendered as the FIRST focusable element of each non-classic view so neither the gamified nor chat experience becomes a keyboard trap. Real importers: `chat/chat-view.tsx:84`, `chat/anvil-view.tsx:35`, `game/game-view.tsx:32`, `game/developer-view.tsx:45`. `view-router.tsx` does **not** render it, and neither does `home/resume-view.tsx` (its docblock at `:14-16` claims otherwise — stale), so the `?view=resume` view has no in-page "back to Classic" control.
+**`view-escape-hatch.tsx`** — "Back to Classic" is a `<button>` calling `setView("classic")`; "Résumé" is a real `<a href="/resume">` so it survives a failed view bundle (`:6-12`, `:17-31`). Documented contract: it is rendered as the FIRST focusable element of each non-classic view so neither the gamified nor chat experience becomes a keyboard trap. Real importers: `chat/chat-view.tsx:85`, `chat/anvil-view.tsx:35`, `game/game-view.tsx:32`, `game/developer-view.tsx:45`. `view-router.tsx` does **not** render it, and neither does `home/resume-view.tsx` (its docblock at `:14-16` claims otherwise — stale), so the `?view=resume` view has no in-page "back to Classic" control.
 
 **Discovery side effect:** any deliberate view switch calls `unlock("view-switch")` from `@/lib/discovery-store` (`view-context.tsx:213`), the first of 4 exploration badges.
 
@@ -344,7 +344,7 @@ Two named transition groups exist in the tree:
 ### `src/components/scroll/jump-to-latest.tsx`
 - **Role:** Presentational "Jump to latest" pill — the visible resume control for the autoscroll state machine (WCAG 2.2.2).
 - **Exports:** `JumpToLatest({ show, onClick, label = "Jump to latest" })`.
-- **Consumed by:** `ask-portfolio.tsx:226`, `chat/chat-messages.tsx:642`.
+- **Consumed by:** `ask-portfolio.tsx:227`, `chat/chat-messages.tsx:642`.
 - **Behaviour notes:** Returns `null` when `!show` (`:28`). Floats bottom-centre of a `relative` parent (`pointer-events-none absolute inset-x-0 bottom-3`, `:30`); visibility and the snap-to-bottom are owned by the autoscroll hook, the caller supplies `onClick`. Target height `h-9` (36 px) with visible focus ring (`:34`).
 
 ## Coverage

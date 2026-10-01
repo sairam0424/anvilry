@@ -3,16 +3,16 @@ kind: doc
 title: lib — AI, Voice, Telemetry & Infrastructure
 domain: [content]
 status: current
-version: v3.9.0
+version: v3.10.0
 ---
 
 # lib — AI, Voice, Telemetry & Infrastructure
 
-> Part of the Anvilry v3.9.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.10.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.9.0 (`package.json` 3.9.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
+> Describes Anvilry v3.10.0 (`package.json` 3.10.0), i.e. main a929932 plus five later behavioural fixes: notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat`/`voice`/`beacon`) with a `CRON_SECRET` bypass via `src/lib/cron-auth.ts`; admin auth shared by the proxy, `requireAdmin` and the telemetry page through `isAdminAuthorized`; command-palette talk mode gated by `isVoiceViewActive`; and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the rate-limit and admin-auth fixes touch this doc's modules.
 
-**Scope:** `src/lib/llm.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
+**Scope:** `src/lib/llm.ts`, `src/lib/llm-pricing.ts`, `src/lib/llm-sdk-mode.ts`, `src/lib/llm-trace.ts`, `src/lib/agent-trace.ts`,
 `src/lib/voice-catalog.ts`, `src/lib/voice-picker-mode.ts`, `src/lib/voice-settings-context.tsx`,
 `src/lib/rate-limit.ts`, `src/lib/redis.ts`, `src/lib/admin-auth.ts`, `src/lib/cron-auth.ts`,
 `src/lib/chat-cache.ts`, `src/lib/faq-embeddings.ts`, `src/lib/r3f.ts`,
@@ -21,7 +21,7 @@ version: v3.9.0
 Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`content.ts`, `corpus.ts`,
 `game-model.ts`, `mcp-tools.ts`, `flags.ts`, …).
 
-**Files indexed:** 27
+**Files indexed:** 28
 
 `case-study-depth`: **no source file exists.** Only `src/lib/case-study-depth.test.ts` is present; it imports
 `allWork` from `@/lib/content` and asserts on Velite frontmatter fields (`diagram`, `diagramAlt`, `constraints`,
@@ -31,8 +31,9 @@ Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`co
 
 | File | Role | Key exports |
 |---|---|---|
-| `src/lib/llm.ts` | Single source of truth for the chatbot AI layer: provider toggle, client construction, model fallback chain, AWS credential decoding, streaming-with-fallback ReadableStream. | `LlmProvider`, `LlmUsage`, `LlmAttempt` (types); `isSonnet5PrimaryEnabled`, `isSonnet55PrimaryEnabled`, `getProvider`, `bedrockCreds`, `isConfigured`, `modelChain`, `makeClient`, `isFallbackEligible`, `streamWithFallback`; re-exports `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` |
-| `src/lib/llm-trace.ts` | Client-safe stream-protocol constants + trace-frame type, split out so the chat client never imports the Bedrock SDK. | `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END`, `stripControlBytes`; `LlmUsage`, `TraceFrame` (types) |
+| `src/lib/llm.ts` | Single source of truth for the chatbot AI layer: provider toggle, client construction, model fallback chain, AWS credential decoding, streaming-with-fallback ReadableStream. | `LlmProvider`, `LlmUsage`, `LlmAttempt` (types); `isSonnet5PrimaryEnabled`, `isSonnet55PrimaryEnabled`, `isOpusFallbackEnabled`, `getProvider`, `bedrockCreds`, `isConfigured`, `modelChain`, `makeClient`, `isFallbackEligible`, `streamWithFallback`; re-exports `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` |
+| `src/lib/llm-pricing.ts` | Verified per-model price table (AWS list prices) behind the `cost_usd` on `llm.attempt` events and the dashboard's "saved by caching" tile; a model with no row prices to `null`, never to another model's rate. | `CACHE_WRITE_TTL`, `priceFor`, `costUsd`, `cacheReadSavingsUsd`; `TokenPrice`, `UsageTokens` (types) |
+| `src/lib/llm-trace.ts` | Client-safe stream-protocol constants + trace-frame type + the server-side answer parser, split out so the chat client never imports the Bedrock SDK. | `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END`, `stripControlBytes`, `answerFromBody`; `LlmUsage`, `TraceFrame` (types) |
 | `src/lib/llm-sdk-mode.ts` | Build-time flag naming which Bedrock SDK `/api/chat` should use. Currently declared but **imported by nothing** — the `aws-sdk-bedrock` branch is unbuilt. | `LlmSdkMode` (type), `getLlmSdkMode`, `LLM_SDK_MODE` |
 | `src/lib/agent-trace.ts` | Hardcoded deterministic multi-agent "glass box" demo script; ships dark behind a placeholder sentinel gate. | `PLACEHOLDER_SENTINEL`, `AgentName`, `AGENTS`, `AgentStep`, `Scenario`, `scenarios`, `allReferencedSlugs`, `traceApproved`, `linkForSlug` |
 | `src/lib/voice-catalog.ts` | Authoritative static catalog of every voice across browser / Polly / Google engines + lookup, allowlist and resolver helpers. | `VoiceEngine`, `PollyTier`, `VoiceGender`, `VoiceAccent`, `VoiceEntry` (types); `CURATED_VOICES`, `EXTENDED_VOICES`, `ALL_VOICES`; `getDefaultVoiceId`, `getVoiceById`, `getVoiceByPollyId`, `getVoiceByGoogleName`, `getVoicesForEngine`, `validateVoiceForEngine`, `resolvePollyParams`, `resolveGoogleVoiceName`, `findBrowserVoice` |
@@ -64,11 +65,11 @@ Excluded: `*.test.ts` / `*.dom.test.*`, and the content/data/domain modules (`co
 ### `src/lib/llm.ts`
 
 - **Role:** The chatbot's entire AI layer — provider selection, credential decoding, model fallback chain, and the streaming `ReadableStream` that falls through models on availability errors.
-- **Exports:** `LlmProvider` (type) — `"bedrock" | "anthropic"`; `LlmUsage` (type) — snake_case token block; `LlmAttempt` (type) — per-attempt observability span (carries optional `answerText`); `isSonnet5PrimaryEnabled()`; `isSonnet55PrimaryEnabled()`; `getProvider()`; `bedrockCreds()`; `isConfigured()`; `modelChain()`; `makeClient()`; `isFallbackEligible(err)`; `streamWithFallback(params, opts?)`; plus a re-export of `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` (llm.ts:272).
-- **Reads / depends on:** `@anthropic-ai/sdk`, `@anthropic-ai/bedrock-sdk`, `@/lib/profile` (for the apology email), `@/lib/llm-trace` (constants plus `stripControlBytes`). Env: `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY`.
+- **Exports:** `LlmProvider` (type) — `"bedrock" | "anthropic"`; `LlmUsage` (type) — snake_case token block; `LlmAttempt` (type) — per-attempt observability span (carries optional `answerText`); `isSonnet5PrimaryEnabled()`; `isSonnet55PrimaryEnabled()`; `isOpusFallbackEnabled()`; `getProvider()`; `bedrockCreds()`; `isConfigured()`; `modelChain()`; `makeClient()`; `isFallbackEligible(err)`; `streamWithFallback(params, opts?)`; plus a re-export of `TRACE_DELIMITER`, `THINKING_SENTINEL`, `THINKING_END` (llm.ts:347).
+- **Reads / depends on:** `@anthropic-ai/sdk`, `@anthropic-ai/bedrock-sdk`, `@/lib/profile` (for the apology email), `@/lib/llm-trace` (constants plus `stripControlBytes`). Env: `LLM_PROVIDER`, `LLM_USE_SONNET_5`, `LLM_USE_SONNET_5_5`, `LLM_USE_OPUS_FALLBACK`, `LLM_THINKING_EFFORT`, `BEDROCK_ACCESS_KEY_ID`, `BEDROCK_SECRET_ACCESS_KEY`, `BEDROCK_SESSION_TOKEN`, `BEDROCK_REGION`, `AWS_REGION`, `ANTHROPIC_API_KEY`.
 - **Consumed by:** `src/app/api/chat/route.ts` (`isConfigured`, `streamWithFallback`, `TRACE_DELIMITER`); `bedrockCreds` only (same AWS account/region reuse) by `src/app/api/tts/route.ts:2`, `src/app/api/transcribe/route.ts:6` and `src/lib/faq-embeddings.ts:5`.
 
-**Exact provider toggle** (`getProvider`, llm.ts:147-149):
+**Exact provider toggle** (`getProvider`, llm.ts:220-222):
 
 ```ts
 return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
@@ -76,83 +77,99 @@ return process.env.LLM_PROVIDER === "anthropic" ? "anthropic" : "bedrock";
 
 Bedrock is the default for *any* value other than the exact string `"anthropic"` (including unset).
 
-**Full model fallback chains** (exact IDs). The PRIMARY rung on both chains is picked by `pickPrimary()` from two flags: `isSonnet55PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5_5 === "true"`, wins) then `isSonnet5PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5 === "true"`), both default false — Opus and Haiku are never affected by either flag:
+**Full model fallback chains** (exact IDs). Both chains come from `buildChain()` (llm.ts:102-110): `[primary, Opus if opted in, Sonnet 4.6, Haiku]` with repeats dropped. The PRIMARY rung is picked by `pickPrimary()` (llm.ts:81-88) from two flags: `isSonnet55PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5_5 === "true"`, wins) then `isSonnet5PrimaryEnabled()` (`process.env.LLM_USE_SONNET_5 === "true"`), both default false. The Opus rung is present only when `isOpusFallbackEnabled()` (`process.env.LLM_USE_OPUS_FALLBACK === "true"`, llm.ts:75-77, default false). Sonnet 4.6 is always a rung, so when it is already the primary it is listed once and a Sonnet 5.x primary is backed up by the model it replaced. Resulting chains: no flags → `[4.6, Haiku]`; `LLM_USE_SONNET_5_5` → `[5.5, 4.6, Haiku]`; plus `LLM_USE_OPUS_FALLBACK` → `[5.5, Opus, 4.6, Haiku]`. `llm.test.ts` ("modelChain — Sonnet 4.6 backs up a Sonnet 5.x primary, and Opus is opt-in") pins the compositions for both providers, and `llm-pricing.test.ts` fails if any Bedrock id in any of them has no price row (the direct-API ids are deliberately unpriced):
 
-| Provider | Index 0 (primary) | Index 1 (secondary) | Index 2 (fallback) | Cite |
-|---|---|---|---|---|
-| `bedrock` | `us.anthropic.claude-sonnet-4-6` (or `-sonnet-5` when `LLM_USE_SONNET_5` is on; `global.anthropic.claude-sonnet-5-5` when `LLM_USE_SONNET_5_5` is on, which wins) | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | `bedrockChain()`, llm.ts:85-95 |
-| `anthropic` | `claude-sonnet-4-6` (or `claude-sonnet-5` / `claude-sonnet-5-5` when the matching flag is on) | `claude-opus-4-7` | `claude-haiku-4-5` | `anthropicChain()`, llm.ts:98-108 |
+| Provider | Sonnet 4.6 | Sonnet 5 (`LLM_USE_SONNET_5`) | Sonnet 5.5 (`LLM_USE_SONNET_5_5`) | Opus (`LLM_USE_OPUS_FALLBACK`) | Haiku | Cite |
+|---|---|---|---|---|---|---|
+| `bedrock` | `us.anthropic.claude-sonnet-4-6` | `us.anthropic.claude-sonnet-5` | `global.anthropic.claude-sonnet-5-5` | `us.anthropic.claude-opus-4-6-v1` | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | `bedrockChain()`, llm.ts:118-126 |
+| `anthropic` | `claude-sonnet-4-6` | `claude-sonnet-5` | `claude-sonnet-5-5` | `claude-opus-4-7` | `claude-haiku-4-5` | `anthropicChain()`, llm.ts:129-137 |
 
-Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:80-82). Note the two chains are not version-parallel: Bedrock secondary is opus-4-6, the direct-API secondary is `claude-opus-4-7` (llm.ts:105). The source comment at llm.ts:35-42 records that Opus is IAM-denied on the reference account whichever generation is named. A denied Opus attempt falls through to Haiku: `isFallbackEligible` advances on a connection error, 429/404/5xx, a 400 carrying one of the six `MODEL_UNAVAILABLE_MARKERS`, or a 403 whose message names a per-model deny (one of those markers or a `MODEL_DENIED_MARKERS` entry, `is not authorized to perform` / `explicit deny`); a credential or signature 403 still ends the chain with the apology tail (llm.ts:238-259). Sonnet 5.5 is the odd one out the other way: it has **no** `us.` profile at all, only `global.anthropic.claude-sonnet-5-5` (verified live 2026-09-30).
+Opus 4.6 on Bedrock **requires** the `-v1` suffix; the bare ID 400s with "model identifier is invalid" (llm.ts:113-115). Note the two chains are not version-parallel: Bedrock Opus is opus-4-6, the direct-API Opus is `claude-opus-4-7` (llm.ts:134). Opus is opt-in because the reference account IAM-denies the whole Opus family whichever generation is named, so a default Opus rung could only answer 403 and would cost a round trip on every fallback before Haiku (a weaker model) got the request (llm.ts:20-24, :70-74). A denied rung still falls through: `isFallbackEligible` advances on a connection error, 429/404/5xx, a 400 carrying one of the six `MODEL_UNAVAILABLE_MARKERS`, or a 403 whose message names a per-model deny (one of those markers or a `MODEL_DENIED_MARKERS` entry, `is not authorized to perform` / `explicit deny`); a credential or signature 403 still ends the chain with the apology tail (llm.ts:313-334). Sonnet 5.5 is the odd one out the other way: it has **no** `us.` profile at all, only `global.anthropic.claude-sonnet-5-5` (verified live 2026-09-30).
 
-**`decodeSecret`'s base64 round-trip check** (llm.ts:158-168) — private, not exported:
+**`decodeSecret`'s base64 round-trip check** (llm.ts:231-241) — private, not exported:
 
 ```ts
 const decoded = Buffer.from(value, "base64").toString("utf-8");
 if (Buffer.from(decoded, "utf-8").toString("base64") === value)
-  return decoded;   // llm.ts:161-163
+  return decoded;   // llm.ts:234-236
 ```
 
-Re-encoding the decode and comparing to the original is the discriminator; a plain "decodes without throwing" test is too loose because many raw secrets are coincidentally valid base64. Raw `AKIA…` keys are not valid base64 *of themselves*, so they fall through unchanged. Empty/undefined → `""` (llm.ts:159). `decodeSecret` has no direct unit test (`llm.test.ts` imports neither it nor `bedrockCreds`).
+Re-encoding the decode and comparing to the original is the discriminator; a plain "decodes without throwing" test is too loose because many raw secrets are coincidentally valid base64. Raw `AKIA…` keys are not valid base64 *of themselves*, so they fall through unchanged. Empty/undefined → `""` (llm.ts:232). `decodeSecret` has no direct unit test (`llm.test.ts` imports neither it nor `bedrockCreds`).
 
 **Every env var read**, with cites:
 
 | Env var | Where | Behaviour |
 |---|---|---|
-| `LLM_PROVIDER` | llm.ts:148 | `"anthropic"` → direct API; anything else → bedrock |
-| `LLM_USE_SONNET_5` | llm.ts:43-45 | `"true"` → Sonnet 5 replaces Sonnet 4.6 as PRIMARY on both chains; default false |
-| `LLM_USE_SONNET_5_5` | llm.ts:64-66 | `"true"` → Sonnet 5.5 replaces the Sonnet primary on both chains and wins over `LLM_USE_SONNET_5`; on Bedrock it is `global.anthropic.claude-sonnet-5-5` (no `us.` profile exists); default false |
-| `BEDROCK_ACCESS_KEY_ID` | llm.ts:175 | base64-or-raw via `decodeSecret` |
-| `BEDROCK_SECRET_ACCESS_KEY` | llm.ts:176 | base64-or-raw via `decodeSecret` |
-| `BEDROCK_SESSION_TOKEN` | llm.ts:177-179 | optional (STS temp creds); `undefined` when unset |
-| `BEDROCK_REGION` | llm.ts:183 | **preferred** region source |
-| `AWS_REGION` | llm.ts:183 | second-choice fallback only (local dev), then `"us-east-1"`; reserved on Vercel — observed corrupted to `s-east-1` in prod (llm.ts:180-182) |
-| `ANTHROPIC_API_KEY` | llm.ts:193 | readiness check for the `anthropic` provider; the SDK itself reads it from env (llm.ts:223-224) |
+| `LLM_PROVIDER` | llm.ts:221 | `"anthropic"` → direct API; anything else → bedrock |
+| `LLM_USE_SONNET_5` | llm.ts:45-47 | `"true"` → Sonnet 5 replaces Sonnet 4.6 as PRIMARY on both chains, with Sonnet 4.6 behind it; default false |
+| `LLM_USE_SONNET_5_5` | llm.ts:66-68 | `"true"` → Sonnet 5.5 replaces the Sonnet primary on both chains (Sonnet 4.6 behind it) and wins over `LLM_USE_SONNET_5`; on Bedrock it is `global.anthropic.claude-sonnet-5-5` (no `us.` profile exists); default false |
+| `LLM_USE_OPUS_FALLBACK` | llm.ts:75-77 | `"true"` → Opus (`us.anthropic.claude-opus-4-6-v1` / `claude-opus-4-7`) is added right behind the primary on both chains; default false because the reference account IAM-denies Opus |
+| `LLM_THINKING_EFFORT` | llm.ts:177-183 | exactly `"low"` or `"medium"` overrides the reasoning effort on every thinking-capable rung; anything else (`"high"` included) is ignored; default `medium` for Sonnet 5.x, `low` otherwise |
+| `BEDROCK_ACCESS_KEY_ID` | llm.ts:248 | base64-or-raw via `decodeSecret` |
+| `BEDROCK_SECRET_ACCESS_KEY` | llm.ts:249 | base64-or-raw via `decodeSecret` |
+| `BEDROCK_SESSION_TOKEN` | llm.ts:250-252 | optional (STS temp creds); `undefined` when unset |
+| `BEDROCK_REGION` | llm.ts:256 | **preferred** region source |
+| `AWS_REGION` | llm.ts:256 | second-choice fallback only (local dev), then `"us-east-1"`; reserved on Vercel — observed corrupted to `s-east-1` in prod (llm.ts:253-255) |
+| `ANTHROPIC_API_KEY` | llm.ts:266 | readiness check for the `anthropic` provider; the SDK itself reads it from env (llm.ts:297-298) |
 
-Note: `llm.ts` does **not** read `EXTENDED_THINKING` — the chat route does (`src/app/api/chat/route.ts:385`, `process.env.EXTENDED_THINKING !== "false"`, i.e. default ON) and passes the result down as `opts.extendedThinking`.
+Note: `llm.ts` does **not** read `EXTENDED_THINKING` — the chat route does (`src/app/api/chat/route.ts:339`, `process.env.EXTENDED_THINKING !== "false"`, i.e. default ON) and passes the result down as `opts.extendedThinking`.
 
-**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:369 and set `true` unconditionally inside the `text_delta` branch (llm.ts:576), AFTER `stripControlBytes` but BEFORE any emptiness check — unlike the `thinking_delta` branch, which only enqueues a chunk `if (chunk)` (non-empty after `stripControlBytes`). So the true gate is **"has a `text_delta` event been received,"** not literally "have any bytes been sent": a `text_delta` event whose text strips to an empty string would still set `emittedAny = true` and permanently disable fallback for the rest of that attempt, even though nothing visible was actually streamed. `emittedAny` gates two separate decisions:
+**The `emittedAny` fallback invariant.** `emittedAny` is declared at llm.ts:444 and set `true` unconditionally inside the `text_delta` branch (llm.ts:652), AFTER `stripControlBytes` but BEFORE any emptiness check — unlike the `thinking_delta` branch, which only enqueues a chunk `if (chunk)` (non-empty after `stripControlBytes`). So the true gate is **"has a `text_delta` event been received,"** not literally "have any bytes been sent": a `text_delta` event whose text strips to an empty string would still set `emittedAny = true` and permanently disable fallback for the rest of that attempt, even though nothing visible was actually streamed. `emittedAny` gates two separate decisions:
 
-1. **Fallback eligibility** (llm.ts:642-669): `const goingToApology = emittedAny || isLast || !isFallbackEligible(err);` (`isLast` at llm.ts:641) → enqueue `apologyTail` and close. Only an attempt with no `text_delta` yet + an eligible error + models remaining advances the loop. Once a `text_delta` has arrived it cannot be un-sent, so a later error is terminal — no retry.
-2. **Trace-frame emission** (llm.ts:614-621): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that an attempt with no `text_delta` can never materialize a trace frame. The `answerText` field on the success `onAttempt` span is gated by the same flag (llm.ts:608).
+1. **Fallback eligibility** (llm.ts:718-745): `const goingToApology = emittedAny || isLast || !isFallbackEligible(err);` (`isLast` at llm.ts:717) → enqueue `apologyTail` and close. Only an attempt with no `text_delta` yet + an eligible error + models remaining advances the loop. Once a `text_delta` has arrived it cannot be un-sent, so a later error is terminal — no retry.
+2. **Trace-frame emission** (llm.ts:690-697): the trace frame is appended *only* when `emittedAny`, preserving the v1.6 invariant that an attempt with no `text_delta` can never materialize a trace frame. The `answerText` field on the success `onAttempt` span is gated by the same flag (llm.ts:684).
 
-`THINKING_SENTINEL` emission is a SEPARATE, stream-scoped guard, not gated on `emittedAny` alone: `if (useThinking && !emittedAny && !thinkingSentinelEmitted)` (llm.ts:486-488) — `thinkingSentinelEmitted` (declared once per stream, llm.ts:376) is what prevents a second, spurious sentinel on a fallback attempt; `!emittedAny` here is just "don't bother opening a new reasoning phase once a `text_delta` has already arrived."
+`THINKING_SENTINEL` emission is a SEPARATE, stream-scoped guard, not gated on `emittedAny` alone: `if (useThinking && !emittedAny && !thinkingSentinelEmitted)` (llm.ts:562-564) — `thinkingSentinelEmitted` (declared once per stream, llm.ts:451) is what prevents a second, spurious sentinel on a fallback attempt; `!emittedAny` here is just "don't bother opening a new reasoning phase once a `text_delta` has already arrived."
 
-The load-bearing reason (the `streamWithFallback` docblock at llm.ts:261-269): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Whether a `text_delta` has already arrived is the only reliable discriminator.
+The load-bearing reason (the `streamWithFallback` docblock at llm.ts:336-344): streaming errors surface *inside* the `for await` loop, never at the `.stream()` callsite, so connect-time and mid-stream errors are indistinguishable by call site. Whether a `text_delta` has already arrived is the only reliable discriminator.
 
 - **Behaviour notes:**
-  - `PER_ATTEMPT_TIMEOUT_MS = 15_000` applied as the SDK `timeout` for both providers (llm.ts:33, 215, 224).
-  - `isFallbackEligible` (llm.ts:238-259): `APIConnectionError` → true; status `429`/`404` → true; status `>= 500` → true; status `400` → true only if the lowercased, apostrophe-folded message contains one of the six `MODEL_UNAVAILABLE_MARKERS` (llm.ts:131-138: `"model identifier is invalid"`, `"model id is invalid"`, `"could not be found"`, `"not authorized to access the model"`, `"don't have access to the model"`, `"is not supported"`); status `403` → true only if the message contains one of those **or** one of the two `MODEL_DENIED_MARKERS` (`"is not authorized to perform"`, `"explicit deny"` — the IAM identity-policy wording, which is how this account's Opus deny surfaces). Plain 400/401/422 and a credential 403 (invalid or expired token, signature mismatch) → **not** eligible. Status+message driven so it survives a double-installed SDK where `instanceof` breaks.
-  - `makeClient` passes DECODED creds via a **double-async** `providerChainResolver: async () => async () => ({...})` (llm.ts:216-220) — the resolver returns a credential provider, which returns credentials. Without this the AWS default chain would sign with still-base64 values.
-  - Client construction happens **inside** `start()` (llm.ts:388-406) so a constructor failure becomes a graceful apology stream rather than an uncaught 500. That failure emits an attempt with `model: "client-init"` and `attempt_index: -1` (llm.ts:394-395; `latency_ms: 0` at llm.ts:397) and strips the leading `\n\n` from the apology (llm.ts:403).
-  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:496-516); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:519-528). `usage` starts `undefined` (llm.ts:415) so the trace frame omits the key entirely when the SDK emits no usage block.
-  - Extended thinking (adaptive shape, no beta header): `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:432-433) — Haiku is silently excluded from the whole `thinking` param, not just given `disabled` (`modelSupportsThinking`, llm.ts:434, gates whether the key is sent at all). When on, sends `thinking:{type:"adaptive"}` + `output_config:{effort:"low"}` via plain `client.messages.stream()`. When off (and non-Haiku), sends an EXPLICIT `thinking:{type:"disabled"}` rather than omitting the field (`{type:"between_tools"}` on the Sonnet 5.5 rung, which rejects `disabled`: `thinkingOff()`, llm.ts:119-125), because Claude Sonnet 5/Opus 5 default adaptive thinking ON when the field is omitted entirely (llm.ts:436-456, 470-479). `max_tokens` is bumped to `Math.max(existing, 2048)` only when thinking is on, as shared thinking+answer headroom (llm.ts:462-469). Two distinct paths can leave the thinking phase unclosed, and both are handled: (1) a **thinking-only completion** — the model stops normally with no `text_delta` at all — is handled by the post-loop path, which emits `THINKING_END` right after the event loop ends if it hasn't already fired (llm.ts:582-594); (2) a **provider error thrown before any `text_delta`** is handled in the catch path, which closes the thinking phase with `THINKING_END` before a terminal apology or a fallback to a non-thinking model (Haiku), but deliberately leaves it open across a fallback to another thinking-capable model (llm.ts:645-664). In case (1) the client receives no answer and no trace frame (and `answerText` is not set on the span).
-  - `thinking_delta` chunks stream live to the client, gated on `useThinking` as defense-in-depth against unsolicited provider-side reasoning (llm.ts:529-559); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:562-569). Reasoning is deliberately absent from the trace frame (llm-trace.ts:54).
-  - Every model-generated chunk (both `thinking_delta` and `text_delta`) passes `stripControlBytes` before it is enqueued (llm.ts:553, 573), so an anomalous completion cannot inject a byte that collides with the wire framing; `answerText` accumulates only the stripped `text_delta` bytes (llm.ts:575).
-  - `ttftMs` is set on the first `text_delta` only (llm.ts:564) — thinking bytes do not count toward TTFT.
-  - `safeOnAttempt` swallows any `onAttempt` throw (llm.ts:359-365); `close()` is idempotent via a `closed` latch (llm.ts:378-383).
+  - `PER_ATTEMPT_TIMEOUT_MS = 15_000` applied as the SDK `timeout` for both providers (llm.ts:36, 289, 298).
+  - `isFallbackEligible` (llm.ts:313-334): `APIConnectionError` → true; status `429`/`404` → true; status `>= 500` → true; status `400` → true only if the lowercased, apostrophe-folded message contains one of the six `MODEL_UNAVAILABLE_MARKERS` (llm.ts:204-211: `"model identifier is invalid"`, `"model id is invalid"`, `"could not be found"`, `"not authorized to access the model"`, `"don't have access to the model"`, `"is not supported"`); status `403` → true only if the message contains one of those **or** one of the two `MODEL_DENIED_MARKERS` (`"is not authorized to perform"`, `"explicit deny"` — the IAM identity-policy wording, which is how this account's Opus deny surfaces). Plain 400/401/422 and a credential 403 (invalid or expired token, signature mismatch) → **not** eligible. Status+message driven so it survives a double-installed SDK where `instanceof` breaks.
+  - `makeClient` passes DECODED creds via a **double-async** `providerChainResolver: async () => async () => ({...})` (llm.ts:290-294) — the resolver returns a credential provider, which returns credentials. Without this the AWS default chain would sign with still-base64 values.
+  - Client construction happens **inside** `start()` (llm.ts:463-481) so a constructor failure becomes a graceful apology stream rather than an uncaught 500. That failure emits an attempt with `model: "client-init"` and `attempt_index: -1` (llm.ts:469-470; `latency_ms: 0` at llm.ts:472) and strips the leading `\n\n` from the apology (llm.ts:478).
+  - Usage capture: `message_start` → `input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens` (llm.ts:572-592); `message_delta` → `output_tokens` and `delta.stop_reason` → `finishReason` (llm.ts:595-604). `usage` starts `undefined` (llm.ts:490) so the trace frame omits the key entirely when the SDK emits no usage block.
+  - Extended thinking (adaptive shape, no beta header): `useThinking = opts.extendedThinking === true && !model.includes("haiku")` (llm.ts:507-508) — Haiku is silently excluded from the whole `thinking` param, not just given `disabled` (`modelSupportsThinking`, llm.ts:509, gates whether the key is sent at all). When on, sends `adaptiveThinking(model)` (llm.ts:191-198: `{type:"adaptive", display:"summarized"}` for Sonnet 5.x, whose thinking block has empty text without `display`, `{type:"adaptive"}` for the rest) + `output_config:{effort: thinkingEffort(model)}` (llm.ts:177-183: `"medium"` on Sonnet 5.x, which at `"low"` did not reason on any of 8 measured questions, `"low"` elsewhere; `LLM_THINKING_EFFORT` overrides) via plain `client.messages.stream()`; `isSonnet5Family` (llm.ts:158-160) is the substring test `model.includes("sonnet-5")`. When off (and non-Haiku), sends an EXPLICIT `thinking:{type:"disabled"}` rather than omitting the field (`{type:"between_tools"}` on the Sonnet 5.5 rung, which rejects `disabled`: `thinkingOff()`, llm.ts:148-154), because Claude Sonnet 5/Opus 5 default adaptive thinking ON when the field is omitted entirely (llm.ts:511-532, 546-555). `max_tokens` is bumped to `Math.max(existing, 2048)` (4096 on Sonnet 5.x, llm.ts:542) only when thinking is on, as shared thinking+answer headroom (llm.ts:538-545). Two distinct paths can leave the thinking phase unclosed, and both are handled: (1) a **thinking-only completion** — the model stops normally with no `text_delta` at all — is handled by the post-loop path, which emits `THINKING_END` right after the event loop ends if it hasn't already fired (llm.ts:658-670); (2) a **provider error thrown before any `text_delta`** is handled in the catch path, which closes the thinking phase with `THINKING_END` before a terminal apology or a fallback to a non-thinking model (Haiku), but deliberately leaves it open across a fallback to another thinking-capable model (llm.ts:721-740). In case (1) the client receives no answer and no trace frame (and `answerText` is not set on the span).
+  - `thinking_delta` chunks stream live to the client, gated on `useThinking` as defense-in-depth against unsolicited provider-side reasoning, and dropped once `THINKING_END` is out so a late block cannot be shown as answer text (llm.ts:605-635); `THINKING_END` is emitted on the FIRST `text_delta` (llm.ts:638-645). Reasoning is deliberately absent from the trace frame (llm-trace.ts:54).
+  - Every model-generated chunk (both `thinking_delta` and `text_delta`) passes `stripControlBytes` before it is enqueued (llm.ts:629, 649), so an anomalous completion cannot inject a byte that collides with the wire framing; `answerText` accumulates only the stripped `text_delta` bytes (llm.ts:651).
+  - `ttftMs` is set on the first `text_delta` only (llm.ts:640) — thinking bytes do not count toward TTFT.
+  - `safeOnAttempt` swallows any `onAttempt` throw (llm.ts:434-440); `close()` is idempotent via a `closed` latch (llm.ts:453-458).
 - **Gotchas / invariants:**
-  - The `LlmUsage` field names are **snake_case** and must stay so — `llm.test.ts` pins them (llm.ts:274-281 explains why). A future SDK returning camelCase would silently zero out token telemetry.
-  - The trace frame is **additive by contract** (llm.ts:337-340): `splitTrace` in `use-chat.ts` `JSON.parse`s and spreads, so unknown keys are kept. Removing a key is the breaking change, not adding one.
-  - `apologyTail` derives the contact address from `profile.email` (llm.ts:336) — do not hardcode it.
-  - `AWS_REGION` must never be the primary region source (llm.ts:180-183).
-  - `isFallbackEligible` is tested directly in `llm.test.ts` (the "isFallbackEligible — status/message truth table" describe block: every status class and the 403 IAM-deny / bad-credential split) and at chain level (the "an IAM-denied rung falls through instead of ending the chain" block, which drives Sonnet 503 → Opus 403 → Haiku through `streamWithFallback`).
+  - The `LlmUsage` field names are **snake_case** and must stay so — `llm.test.ts` pins them (llm.ts:349-356 explains why). A future SDK returning camelCase would silently zero out token telemetry.
+  - The trace frame is **additive by contract** (llm.ts:412-415): `splitTrace` in `use-chat.ts` `JSON.parse`s and spreads, so unknown keys are kept. Removing a key is the breaking change, not adding one.
+  - `apologyTail` derives the contact address from `profile.email` (llm.ts:411) — do not hardcode it.
+  - `AWS_REGION` must never be the primary region source (llm.ts:253-256).
+  - `isFallbackEligible` is tested directly in `llm.test.ts` (the "isFallbackEligible — status/message truth table" describe block: every status class and the 403 IAM-deny / bad-credential split) and at chain level (the "an IAM-denied rung falls through instead of ending the chain" block, which drives Sonnet 503 → Opus 403 → Haiku (Opus opted in), Sonnet 5.5 403 → Sonnet 4.6 and Sonnet 4.6 403 → Haiku through `streamWithFallback`); the request shape per model is pinned by the "thinking a visitor can actually see" block.
+
+### `src/lib/llm-pricing.ts`
+
+- **Role:** The verified per-model price table behind the `cost_usd` on every `llm.attempt` event and the dashboard's "saved by caching" tile. It replaced the three-entry `BEDROCK_PRICE` table that lived in the chat route, which priced every unknown model (Sonnet 5, Sonnet 5.5, every direct-API id) as Sonnet 4.6.
+- **Exports:** `TokenPrice` (type) — `{ input, output, cacheRead, cacheWrite5m, cacheWrite1h }`, USD per million tokens (llm-pricing.ts:30-38); `UsageTokens` (type) — the snake_case usage block (:41-46); `CACHE_WRITE_TTL` = `"1h"` (:55); `priceFor(model)` — the row or `null` (:98-100); `costUsd(model, usage)` — dollars or `null` (:107-119); `cacheReadSavingsUsd(model, usage)` — the input cost a cache read avoided, or `null` (:128-138).
+- **Reads / depends on:** nothing (pure).
+- **Consumed by:** `src/app/api/chat/route.ts:6` (`CACHE_WRITE_TTL`, `costUsd`); `src/app/admin/telemetry/page.tsx:16` (`cacheReadSavingsUsd`, `UsageTokens`).
+- **Behaviour notes:**
+  - Five rows in `PRICES`, keyed by exact model id (:57-95): `global.anthropic.claude-sonnet-5-5` ($2 in / $10 out per million, cache read $0.20), `us.anthropic.claude-sonnet-5`, `us.anthropic.claude-sonnet-4-6` ($3.30 / $16.50, cache read $0.33), `us.anthropic.claude-opus-4-6-v1` and `us.anthropic.claude-haiku-4-5-20251001-v1:0`. Source: the AWS Price List, offer `AmazonBedrockFoundationModels`, version 20260930001912, source region us-east-1 (the docblock, :1-28, says how to re-read it). `us.` ids are billed at the Regional CRIS rate (10% over Global; the price file calls the Sonnet 5 / 5.5 rows of that kind just "Standard"), `global.` ids at the Global rate.
+  - Cache writes are priced at the 1-hour rate because `CACHE_WRITE_TTL` is `"1h"`, and the chat route builds `cache_control.ttl` from the same constant; the usage block reports writes as one total, so a single TTL is assumed (:110-112).
+  - A model with no row returns `null` from `priceFor`, `costUsd` and `cacheReadSavingsUsd`, so telemetry omits `cost_usd` (every direct-API id lands here: it has no Bedrock price) instead of inventing one. `priceFor` uses `Object.hasOwn` (:99), so an id such as `constructor` cannot reach the prototype chain.
+- **Gotchas / invariants:**
+  - Adding a model id to a chain without a row here fails `llm-pricing.test.ts` ("every model the chat can call has a price" drives `modelChain()` through every flag combination).
+  - Sonnet 5.5 is not dearer than Sonnet 4.6 although the same prompt is ~45% more tokens (5247 vs 3618 cached), because the global rate is lower; `llm-pricing.test.ts` pins that with the measured token counts. Measured 2026-10-01: 14% / 21% cheaper per turn (cold / warm cache) on 8 questions at effort `low`; on 3 questions at `medium` from 17% cheaper to 4% dearer ($0.00994 vs $0.00958 on the long, reasoning one).
 
 ### `src/lib/llm-trace.ts`
 
-- **Role:** Client-safe chat-stream protocol constants, the control-byte scrubber and the `TraceFrame` shape, isolated so the browser bundle never pulls the Bedrock SDK.
-- **Exports:** `TRACE_DELIMITER` = `U+001E` (RECORD SEPARATOR) — llm-trace.ts:23; `THINKING_SENTINEL` = `U+001E U+0001` — :24; `THINKING_END` = `U+001E U+0002` (STX) — :25; `stripControlBytes(text)` — :36-38, removes `/[\u001e\u0001\u0002]/g` (`CONTROL_BYTES_RE`, :34); `LlmUsage` (type) :40-45; `TraceFrame` (type) :47-55 = `{ model, fellBack, traceId?, usage?, ttftMs?, latencyMs? }`. Code points verified by hexdump (`036`, `036 001`, `036 002`).
-- **Reads / depends on:** nothing (pure constants and one pure function).
-- **Consumed by:** `src/lib/llm.ts:9` (constants + `stripControlBytes`), `src/lib/chat-cache.ts:5` (`stripControlBytes` before a cache write); `src/components/chat/use-chat.ts:8`.
+- **Role:** Client-safe chat-stream protocol constants, the control-byte scrubber, the `TraceFrame` shape and `answerFromBody` (the visible answer of a complete body, for the eval cron), isolated so the browser bundle never pulls the Bedrock SDK.
+- **Exports:** `TRACE_DELIMITER` = `U+001E` (RECORD SEPARATOR) — llm-trace.ts:23; `THINKING_SENTINEL` = `U+001E U+0001` — :24; `THINKING_END` = `U+001E U+0002` (STX) — :25; `stripControlBytes(text)` — :36-38, removes `/[\u001e\u0001\u0002]/g` (`CONTROL_BYTES_RE`, :34); `LlmUsage` (type) :40-45; `TraceFrame` (type) :47-55 = `{ model, fellBack, traceId?, usage?, ttftMs?, latencyMs? }`; `answerFromBody(body)` — :67-75, drops a leading reasoning block (only when the body starts with `THINKING_SENTINEL`; none at all when `THINKING_END` never arrived), then everything from the first `TRACE_DELIMITER`, and trims. Code points verified by hexdump (`036`, `036 001`, `036 002`).
+- **Reads / depends on:** nothing (pure constants and two pure functions).
+- **Consumed by:** `src/lib/llm.ts:9` (constants + `stripControlBytes`), `src/lib/chat-cache.ts:5` (`stripControlBytes` before a cache write); `src/components/chat/use-chat.ts:8`; `src/app/api/cron/eval/route.ts:2` (`answerFromBody`).
 - **Behaviour notes:** Wire layout (llm-trace.ts:6-9): `[THINKING_SENTINEL][reasoning][THINKING_END][answer][TRACE_DELIMITER][JSON]`, or `[answer][TRACE_DELIMITER][JSON]` without extended thinking.
-- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first.
+- **Gotchas / invariants:** Non-printable chars are chosen so they can never collide with model prose. `llm-trace.test.ts` pins all three constants. Because `THINKING_SENTINEL`/`THINKING_END` both *start* with `TRACE_DELIMITER`, any naive `split(TRACE_DELIMITER)` on a thinking stream splits more than twice — the client must strip the sentinels first, and a server-side reader must use `answerFromBody` (cutting at the first `TRACE_DELIMITER` returns an empty answer whenever extended thinking is on, because the sentinel is sent first even if the model never reasons; the eval cron did exactly that).
 
 ### `src/lib/llm-sdk-mode.ts`
 
 - **Role:** Declares a build-time flag naming which Bedrock SDK `/api/chat` should instantiate.
 - **Exports:** `LlmSdkMode` (type) = `"anthropic-bedrock" | "aws-sdk-bedrock"`; `getLlmSdkMode()`; `LLM_SDK_MODE` (const).
 - **Reads / depends on:** `NEXT_PUBLIC_LLM_SDK`, read once at module load (llm-sdk-mode.ts:26). Resolution: exact match on either literal, else `DEFAULT_MODE = "anthropic-bedrock"` (llm-sdk-mode.ts:24, 28-29).
-- **Consumed by:** **nothing at runtime.** Grep for `llm-sdk-mode` / `LLM_SDK_MODE` / `getLlmSdkMode` finds only the module itself and `llm-sdk-mode.test.ts`. `src/instrumentation.ts:76` snapshots the raw `NEXT_PUBLIC_LLM_SDK` env value directly, not via this module. `.env.example:161` documents it commented out.
+- **Consumed by:** **nothing at runtime.** Grep for `llm-sdk-mode` / `LLM_SDK_MODE` / `getLlmSdkMode` finds only the module itself and `llm-sdk-mode.test.ts`. `src/instrumentation.ts:76` snapshots the raw `NEXT_PUBLIC_LLM_SDK` env value directly, not via this module. `.env.example:171` documents it commented out.
 - **Gotchas / invariants:** Per its own docstring (llm-sdk-mode.ts:13-15), the `aws-sdk-bedrock` branch is not implemented; flipping the flag today changes nothing because no caller reads it. Guarded by `llm-sdk-mode.test.ts` (pins the default and `getLlmSdkMode() === LLM_SDK_MODE` agreement).
 
 ### `src/lib/agent-trace.ts`
@@ -170,7 +187,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:261-269): s
 - **Role:** The one static catalog of voices for all three TTS engines, plus lookups, the server-side allowlist validator, and engine-native parameter resolvers.
 - **Exports:** types `VoiceEngine` (`"browser" | "polly" | "google"`, :24), `PollyTier` (`"neural" | "generative"`, :25), `VoiceGender`, `VoiceAccent` (`"us" | "gb" | "au" | "in"`, :27), `VoiceEntry`; data `CURATED_VOICES` (6, :134-141), `EXTENDED_VOICES` (12, :283-287), `ALL_VOICES` (18, :291-294); functions `getDefaultVoiceId`, `getVoiceById`, `getVoiceByPollyId`, `getVoiceByGoogleName`, `getVoicesForEngine`, `validateVoiceForEngine`, `resolvePollyParams`, `resolveGoogleVoiceName`, `findBrowserVoice`.
 - **Reads / depends on:** nothing — pure data + Map lookups, no React, no I/O (voice-catalog.ts:16-21).
-- **Consumed by:** `src/app/api/tts/route.ts:8`, `src/app/api/tts-google/route.ts:5`, `src/components/command-palette-content.tsx:60`, `src/components/chat/voice-picker.tsx:12`, `src/components/chat/use-speech-synthesis.ts:15`, `src/components/chat/voice-settings-dialog.tsx:19`, `src/components/chat/talk-mode.tsx:21`, `src/lib/voice-settings-context.tsx:4`.
+- **Consumed by:** `src/app/api/tts/route.ts:8`, `src/app/api/tts-google/route.ts:5`, `src/components/command-palette-content.tsx:60`, `src/components/chat/voice-picker.tsx:12`, `src/components/chat/use-speech-synthesis.ts:15`, `src/components/chat/voice-settings-dialog.tsx:19`, `src/components/chat/talk-mode.tsx:22`, `src/lib/voice-settings-context.tsx:4`.
 - **Behaviour notes:**
   - Curated 6: Polly Neural `Joanna`, `Matthew`; Polly Generative `Stephen`, `Ruth`; Google Chirp3-HD `en-US-Chirp3-HD-Aoede`, `en-US-Chirp3-HD-Charon` (voice-catalog.ts:61-141).
   - Extended: 5 Polly Neural (`Danielle`, `Gregory`, `Brian` gb, `Amy` gb, `Olivia` au — :145-201), 3 Google Chirp3-HD (`Puck`, `Kore`, `Fenrir` — :203-234), 4 browser voices keyed by `voiceURI` prefix (`Microsoft Aria Online`, `Microsoft Guy Online`, `com.apple.voice.premium.en-US.Samantha`, `com.apple.voice.premium.en-US.Tom` — :239-280).
@@ -184,7 +201,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:261-269): s
 - **Role:** Persisted voice preferences as a module-level external store, so a returning visitor's choices apply on the first client render without a flash of defaults.
 - **Exports:** types `SttEngine` (`"browser" | "transcribe"`), `TtsEngine` (`"browser" | "polly" | "google"`), `TalkSurface` (`"modal" | "view"`), `VoiceCharacterSpeed/Tone/Pause`, `VoiceCharacter`, `VoiceSettings`; `DEFAULT_VOICE_CHARACTER`; `useVoiceSettings()` → `{ settings, set, toggle }`; and (for tests / non-React callers) `DEFAULTS`, `STORAGE_KEY`, `parse`, `__resetVoiceSettingsForTest`.
 - **Reads / depends on:** `react` (`useCallback`, `useSyncExternalStore`), `getVoiceById` from `@/lib/voice-catalog`, `window.localStorage`. `"use client"` (:1).
-- **Consumed by:** `src/components/command-palette-content.tsx:57`, and under `src/components/chat/`: `chat-messages.tsx:11`, `use-voice-session.ts:7`, `talk-launch-button.tsx:6`, `voice-settings-dialog.tsx:18`, `use-speech-synthesis.ts:20`, `talk-mode.tsx:20`, `wake-word-controller.tsx:6`, `mic-button.tsx:6`.
+- **Consumed by:** `src/components/command-palette-content.tsx:57`, and under `src/components/chat/`: `chat-messages.tsx:11`, `use-voice-session.ts:7`, `talk-launch-button.tsx:6`, `voice-settings-dialog.tsx:18`, `use-speech-synthesis.ts:20`, `talk-mode.tsx:21`, `wake-word-controller.tsx:6`, `mic-button.tsx:6`.
 - **Behaviour notes:**
   - **Fail-closed defaults** (voice-settings-context.tsx:77-88): `micEnabled: false`, `ttsEnabled: false`, `wakeWord: false`, `captions: true` (a11y), `sttEngine: "browser"`, `ttsEngine: "browser"`, `talkSurface: "modal"`, `voiceId` intentionally omitted, `voiceCharacter: { speed: "natural", tone: "neutral", pause: "normal" }` (:71-75).
   - `STORAGE_KEY = "anvilry:voice:settings"` (:90).
@@ -207,7 +224,7 @@ The load-bearing reason (the `streamWithFallback` docblock at llm.ts:261-269): s
 - **Role:** Per-IP distributed rate limiter guarding the cost-bearing routes against bot-driven AWS spend, with one independent bucket per route class.
 - **Exports:** `RateLimitClass` (type) = `"chat" | "voice" | "beacon"` (rate-limit.ts:19); `isRateLimitEnabled` (const boolean); `checkRateLimit(req, cls)` → `Promise<{ ok: true } | { ok: false; retryAfter: number }>`. `cls` is a required argument so a route can never silently share another class's bucket.
 - **Reads / depends on:** `@upstash/ratelimit`, `./redis` (the shared singleton), `./cron-auth` (`hasValidCronSecret`). The only direct env read is `NODE_ENV` for the module-load production warning (rate-limit.ts:62); the Upstash vars are owned by `redis.ts` and `CRON_SECRET` by `cron-auth.ts`.
-- **Consumed by** (class in parentheses): `src/app/api/chat/route.ts:6,188` (`"chat"`), `src/app/api/tts/route.ts:3,69` (`"voice"`), `src/app/api/tts-google/route.ts:1,67` (`"voice"`), `src/app/api/transcribe/route.ts:7,63` (`"voice"`), `src/app/api/error/route.ts:3,101` (`"beacon"`) — import line, then call site.
+- **Consumed by** (class in parentheses): `src/app/api/chat/route.ts:7,142` (`"chat"`), `src/app/api/tts/route.ts:3,69` (`"voice"`), `src/app/api/tts-google/route.ts:1,67` (`"voice"`), `src/app/api/transcribe/route.ts:7,63` (`"voice"`), `src/app/api/error/route.ts:3,101` (`"beacon"`) — import line, then call site.
 
 **Exact budget** (`REQUESTS_PER_WINDOW = 8`, `WINDOW = "60 s"`, rate-limit.ts:22-23; built per class in `buildLimiters`, rate-limit.ts:33-46):
 
@@ -246,7 +263,7 @@ The rationale (docblock above `checkRateLimit`, rate-limit.ts:90-93): a cost gua
 - **Role:** The single Upstash Redis client, shared by rate limiting, telemetry emit, the FAQ cache, cron routes, visit/error tracking, and the admin dashboard.
 - **Exports:** `redis: Redis | null`; `isRedisConfigured(): boolean`.
 - **Reads / depends on:** `@upstash/redis`; env `UPSTASH_REDIS_REST_URL` (:26) and `UPSTASH_REDIS_REST_TOKEN` (:27). Client constructed only when both are present (:36).
-- **Consumed by:** `src/lib/rate-limit.ts:3`, `src/lib/telemetry/emit.ts:1`, `src/lib/chat-cache.ts:2`, `src/instrumentation.ts:95` (dynamic import; stamps the corpus build tag), `src/app/admin/telemetry/page.tsx:16`, `src/app/api/visit/route.ts:2`, `src/app/api/error/route.ts:7`, and the five cron routes (`content-audit`, `github-sync`, `seo-audit`, `health-check`, `eval`).
+- **Consumed by:** `src/lib/rate-limit.ts:3`, `src/lib/telemetry/emit.ts:1`, `src/lib/chat-cache.ts:2`, `src/instrumentation.ts:95` (dynamic import; stamps the corpus build tag), `src/app/admin/telemetry/page.tsx:17`, `src/app/api/visit/route.ts:2`, `src/app/api/error/route.ts:7`, and the five cron routes (`content-audit`, `github-sync`, `seo-audit`, `health-check`, `eval`).
 - **Behaviour notes:** Construction is wrapped in try/catch (:35-39) because the SDK throws a **synchronous `UrlError`** for an invalid URL scheme (`redis://`, bare hostname, trailing newline from env injection); without the guard a malformed `UPSTASH_REDIS_REST_URL` would crash every API route cold start, since this module is transitively imported by `rate-limit.ts`, `emit.ts`, and `with-trace.ts` (:29-33). On that failure it logs `[redis] Invalid Upstash configuration` and leaves `redis` null.
 - **Gotchas / invariants:** Deliberately does **not** throw on missing creds — a hard throw here would kill `next build` on any environment without Upstash creds at build time (:21-23). The all-or-nothing posture is intentional: either every Redis-backed feature is configured or none are, "no half-on state" (:15-16). Every caller MUST null-guard.
 
@@ -255,7 +272,7 @@ The rationale (docblock above `checkRateLimit`, rate-limit.ts:90-93): a cost gua
 - **Role:** The one HTTP Basic credential check for the admin surface, applied at three call sites: the proxy, route handlers (`requireAdmin`), and the telemetry page.
 - **Exports:** `isAdminAuthorized(header: string | null): boolean` (admin-auth.ts:24); `requireAdmin(req)` → `{ ok: true } | Response` (:48).
 - **Reads / depends on:** `node:crypto` (`timingSafeEqual`, `createHash`); env `ADMIN_PASSWORD` (:25).
-- **Consumed by:** `src/proxy.ts:4,26` (first-filter gate for `/admin/:path*`, matcher config at `src/proxy.ts:21`); `src/app/admin/telemetry/page.tsx:472` (re-checks the `Authorization` header itself and calls `notFound()` when unauthorized, so the proxy is the first filter, not the only gate); `requireAdmin` by `src/app/api/admin/faq-cache/purge/route.ts:32`. Next 16 proxies run on the Node.js runtime, so the proxy imports `node:crypto`-based code directly — there is no separate Edge re-implementation any more.
+- **Consumed by:** `src/proxy.ts:4,26` (first-filter gate for `/admin/:path*`, matcher config at `src/proxy.ts:21`); `src/app/admin/telemetry/page.tsx:470` (re-checks the `Authorization` header itself and calls `notFound()` when unauthorized, so the proxy is the first filter, not the only gate); `requireAdmin` by `src/app/api/admin/faq-cache/purge/route.ts:32`. Next 16 proxies run on the Node.js runtime, so the proxy imports `node:crypto`-based code directly — there is no separate Edge re-implementation any more.
 - **Behaviour notes:**
   - `ADMIN_PASSWORD` unset → **deny everything** and `console.warn` without leaking the reason to the client (:25-31). The comment says "log once" but nothing dedupes it, so it warns on every call. There is no default password.
   - Requires an `Authorization: Basic …` prefix (:33), base64-decodes (:37), and accepts both `password` (no colon) and `anything:password` forms so `curl -u admin:pw` and `-u :pw` both work (:41). With a colon, everything after the FIRST colon is the password (`split(":").slice(1).join(":")`), so colons in passwords survive.
@@ -277,7 +294,7 @@ The rationale (docblock above `checkRateLimit`, rate-limit.ts:90-93): a cost gua
 - **Role:** Upstash-backed full-response cache for first-turn `/api/chat` questions — an exact tier (SHA-256 of the normalized question) plus an optional semantic tier — so repeated FAQs skip Bedrock.
 - **Exports:** types `FaqCacheEntry`, `FaqCacheHit`, `FaqCachePurgeResult`; constants `FAQ_CACHE_TTL_SECONDS` (24 * 60 * 60, :63), `FAQ_CACHE_INDEX_CAP` (500, :66), `TRIM_SAMPLE_EVERY` (20, :72), `MAX_CACHEABLE_ANSWER_CHARS` (4000, :79); functions `normalizeQuestion`, `faqCacheKey`, `isSemanticMatchEnabled`, `isFaqCacheEnabled`, `faqCacheGet`, `faqCacheSemanticGet`, `faqCacheSet(question, answer, model, costUsd, finishReason)`, `faqCachePurge`.
 - **Reads / depends on:** `@/lib/redis`, `@/lib/telemetry/emit` and `redact` (for `server.error` events on cache failures), `stripControlBytes` from `@/lib/llm-trace`, and `./faq-embeddings` via dynamic `import()` (semantic tier only). Env: `FAQ_CACHE_ENABLED` (kill switch, default on; `!== "false"`, :130) and `FAQ_CACHE_SEMANTIC_MATCH` (`=== "true"`, :122).
-- **Consumed by:** `src/app/api/chat/route.ts` (read at :336-337, skipped when the request carries `x-chat-skip-cache`, which the eval cron sends, :322, write-through via `void faqCacheSet(...)` from the `onAttempt` handler (skipped when `attempt.fell_back`: an answer from a fallback rung is never cached, `route.ts:477`), `chat.cache` telemetry emitted per lookup); `src/app/api/admin/faq-cache/purge/route.ts` (`faqCachePurge`).
+- **Consumed by:** `src/app/api/chat/route.ts` (read at :290-291, skipped when the request carries `x-chat-skip-cache`, which the eval cron sends, :276, write-through via `void faqCacheSet(...)` from the `onAttempt` handler (skipped when `attempt.fell_back`: an answer from a fallback rung is never cached, `route.ts:434`), `chat.cache` telemetry emitted per lookup); `src/app/api/admin/faq-cache/purge/route.ts` (`faqCachePurge`).
 - **Behaviour notes:**
   - Redis keys: entries at `anvilry:chat:cache:<sha256 hex>` (`ENTRY_PREFIX`, :52), a sorted-set index `anvilry:chat:cache:index` (`INDEX_KEY`, :53, score = `cachedAt`), and the corpus tag `anvilry:corpus:built_at` (`CORPUS_BUILT_AT_KEY`, :54). No raw question text is stored; the key is derived from `normalizeQuestion` (lowercase, trim, collapse whitespace, strip trailing `? ! . , ; :` via a linear loop, not a regex).
   - **Corpus tagging.** Each entry records `corpusBuiltAt`; a lookup is a hit only if it equals the current tag, and "both null" counts as a match (`isSameCorpusBuild`, :148-156). The tag is stamped by `src/instrumentation.ts` (`redis.set("anvilry:corpus:built_at", Date.now()…, { ex: 7 * 24 * 3600 })`, production deploys only) and shown on `/admin/telemetry`.
@@ -302,7 +319,7 @@ The rationale (docblock above `checkRateLimit`, rate-limit.ts:90-93): a cost gua
 - **Role:** The type-level contract every telemetry producer and consumer imports: envelope schema, PII redaction, salted IP hashing. Pure data — no I/O, no globals, no clock reads (:20-23).
 - **Exports:** `KIND_LITERALS`, `KindLiteral`, `TelemetryEventSchema`, `TelemetryEvent`, `redact(text)`, `hashIp(ip, salt)`.
 - **Reads / depends on:** `node:crypto` (`createHash`), `zod`. Reads no env itself — the salt is passed in by the caller.
-- **Consumed by:** `src/lib/telemetry/with-trace.ts:3` (`hashIp`, `redact`, types); `src/app/admin/telemetry/page.tsx:17` (`KIND_LITERALS`, `TelemetryEvent`); `redact` in `src/lib/chat-cache.ts:4` and `src/app/api/chat/route.ts:9`, `api/tts/route.ts:11`, `api/tts-google/route.ts:8`, `api/transcribe/route.ts:10`, `api/error/route.ts:6`.
+- **Consumed by:** `src/lib/telemetry/with-trace.ts:3` (`hashIp`, `redact`, types); `src/app/admin/telemetry/page.tsx:18` (`KIND_LITERALS`, `TelemetryEvent`); `redact` in `src/lib/chat-cache.ts:4` and `src/app/api/chat/route.ts:10`, `api/tts/route.ts:11`, `api/tts-google/route.ts:8`, `api/transcribe/route.ts:10`, `api/error/route.ts:6`.
 
 **Event schema** (`TelemetryEventSchema`, schema.ts:71-81). Envelope fields, with per-kind detail pushed into `attrs`:
 
@@ -331,7 +348,7 @@ The 8 `kind` literals (`KIND_LITERALS`, schema.ts:37-50): `http.request`, `llm.a
 - **Role:** The dual-sink, fire-and-forget telemetry writer.
 - **Exports:** `emit(event: TelemetryEvent): void`.
 - **Reads / depends on:** `redis` from `@/lib/redis`; `TelemetryEvent` type. No env reads.
-- **Consumed by:** `src/lib/telemetry/with-trace.ts:2`; `src/lib/chat-cache.ts:3` (`server.error` on cache failures); directly by `src/app/api/chat/route.ts:8`, `api/tts/route.ts:10`, `api/tts-google/route.ts:7`, `api/transcribe/route.ts:9`, `api/error/route.ts:5`.
+- **Consumed by:** `src/lib/telemetry/with-trace.ts:2`; `src/lib/chat-cache.ts:3` (`server.error` on cache failures); directly by `src/app/api/chat/route.ts:9`, `api/tts/route.ts:10`, `api/tts-google/route.ts:7`, `api/transcribe/route.ts:9`, `api/error/route.ts:5`.
 
 **Both sinks:**
 
@@ -348,7 +365,7 @@ The 8 `kind` literals (`KIND_LITERALS`, schema.ts:37-50): `http.request`, `llm.a
 - **Role:** The universal `/api/*` observability wrapper: one request = one traceId, exactly one emitted span, response header stamped, errors observed and re-thrown.
 - **Exports:** `TraceCtx` (type); `withTrace(req, route, handler)`.
 - **Reads / depends on:** `node:crypto` (`createHash`), `emit`, `hashIp`/`redact`/types from schema, and a **lazy `require("next/server")`** for `after` (:11). Env: `TELEMETRY_IP_SALT` (:157).
-- **Consumed by:** `src/app/api/chat/route.ts:7`, `api/tts/route.ts:9`, `api/tts-google/route.ts:6`, `api/transcribe/route.ts:8`, `api/error/route.ts:4`.
+- **Consumed by:** `src/app/api/chat/route.ts:8`, `api/tts/route.ts:9`, `api/tts-google/route.ts:6`, `api/transcribe/route.ts:8`, `api/error/route.ts:4`.
 
 **The wrapper contract:**
 
@@ -399,7 +416,7 @@ Every emitted event carries `attrs: { ipHash, uaHash, ...attrs }` plus `latency_
 #### `src/lib/scroll/use-auto-scroll.ts`
 - **Role:** Engine-agnostic entry point.
 - **Exports:** `useAutoScroll(opts?)` → `UseAutoScroll`.
-- **Consumed by:** `src/components/ask-portfolio.tsx:13`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
+- **Consumed by:** `src/components/ask-portfolio.tsx:14`, `src/components/chat/chat-messages.tsx:12`, `src/components/game/terminal/terminal.tsx:7`.
 - **Behaviour notes:** BOTH engine hooks are called unconditionally every render (:25-29) — required by the rules of hooks — and each is handed `enabled: callerEnabled && engine === "<its own>"` so the inactive engine attaches no observers/listeners (:24-29). The return is `engine === "library" ? library : custom` (:30), i.e. `custom` is the else-branch default.
 - **Gotchas / invariants:** Do not make either hook call conditional. `chat-messages.tsx:374` destructures `anchorRef`, which only the custom engine provides — under `?scroll=library` it is `undefined` (see below).
 
@@ -454,6 +471,7 @@ Every emitted event carries `attrs: { ipHash, uaHash, ...attrs }` plus `latency_
 ## Coverage
 
 - `src/lib/llm.ts`
+- `src/lib/llm-pricing.ts`
 - `src/lib/llm-trace.ts`
 - `src/lib/llm-sdk-mode.ts`
 - `src/lib/agent-trace.ts`

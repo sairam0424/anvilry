@@ -75,9 +75,9 @@ export function TalkModeOverlay({
           >
             <Dialog.Title className="sr-only">Voice conversation</Dialog.Title>
             <Dialog.Description className="sr-only">
-              Talk with the portfolio assistant. Press Space to talk, Escape to
-              close. A live transcript is shown, and you can always type
-              instead.
+              Talk with the portfolio&apos;s AI assistant. Press Space to talk,
+              Escape to close. A live transcript is shown, and you can always
+              type instead.
             </Dialog.Description>
             <TalkMode onClose={() => onOpenChange(false)} />
           </motion.div>

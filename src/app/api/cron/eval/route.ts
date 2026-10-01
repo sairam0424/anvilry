@@ -1,4 +1,5 @@
 import { unauthorizedUnlessCron } from "@/lib/cron-auth";
+import { answerFromBody } from "@/lib/llm-trace";
 import { redis } from "@/lib/redis";
 
 export const maxDuration = 60;
@@ -97,8 +98,6 @@ function checkPass(
   return pair.expected.some((kw) => lower.includes(kw.toLowerCase()));
 }
 
-const TRACE_DELIMITER = "\x1e";
-
 async function runEval(req: Request) {
   const denied = unauthorizedUnlessCron(req);
   if (denied) return denied;
@@ -134,10 +133,9 @@ async function runEval(req: Request) {
 
       let responseText = "";
       if (chatRes.ok) {
-        const raw = await chatRes.text();
-        // Strip the trace frame (everything from TRACE_DELIMITER onward).
-        const delimIdx = raw.indexOf(TRACE_DELIMITER);
-        responseText = (delimIdx >= 0 ? raw.slice(0, delimIdx) : raw).trim();
+        // The visible answer only: while extended thinking is on, every body opens with the
+        // thinking sentinel (its first byte is the trace delimiter's), reasoning or not.
+        responseText = answerFromBody(await chatRes.text());
       }
 
       const pass = responseText ? checkPass(responseText, pair) : false;

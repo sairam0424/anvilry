@@ -568,7 +568,7 @@ Minimum full policy (Bedrock + Voice):
 }
 ```
 
-No new environment variables — the routes detect creds via `bedrockCreds()` and enable themselves.
+No new environment variables — the routes detect creds via `bedrockCreds()` and enable themselves. The `us.anthropic.claude-opus-4-6-v1` line in the policy above is only needed with `LLM_USE_OPUS_FALLBACK=true`.
 
 **Step 3 — Smoke-test the routes.**
 

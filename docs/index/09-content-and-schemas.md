@@ -365,7 +365,7 @@ anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metri
 `src/lib/corpus.test.ts:13-18` asserts the corpus always contains `profile.name`,
 `## Production Work`, and `## Skills`; `:20-28` asserts `## Personal` appears iff `personal.ts` is
 populated. The `register` string reaching the LLM verbatim is also reinforced in the chat system
-prompt at `src/app/api/chat/route.ts:131`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
+prompt at `src/app/api/chat/route.ts:85`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
 stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11,437 with notes on.
 
 ### 3. Resume → content

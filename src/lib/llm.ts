@@ -17,14 +17,17 @@ import {
  * AWS Bedrock <-> the direct Anthropic API is an env change (LLM_PROVIDER), not
  * a code change.
  *
- * Owner directive: Sonnet (4.6, 5 when LLM_USE_SONNET_5 is set, or 5.5 when
- * LLM_USE_SONNET_5_5 is set) primary -> Opus 4.6 secondary -> Haiku 4.5 fallback.
+ * Chain: Sonnet (4.6, 5 when LLM_USE_SONNET_5 is set, or 5.5 when LLM_USE_SONNET_5_5
+ * is set) primary -> Sonnet 4.6 (when the primary is a 5.x) -> Haiku 4.5. Opus 4.6 is an
+ * opt-in rung (LLM_USE_OPUS_FALLBACK=true) since 2026-10-01: it was the original
+ * secondary, but this account IAM-denies the whole Opus family, so that rung could only
+ * ever answer 403 before Haiku (a weaker model) got the request.
  * (Updated 2026-06-17 to match the BEDROCK_CHAIN order below — earlier wording said
  * "Opus primary" while the array shipped Sonnet-first since v1.6, leaving log
  * analysis ambiguous about which model was the "expected primary" on a given turn.)
  * (Updated 2026-09-18: added the LLM_USE_SONNET_5 toggle — see isSonnet5PrimaryEnabled()
- * below — so the primary rung can move to Claude Sonnet 5 without touching the
- * Opus/Haiku rungs or requiring a code change to roll back.)
+ * below — so the primary rung can move to Claude Sonnet 5 without requiring a code
+ * change to roll back.)
  * Ported from the production pattern in Too-Hot-To-Loose (career_copilot provider.py).
  */
 
@@ -33,10 +36,9 @@ export type LlmProvider = "bedrock" | "anthropic";
 const PER_ATTEMPT_TIMEOUT_MS = 15_000;
 
 /** Feature flag: when "true", Claude Sonnet 5 replaces Sonnet 4.6 as the
- *  PRIMARY rung on both chains. Opus and Haiku rungs are deliberately left
- *  untouched — Opus is already IAM-denied on this account regardless of which
- *  Opus generation is named, and Haiku 4.5 is still Bedrock's current Haiku
- *  generation, so neither needs to move. Default OFF: this is a capability
+ *  PRIMARY rung on both chains, and Sonnet 4.6 becomes the rung behind it. Haiku
+ *  4.5 is still Bedrock's current Haiku generation, so it does not move. Default
+ *  OFF: this is a capability
  *  upgrade, not a fix, so it stays an explicit opt-in until proven in
  *  production. REQUIRES the adaptive-thinking shape below — Sonnet 5 rejects
  *  the old thinking.enabled+budget_tokens request shape outright (400). */
@@ -45,8 +47,8 @@ export function isSonnet5PrimaryEnabled(): boolean {
 }
 
 /** Feature flag: when "true", Claude Sonnet 5.5 becomes the PRIMARY rung on both
- *  chains, taking precedence over LLM_USE_SONNET_5. Opus and Haiku are left
- *  untouched. Default OFF, for the same reason as the Sonnet 5 flag: a
+ *  chains, taking precedence over LLM_USE_SONNET_5; Sonnet 4.6 is the rung behind
+ *  it. Default OFF, for the same reason as the Sonnet 5 flag: a
  *  capability upgrade stays an explicit opt-in until proven in production.
  *
  *  Things a naive "swap the id" change gets wrong (verified live against
@@ -57,12 +59,21 @@ export function isSonnet5PrimaryEnabled(): boolean {
  *    fail loudly, it would skip the primary on every request. Global routing
  *    means a request may be processed outside the US regions.
  *  - The principal needs IAM on the global profile. Without it 5.5 answers 403
- *    (eligible), Opus 403s too, and Haiku answers EVERY request: no error, only
+ *    (eligible) and Sonnet 4.6 answers EVERY request: no error, only
  *    fell_back / attrs.status 403 in llm.attempt. Check fellBack after enabling.
  *  - It rejects `thinking: {type:"disabled"}`; see thinkingOff().
  *  - It rejects `temperature`; this module sends no sampling parameters. */
 export function isSonnet55PrimaryEnabled(): boolean {
   return process.env.LLM_USE_SONNET_5_5 === "true";
+}
+
+/** Feature flag: when "true", Claude Opus 4.6 (direct API: Opus 4.7) is added to the
+ *  chain right behind the primary, the position it held before 2026-10-01. Default
+ *  OFF: this account IAM-denies the whole Opus family, so with the rung on, every
+ *  fallback would first spend a round trip on a guaranteed 403 (telemetry would
+ *  log it as attrs.status 403 on each one). Turn it on only where Opus is allowed. */
+export function isOpusFallbackEnabled(): boolean {
+  return process.env.LLM_USE_OPUS_FALLBACK === "true";
 }
 
 /** The primary rung's id: 5.5 (LLM_USE_SONNET_5_5) beats 5 (LLM_USE_SONNET_5),
@@ -76,6 +87,28 @@ function pickPrimary(ids: {
   return isSonnet5PrimaryEnabled() ? ids.sonnet5 : ids.sonnet46;
 }
 
+type ChainIds = {
+  sonnet46: string;
+  sonnet5: string;
+  sonnet55: string;
+  opus: string;
+  haiku: string;
+};
+
+/** [primary, Opus if opted in, Sonnet 4.6, Haiku], with repeats dropped: when the
+ *  primary IS Sonnet 4.6 it is not listed again, so the default chain is
+ *  [4.6, Haiku] and a 5.x primary is backed up by the model it replaced, which is
+ *  reachable on this account and has its own quota, before the weaker Haiku. */
+function buildChain(ids: ChainIds): string[] {
+  const rungs = [
+    pickPrimary(ids),
+    ...(isOpusFallbackEnabled() ? [ids.opus] : []),
+    ids.sonnet46,
+    ids.haiku,
+  ];
+  return rungs.filter((id, i) => rungs.indexOf(id) === i);
+}
+
 /**
  * Region-prefixed Bedrock inference-profile IDs (verified live in the reference
  * account). NOTE: Opus 4.6 REQUIRES the `-v1` suffix — the bare id 400s with
@@ -83,28 +116,24 @@ function pickPrimary(ids: {
  * Sonnet 5.5 is the exception: no `us.` profile, only `global.anthropic.claude-sonnet-5-5`.
  */
 function bedrockChain(): string[] {
-  return [
-    pickPrimary({
-      sonnet46: "us.anthropic.claude-sonnet-4-6", // primary (fast, cost-effective)
-      sonnet5: "us.anthropic.claude-sonnet-5",
-      sonnet55: "global.anthropic.claude-sonnet-5-5",
-    }),
-    "us.anthropic.claude-opus-4-6-v1", // secondary (deeper reasoning if needed)
-    "us.anthropic.claude-haiku-4-5-20251001-v1:0", // fallback
-  ];
+  return buildChain({
+    sonnet46: "us.anthropic.claude-sonnet-4-6", // default primary; backs up a 5.x primary
+    sonnet5: "us.anthropic.claude-sonnet-5",
+    sonnet55: "global.anthropic.claude-sonnet-5-5",
+    opus: "us.anthropic.claude-opus-4-6-v1", // opt-in (LLM_USE_OPUS_FALLBACK)
+    haiku: "us.anthropic.claude-haiku-4-5-20251001-v1:0", // last resort
+  });
 }
 
 /** Direct-API chain (used only when LLM_PROVIDER=anthropic). */
 function anthropicChain(): string[] {
-  return [
-    pickPrimary({
-      sonnet46: "claude-sonnet-4-6",
-      sonnet5: "claude-sonnet-5",
-      sonnet55: "claude-sonnet-5-5",
-    }),
-    "claude-opus-4-7",
-    "claude-haiku-4-5",
-  ];
+  return buildChain({
+    sonnet46: "claude-sonnet-4-6",
+    sonnet5: "claude-sonnet-5",
+    sonnet55: "claude-sonnet-5-5",
+    opus: "claude-opus-4-7",
+    haiku: "claude-haiku-4-5",
+  });
 }
 
 /** The explicit "thinking off" request shape for a thinking-capable model.
@@ -122,6 +151,50 @@ function thinkingOff(model: string): {
   return model.includes("sonnet-5-5")
     ? { type: "between_tools" }
     : { type: "disabled" };
+}
+
+/** Sonnet 5 and 5.5 (every id form: `us.anthropic.claude-sonnet-5`,
+ *  `global.anthropic.claude-sonnet-5-5`, `claude-sonnet-5-5`, ...). */
+function isSonnet5Family(model: string): boolean {
+  return model.includes("sonnet-5");
+}
+
+type ThinkingEffort = "low" | "medium";
+
+/** How hard the model may think. LLM_THINKING_EFFORT (exactly "low" or "medium";
+ *  anything else is ignored) overrides every thinking-capable rung; otherwise
+ *  Sonnet 5.x gets "medium" and everything else keeps "low". "high" is deliberately
+ *  not accepted: the request's shared thinking-plus-answer ceiling (the max_tokens
+ *  floor below: 2048, 4096 on Sonnet 5.x) was sized for low and medium, and a hard
+ *  question at high effort could spend it all on reasoning and cut the answer off.
+ *
+ *  Why 5.x is "medium": measured live on Bedrock (2026-10-01, the production prompt,
+ *  8 recruiter questions), Sonnet 5.5 at "low" did not think on any of the 8 (0 thinking
+ *  tokens), so the reasoning panel stayed empty. At "medium" it thought on the harder
+ *  questions only (90 to 390 thinking tokens, a 300 to 700 character summary, +2 to
+ *  3 s), about $0.0006 more per question on average, and still skipped the easy ones.
+ *  Sonnet 4.6 keeps the "low" it has always been sent. */
+function thinkingEffort(model: string): ThinkingEffort {
+  const override = process.env.LLM_THINKING_EFFORT;
+  if (override === "low" || override === "medium") {
+    return override;
+  }
+  return isSonnet5Family(model) ? "medium" : "low";
+}
+
+/** The adaptive-thinking request shape. Sonnet 5.x returns a thinking block with EMPTY
+ *  text unless `display: "summarized"` is set (the default is "omitted"), while
+ *  billing the same thinking tokens, so without it the panel can never show anything.
+ *  Sonnet 4.6 already returns summaries by default and keeps the request it has
+ *  always sent. Verified live on the streaming path: thinking_delta events carry the
+ *  summary, then one signature_delta (ignored by the loop below), then the answer. */
+function adaptiveThinking(model: string): {
+  type: "adaptive";
+  display?: "summarized";
+} {
+  return isSonnet5Family(model)
+    ? { type: "adaptive", display: "summarized" }
+    : { type: "adaptive" };
 }
 
 /** 400 messages that mean "this MODEL is unavailable" (Bedrock reports an
@@ -193,7 +266,8 @@ export function isConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
 
-/** Ordered model chain [primary, secondary, fallback] for the active provider. */
+/** Ordered model chain for the active provider: [primary, Opus if opted in, Sonnet 4.6,
+ *  Haiku], repeats dropped (see buildChain). */
 export function modelChain(): string[] {
   return getProvider() === "bedrock" ? bedrockChain() : anthropicChain();
 }
@@ -231,9 +305,10 @@ export function makeClient(): Anthropic {
  * hypothetical double-install of the SDK where `instanceof` could break.
  *
  * A 403 is eligible only when its message names a per-model deny
- * (MODEL_DENIED_MARKERS / MODEL_UNAVAILABLE_MARKERS). Without that, the
- * IAM-denied Opus rung would end the chain in the apology and Haiku, the last
- * rung, would never be reached.
+ * (MODEL_DENIED_MARKERS / MODEL_UNAVAILABLE_MARKERS). Without that, an
+ * IAM-denied rung (the opt-in Opus rung, or the global Sonnet 5.5 profile when
+ * the policy lacks it) would end the chain in the apology and the rungs behind
+ * it would never be reached.
  */
 export function isFallbackEligible(err: unknown): boolean {
   if (err instanceof Anthropic.APIConnectionError) return true; // incl. timeout subclass
@@ -323,7 +398,7 @@ export function streamWithFallback(
     /** Optional traceId threaded into the trace frame so the client can correlate
      *  the streamed answer with the server-side llm.attempt events. */
     traceId?: string;
-    /** When true, enables Anthropic adaptive extended thinking (effort: "low").
+    /** When true, enables Anthropic adaptive extended thinking (effort: see thinkingEffort()).
      *  Haiku models are silently excluded — they do not support extended thinking.
      *  The stream is: THINKING_SENTINEL + reasoning bytes + THINKING_END + answer bytes.
      *  Reasoning streams live to the client; the trace frame does NOT include reasoning. */
@@ -370,7 +445,7 @@ export function streamWithFallback(
       // Tracks whether THINKING_SENTINEL has been sent for the WHOLE stream,
       // not per attempt — the old `!emittedAny` guard re-fired it on every
       // fallback attempt that hadn't produced text yet (e.g. Sonnet throws
-      // mid-thinking, Opus retries: a second, spurious THINKING_SENTINEL
+      // mid-thinking, the next rung retries: a second, spurious THINKING_SENTINEL
       // landed mid-reasoning). The sentinel opens the framing exactly once;
       // matches thinkingEndEmitted's per-attempt closing counterpart below.
       let thinkingSentinelEmitted = false;
@@ -442,9 +517,10 @@ export function streamWithFallback(
         // client.beta.messages.stream() special-casing) and no max_tokens bump
         // for the budget itself; "effort" bounds thinking cost directly. "low"
         // approximates this route's prior small 1024-token budget's intent (a
-        // quick portfolio-bot answer, not a deep research task). The max_tokens
-        // bump below is kept only as shared thinking+answer headroom, same
-        // purpose as before.
+        // quick portfolio-bot answer, not a deep research task); Sonnet 5.x gets
+        // "medium" because at "low" it did not think when measured (see thinkingEffort()). The
+        // max_tokens bump below is shared thinking+answer headroom: 2048, or 4096 on
+        // Sonnet 5.x (it reasons at medium, and its tokenizer emits ~30% more tokens).
         //
         // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
         // the `thinking` field is omitted entirely — unlike 4.6, where omission
@@ -463,17 +539,17 @@ export function streamWithFallback(
             ? {
                 max_tokens: Math.max(
                   (params as { max_tokens?: number }).max_tokens ?? 0,
-                  2048,
+                  isSonnet5Family(model) ? 4096 : 2048,
                 ),
               }
             : {}),
           ...(modelSupportsThinking
             ? {
                 thinking: useThinking
-                  ? ({ type: "adaptive" } as const)
+                  ? adaptiveThinking(model)
                   : thinkingOff(model),
                 ...(useThinking
-                  ? { output_config: { effort: "low" as const } }
+                  ? { output_config: { effort: thinkingEffort(model) } }
                   : {}),
               }
             : {}),
@@ -537,15 +613,15 @@ export function streamWithFallback(
             // 5/Opus 5's adaptive-thinking-on-by-default behavior is exactly
             // the kind of provider-side default this repo has already been
             // burned by once — if a thinking_delta ever arrives despite the
-            // explicit off shape, drop it here rather than streaming raw,
-            // unframed reasoning bytes (no THINKING_SENTINEL was emitted for
-            // this attempt in that case).
+            // explicit off shape, drop it here rather than streaming raw, unframed
+            // bytes (no THINKING_SENTINEL was emitted for this attempt in that case).
+            // Also dropped once THINKING_END is out: it would read as answer text.
             if (
               event.type === "content_block_delta" &&
               (event.delta as { type: string; thinking?: string }).type ===
                 "thinking_delta"
             ) {
-              if (!useThinking) continue;
+              if (!useThinking || thinkingEndEmitted) continue;
               // Stripped defensively: a legitimate thinking chunk should never
               // contain the protocol's own framing bytes (see llm-trace.ts) —
               // this is a live stream, not something faqCacheSet can sanitize

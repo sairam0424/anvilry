@@ -98,19 +98,19 @@ and a fresh worktree resets all of them), so the in-document version marker is t
 | File | Kind | Authoritative for | Last-updated signal |
 |---|---|---|---|
 | `README.md` | public readme | The outward-facing pitch, stack table, voice cost table | no version marker; the pitch line still says "four switchable experiences" (the headline count) while the *View architecture* bullet describes six views |
-| `CLAUDE.md` | agent brief | Command surface, branch/CI model, key-files map, testing invariants, skills index | opens with a `> **Snapshot.**` callout stating it describes v3.9.0, i.e. `main` at `a929932` (3.6.0) plus nine changes (the five v3.7.0 fixes, two in v3.8.0 and two in v3.9.0); § Branch Model & CI records the 2026-09-17 retroactive tagging up to v3.6.0 |
+| `CLAUDE.md` | agent brief | Command surface, branch/CI model, key-files map, testing invariants, skills index | opens with a `> **Snapshot.**` callout stating it describes v3.9.0, i.e. `main` at `a929932` (3.6.0) plus ten changes (the five v3.7.0 fixes, two in v3.8.0, two in v3.9.0 and one on `develop` that is not yet released); § Branch Model & CI records the 2026-09-17 retroactive tagging up to v3.6.0 |
 | `ARCHITECTURE.md` | ADR (`kind: architecture`, `status: adopted`) | The knowledge-base model (kinds, domains, invariants) — **not** app architecture | in-doc `**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24` (`ARCHITECTURE.md:8`), which versions the model, plus a `**Scope:**` note naming the app state it describes, v3.9.0 (`ARCHITECTURE.md:9`) |
 | `AGENTS.md` | agent rule block | Only the "this is not the Next.js you know" warning | no version marker |
 | `CHANGELOG.md` | release log | Per-release narrative; 22 version entries | latest entry `[3.9.0] — 2026-10-01`, then `[3.8.0] — 2026-09-30`, `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:223`); rewritten in v3.5.0; the 297 commits between the `v3.6.0` tag and `a929932` are still unrecorded |
 | `LOG.md` | activity journal | Finished-work feed + its own entry grammar | newest entry 2026-08-15 |
 | `VOICE.md` | feature reference | Voice architecture, settings keys, IAM, privacy/a11y model, voice catalog | in-doc `v1.7 update` banner |
-| `TELEMETRY.md` | feature reference | Span kinds, PII policy, dashboard tiles, replay CLI | in-doc title `(v1.8)`, which dates the design, plus a `> **Scope:**` note that it describes v3.9.0, i.e. `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes and the two v3.9.0 removals (`TELEMETRY.md:7`) |
-| `DEPLOY.md` | runbook | Vercel env-var table, IAM policy JSON, Upstash setup, region gotcha | no version marker of its own; the intro says it describes v3.9.0, i.e. `main` @ `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes and the two v3.9.0 removals (`DEPLOY.md:5`) |
+| `TELEMETRY.md` | feature reference | Span kinds, PII policy, dashboard tiles, replay CLI | in-doc title `(v1.8)`, which dates the design, plus a `> **Scope:**` note that it describes v3.9.0, i.e. `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals and one unreleased change on `develop`, the per-model price table (`TELEMETRY.md:7`) |
+| `DEPLOY.md` | runbook | Vercel env-var table, IAM policy JSON, Upstash setup, region gotcha | no version marker of its own; the intro says it describes v3.9.0, i.e. `main` @ `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals and one unreleased change on `develop` (Sonnet 4.6 backs up a 5.x primary, Opus is opt-in) (`DEPLOY.md:5`) |
 | `SECURITY.md` | policy | Disclosure channel + SLA + scope | no version marker |
 | `CODE_OF_CONDUCT.md` | policy | Contributor Covenant v2.1 adoption + enforcement contact | v2.1 |
 | `LICENSE` | legal | MIT for code; all-rights-reserved carve-out for content/identity/résumés/branding | copyright range `2024–2026` |
 | `docs/README.md` | schema readme | The `doc` frontmatter schema | §Existing Docs (`docs/README.md:36-44`) matches the disk: 17 plans, 6 specs, plus the upgrade plan |
-| `docs/configuration.md` | config reference | Env vars + flags, defaults, add-a-flag recipes, CSP override | flags tagged up to `v3.3`; a `> **Scope:**` note that it describes v3.9.0 (`docs/configuration.md:5`); now covers the FAQ-cache, Sonnet-5, Sonnet-5.5 and extended-thinking toggles |
+| `docs/configuration.md` | config reference | Env vars + flags, defaults, add-a-flag recipes, CSP override | flags tagged up to `v3.3`; a `> **Scope:**` note that it describes v3.9.0 (`docs/configuration.md:5`); now covers the FAQ-cache, Sonnet-5, Sonnet-5.5, Opus-fallback, thinking-effort and extended-thinking toggles |
 | `docs/next-upgrade-plan-2026-09.md` | draft plan | Point-in-time upgrade research; mixed shipped/open items | frontmatter `status: draft`, 2026-09-18 |
 | `docs/superpowers/plans/*` (17) | point-in-time plans | What was *intended* on the plan's date — **not** current-state assertions | filename dates 2026-06-13 → 2026-09-07 |
 | `docs/superpowers/specs/*` (6) | point-in-time design specs | Locked decisions + rejected alternatives for their feature | filename dates 2026-06-13 → 2026-09-07 |
@@ -385,14 +385,14 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    `DEPLOY.md` used to table Primary = `us.anthropic.claude-opus-4-6-v1`, Secondary =
    `us.anthropic.claude-sonnet-4-6`, and to say the `anthropic` chain becomes
    `claude-opus-4-7 → claude-sonnet-4-6 → claude-haiku-4-5` — both inverted relative to the code. Current
-   state: `DEPLOY.md:94` = Primary `us.anthropic.claude-sonnet-4-6`, `:95` = Secondary
-   `us.anthropic.claude-opus-4-6-v1`, `:96` = Fallback `us.anthropic.claude-haiku-4-5-20251001-v1:0`, and
-   `:99` = `claude-sonnet-4-6 → claude-opus-4-7 → claude-haiku-4-5`. Both match `bedrockChain()`
-   (`src/lib/llm.ts:87-95`, Haiku fallback at `:93`) and `anthropicChain()` (`src/lib/llm.ts:100-108`). They
+   state (Opus became an opt-in rung on 2026-10-01): `DEPLOY.md:94` = Primary `us.anthropic.claude-sonnet-4-6`, `:95` = Behind a 5.x primary,
+   `:96` = Opt-in `us.anthropic.claude-opus-4-6-v1`, `:97` = Last resort `us.anthropic.claude-haiku-4-5-20251001-v1:0`, and
+   `:100` = `claude-sonnet-4-6 → claude-haiku-4-5` (Opus behind the primary when `LLM_USE_OPUS_FALLBACK=true`). Both match `bedrockChain()`
+   (`src/lib/llm.ts:118-126`, Haiku at `:124`) and `anthropicChain()` (`src/lib/llm.ts:129-137`), built by `buildChain()` (`:102-110`). They
    are functions rather than module-level consts because the primary rung is conditional on
-   `isSonnet5PrimaryEnabled()` (`src/lib/llm.ts:44`), i.e. `LLM_USE_SONNET_5 === "true"`, which swaps the
+   `isSonnet5PrimaryEnabled()` (`src/lib/llm.ts:46`), i.e. `LLM_USE_SONNET_5 === "true"`, which swaps the
    primary to `us.anthropic.claude-sonnet-5` / `claude-sonnet-5` (`LLM_USE_SONNET_5_5 === "true"` wins over it and swaps in `global.anthropic.claude-sonnet-5-5` / `claude-sonnet-5-5`). The same edit added a standing rule at
-   `DEPLOY.md:101-103` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is
+   `DEPLOY.md:103-107` — "Both chains are **Sonnet-primary**, not Opus-primary … that file is
    authoritative if this table ever disagrees with it". `CLAUDE.md` § LLM / Chat Architecture and
    `docs/configuration.md` §1 (the "Model fallback chain" block) always stated the correct order. The earlier residual gaps are closed too:
    that rule's source pointer now names `bedrockChain()` / `anthropicChain()` instead of the old

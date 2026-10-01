@@ -13,6 +13,7 @@ import { connection } from "next/server";
 export const instant = false;
 
 import { isAdminAuthorized } from "@/lib/admin-auth";
+import { cacheReadSavingsUsd, type UsageTokens } from "@/lib/llm-pricing";
 import { redis } from "@/lib/redis";
 import { KIND_LITERALS, type TelemetryEvent } from "@/lib/telemetry/schema";
 
@@ -111,9 +112,6 @@ function fallbackRate(llmAttempts: TelemetryEvent[]): number {
   return Math.round((fallen / llmAttempts.length) * 100);
 }
 
-// Cost per cache-read token in USD per million tokens
-const CACHE_READ_PRICE_PER_MTOK = 0.3;
-
 function costSummary(llmAttempts: TelemetryEvent[]): {
   totalUsd: number;
   savedUsd: number;
@@ -125,10 +123,10 @@ function costSummary(llmAttempts: TelemetryEvent[]): {
     if (typeof a.cost_usd === "number") {
       totalUsd += a.cost_usd;
     }
-    const u = a.usage as Record<string, number> | undefined;
-    if (u?.cache_read_input_tokens) {
-      savedUsd +=
-        (u.cache_read_input_tokens / 1_000_000) * CACHE_READ_PRICE_PER_MTOK;
+    // Priced per model (llm-pricing.ts); a model with no verified price adds nothing.
+    const u = a.usage as UsageTokens | undefined;
+    if (u && typeof a.model === "string") {
+      savedUsd += cacheReadSavingsUsd(a.model, u) ?? 0;
     }
   }
   return { totalUsd, savedUsd };
@@ -347,7 +345,7 @@ function fmtAttrs(e: TelemetryEvent): string {
       const u = a.usage as Record<string, number> | undefined;
       const parts = [];
       if (a.model)
-        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+        parts.push(String(a.model).replace(/^(?:us|global)\.anthropic\.claude-/, ""));
       if (u?.input_tokens != null) parts.push(`in:${u.input_tokens}`);
       if (u?.cache_read_input_tokens)
         parts.push(`cached:${u.cache_read_input_tokens}`);
@@ -387,7 +385,7 @@ function fmtAttrs(e: TelemetryEvent): string {
       const parts = [String(a.outcome ?? "?")];
       if (a.tier && a.tier !== "none") parts.push(`tier:${a.tier}`);
       if (a.model)
-        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+        parts.push(String(a.model).replace(/^(?:us|global)\.anthropic\.claude-/, ""));
       if (typeof a.saved_usd === "number")
         parts.push(`saved:$${a.saved_usd.toFixed(4)}`);
       if (typeof a.similarity === "number")
@@ -705,7 +703,7 @@ export default async function TelemetryDashboard() {
                     className="border-b border-border-strong/10 hover:bg-bg-elevated/40"
                   >
                     <td className="px-2 py-2 font-mono text-fg-muted">
-                      {row.model.replace("us.anthropic.claude-", "")}
+                      {row.model.replace(/^(?:us|global)\.anthropic\.claude-/, "")}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">
                       {row.calls}

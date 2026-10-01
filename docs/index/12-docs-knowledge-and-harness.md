@@ -420,7 +420,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    `export const runtime`.** No route exports `runtime` anywhere in `src/`" and states that `maxDuration` is
    "**per-route, not a uniform 30s**", followed by the real per-route table. Measured from
    `export const maxDuration` in each `route.ts`: 60 for `cron/{eval,seo-audit,content-audit}`, 30 for
-   `chat`/`mcp/[transport]`/`cron/github-sync`, 25 for `cron/health-check`, 20 `transcribe`, 15
+   `mcp/[transport]`/`cron/github-sync` (`chat` moved from 30 to 60 after v3.10.0), 25 for `cron/health-check`, 20 `transcribe`, 15
    `tts`/`tts-google`, 10 `admin/faq-cache/purge`, 5 `error`, none for `visit`/`github/stats`/`md/*`/
    `resume.json`. The table now has the row for the purge route's 10 as well. The only
    `export const runtime` text left in `src/` is the comment noting its removal in the MCP route

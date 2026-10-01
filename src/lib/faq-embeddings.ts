@@ -22,7 +22,7 @@ const EMBED_DIMENSIONS = 512;
 
 /** The AWS SDK v3's NodeHttpHandler defaults requestTimeout to 0 (disabled) —
  *  without an explicit bound, a slow/hung Bedrock response could consume the
- *  chat route's entire maxDuration (30s) budget. This tier is a bonus over
+ *  chat route's entire maxDuration (60s) budget. This tier is a bonus over
  *  the base exact-match cache, never a blocker, so it gets its own tight cap
  *  well under that budget. */
 const EMBED_TIMEOUT_MS = 5_000;

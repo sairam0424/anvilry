@@ -159,27 +159,51 @@ function isSonnet5Family(model: string): boolean {
   return model.includes("sonnet-5");
 }
 
-type ThinkingEffort = "low" | "medium";
+const THINKING_EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 
-/** How hard the model may think. LLM_THINKING_EFFORT (exactly "low" or "medium";
- *  anything else is ignored) overrides every thinking-capable rung; otherwise
- *  Sonnet 5.x gets "medium" and everything else keeps "low". "high" is deliberately
- *  not accepted: the request's shared thinking-plus-answer ceiling (the max_tokens
- *  floor below: 2048, 4096 on Sonnet 5.x) was sized for low and medium, and a hard
- *  question at high effort could spend it all on reasoning and cut the answer off.
+type ThinkingEffort = (typeof THINKING_EFFORTS)[number];
+
+/** How hard the model may think. LLM_THINKING_EFFORT (exactly one of "low", "medium", "high",
+ *  "xhigh" or "max", lower case; anything else is ignored) overrides every thinking-capable
+ *  rung; otherwise Sonnet 5.x gets "medium" and everything else keeps "low".
  *
- *  Why 5.x is "medium": measured live on Bedrock (2026-10-01, the production prompt,
- *  8 recruiter questions), Sonnet 5.5 at "low" did not think on any of the 8 (0 thinking
- *  tokens), so the reasoning panel stayed empty. At "medium" it thought on the harder
- *  questions only (90 to 390 thinking tokens, a 300 to 700 character summary, +2 to
- *  3 s), about $0.0006 more per question on average, and still skipped the easy ones.
+ *  Which levels a model takes was read off Bedrock's own 400 on the streaming action
+ *  (2026-10-01): Sonnet 5 and 5.5 accept all five, Sonnet 4.6 accepts "low", "medium", "high"
+ *  and "max" and answers 400 to "xhigh". A 400 is not fallback-eligible, so "xhigh" is never
+ *  sent to a model that is not Sonnet 5.x: it becomes "max", the level above (Opus 4.7 may take it).
+ *
+ *  What the levels do on Sonnet 5.5 (production prompt, 90 calls over 15 recruiter-style
+ *  questions, 2026-10-01): "low" reasoned on 1 of 15 calls, "medium" on 3 of 15, "high" on 16 of
+ *  25 (it skipped "hi", "What is your current role?" and "What is Pensieve?" every time),
+ *  "xhigh" on 30 of 30 (first answer text after 4.1 s on average, 7.6 s at most) and "max" on
+ *  5 of 5 (10 s on average, 20.5 s at most). So "medium", the default, reasons mostly on the
+ *  hard questions (2 of its 3 reasoned calls); "xhigh" shows reasoning on every question.
  *  Sonnet 4.6 keeps the "low" it has always been sent. */
 function thinkingEffort(model: string): ThinkingEffort {
   const override = process.env.LLM_THINKING_EFFORT;
-  if (override === "low" || override === "medium") {
-    return override;
+  const level = THINKING_EFFORTS.find((known) => known === override);
+  if (level !== undefined) {
+    return level === "xhigh" && !isSonnet5Family(model) ? "max" : level;
   }
   return isSonnet5Family(model) ? "medium" : "low";
+}
+
+/** The shared thinking-plus-answer ceiling: `max_tokens` counts reasoning and answer together,
+ *  and a completion that spends it all on reasoning ends with no answer and no fallback. Output
+ *  measured on Sonnet 5.5 over the same 90 calls: at most 593 tokens at "low", 578 at "medium",
+ *  694 at "high", 960 at "xhigh" and 2,902 at "max", for answers of two to four sentences; each
+ *  floor leaves several times that. A larger value from the caller is never lowered. */
+function thinkingTokenFloor(model: string, effort: ThinkingEffort): number {
+  switch (effort) {
+    case "max":
+      return 32_000;
+    case "xhigh":
+      return 16_000;
+    case "high":
+      return 8_192;
+    default:
+      return isSonnet5Family(model) ? 4096 : 2048;
+  }
 }
 
 /** The adaptive-thinking request shape. Sonnet 5.x returns a thinking block with EMPTY
@@ -519,8 +543,8 @@ export function streamWithFallback(
         // approximates this route's prior small 1024-token budget's intent (a
         // quick portfolio-bot answer, not a deep research task); Sonnet 5.x gets
         // "medium" because at "low" it did not think when measured (see thinkingEffort()). The
-        // max_tokens bump below is shared thinking+answer headroom: 2048, or 4096 on
-        // Sonnet 5.x (it reasons at medium, and its tokenizer emits ~30% more tokens).
+        // max_tokens bump below is shared thinking+answer headroom, sized by thinkingTokenFloor():
+        // 2048, 4096 on Sonnet 5.x, and up to 32000 at the highest efforts.
         //
         // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
         // the `thinking` field is omitted entirely — unlike 4.6, where omission
@@ -539,7 +563,7 @@ export function streamWithFallback(
             ? {
                 max_tokens: Math.max(
                   (params as { max_tokens?: number }).max_tokens ?? 0,
-                  isSonnet5Family(model) ? 4096 : 2048,
+                  thinkingTokenFloor(model, thinkingEffort(model)),
                 ),
               }
             : {}),

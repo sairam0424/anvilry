@@ -345,7 +345,7 @@ function fmtAttrs(e: TelemetryEvent): string {
       const u = a.usage as Record<string, number> | undefined;
       const parts = [];
       if (a.model)
-        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+        parts.push(String(a.model).replace(/^(?:us|global)\.anthropic\.claude-/, ""));
       if (u?.input_tokens != null) parts.push(`in:${u.input_tokens}`);
       if (u?.cache_read_input_tokens)
         parts.push(`cached:${u.cache_read_input_tokens}`);
@@ -385,7 +385,7 @@ function fmtAttrs(e: TelemetryEvent): string {
       const parts = [String(a.outcome ?? "?")];
       if (a.tier && a.tier !== "none") parts.push(`tier:${a.tier}`);
       if (a.model)
-        parts.push(String(a.model).replace("us.anthropic.claude-", ""));
+        parts.push(String(a.model).replace(/^(?:us|global)\.anthropic\.claude-/, ""));
       if (typeof a.saved_usd === "number")
         parts.push(`saved:$${a.saved_usd.toFixed(4)}`);
       if (typeof a.similarity === "number")
@@ -703,7 +703,7 @@ export default async function TelemetryDashboard() {
                     className="border-b border-border-strong/10 hover:bg-bg-elevated/40"
                   >
                     <td className="px-2 py-2 font-mono text-fg-muted">
-                      {row.model.replace("us.anthropic.claude-", "")}
+                      {row.model.replace(/^(?:us|global)\.anthropic\.claude-/, "")}
                     </td>
                     <td className="px-2 py-2 text-right tabular-nums text-fg-subtle">
                       {row.calls}

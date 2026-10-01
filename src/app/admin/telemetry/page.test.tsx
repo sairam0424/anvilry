@@ -129,6 +129,28 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
     expect(html).toContain("saved $0.0000 by caching");
   });
 
+  it("shortens global. model ids in the events table and the model cost table, like us. ids", async () => {
+    // Sonnet 5.5 is served only from the global profile, so its id is global.anthropic.*;
+    // only the us. prefix used to be stripped and the id printed in full.
+    const html = await renderWith([
+      attempt(
+        "global.anthropic.claude-sonnet-5-5",
+        { input_tokens: 10, output_tokens: 10 },
+        0.001,
+      ),
+      attempt(
+        "us.anthropic.claude-sonnet-4-6",
+        { input_tokens: 10, output_tokens: 10 },
+        0.002,
+      ),
+    ]);
+    expect(html).not.toContain("global.anthropic.claude-");
+    expect(html).not.toContain("us.anthropic.claude-");
+    expect(html).toContain(">sonnet-5-5<");
+    expect(html).toContain(">sonnet-4-6<");
+    expect(html).toContain("sonnet-5-5  ·  in:10");
+  });
+
   it("sums savings across models at their own rates", async () => {
     const html = await renderWith([
       attempt("global.anthropic.claude-sonnet-5-5", {

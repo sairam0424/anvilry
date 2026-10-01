@@ -164,9 +164,9 @@ type ThinkingEffort = "low" | "medium";
 /** How hard the model may think. LLM_THINKING_EFFORT (exactly "low" or "medium";
  *  anything else is ignored) overrides every thinking-capable rung; otherwise
  *  Sonnet 5.x gets "medium" and everything else keeps "low". "high" is deliberately
- *  not accepted: the request's shared thinking-plus-answer ceiling (the 2048-token
- *  floor on max_tokens below) was sized for low and medium, and a hard question at
- *  high effort could spend it all on reasoning and cut the answer off.
+ *  not accepted: the request's shared thinking-plus-answer ceiling (the max_tokens
+ *  floor below: 2048, 4096 on Sonnet 5.x) was sized for low and medium, and a hard
+ *  question at high effort could spend it all on reasoning and cut the answer off.
  *
  *  Why 5.x is "medium": measured live on Bedrock (2026-10-01, the production prompt,
  *  8 recruiter questions), Sonnet 5.5 at "low" never thought (0 thinking tokens in 8
@@ -398,7 +398,7 @@ export function streamWithFallback(
     /** Optional traceId threaded into the trace frame so the client can correlate
      *  the streamed answer with the server-side llm.attempt events. */
     traceId?: string;
-    /** When true, enables Anthropic adaptive extended thinking (effort: "low").
+    /** When true, enables Anthropic adaptive extended thinking (effort: see thinkingEffort()).
      *  Haiku models are silently excluded — they do not support extended thinking.
      *  The stream is: THINKING_SENTINEL + reasoning bytes + THINKING_END + answer bytes.
      *  Reasoning streams live to the client; the trace frame does NOT include reasoning. */
@@ -519,8 +519,8 @@ export function streamWithFallback(
         // approximates this route's prior small 1024-token budget's intent (a
         // quick portfolio-bot answer, not a deep research task); Sonnet 5.x gets
         // "medium" because at "low" it never thinks (see thinkingEffort()). The
-        // max_tokens bump below is kept only as shared thinking+answer headroom,
-        // same purpose as before.
+        // max_tokens bump below is shared thinking+answer headroom: 2048, or 4096 on
+        // Sonnet 5.x (it reasons at medium, and its tokenizer emits ~30% more tokens).
         //
         // CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when
         // the `thinking` field is omitted entirely — unlike 4.6, where omission
@@ -539,7 +539,7 @@ export function streamWithFallback(
             ? {
                 max_tokens: Math.max(
                   (params as { max_tokens?: number }).max_tokens ?? 0,
-                  2048,
+                  isSonnet5Family(model) ? 4096 : 2048,
                 ),
               }
             : {}),
@@ -613,15 +613,15 @@ export function streamWithFallback(
             // 5/Opus 5's adaptive-thinking-on-by-default behavior is exactly
             // the kind of provider-side default this repo has already been
             // burned by once — if a thinking_delta ever arrives despite the
-            // explicit off shape, drop it here rather than streaming raw,
-            // unframed reasoning bytes (no THINKING_SENTINEL was emitted for
-            // this attempt in that case).
+            // explicit off shape, drop it here rather than streaming raw, unframed
+            // bytes (no THINKING_SENTINEL was emitted for this attempt in that case).
+            // Also dropped once THINKING_END is out: it would read as answer text.
             if (
               event.type === "content_block_delta" &&
               (event.delta as { type: string; thinking?: string }).type ===
                 "thinking_delta"
             ) {
-              if (!useThinking) continue;
+              if (!useThinking || thinkingEndEmitted) continue;
               // Stripped defensively: a legitimate thinking chunk should never
               // contain the protocol's own framing bytes (see llm-trace.ts) —
               // this is a live stream, not something faqCacheSet can sanitize

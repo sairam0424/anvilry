@@ -2070,3 +2070,112 @@ describe("streamWithFallback — thinking a visitor can actually see (Sonnet 5.x
     );
   });
 });
+
+describe("streamWithFallback — reasoning that must never reach the answer or starve it", () => {
+  const params = {
+    messages: [{ role: "user" as const, content: "hi" }],
+    max_tokens: 1024,
+    system: "test",
+  };
+  type Sent = { model: string; max_tokens?: number };
+
+  it("drops a thinking_delta that arrives after the answer has started (it would be read as answer text)", async () => {
+    // Only reachable if a provider opens a second thinking block after the first text.
+    // With display 'summarized' that block has real text, so it would be enqueued after
+    // THINKING_END and shown to the visitor as part of the answer.
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "early reasoning. " },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Answer part 1. " },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "thinking_delta", thinking: "LATE REASONING. " },
+        },
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Answer part 2." },
+        },
+      ],
+    ];
+    const onAttempt = vi.fn<(a: LlmAttempt) => void>();
+    const { streamWithFallback } = await import("./llm");
+    const body = await drain(
+      streamWithFallback(params, { extendedThinking: true, onAttempt }),
+    );
+    expect(body).not.toContain("LATE REASONING");
+    const endIdx = body.indexOf(THINKING_END);
+    expect(body.slice(THINKING_SENTINEL.length, endIdx)).toBe("early reasoning. ");
+    expect(
+      body.slice(endIdx + THINKING_END.length).split(TRACE_DELIMITER)[0],
+    ).toBe("Answer part 1. Answer part 2.");
+    // What the visitor saw and what the FAQ cache may store are the same text.
+    expect(onAttempt.mock.calls[0][0].answerText).toBe(
+      "Answer part 1. Answer part 2.",
+    );
+  });
+
+  // Sonnet 5.x reasons at effort 'medium' (and its tokenizer emits ~30% more tokens), and
+  // reasoning shares max_tokens with the answer. A completion that spends it all on
+  // reasoning ends the stream with no answer and no fallback, so 5.x gets twice the
+  // headroom of the other models.
+  it.each([
+    ["Sonnet 5.5", { LLM_USE_SONNET_5_5: "true" }, 4096],
+    ["Sonnet 5", { LLM_USE_SONNET_5: "true" }, 4096],
+    ["Sonnet 4.6 (default)", {}, 2048],
+  ])(
+    "raises max_tokens to at least %s's thinking headroom when extended thinking is on",
+    async (_label, env, floor) => {
+      Object.assign(process.env, env);
+      STATE.events = [
+        [
+          {
+            type: "content_block_delta",
+            delta: { type: "text_delta", text: "Hi." },
+          },
+        ],
+      ];
+      const { streamWithFallback } = await import("./llm");
+      await drain(streamWithFallback(params, { extendedThinking: true }));
+      expect((STATE.streamParamsByCall[0] as Sent).max_tokens).toBe(floor);
+    },
+  );
+
+  it("never lowers a larger caller max_tokens, and leaves it alone when thinking is off", async () => {
+    process.env.LLM_USE_SONNET_5_5 = "true";
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    const { streamWithFallback } = await import("./llm");
+    await drain(
+      streamWithFallback(
+        { ...params, max_tokens: 9000 },
+        { extendedThinking: true },
+      ),
+    );
+    expect((STATE.streamParamsByCall[0] as Sent).max_tokens).toBe(9000);
+
+    STATE.callCount = 0;
+    STATE.streamParamsByCall = [];
+    STATE.events = [
+      [
+        {
+          type: "content_block_delta",
+          delta: { type: "text_delta", text: "Hi." },
+        },
+      ],
+    ];
+    await drain(streamWithFallback(params, { extendedThinking: false }));
+    expect((STATE.streamParamsByCall[0] as Sent).max_tokens).toBe(1024);
+  });
+});

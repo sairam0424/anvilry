@@ -401,7 +401,7 @@ through `redact()` first (`:428`). A request that reached the FAQ-cache check al
 span (`outcome` hit/miss, `tier` exact/semantic/none, and on a hit `saved_usd`, `model`, `reasoning_replayed` (a boolean; the summary text never goes to telemetry, `:337`), plus `similarity` for
 the semantic tier — `:317-342`) and stamps `cache_hit` / `cache_tier` on the parent `http.request` span (`:316`).
 A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-cache"`,
-`src/lib/chat-cache.ts:222-240`) so a broken cache is distinguishable from a genuine miss.
+`src/lib/chat-cache.ts:235-253`) so a broken cache is distinguishable from a genuine miss.
 
 ### FAQ response cache (first-turn questions)
 
@@ -412,32 +412,32 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
   non-blank. Scoped to turn 1 because a later turn can legitimately warrant a different persona/depth
   (`:269-274`). The header needs no auth — skipping only forfeits a saving, it grants nothing (`:275-280`).
 - **Key and value:** SHA-256 of the *normalized* question (lowercase, whitespace-collapsed, trailing `?!.,;:`
-  stripped by a plain loop, not a regex — `chat-cache.ts:132-148`) under `anvilry:chat:cache:` (`:56`), value
-  `{answer, reasoning?, model, costUsd, cachedAt, corpusBuiltAt, embedding?}` (`:97-114`), TTL `FAQ_CACHE_TTL_SECONDS` = 24 h
-  (`:67`). No raw question text is stored, but the optional `reasoning` summary is model-written prose that can quote or paraphrase the question: it is kept only for a normalized question of at most `MAX_REASONING_QUESTION_CHARS` = 200 characters (`:95`) and replayed only on an exact-tier hit, as `THINKING_SENTINEL` + summary + `THINKING_END` ahead of the answer unless `EXTENDED_THINKING=false` (`route.ts:309-313,352-353`).
-- **Two tiers.** Exact (`faqCacheGet`, `:246`) is on by default; the kill switch is `FAQ_CACHE_ENABLED=false`
-  (`isFaqCacheEnabled`, `:158`). Semantic (`faqCacheSemanticGet`, `:278`) is **off** unless
-  `FAQ_CACHE_SEMANTIC_MATCH=true` (`:150`): Titan `amazon.titan-embed-text-v2:0`, 512 dims, 5 s timeout
-  (`faq-embeddings.ts:20-28`), cosine similarity ≥ 0.92 (`chat-cache.ts:282`) over a capped ZSET index
-  `anvilry:chat:cache:index` (`FAQ_CACHE_INDEX_CAP` = 500, `:57,70`). The embedding module is imported
-  dynamically, so its AWS SDK cost is paid only when the flag is on. The exact tier normalizes a stored `reasoning` on read (`withReplayableReasoning`, `:181`, built on `replayableReasoning`, `:172`, and applied at `:265`: Redis is a trust boundary, so an unusable value becomes no reasoning); the semantic tier deletes it (`:310-314`) and its hit type is `Omit<FaqCacheEntry, "reasoning">` (`:123`), so a semantic hit can never replay another visitor's wording.
-- **Staleness:** every entry is tagged with `anvilry:corpus:built_at` (stamped in production by
-  `src/instrumentation.ts:97`, re-stamped with `Date.now()` on EVERY production process start: every cold start or fresh serverless instance, not only a content deploy); a mismatch at read time is a miss (`chat-cache.ts:189-206`), so entries die at each such start. Both-null counts as a
+  stripped by a plain loop, not a regex — `chat-cache.ts:133-149`) under `anvilry:chat:cache:` (`:57`), value
+  `{answer, reasoning?, model, costUsd, cachedAt, corpusBuiltAt, embedding?}` (`:98-115`), TTL `FAQ_CACHE_TTL_SECONDS` = 24 h
+  (`:68`). No raw question text is stored, but the optional `reasoning` summary is model-written prose that can quote or paraphrase the question: it is kept only for a normalized question of at most `MAX_REASONING_QUESTION_CHARS` = 200 characters (`:96`) and replayed only on an exact-tier hit, as `THINKING_SENTINEL` + summary + `THINKING_END` ahead of the answer unless `EXTENDED_THINKING=false` (`route.ts:309-313,352-353`).
+- **Two tiers.** Exact (`faqCacheGet`, `:259`) is on by default; the kill switch is `FAQ_CACHE_ENABLED=false`
+  (`isFaqCacheEnabled`, `:159`). Semantic (`faqCacheSemanticGet`, `:294`) is **off** unless
+  `FAQ_CACHE_SEMANTIC_MATCH=true` (`:151`): Titan `amazon.titan-embed-text-v2:0`, 512 dims, 5 s timeout
+  (`faq-embeddings.ts:20-28`), cosine similarity ≥ 0.92 (`chat-cache.ts:298`) over a capped ZSET index
+  `anvilry:chat:cache:index` (`FAQ_CACHE_INDEX_CAP` = 500, `:58,71`). The embedding module is imported
+  dynamically, so its AWS SDK cost is paid only when the flag is on. The exact tier normalizes a stored `reasoning` on read (`withReplayableReasoning`, `:182`, built on `replayableReasoning`, `:173`, and applied at `:281`: Redis is a trust boundary, so an unusable value becomes no reasoning); the semantic tier deletes it (`:326-330`) and its hit type is `Omit<FaqCacheEntry, "reasoning">` (`:124`), so a semantic hit can never replay another visitor's wording.
+- **Staleness:** every entry is tagged with the id of the deployment that wrote it (`ownDeploymentTag()`, `VERCEL_DEPLOYMENT_ID`, `chat-cache.ts:193-195`); a mismatch at read time is a miss (`chat-cache.ts:193-219`), so entries end with their deployment, not at a cold start or a new instance, and another deployment's answers (a rollback target, a preview reading production's entries) are never served. Where the host gives no id the tag is `anvilry:corpus:built_at` (stamped in production by
+  `src/instrumentation.ts:98`, re-stamped with `Date.now()` on EVERY production process start), and there every start retires the entries. Both-null counts as a
   match, so local dev caches without a deploy stamp.
-- **Write gate** (`faqCacheSet`, `:331`): only `finish_reason === "end_turn"`, control bytes stripped, 1–4000
-  chars (`MAX_CACHEABLE_ANSWER_CHARS`, `:83`). `answerText` reaches the route only for a clean, complete
-  answer (`llm.ts:531,690,723`; `reasoningText`, exactly the `thinking_delta` bytes sent to the client, rides the same record when non-empty and is never emitted to telemetry, `llm.ts:534,671,725`), so an apology tail or a partial answer can never be cached; a clean answer from a fallback rung does reach the route, which declines to write it through (`!attempt.fell_back`, `route.ts:466`), so a transient primary outage is not pinned for 24 h. The sixth parameter `reasoning?` (`:337`) is stored beside the answer only when `replayableReasoning` (`:172`) keeps it (control bytes stripped, trimmed, 1–4000 chars, `MAX_CACHEABLE_REASONING_CHARS`, `:89`) and the normalized question is at most `MAX_REASONING_QUESTION_CHARS` = 200 (`:95`, checked at `:355-358`); otherwise the answer is cached without it, and a summary over 4000 characters is logged by length only (`console.warn`, `:365`). The route passes `attempt.reasoningText` (`route.ts:474`). Index trimming is
-  sampled 1-in-20 (`TRIM_SAMPLE_EVERY`, `:76`).
+- **Write gate** (`faqCacheSet`, `:347`): only `finish_reason === "end_turn"`, control bytes stripped, 1–4000
+  chars (`MAX_CACHEABLE_ANSWER_CHARS`, `:84`). `answerText` reaches the route only for a clean, complete
+  answer (`llm.ts:531,690,723`; `reasoningText`, exactly the `thinking_delta` bytes sent to the client, rides the same record when non-empty and is never emitted to telemetry, `llm.ts:534,671,725`), so an apology tail or a partial answer can never be cached; a clean answer from a fallback rung does reach the route, which declines to write it through (`!attempt.fell_back`, `route.ts:466`), so a transient primary outage is not pinned for 24 h. The sixth parameter `reasoning?` (`:353`) is stored beside the answer only when `replayableReasoning` (`:173`) keeps it (control bytes stripped, trimmed, 1–4000 chars, `MAX_CACHEABLE_REASONING_CHARS`, `:90`) and the normalized question is at most `MAX_REASONING_QUESTION_CHARS` = 200 (`:96`, checked at `:371-374`); otherwise the answer is cached without it, and a summary over 4000 characters is logged by length only (`console.warn`, `:381`). The route passes `attempt.reasoningText` (`route.ts:474`). Index trimming is
+  sampled 1-in-20 (`TRIM_SAMPLE_EVERY`, `:77`).
 - **Accepted gap:** the gate proves completion cleanliness, not content safety — a jailbreak that finishes with
-  `end_turn` would be replayed until TTL, a corpus-build tag change (every production process start re-stamps it), or a purge (`chat-cache.ts:25-32`); the stored reasoning summary is model text too, bounded but not content-checked, and can quote the question (kept for the same TTL, replayed only to the same normalized question).
+  `end_turn` would be replayed until TTL, a change of corpus tag (the next deploy; without a deployment id, any production process start), or a purge (`chat-cache.ts:25-32`); the stored reasoning summary is model text too, bounded but not content-checked, and can quote the question (kept for the same TTL, replayed only to the same normalized question).
 - **Purge:** `POST /api/admin/faq-cache/purge` (`src/app/api/admin/faq-cache/purge/route.ts:31-74`) →
-  `faqCachePurge` (`chat-cache.ts:449`). `requireAdmin` Basic auth; the `/admin/:path*` proxy matcher does
+  `faqCachePurge` (`chat-cache.ts:465`). `requireAdmin` Basic auth; the `/admin/:path*` proxy matcher does
   **not** cover `/api/admin/*`, so the route authenticates itself. 4 KB body cap checked before *and* after
   parse, question ≤ 2000 chars, deliberately not rate-limited.
 - **Fail-open:** every function guards `redis === null` and turns a Redis error into a miss (a no-op for
-  `faqCacheSet`) plus a `server.error` span (`emitCacheError`, `:222-240`; its message is cut at Upstash's `, command was:` echo, which for a failed SET is the whole entry, and capped at 300 characters, `:212-214`; the purge result's message is cut the same way, `:466`). The one deliberate exception is
+  `faqCacheSet`) plus a `server.error` span (`emitCacheError`, `:235-253`; its message is cut at Upstash's `, command was:` echo, which for a failed SET is the whole entry, and capped at 300 characters, `:225-227`; the purge result's message is cut the same way, `:482`). The one deliberate exception is
   `faqCachePurge`, an operator action: it emits the same span but returns a distinguishable `error` result (also when
-  Redis is unconfigured), which the purge route maps to HTTP 503 (`chat-cache.ts:433-436,449-468`;
+  Redis is unconfigured), which the purge route maps to HTTP 503 (`chat-cache.ts:449-452,465-484`;
   `purge/route.ts:70-72`).
 
 ### Failure modes
@@ -460,9 +460,10 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 | Model navigates to a view the prompt never offered | The `[[cmd:view:<x>]]` parser accepts every `VIEWS` member (all six, including `resume` — `parse-cards.ts:62`), while the system prompt lists five (`chat/route.ts:109`). Harmless — `ViewRouter` still gates on `isViewEnabled` — but the grammar and the prompt are two separate copies. |
 | XSS via streamed markdown | Removing `skipHtml` or overriding `urlTransform` (`markdown-message.tsx:10-16`). |
 | Abort loses the partial answer | `AbortError` is treated as a user action — partial kept, suffixed ` …[stopped]` (`use-chat.ts:363-374`); the catch path flushes **before** mutating messages (`:360`). |
-| A repeat question replays a stale or unsafe answer | Serving from the FAQ cache is bounded by the 24 h TTL, the corpus-build tag, and the purge route — but a jailbreak that ends `end_turn` passes the write gate. Remedy: `POST /api/admin/faq-cache/purge` with the question text (`chat-cache.ts:449`). |
+| A repeat question replays a stale or unsafe answer | Serving from the FAQ cache is bounded by the 24 h TTL, the corpus-build tag, and the purge route — but a jailbreak that ends `end_turn` passes the write gate. Remedy: `POST /api/admin/faq-cache/purge` with the question text (`chat-cache.ts:465`). |
 | Eval cron silently tests the cache instead of the model | Dropping `X-Chat-Skip-Cache` from the cron's request (`eval/route.ts:123`); `route.ts:284` is the only reader. Each side is pinned by its own test (`cron/eval/route.test.ts`, `chat/route.test.ts`), so only a rename of one side together with its own test stays silent. |
-| Broken cache looks like a normal miss | Swallowing the Redis error instead of `emitCacheError` (`chat-cache.ts:222-240`) — the `server.error` with `source: "chat-cache"` is the only signal. |
+| Broken cache looks like a normal miss | Swallowing the Redis error instead of `emitCacheError` (`chat-cache.ts:235-253`) — the `server.error` with `source: "chat-cache"` is the only signal. |
+| The cache stops surviving process starts again | `VERCEL_DEPLOYMENT_ID` missing or empty at runtime, so `ownDeploymentTag()` (`chat-cache.ts:193-195`) returns `null` and the tag falls back to the stamp that `register()` rewrites at every production process start. Nothing fails; the hit rate collapses. The `deployment_id` boolean in the `[config]` log line (`instrumentation.ts:44`) is the tell. |
 
 ### Flags / env that alter it
 
@@ -472,7 +473,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 `NEXT_PUBLIC_EXTENDED_THINKING` (client thinking-block rendering, `chat-messages.tsx:165`);
 `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` (`chat-view.tsx:259`); `NEXT_PUBLIC_PDF_ATTACHMENTS`
 (`file-picker-button.tsx:7`); `FAQ_CACHE_ENABLED` (kill switch, default on) and `FAQ_CACHE_SEMANTIC_MATCH`
-(default off) (`chat-cache.ts:150,158`); `CRON_SECRET` (rate-limit bypass for the eval cron);
+(default off) (`chat-cache.ts:151,159`); `CRON_SECRET` (rate-limit bypass for the eval cron);
 `UPSTASH_REDIS_REST_URL`/`_TOKEN` (rate limit + FAQ cache + telemetry sink); `VERCEL_URL` (self-fetch base for
 the GitHub stats block, `route.ts:39` — unlike the health-check cron, which prefers the production alias via
 `probeBase()` (`src/lib/health-expectations.ts:51-59`), this fetch has no SSO-wall handling: on a protected
@@ -798,7 +799,7 @@ CLIENT SIDE
 | 7 | `src/instrumentation-client.ts:26-39,46-106` | The 100 ms dedupe contract, both window listeners, the lazy `web-vitals` import. |
 | 8 | `src/app/error.tsx:39,54-81` / `src/app/global-error.tsx:34,51-70` | Boundary beacons with distinct `source` values (`"boundary"` / `"global-boundary"`). |
 | 9 | `src/app/api/error/route.ts:83,87-184` | The sink route: opt-out gate, rate limit (the `beacon` bucket, `:101`), dual 413, Zod, redaction, 204. |
-| 10 | `src/instrumentation.ts:35-105` | Cold-start `[config]` snapshot (presence-only, never secret values) + the production-only `anvilry:corpus:built_at` write. |
+| 10 | `src/instrumentation.ts:35-106` | Cold-start `[config]` snapshot (presence-only, never secret values) + the production-only `anvilry:corpus:built_at` write (the dashboard's Corpus age; the FAQ cache's fallback tag). |
 | 11 | `src/app/admin/telemetry/page.tsx` | The dashboard; 6 hardcoded snapshot-key literals plus the templated `anvilry:trace:${kind}`; the "saved by caching" tile priced per model via `cacheReadSavingsUsd` from `llm-pricing.ts` (`costSummary`, `:115-133`); snake_case usage reads (`:60-68`); its own Basic-auth re-check (`:470`). |
 | 12 | `scripts/replay-trace.mjs:47-108` | The replay CLI; one `zrange` per kind over a 7-day window. |
 | 13 | `src/lib/admin-auth.ts` / `src/proxy.ts` / `src/lib/cron-auth.ts` | The two auth gates the telemetry surface sits behind: admin Basic auth (one `isAdminAuthorized` shared by the proxy `:21-35`, `requireAdmin` `:48-50` and the page) and the fail-closed `Bearer ${CRON_SECRET}` check (`hasValidCronSecret` `:15-20`, `unauthorizedUnlessCron` `:23-26`) used by all five cron routes and by the rate limiter's bypass. |
@@ -821,7 +822,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 
 | Handle | Emitted at | Content |
 |---|---|---|
-| `[config]` | `src/instrumentation.ts:84` | One cold-start snapshot per server process; booleans and safe enums only. |
+| `[config]` | `src/instrumentation.ts:85` | One cold-start snapshot per server process; booleans and safe enums only. |
 | `[trace]` | `src/lib/telemetry/emit.ts:61` | Every telemetry span. |
 | `[vitals]` | `src/instrumentation-client.ts:52` | LCP / INP / CLS, client-side only. |
 | `[flags]` | `src/lib/flags.ts:45` | One line per flag resolution, incl. `driver` and `value`. |
@@ -844,7 +845,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Oversized body still read | Removing the **post-read** 413 backstop (`api/error/route.ts:131-133`) — `sendBeacon` does not always send `Content-Length`, so the header-only gate is bypassable. |
 | Dashboard tile goes blank | A cron route writing a different key than the snapshot literals hardcoded in `src/app/admin/telemetry/page.tsx` (`anvilry:eval:latest` `:244`, `anvilry:github:stats:latest` `:278`, `anvilry:seo:audit:latest` `:281`, `anvilry:content:audit:latest` `:284`, `anvilry:health:latest` `:287`, `anvilry:corpus:built_at` `:293`; the trace key is templated at `:29`). |
 | TTS / transcribe latency tiles are always empty | No code emits `tts.request` or `transcribe.request` (see "Resolved here"); the tiles read kinds nobody writes (`page.tsx:495-496,532-533`). |
-| Preview deploys pollute the corpus timestamp | Gating on `NODE_ENV` instead of `VERCEL_ENV === "production"` — Vercel previews also run `NODE_ENV=production` (`instrumentation.ts:87-92`). |
+| Preview deploys pollute the corpus timestamp | Gating on `NODE_ENV` instead of `VERCEL_ENV === "production"` — Vercel previews also run `NODE_ENV=production` (`instrumentation.ts:88-93`). |
 | Replay CLI silently drops every event | Reintroducing `JSON.parse(member)`: `@upstash/redis` has `automaticDeserialization=true`, so members return as objects and the parse coerces to `"[object Object]"` and throws (`scripts/replay-trace.mjs:65-68`). |
 | New span kind invisible in replay | `KINDS` is hardcoded (`replay-trace.mjs:47-55`); `KIND_LITERALS` and the dashboard filter must also be updated (`schema.ts:36-37`). `chat.cache` is already in that state — it is in `KIND_LITERALS` and the dashboard but not in `KINDS`, so `make trace` never shows a cache lookup. |
 

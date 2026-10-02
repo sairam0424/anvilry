@@ -10,14 +10,77 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * TraceCtx — withTrace's own behavior is pinned in src/lib/telemetry/with-trace.test.ts;
  * here we only care about THIS route's logic (validation, redaction, emission shape).
  *
+ * The Redis singleton is mocked too. The route appends every accepted report to the
+ * capped list `anvilry:errors:recent` through `redis.pipeline()`, and the real singleton
+ * is built from UPSTASH_REDIS_REST_URL/TOKEN, which `pnpm build` (it runs this suite)
+ * inherits from the Vercel environment: with the real client, each build that had them pushed five
+ * fake client errors into the owner's real list. The mock records the pipeline instead,
+ * so the write is asserted and nothing leaves the process.
+ *
  * vi.hoisted is REQUIRED because vi.mock factories run before module-scope code. The
  * factory needs the same array reference the test bodies read; a plain `const events
  * = []` declared at top scope would be undefined when the factory runs.
  */
 
-const { emitCalls, rateLimitState } = vi.hoisted(() => ({
+const { emitCalls, rateLimitState, redisState } = vi.hoisted(() => ({
   emitCalls: [] as Array<Record<string, unknown>>,
   rateLimitState: { ok: true as boolean, retryAfter: 0 },
+  // `configured: false` models an environment with no Upstash credentials (the singleton
+  // is null there); `execError` makes the pipeline's exec() reject.
+  redisState: {
+    configured: true as boolean,
+    execError: null as Error | null,
+    // `hold: true` keeps exec() pending until `release()` is called.
+    hold: false as boolean,
+    release: null as (() => void) | null,
+    pipelines: [] as Array<{
+      calls: string[];
+      lpush: unknown[][];
+      ltrim: unknown[][];
+      executed: boolean;
+    }>,
+  },
+}));
+
+vi.mock("@/lib/redis", () => ({
+  get redis() {
+    if (!redisState.configured) return null;
+    return {
+      pipeline() {
+        const record = {
+          calls: [] as string[],
+          lpush: [] as unknown[][],
+          ltrim: [] as unknown[][],
+          executed: false,
+        };
+        redisState.pipelines.push(record);
+        const chain = {
+          lpush: (...args: unknown[]) => {
+            record.calls.push("lpush");
+            record.lpush.push(args);
+            return chain;
+          },
+          ltrim: (...args: unknown[]) => {
+            record.calls.push("ltrim");
+            record.ltrim.push(args);
+            return chain;
+          },
+          exec: async () => {
+            record.calls.push("exec");
+            record.executed = true;
+            if (redisState.hold) {
+              await new Promise<void>((resolve) => {
+                redisState.release = resolve;
+              });
+            }
+            if (redisState.execError) throw redisState.execError;
+            return [1, "OK"];
+          },
+        };
+        return chain;
+      },
+    };
+  },
 }));
 
 vi.mock("@/lib/telemetry/emit", () => ({
@@ -79,6 +142,11 @@ beforeEach(async () => {
   emitCalls.length = 0;
   rateLimitState.ok = true;
   rateLimitState.retryAfter = 0;
+  redisState.configured = true;
+  redisState.execError = null;
+  redisState.hold = false;
+  redisState.release = null;
+  redisState.pipelines.length = 0;
   delete process.env.TELEMETRY_ENABLED;
   await importRoute();
 });
@@ -260,5 +328,146 @@ describe("/api/error — PII redaction before emit", () => {
 
     expect(emittedStack).not.toContain(fakeToken);
     expect(emittedStack).toContain("[redacted-token]");
+  });
+});
+
+describe("/api/error — recent-errors list in Redis", () => {
+  it("appends one redacted record to anvilry:errors:recent and keeps the last 50", async () => {
+    const fakeKey = `sk-${"a".repeat(32)}`;
+    const fakeCard = "7".repeat(16);
+    const message = `Auth failed for user@example.com using key ${fakeKey} card ${fakeCard}`;
+    const before = Date.now();
+    const res = await POST(makeReq({ ...validPayload(), message }));
+    const after = Date.now();
+    expect(res.status).toBe(204);
+
+    expect(redisState.pipelines).toHaveLength(1);
+    const [pipeline] = redisState.pipelines;
+    expect(pipeline.lpush).toHaveLength(1);
+    // The key and exactly one record: a second element would push a second list entry.
+    expect(pipeline.lpush[0]).toHaveLength(2);
+    const [key, raw] = pipeline.lpush[0] as [string, string];
+    expect(key).toBe("anvilry:errors:recent");
+    const record = JSON.parse(raw) as Record<string, unknown>;
+    expect(Object.keys(record).sort()).toEqual(["message", "ts", "url"]);
+    // Redacted like the emitted event: the email, the token and the digit run are all gone.
+    expect(record.message).toBe(
+      "Auth failed for [email] using key [redacted-token] card [redacted-num]",
+    );
+    expect(record.url).toBe("https://anvilry.test/notes/foo");
+    // The accept time in epoch milliseconds: not 0, not seconds.
+    expect(record.ts).toBeGreaterThanOrEqual(before);
+    expect(record.ts).toBeLessThanOrEqual(after);
+    expect(pipeline.ltrim).toEqual([["anvilry:errors:recent", 0, 49]]);
+    // Push first, then trim to the newest 50, then send the pipeline.
+    expect(pipeline.calls).toEqual(["lpush", "ltrim", "exec"]);
+    expect(pipeline.executed).toBe(true);
+  });
+
+  it("records a warn-level report from another source that carries no stack or url", async () => {
+    const res = await POST(
+      makeReq({ message: "ResizeObserver loop limit exceeded", source: "window", level: "warn" }),
+    );
+    expect(res.status).toBe(204);
+
+    expect(redisState.pipelines).toHaveLength(1);
+    const [, raw] = redisState.pipelines[0].lpush[0] as [string, string];
+    expect(JSON.parse(raw)).toMatchObject({ message: "ResizeObserver loop limit exceeded" });
+  });
+
+  it.each([
+    ["an invalid payload", async () => POST(makeReq({ source: "boundary" }))],
+    ["an oversize declared body", async () => POST(makeReq(validPayload(), 9000))],
+    [
+      // Within every field's cap, over 8 KB together, and a small declared length: only the
+      // post-read guard stops it.
+      "an oversize body that declares a small length",
+      async () =>
+        POST(makeReq({ ...validPayload(), message: "m".repeat(2000), stack: "s".repeat(8000) }, 100)),
+    ],
+    [
+      "a malformed JSON body",
+      async () =>
+        POST(
+          new Request("http://localhost/api/error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{not json!",
+          }),
+        ),
+    ],
+    [
+      "a rate-limited caller",
+      async () => {
+        rateLimitState.ok = false;
+        return POST(makeReq(validPayload()));
+      },
+    ],
+    [
+      "the telemetry opt-out",
+      async () => {
+        process.env.TELEMETRY_ENABLED = "false";
+        await importRoute();
+        return POST(makeReq(validPayload()));
+      },
+    ],
+  ])("writes nothing to Redis for %s", async (_label, send) => {
+    await send();
+    expect(redisState.pipelines).toHaveLength(0);
+  });
+
+  it("still answers 204 when the Redis write fails, and lets no rejection escape", async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => unhandled.push(reason);
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      redisState.execError = new Error("upstash is down");
+      const res = await POST(makeReq(validPayload()));
+      expect(res.status).toBe(204);
+      expect(redisState.pipelines[0]?.executed).toBe(true);
+      // The write is fire-and-forget: give its rejection the turns it needs to surface.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+  });
+
+  it("does not wait for the Redis write before answering", async () => {
+    // Event-loop turns, not wall-clock time: timers are faked, so a route that waits on the
+    // held write, or races it against a timer, stays pending (a wait of a few turns is not caught).
+    redisState.hold = true;
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let status: number | undefined;
+      let failure: unknown;
+      const answered = POST(makeReq(validPayload())).then(
+        (res) => {
+          status = res.status;
+        },
+        (err: unknown) => {
+          failure = err; // reported by the assertion below, not as a stray rejection
+        },
+      );
+      for (let turn = 0; turn < 100 && status === undefined && failure === undefined; turn++) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      expect(failure).toBeUndefined();
+      expect(status).toBe(204);
+      expect(redisState.pipelines[0]?.calls).toContain("exec");
+      redisState.release?.(); // let the pending write finish
+      await answered;
+    } finally {
+      vi.useRealTimers();
+      redisState.release?.();
+    }
+  });
+
+  it("answers 204 and emits the event with no Redis configured, as in local dev", async () => {
+    redisState.configured = false;
+    const res = await POST(makeReq(validPayload()));
+    expect(res.status).toBe(204);
+    expect(emitCalls).toHaveLength(1);
+    expect(redisState.pipelines).toHaveLength(0);
   });
 });

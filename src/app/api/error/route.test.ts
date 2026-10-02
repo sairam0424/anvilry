@@ -333,30 +333,67 @@ describe("/api/error — PII redaction before emit", () => {
 
 describe("/api/error — recent-errors list in Redis", () => {
   it("appends one redacted record to anvilry:errors:recent and keeps the last 50", async () => {
+    const fakeKey = `sk-${"a".repeat(32)}`;
+    const before = Date.now();
     const res = await POST(
-      makeReq({ ...validPayload(), message: "Auth failed for user@example.com" }),
+      makeReq({ ...validPayload(), message: `Auth failed for user@example.com using key ${fakeKey}` }),
     );
+    const after = Date.now();
     expect(res.status).toBe(204);
 
     expect(redisState.pipelines).toHaveLength(1);
     const [pipeline] = redisState.pipelines;
     expect(pipeline.lpush).toHaveLength(1);
+    // The key and exactly one record: a second element would push a second list entry.
+    expect(pipeline.lpush[0]).toHaveLength(2);
     const [key, raw] = pipeline.lpush[0] as [string, string];
     expect(key).toBe("anvilry:errors:recent");
     const record = JSON.parse(raw) as Record<string, unknown>;
     expect(Object.keys(record).sort()).toEqual(["message", "ts", "url"]);
-    expect(record.message).toBe("Auth failed for [email]");
+    // Redacted like the emitted event: the email and the token are both gone.
+    expect(record.message).toBe("Auth failed for [email] using key [redacted-token]");
     expect(record.url).toBe("https://anvilry.test/notes/foo");
-    expect(typeof record.ts).toBe("number");
+    // The accept time in epoch milliseconds: not 0, not seconds.
+    expect(record.ts).toBeGreaterThanOrEqual(before);
+    expect(record.ts).toBeLessThanOrEqual(after);
     expect(pipeline.ltrim).toEqual([["anvilry:errors:recent", 0, 49]]);
     // Push first, then trim to the newest 50, then send the pipeline.
     expect(pipeline.calls).toEqual(["lpush", "ltrim", "exec"]);
     expect(pipeline.executed).toBe(true);
   });
 
+  it("records a warn-level report from another source that carries no stack or url", async () => {
+    const res = await POST(
+      makeReq({ message: "ResizeObserver loop limit exceeded", source: "window", level: "warn" }),
+    );
+    expect(res.status).toBe(204);
+
+    expect(redisState.pipelines).toHaveLength(1);
+    const [, raw] = redisState.pipelines[0].lpush[0] as [string, string];
+    expect(JSON.parse(raw)).toMatchObject({ message: "ResizeObserver loop limit exceeded" });
+  });
+
   it.each([
     ["an invalid payload", async () => POST(makeReq({ source: "boundary" }))],
     ["an oversize declared body", async () => POST(makeReq(validPayload(), 9000))],
+    [
+      // Within every field's cap, over 8 KB together, and a small declared length: only the
+      // post-read guard stops it.
+      "an oversize body that declares a small length",
+      async () =>
+        POST(makeReq({ ...validPayload(), message: "m".repeat(2000), stack: "s".repeat(8000) }, 100)),
+    ],
+    [
+      "a malformed JSON body",
+      async () =>
+        POST(
+          new Request("http://localhost/api/error", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "{not json!",
+          }),
+        ),
+    ],
     [
       "a rate-limited caller",
       async () => {

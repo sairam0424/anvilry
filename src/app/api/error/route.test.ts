@@ -435,7 +435,7 @@ describe("/api/error — recent-errors list in Redis", () => {
 
   it("does not wait for the Redis write before answering", async () => {
     // Event-loop turns, not wall-clock time: timers are faked, so a route that waits on the
-    // held write for any bounded time (a race against a timer, say) stays pending here.
+    // held write, or races it against a timer, stays pending (a wait of a few turns is not caught).
     redisState.hold = true;
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {

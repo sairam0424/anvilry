@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.12.0
+version: v3.13.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.12.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.12.0 (`package.json` 3.12.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
+> Describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40
@@ -206,7 +206,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
   - Any other thrown error replaces the placeholder with "Network error — please try again." and sets status `"error"` (:375-379).
   - Multi-modal payload: attachment blocks first, text block last; PDFs are sent as a `text` block `"[PDF: name]\n<pdfText>"` (no base64), images as `{type:"image",source:{type:"base64",...}}` (:275-293).
 - **Gotchas / invariants:**
-  - `commit()` writes a `reasoning` property (:190-192) that is **not declared** on the exported `ChatMessage` type (:40-56). Nothing in `src/` reads `message.reasoning` (the other non-test `.reasoning` accesses are the FAQ-cache entry's field: `app/api/chat/route.ts:312-313`, `lib/chat-cache.ts:313`); only `use-chat.test.ts` asserts on `trace.reasoning`, and it does so against a local copy of `splitTrace` (`use-chat.test.ts:11-25`; the real one is not exported), so it does not exercise the real parser. The real trace-frame and THINKING parsing is covered by `use-chat-stream.dom.test.tsx`, which does not assert on `trace.reasoning`.
+  - `commit()` writes a `reasoning` property (:190-192) that is **not declared** on the exported `ChatMessage` type (:40-56). Nothing in `src/` reads `message.reasoning` (the other non-test `.reasoning` accesses are the FAQ-cache entry's field: `app/api/chat/route.ts:312-313`, `lib/chat-cache.ts:329`); only `use-chat.test.ts` asserts on `trace.reasoning`, and it does so against a local copy of `splitTrace` (`use-chat.test.ts:11-25`; the real one is not exported), so it does not exercise the real parser. The real trace-frame and THINKING parsing is covered by `use-chat-stream.dom.test.tsx`, which does not assert on `trace.reasoning`.
   - `send` early-returns when `status === "streaming"` (:262) — the only concurrency guard; there is no queue.
   - `reset()` revokes every attachment `previewUrl` (:391-393); dropping that leaks object URLs.
   - `send`'s dep array includes `messages` (:384), so its identity changes every message — callers must not memoize on it.

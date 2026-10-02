@@ -3,14 +3,14 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.12.0
+version: v3.13.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.12.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-> **Baseline.** Describes Anvilry v3.12.0 (`package.json` 3.12.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more.
+> **Baseline.** Describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more.
 
 **Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`. The `?scroll=` flag store (`src/lib/scroll/*`) is owned by [04](./04-lib-ai-voice-infra.md); the persisted theme store (`src/lib/theme-context.tsx`) is not indexed by any section (see the coverage reconciliation in the [README](./README.md)); this doc covers only their component touchpoints (`ThemeToggle`, `ScrollFlagsSync` in `Providers`).
 **Files indexed:** 39

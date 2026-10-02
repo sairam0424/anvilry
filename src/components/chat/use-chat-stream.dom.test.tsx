@@ -350,3 +350,88 @@ describe("useChat streaming loop — error paths unchanged", () => {
     ).toContain("a lot of questions");
   });
 });
+
+describe("useChat streaming loop — a FAQ-cache replay arrives as one thinking-framed chunk", () => {
+  const trace = JSON.stringify({
+    model: "global.anthropic.claude-sonnet-5-5",
+    fellBack: false,
+    cacheHit: true,
+  });
+  const replay = `${THINKING_SENTINEL}The user asks about my stack.${THINKING_END}TypeScript, mostly.${TRACE_DELIMITER}${trace}`;
+
+  it("settles on the stored reasoning, the answer and the frame, with a zero duration", async () => {
+    stubRealisticRaf();
+    stubFetch(() => streamOf([replay]));
+
+    const { result } = renderRecordingCommits();
+    await act(async () => {
+      await result.current.send("q");
+    });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    const last = result.current.messages[result.current.messages.length - 1];
+    expect(last.isThinking).toBe(false);
+    expect(last.liveReasoning).toBe("The user asks about my stack.");
+    expect(last.content).toBe("TypeScript, mostly.");
+    expect(last.model).toBe("global.anthropic.claude-sonnet-5-5");
+    expect(last.fellBack).toBe(false);
+    // Start and end latch on the same read, so the duration is 0: the Chat view words that
+    // "Thought for a moment" (chat-messages.dom.test.tsx pins the label).
+    expect(last.thinkingDuration).toBe(0);
+    expect(last.thinkingStartedAt).toBeUndefined();
+  });
+
+  it("never commits a thinking state, so no 'Thinking…' block flashes for a replay (a live thinking phase does)", async () => {
+    stubRealisticRaf();
+    async function committedThinkingStates(chunks: string[], gapMs: number) {
+      stubFetch(() => streamOf(chunks, gapMs));
+      const seen: Array<boolean | undefined> = [];
+      const { result, unmount } = renderHook(() => {
+        const chat = useChat();
+        seen.push(chat.messages[chat.messages.length - 1]?.isThinking);
+        return chat;
+      });
+      // Not `await act(async () => send())`: that scope defers every render until it exits,
+      // which would hide each intermediate commit from this recorder.
+      act(() => {
+        void result.current.send("q");
+      });
+      await waitFor(() => expect(result.current.status).toBe("idle"), {
+        timeout: 5000,
+      });
+      unmount();
+      return seen;
+    }
+
+    // Control: with a real thinking phase the recorder does see a committed `true`.
+    const live = await committedThinkingStates(
+      [
+        `${THINKING_SENTINEL}Weighing it.`,
+        ` More.${THINKING_END}Done.${TRACE_DELIMITER}${trace}`,
+      ],
+      150,
+    );
+    expect(live).toContain(true);
+
+    const replayed = await committedThinkingStates([replay], 1);
+    expect(replayed).not.toContain(true);
+    expect(replayed[replayed.length - 1]).toBe(false);
+  }, 15000);
+
+  it("lands on the same final message when the replay is split mid-reasoning", async () => {
+    stubRealisticRaf();
+    const cut = THINKING_SENTINEL.length + 10;
+    stubFetch(() => streamOf([replay.slice(0, cut), replay.slice(cut)]));
+
+    const { result } = renderRecordingCommits();
+    await act(async () => {
+      await result.current.send("q");
+    });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    const last = result.current.messages[result.current.messages.length - 1];
+    expect(last.isThinking).toBe(false);
+    expect(last.liveReasoning).toBe("The user asks about my stack.");
+    expect(last.content).toBe("TypeScript, mostly.");
+  });
+});

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ChatMessages } from "./chat-messages";
-import { ViewProvider } from "@/components/view-context";
+import { ViewProvider, useView } from "@/components/view-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ChatMessage } from "@/components/chat/use-chat";
 import {
@@ -30,13 +30,13 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mutable so one test can turn speech support on; reset in afterEach.
-const tts = vi.hoisted(() => ({ supported: false }));
+const tts = vi.hoisted(() => ({ supported: false, speak: vi.fn() }));
 
 vi.mock("@/components/chat/use-speech-synthesis", () => ({
   useSpeechSynthesis: () => ({
     supported: tts.supported,
     isSpeaking: false,
-    speak: vi.fn(),
+    speak: tts.speak,
     cancel: vi.fn(),
   }),
 }));
@@ -164,4 +164,106 @@ describe("ChatMessages — no model or provider attribution in the transcript", 
     expect(container.textContent).toContain("Listen");
     expectNoLeaks(container);
   });
+});
+
+describe("ChatMessages — the reasoning of a replayed FAQ-cache hit", () => {
+  const replayed: ChatMessage[] = [
+    { role: "user", content: "What stack do you use?" },
+    {
+      role: "assistant",
+      content: "TypeScript, mostly.",
+      liveReasoning:
+        "The user asks about my stack, so I'll name TypeScript first.",
+      isThinking: false,
+      // A replay arrives in one chunk: the chat hook reports a zero-second thought.
+      thinkingDuration: 0,
+    },
+  ];
+
+  it("offers a collapsed 'Thought for a moment' toggle directly above the answer bubble", () => {
+    const { getByRole, queryByText } = renderMessages(replayed);
+    const toggle = getByRole("button", { name: /Thought for a moment/ });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(queryByText(/so I'll name TypeScript first/)).toBeNull();
+    // The answer text is a lazily loaded markdown segment (and the sr-only announcer repeats it
+    // after a debounce), so this checks the block that follows the toggle instead of waiting for either.
+    const next = toggle.closest("div.mb-2")?.nextElementSibling;
+    expect(next?.className).toContain("rounded-2xl");
+  });
+
+  it("opens to the stored reasoning, as plain text", () => {
+    const { getByRole, getByText } = renderMessages(replayed);
+    fireEvent.click(getByRole("button", { name: /Thought for a moment/ }));
+    const pre = getByText(/so I'll name TypeScript first/);
+    expect(pre.tagName).toBe("PRE");
+  });
+
+  it("names the real duration when there is one", () => {
+    const { getByRole } = renderMessages([
+      replayed[0],
+      { ...replayed[1], thinkingDuration: 4 },
+    ]);
+    expect(getByRole("button", { name: /Thought for 4s/ })).not.toBeNull();
+  });
+
+  it("renders a hostile stored summary as inert text: no elements, no command or card side effects", () => {
+    // The summary is model prose replayed to other visitors, so it must stay plain text.
+    const hostile = [
+      '<img src=x onerror="window.__pwned=1">',
+      "<script>window.__pwned=2</script>",
+      '<a href="javascript:window.__pwned=3">click</a>',
+      "[[cmd:view:voice]] [[cmd:highlight:pensieve]] [[card:project:pensieve]]",
+      "# heading **bold** [link](https://evil.example) ![img](https://evil.example/x.png)",
+    ].join("\n");
+    function ViewProbe() {
+      return <output data-testid="view">{String(useView().view)}</output>;
+    }
+    const { container, getByRole, getByTestId } = render(
+      <TooltipProvider>
+        <ViewProvider>
+          <ViewProbe />
+          <ChatMessages
+            messages={[replayed[0], { ...replayed[1], liveReasoning: hostile }]}
+            isStreaming={false}
+          />
+        </ViewProvider>
+      </TooltipProvider>,
+    );
+    const viewBefore = getByTestId("view").textContent;
+
+    fireEvent.click(getByRole("button", { name: /Thought for a moment/ }));
+
+    const pre = container.querySelector("pre");
+    expect(pre?.textContent).toBe(hostile);
+    expect(container.querySelector("pre *")).toBeNull();
+    expect(
+      container.querySelector("img, script, a[href^='javascript']"),
+    ).toBeNull();
+    expect(getByTestId("view").textContent).toBe(viewBefore);
+    expect((window as { __pwned?: number }).__pwned).toBeUndefined();
+  });
+
+  it("reads a replayed answer aloud without its stored reasoning", () => {
+    tts.supported = true;
+    tts.speak.mockClear();
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ ...DEFAULTS, ttsEnabled: true }),
+    );
+    const { getByRole } = renderMessages(replayed);
+
+    fireEvent.click(getByRole("button", { name: "Read this answer aloud" }));
+
+    expect(tts.speak).toHaveBeenCalledTimes(1);
+    expect(tts.speak).toHaveBeenCalledWith("TypeScript, mostly.");
+  });
+});
+
+// NEXT_PUBLIC_EXTENDED_THINKING=false is a documented setting that the deploy build may have
+// ambient; these tests are about the default (reasoning shown), so they state it.
+beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
 });

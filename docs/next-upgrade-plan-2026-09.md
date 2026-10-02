@@ -152,7 +152,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   its mock never triggered the thinking phase) — fixed and covered in PR #262 (`0639a3d`).
   This session found **two real, live aria-live double-announce bugs** that the full existing
   CI (lint/typecheck/vitest/E2E) missed — a distinct second generation of a bug class the
-  codebase already fixed once before (`CHANGELOG.md:999-1000,1139`, the "NO DOUBLE-SPEAK" logic in
+  codebase already fixed once before (`CHANGELOG.md:1033-1034,1173`, the "NO DOUBLE-SPEAK" logic in
   `use-chat-a11y.ts`). The repo already has the right pattern for this kind of fail-closed
   regression pin (`use-chat-a11y.dom.test.tsx`, `parse-cards.test.ts`, both build-blocking via
   `pnpm build`). Once the two live bugs are fixed, add/extend a DOM test asserting exactly one
@@ -161,7 +161,7 @@ already shipped to real users with a confirmed, sourced failure mode.
   defect class than any generic scanner (see the P1 axe-core item below, which would **not** have
   caught this).
   *Sources:* `docs/index/05-components-chat-voice.md` (its live-region notes; the line number and the quoted phrase this cite carried no longer match); direct
-  read of `src/components/chat/use-chat-a11y.ts`; `CHANGELOG.md:999-1000,1139`.
+  read of `src/components/chat/use-chat-a11y.ts`; `CHANGELOG.md:1033-1034,1173`.
   *Risk:* None — additive test only. Must be written against the **fixed** behavior, or it will
   codify the bug rather than prevent it.
 

@@ -4,6 +4,40 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.12.0] — 2026-10-02
+
+**Minor** — a repeated first-turn question that the FAQ cache answers now shows the reasoning its first answer
+was written with, so the 3.11.0 note that such a question "still carries no reasoning" no longer holds. The
+cache entry gains an optional `reasoning` field, an exact hit's response opens like a live one, and the
+`chat.cache` hit event gains one attribute. It is a minor because a visitor sees a different response to a
+repeated question and an operator sees a different entry and event.
+
+### Added
+- **A FAQ-cache hit replays the reasoning summary stored with its answer** (#303). The entry keeps the summary
+  the model streamed before the answer (control bytes stripped, trimmed, at most 4,000 characters), and an
+  exact-tier hit sends it ahead of the answer in the framing of a live stream, so the Chat view shows a
+  collapsed "Thought for a moment" toggle as it does on the first ask; the Classic widget and the voice view
+  still show and speak the answer only. The summary is the model's own planning note, shown as written, and it
+  can quote the question, which sets three limits: it is stored only when the normalized question is at most
+  200 characters, only an exact-tier hit replays it (a semantic hit answers a merely similar question), and
+  `EXTENDED_THINKING=false` stops the replay. It never reaches telemetry, which gets a boolean.
+  **Operator-visible:** nothing to configure. Entries written before this release serve a plain answer, and
+  v3.11.0 ignores the new field, so a rollback needs no cache flush. The `chat.cache` hit event gains
+  `reasoning_replayed`; the summary lives for the 24 h TTL and goes with its entry on
+  `POST /api/admin/faq-cache/purge`. A stored entry lasts only until the next production process start, because
+  `register()` re-stamps `anvilry:corpus:built_at` on every cold start, not only on a deploy (the docs said "a
+  deploy"), so the replay helps within an instance's life.
+
+### Changed
+- **The Upstash `, command was:` echo stays out of the cache's error events and the purge result** (#303). For
+  a failed `SET` that echo is the whole entry, answer and summary. The cache's `server.error` event is now cut
+  at it and capped at 300 characters, the admin purge returns its failure message through the same cut (its 503
+  body carried the raw text), and an error with a non-string message no longer throws from the error path.
+- The suite goes from 1064 to 1148 tests across 96 files (`chat-cache.test.ts` 44 to 85, `route.test.ts` 24 to
+  46, `llm.test.ts` 151 to 159). The new tests state the kill switches they need instead of inheriting the
+  build's environment, so flipping `EXTENDED_THINKING`, `FAQ_CACHE_ENABLED` or `NEXT_PUBLIC_EXTENDED_THINKING`
+  in Vercel cannot fail the build. The docs index moves to 3.12.0 with its scale rows re-measured.
+
 ## [3.11.0] — 2026-10-01
 
 **Minor** — `LLM_THINKING_EFFORT` takes the five levels Sonnet 5.x accepts, so Sonnet 5.5 can show its

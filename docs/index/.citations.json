@@ -4780,6 +4780,13 @@
       ],
       "preview": "});"
     },
+    "src/app/api/chat/route.test.ts:639": {
+      "fp": "ef4826b698c4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"treats stored reasoning that is %s as untrusted\","
+    },
     "src/app/api/chat/route.ts:1": {
       "fp": "30c95feae9f5",
       "citedBy": [
@@ -4795,14 +4802,14 @@
       ],
       "preview": "import { redact } from \"@/lib/telemetry/schema\";"
     },
-    "src/app/api/chat/route.ts:104": {
+    "src/app/api/chat/route.ts:109": {
       "fp": "e6ed41ba4141",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- When you naturally reference a specific view and it would genuinely help the visitor, you MAY appe"
     },
-    "src/app/api/chat/route.ts:142": {
+    "src/app/api/chat/route.ts:147": {
       "fp": "c6c620945484",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -4812,49 +4819,36 @@
       ],
       "preview": "const rl = await checkRateLimit(req, \"chat\");"
     },
-    "src/app/api/chat/route.ts:155": {
+    "src/app/api/chat/route.ts:160": {
       "fp": "4d975919a29a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const declaredLen = Number(req.headers.get(\"content-length\") ?? 0);"
     },
-    "src/app/api/chat/route.ts:158": {
+    "src/app/api/chat/route.ts:163": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/api/chat/route.ts:17": {
-      "fp": "993ce4acbf5f",
+    "src/app/api/chat/route.ts:22": {
+      "fp": "d9b68daf357a",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md"
       ],
-      "preview": "import { randomUUID } from \"node:crypto\";"
+      "preview": "} from \"@/lib/llm-trace\";"
     },
-    "src/app/api/chat/route.ts:21": {
+    "src/app/api/chat/route.ts:26": {
       "fp": "105c20d18ff6",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "const MAX_MESSAGES = 12;"
     },
-    "src/app/api/chat/route.ts:22": {
-      "fp": "ea6d05d2f1bb",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "const MAX_CHARS = 600;"
-    },
-    "src/app/api/chat/route.ts:26": {
-      "fp": "eb7163fe2078",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
-    },
-    "src/app/api/chat/route.ts:264": {
+    "src/app/api/chat/route.ts:269": {
       "fp": "09fd2a47ad32",
       "citedBy": [
         "14-subsystems.md"
@@ -4862,73 +4856,13 @@
       "preview": "// FAQ cache — first-turn questions only. Scoping to the first turn sidesteps"
     },
     "src/app/api/chat/route.ts:27": {
-      "fp": "28813e88a278",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const WORK_SLUGS = allWork.map((w) => w.slug).join(\", \");"
-    },
-    "src/app/api/chat/route.ts:276": {
-      "fp": "4b76a0c555dc",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
-      ],
-      "preview": "const skipCache = req.headers.get(\"x-chat-skip-cache\") != null;"
-    },
-    "src/app/api/chat/route.ts:282": {
-      "fp": "59c9caf2af38",
-      "citedBy": [
-        "15-invariants-and-gotchas.md",
-        "README.md"
-      ],
-      "preview": "firstContent.trim().length > 0;"
-    },
-    "src/app/api/chat/route.ts:286": {
-      "fp": "4656419e5eeb",
+      "fp": "ea6d05d2f1bb",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "const question = cacheEligible ? (firstContent as string) : null;"
+      "preview": "const MAX_CHARS = 600;"
     },
-    "src/app/api/chat/route.ts:291": {
-      "fp": "bebfefc375dd",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "(isSemanticMatchEnabled() ? await faqCacheSemanticGet(question) : null);"
-    },
-    "src/app/api/chat/route.ts:294": {
-      "fp": "807d36fd6b30",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "emit({"
-    },
-    "src/app/api/chat/route.ts:317": {
-      "fp": "f5b40af4e8c5",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const frame = {"
-    },
-    "src/app/api/chat/route.ts:323": {
-      "fp": "a7663471be1b",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const responseBody = `${hit.entry.answer}${TRACE_DELIMITER}${JSON.stringify(frame)}`;"
-    },
-    "src/app/api/chat/route.ts:332": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "}"
-    },
-    "src/app/api/chat/route.ts:339": {
+    "src/app/api/chat/route.ts:283": {
       "fp": "8ea76524cdbc",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -4938,7 +4872,167 @@
       ],
       "preview": "const extendedThinking = process.env.EXTENDED_THINKING !== \"false\";"
     },
-    "src/app/api/chat/route.ts:34": {
+    "src/app/api/chat/route.ts:284": {
+      "fp": "4b76a0c555dc",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const skipCache = req.headers.get(\"x-chat-skip-cache\") != null;"
+    },
+    "src/app/api/chat/route.ts:290": {
+      "fp": "59c9caf2af38",
+      "citedBy": [
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "firstContent.trim().length > 0;"
+    },
+    "src/app/api/chat/route.ts:294": {
+      "fp": "4656419e5eeb",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const question = cacheEligible ? (firstContent as string) : null;"
+    },
+    "src/app/api/chat/route.ts:299": {
+      "fp": "bebfefc375dd",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "(isSemanticMatchEnabled() ? await faqCacheSemanticGet(question) : null);"
+    },
+    "src/app/api/chat/route.ts:309": {
+      "fp": "4a983d4358d5",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const replayedReasoning ="
+    },
+    "src/app/api/chat/route.ts:31": {
+      "fp": "eb7163fe2078",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
+    },
+    "src/app/api/chat/route.ts:311": {
+      "fp": "ba8c1dcee8ed",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "extendedThinking &&"
+    },
+    "src/app/api/chat/route.ts:312": {
+      "fp": "555256516a36",
+      "citedBy": [
+        "05-components-chat-voice.md"
+      ],
+      "preview": "typeof hit.entry.reasoning === \"string\""
+    },
+    "src/app/api/chat/route.ts:313": {
+      "fp": "92c414a1c34e",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "? stripControlBytes(hit.entry.reasoning).trim()"
+    },
+    "src/app/api/chat/route.ts:314": {
+      "fp": "b7a0e76f28fa",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ": \"\";"
+    },
+    "src/app/api/chat/route.ts:317": {
+      "fp": "807d36fd6b30",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "emit({"
+    },
+    "src/app/api/chat/route.ts:32": {
+      "fp": "28813e88a278",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const WORK_SLUGS = allWork.map((w) => w.slug).join(\", \");"
+    },
+    "src/app/api/chat/route.ts:336": {
+      "fp": "2bcd6325311d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// A boolean only: the summary text itself never goes to telemetry."
+    },
+    "src/app/api/chat/route.ts:337": {
+      "fp": "74efaaec9095",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "README.md"
+      ],
+      "preview": "reasoning_replayed: replayedReasoning.length > 0,"
+    },
+    "src/app/api/chat/route.ts:345": {
+      "fp": "f5b40af4e8c5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const frame = {"
+    },
+    "src/app/api/chat/route.ts:351": {
+      "fp": "a7663471be1b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const responseBody = `${hit.entry.answer}${TRACE_DELIMITER}${JSON.stringify(frame)}`;"
+    },
+    "src/app/api/chat/route.ts:352": {
+      "fp": "ce2cea4db093",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "05-components-chat-voice.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "const body = replayedReasoning"
+    },
+    "src/app/api/chat/route.ts:353": {
+      "fp": "dd5c54f7285f",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "? `${THINKING_SENTINEL}${replayedReasoning}${THINKING_END}${responseBody}`"
+    },
+    "src/app/api/chat/route.ts:354": {
+      "fp": "fdd12c1e9cce",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "05-components-chat-voice.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ": responseBody;"
+    },
+    "src/app/api/chat/route.ts:363": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/api/chat/route.ts:39": {
       "fp": "11ee9afb1588",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -4946,7 +5040,7 @@
       ],
       "preview": "const base = process.env.VERCEL_URL"
     },
-    "src/app/api/chat/route.ts:35": {
+    "src/app/api/chat/route.ts:40": {
       "fp": "1b32486d8bfa",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -4955,56 +5049,63 @@
       ],
       "preview": "? `https://${process.env.VERCEL_URL}`"
     },
-    "src/app/api/chat/route.ts:37": {
-      "fp": "a155cea2fe6f",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "const res = await fetch(`${base}/api/github/stats`, {"
-    },
-    "src/app/api/chat/route.ts:380": {
+    "src/app/api/chat/route.ts:409": {
       "fp": "fd9fc9486e09",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// null = no verified price for this model id (see llm-pricing.ts): the"
     },
-    "src/app/api/chat/route.ts:384": {
+    "src/app/api/chat/route.ts:413": {
       "fp": "4728b6206643",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ": null;"
     },
-    "src/app/api/chat/route.ts:390": {
+    "src/app/api/chat/route.ts:419": {
       "fp": "807d36fd6b30",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "emit({"
     },
-    "src/app/api/chat/route.ts:399": {
+    "src/app/api/chat/route.ts:42": {
+      "fp": "a155cea2fe6f",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const res = await fetch(`${base}/api/github/stats`, {"
+    },
+    "src/app/api/chat/route.ts:428": {
       "fp": "5ce89913ccc9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "? { message: redact(attempt.error.message ?? attempt.error.name) }"
     },
-    "src/app/api/chat/route.ts:421": {
+    "src/app/api/chat/route.ts:450": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "});"
     },
-    "src/app/api/chat/route.ts:423": {
+    "src/app/api/chat/route.ts:452": {
       "fp": "88dce7449801",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Write-through: attempt.answerText is present iff this was a clean,"
     },
-    "src/app/api/chat/route.ts:443": {
+    "src/app/api/chat/route.ts:474": {
+      "fp": "540955851fa9",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "attempt.reasoningText,"
+    },
+    "src/app/api/chat/route.ts:476": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -5025,19 +5126,12 @@
       ],
       "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
     },
-    "src/app/api/chat/route.ts:72": {
+    "src/app/api/chat/route.ts:77": {
       "fp": "270a867f76e9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* Deliberately takes ONLY `corpus` — no githubStats param. This template is the"
-    },
-    "src/app/api/chat/route.ts:78": {
-      "fp": "3a572e944b53",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const staticSystemPrompt = ("
     },
     "src/app/api/chat/route.ts:8": {
       "fp": "3a7ea27ec96e",
@@ -5046,12 +5140,12 @@
       ],
       "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
     },
-    "src/app/api/chat/route.ts:85": {
-      "fp": "b6dad2aa8338",
+    "src/app/api/chat/route.ts:83": {
+      "fp": "3a572e944b53",
       "citedBy": [
-        "09-content-and-schemas.md"
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "- Preserve the honest contribution register exactly: Pensieve and AAVA Code are \"co-built\" (AAVA: I "
+      "preview": "const staticSystemPrompt = ("
     },
     "src/app/api/chat/route.ts:9": {
       "fp": "e627f704b032",
@@ -5059,6 +5153,13 @@
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+    },
+    "src/app/api/chat/route.ts:90": {
+      "fp": "b6dad2aa8338",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "- Preserve the honest contribution register exactly: Pensieve and AAVA Code are \"co-built\" (AAVA: I "
     },
     "src/app/api/cron/content-audit/route.ts:17": {
       "fp": "d2fbfdb0c7bc",
@@ -5106,6 +5207,20 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
+    },
+    "src/app/api/cron/eval/route.test.ts:124": {
+      "fp": "7edc06d6f1b3",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"asks /api/chat to skip the FAQ cache on every call, so a replayed hit never stands in for the li"
+    },
+    "src/app/api/cron/eval/route.test.ts:135": {
+      "fp": "6b2b8576a58a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(headers[\"X-Chat-Skip-Cache\"]).toBe(\"1\");"
     },
     "src/app/api/cron/eval/route.test.ts:27": {
       "fp": "28e18cc726a7",
@@ -8501,6 +8616,15 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const enabled = process.env.NEXT_PUBLIC_EXTENDED_THINKING !== \"false\";"
+    },
+    "src/components/chat/chat-messages.tsx:260": {
+      "fp": "a6257e4dcaeb",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "README.md"
+      ],
+      "preview": "{duration > 0 ? `${duration}s` : \"a moment\"}"
     },
     "src/components/chat/chat-messages.tsx:278": {
       "fp": "1a8f6f036163",
@@ -15119,6 +15243,13 @@
       ],
       "preview": "if (process.env.NEXT_RUNTIME === \"edge\") return;"
     },
+    "src/instrumentation.ts:4": {
+      "fp": "92c8f9ba25ea",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* `register()` is called ONCE per server process start (cold start in serverless)."
+    },
     "src/instrumentation.ts:41": {
       "fp": "48453da2375d",
       "citedBy": [
@@ -15227,6 +15358,9 @@
     "src/instrumentation.ts:97": {
       "fp": "40b5321a7261",
       "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
@@ -15757,21 +15891,42 @@
       ],
       "preview": "});"
     },
-    "src/lib/chat-cache.ts:103": {
+    "src/lib/chat-cache.test.ts:597": {
+      "fp": "17f670d4f664",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"strips the protocol's control bytes from the reasoning before storing it\", async () => {"
+    },
+    "src/lib/chat-cache.test.ts:753": {
+      "fp": "9389765d81d2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"does not copy the stored entry into a server.error event when a write fails (Upstash echoes the "
+    },
+    "src/lib/chat-cache.ts:123": {
+      "fp": "1709130b7d10",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "entry: Omit<FaqCacheEntry, \"reasoning\">;"
+    },
+    "src/lib/chat-cache.ts:132": {
       "fp": "91381355200f",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const TRAILING_PUNCTUATION = new Set([\"?\", \"!\", \".\", \",\", \";\", \":\"]);"
     },
-    "src/lib/chat-cache.ts:105": {
+    "src/lib/chat-cache.ts:134": {
       "fp": "792066ea4a6b",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function normalizeQuestion(text: string): string {"
     },
-    "src/lib/chat-cache.ts:119": {
+    "src/lib/chat-cache.ts:148": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md",
@@ -15779,7 +15934,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/chat-cache.ts:121": {
+    "src/lib/chat-cache.ts:150": {
       "fp": "a1d92509264d",
       "citedBy": [
         "14-subsystems.md",
@@ -15788,29 +15943,30 @@
       ],
       "preview": "export function isSemanticMatchEnabled(): boolean {"
     },
-    "src/lib/chat-cache.ts:122": {
+    "src/lib/chat-cache.ts:151": {
       "fp": "eb2ca9152a38",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "13-dependencies-and-versions.md"
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md"
       ],
       "preview": "return process.env.FAQ_CACHE_SEMANTIC_MATCH === \"true\";"
     },
-    "src/lib/chat-cache.ts:129": {
+    "src/lib/chat-cache.ts:158": {
       "fp": "d8253ad5cb75",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function isFaqCacheEnabled(): boolean {"
     },
-    "src/lib/chat-cache.ts:130": {
+    "src/lib/chat-cache.ts:159": {
       "fp": "b334beca16ce",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "return process.env.FAQ_CACHE_ENABLED !== \"false\";"
     },
-    "src/lib/chat-cache.ts:131": {
+    "src/lib/chat-cache.ts:160": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -15818,40 +15974,33 @@
       ],
       "preview": "}"
     },
-    "src/lib/chat-cache.ts:139": {
+    "src/lib/chat-cache.ts:172": {
+      "fp": "2af8afa71ffa",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "function replayableReasoning(value: unknown): string | undefined {"
+    },
+    "src/lib/chat-cache.ts:174": {
+      "fp": "7ce2eb6a6721",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const clean = stripControlBytes(value).trim();"
+    },
+    "src/lib/chat-cache.ts:181": {
+      "fp": "88a9f07164ff",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {"
+    },
+    "src/lib/chat-cache.ts:189": {
       "fp": "acb13c2c01b0",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "async function getCurrentCorpusBuildTag(): Promise<string | null> {"
-    },
-    "src/lib/chat-cache.ts:156": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/chat-cache.ts:163": {
-      "fp": "f7abf6452803",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "function emitCacheError(op: string, err: unknown): void {"
-    },
-    "src/lib/chat-cache.ts:172": {
-      "fp": "20f337ba5866",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "kind: \"server.error\","
-    },
-    "src/lib/chat-cache.ts:181": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
     },
     "src/lib/chat-cache.ts:2": {
       "fp": "30d93a0ed4ee",
@@ -15860,29 +16009,43 @@
       ],
       "preview": "import { redis } from \"@/lib/redis\";"
     },
-    "src/lib/chat-cache.ts:200": {
-      "fp": "8c7c5dcbec3b",
+    "src/lib/chat-cache.ts:201": {
+      "fp": "b0ee52712e8d",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "02-api-routes.md"
       ],
-      "preview": "const [raw, currentTag] = await redis.mget<"
+      "preview": "function isSameCorpusBuild("
     },
-    "src/lib/chat-cache.ts:223": {
-      "fp": "11a1e7d7ef6a",
+    "src/lib/chat-cache.ts:206": {
+      "fp": "d10b36aa74a5",
       "citedBy": [
-        "11-config-build-ci-infra.md",
-        "13-dependencies-and-versions.md",
-        "14-subsystems.md",
-        "README.md"
+        "02-api-routes.md",
+        "14-subsystems.md"
       ],
-      "preview": "const SIMILARITY_THRESHOLD = 0.92;"
+      "preview": "}"
     },
-    "src/lib/chat-cache.ts:225": {
-      "fp": "67e182b33b2a",
+    "src/lib/chat-cache.ts:212": {
+      "fp": "8e9d970e2ba3",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "const { embedText, cosineSimilarity } = await import(\"./faq-embeddings\");"
+      "preview": "function withoutCommandEcho(message: unknown): string {"
+    },
+    "src/lib/chat-cache.ts:214": {
+      "fp": "b88f20db2196",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return head.slice(0, 300);"
+    },
+    "src/lib/chat-cache.ts:222": {
+      "fp": "f7abf6452803",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "function emitCacheError(op: string, err: unknown): void {"
     },
     "src/lib/chat-cache.ts:23": {
       "fp": "f817db3483d7",
@@ -15892,6 +16055,20 @@
       ],
       "preview": "* Safety layers added after an adversarial audit of the first cut:"
     },
+    "src/lib/chat-cache.ts:231": {
+      "fp": "20f337ba5866",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "kind: \"server.error\","
+    },
+    "src/lib/chat-cache.ts:240": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/chat-cache.ts:25": {
       "fp": "21fdcbc4d508",
       "citedBy": [
@@ -15899,12 +16076,19 @@
       ],
       "preview": "*  - Completion-integrity gate (finish_reason === \"end_turn\" only) + control-char"
     },
-    "src/lib/chat-cache.ts:278": {
-      "fp": "3e313951ec89",
+    "src/lib/chat-cache.ts:259": {
+      "fp": "8c7c5dcbec3b",
       "citedBy": [
-        "14b-subsystems.md"
+        "13-dependencies-and-versions.md"
       ],
-      "preview": "if (finishReason !== \"end_turn\") return;"
+      "preview": "const [raw, currentTag] = await redis.mget<"
+    },
+    "src/lib/chat-cache.ts:264": {
+      "fp": "7bb0ddb44122",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "if (!isSameCorpusBuild(entry, currentTag)) return null;"
     },
     "src/lib/chat-cache.ts:28": {
       "fp": "28fd8f1c0603",
@@ -15913,12 +16097,22 @@
       ],
       "preview": "*    visitor. NOTE: this checks completion cleanliness, not actual content"
     },
-    "src/lib/chat-cache.ts:280": {
-      "fp": "033accff1395",
+    "src/lib/chat-cache.ts:282": {
+      "fp": "11a1e7d7ef6a",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md",
+        "README.md"
       ],
-      "preview": "const sanitized = stripControlBytes(answer).trim();"
+      "preview": "const SIMILARITY_THRESHOLD = 0.92;"
+    },
+    "src/lib/chat-cache.ts:284": {
+      "fp": "67e182b33b2a",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "const { embedText, cosineSimilarity } = await import(\"./faq-embeddings\");"
     },
     "src/lib/chat-cache.ts:3": {
       "fp": "e627f704b032",
@@ -15926,6 +16120,21 @@
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+    },
+    "src/lib/chat-cache.ts:310": {
+      "fp": "a7afb87402f4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const entry: Omit<FaqCacheEntry, \"reasoning\"> & { reasoning?: string } = {"
+    },
+    "src/lib/chat-cache.ts:313": {
+      "fp": "6ea0672b9cf8",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "delete entry.reasoning;"
     },
     "src/lib/chat-cache.ts:32": {
       "fp": "888fb36efc5b",
@@ -15935,43 +16144,33 @@
       ],
       "preview": "*    a moderation layer."
     },
-    "src/lib/chat-cache.ts:352": {
-      "fp": "c2e5d34c335b",
+    "src/lib/chat-cache.ts:331": {
+      "fp": "d009fe25d93e",
       "citedBy": [
-        "14-subsystems.md"
+        "README.md"
       ],
-      "preview": "export type FaqCachePurgeResult ="
+      "preview": "export async function faqCacheSet("
     },
-    "src/lib/chat-cache.ts:355": {
-      "fp": "ffa1a1de171c",
+    "src/lib/chat-cache.ts:337": {
+      "fp": "6e866e63df89",
       "citedBy": [
-        "14-subsystems.md"
+        "README.md"
       ],
-      "preview": "| { status: \"error\"; key: string; message: string };"
+      "preview": "reasoning?: string,"
     },
-    "src/lib/chat-cache.ts:368": {
-      "fp": "72196860bed7",
+    "src/lib/chat-cache.ts:345": {
+      "fp": "3e313951ec89",
       "citedBy": [
-        "02-api-routes.md",
-        "14-subsystems.md",
         "14b-subsystems.md"
       ],
-      "preview": "export async function faqCachePurge("
+      "preview": "if (finishReason !== \"end_turn\") return;"
     },
-    "src/lib/chat-cache.ts:37": {
-      "fp": "b1508a8772b9",
+    "src/lib/chat-cache.ts:347": {
+      "fp": "033accff1395",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "*    not silently folded into the same signal as a genuine miss."
-    },
-    "src/lib/chat-cache.ts:388": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "02-api-routes.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "}"
+      "preview": "const sanitized = stripControlBytes(answer).trim();"
     },
     "src/lib/chat-cache.ts:4": {
       "fp": "e8c4209fbe6d",
@@ -15980,6 +16179,44 @@
       ],
       "preview": "import { redact } from \"@/lib/telemetry/schema\";"
     },
+    "src/lib/chat-cache.ts:41": {
+      "fp": "b1508a8772b9",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*    not silently folded into the same signal as a genuine miss."
+    },
+    "src/lib/chat-cache.ts:433": {
+      "fp": "c2e5d34c335b",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "export type FaqCachePurgeResult ="
+    },
+    "src/lib/chat-cache.ts:436": {
+      "fp": "ffa1a1de171c",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "| { status: \"error\"; key: string; message: string };"
+    },
+    "src/lib/chat-cache.ts:449": {
+      "fp": "72196860bed7",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "export async function faqCachePurge("
+    },
+    "src/lib/chat-cache.ts:469": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/chat-cache.ts:5": {
       "fp": "b76c3a2029fd",
       "citedBy": [
@@ -15987,14 +16224,14 @@
       ],
       "preview": "import { stripControlBytes } from \"@/lib/llm-trace\";"
     },
-    "src/lib/chat-cache.ts:50": {
+    "src/lib/chat-cache.ts:54": {
       "fp": "ed9623369ff0",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "*/"
     },
-    "src/lib/chat-cache.ts:52": {
+    "src/lib/chat-cache.ts:56": {
       "fp": "60157126e7bd",
       "citedBy": [
         "14b-subsystems.md",
@@ -16002,7 +16239,7 @@
       ],
       "preview": "const ENTRY_PREFIX = \"anvilry:chat:cache:\";"
     },
-    "src/lib/chat-cache.ts:54": {
+    "src/lib/chat-cache.ts:58": {
       "fp": "d388f1bcc0fd",
       "citedBy": [
         "14b-subsystems.md",
@@ -16010,21 +16247,21 @@
       ],
       "preview": "const CORPUS_BUILT_AT_KEY = \"anvilry:corpus:built_at\";"
     },
-    "src/lib/chat-cache.ts:56": {
+    "src/lib/chat-cache.ts:60": {
       "fp": "8631e587f68c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "/** 24h: long enough to catch same-day repeat traffic, short enough to bound"
     },
-    "src/lib/chat-cache.ts:62": {
+    "src/lib/chat-cache.ts:66": {
       "fp": "2679bf30d645",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "*  cache at all — see src/app/api/chat/route.ts.) */"
     },
-    "src/lib/chat-cache.ts:63": {
+    "src/lib/chat-cache.ts:67": {
       "fp": "b74524a32968",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -16032,13 +16269,28 @@
       ],
       "preview": "export const FAQ_CACHE_TTL_SECONDS = 24 * 60 * 60;"
     },
-    "src/lib/chat-cache.ts:79": {
+    "src/lib/chat-cache.ts:83": {
       "fp": "de65f807c4b3",
       "citedBy": [
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
       "preview": "export const MAX_CACHEABLE_ANSWER_CHARS = 4000;"
+    },
+    "src/lib/chat-cache.ts:89": {
+      "fp": "8ffea9ea7dcb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "export const MAX_CACHEABLE_REASONING_CHARS = 4000;"
+    },
+    "src/lib/chat-cache.ts:95": {
+      "fp": "7181fb8eedb8",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "export const MAX_REASONING_QUESTION_CHARS = 200;"
     },
     "src/lib/claims-integrity.ts:1": {
       "fp": "8d64a30d9de1",
@@ -17692,6 +17944,13 @@
       ],
       "preview": "});"
     },
+    "src/lib/llm.test.ts:2515": {
+      "fp": "237d7312a0b2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"strips the protocol's control bytes from the reasoning, live and in reasoningText\", async () => "
+    },
     "src/lib/llm.test.ts:278": {
       "fp": "d8ff266bf1e6",
       "citedBy": [
@@ -18243,28 +18502,42 @@
       ],
       "preview": "};"
     },
-    "src/lib/llm.ts:435": {
+    "src/lib/llm.ts:410": {
+      "fp": "7a529142b870",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "answerText?: string;"
+    },
+    "src/lib/llm.ts:419": {
+      "fp": "701da4b4b46e",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "reasoningText?: string;"
+    },
+    "src/lib/llm.ts:444": {
       "fp": "8db2f209cbd9",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const apologyTail = `\\n\\n[Sorry — something went wrong. Please email ${profile.email}.]`;"
     },
-    "src/lib/llm.ts:436": {
+    "src/lib/llm.ts:445": {
       "fp": "0a590f272b8d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "// Trace frame extends the v1.6 {model, fellBack} shape with v1.8 fields. The"
     },
-    "src/lib/llm.ts:437": {
+    "src/lib/llm.ts:446": {
       "fp": "97dee7aa6df0",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// shape is ADDITIVE — splitTrace at use-chat.ts:13-24 does JSON.parse(rest) and"
     },
-    "src/lib/llm.ts:439": {
+    "src/lib/llm.ts:448": {
       "fp": "163d58a6a61b",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18280,13 +18553,6 @@
       ],
       "preview": "export function isSonnet5PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:458": {
-      "fp": "4b797ccbd3d3",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
-    },
     "src/lib/llm.ts:46": {
       "fp": "9a87a2140b36",
       "citedBy": [
@@ -18296,20 +18562,12 @@
       ],
       "preview": "return process.env.LLM_USE_SONNET_5 === \"true\";"
     },
-    "src/lib/llm.ts:464": {
-      "fp": "df3982fd6101",
+    "src/lib/llm.ts:467": {
+      "fp": "4b797ccbd3d3",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "};"
-    },
-    "src/lib/llm.ts:468": {
-      "fp": "d85ca4170ed1",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "let emittedAny = false;"
+      "preview": "const safeOnAttempt = (attempt: LlmAttempt) => {"
     },
     "src/lib/llm.ts:47": {
       "fp": "d10b36aa74a5",
@@ -18319,7 +18577,22 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:475": {
+    "src/lib/llm.ts:473": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/llm.ts:477": {
+      "fp": "d85ca4170ed1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "let emittedAny = false;"
+    },
+    "src/lib/llm.ts:484": {
       "fp": "2f8673da0c7b",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18327,63 +18600,63 @@
       ],
       "preview": "let thinkingSentinelEmitted = false;"
     },
-    "src/lib/llm.ts:477": {
+    "src/lib/llm.ts:486": {
       "fp": "ec4bd6281932",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const close = () => {"
     },
-    "src/lib/llm.ts:482": {
+    "src/lib/llm.ts:491": {
       "fp": "df3982fd6101",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "};"
     },
-    "src/lib/llm.ts:485": {
+    "src/lib/llm.ts:494": {
       "fp": "f5d350b44ec7",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// SDK init error) becomes a graceful apology stream — not an uncaught 500 at"
     },
-    "src/lib/llm.ts:487": {
+    "src/lib/llm.ts:496": {
       "fp": "d845f1992f4d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "let client: Anthropic;"
     },
-    "src/lib/llm.ts:493": {
+    "src/lib/llm.ts:502": {
       "fp": "be4088746726",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "model: \"client-init\","
     },
-    "src/lib/llm.ts:494": {
+    "src/lib/llm.ts:503": {
       "fp": "12c02075e40b",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "attempt_index: -1,"
     },
-    "src/lib/llm.ts:496": {
+    "src/lib/llm.ts:505": {
       "fp": "a649c792ffbb",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "latency_ms: 0,"
     },
-    "src/lib/llm.ts:502": {
+    "src/lib/llm.ts:511": {
       "fp": "54d1ad310c19",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "controller.enqueue(encoder.encode(apologyTail.replace(/^\\n\\n/, \"\")));"
     },
-    "src/lib/llm.ts:505": {
+    "src/lib/llm.ts:514": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18391,56 +18664,64 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:514": {
+    "src/lib/llm.ts:523": {
       "fp": "baa9f9035b59",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "let usage: LlmUsage | undefined;"
     },
-    "src/lib/llm.ts:522": {
+    "src/lib/llm.ts:531": {
       "fp": "dd5a9f2167ee",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "let answerText = \"\";"
     },
-    "src/lib/llm.ts:524": {
+    "src/lib/llm.ts:534": {
+      "fp": "b47ecd75170b",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "let reasoningText = \"\";"
+    },
+    "src/lib/llm.ts:536": {
       "fp": "1c7c59f020b9",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "// Extended thinking: only for non-Haiku models (Haiku doesn't support the"
     },
-    "src/lib/llm.ts:525": {
+    "src/lib/llm.ts:537": {
       "fp": "d7912666e51f",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "// `thinking` param at all — not even an explicit \"disabled\"). NOTE: If"
     },
-    "src/lib/llm.ts:531": {
+    "src/lib/llm.ts:543": {
       "fp": "ae29ea4279db",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const useThinking ="
     },
-    "src/lib/llm.ts:532": {
+    "src/lib/llm.ts:544": {
       "fp": "c4c603db2d2e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "opts?.extendedThinking === true && !model.includes(\"haiku\");"
     },
-    "src/lib/llm.ts:533": {
+    "src/lib/llm.ts:545": {
       "fp": "d25c37fb3c32",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const modelSupportsThinking = !model.includes(\"haiku\");"
     },
-    "src/lib/llm.ts:535": {
+    "src/lib/llm.ts:547": {
       "fp": "aac95f3d1ef6",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18449,35 +18730,43 @@
       ],
       "preview": "// Adaptive thinking (`{type:\"adaptive\"}` + `output_config.effort`)"
     },
-    "src/lib/llm.ts:556": {
+    "src/lib/llm.ts:561": {
+      "fp": "996950386198",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// CRITICAL: Sonnet 5 / Opus 5 run adaptive thinking ON BY DEFAULT when"
+    },
+    "src/lib/llm.ts:568": {
       "fp": "17390c5655aa",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "// recognize the param."
     },
-    "src/lib/llm.ts:562": {
+    "src/lib/llm.ts:574": {
       "fp": "d5cbd78edc45",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "...(useThinking"
     },
-    "src/lib/llm.ts:566": {
+    "src/lib/llm.ts:578": {
       "fp": "ce2fee23e247",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "thinkingTokenFloor(model, thinkingEffort(model)),"
     },
-    "src/lib/llm.ts:569": {
+    "src/lib/llm.ts:581": {
       "fp": "00fa278ea019",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": ": {}),"
     },
-    "src/lib/llm.ts:580": {
+    "src/lib/llm.ts:592": {
       "fp": "a9849ac2357a",
       "citedBy": [
         "14-subsystems.md",
@@ -18485,40 +18774,26 @@
       ],
       "preview": "} as Anthropic.MessageStreamParams & { model: string });"
     },
-    "src/lib/llm.ts:586": {
+    "src/lib/llm.ts:598": {
       "fp": "9f882be98cf4",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (useThinking && !emittedAny && !thinkingSentinelEmitted) {"
     },
-    "src/lib/llm.ts:588": {
+    "src/lib/llm.ts:600": {
       "fp": "f2eae6b3c0f9",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "thinkingSentinelEmitted = true;"
     },
-    "src/lib/llm.ts:596": {
+    "src/lib/llm.ts:608": {
       "fp": "7179c2f4b390",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "if (event.type === \"message_start\") {"
-    },
-    "src/lib/llm.ts:616": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/llm.ts:619": {
-      "fp": "bd764c92f214",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "if (event.type === \"message_delta\") {"
     },
     "src/lib/llm.ts:628": {
       "fp": "d10b36aa74a5",
@@ -18527,34 +18802,26 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:629": {
-      "fp": "ee8c1cc9eb5b",
+    "src/lib/llm.ts:631": {
+      "fp": "bd764c92f214",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "// Extended thinking: stream thinking_delta bytes live to the client."
+      "preview": "if (event.type === \"message_delta\") {"
     },
-    "src/lib/llm.ts:648": {
-      "fp": "3929c23b4a56",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "if (!useThinking || thinkingEndEmitted) continue;"
-    },
-    "src/lib/llm.ts:653": {
-      "fp": "2ede4f7460e4",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const chunk = stripControlBytes("
-    },
-    "src/lib/llm.ts:659": {
+    "src/lib/llm.ts:640": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
+    },
+    "src/lib/llm.ts:641": {
+      "fp": "ee8c1cc9eb5b",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "// Extended thinking: stream thinking_delta bytes live to the client."
     },
     "src/lib/llm.ts:66": {
       "fp": "b87f3902e02a",
@@ -18564,40 +18831,64 @@
       ],
       "preview": "export function isSonnet55PrimaryEnabled(): boolean {"
     },
-    "src/lib/llm.ts:662": {
-      "fp": "20f32da3dcd3",
+    "src/lib/llm.ts:660": {
+      "fp": "3929c23b4a56",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
       ],
-      "preview": "event.delta.type === \"text_delta\""
+      "preview": "if (!useThinking || thinkingEndEmitted) continue;"
     },
-    "src/lib/llm.ts:664": {
-      "fp": "e236a00082d4",
+    "src/lib/llm.ts:665": {
+      "fp": "2ede4f7460e4",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "if (ttftMs == null) ttftMs = Date.now() - attemptStart;"
+      "preview": "const chunk = stripControlBytes("
     },
     "src/lib/llm.ts:669": {
+      "fp": "e18f1434a507",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "if (chunk) {"
+    },
+    "src/lib/llm.ts:671": {
+      "fp": "72ba8b103da1",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "reasoningText += chunk;"
+    },
+    "src/lib/llm.ts:672": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:674": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:675": {
-      "fp": "e32dfcc1b73f",
+    "src/lib/llm.ts:677": {
+      "fp": "20f32da3dcd3",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "answerText += text;"
+      "preview": "event.delta.type === \"text_delta\""
     },
-    "src/lib/llm.ts:676": {
-      "fp": "873ab549ff72",
+    "src/lib/llm.ts:679": {
+      "fp": "e236a00082d4",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "emittedAny = true;"
+      "preview": "if (ttftMs == null) ttftMs = Date.now() - attemptStart;"
     },
     "src/lib/llm.ts:68": {
       "fp": "d10b36aa74a5",
@@ -18607,21 +18898,42 @@
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:682": {
-      "fp": "2e164b8bb5bf",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "// Loop ended with zero text_delta events (e.g. adaptive thinking"
-    },
-    "src/lib/llm.ts:694": {
+    "src/lib/llm.ts:684": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "}"
     },
-    "src/lib/llm.ts:708": {
+    "src/lib/llm.ts:690": {
+      "fp": "e32dfcc1b73f",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "answerText += text;"
+    },
+    "src/lib/llm.ts:691": {
+      "fp": "873ab549ff72",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "emittedAny = true;"
+    },
+    "src/lib/llm.ts:697": {
+      "fp": "2e164b8bb5bf",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "// Loop ended with zero text_delta events (e.g. adaptive thinking"
+    },
+    "src/lib/llm.ts:709": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:723": {
       "fp": "6475e3f06871",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18629,7 +18941,15 @@
       ],
       "preview": "...(emittedAny ? { answerText } : {}),"
     },
-    "src/lib/llm.ts:714": {
+    "src/lib/llm.ts:725": {
+      "fp": "f6089c079b31",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "...(emittedAny && reasoningText ? { reasoningText } : {}),"
+    },
+    "src/lib/llm.ts:731": {
       "fp": "cbb775d99a96",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -18637,45 +18957,13 @@
       ],
       "preview": "if (emittedAny)"
     },
-    "src/lib/llm.ts:721": {
+    "src/lib/llm.ts:738": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": ");"
-    },
-    "src/lib/llm.ts:741": {
-      "fp": "ab8795c5d95c",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "const isLast = i === chain.length - 1;"
-    },
-    "src/lib/llm.ts:742": {
-      "fp": "3762952356a4",
-      "citedBy": [
-        "02-api-routes.md",
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const goingToApology ="
-    },
-    "src/lib/llm.ts:743": {
-      "fp": "552a67dc6f92",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "emittedAny || isLast || !isFallbackEligible(err);"
-    },
-    "src/lib/llm.ts:745": {
-      "fp": "ec69082ed723",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "// a fallback to a model that doesn't support thinking (Haiku) — the"
     },
     "src/lib/llm.ts:75": {
       "fp": "e9216f3a66d8",
@@ -18686,22 +18974,37 @@
       ],
       "preview": "export function isOpusFallbackEnabled(): boolean {"
     },
-    "src/lib/llm.ts:764": {
-      "fp": "d10b36aa74a5",
+    "src/lib/llm.ts:758": {
+      "fp": "ab8795c5d95c",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "14b-subsystems.md"
       ],
-      "preview": "}"
+      "preview": "const isLast = i === chain.length - 1;"
     },
-    "src/lib/llm.ts:769": {
-      "fp": "d10b36aa74a5",
+    "src/lib/llm.ts:759": {
+      "fp": "3762952356a4",
       "citedBy": [
         "02-api-routes.md",
         "04-lib-ai-voice-infra.md",
         "14-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "}"
+      "preview": "const goingToApology ="
+    },
+    "src/lib/llm.ts:760": {
+      "fp": "552a67dc6f92",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "emittedAny || isLast || !isFallbackEligible(err);"
+    },
+    "src/lib/llm.ts:762": {
+      "fp": "ec69082ed723",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "// a fallback to a model that doesn't support thinking (Haiku) — the"
     },
     "src/lib/llm.ts:77": {
       "fp": "d10b36aa74a5",
@@ -18709,6 +19012,23 @@
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md",
         "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:781": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/llm.ts:786": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },

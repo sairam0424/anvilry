@@ -32,7 +32,11 @@ import { stripControlBytes } from "@/lib/llm-trace";
  *    a moderation layer.
  *  - Entries are tagged with the corpus build they were answered against, so
  *    a content-correcting deploy can't have its old answer survive the TTL.
- *  - No raw question text is persisted (the key is already a hash of it).
+ *  - No raw question text is persisted (the key is already a hash of it). The
+ *    one exception in spirit is the stored reasoning summary: it is model-written
+ *    prose that can paraphrase or quote the question, so it is replayed only on
+ *    an EXACT-tier hit (the next visitor typed the same normalized text) and never
+ *    on a semantic hit, where it would show one visitor's wording to another.
  *  - Cache-layer errors are emitted as a distinguishable server.error event,
  *    not silently folded into the same signal as a genuine miss.
  *
@@ -78,8 +82,25 @@ export const TRIM_SAMPLE_EVERY = 20;
  *  truncated, since a truncated cached answer would look permanently broken). */
 export const MAX_CACHEABLE_ANSWER_CHARS = 4000;
 
+/** A reasoning summary is a few sentences (Sonnet 5.5 at xhigh: median 380, p95 810,
+ *  max 1,077 characters over 41 measured calls). Same role as the bound above: reject an
+ *  anomalous one outright, never store it truncated. A rejected summary costs only the
+ *  summary: the ANSWER is still cached, and a hit then replays it without reasoning. */
+export const MAX_CACHEABLE_REASONING_CHARS = 4000;
+
+/** The summary is stored only for a question this short (normalized). A model-written summary
+ *  of a long free-text question is the likeliest to carry personal detail the visitor typed,
+ *  and an exact-match repeat of a long question almost never happens, so the summary would buy
+ *  nothing there; the answer is cached regardless. The starter chips are under 60 characters. */
+export const MAX_REASONING_QUESTION_CHARS = 200;
+
 export type FaqCacheEntry = {
   answer: string;
+  /** The reasoning summary the model streamed before this answer (sanitized, at most
+   *  MAX_CACHEABLE_REASONING_CHARS). Absent on entries written before it was stored, when the
+   *  model did not reason, when the summary failed the bound, and when the normalized question
+   *  was over MAX_REASONING_QUESTION_CHARS. Replayed by the chat route on an exact hit only. */
+  reasoning?: string;
   model: string;
   costUsd: number;
   cachedAt: number;
@@ -92,9 +113,17 @@ export type FaqCacheEntry = {
   embedding?: number[];
 };
 
+/** A semantic hit answers a question that is merely SIMILAR to the one the entry was
+ *  written for, so it never carries the reasoning summary (which paraphrases that
+ *  other question): the type leaves the field out and faqCacheSemanticGet removes it,
+ *  so a later caller cannot replay it by forgetting a tier check. */
 export type FaqCacheHit =
   | { entry: FaqCacheEntry; tier: "exact" }
-  | { entry: FaqCacheEntry; tier: "semantic"; similarity: number };
+  | {
+      entry: Omit<FaqCacheEntry, "reasoning">;
+      tier: "semantic";
+      similarity: number;
+    };
 
 /** Lowercase, trim, collapse whitespace, strip trailing punctuation. Cheap,
  *  no new dependency; catches near-identical phrasing but not true paraphrases
@@ -134,6 +163,27 @@ function parseEntry(raw: string | FaqCacheEntry): FaqCacheEntry {
   return typeof raw === "string" ? (JSON.parse(raw) as FaqCacheEntry) : raw;
 }
 
+/** A reasoning summary in the form that is safe to store AND to replay: a string with the
+ *  thinking protocol's own control bytes stripped, trimmed, non-empty and within
+ *  MAX_CACHEABLE_REASONING_CHARS; anything else is undefined. Applied on BOTH sides of Redis,
+ *  because Redis is a trust boundary (an older writer, a hand edit, a bug): a bad stored value
+ *  must degrade to "no reasoning", never to an error or a mis-framed body on the hit path,
+ *  which has no try/catch of its own. */
+function replayableReasoning(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const clean = stripControlBytes(value).trim();
+  return clean.length > 0 && clean.length <= MAX_CACHEABLE_REASONING_CHARS
+    ? clean
+    : undefined;
+}
+
+/** `entry` with its stored reasoning normalized by replayableReasoning (dropped if unusable). */
+function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {
+  const { reasoning: stored, ...rest } = entry;
+  const reasoning = replayableReasoning(stored);
+  return reasoning === undefined ? rest : { ...rest, reasoning };
+}
+
 /** Current corpus build tag, or null if unset (local dev/preview) or on any
  *  Redis error — fails open to null, same posture as everything else here. */
 async function getCurrentCorpusBuildTag(): Promise<string | null> {
@@ -155,6 +205,15 @@ function isSameCorpusBuild(
   return (entry.corpusBuiltAt ?? null) === (currentTag ?? null);
 }
 
+/** An Upstash client error ends with ", command was: <the whole command as JSON>".
+ *  For a failed SET that is the entire cache entry, the answer and its reasoning
+ *  summary, so what follows the marker must never be copied into a telemetry event
+ *  or a log line. Also bounded, so one message cannot bloat the trace sink. */
+function withoutCommandEcho(message: unknown): string {
+  const [head] = String(message).split(", command was:");
+  return head.slice(0, 300);
+}
+
 /** Logs AND emits a distinguishable server.error telemetry event for a cache
  *  operation failure, so a broken cache is visible on /admin/telemetry's
  *  existing error-rate tile instead of silently looking identical to a
@@ -162,7 +221,7 @@ function isSameCorpusBuild(
  *  failure, not a request-scoped one), so it mints its own trace/span pair. */
 function emitCacheError(op: string, err: unknown): void {
   const name = (err as Error)?.name ?? "Error";
-  const message = (err as Error)?.message ?? String(err);
+  const message = withoutCommandEcho((err as Error)?.message ?? String(err));
   console.warn(`[chat-cache] ${op} failed, failing open: ${name}`);
   try {
     emit({
@@ -203,7 +262,7 @@ export async function faqCacheGet(
     if (!raw) return null;
     const entry = parseEntry(raw);
     if (!isSameCorpusBuild(entry, currentTag)) return null;
-    return { entry, tier: "exact" };
+    return { entry: withReplayableReasoning(entry), tier: "exact" };
   } catch (err) {
     emitCacheError("get", err);
     return null;
@@ -247,9 +306,12 @@ export async function faqCacheSemanticGet(
         best = { entry, similarity };
       }
     }
-    return best
-      ? { entry: best.entry, tier: "semantic", similarity: best.similarity }
-      : null;
+    if (!best) return null;
+    const entry: Omit<FaqCacheEntry, "reasoning"> & { reasoning?: string } = {
+      ...best.entry,
+    };
+    delete entry.reasoning;
+    return { entry, tier: "semantic", similarity: best.similarity };
   } catch (err) {
     emitCacheError("semantic-get", err);
     return null;
@@ -260,6 +322,10 @@ export async function faqCacheSemanticGet(
  *  into the request path — call as `void faqCacheSet(...)`. Rejects (does not
  *  cache) anything that isn't a clean `end_turn` completion, anything that
  *  sanitizes to empty, and anything anomalously long — see the module header.
+ *  `reasoning` (the summary streamed before the answer) gets the same control-byte
+ *  stripping and is stored beside the answer only when it is non-empty, within
+ *  MAX_CACHEABLE_REASONING_CHARS, and the normalized question is at most
+ *  MAX_REASONING_QUESTION_CHARS; otherwise the answer is still cached, without it.
  *  The optional semantic-embedding write is itself best-effort and never
  *  blocks the base exact-match write above it. */
 export async function faqCacheSet(
@@ -268,6 +334,7 @@ export async function faqCacheSet(
   model: string,
   costUsd: number,
   finishReason: string | undefined,
+  reasoning?: string,
 ): Promise<void> {
   if (!isFaqCacheEnabled() || !redis) return;
 
@@ -285,8 +352,22 @@ export async function faqCacheSet(
   const key = faqCacheKey(normalized);
   const cachedAt = Date.now();
   const corpusBuiltAt = await getCurrentCorpusBuildTag();
+  const storedReasoning =
+    normalized.length <= MAX_REASONING_QUESTION_CHARS
+      ? replayableReasoning(reasoning)
+      : undefined;
+  if (
+    typeof reasoning === "string" &&
+    stripControlBytes(reasoning).trim().length > MAX_CACHEABLE_REASONING_CHARS
+  ) {
+    // Length only, never the text: an over-long summary is dropped silently otherwise.
+    console.warn(
+      `[chat-cache] reasoning summary of ${reasoning.length} characters is over the ${MAX_CACHEABLE_REASONING_CHARS} bound: answer cached without it`,
+    );
+  }
   const entry: FaqCacheEntry = {
     answer: sanitized,
+    ...(storedReasoning !== undefined ? { reasoning: storedReasoning } : {}),
     model,
     costUsd,
     cachedAt,
@@ -382,7 +463,7 @@ export async function faqCachePurge(
     return {
       status: "error",
       key,
-      message: (err as Error)?.message ?? "unknown error",
+      message: withoutCommandEcho((err as Error)?.message ?? "unknown error"),
     };
   }
 }

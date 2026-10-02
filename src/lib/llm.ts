@@ -408,6 +408,15 @@ export type LlmAttempt = {
    *  thinking_delta bytes and the trailing trace frame structurally — it is
    *  built from the exact same text_delta bytes the client renders. */
   answerText?: string;
+  /** The reasoning summary THIS attempt streamed between THINKING_SENTINEL and
+   *  THINKING_END: exactly the thinking_delta bytes the client was sent (control bytes
+   *  stripped, a late block after the answer started excluded). Present only together
+   *  with answerText and only when non-empty, so it is absent whenever the model did not
+   *  reason, extended thinking is off, or the attempt failed. On a fallback rung it holds
+   *  that rung's own reasoning, not the reasoning of the failed attempt before it; the
+   *  route caches only a primary-rung success, where the two coincide. Never emitted to
+   *  telemetry. */
+  reasoningText?: string;
 };
 
 export function streamWithFallback(
@@ -520,6 +529,9 @@ export function streamWithFallback(
         // loop). Read by route.ts's onAttempt handler to write-through a clean
         // answer into the FAQ cache; undefined on any error/fallback path.
         let answerText = "";
+        // The counterpart for reasoning: ONLY the thinking_delta bytes actually sent
+        // to the client (the enqueue below), so a replay reproduces what was shown.
+        let reasoningText = "";
 
         // Extended thinking: only for non-Haiku models (Haiku doesn't support the
         // `thinking` param at all — not even an explicit "disabled"). NOTE: If
@@ -654,7 +666,10 @@ export function streamWithFallback(
                 (event.delta as { type: string; thinking?: string }).thinking ??
                   "",
               );
-              if (chunk) controller.enqueue(encoder.encode(chunk));
+              if (chunk) {
+                controller.enqueue(encoder.encode(chunk));
+                reasoningText += chunk;
+              }
               continue;
             }
             if (
@@ -706,6 +721,8 @@ export function streamWithFallback(
             // on the catch-block's safeOnAttempt call, so a partial answer is
             // never cached (the route also skips fell_back successes).
             ...(emittedAny ? { answerText } : {}),
+            // The reasoning summary rides along under the same condition, when there is one.
+            ...(emittedAny && reasoningText ? { reasoningText } : {}),
           });
           // Clean finish — append the honest trace frame (which model served the bytes,
           // whether a fallback fired, and the v1.8 usage + ttft + latency telemetry).

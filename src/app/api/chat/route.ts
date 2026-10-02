@@ -15,6 +15,11 @@ import {
   isSemanticMatchEnabled,
 } from "@/lib/chat-cache";
 import { randomUUID } from "node:crypto";
+import {
+  THINKING_END,
+  THINKING_SENTINEL,
+  stripControlBytes,
+} from "@/lib/llm-trace";
 
 export const maxDuration = 60;
 
@@ -273,6 +278,9 @@ export async function POST(req: Request) {
     // No auth needed: skipping the cache only forfeits a savings opportunity
     // for that one request, it grants no new privilege (rate-limiting above
     // still applies unconditionally either way).
+    // Read once, up front: the live path below sends it to the model, and the hit
+    // path uses it to honour the same kill switch when it replays stored reasoning.
+    const extendedThinking = process.env.EXTENDED_THINKING !== "false";
     const skipCache = req.headers.get("x-chat-skip-cache") != null;
     const firstContent = messages[0]?.content;
     const cacheEligible =
@@ -289,6 +297,21 @@ export async function POST(req: Request) {
       const hit =
         (await faqCacheGet(question)) ??
         (isSemanticMatchEnabled() ? await faqCacheSemanticGet(question) : null);
+
+      // A reasoning summary stored beside the answer is replayed in the SAME framing a
+      // live stream has, [THINKING_SENTINEL][reasoning][THINKING_END][answer][trace], so
+      // every client (Chat view, widget, voice) and server-side reader (answerFromBody)
+      // takes it unchanged; the whole body arrives at once, so the Chat view settles on
+      // "Thought for a moment". Only an EXACT hit replays it: the summary paraphrases the
+      // question it was written for, and a semantic hit answers a merely SIMILAR question
+      // someone else typed. It also honours the EXTENDED_THINKING kill switch the live
+      // path honours. Re-stripped and type-checked here because it comes back from Redis.
+      const replayedReasoning =
+        hit?.tier === "exact" &&
+        extendedThinking &&
+        typeof hit.entry.reasoning === "string"
+          ? stripControlBytes(hit.entry.reasoning).trim()
+          : "";
 
       ctx.attrs({ cache_hit: !!hit, cache_tier: hit?.tier ?? "none" });
       emit({
@@ -307,7 +330,12 @@ export async function POST(req: Request) {
           // real operational use — faqCachePurge takes the original question
           // text, not a hash, so this field couldn't even drive a purge call.
           ...(hit
-            ? { saved_usd: hit.entry.costUsd, model: hit.entry.model }
+            ? {
+                saved_usd: hit.entry.costUsd,
+                model: hit.entry.model,
+                // A boolean only: the summary text itself never goes to telemetry.
+                reasoning_replayed: replayedReasoning.length > 0,
+              }
             : {}),
           ...(hit?.tier === "semantic" ? { similarity: hit.similarity } : {}),
         },
@@ -321,7 +349,10 @@ export async function POST(req: Request) {
           traceId: ctx.traceId,
         };
         const responseBody = `${hit.entry.answer}${TRACE_DELIMITER}${JSON.stringify(frame)}`;
-        return new Response(responseBody, {
+        const body = replayedReasoning
+          ? `${THINKING_SENTINEL}${replayedReasoning}${THINKING_END}${responseBody}`
+          : responseBody;
+        return new Response(body, {
           headers: {
             "Content-Type": "text/plain; charset=utf-8",
             "Cache-Control": "no-store",
@@ -335,8 +366,6 @@ export async function POST(req: Request) {
     // times out or the GitHub token is unset, githubStats is null and the prompt
     // just omits the LIVE GITHUB STATS block.
     const githubStats = await getLiveGithubStats();
-
-    const extendedThinking = process.env.EXTENDED_THINKING !== "false";
 
     const stream = streamWithFallback(
       {
@@ -428,6 +457,9 @@ export async function POST(req: Request) {
           // and a cache hit would replay it for 24 h as the normal answer.
           // faqCacheSet applies its own additional completion-integrity gate on
           // finish_reason (only "end_turn" is cacheable) — passed through here.
+          // The reasoning summary this same attempt streamed goes with the answer, so a
+          // later exact hit can replay it (see the hit path above); undefined when the
+          // model did not reason.
           if (
             question != null &&
             attempt.answerText != null &&
@@ -439,6 +471,7 @@ export async function POST(req: Request) {
               attempt.model,
               attemptCost ?? 0,
               attempt.finish_reason,
+              attempt.reasoningText,
             );
           }
         },

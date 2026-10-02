@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   render,
   screen,
@@ -294,4 +294,148 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
 
     expectExactlyOneLiveAnnouncer(container);
   });
+});
+
+describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
+  const QUESTION = "What stack do you use?";
+  const REASONING = "The user asks about my stack, so I'll name TypeScript first.";
+  const ANSWER = "TypeScript, mostly.";
+  const FRAME = JSON.stringify({
+    model: "global.anthropic.claude-sonnet-5-5",
+    fellBack: false,
+    cacheHit: true,
+    traceId: "test-trace-id",
+  });
+  const PROTOCOL_BYTES = /[\u001e\u0001\u0002]/;
+
+  /** The body an exact FAQ-cache hit sends when its entry stored the reasoning: the live
+   *  framing, in a single chunk. */
+  async function replayFetch() {
+    const { TRACE_DELIMITER } = await import("@/lib/llm-trace");
+    const body = `${THINKING_SENTINEL}${REASONING}${THINKING_END}${ANSWER}${TRACE_DELIMITER}${FRAME}`;
+    return vi.fn(async () => streamingResponse([body]));
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  function ask(question: string) {
+    fireEvent.change(screen.getByLabelText("Ask a question about Sairam"), {
+      target: { value: question },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  }
+
+  it("ChatView: a collapsed 'Thought for a moment' toggle opens to the stored reasoning, with one live region announcing the answer only", async () => {
+    vi.stubGlobal("fetch", await replayFetch());
+    const { container } = render(
+      <ViewProvider>
+        <ChatView />
+      </ViewProvider>,
+    );
+
+    ask(QUESTION);
+
+    const toggle = await screen.findByRole(
+      "button",
+      { name: /Thought for a moment/ },
+      { timeout: 8000 },
+    );
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(within(container).queryByText(REASONING)).toBeNull();
+
+    await waitFor(
+      () =>
+        expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
+          0,
+        ),
+      { timeout: 8000 },
+    );
+    await waitFor(
+      () => {
+        const announcer = container.querySelector('[aria-live="polite"]');
+        expect(announcer?.textContent).toBe(ANSWER);
+      },
+      { timeout: 5000 },
+    );
+    expectExactlyOneLiveAnnouncer(container);
+    expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
+    expect(document.body.textContent).not.toContain("cacheHit");
+
+    fireEvent.click(toggle);
+    expect(within(container).getByText(REASONING).tagName).toBe("PRE");
+    expectExactlyOneLiveAnnouncer(container);
+    // Opening the toggle must not make the announcer read the reasoning out.
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).toBe(
+      ANSWER,
+    );
+  }, 15000);
+
+  it("ChatView: with NEXT_PUBLIC_EXTENDED_THINKING=false the same body shows the answer and no reasoning at all", async () => {
+    vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "false");
+    vi.stubGlobal("fetch", await replayFetch());
+    const { container } = render(
+      <ViewProvider>
+        <ChatView />
+      </ViewProvider>,
+    );
+
+    ask(QUESTION);
+
+    await waitFor(
+      () =>
+        expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
+          0,
+        ),
+      { timeout: 8000 },
+    );
+    expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();
+    expect(document.body.textContent).not.toContain(REASONING);
+    expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
+    expectExactlyOneLiveAnnouncer(container);
+  }, 15000);
+
+  it("AskPortfolio widget: shows the answer only, never the reasoning or a protocol byte", async () => {
+    vi.stubGlobal("fetch", await replayFetch());
+    const { container } = render(
+      <ViewProvider>
+        <AskPortfolio />
+      </ViewProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Ask my portfolio" }));
+    ask(QUESTION);
+
+    await waitFor(
+      () => {
+        const transcript = screen.getByRole("log", { name: "Chat transcript" });
+        expect(within(transcript).getAllByText(ANSWER).length).toBeGreaterThan(
+          0,
+        );
+      },
+      { timeout: 8000 },
+    );
+    await waitFor(
+      () => {
+        const announcer = container.querySelector('[aria-live="polite"]');
+        expect(announcer?.textContent).toBe(ANSWER);
+      },
+      { timeout: 5000 },
+    );
+
+    expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();
+    expect(document.body.textContent).not.toContain(REASONING);
+    expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
+    expectExactlyOneLiveAnnouncer(container);
+  }, 15000);
+});
+
+// NEXT_PUBLIC_EXTENDED_THINKING=false is a documented setting that the deploy build may have
+// ambient; these tests are about the default (reasoning shown), so they state it.
+beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
 });

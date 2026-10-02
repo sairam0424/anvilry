@@ -587,7 +587,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     `NEXT_PUBLIC_CHROME_TTS_BANNER`, `NEXT_PUBLIC_ENABLE_ANVIL_ORB` or `NEXT_PUBLIC_BUILD_YEAR`. All eleven
     are now documented, mostly in the new "Server Toggles, Caches & Crons" section. Extended thinking is two
     separate switches: the chat route reads the unprefixed `EXTENDED_THINKING` and the client reads
-    `NEXT_PUBLIC_EXTENDED_THINKING`, each on unless set to `"false"`; `ARCHITECTURE.md` (the feature-flags
+    `NEXT_PUBLIC_EXTENDED_THINKING`, each on unless set to `"false"` (the server one also gates replaying a stored reasoning summary on an exact-tier FAQ-cache hit); `ARCHITECTURE.md` (the feature-flags
     bullet under Key invariants) used to list it only as a `NEXT_PUBLIC_*` flag and now describes both.
 22. ~~**Subsystems added after the index was pinned are not described in the root docs.**~~ —
     **corrected.** The FAQ response cache (`src/lib/chat-cache.ts`, `src/lib/faq-embeddings.ts`, and the

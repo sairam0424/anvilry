@@ -5711,7 +5711,21 @@
       ],
       "preview": "import { afterEach, beforeEach, describe, expect, it, vi } from \"vitest\";"
     },
-    "src/app/api/error/route.test.ts:198": {
+    "src/app/api/error/route.test.ts:13": {
+      "fp": "1184f8d743be",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* The Redis singleton is mocked too. The route appends every accepted report to the"
+    },
+    "src/app/api/error/route.test.ts:18": {
+      "fp": "dc84dfd4e0fe",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* so the write is asserted and nothing leaves the process."
+    },
+    "src/app/api/error/route.test.ts:266": {
       "fp": "c6831d95055e",
       "citedBy": [
         "14b-subsystems.md",
@@ -5719,21 +5733,21 @@
       ],
       "preview": "describe(\"/api/error — rate-limit class\", () => {"
     },
-    "src/app/api/error/route.test.ts:204": {
+    "src/app/api/error/route.test.ts:272": {
       "fp": "29576b54e255",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "});"
     },
-    "src/app/api/error/route.test.ts:225": {
+    "src/app/api/error/route.test.ts:293": {
       "fp": "c1f122a4bea2",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "describe(\"/api/error — PII redaction before emit\", () => {"
     },
-    "src/app/api/error/route.test.ts:226": {
+    "src/app/api/error/route.test.ts:294": {
       "fp": "50e2c4261b22",
       "citedBy": [
         "14-subsystems.md",
@@ -5741,7 +5755,7 @@
       ],
       "preview": "it(\"scrubs emails and tokens from message + stack before the event lands in emit()\", async () => {"
     },
-    "src/app/api/error/route.test.ts:263": {
+    "src/app/api/error/route.test.ts:331": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md",
@@ -5749,7 +5763,7 @@
       ],
       "preview": "});"
     },
-    "src/app/api/error/route.test.ts:264": {
+    "src/app/api/error/route.test.ts:332": {
       "fp": "29576b54e255",
       "citedBy": [
         "14b-subsystems.md"
@@ -5830,6 +5844,13 @@
         "14b-subsystems.md"
       ],
       "preview": "});"
+    },
+    "src/app/api/error/route.ts:173": {
+      "fp": "d282fec74710",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Append to recent-errors list in Redis for the telemetry dashboard (fire-and-forget)."
     },
     "src/app/api/error/route.ts:174": {
       "fp": "a6a3dbcf91aa",

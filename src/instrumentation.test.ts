@@ -214,6 +214,8 @@ describe("register() — the corpus stamp follows the deployment", () => {
   it("does nothing when Redis is not configured", async () => {
     holder.redis = null;
     await expect(register()).resolves.toBeUndefined();
+    // Nothing to stamp is not a failure to stamp: no warning either.
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
   it("never lets a Redis failure escape, and the next start of the deployment tries again", async () => {

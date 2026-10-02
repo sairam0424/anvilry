@@ -3,14 +3,14 @@ kind: doc
 title: Docs, Knowledge Base & Agent Harness
 domain: [content]
 status: current
-version: v3.11.0
+version: v3.12.0
 ---
 
 # Docs, Knowledge Base & Agent Harness
 
-> Part of the Anvilry v3.11.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.12.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> **Pin:** this file describes Anvilry v3.11.0 (package.json `3.11.0`), i.e. `main` at a929932 (package.json `3.6.0`) plus five later behavioural fixes: notes are hidden at the data layer when `NOTES_ENABLED` is off; the rate limiter has per-class buckets (chat, voice, beacon) with an eval-cron bypass via `src/lib/cron-auth.ts`; admin auth goes through one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page); the command palette gates talk mode on `isVoiceViewActive`; and the bundle gate's route floor (`MIN_ROUTES`) is 17 and verified-dead components were removed. Numbers below were re-measured against that tree (worktree head 8e9e73e; `package.json`'s own version, bumped at the release cut, is `3.11.0`), not copied from older docs. Statements about what the other root docs say describe those docs as they stand in v3.7.0, after their own drift fixes; the §Doc-vs-code drift ledger marks which rows that closed.
+> **Pin:** this file describes Anvilry v3.12.0 (package.json `3.12.0`), i.e. `main` at a929932 (package.json `3.6.0`) plus five later behavioural fixes: notes are hidden at the data layer when `NOTES_ENABLED` is off; the rate limiter has per-class buckets (chat, voice, beacon) with an eval-cron bypass via `src/lib/cron-auth.ts`; admin auth goes through one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page); the command palette gates talk mode on `isVoiceViewActive`; and the bundle gate's route floor (`MIN_ROUTES`) is 17 and verified-dead components were removed. Numbers below were re-measured against that tree (worktree head 8e9e73e; `package.json`'s own version, bumped at the release cut, is `3.12.0`), not copied from older docs. Statements about what the other root docs say describe those docs as they stand in v3.7.0, after their own drift fixes; the §Doc-vs-code drift ledger marks which rows that closed.
 
 **Scope:** `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `AGENTS.md`, `CHANGELOG.md`, `LOG.md`, `VOICE.md`,
 `TELEMETRY.md`, `DEPLOY.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `docs/README.md`,
@@ -29,7 +29,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `CLAUDE.md` | Agent operating brief: commands, Makefile targets, branch/CI model, architecture overview, key-files table, env vars, testing notes, skills + knowledge-base pointers. | §Commands, §Branch Model & CI, §Architecture Overview, §Key Files, §Testing Notes, §Skills |
 | `ARCHITECTURE.md` | Knowledge-base architecture decision record: the `signal`/`doc` kind model, domains-as-loops, repo map, key invariants. Frontmatter `kind: architecture`, `status: adopted`. Its `**Product:**` line records that the `View` union has **six** members and defers to `CLAUDE.md` → "The View System" (`ARCHITECTURE.md:17`); it used to say "4-view system". A `> **Scope:**` blockquote (`ARCHITECTURE.md:9`) now pins the app state that its domain table, layout map and invariants describe. | §The model, §Kinds, §Domains (active loops), §Repo layout, §Key invariants |
 | `AGENTS.md` | 9-line Next.js-version warning wrapped in `<!-- BEGIN:nextjs-agent-rules -->` markers; points agents at `node_modules/next/dist/docs/`. States that `next dev` writes and re-adds this block (`node_modules/next/dist/server/lib/generate-agent-files.js`), so deleting it from a diff only recreates the change. `CLAUDE.md` restates the warning in its first callout. | (no headings beyond the single H1) |
-| `CHANGELOG.md` | Keep-a-Changelog release history, **24** released version entries, newest first (`[3.11.0] — 2026-10-01` on top, then `[3.10.0] — 2026-10-01` and `[3.9.0] — 2026-10-01`), and NO live `[Unreleased]` section — the pnpm 11 `allowBuilds` fix and the bundle gate both shipped as `[3.6.0] — 2026-08-21` (`CHANGELOG.md:349-439`). `[3.7.0]` covers what changed after `a929932` (#279–#284), `[3.8.0]` covers #287, `[3.9.0]` covers #291 and #292, `[3.10.0]` covers #296 and #297 and `[3.11.0]` covers #300; the 297 commits between the `v3.6.0` tag and `a929932` (FAQ response cache, claims-integrity ledger, decisions ledger) still have no entry. | `[3.11.0]`, `[3.10.0]`, `[3.9.0]`, `[3.8.0]`, `[3.7.0]`, `[3.6.0]`, `[3.5.0]` … `[1.0.0]`, link-ref footer |
+| `CHANGELOG.md` | Keep-a-Changelog release history, **25** released version entries, newest first (`[3.12.0] — 2026-10-02` on top, then `[3.11.0] — 2026-10-01` and `[3.10.0] — 2026-10-01`), and NO live `[Unreleased]` section — the pnpm 11 `allowBuilds` fix and the bundle gate both shipped as `[3.6.0] — 2026-08-21` (`CHANGELOG.md:383-473`). `[3.7.0]` covers what changed after `a929932` (#279–#284), `[3.8.0]` covers #287, `[3.9.0]` covers #291 and #292, `[3.10.0]` covers #296 and #297, `[3.11.0]` covers #300 and `[3.12.0]` covers #303; the 297 commits between the `v3.6.0` tag and `a929932` (FAQ response cache, claims-integrity ledger, decisions ledger) still have no entry. | `[3.12.0]`, `[3.11.0]`, `[3.10.0]`, `[3.9.0]`, `[3.8.0]`, `[3.7.0]`, `[3.6.0]`, `[3.5.0]` … `[1.0.0]`, link-ref footer |
 | `LOG.md` | Append-only activity journal, newest first, with a strict entry grammar, tag vocabulary, and grep/awk retrieval recipes. Newest entry is 2026-08-15, so it has nothing for v3.5/v3.6 or later work. | §Entry grammar, §Tags, §Retrieval recipes, 3 entries |
 | `VOICE.md` | Canonical voice-layer reference (940 lines): architecture, 4 opt-in features, settings/flag tables, env+IAM+cost, privacy & a11y model, developer notes, v1.7 voice picker. | §1 Overview, §2 Features, §3 Flags/Settings, §4 Env/IAM/Cost, §5 Privacy & A11y, §6 Dev Notes, §7 Voice picker |
 | `TELEMETRY.md` | Canonical observability reference (v1.8 header): dual-sink pipeline, `TelemetryEvent` schema, all 8 span kinds (`KIND_LITERALS` in `src/lib/telemetry/schema.ts`; `tts.request`, `transcribe.request` and `budget.tick` are declared but never emitted), trace-ID correlation, PII policy, admin dashboard, replay CLI, debugging cookbook, file map. | §1–§9 |
@@ -44,7 +44,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `docs/superpowers/plans/2026-06-23-c1-directional-transitions.md` | Plan: stamp `data-view-dir` on `<html>` before `startViewTransition`; directional slide keyframes in `globals.css`. 2 files, 3 tasks. | Tasks 1–3 |
 | `docs/superpowers/plans/2026-06-23-c2-motion-audit.md` | Plan: audit the 140 KB `motion/react` bundle; replace `useReducedMotion` in shared primitives with a native hook. 3 tasks. | Tasks 1–3 |
 | `docs/superpowers/plans/2026-06-23-c3-r3f-chunk-dedup.md` | Plan: collapse the twin 876 KB R3F chunks — Option A `optimizePackageImports`, Option B `src/lib/r3f.ts` barrel. 4 tasks. | Tasks 1–4 |
-| `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` | Plan: add `@react-three/rapier` physics behind `NEXT_PUBLIC_GRAPH_PHYSICS`, via a separate `scene-physics.tsx`. 4 tasks. Unchanged history, and still accurate *about the plan* — but note the outcome: the dependency was installed, `scene-physics.tsx` shipped as plain sinusoidal `useFrame` maths instead, rapier was never imported, and the package was **removed in v3.5.0** (`CHANGELOG.md:539-543`). The flag and filename are the only residue. | Tasks 1–4 |
+| `docs/superpowers/plans/2026-06-23-c4-r3f-physics.md` | Plan: add `@react-three/rapier` physics behind `NEXT_PUBLIC_GRAPH_PHYSICS`, via a separate `scene-physics.tsx`. 4 tasks. Unchanged history, and still accurate *about the plan* — but note the outcome: the dependency was installed, `scene-physics.tsx` shipped as plain sinusoidal `useFrame` maths instead, rapier was never imported, and the package was **removed in v3.5.0** (`CHANGELOG.md:573-577`). The flag and filename are the only residue. | Tasks 1–4 |
 | `docs/superpowers/plans/2026-06-23-v2.3.0-ai-transparency.md` | 1034-line plan: Anthropic extended thinking — `THINKING_SENTINEL`, server-buffered `thinking_delta`, `reasoning` in the trace frame, `ThinkingBlock` UI. 6 tasks. | Tasks 1–6, §Self-Review |
 | `docs/superpowers/plans/2026-06-23-v2.4.0-performance-ppr.md` | Plan: enable `cacheComponents: true` and migrate 5 page/special routes; 9 API routes explicitly untouched. 7 tasks. | Tasks 1–7 |
 | `docs/superpowers/plans/2026-06-23-v2.6.0-a11y-bundle.md` | Plan: fix WCAG 4.1.2 on the terminal input (`role="combobox"` + always-rendered listbox) + a read-only bundle audit. 3 tasks. | Tasks 1–3 |
@@ -98,19 +98,19 @@ and a fresh worktree resets all of them), so the in-document version marker is t
 | File | Kind | Authoritative for | Last-updated signal |
 |---|---|---|---|
 | `README.md` | public readme | The outward-facing pitch, stack table, voice cost table | no version marker; the pitch line still says "four switchable experiences" (the headline count) while the *View architecture* bullet describes six views |
-| `CLAUDE.md` | agent brief | Command surface, branch/CI model, key-files map, testing invariants, skills index | opens with a `> **Snapshot.**` callout stating it describes v3.11.0, i.e. `main` at `a929932` (3.6.0) plus twelve changes (the five v3.7.0 fixes, two in v3.8.0, two in v3.9.0, two in v3.10.0 and one in v3.11.0); § Branch Model & CI records the 2026-09-17 retroactive tagging up to v3.6.0 |
-| `ARCHITECTURE.md` | ADR (`kind: architecture`, `status: adopted`) | The knowledge-base model (kinds, domains, invariants) — **not** app architecture | in-doc `**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24` (`ARCHITECTURE.md:8`), which versions the model, plus a `**Scope:**` note naming the app state it describes, v3.11.0 (`ARCHITECTURE.md:9`) |
+| `CLAUDE.md` | agent brief | Command surface, branch/CI model, key-files map, testing invariants, skills index | opens with a `> **Snapshot.**` callout stating it describes v3.12.0, i.e. `main` at `a929932` (3.6.0) plus thirteen changes (the five v3.7.0 fixes, two in v3.8.0, two in v3.9.0, two in v3.10.0, one in v3.11.0 and one in v3.12.0); § Branch Model & CI records the 2026-09-17 retroactive tagging up to v3.6.0 |
+| `ARCHITECTURE.md` | ADR (`kind: architecture`, `status: adopted`) | The knowledge-base model (kinds, domains, invariants) — **not** app architecture | in-doc `**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24` (`ARCHITECTURE.md:8`), which versions the model, plus a `**Scope:**` note naming the app state it describes, v3.12.0 (`ARCHITECTURE.md:9`) |
 | `AGENTS.md` | agent rule block | Only the "this is not the Next.js you know" warning | no version marker |
-| `CHANGELOG.md` | release log | Per-release narrative; 24 version entries | latest entry `[3.11.0] — 2026-10-01`, then `[3.10.0] — 2026-10-01`, `[3.9.0] — 2026-10-01`, `[3.8.0] — 2026-09-30`, `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:349`); rewritten in v3.5.0; the 297 commits between the `v3.6.0` tag and `a929932` are still unrecorded |
+| `CHANGELOG.md` | release log | Per-release narrative; 25 version entries | latest entry `[3.12.0] — 2026-10-02`, then `[3.11.0] — 2026-10-01`, `[3.10.0] — 2026-10-01`, `[3.9.0] — 2026-10-01`, `[3.8.0] — 2026-09-30`, `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:383`); rewritten in v3.5.0; the 297 commits between the `v3.6.0` tag and `a929932` are still unrecorded |
 | `LOG.md` | activity journal | Finished-work feed + its own entry grammar | newest entry 2026-08-15 |
 | `VOICE.md` | feature reference | Voice architecture, settings keys, IAM, privacy/a11y model, voice catalog | in-doc `v1.7 update` banner |
-| `TELEMETRY.md` | feature reference | Span kinds, PII policy, dashboard tiles, replay CLI | in-doc title `(v1.8)`, which dates the design, plus a `> **Scope:**` note that it describes v3.11.0, i.e. `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals, the v3.10.0 per-model price table and the v3.11.0 note that the effort levels change no span shape (`TELEMETRY.md:7`) |
-| `DEPLOY.md` | runbook | Vercel env-var table, IAM policy JSON, Upstash setup, region gotcha | no version marker of its own; the intro says it describes v3.11.0, i.e. `main` @ `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals, the two v3.10.0 changes (Sonnet 4.6 backs up a 5.x primary, Opus is opt-in; a neutral AI cue) and the v3.11.0 effort levels (`DEPLOY.md:5`) |
+| `TELEMETRY.md` | feature reference | Span kinds, PII policy, dashboard tiles, replay CLI | in-doc title `(v1.8)`, which dates the design, plus a `> **Scope:**` note that it describes v3.12.0, i.e. `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals, the v3.10.0 per-model price table, the v3.11.0 note that the effort levels change no span shape and the v3.12.0 `reasoning_replayed` attribute (`TELEMETRY.md:7`) |
+| `DEPLOY.md` | runbook | Vercel env-var table, IAM policy JSON, Upstash setup, region gotcha | no version marker of its own; the intro says it describes v3.12.0, i.e. `main` @ `a929932` plus the five v3.7.0 fixes, the two v3.8.0 changes, the two v3.9.0 removals, the two v3.10.0 changes (Sonnet 4.6 backs up a 5.x primary, Opus is opt-in; a neutral AI cue), the v3.11.0 effort levels and the v3.12.0 reasoning replay (`DEPLOY.md:5`) |
 | `SECURITY.md` | policy | Disclosure channel + SLA + scope | no version marker |
 | `CODE_OF_CONDUCT.md` | policy | Contributor Covenant v2.1 adoption + enforcement contact | v2.1 |
 | `LICENSE` | legal | MIT for code; all-rights-reserved carve-out for content/identity/résumés/branding | copyright range `2024–2026` |
 | `docs/README.md` | schema readme | The `doc` frontmatter schema | §Existing Docs (`docs/README.md:36-44`) matches the disk: 17 plans, 6 specs, plus the upgrade plan |
-| `docs/configuration.md` | config reference | Env vars + flags, defaults, add-a-flag recipes, CSP override | flags tagged up to `v3.3`; a `> **Scope:**` note that it describes v3.11.0 (`docs/configuration.md:5`); now covers the FAQ-cache, Sonnet-5, Sonnet-5.5, Opus-fallback, thinking-effort and extended-thinking toggles |
+| `docs/configuration.md` | config reference | Env vars + flags, defaults, add-a-flag recipes, CSP override | flags tagged up to `v3.3`; a `> **Scope:**` note that it describes v3.12.0 (`docs/configuration.md:5`); now covers the FAQ-cache, Sonnet-5, Sonnet-5.5, Opus-fallback, thinking-effort and extended-thinking toggles |
 | `docs/next-upgrade-plan-2026-09.md` | draft plan | Point-in-time upgrade research; mixed shipped/open items | frontmatter `status: draft`, 2026-09-18 |
 | `docs/superpowers/plans/*` (17) | point-in-time plans | What was *intended* on the plan's date — **not** current-state assertions | filename dates 2026-06-13 → 2026-09-07 |
 | `docs/superpowers/specs/*` (6) | point-in-time design specs | Locked decisions + rejected alternatives for their feature | filename dates 2026-06-13 → 2026-09-07 |
@@ -128,22 +128,23 @@ and a fresh worktree resets all of them), so the in-document version marker is t
 
 ## Version history
 
-Read in full from `CHANGELOG.md`. **24 released version entries** are present, and NO live `[Unreleased]`
-section — the last one was cut as `[3.11.0] — 2026-10-01`; the one before it was `[3.10.0] — 2026-10-01`, then `[3.9.0] — 2026-10-01` and `[3.8.0] — 2026-09-30`, then `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:349-439`). The release before that,
-`[3.5.0]` (`CHANGELOG.md:441-543`), covered six live defects and the documentation corrections listed in
-§Doc-vs-code drift. Count entries with `grep -c '^## \[[0-9]' CHANGELOG.md` (24).
+Read in full from `CHANGELOG.md`. **25 released version entries** are present, and NO live `[Unreleased]`
+section — the last one was cut as `[3.12.0] — 2026-10-02`; the one before it was `[3.11.0] — 2026-10-01`, then `[3.10.0] — 2026-10-01`, `[3.9.0] — 2026-10-01` and `[3.8.0] — 2026-09-30`, then `[3.7.0] — 2026-09-30` and `[3.6.0] — 2026-08-21` (`CHANGELOG.md:383-473`). The release before that,
+`[3.5.0]` (`CHANGELOG.md:475-577`), covered six live defects and the documentation corrections listed in
+§Doc-vs-code drift. Count entries with `grep -c '^## \[[0-9]' CHANGELOG.md` (25).
 
 **Do not trust a stated line-shift; re-derive it.** Prepending a release entry moves every line below it
 and the offset compounds across releases. The reliable check is `node scripts/check-index-citations.mjs`,
 which fingerprints each cited line's content. Note the gap: no `2.x` entry and no `3.1.x`–`3.3.x` entry
 exists at all — `LOG.md:33` records that the 3.4.0 entry was "added after a 13-release gap", so the
-changelog is not a complete release ledger. It is also behind the code: `package.json` says `3.11.0`; `[3.7.0]` covers what changed after `a929932`, `[3.8.0]` covers #287, `[3.9.0]` covers #291 and #292, `[3.10.0]` covers #296 and #297 and `[3.11.0]` covers #300, but
+changelog is not a complete release ledger. It is also behind the code: `package.json` says `3.12.0`; `[3.7.0]` covers what changed after `a929932`, `[3.8.0]` covers #287, `[3.9.0]` covers #291 and #292, `[3.10.0]` covers #296 and #297, `[3.11.0]` covers #300 and `[3.12.0]` covers #303, but
 the source still contains work from the 297 commits between the `v3.6.0` tag and `a929932` with no entry (the FAQ response cache, the claims-integrity chain, the
 decisions ledger and `list_decisions`); per-class rate limits are recorded in `[3.7.0]`.
 
 | Version | Theme |
 |---|---|
-| 3.11.0 (2026-10-01) | **Newest entry.** `LLM_THINKING_EFFORT` takes `high`, `xhigh` and `max` next to `low` and `medium` (`xhigh` makes Sonnet 5.5 reason on every question; any model that is not Sonnet 5.x is sent `max` for it), the reasoning `max_tokens` floor follows the effort, and `/api/chat` may run for 60 s (#300). |
+| 3.12.0 (2026-10-02) | **Newest entry.** The FAQ cache stores the reasoning summary beside its answer and an exact-tier hit replays it (so a repeated first-turn question shows its reasoning too; a semantic hit never does, and `EXTENDED_THINKING=false` stops it), the `chat.cache` hit event gains the boolean `reasoning_replayed`, the Upstash `, command was:` echo is cut from the cache's error events and the purge result, and the docs now say the corpus stamp is re-written on every production process start (#303). |
+| 3.11.0 (2026-10-01) | `LLM_THINKING_EFFORT` takes `high`, `xhigh` and `max` next to `low` and `medium` (`xhigh` makes Sonnet 5.5 reason on every question; any model that is not Sonnet 5.x is sent `max` for it), the reasoning `max_tokens` floor follows the effort, and `/api/chat` may run for 60 s (#300). |
 | 3.10.0 (2026-10-01) | Sonnet 5.x streams a reasoning summary (`display: "summarized"`, effort `medium`, `LLM_THINKING_EFFORT`); Opus leaves the default fallback chain (`LLM_USE_OPUS_FALLBACK`) and Sonnet 4.6 backs up a 5.x primary; `cost_usd` comes from a verified per-model price table; the weekly eval cron reads the answer with `answerFromBody`; phone visitors get a neutral "AI assistant" cue again (#296, #297). |
 | 3.9.0 (2026-10-01) | Two removals a visitor could see, and one label: the `Answered by <model> · <provider>` line under chat answers is gone (#291); the Konami-code easter egg is gone (#292), so the optional discovery badge counts to 4; and the streaming reasoning block's `aria-label` no longer names the model; the docs index relabelled. |
 | 3.8.0 (2026-09-30) | One behaviour fix and one opt-in setting: a 403 that names an IAM deny now falls through to the next rung instead of ending the chain (so a failing primary answers from Haiku, not the apology, and that fallback answer is not written to the FAQ cache); `LLM_USE_SONNET_5_5` makes Claude Sonnet 5.5 the primary (global Bedrock profile only, `between_tools` as its thinking-off shape); the docs index relabelled. |
@@ -168,17 +169,17 @@ decisions ledger and `list_decisions`); per-class rate limits are recorded in `[
 | 1.1.0 (2026-06-14) | Developer Mode view (full-page keyboard-native terminal) + autoscroll engine fix. |
 | 1.0.0 (2026-06-13) | Initial public portfolio: four switchable views over one content source + the Bedrock "Ask my portfolio" chat. |
 
-**Current version:** `3.11.0` (`package.json:3`). **What v3.5.0 shipped** (`CHANGELOG.md:441-543`): the six
-defect fixes tabled above, the pnpm-settings migration to `pnpm-workspace.yaml` (`CHANGELOG.md:526` — pnpm 11
+**Current version:** `3.12.0` (`package.json:3`). **What v3.5.0 shipped** (`CHANGELOG.md:475-577`): the six
+defect fixes tabled above, the pnpm-settings migration to `pnpm-workspace.yaml` (`CHANGELOG.md:560` — pnpm 11
 stopped reading `package.json`'s `pnpm` field, so v3.4.2's ten security `overrides` were being silently
 ignored; the `pnpm` field is now **gone** from `package.json`), a `.nvmrc` of `22` with `engines.node` pinned
-to `">=22 <23"` (`CHANGELOG.md:520`, `package.json:5-7`), and the removal of `@react-three/rapier` +
-`@react-three/offscreen` (`CHANGELOG.md:539-543`: 3 packages removed, 0 added, and one version change —
+to `">=22 <23"` (`CHANGELOG.md:554`, `package.json:5-7`), and the removal of `@react-three/rapier` +
+`@react-three/offscreen` (`CHANGELOG.md:573-577`: 3 packages removed, 0 added, and one version change —
 `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, because `@types/three` (`package.json:35`, `^0.186.0`) was its
 only remaining consumer). At v3.5.0 the dependency counts were 33 prod / 17 dev; re-count from
 `package.json` before quoting them.
 
-**What v3.4.2 shipped** (`CHANGELOG.md:545-595`): a
+**What v3.4.2 shipped** (`CHANGELOG.md:579-629`): a
 security-only promotion of fixes that had sat on `develop` while production served vulnerable versions —
 `pdfjs-dist` 6.0.227→6.2.108 (high, reachable via `file-picker-button.tsx`'s `await import("pdfjs-dist")`),
 `ip-address` 10.2.0→10.5.0 (high, SSRF via `mcp-handler` → MCP SDK → `express-rate-limit`), `hono`
@@ -319,7 +320,7 @@ Five skills live under `.claude/skills/`, each with YAML frontmatter (`name`, `d
 | Skill | Trigger (from frontmatter) | What it does |
 |---|---|---|
 | `dev-local` | "dev-local up", "start the stack", "bring up Anvilry locally", "start dev server" | The only Anvilry-*specific* skill. Port map (Next.js dev = 3000, single service), prerequisites (Node 22+, pnpm, `.env.local` via `vercel env pull`), then `up`/`verify`/`content`/`test`/`build` command blocks with absolute paths — the `up` block `cd`s into the primary `sairam-dev` checkout, so run from a worktree it would start the wrong tree. `verify` greps the homepage for "Sairam" and POSTs a 5s-capped `/api/chat` probe (`SKILL.md:34-40`). |
-| `e2e-setup` | "set up e2e", "add end-to-end tests", "scaffold a test gate" | Generic. System E2E belongs in a dedicated top-level package (it spans all apps, so belongs to none); the skill says the suite **never boots the app itself** (`SKILL.md:24-25`), although the repo's own `playwright.config.ts` declares a `webServer` (`playwright.config.ts:37`) and v3.4.2 added it (`CHANGELOG.md:585`). Practices: real flow not bypass (read OTP from a local mail server), verify auth *itself* once then bypass everywhere else via a session helper, layered client → server → product assertions, stable role/label selectors, fresh data per run. Failure triage = real bug / stale test / flaky-env, and "never weaken or delete an assertion just to go green" (`SKILL.md:60`). |
+| `e2e-setup` | "set up e2e", "add end-to-end tests", "scaffold a test gate" | Generic. System E2E belongs in a dedicated top-level package (it spans all apps, so belongs to none); the skill says the suite **never boots the app itself** (`SKILL.md:24-25`), although the repo's own `playwright.config.ts` declares a `webServer` (`playwright.config.ts:37`) and v3.4.2 added it (`CHANGELOG.md:619`). Practices: real flow not bypass (read OTP from a local mail server), verify auth *itself* once then bypass everywhere else via a session helper, layered client → server → product assertions, stable role/label selectors, fresh data per run. Failure triage = real bug / stale test / flaky-env, and "never weaken or delete an assertion just to go green" (`SKILL.md:60`). |
 | `pr` | "open a PR", "ship this", "raise a PR", "/pr" — "Never opens a PR until the feature is verified" | Splits verification by who's best at it: the subjective "does the feature do what was intended?" goes to a **fresh read-only verifier sub-agent** that drives the real app and returns a fixed `FEATURE: works \| broken` block; objective checks (type-check, lint, unit, e2e) are run by the orchestrator afterwards as a regression sweep (`SKILL.md:14-23`). Verifier loop capped at ~3 rounds, then escalate. The PR body leads with the feature proof and a reviewable video URL (a `pr-evidence` GitHub prerelease, a bucket, or CI artifacts) because GitHub cannot play video inline via automation (`SKILL.md:68-70`). |
 | `new-loop` | "set up a new loop", "create a domain", "start a new beat/workstream", or naming a recurring job | Gathers 5 inputs (name, goal, cadence, what-it-does, tools/data), bootstraps the KB substrate only if `ARCHITECTURE.md`+`LOG.md`+a CLAUDE.md knowledge-base section are missing (via `references/KNOWLEDGE_SETUP.md`, idempotent), scaffolds `domains/<name>/README.md`, then **does ONE real test run at small scale**. Producing an artifact is optional; two outputs are mandatory — a dated line in the loop's `## Timeline` and one `LOG.md` entry (`SKILL.md:68-77`). Stops and asks if `domains/<name>/` already exists. |
 | `setup-codebase-harness` | "set up the harness", "make this repo agent-ready", "harness this codebase" | Master orchestrator over `dev-local-setup`, `e2e-setup`, `crabbox-setup`, `pr`. Three pillars: **Legible** (shrink the root agent doc to a ~100-line table of contents; promote prose golden rules into mechanical lints whose error messages *inject the fix*), **Executable** (one-command stack; per-agent cloud box when loops run concurrently, because one laptop can't host N stacks), **Verifiable** (E2E gate + `pr`). Declared order: `1a (map) → 2 (dev-local) → 3 (e2e + /pr)`, then `1b (lints)` and `4` (`SKILL.md:91`). |
@@ -400,7 +401,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    that rule's source pointer now names `bedrockChain()` / `anthropicChain()` instead of the old
    `BEDROCK_CHAIN` `:31-35` / `ANTHROPIC_CHAIN` `:38` pointers, and the `LLM_USE_SONNET_5` toggle is
    documented in `DEPLOY.md` §7, `CLAUDE.md`, `README.md` and `docs/configuration.md`. No test guards the
-   chain tables; the anchor is that pointer. (`CHANGELOG.md:919-921` records fixing the same
+   chain tables; the anchor is that pointer. (`CHANGELOG.md:953-955` records fixing the same
    inversion once already, in a `streamWithFallback` docblock at v1.8.0 — so this is the second
    recurrence, which is why the authoritative-source note was added rather than just the numbers.)
 2. ~~**MCP tool count is 9, not 7.**~~ — **corrected, and guarded; the count has since grown to 10.**
@@ -414,7 +415,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    route's `registerTool` calls (`:92`; the "documents every tool the route registers" case names the
    missing tools in its failure message). `vitest run` is chained into `pnpm build`, so adding a tool
    without documenting it fails the build. That is why the count is safe to quote (`CLAUDE.md` § MCP
-   Server says the same). `CHANGELOG.md:798` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:462-464`
+   Server says the same). `CHANGELOG.md:832` records the 7 → 9 growth at v3.0.0, and `CHANGELOG.md:496-498`
    records the doc fix landing in v3.5.0.
 3. ~~**"Every API route runs on the Node.js runtime … with a 30s max duration" is doubly stale.**~~ —
    **corrected.** `CLAUDE.md` § Route Tree now leads with "**Runtime & duration — do not add
@@ -425,7 +426,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    `tts`/`tts-google`, 10 `admin/faq-cache/purge`, 5 `error`, none for `visit`/`github/stats`/`md/*`/
    `resume.json`. The table now has the row for the purge route's 10 as well. The only
    `export const runtime` text left in `src/` is the comment noting its removal in the MCP route
-   (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:667-669` (13 `runtime`
+   (`src/app/api/mcp/[transport]/route.ts:6-8`), consistent with `CHANGELOG.md:701-703` (13 `runtime`
    exports deleted for Cache Components).
 4. ~~**`pnpm search-index` does not exist.**~~ — **corrected.** `CLAUDE.md` used to list
    `pnpm search-index` under "After build". The `scripts` block of `package.json` has no `search-index`
@@ -500,8 +501,8 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     codebase-index-citations step (`ci.yml:76-77`), the claims-integrity step (`ci.yml:83-84`) and three of
     the five jobs, said "**three workflows**", and cited the bundle-budget step as `ci.yml` lines 110-111
     (it is at `ci.yml:190-191`). It now lists all five jobs and all five workflows and refers to the
-    bundle-budget step by name. `e2e` and `security-alerts` arrived in v3.4.2 (`CHANGELOG.md:580-584`);
-    `install-pnpm-11` shipped in `[3.6.0]` (`CHANGELOG.md:395-413`).
+    bundle-budget step by name. `e2e` and `security-alerts` arrived in v3.4.2 (`CHANGELOG.md:614-618`);
+    `install-pnpm-11` shipped in `[3.6.0]` (`CHANGELOG.md:429-447`).
 12. ~~**`DEPLOY.md`'s build command drops the test and search steps.**~~ — **corrected.** `DEPLOY.md` §1
     used to say "Build command: `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
     `"build": "velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path
@@ -527,9 +528,9 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     it is silent on v3.5/v3.6 and all later work.
 15. **Version-marker skew (not a code contradiction, but a freshness trap).** *(Half closed.)*
     `ARCHITECTURE.md:8` is stamped "`**Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24`" while
-    the project is at `3.11.0`; the marker versions the knowledge-base model, not the app, and the new
-    `**Scope:**` line at `ARCHITECTURE.md:9` now says so. Still live: `CHANGELOG.md:1201-1209` has link
-    references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after it, through `[3.11.0]`, have no
+    the project is at `3.12.0`; the marker versions the knowledge-base model, not the app, and the new
+    `**Scope:**` line at `ARCHITECTURE.md:9` now says so. Still live: `CHANGELOG.md:1235-1243` has link
+    references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after it, through `[3.12.0]`, have no
     link-ref footer entry.
 16. ~~**Bundle-budget numbers are stale in `domains/performance/README.md` and `CLAUDE.md`.**~~ —
     **corrected.** The live gate is `MAX_FIRST_LOAD_BYTES = 1_336_000` (`scripts/bundle-budget.mjs:72`),
@@ -539,7 +540,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     1,336,000 B and `MIN_ROUTES` = 17: the performance README tells the reader to re-measure with
     `pnpm build && node scripts/bundle-budget.mjs` rather than quote a percentage, and `CLAUDE.md` calls the
     figure a ceiling with about 2.5 KB of headroom. The comment above the constant records `/` at
-    1,333,521 B after the last raise, about 2,479 B of headroom, so treat the headroom as thin. `CHANGELOG.md:405` (v3.6.0) records 1,285,000 B, correct for that release and
+    1,333,521 B after the last raise, about 2,479 B of headroom, so treat the headroom as thin. `CHANGELOG.md:439` (v3.6.0) records 1,285,000 B, correct for that release and
     superseded since; `docs/next-upgrade-plan-2026-09.md` (a draft) records another live run, `/` at
     1,330,764 B with 5,236 B (~0.39%) of headroom.
 17. ~~**Other stale facts in `CLAUDE.md`.**~~ — **corrected.** Seven claims were stale and are now right.

@@ -537,7 +537,7 @@ export default async function TelemetryDashboard() {
   const fmtTokens = (n: number) =>
     n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 
-  // Corpus age (hours or days since last deploy)
+  // Corpus age (hours or days since the last production process start)
   const corpusAgeMs = corpusBuiltAt ? now - corpusBuiltAt : null;
   const corpusAgeLabel =
     corpusAgeMs == null
@@ -819,7 +819,7 @@ export default async function TelemetryDashboard() {
             value={corpusAgeLabel}
             sub={
               corpusBuiltAt
-                ? `Last deployed: ${new Date(corpusBuiltAt).toLocaleDateString()}`
+                ? `Last process start: ${new Date(corpusBuiltAt).toLocaleDateString()}`
                 : "set on production cold start"
             }
             warn={corpusStale}

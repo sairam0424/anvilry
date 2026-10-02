@@ -13,9 +13,9 @@
  * or a safe enum value. The emit follows the same [trace] prefix convention as
  * the telemetry emitter so `vercel logs | grep '\[config\]'` filters just these.
  *
- * Note on timing: register() runs on cold start but Next.js makes no guarantee
- * it blocks before the first request is handled in serverless. Treat it as
- * "best-effort startup logging", not a hard initialization gate.
+ * Note on timing: Next.js awaits register() before a new server instance takes its
+ * first request, so a throw or a slow call here fails or delays every request on it.
+ * Keep it best-effort startup logging: catch everything and do as little I/O as possible.
  */
 
 function present(val: string | undefined): boolean {
@@ -96,7 +96,7 @@ export async function register() {
       const { redis } = await import("@/lib/redis");
       if (redis) {
         await redis.set("anvilry:corpus:built_at", Date.now().toString(), {
-          ex: 7 * 24 * 3600, // 1 week — auto-expires if no new deploy
+          ex: 7 * 24 * 3600, // 1 week — auto-expires if no production process starts
         });
       }
     } catch {

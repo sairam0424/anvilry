@@ -42,16 +42,16 @@ import { stripControlBytes } from "@/lib/llm-trace";
  *
  * Accepted tradeoff, deliberately NOT fixed: one e2e spec hits production
  * /api/chat directly with a fixed literal question (`make health` sends
- * X-Chat-Skip-Cache and stays out), sharing this same cache namespace with
- * real visitor traffic when run locally against pulled production credentials
- * (CI itself never touches it — no Bedrock/Upstash secrets are set there). A
- * dev-authored entry is now content-gated, corpus-tagged, and purgeable, so
- * it's functionally indistinguishable from a real visitor's — the theoretical
- * "leak" is the cache doing its job, not a real risk, for a single-owner portfolio site.
- * Entries are tagged with the id of the deployment that wrote them (see
- * ownDeploymentTag), so a preview deployment's entries are never served by
- * production and the reverse; the namespace is only shared with runs against
- * production itself, which is the point.
+ * X-Chat-Skip-Cache and stays out) and, run locally against pulled production
+ * credentials, writes into this same key space (CI itself never touches it —
+ * no Bedrock/Upstash secrets are set there). What it writes is content-gated,
+ * tagged with the local stamp rather than a deployment id, and purgeable, so
+ * production never serves it. Entries are tagged with the id of the deployment
+ * that wrote them (see ownDeploymentTag): a preview's entries are never served
+ * by production and the reverse. The key is per question, though, so the slot
+ * is shared and the later write replaces the earlier one; that costs a live
+ * call to restore, nothing more, and only while two deployments (a preview, a
+ * rollback target) answer the same question.
  */
 
 const ENTRY_PREFIX = "anvilry:chat:cache:";
@@ -189,7 +189,7 @@ function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {
  *  (VERCEL_DEPLOYMENT_ID; empty or unset means it does not). It is the corpus
  *  tag itself: an entry is a hit only for the deployment that wrote it, so a
  *  deploy or a rollback never serves another deployment's answers, a preview
- *  and production never share entries, and a cold start changes nothing. */
+ *  and production never serve each other's, and a cold start changes nothing. */
 function ownDeploymentTag(): string | null {
   return process.env.VERCEL_DEPLOYMENT_ID || null;
 }
@@ -254,8 +254,8 @@ function emitCacheError(op: string, err: unknown): void {
 
 /** Exact-match tier lookup. Fails open to `null` on any Redis error, a
  *  malformed stored value, the kill switch being off, or when Redis isn't
- *  configured. Also returns `null` (a "miss") when the entry predates the
- *  current corpus build. */
+ *  configured. Also returns `null` (a "miss") when the entry was not written
+ *  under the current corpus tag. */
 export async function faqCacheGet(
   question: string,
 ): Promise<FaqCacheHit | null> {
@@ -287,8 +287,8 @@ export async function faqCacheGet(
 
 /** Semantic-similarity tier lookup (Phase 2b) — no-op unless
  *  FAQ_CACHE_SEMANTIC_MATCH=true (and the kill switch is on). Scans the capped
- *  index in one ZRANGE + one batched MGET, filters out entries from a stale
- *  corpus build, then compares in-process. Deliberately high threshold (0.92):
+ *  index in one ZRANGE + one batched MGET, filters out entries written under
+ *  another corpus tag, then compares in-process. Deliberately high threshold (0.92):
  *  a false-positive semantic hit serves a wrong canned answer, a correctness
  *  bug, not just a missed optimization. */
 export async function faqCacheSemanticGet(

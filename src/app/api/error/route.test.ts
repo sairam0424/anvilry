@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * The Redis singleton is mocked too. The route appends every accepted report to the
  * capped list `anvilry:errors:recent` through `redis.pipeline()`, and the real singleton
  * is built from UPSTASH_REDIS_REST_URL/TOKEN, which `pnpm build` (it runs this suite)
- * inherits from the Vercel environment: with the real client every build pushed five
+ * inherits from the Vercel environment: with the real client, each build that had them pushed five
  * fake client errors into the owner's real list. The mock records the pipeline instead,
  * so the write is asserted and nothing leaves the process.
  *
@@ -334,10 +334,10 @@ describe("/api/error — PII redaction before emit", () => {
 describe("/api/error — recent-errors list in Redis", () => {
   it("appends one redacted record to anvilry:errors:recent and keeps the last 50", async () => {
     const fakeKey = `sk-${"a".repeat(32)}`;
+    const fakeCard = "7".repeat(16);
+    const message = `Auth failed for user@example.com using key ${fakeKey} card ${fakeCard}`;
     const before = Date.now();
-    const res = await POST(
-      makeReq({ ...validPayload(), message: `Auth failed for user@example.com using key ${fakeKey}` }),
-    );
+    const res = await POST(makeReq({ ...validPayload(), message }));
     const after = Date.now();
     expect(res.status).toBe(204);
 
@@ -350,8 +350,10 @@ describe("/api/error — recent-errors list in Redis", () => {
     expect(key).toBe("anvilry:errors:recent");
     const record = JSON.parse(raw) as Record<string, unknown>;
     expect(Object.keys(record).sort()).toEqual(["message", "ts", "url"]);
-    // Redacted like the emitted event: the email and the token are both gone.
-    expect(record.message).toBe("Auth failed for [email] using key [redacted-token]");
+    // Redacted like the emitted event: the email, the token and the digit run are all gone.
+    expect(record.message).toBe(
+      "Auth failed for [email] using key [redacted-token] card [redacted-num]",
+    );
     expect(record.url).toBe("https://anvilry.test/notes/foo");
     // The accept time in epoch milliseconds: not 0, not seconds.
     expect(record.ts).toBeGreaterThanOrEqual(before);
@@ -432,14 +434,33 @@ describe("/api/error — recent-errors list in Redis", () => {
   });
 
   it("does not wait for the Redis write before answering", async () => {
+    // Event-loop turns, not wall-clock time: timers are faked, so a route that waits on the
+    // held write for any bounded time (a race against a timer, say) stays pending here.
     redisState.hold = true;
-    const answered = await Promise.race([
-      POST(makeReq(validPayload())).then((res) => res.status),
-      new Promise<string>((resolve) => setTimeout(() => resolve("waited"), 1000)),
-    ]);
-    redisState.release?.(); // let the pending write finish either way
-    expect(answered).toBe(204);
-    expect(redisState.pipelines[0]?.calls).toContain("exec");
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      let status: number | undefined;
+      let failure: unknown;
+      const answered = POST(makeReq(validPayload())).then(
+        (res) => {
+          status = res.status;
+        },
+        (err: unknown) => {
+          failure = err; // reported by the assertion below, not as a stray rejection
+        },
+      );
+      for (let turn = 0; turn < 100 && status === undefined && failure === undefined; turn++) {
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+      expect(failure).toBeUndefined();
+      expect(status).toBe(204);
+      expect(redisState.pipelines[0]?.calls).toContain("exec");
+      redisState.release?.(); // let the pending write finish
+      await answered;
+    } finally {
+      vi.useRealTimers();
+      redisState.release?.();
+    }
   });
 
   it("answers 204 and emits the event with no Redis configured, as in local dev", async () => {

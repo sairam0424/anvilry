@@ -1042,3 +1042,39 @@ describe("/api/chat — what telemetry may know about a replayed summary", () =>
     expect(await res.text()).not.toContain(REASONING);
   });
 });
+
+// EXTENDED_THINKING and FAQ_CACHE_ENABLED are documented Vercel settings, and the deploy build runs
+// this suite with them ambient. Every test here states the value it needs instead of inheriting
+// the operator's; without this, flipping either switch failed the build that was meant to ship it.
+beforeEach(() => {
+  delete process.env.EXTENDED_THINKING;
+  delete process.env.FAQ_CACHE_ENABLED;
+  delete process.env.FAQ_CACHE_SEMANTIC_MATCH;
+});
+
+describe("/api/chat — the EXTENDED_THINKING switch, both ways", () => {
+  it("replays a stored summary, goes quiet while the switch is off, and replays again once it is back on", async () => {
+    const { THINKING_SENTINEL } = await import("@/lib/llm-trace");
+    faqCacheGetMock.mockResolvedValue({
+      tier: "exact" as const,
+      entry: {
+        answer: "I mostly use TypeScript and Next.js.",
+        reasoning: "The user asks about my stack.",
+        model: "global.anthropic.claude-sonnet-5-5",
+        costUsd: 0.004,
+        cachedAt: Date.now(),
+        corpusBuiltAt: null,
+      },
+    });
+    const ask = async () =>
+      (
+        await POST(makeReq([{ role: "user", content: "What stack do you use?" }]))
+      ).text();
+
+    expect((await ask()).startsWith(THINKING_SENTINEL)).toBe(true);
+    process.env.EXTENDED_THINKING = "false";
+    expect((await ask()).startsWith(THINKING_SENTINEL)).toBe(false);
+    delete process.env.EXTENDED_THINKING;
+    expect((await ask()).startsWith(THINKING_SENTINEL)).toBe(true);
+  });
+});

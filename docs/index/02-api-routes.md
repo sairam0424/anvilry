@@ -23,7 +23,7 @@ version: v3.11.0
 | File | Role | Key exports |
 |---|---|---|
 | `src/app/api/chat/route.ts` | Grounded first-person LLM chat; `chat` rate-limit bucket, FAQ response cache (exact + optional semantic; an exact hit replays the reasoning summary stored with the answer), streamed, per-attempt telemetry + cost | `maxDuration = 60`, `POST` |
-| `src/app/api/chat/route.test.ts` | Rate-limit class, cache eligibility, hit short-circuit, write-through glue, `llm.attempt` cost telemetry, exact-hit reasoning replay (mocked cache, then the real `chat-cache` over an in-memory Redis) | (vitest suite, 1,044 lines) |
+| `src/app/api/chat/route.test.ts` | Rate-limit class, cache eligibility, hit short-circuit, write-through glue, `llm.attempt` cost telemetry, exact-hit reasoning replay (mocked cache, then the real `chat-cache` over an in-memory Redis) | (vitest suite, 1,080 lines) |
 | `src/app/api/admin/faq-cache/purge/route.ts` | Basic-auth admin action: delete one FAQ-cache entry by question text; unthrottled by design | `maxDuration = 10`, `POST` |
 | `src/app/api/admin/faq-cache/purge/route.test.ts` | 401 paths never touch Redis; purge / not_found / 503 / 400 / 413 | (vitest suite, 122 lines) |
 | `src/app/api/mcp/[transport]/route.ts` | MCP server (Streamable HTTP; SSE disabled) wiring 10 read-only tools | `maxDuration = 30`, `GET`, `POST`, `DELETE` (all the same handler) |

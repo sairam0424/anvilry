@@ -807,7 +807,7 @@ describe("FAQ cache — reasoning: the question-length bound, the read side and 
     expect(storedEntry(1)).not.toHaveProperty("reasoning");
   });
 
-  it("measures the bound on the NORMALIZED question (case, spacing and trailing punctuation do not count)", async () => {
+  it("measures the bound on the NORMALIZED question (case, padding and trailing punctuation do not count)", async () => {
     const { faqCacheSet, MAX_REASONING_QUESTION_CHARS } =
       await import("./chat-cache");
     const padded = `  ${"Q".repeat(MAX_REASONING_QUESTION_CHARS)}???  `;
@@ -836,7 +836,7 @@ describe("FAQ cache — reasoning: the question-length bound, the read side and 
     const warnings = vi
       .mocked(console.warn)
       .mock.calls.map((c) => String(c[0]));
-    expect(warnings.filter((w) => w.includes("is over the"))).toEqual([]);
+    expect(warnings).toEqual([]);
   });
 
   it.each([
@@ -1113,5 +1113,30 @@ describe("FAQ cache — a rejection that is not an Error", () => {
     expect(JSON.stringify(traceWrites[0])).toContain(
       "plain string thrown by a client",
     );
+  });
+});
+
+describe("FAQ cache — the reasoning policy holds where the questions really come from", () => {
+  it("keeps every starter chip within the question bound, so the questions most often repeated can be replayed", async () => {
+    const { normalizeQuestion, MAX_REASONING_QUESTION_CHARS } =
+      await import("./chat-cache");
+    const { RECRUITER_CHIPS, STARTER_CHIPS } =
+      await import("@/components/chat/chat-suggestions");
+    const chips = [...RECRUITER_CHIPS, ...STARTER_CHIPS];
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips)
+      expect(normalizeQuestion(chip).length).toBeLessThanOrEqual(
+        MAX_REASONING_QUESTION_CHARS,
+      );
+  });
+
+  it("types a semantic hit without the reasoning field, so a forgotten tier check is a compile error", async () => {
+    const { faqCacheSemanticGet } = await import("./chat-cache");
+    const hit = await faqCacheSemanticGet("q");
+    expect(hit).toBeNull();
+    if (hit?.tier === "semantic") {
+      // @ts-expect-error the semantic arm of FaqCacheHit omits `reasoning` on purpose
+      void hit.entry.reasoning;
+    }
   });
 });

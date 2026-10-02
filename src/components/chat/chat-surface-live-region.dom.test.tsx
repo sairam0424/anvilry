@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   render,
   screen,
@@ -429,4 +429,13 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
     expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
     expectExactlyOneLiveAnnouncer(container);
   }, 15000);
+});
+
+// NEXT_PUBLIC_EXTENDED_THINKING=false is a documented setting that the deploy build may have
+// ambient; these tests are about the default (reasoning shown), so they state it.
+beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
 });

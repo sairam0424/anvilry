@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, cleanup, fireEvent } from "@testing-library/react";
 import { ChatMessages } from "./chat-messages";
 import { ViewProvider, useView } from "@/components/view-context";
@@ -257,4 +257,13 @@ describe("ChatMessages — the reasoning of a replayed FAQ-cache hit", () => {
     expect(tts.speak).toHaveBeenCalledTimes(1);
     expect(tts.speak).toHaveBeenCalledWith("TypeScript, mostly.");
   });
+});
+
+// NEXT_PUBLIC_EXTENDED_THINKING=false is a documented setting that the deploy build may have
+// ambient; these tests are about the default (reasoning shown), so they state it.
+beforeEach(() => {
+  vi.stubEnv("NEXT_PUBLIC_EXTENDED_THINKING", "true");
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
 });

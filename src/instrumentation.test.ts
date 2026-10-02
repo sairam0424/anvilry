@@ -105,12 +105,27 @@ describe("register() — the corpus stamp", () => {
     later();
     await register();
     expect(setSpy).toHaveBeenCalledTimes(2);
+    expect(getSpy).not.toHaveBeenCalled();
     expect(setSpy).toHaveBeenNthCalledWith(1, STAMP_KEY, String(T0), {
       ex: WEEK_SECONDS,
     });
     expect(setSpy).toHaveBeenNthCalledWith(2, STAMP_KEY, String(T0 + 60_000), {
       ex: WEEK_SECONDS,
     });
+  });
+
+  it("issues exactly one Redis command at a production start, the stamp SET (no read before it, no cleanup after it)", async () => {
+    const accessed: string[] = [];
+    holder.redis = new Proxy(fake, {
+      get(target, prop) {
+        const value = Reflect.get(target, prop, target);
+        if (typeof prop !== "string" || prop === "then") return value;
+        accessed.push(prop); // a command about to be called, or one the fake does not implement
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    await register();
+    expect(accessed).toEqual(["set"]);
   });
 
   it("stamps a self-hosted production build (no VERCEL_ENV, NODE_ENV=production) the same way", async () => {
@@ -128,6 +143,7 @@ describe("register() — the corpus stamp", () => {
     ["a preview deployment", { VERCEL_ENV: "preview", NODE_ENV: "production" }],
     ["a development run", { VERCEL_ENV: "development", NODE_ENV: "development" }],
     ["a local run", { VERCEL_ENV: "", NODE_ENV: "development" }],
+    ["a test run", { VERCEL_ENV: "", NODE_ENV: "test" }],
     ["the edge runtime", { NEXT_RUNTIME: "edge" }],
   ])("never touches Redis on %s", async (_label, env) => {
     for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
@@ -142,9 +158,19 @@ describe("register() — the corpus stamp", () => {
   });
 
   it("never lets a Redis failure escape (an exception out of register() fails every request on the instance)", async () => {
-    setSpy.mockRejectedValueOnce(new Error("upstash is down"));
+    // A plain function, not setSpy: a spy's bookkeeping marks the rejection it returns as handled,
+    // which would hide a dropped `await` (the rejection would escape as an unhandled one).
+    let attempts = 0;
+    holder.redis = {
+      set: () => {
+        attempts++;
+        return Promise.reject(new Error("upstash is down"));
+      },
+    };
     await expect(register()).resolves.toBeUndefined();
-    expect(fake.store.has(STAMP_KEY)).toBe(false);
+    await new Promise((resolve) => setTimeout(resolve, 0)); // an unhandled rejection surfaces by here
+    expect(attempts).toBe(1);
+    holder.redis = fake;
     later();
     await register();
     expect(fake.store.get(STAMP_KEY)).toBe(String(T0 + 60_000));
@@ -243,7 +269,7 @@ describe("the FAQ cache across process starts", () => {
     expect(await faqCacheGet(OTHER)).toBeNull();
   });
 
-  it("gives a rolled-back deployment its own answers again and never the ones written in between", async () => {
+  it("gives a rolled-back deployment the answers nobody has replaced, and never the ones written in between", async () => {
     await register();
     await cacheAs("dpl_A");
     deployment("dpl_B");
@@ -268,6 +294,51 @@ describe("the FAQ cache across process starts", () => {
     expect(await faqCacheGet(QUESTION)).toBeNull(); // the new deployment does not serve it
     deployment("dpl_A");
     expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+  });
+
+  // The cache key is the question alone, so there is ONE slot per question and the later write
+  // replaces the earlier one whatever deployment it belongs to. What is never shared is what gets
+  // served: a read is a hit only under the id that wrote the entry.
+  it("has one slot per question: the deployment that answers it again replaces the other's entry", async () => {
+    await register();
+    await cacheAs("dpl_A");
+    deployment("dpl_B");
+    later();
+    await register();
+    expect(await faqCacheGet(QUESTION)).toBeNull();
+    await cacheAs("dpl_B"); // B answers the same question itself
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+    deployment("dpl_A");
+    later();
+    await register(); // dpl_A is promoted again: its entry for this question is gone
+    expect(await faqCacheGet(QUESTION)).toBeNull();
+  });
+
+  it("lets a late write from the previous deployment replace the new deployment's entry", async () => {
+    await register();
+    deployment("dpl_B");
+    later();
+    await register();
+    await cacheAs("dpl_B");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+    await cacheAs("dpl_A"); // a request still in flight on an old instance finishes
+    deployment("dpl_B");
+    expect(await faqCacheGet(QUESTION)).toBeNull();
+    deployment("dpl_A");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+  });
+
+  it("lets a preview that answers the same question replace production's entry, without ever serving it", async () => {
+    await register();
+    await cacheAs("dpl_A");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+    vi.stubEnv("VERCEL_ENV", "preview");
+    deployment("dpl_PREVIEW");
+    expect(await faqCacheGet(QUESTION)).toBeNull(); // the preview does not serve production's entry
+    await cacheAs("dpl_PREVIEW");
+    vi.stubEnv("VERCEL_ENV", "production");
+    deployment("dpl_A");
+    expect(await faqCacheGet(QUESTION)).toBeNull(); // production lost its entry to the preview's write
   });
 
   it.each([

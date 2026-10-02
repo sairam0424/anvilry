@@ -927,3 +927,118 @@ describe("/api/chat — a miss writes what the next exact hit replays (real chat
     }
   });
 });
+
+describe("/api/chat — what telemetry may know about a replayed summary", () => {
+  const QUESTION = "What stack do you use?";
+  const ANSWER = "I mostly use TypeScript and Next.js.";
+  const REASONING =
+    "The user asks about my stack, so I'll name TypeScript and Next.js first.";
+  const entry = () => ({
+    answer: ANSWER,
+    reasoning: REASONING,
+    model: "global.anthropic.claude-sonnet-5-5",
+    costUsd: 0.004,
+    cachedAt: Date.now(),
+    corpusBuiltAt: null,
+  });
+  const ask = () => POST(makeReq([{ role: "user", content: QUESTION }]));
+
+  /** The http.request span's attributes, as the route sets them through ctx.attrs(). */
+  const spanAttrs: Record<string, unknown>[] = [];
+  function withTraceCapturing(sink: (a: Record<string, unknown>) => void) {
+    return {
+      withTrace: async (
+        _req: Request,
+        _route: string,
+        handler: (ctx: {
+          traceId: string;
+          spanId: string;
+          startedAt: number;
+          ipHash: string;
+          uaHash: string;
+          attrs: (a: Record<string, unknown>) => void;
+        }) => Promise<Response>,
+      ) =>
+        handler({
+          traceId: "test-trace-id",
+          spanId: "test-span-id",
+          startedAt: Date.now(),
+          ipHash: "test-ip-hash",
+          uaHash: "test-ua-hash",
+          attrs: sink,
+        }),
+    };
+  }
+
+  beforeEach(async () => {
+    spanAttrs.length = 0;
+    vi.doMock("@/lib/telemetry/with-trace", () =>
+      withTraceCapturing((a) => spanAttrs.push(a)),
+    );
+    await importRoute();
+  });
+
+  afterEach(() => {
+    // The rest of this file runs against the plain passthrough; put it back.
+    vi.doMock("@/lib/telemetry/with-trace", () =>
+      withTraceCapturing(() => {}),
+    );
+  });
+
+  type EmitArg = { kind: string; attrs: Record<string, unknown> };
+  async function emitted(kind: string): Promise<EmitArg[]> {
+    const { emit } = await import("@/lib/telemetry/emit");
+    return (emit as unknown as { mock: { calls: [EmitArg][] } }).mock.calls
+      .map(([e]) => e)
+      .filter((e) => e.kind === kind);
+  }
+
+  it("keeps the summary, a preview of it and its length off the http.request span of a replayed hit", async () => {
+    faqCacheGetMock.mockResolvedValue({ tier: "exact" as const, entry: entry() });
+    const res = await ask();
+    expect(res.headers.get("X-Chat-Cache")).toBe("hit");
+    expect(spanAttrs.length).toBeGreaterThan(0);
+    const serialized = JSON.stringify(spanAttrs);
+    expect(serialized).not.toContain(REASONING.slice(0, 12));
+    expect(serialized).not.toMatch(/reasoning/i);
+  });
+
+  it("names no reasoning on the llm.attempt event: no text, no preview, no length", async () => {
+    streamWithFallbackMock.mockImplementation((_params, opts) => {
+      opts?.onAttempt?.({
+        model: "global.anthropic.claude-sonnet-5-5",
+        attempt_index: 0,
+        fell_back: false,
+        latency_ms: 500,
+        finish_reason: "end_turn",
+        usage: { input_tokens: 100, output_tokens: 50 },
+        answerText: ANSWER,
+        reasoningText: REASONING,
+      });
+      return new ReadableStream();
+    });
+    await ask();
+    const attempts = await emitted("llm.attempt");
+    expect(attempts).toHaveLength(1);
+    const serialized = JSON.stringify(attempts);
+    expect(serialized).not.toContain(REASONING.slice(0, 12));
+    expect(serialized).not.toMatch(/reasoning/i);
+  });
+
+  it("reports reasoning_replayed false for a semantic hit, even if its entry somehow carries a summary", async () => {
+    isSemanticMatchEnabledMock.mockReturnValue(true);
+    faqCacheSemanticGetMock.mockResolvedValue({
+      tier: "semantic" as const,
+      similarity: 0.95,
+      entry: entry(),
+    });
+    const res = await ask();
+    const [hit] = await emitted("chat.cache");
+    expect(hit.attrs).toMatchObject({
+      outcome: "hit",
+      tier: "semantic",
+      reasoning_replayed: false,
+    });
+    expect(await res.text()).not.toContain(REASONING);
+  });
+});

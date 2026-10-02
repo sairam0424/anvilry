@@ -1065,3 +1065,53 @@ describe("FAQ cache — the Upstash command echo stays out of error events and p
     },
   );
 });
+
+describe("FAQ cache — the documented reasoning bounds and the semantic miss", () => {
+  it("keeps the two bounds the docs state as policy: 4,000 characters of summary, questions of at most 200", async () => {
+    const { MAX_CACHEABLE_REASONING_CHARS, MAX_REASONING_QUESTION_CHARS } =
+      await import("./chat-cache");
+    // CLAUDE.md, TELEMETRY.md, docs/configuration.md and docs/index quote these numbers, and
+    // the other tests measure the bounds relative to the exports; changing one is a decision.
+    expect(MAX_CACHEABLE_REASONING_CHARS).toBe(4000);
+    expect(MAX_REASONING_QUESTION_CHARS).toBe(200);
+  });
+
+  it("returns null on a semantic miss without recording a server.error", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([1, 0]);
+    const { cosineSimilarity } = await import("./faq-embeddings");
+    vi.mocked(cosineSimilarity).mockReturnValue(0.5);
+    redisMock.zrange.mockResolvedValue(["k1"]);
+    redisMock.mget.mockResolvedValue([
+      JSON.stringify({
+        answer: "a",
+        model: "m",
+        costUsd: 0,
+        cachedAt: 1,
+        corpusBuiltAt: null,
+        embedding: [0, 1],
+      }),
+    ]);
+    const { faqCacheSemanticGet } = await import("./chat-cache");
+    await expect(faqCacheSemanticGet("q")).resolves.toBeNull();
+    expect(redisMock.zadd).not.toHaveBeenCalledWith(
+      "anvilry:trace:server.error",
+      expect.anything(),
+    );
+  });
+});
+
+describe("FAQ cache — a rejection that is not an Error", () => {
+  it("records what was thrown and still fails open", async () => {
+    redisMock.mget.mockRejectedValueOnce("plain string thrown by a client");
+    const { faqCacheGet } = await import("./chat-cache");
+    await expect(faqCacheGet("q")).resolves.toBeNull();
+    const traceWrites = redisMock.zadd.mock.calls.filter(
+      ([key]) => key === "anvilry:trace:server.error",
+    );
+    expect(traceWrites).toHaveLength(1);
+    expect(JSON.stringify(traceWrites[0])).toContain(
+      "plain string thrown by a client",
+    );
+  });
+});

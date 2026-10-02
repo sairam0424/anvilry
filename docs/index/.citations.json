@@ -15207,19 +15207,12 @@
       ],
       "preview": "window.addEventListener(\"error\", (e: ErrorEvent) => {"
     },
-    "src/instrumentation.ts:100": {
-      "fp": "d10b36aa74a5",
+    "src/instrumentation.ts:111": {
+      "fp": "f7dbd51d59be",
       "citedBy": [
-        "README.md"
+        "11-config-build-ci-infra.md"
       ],
-      "preview": "}"
-    },
-    "src/instrumentation.ts:105": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
+      "preview": "bedrock: present(env.BEDROCK_ACCESS_KEY_ID),"
     },
     "src/instrumentation.ts:12": {
       "fp": "2485991aa95e",
@@ -15228,65 +15221,7 @@
       ],
       "preview": "* SECURITY: no secret values are logged — only whether a var is present/absent"
     },
-    "src/instrumentation.ts:13": {
-      "fp": "056c2e65c4c1",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "* or a safe enum value. The emit follows the same [trace] prefix convention as"
-    },
-    "src/instrumentation.ts:35": {
-      "fp": "c80706837467",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "if (process.env.NEXT_RUNTIME === \"edge\") return;"
-    },
-    "src/instrumentation.ts:4": {
-      "fp": "92c8f9ba25ea",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "* `register()` is called ONCE per server process start (cold start in serverless)."
-    },
-    "src/instrumentation.ts:41": {
-      "fp": "48453da2375d",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "vercel_env: enumVal(env.VERCEL_ENV, [\"production\", \"preview\", \"development\"], \"local\"),"
-    },
-    "src/instrumentation.ts:42": {
-      "fp": "68e0d108c611",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "node_env: enumVal(env.NODE_ENV, [\"production\", \"development\", \"test\"], \"development\"),"
-    },
-    "src/instrumentation.ts:43": {
-      "fp": "8f2b28787a52",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "region: env.VERCEL_REGION ?? env.AWS_REGION ?? \"unknown\","
-    },
-    "src/instrumentation.ts:49": {
-      "fp": "cc2cf6ab33f6",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "flags_sdk_configured: present(env.FLAGS),         // SDK connection string"
-    },
-    "src/instrumentation.ts:65": {
-      "fp": "f7dbd51d59be",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "bedrock: present(env.BEDROCK_ACCESS_KEY_ID),"
-    },
-    "src/instrumentation.ts:75": {
+    "src/instrumentation.ts:121": {
       "fp": "dc90fa6b5cc6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15294,14 +15229,14 @@
       ],
       "preview": "llm_sdk: enumVal("
     },
-    "src/instrumentation.ts:76": {
+    "src/instrumentation.ts:122": {
       "fp": "09ce176523d2",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "env.NEXT_PUBLIC_LLM_SDK,"
     },
-    "src/instrumentation.ts:79": {
+    "src/instrumentation.ts:125": {
       "fp": "bb01c44bd646",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15309,7 +15244,14 @@
       ],
       "preview": "),"
     },
-    "src/instrumentation.ts:84": {
+    "src/instrumentation.ts:13": {
+      "fp": "056c2e65c4c1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* or a safe enum value. The emit follows the same [trace] prefix convention as"
+    },
+    "src/instrumentation.ts:130": {
       "fp": "532f4f2f07f1",
       "citedBy": [
         "14-subsystems.md",
@@ -15317,22 +15259,16 @@
       ],
       "preview": "console.log(\"[config]\", JSON.stringify(config));"
     },
-    "src/instrumentation.ts:86": {
-      "fp": "d7249f04b41d",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// Stamp corpus build time in Redis on production deploys only."
-    },
-    "src/instrumentation.ts:87": {
-      "fp": "7da3e6c7b349",
+    "src/instrumentation.ts:132": {
+      "fp": "17ca59df85dd",
       "citedBy": [
         "11-config-build-ci-infra.md",
-        "14-subsystems.md"
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Use VERCEL_ENV=production to exclude preview deployments — on Vercel, preview"
+      "preview": "// Stamp the corpus in Redis, production only. VERCEL_ENV=production excludes preview"
     },
-    "src/instrumentation.ts:92": {
+    "src/instrumentation.ts:137": {
       "fp": "8b1e08301f7e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15341,22 +15277,103 @@
       ],
       "preview": "(!process.env.VERCEL_ENV && process.env.NODE_ENV === \"production\");"
     },
-    "src/instrumentation.ts:93": {
-      "fp": "81707bd2efa0",
+    "src/instrumentation.ts:151": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/instrumentation.ts:33": {
+      "fp": "1bbf2b6b9016",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const CORPUS_STAMP_KEY = \"anvilry:corpus:built_at\";"
+    },
+    "src/instrumentation.ts:38": {
+      "fp": "990c4ff92747",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "function stampedDeploymentId(stamp: unknown): string | null {"
+    },
+    "src/instrumentation.ts:4": {
+      "fp": "92c8f9ba25ea",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "* `register()` is called ONCE per server process start (cold start in serverless)."
+    },
+    "src/instrumentation.ts:42": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/instrumentation.ts:58": {
+      "fp": "78f91810803f",
       "citedBy": [
         "README.md"
       ],
-      "preview": "if (isProductionDeploy) {"
+      "preview": "async function stampCorpus(): Promise<void> {"
     },
-    "src/instrumentation.ts:95": {
+    "src/instrumentation.ts:59": {
       "fp": "4a07d8962238",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const { redis } = await import(\"@/lib/redis\");"
     },
-    "src/instrumentation.ts:97": {
-      "fp": "40b5321a7261",
+    "src/instrumentation.ts:61": {
+      "fp": "dda4b62e540b",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const deploymentId = process.env.VERCEL_DEPLOYMENT_ID;"
+    },
+    "src/instrumentation.ts:62": {
+      "fp": "78193f50a6ef",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "if (!deploymentId) {"
+    },
+    "src/instrumentation.ts:63": {
+      "fp": "63b5a4f1ab33",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "await redis.set(CORPUS_STAMP_KEY, Date.now().toString(), {"
+    },
+    "src/instrumentation.ts:67": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/instrumentation.ts:68": {
+      "fp": "9eff54503624",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const stamp = await redis.get<string | number>(CORPUS_STAMP_KEY);"
+    },
+    "src/instrumentation.ts:70": {
+      "fp": "30c3b1d3a1f0",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md",
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "await redis.expire(CORPUS_STAMP_KEY, CORPUS_STAMP_TTL_SECONDS);"
+    },
+    "src/instrumentation.ts:73": {
+      "fp": "b2921990247d",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
         "11-config-build-ci-infra.md",
@@ -15364,7 +15381,59 @@
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "await redis.set(\"anvilry:corpus:built_at\", Date.now().toString(), {"
+      "preview": "await redis.set(CORPUS_STAMP_KEY, `${Date.now()}:${deploymentId}`, {"
+    },
+    "src/instrumentation.ts:76": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md",
+        "README.md"
+      ],
+      "preview": "}"
+    },
+    "src/instrumentation.ts:80": {
+      "fp": "c80706837467",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md"
+      ],
+      "preview": "if (process.env.NEXT_RUNTIME === \"edge\") return;"
+    },
+    "src/instrumentation.ts:86": {
+      "fp": "48453da2375d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "vercel_env: enumVal(env.VERCEL_ENV, [\"production\", \"preview\", \"development\"], \"local\"),"
+    },
+    "src/instrumentation.ts:87": {
+      "fp": "68e0d108c611",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "node_env: enumVal(env.NODE_ENV, [\"production\", \"development\", \"test\"], \"development\"),"
+    },
+    "src/instrumentation.ts:88": {
+      "fp": "8f2b28787a52",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "region: env.VERCEL_REGION ?? env.AWS_REGION ?? \"unknown\","
+    },
+    "src/instrumentation.ts:89": {
+      "fp": "92cfd6733362",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "deployment_id: present(env.VERCEL_DEPLOYMENT_ID), // presence only; see stampCorpus()"
+    },
+    "src/instrumentation.ts:95": {
+      "fp": "cc2cf6ab33f6",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "flags_sdk_configured: present(env.FLAGS),         // SDK connection string"
     },
     "src/lib/admin-auth.test.ts:123": {
       "fp": "54545a777f82",

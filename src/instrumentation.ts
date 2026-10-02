@@ -13,9 +13,9 @@
  * or a safe enum value. The emit follows the same [trace] prefix convention as
  * the telemetry emitter so `vercel logs | grep '\[config\]'` filters just these.
  *
- * Note on timing: register() runs on cold start but Next.js makes no guarantee
- * it blocks before the first request is handled in serverless. Treat it as
- * "best-effort startup logging", not a hard initialization gate.
+ * Note on timing: Next.js awaits register() before a new server instance takes its
+ * first request, so a throw or a slow call here fails or delays every request on it.
+ * Keep it best-effort startup logging: catch everything and do as little I/O as possible.
  */
 
 function present(val: string | undefined): boolean {
@@ -41,6 +41,7 @@ export async function register() {
     vercel_env: enumVal(env.VERCEL_ENV, ["production", "preview", "development"], "local"),
     node_env: enumVal(env.NODE_ENV, ["production", "development", "test"], "development"),
     region: env.VERCEL_REGION ?? env.AWS_REGION ?? "unknown",
+    deployment_id: present(env.VERCEL_DEPLOYMENT_ID), // presence only; the FAQ cache's corpus tag
 
     // ── Feature flag driver ──────────────────────────────────────────────────
     // FLAG_DRIVER is our custom switch (not a Vercel SDK concept).
@@ -83,10 +84,10 @@ export async function register() {
   // (telemetry spans) and "[vitals]" (web-vitals RUM).
   console.log("[config]", JSON.stringify(config));
 
-  // Stamp corpus build time in Redis on production deploys only.
-  // Use VERCEL_ENV=production to exclude preview deployments — on Vercel, preview
-  // deployments also run with NODE_ENV=production, which would pollute the timestamp.
-  // Falls back to NODE_ENV check for non-Vercel hosts where VERCEL_ENV is absent.
+  // Stamp this process's start time in Redis, in production only (the dashboard's
+  // Corpus age; the FAQ cache's fallback tag). VERCEL_ENV=production excludes preview
+  // deployments, which also run NODE_ENV=production and would pollute the timestamp;
+  // falls back to the NODE_ENV check for non-Vercel hosts where VERCEL_ENV is absent.
   const isProductionDeploy =
     process.env.VERCEL_ENV === "production" ||
     (!process.env.VERCEL_ENV && process.env.NODE_ENV === "production");
@@ -95,7 +96,7 @@ export async function register() {
       const { redis } = await import("@/lib/redis");
       if (redis) {
         await redis.set("anvilry:corpus:built_at", Date.now().toString(), {
-          ex: 7 * 24 * 3600, // 1 week — auto-expires if no new deploy
+          ex: 7 * 24 * 3600, // 1 week — auto-expires if no production process starts
         });
       }
     } catch {

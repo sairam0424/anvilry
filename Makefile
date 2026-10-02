@@ -274,7 +274,7 @@ health: ## Smoke-test /api/chat with a live POST request
 	@curl -s -o /dev/null -w "HTTP Status: %{http_code}\nTime: %{time_total}s\n" \
 		$(PROD_URL)/api/chat \
 		-X POST \
-		-H "Content-Type: application/json" \
+		-H "Content-Type: application/json" -H "X-Chat-Skip-Cache: 1" \
 		-d '{"messages":[{"role":"user","content":"What stack does Sairam use?"}]}'
 	@echo ""
 	@echo "Tip: run in verbose mode with: curl -v $(PROD_URL)/api/chat -X POST ..."

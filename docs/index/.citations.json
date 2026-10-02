@@ -1858,14 +1858,14 @@
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |"
     },
-    "CLAUDE.md:395": {
+    "CLAUDE.md:396": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:397": {
+    "CLAUDE.md:398": {
       "fp": "9b72df9920f2",
       "citedBy": [
         "02-api-routes.md"
@@ -15207,14 +15207,14 @@
       ],
       "preview": "window.addEventListener(\"error\", (e: ErrorEvent) => {"
     },
-    "src/instrumentation.ts:100": {
+    "src/instrumentation.ts:101": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "README.md"
       ],
       "preview": "}"
     },
-    "src/instrumentation.ts:105": {
+    "src/instrumentation.ts:106": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
@@ -15271,7 +15271,16 @@
       ],
       "preview": "region: env.VERCEL_REGION ?? env.AWS_REGION ?? \"unknown\","
     },
-    "src/instrumentation.ts:49": {
+    "src/instrumentation.ts:44": {
+      "fp": "9c04e0741958",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "deployment_id: present(env.VERCEL_DEPLOYMENT_ID), // presence only; the FAQ cache's corpus tag"
+    },
+    "src/instrumentation.ts:50": {
       "fp": "cc2cf6ab33f6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15279,14 +15288,14 @@
       ],
       "preview": "flags_sdk_configured: present(env.FLAGS),         // SDK connection string"
     },
-    "src/instrumentation.ts:65": {
+    "src/instrumentation.ts:66": {
       "fp": "f7dbd51d59be",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "bedrock: present(env.BEDROCK_ACCESS_KEY_ID),"
     },
-    "src/instrumentation.ts:75": {
+    "src/instrumentation.ts:76": {
       "fp": "dc90fa6b5cc6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15294,14 +15303,14 @@
       ],
       "preview": "llm_sdk: enumVal("
     },
-    "src/instrumentation.ts:76": {
+    "src/instrumentation.ts:77": {
       "fp": "09ce176523d2",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "env.NEXT_PUBLIC_LLM_SDK,"
     },
-    "src/instrumentation.ts:79": {
+    "src/instrumentation.ts:80": {
       "fp": "bb01c44bd646",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15309,7 +15318,7 @@
       ],
       "preview": "),"
     },
-    "src/instrumentation.ts:84": {
+    "src/instrumentation.ts:85": {
       "fp": "532f4f2f07f1",
       "citedBy": [
         "14-subsystems.md",
@@ -15317,22 +15326,22 @@
       ],
       "preview": "console.log(\"[config]\", JSON.stringify(config));"
     },
-    "src/instrumentation.ts:86": {
-      "fp": "d7249f04b41d",
+    "src/instrumentation.ts:87": {
+      "fp": "5ca78cf97be8",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Stamp corpus build time in Redis on production deploys only."
+      "preview": "// Stamp this process's start time in Redis, in production only (the dashboard's"
     },
-    "src/instrumentation.ts:87": {
-      "fp": "7da3e6c7b349",
+    "src/instrumentation.ts:88": {
+      "fp": "d18f660800a6",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "14-subsystems.md"
       ],
-      "preview": "// Use VERCEL_ENV=production to exclude preview deployments — on Vercel, preview"
+      "preview": "// Corpus age; the FAQ cache's fallback tag). VERCEL_ENV=production excludes preview"
     },
-    "src/instrumentation.ts:92": {
+    "src/instrumentation.ts:93": {
       "fp": "8b1e08301f7e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15341,21 +15350,21 @@
       ],
       "preview": "(!process.env.VERCEL_ENV && process.env.NODE_ENV === \"production\");"
     },
-    "src/instrumentation.ts:93": {
+    "src/instrumentation.ts:94": {
       "fp": "81707bd2efa0",
       "citedBy": [
         "README.md"
       ],
       "preview": "if (isProductionDeploy) {"
     },
-    "src/instrumentation.ts:95": {
+    "src/instrumentation.ts:96": {
       "fp": "4a07d8962238",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const { redis } = await import(\"@/lib/redis\");"
     },
-    "src/instrumentation.ts:97": {
+    "src/instrumentation.ts:98": {
       "fp": "40b5321a7261",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -15905,28 +15914,28 @@
       ],
       "preview": "it(\"does not copy the stored entry into a server.error event when a write fails (Upstash echoes the "
     },
-    "src/lib/chat-cache.ts:123": {
+    "src/lib/chat-cache.ts:124": {
       "fp": "1709130b7d10",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "entry: Omit<FaqCacheEntry, \"reasoning\">;"
     },
-    "src/lib/chat-cache.ts:132": {
+    "src/lib/chat-cache.ts:133": {
       "fp": "91381355200f",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const TRAILING_PUNCTUATION = new Set([\"?\", \"!\", \".\", \",\", \";\", \":\"]);"
     },
-    "src/lib/chat-cache.ts:134": {
+    "src/lib/chat-cache.ts:135": {
       "fp": "792066ea4a6b",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function normalizeQuestion(text: string): string {"
     },
-    "src/lib/chat-cache.ts:148": {
+    "src/lib/chat-cache.ts:149": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md",
@@ -15934,7 +15943,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/chat-cache.ts:150": {
+    "src/lib/chat-cache.ts:151": {
       "fp": "a1d92509264d",
       "citedBy": [
         "14-subsystems.md",
@@ -15943,7 +15952,7 @@
       ],
       "preview": "export function isSemanticMatchEnabled(): boolean {"
     },
-    "src/lib/chat-cache.ts:151": {
+    "src/lib/chat-cache.ts:152": {
       "fp": "eb2ca9152a38",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -15952,21 +15961,21 @@
       ],
       "preview": "return process.env.FAQ_CACHE_SEMANTIC_MATCH === \"true\";"
     },
-    "src/lib/chat-cache.ts:158": {
+    "src/lib/chat-cache.ts:159": {
       "fp": "d8253ad5cb75",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function isFaqCacheEnabled(): boolean {"
     },
-    "src/lib/chat-cache.ts:159": {
+    "src/lib/chat-cache.ts:160": {
       "fp": "b334beca16ce",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "return process.env.FAQ_CACHE_ENABLED !== \"false\";"
     },
-    "src/lib/chat-cache.ts:160": {
+    "src/lib/chat-cache.ts:161": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -15974,33 +15983,57 @@
       ],
       "preview": "}"
     },
-    "src/lib/chat-cache.ts:172": {
+    "src/lib/chat-cache.ts:173": {
       "fp": "2af8afa71ffa",
       "citedBy": [
         "README.md"
       ],
       "preview": "function replayableReasoning(value: unknown): string | undefined {"
     },
-    "src/lib/chat-cache.ts:174": {
+    "src/lib/chat-cache.ts:175": {
       "fp": "7ce2eb6a6721",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const clean = stripControlBytes(value).trim();"
     },
-    "src/lib/chat-cache.ts:181": {
+    "src/lib/chat-cache.ts:182": {
       "fp": "88a9f07164ff",
       "citedBy": [
         "README.md"
       ],
       "preview": "function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {"
     },
-    "src/lib/chat-cache.ts:189": {
-      "fp": "acb13c2c01b0",
+    "src/lib/chat-cache.ts:193": {
+      "fp": "93e72ca715f5",
       "citedBy": [
-        "14-subsystems.md"
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
       ],
-      "preview": "async function getCurrentCorpusBuildTag(): Promise<string | null> {"
+      "preview": "function ownDeploymentTag(): string | null {"
+    },
+    "src/lib/chat-cache.ts:194": {
+      "fp": "254ddeaa2566",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "return process.env.VERCEL_DEPLOYMENT_ID || null;"
+    },
+    "src/lib/chat-cache.ts:195": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "}"
     },
     "src/lib/chat-cache.ts:2": {
       "fp": "30d93a0ed4ee",
@@ -16009,14 +16042,14 @@
       ],
       "preview": "import { redis } from \"@/lib/redis\";"
     },
-    "src/lib/chat-cache.ts:201": {
+    "src/lib/chat-cache.ts:214": {
       "fp": "b0ee52712e8d",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "function isSameCorpusBuild("
     },
-    "src/lib/chat-cache.ts:206": {
+    "src/lib/chat-cache.ts:219": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "02-api-routes.md",
@@ -16024,7 +16057,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/chat-cache.ts:212": {
+    "src/lib/chat-cache.ts:225": {
       "fp": "8e9d970e2ba3",
       "citedBy": [
         "14b-subsystems.md",
@@ -16032,20 +16065,13 @@
       ],
       "preview": "function withoutCommandEcho(message: unknown): string {"
     },
-    "src/lib/chat-cache.ts:214": {
+    "src/lib/chat-cache.ts:227": {
       "fp": "b88f20db2196",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "return head.slice(0, 300);"
-    },
-    "src/lib/chat-cache.ts:222": {
-      "fp": "f7abf6452803",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "function emitCacheError(op: string, err: unknown): void {"
     },
     "src/lib/chat-cache.ts:23": {
       "fp": "f817db3483d7",
@@ -16055,19 +16081,19 @@
       ],
       "preview": "* Safety layers added after an adversarial audit of the first cut:"
     },
-    "src/lib/chat-cache.ts:231": {
+    "src/lib/chat-cache.ts:235": {
+      "fp": "f7abf6452803",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "function emitCacheError(op: string, err: unknown): void {"
+    },
+    "src/lib/chat-cache.ts:244": {
       "fp": "20f337ba5866",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "kind: \"server.error\","
-    },
-    "src/lib/chat-cache.ts:240": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
     },
     "src/lib/chat-cache.ts:25": {
       "fp": "21fdcbc4d508",
@@ -16076,19 +16102,19 @@
       ],
       "preview": "*  - Completion-integrity gate (finish_reason === \"end_turn\" only) + control-char"
     },
-    "src/lib/chat-cache.ts:259": {
-      "fp": "8c7c5dcbec3b",
+    "src/lib/chat-cache.ts:253": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/chat-cache.ts:274": {
+      "fp": "3947d4dd54c1",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "const [raw, currentTag] = await redis.mget<"
-    },
-    "src/lib/chat-cache.ts:264": {
-      "fp": "7bb0ddb44122",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "if (!isSameCorpusBuild(entry, currentTag)) return null;"
+      "preview": "const [raw, stamped] = await redis.mget<"
     },
     "src/lib/chat-cache.ts:28": {
       "fp": "28fd8f1c0603",
@@ -16097,7 +16123,14 @@
       ],
       "preview": "*    visitor. NOTE: this checks completion cleanliness, not actual content"
     },
-    "src/lib/chat-cache.ts:282": {
+    "src/lib/chat-cache.ts:280": {
+      "fp": "7bb0ddb44122",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "if (!isSameCorpusBuild(entry, currentTag)) return null;"
+    },
+    "src/lib/chat-cache.ts:298": {
       "fp": "11a1e7d7ef6a",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -16107,13 +16140,6 @@
       ],
       "preview": "const SIMILARITY_THRESHOLD = 0.92;"
     },
-    "src/lib/chat-cache.ts:284": {
-      "fp": "67e182b33b2a",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "const { embedText, cosineSimilarity } = await import(\"./faq-embeddings\");"
-    },
     "src/lib/chat-cache.ts:3": {
       "fp": "e627f704b032",
       "citedBy": [
@@ -16121,20 +16147,12 @@
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
-    "src/lib/chat-cache.ts:310": {
-      "fp": "a7afb87402f4",
+    "src/lib/chat-cache.ts:300": {
+      "fp": "67e182b33b2a",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "13-dependencies-and-versions.md"
       ],
-      "preview": "const entry: Omit<FaqCacheEntry, \"reasoning\"> & { reasoning?: string } = {"
-    },
-    "src/lib/chat-cache.ts:313": {
-      "fp": "6ea0672b9cf8",
-      "citedBy": [
-        "05-components-chat-voice.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "delete entry.reasoning;"
+      "preview": "const { embedText, cosineSimilarity } = await import(\"./faq-embeddings\");"
     },
     "src/lib/chat-cache.ts:32": {
       "fp": "888fb36efc5b",
@@ -16144,28 +16162,43 @@
       ],
       "preview": "*    a moderation layer."
     },
-    "src/lib/chat-cache.ts:331": {
+    "src/lib/chat-cache.ts:326": {
+      "fp": "a7afb87402f4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const entry: Omit<FaqCacheEntry, \"reasoning\"> & { reasoning?: string } = {"
+    },
+    "src/lib/chat-cache.ts:329": {
+      "fp": "6ea0672b9cf8",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "delete entry.reasoning;"
+    },
+    "src/lib/chat-cache.ts:347": {
       "fp": "d009fe25d93e",
       "citedBy": [
         "README.md"
       ],
       "preview": "export async function faqCacheSet("
     },
-    "src/lib/chat-cache.ts:337": {
+    "src/lib/chat-cache.ts:353": {
       "fp": "6e866e63df89",
       "citedBy": [
         "README.md"
       ],
       "preview": "reasoning?: string,"
     },
-    "src/lib/chat-cache.ts:345": {
+    "src/lib/chat-cache.ts:361": {
       "fp": "3e313951ec89",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "if (finishReason !== \"end_turn\") return;"
     },
-    "src/lib/chat-cache.ts:347": {
+    "src/lib/chat-cache.ts:363": {
       "fp": "033accff1395",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -16186,21 +16219,21 @@
       ],
       "preview": "*    not silently folded into the same signal as a genuine miss."
     },
-    "src/lib/chat-cache.ts:433": {
+    "src/lib/chat-cache.ts:449": {
       "fp": "c2e5d34c335b",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "export type FaqCachePurgeResult ="
     },
-    "src/lib/chat-cache.ts:436": {
+    "src/lib/chat-cache.ts:452": {
       "fp": "ffa1a1de171c",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "| { status: \"error\"; key: string; message: string };"
     },
-    "src/lib/chat-cache.ts:449": {
+    "src/lib/chat-cache.ts:465": {
       "fp": "72196860bed7",
       "citedBy": [
         "02-api-routes.md",
@@ -16209,7 +16242,7 @@
       ],
       "preview": "export async function faqCachePurge("
     },
-    "src/lib/chat-cache.ts:469": {
+    "src/lib/chat-cache.ts:485": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "02-api-routes.md",
@@ -16224,14 +16257,14 @@
       ],
       "preview": "import { stripControlBytes } from \"@/lib/llm-trace\";"
     },
-    "src/lib/chat-cache.ts:54": {
+    "src/lib/chat-cache.ts:55": {
       "fp": "ed9623369ff0",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "*/"
     },
-    "src/lib/chat-cache.ts:56": {
+    "src/lib/chat-cache.ts:57": {
       "fp": "60157126e7bd",
       "citedBy": [
         "14b-subsystems.md",
@@ -16239,7 +16272,7 @@
       ],
       "preview": "const ENTRY_PREFIX = \"anvilry:chat:cache:\";"
     },
-    "src/lib/chat-cache.ts:58": {
+    "src/lib/chat-cache.ts:59": {
       "fp": "d388f1bcc0fd",
       "citedBy": [
         "14b-subsystems.md",
@@ -16247,21 +16280,21 @@
       ],
       "preview": "const CORPUS_BUILT_AT_KEY = \"anvilry:corpus:built_at\";"
     },
-    "src/lib/chat-cache.ts:60": {
+    "src/lib/chat-cache.ts:61": {
       "fp": "8631e587f68c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "/** 24h: long enough to catch same-day repeat traffic, short enough to bound"
     },
-    "src/lib/chat-cache.ts:66": {
+    "src/lib/chat-cache.ts:67": {
       "fp": "2679bf30d645",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "*  cache at all — see src/app/api/chat/route.ts.) */"
     },
-    "src/lib/chat-cache.ts:67": {
+    "src/lib/chat-cache.ts:68": {
       "fp": "b74524a32968",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -16269,7 +16302,7 @@
       ],
       "preview": "export const FAQ_CACHE_TTL_SECONDS = 24 * 60 * 60;"
     },
-    "src/lib/chat-cache.ts:83": {
+    "src/lib/chat-cache.ts:84": {
       "fp": "de65f807c4b3",
       "citedBy": [
         "15-invariants-and-gotchas.md",
@@ -16277,7 +16310,7 @@
       ],
       "preview": "export const MAX_CACHEABLE_ANSWER_CHARS = 4000;"
     },
-    "src/lib/chat-cache.ts:89": {
+    "src/lib/chat-cache.ts:90": {
       "fp": "8ffea9ea7dcb",
       "citedBy": [
         "15-invariants-and-gotchas.md",
@@ -16285,7 +16318,7 @@
       ],
       "preview": "export const MAX_CACHEABLE_REASONING_CHARS = 4000;"
     },
-    "src/lib/chat-cache.ts:95": {
+    "src/lib/chat-cache.ts:96": {
       "fp": "7181fb8eedb8",
       "citedBy": [
         "README.md"

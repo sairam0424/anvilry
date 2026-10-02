@@ -1140,3 +1140,86 @@ describe("FAQ cache — the reasoning policy holds where the questions really co
     }
   });
 });
+
+describe("FAQ cache — the deployment is the corpus tag", () => {
+  const QUESTION = "What is Pensieve?";
+  const ANSWER = "An answer written under one corpus.";
+  const entryTaggedWith = (tag: string | null) => ({
+    answer: ANSWER,
+    model: "sonnet",
+    costUsd: 0.001,
+    cachedAt: 1,
+    corpusBuiltAt: tag,
+  });
+
+  it("tags a new entry with the id of the deployment that writes it, without reading the stamp", async () => {
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_A");
+    const { faqCacheSet } = await import("./chat-cache");
+    await faqCacheSet(QUESTION, "A clean answer.", "sonnet", 0.001, "end_turn");
+    const [, json] = redisMock.set.mock.calls[0];
+    expect(JSON.parse(json as string).corpusBuiltAt).toBe("dpl_A");
+    expect(redisMock.get).not.toHaveBeenCalled();
+  });
+
+  it("serves an entry to the deployment that wrote it, whatever the stamp key says, and to no other", async () => {
+    mockGetByKey(JSON.stringify(entryTaggedWith("dpl_A")), "1000");
+    const { faqCacheGet } = await import("./chat-cache");
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_A");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_B");
+    await expect(faqCacheGet(QUESTION)).resolves.toBeNull();
+  });
+
+  it("asks for the entry alone when the host gives an id, and for the entry and the stamp in one command when it does not", async () => {
+    mockGetByKey(JSON.stringify(entryTaggedWith("dpl_A")), "1000");
+    const { faqCacheGet } = await import("./chat-cache");
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_A");
+    await faqCacheGet(QUESTION);
+    expect(redisMock.mget).toHaveBeenCalledTimes(1);
+    expect(redisMock.mget.mock.calls[0]).toHaveLength(1);
+    redisMock.mget.mockClear();
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "");
+    await faqCacheGet(QUESTION);
+    expect(redisMock.mget).toHaveBeenCalledTimes(1);
+    expect(redisMock.mget.mock.calls[0]).toEqual([
+      expect.any(String),
+      CORPUS_BUILT_AT_KEY,
+    ]);
+  });
+
+  it("takes an empty id for none and compares the stamp, as before", async () => {
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "");
+    const { faqCacheGet } = await import("./chat-cache");
+    mockGetByKey(JSON.stringify(entryTaggedWith("1000")), "1000");
+    await expect(faqCacheGet(QUESTION)).resolves.not.toBeNull();
+    mockGetByKey(JSON.stringify(entryTaggedWith("dpl_A")), "1000");
+    await expect(faqCacheGet(QUESTION)).resolves.toBeNull();
+  });
+
+  it("gives the semantic tier the same rule: another deployment's entries are skipped", async () => {
+    process.env.FAQ_CACHE_SEMANTIC_MATCH = "true";
+    embedTextMock.mockResolvedValue([1, 0]);
+    const { cosineSimilarity } = await import("./faq-embeddings");
+    vi.mocked(cosineSimilarity).mockReturnValue(0.95);
+    redisMock.zrange.mockResolvedValue(["k1"]);
+    redisMock.mget.mockResolvedValue([
+      JSON.stringify({ ...entryTaggedWith("dpl_A"), embedding: [1, 0] }),
+    ]);
+    const { faqCacheSemanticGet } = await import("./chat-cache");
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_B");
+    await expect(faqCacheSemanticGet("What is Pensieve exactly?")).resolves.toBeNull();
+    vi.stubEnv("VERCEL_DEPLOYMENT_ID", "dpl_A");
+    expect((await faqCacheSemanticGet("What is Pensieve exactly?"))?.tier).toBe("semantic");
+  });
+});
+
+// Root-level hooks, registered after every other hook in this file so they apply to all of
+// its tests: the suite must not inherit the deployment id of the Vercel build that runs it
+// (VERCEL_DEPLOYMENT_ID is set there), because it decides which corpus tag the cache compares.
+beforeEach(() => {
+  vi.stubEnv("VERCEL_DEPLOYMENT_ID", "");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});

@@ -40,17 +40,18 @@ import { stripControlBytes } from "@/lib/llm-trace";
  *  - Cache-layer errors are emitted as a distinguishable server.error event,
  *    not silently folded into the same signal as a genuine miss.
  *
- * Accepted tradeoff, deliberately NOT fixed: `make health` and one e2e spec
- * hit production /api/chat directly with a fixed literal question, sharing
- * this same cache namespace with real visitor traffic when run locally
- * against pulled production credentials (CI itself never touches it — no
- * Bedrock/Upstash secrets are set there). A dev-authored entry is now
- * content-gated, corpus-tagged, and purgeable, so it's functionally
- * indistinguishable from a real visitor's — the theoretical "leak" is the
- * cache doing its job, not a real risk, for a single-owner portfolio site.
- * A VERCEL_ENV-scoped key namespace would close this fully but is
- * disproportionate complexity for the actual risk here; revisit only if
- * this ever stops being a personal portfolio site's chatbot.
+ * Accepted tradeoff, deliberately NOT fixed: one e2e spec hits production
+ * /api/chat directly with a fixed literal question (`make health` sends
+ * X-Chat-Skip-Cache and stays out), sharing this same cache namespace with
+ * real visitor traffic when run locally against pulled production credentials
+ * (CI itself never touches it — no Bedrock/Upstash secrets are set there). A
+ * dev-authored entry is now content-gated, corpus-tagged, and purgeable, so
+ * it's functionally indistinguishable from a real visitor's — the theoretical
+ * "leak" is the cache doing its job, not a real risk, for a single-owner portfolio site.
+ * Entries are tagged with the id of the deployment that wrote them (see
+ * ownDeploymentTag), so a preview deployment's entries are never served by
+ * production and the reverse; the namespace is only shared with runs against
+ * production itself, which is the point.
  */
 
 const ENTRY_PREFIX = "anvilry:chat:cache:";
@@ -104,10 +105,10 @@ export type FaqCacheEntry = {
   model: string;
   costUsd: number;
   cachedAt: number;
-  /** Value of anvilry:corpus:built_at at write time (null if unset — e.g.
-   *  local dev/preview, where instrumentation.ts never stamps it). A mismatch
-   *  against the CURRENT value at read time means the corpus changed since
-   *  this answer was cached — treated as an automatic miss. */
+  /** Corpus tag at write time: the writing deployment's id (VERCEL_DEPLOYMENT_ID)
+   *  where the host gives one, else anvilry:corpus:built_at (null if unset, e.g.
+   *  local dev). A mismatch with the CURRENT tag at read time means another
+   *  corpus wrote this answer, so it is an automatic miss. */
   corpusBuiltAt: string | null;
   /** Present only when FAQ_CACHE_SEMANTIC_MATCH is enabled at write time. */
   embedding?: number[];
@@ -184,9 +185,21 @@ function withReplayableReasoning(entry: FaqCacheEntry): FaqCacheEntry {
   return reasoning === undefined ? rest : { ...rest, reasoning };
 }
 
-/** Current corpus build tag, or null if unset (local dev/preview) or on any
- *  Redis error — fails open to null, same posture as everything else here. */
+/** The id of the deployment this process serves, when the host says which one
+ *  (VERCEL_DEPLOYMENT_ID; empty or unset means it does not). It is the corpus
+ *  tag itself: an entry is a hit only for the deployment that wrote it, so a
+ *  deploy or a rollback never serves another deployment's answers, a preview
+ *  and production never share entries, and a cold start changes nothing. */
+function ownDeploymentTag(): string | null {
+  return process.env.VERCEL_DEPLOYMENT_ID || null;
+}
+
+/** Current corpus tag: this deployment's id where the host gives one, else the
+ *  anvilry:corpus:built_at stamp, or null if unset (local dev) or on any Redis
+ *  error — fails open to null, same posture as everything else here. */
 async function getCurrentCorpusBuildTag(): Promise<string | null> {
+  const ownTag = ownDeploymentTag();
+  if (ownTag) return ownTag;
   if (!redis) return null;
   try {
     return (await redis.get<string>(CORPUS_BUILT_AT_KEY)) ?? null;
@@ -255,10 +268,13 @@ export async function faqCacheGet(
     // a real, verified contributor to exhausting the free-tier monthly quota.
     // faqCacheSemanticGet and faqCacheSet still call getCurrentCorpusBuildTag()
     // directly, since their own Redis reads aren't a plain single-key GET this
-    // can merge with.
-    const [raw, currentTag] = await redis.mget<
-      [string | FaqCacheEntry | null, string | null]
-    >(key, CORPUS_BUILT_AT_KEY);
+    // can merge with. With a deployment id the id is the tag, so the stamp key
+    // is not read at all.
+    const ownTag = ownDeploymentTag();
+    const [raw, stamped] = await redis.mget<
+      [string | FaqCacheEntry | null, string | null | undefined]
+    >(...(ownTag ? [key] : [key, CORPUS_BUILT_AT_KEY]));
+    const currentTag = ownTag ?? stamped ?? null;
     if (!raw) return null;
     const entry = parseEntry(raw);
     if (!isSameCorpusBuild(entry, currentTag)) return null;

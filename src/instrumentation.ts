@@ -41,6 +41,7 @@ export async function register() {
     vercel_env: enumVal(env.VERCEL_ENV, ["production", "preview", "development"], "local"),
     node_env: enumVal(env.NODE_ENV, ["production", "development", "test"], "development"),
     region: env.VERCEL_REGION ?? env.AWS_REGION ?? "unknown",
+    deployment_id: present(env.VERCEL_DEPLOYMENT_ID), // presence only; the FAQ cache's corpus tag
 
     // ── Feature flag driver ──────────────────────────────────────────────────
     // FLAG_DRIVER is our custom switch (not a Vercel SDK concept).

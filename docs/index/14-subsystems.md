@@ -421,7 +421,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
   (`faq-embeddings.ts:20-28`), cosine similarity ≥ 0.92 (`chat-cache.ts:298`) over a capped ZSET index
   `anvilry:chat:cache:index` (`FAQ_CACHE_INDEX_CAP` = 500, `:58,71`). The embedding module is imported
   dynamically, so its AWS SDK cost is paid only when the flag is on. The exact tier normalizes a stored `reasoning` on read (`withReplayableReasoning`, `:182`, built on `replayableReasoning`, `:173`, and applied at `:281`: Redis is a trust boundary, so an unusable value becomes no reasoning); the semantic tier deletes it (`:326-330`) and its hit type is `Omit<FaqCacheEntry, "reasoning">` (`:124`), so a semantic hit can never replay another visitor's wording.
-- **Staleness:** every entry is tagged with the id of the deployment that wrote it (`ownDeploymentTag()`, `VERCEL_DEPLOYMENT_ID`, `chat-cache.ts:193-195`); a mismatch at read time is a miss (`chat-cache.ts:193-219`), so entries end with their deployment, not at a cold start or a new instance, and another deployment's answers (a rollback target, a preview reading production's entries) are never served. Where the host gives no id the tag is `anvilry:corpus:built_at` (stamped in production by
+- **Staleness:** every entry is tagged with the id of the deployment that wrote it (`ownDeploymentTag()`, `VERCEL_DEPLOYMENT_ID`, `chat-cache.ts:193-195`); a mismatch at read time is a miss (`chat-cache.ts:193-219`), so entries end with their deployment, not at a cold start or a new instance, and another deployment's answers (a rollback target, a preview reading production's entries) are never served. The key is one per question, so a deployment that answers a question replaces the other's entry, and a rolled-back deployment regains only the questions nobody has answered since. Where the host gives no id the tag is `anvilry:corpus:built_at` (stamped in production by
   `src/instrumentation.ts:98`, re-stamped with `Date.now()` on EVERY production process start), and there every start retires the entries. Both-null counts as a
   match, so local dev caches without a deploy stamp.
 - **Write gate** (`faqCacheSet`, `:347`): only `finish_reason === "end_turn"`, control bytes stripped, 1–4000
@@ -473,7 +473,7 @@ A cache-layer Redis failure emits its own `server.error` (`attrs.source: "chat-c
 `NEXT_PUBLIC_EXTENDED_THINKING` (client thinking-block rendering, `chat-messages.tsx:165`);
 `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` (`chat-view.tsx:259`); `NEXT_PUBLIC_PDF_ATTACHMENTS`
 (`file-picker-button.tsx:7`); `FAQ_CACHE_ENABLED` (kill switch, default on) and `FAQ_CACHE_SEMANTIC_MATCH`
-(default off) (`chat-cache.ts:151,159`); `CRON_SECRET` (rate-limit bypass for the eval cron);
+(default off) (`chat-cache.ts:151,159`); `VERCEL_DEPLOYMENT_ID` (the FAQ cache's corpus tag; empty or unset falls back to the `anvilry:corpus:built_at` stamp, `chat-cache.ts:194`); `CRON_SECRET` (rate-limit bypass for the eval cron);
 `UPSTASH_REDIS_REST_URL`/`_TOKEN` (rate limit + FAQ cache + telemetry sink); `VERCEL_URL` (self-fetch base for
 the GitHub stats block, `route.ts:39` — unlike the health-check cron, which prefers the production alias via
 `probeBase()` (`src/lib/health-expectations.ts:51-59`), this fetch has no SSO-wall handling: on a protected

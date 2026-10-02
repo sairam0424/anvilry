@@ -1858,14 +1858,14 @@
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |"
     },
-    "CLAUDE.md:395": {
+    "CLAUDE.md:396": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:397": {
+    "CLAUDE.md:398": {
       "fp": "9b72df9920f2",
       "citedBy": [
         "02-api-routes.md"
@@ -16018,7 +16018,9 @@
     "src/lib/chat-cache.ts:194": {
       "fp": "254ddeaa2566",
       "citedBy": [
-        "11-config-build-ci-infra.md"
+        "11-config-build-ci-infra.md",
+        "14-subsystems.md",
+        "14b-subsystems.md"
       ],
       "preview": "return process.env.VERCEL_DEPLOYMENT_ID || null;"
     },

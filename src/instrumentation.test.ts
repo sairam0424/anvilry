@@ -124,8 +124,9 @@ describe("register() — the corpus stamp", () => {
   });
 
   it.each([
-    ["a preview deployment", { VERCEL_ENV: "preview" }],
-    ["a development run", { VERCEL_ENV: "development" }],
+    // A Vercel preview runs NODE_ENV=production too: VERCEL_ENV is what keeps it out.
+    ["a preview deployment", { VERCEL_ENV: "preview", NODE_ENV: "production" }],
+    ["a development run", { VERCEL_ENV: "development", NODE_ENV: "development" }],
     ["a local run", { VERCEL_ENV: "", NODE_ENV: "development" }],
     ["the edge runtime", { NEXT_RUNTIME: "edge" }],
   ])("never touches Redis on %s", async (_label, env) => {
@@ -217,6 +218,7 @@ describe("the FAQ cache across process starts", () => {
   it("does not serve one deployment's answers to another, and caches again under the new one", async () => {
     await register();
     await cacheAs("dpl_A");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER); // its own, so it was cached
     deployment("dpl_B");
     later();
     await register();
@@ -230,11 +232,13 @@ describe("the FAQ cache across process starts", () => {
   it("never serves a preview's answer to production, or production's to a preview", async () => {
     vi.stubEnv("VERCEL_ENV", "preview");
     await cacheAs("dpl_PREVIEW");
+    expect((await faqCacheGet(QUESTION))?.entry.answer).toBe(ANSWER);
     vi.stubEnv("VERCEL_ENV", "production");
     deployment("dpl_A");
     await register();
     expect(await faqCacheGet(QUESTION)).toBeNull();
     await cacheAs("dpl_A", OTHER);
+    expect((await faqCacheGet(OTHER))?.entry.answer).toBe(ANSWER);
     deployment("dpl_PREVIEW");
     expect(await faqCacheGet(OTHER)).toBeNull();
   });
@@ -246,6 +250,7 @@ describe("the FAQ cache across process starts", () => {
     later();
     await register();
     await cacheAs("dpl_B", OTHER);
+    expect((await faqCacheGet(OTHER))?.entry.answer).toBe(ANSWER);
     deployment("dpl_A");
     later();
     await register(); // dpl_A is promoted again

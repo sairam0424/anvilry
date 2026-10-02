@@ -4,6 +4,41 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.13.0] — 2026-10-02
+
+**Minor** — a cached FAQ answer, and the reasoning summary stored with it, now lasts until the next deploy or
+its 24 h TTL instead of until the next cold start of any function, so the replay added in 3.12.0 works for the
+whole window it was meant for. The cache tags each entry with the id of the deployment that wrote it. It is a
+minor because a visitor is served the same cached answer for hours instead of minutes and an operator sees a
+different tag in every entry; the first deploy flushes the cache once.
+
+### Changed
+- **FAQ-cache entries are tagged with the deployment that wrote them, not with a stamp re-written at every
+  process start** (#307). `register()` wrote `anvilry:corpus:built_at` at every production process start, so a
+  cold start of any function, a new instance or the post-deploy canary retired every cached answer and the
+  reasoning stored with it (3.12.0 said "until the next production process start"). The tag is now the running
+  process's own `VERCEL_DEPLOYMENT_ID`: an entry is a hit only under the id that wrote it, so a cold start
+  changes nothing, and a deploy, a rollback or a preview never serves another deployment's answers. The key is
+  still the question alone, so there is one slot per question and the later write replaces the earlier: a
+  rolled-back deployment regains only the questions nobody has answered since, and a preview that answers
+  production's question replaces production's entry (served to nobody but itself). A host that gives no
+  deployment id keeps the stamp as the tag. **Operator-visible:** nothing to configure. The first deploy of
+  3.13.0 flushes the cache once (old entries carry a timestamp, which matches no id), and 3.12.0 and 3.13.0 never
+  serve each other's entries, so a rollback across them costs one flush. The `[config]` log line gains the boolean
+  `deployment_id` (`false` means a function did not get the variable and behaves as 3.12.0 did). The stamp still
+  feeds the dashboard's Corpus age tile, whose caption now reads "Last process start" (it never was the last
+  deploy). `make health` sends `X-Chat-Skip-Cache`, so it reaches the model and plants no cache entry.
+- **The `/api/error` suite no longer writes to the real Redis** (#308). The route appends every accepted
+  report to the capped list `anvilry:errors:recent`, and `pnpm build` runs the suite with the Vercel
+  environment's Upstash credentials, so every build that carried them pushed five fake client errors into the
+  real list (measured against a loopback listener: 5 requests before, 0 after). The suite now mocks the
+  singleton and asserts what the route writes. **Operator-visible:** the fake entries that earlier builds
+  pushed stay in that list until newer reports push them off (it keeps 50, and nothing in `src/` reads it);
+  they carry the url `https://anvilry.test/notes/foo`.
+- The suite goes from 1148 to 1195 tests across 96 to 97 files (`chat-cache.test.ts` 85 to 98, the new
+  `instrumentation.test.ts` 23, `api/error/route.test.ts` 12 to 23); the normalize-question timing guard
+  goes from 100 ms to 1 s, so a loaded build machine cannot fail a deploy on it.
+
 ## [3.12.0] — 2026-10-02
 
 **Minor** — a repeated first-turn question that the FAQ cache answers now shows the reasoning its first answer

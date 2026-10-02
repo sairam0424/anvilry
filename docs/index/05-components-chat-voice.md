@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.12.0
+version: v3.13.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.12.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.12.0 (`package.json` 3.12.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
+> Describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40

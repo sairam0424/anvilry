@@ -30,6 +30,51 @@ function enumVal<T extends string>(
   return allowed.includes(val as T) ? (val as T) : fallback;
 }
 
+const CORPUS_STAMP_KEY = "anvilry:corpus:built_at";
+const CORPUS_STAMP_TTL_SECONDS = 7 * 24 * 3600; // 1 week, renewed by every start of the deployment
+
+/** The deployment id inside a stamp written as `<ms>:<deployment id>`, else null (a bare
+ *  timestamp from the previous release, which the SDK hands back as a number). */
+function stampedDeploymentId(stamp: unknown): string | null {
+  if (typeof stamp !== "string") return null;
+  const colon = stamp.indexOf(":");
+  return colon === -1 ? null : stamp.slice(colon + 1);
+}
+
+/**
+ * Keep anvilry:corpus:built_at in step with the DEPLOYMENT, not with the process.
+ *
+ * The FAQ cache tags every entry with this value and treats any other value as "the
+ * corpus changed", so writing it retires every cached answer, and the reasoning summary
+ * stored with it. register() runs on every cold start and every new instance of every
+ * function, so stamping Date.now() each time threw the cache away at each of them.
+ *
+ * Where the host gives a deployment id (VERCEL_DEPLOYMENT_ID) the value is
+ * `<ms of the deployment's first start>:<deployment id>`; a later start of the same
+ * deployment leaves it alone (and renews its expiry), a different id (a deploy, or a
+ * rollback) re-stamps. The /admin/telemetry "Corpus age" tile reads the leading digits
+ * with parseInt. Without an id (self-hosted) every start stamps Date.now(), as before.
+ */
+async function stampCorpus(): Promise<void> {
+  const { redis } = await import("@/lib/redis");
+  if (!redis) return;
+  const deploymentId = process.env.VERCEL_DEPLOYMENT_ID;
+  if (!deploymentId) {
+    await redis.set(CORPUS_STAMP_KEY, Date.now().toString(), {
+      ex: CORPUS_STAMP_TTL_SECONDS,
+    });
+    return;
+  }
+  const stamp = await redis.get<string | number>(CORPUS_STAMP_KEY);
+  if (stampedDeploymentId(stamp) === deploymentId) {
+    await redis.expire(CORPUS_STAMP_KEY, CORPUS_STAMP_TTL_SECONDS);
+    return;
+  }
+  await redis.set(CORPUS_STAMP_KEY, `${Date.now()}:${deploymentId}`, {
+    ex: CORPUS_STAMP_TTL_SECONDS,
+  });
+}
+
 export async function register() {
   // Edge runtime has no access to process.env secrets — skip.
   if (process.env.NEXT_RUNTIME === "edge") return;
@@ -41,6 +86,7 @@ export async function register() {
     vercel_env: enumVal(env.VERCEL_ENV, ["production", "preview", "development"], "local"),
     node_env: enumVal(env.NODE_ENV, ["production", "development", "test"], "development"),
     region: env.VERCEL_REGION ?? env.AWS_REGION ?? "unknown",
+    deployment_id: present(env.VERCEL_DEPLOYMENT_ID), // presence only; see stampCorpus()
 
     // ── Feature flag driver ──────────────────────────────────────────────────
     // FLAG_DRIVER is our custom switch (not a Vercel SDK concept).
@@ -83,23 +129,23 @@ export async function register() {
   // (telemetry spans) and "[vitals]" (web-vitals RUM).
   console.log("[config]", JSON.stringify(config));
 
-  // Stamp corpus build time in Redis on production deploys only.
-  // Use VERCEL_ENV=production to exclude preview deployments — on Vercel, preview
-  // deployments also run with NODE_ENV=production, which would pollute the timestamp.
-  // Falls back to NODE_ENV check for non-Vercel hosts where VERCEL_ENV is absent.
+  // Stamp the corpus in Redis, production only. VERCEL_ENV=production excludes preview
+  // deployments: on Vercel they also run with NODE_ENV=production and would overwrite
+  // the stamp. Falls back to the NODE_ENV check for hosts where VERCEL_ENV is absent.
   const isProductionDeploy =
     process.env.VERCEL_ENV === "production" ||
     (!process.env.VERCEL_ENV && process.env.NODE_ENV === "production");
   if (isProductionDeploy) {
     try {
-      const { redis } = await import("@/lib/redis");
-      if (redis) {
-        await redis.set("anvilry:corpus:built_at", Date.now().toString(), {
-          ex: 7 * 24 * 3600, // 1 week — auto-expires if no new deploy
-        });
-      }
-    } catch {
-      // Fail silently — corpus timestamp is best-effort instrumentation.
+      await stampCorpus();
+    } catch (err) {
+      // Best-effort: a failed write leaves the previous stamp, and the next start of
+      // the deployment finds a different id and tries again. Name only, never the
+      // message: an Upstash error message can echo the whole command.
+      console.warn(
+        "[config] corpus stamp not written:",
+        err instanceof Error ? err.name : "unknown",
+      );
     }
   }
 }

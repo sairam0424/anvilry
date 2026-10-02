@@ -240,3 +240,49 @@ describe("TelemetryDashboard — cost tiles use each model's own verified price"
     );
   });
 });
+
+describe("TelemetryDashboard — the corpus age tile reads the corpus stamp", () => {
+  const HOUR = 3_600_000;
+
+  /** The value and sub line of the "Corpus age" tile for a given `anvilry:corpus:built_at`. */
+  async function corpusTile(stamp: unknown): Promise<{ value: string; sub: string }> {
+    configure(ADMIN_SECRET);
+    headerStore.authorization = basic(ADMIN_SECRET);
+    redisMock.get.mockImplementation(async (key: string) =>
+      key === "anvilry:corpus:built_at" ? stamp : null,
+    );
+    const html = renderToStaticMarkup(await TelemetryDashboard());
+    const m = html.match(
+      /Corpus age<\/span><span[^>]*>([^<]*)<\/span>(?:<span[^>]*>([^<]*)<\/span>)?/,
+    );
+    if (!m) throw new Error('tile "Corpus age" not found');
+    return { value: m[1], sub: m[2] ?? "" };
+  }
+
+  it("reads the leading timestamp of a stamp that carries a deployment id", async () => {
+    // register() writes `<ms of the deployment's first start>:<deployment id>`.
+    const builtAt = Date.now() - 5 * HOUR;
+    expect(await corpusTile(`${builtAt}:dpl_7Gw5ZMBpQA8h9GF832KGp7nwbuh3`)).toEqual({
+      value: "5h ago",
+      sub: `Last deployed: ${new Date(builtAt).toLocaleDateString()}`,
+    });
+  });
+
+  it.each([
+    ["a bare timestamp string", (ms: number) => String(ms)],
+    ["a number, which is how the Upstash SDK returns a numeric string", (ms: number) => ms],
+  ])("still reads %s, as the previous release wrote it", async (_label, make) => {
+    const builtAt = Date.now() - 3 * HOUR;
+    expect(await corpusTile(make(builtAt))).toEqual({
+      value: "3h ago",
+      sub: `Last deployed: ${new Date(builtAt).toLocaleDateString()}`,
+    });
+  });
+
+  it("shows no age until a production deployment has stamped the corpus", async () => {
+    expect(await corpusTile(null)).toEqual({
+      value: "—",
+      sub: "set on production cold start",
+    });
+  });
+});

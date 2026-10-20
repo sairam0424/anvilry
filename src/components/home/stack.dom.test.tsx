@@ -52,6 +52,12 @@ describe("Stack section", () => {
     });
   });
 
+  it("links to the grouped full list on /about", () => {
+    renderStack();
+    const link = screen.getByRole("link", { name: /see the full list/i });
+    expect(link.getAttribute("href")).toBe("/about#skills");
+  });
+
   it("brand tiles carry per-theme brand colour variables; glyph tiles do not", () => {
     renderStack();
     const list = screen.getByRole("list", { name: "Tools and technologies" });

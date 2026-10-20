@@ -32,6 +32,18 @@ test("classic view: navigation to articles page works", async ({ page }) => {
   await expect(page.locator("main")).toBeVisible();
 });
 
+test("classic view: stack wall renders external tool links", async ({ page }) => {
+  await page.goto("/");
+  const links = page.locator("#stack a[target=_blank]");
+  await expect(links.first()).toBeVisible();
+  expect(await links.count()).toBeGreaterThanOrEqual(19);
+  await expect(links.first()).toHaveAttribute("rel", /noopener/);
+  await expect(links.first()).toHaveAttribute("href", /^https:\/\//);
+  // One accessible-name source per tile (aria-label); the SVG is decorative.
+  await expect(links.first()).toHaveAttribute("aria-label", /.+/);
+  await expect(links.first().locator("svg")).toHaveAttribute("aria-hidden", "true");
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

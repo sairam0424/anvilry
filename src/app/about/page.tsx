@@ -51,7 +51,7 @@ export default function AboutPage() {
             </p>
             <p>
               Beyond work, I build open-source AI infrastructure in the open — agent frameworks, code-intelligence
-              engines, and AI-native tooling ({publicProjects.length}&nbsp;public repos). I also compete: Google Code Jam
+              engines, LLM gateways and MCP guardrails, and AI-native tooling ({publicProjects.length}&nbsp;public repos). I also compete: Google Code Jam
               2023
               (AIR 420), Meta Hacker Cup 2022, and Institute Rank 1 on GeeksforGeeks &amp; InterviewBit.
             </p>

@@ -23,17 +23,19 @@ describe("mascot character registry", () => {
 });
 
 describe("mascot flags", () => {
-  it("shows the About portrait and the 404 mascot by default", () => {
+  it("keeps the About portrait OFF until NEXT_PUBLIC_ABOUT_MASCOT is exactly 'true'", () => {
+    expect(isAboutMascotEnabled()).toBe(false);
+    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "1");
+    expect(isAboutMascotEnabled()).toBe(false);
+    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "true");
     expect(isAboutMascotEnabled()).toBe(true);
-    expect(isNotFoundMascotEnabled()).toBe(true);
   });
 
-  it("hides each one only on an explicit 'false'", () => {
-    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "false");
+  it("shows the 404 mascot by default and hides it only on an explicit 'false'", () => {
+    expect(isNotFoundMascotEnabled()).toBe(true);
+    vi.stubEnv("NEXT_PUBLIC_404_MASCOT", "0");
+    expect(isNotFoundMascotEnabled()).toBe(true);
     vi.stubEnv("NEXT_PUBLIC_404_MASCOT", "false");
-    expect(isAboutMascotEnabled()).toBe(false);
     expect(isNotFoundMascotEnabled()).toBe(false);
-    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "0");
-    expect(isAboutMascotEnabled()).toBe(true);
   });
 });

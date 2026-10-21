@@ -34,7 +34,7 @@ export default function AboutPage() {
         <Reveal>
           {/* Portrait: the site's drawn head (src/lib/mascots.ts) beside the intro from `sm`,
               lifted to the heading line; above the intro on phones. It only tracks fine
-              pointers and a tap plays a reaction. NEXT_PUBLIC_ABOUT_MASCOT=false removes it. */}
+              pointers and a tap plays a reaction. Opt-in: NEXT_PUBLIC_ABOUT_MASCOT=true. */}
           <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
             <div className="max-w-2xl space-y-4 text-fg-muted">
             <p>

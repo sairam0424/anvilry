@@ -2062,42 +2062,42 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
-    "e2e/views.spec.ts:181": {
+    "e2e/views.spec.ts:182": {
       "fp": "e613c6c8961d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "test.skip("
     },
-    "e2e/views.spec.ts:184": {
+    "e2e/views.spec.ts:185": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ");"
     },
-    "e2e/views.spec.ts:261": {
+    "e2e/views.spec.ts:262": {
       "fp": "19f5206389e0",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:284": {
+    "e2e/views.spec.ts:285": {
       "fp": "29576b54e255",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "});"
     },
-    "e2e/views.spec.ts:288": {
+    "e2e/views.spec.ts:289": {
       "fp": "8e5c494d0c11",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:293": {
+    "e2e/views.spec.ts:294": {
       "fp": "7ba9677d7b80",
       "citedBy": [
         "02-api-routes.md"

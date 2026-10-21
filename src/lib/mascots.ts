@@ -12,7 +12,8 @@ import crtReactions from "@/assets/mascots/crt-reactions.webp";
  * change here. Static imports give content-hashed `/_next/static/media/` URLs with immutable
  * caching; under Vitest the same import resolves to a plain path string.
  *
- *   gearbot — the site's own head: hero (NEXT_PUBLIC_HERO_MODE=mascot) and the About portrait.
+ *   gearbot — the site's own head: hero (NEXT_PUBLIC_HERO_MODE=mascot) and the About portrait
+ *             (NEXT_PUBLIC_ABOUT_MASCOT=true); both opt-in.
  *   crt     — a CRT monitor with a face, for the 404 kernel-panic page.
  */
 type Sheet = StaticImageData | string;
@@ -32,9 +33,9 @@ export function mascotSheets(name: MascotCharacter): { directions: string; react
   return { directions: url(character.directions), reactions: url(character.reactions) };
 }
 
-/** About-page portrait. On by default; `NEXT_PUBLIC_ABOUT_MASCOT=false` hides it (build-time). */
+/** About-page portrait. OFF by default, like the hero head; `NEXT_PUBLIC_ABOUT_MASCOT=true` shows it (build-time). */
 export function isAboutMascotEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_ABOUT_MASCOT !== "false";
+  return process.env.NEXT_PUBLIC_ABOUT_MASCOT === "true";
 }
 
 /** 404-page mascot. On by default; `NEXT_PUBLIC_404_MASCOT=false` hides it (build-time). */

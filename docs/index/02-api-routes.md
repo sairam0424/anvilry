@@ -3,14 +3,14 @@ kind: doc
 title: API Routes, Machine-Readable Endpoints & Instrumentation
 domain: [content]
 status: current
-version: v3.14.0
+version: v3.15.0
 ---
 
 # API Routes, Machine-Readable Endpoints & Instrumentation
 
-> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer while `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron and a shared `src/lib/cron-auth.ts`; one admin check (`isAdminAuthorized`) shared by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk mode gated on `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Line citations are against that tree.
+> Describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. main `a929932` plus five post-`a929932` fixes: notes hidden at the data layer while `NOTES_ENABLED` is off; per-class rate-limit buckets (`chat` / `voice` / `beacon`) with a `CRON_SECRET` bypass for the eval cron and a shared `src/lib/cron-auth.ts`; one admin check (`isAdminAuthorized`) shared by `src/proxy.ts`, `requireAdmin` and the telemetry page; command-palette talk mode gated on `isVoiceViewActive`; `MIN_ROUTES = 17` in the bundle budget plus removal of dead components. Line citations are against that tree.
 
 **Scope:** `src/app/api/**`, `src/app/.well-known/vercel/flags/route.ts`, `src/app/feed.xml/route.ts`,
 `src/app/llms.txt/route.ts`, `src/app/llms-full.txt/route.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`,
@@ -298,7 +298,7 @@ Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 - **Role:** Flag-aware sitemap generator (`/sitemap.xml`).
 - **Exports:** `default sitemap(): MetadataRoute.Sitemap`.
 - **Reads / depends on:** `@/lib/content` (all four collections), `@/lib/writing-flags` (`ARTICLES_ENABLED`, `NOTES_ENABLED`, `STATS_ENABLED`, `SEARCH_ENABLED`).
-- **Consumed by:** `robots.ts:16` points at it; `e2e/views.spec.ts:275`; probed by `seo-audit` and `health-check` (P1).
+- **Consumed by:** `robots.ts:16` points at it; `e2e/views.spec.ts:296`; probed by `seo-audit` and `health-check` (P1).
 - **Behaviour notes:** static routes are `["", "/work", "/projects", "/about", "/resume", "/mcp"]` (:13-19) with `priority` 1 for `""` and 0.8 otherwise. Priorities: work 0.7, projects 0.6, listing pages 0.6, note/article detail 0.5, `/stats` 0.6, `/search` 0.5. `changeFrequency` is `"monthly"` everywhere except the `/notes` and `/articles` listing pages (`"weekly"`). `lastModified` is set only on note and article entries, from the item's real `date` (the listing page uses the newest entry's date, :38-57, :59-85); static, work, project, `/stats` and `/search` entries carry none.
 - **Gotchas / invariants:** notes and articles are included only when the flag **and** non-empty content both hold (`NOTES_ENABLED && allNotes.length`, :41; `ARTICLES_ENABLED && indexableArticles.length`, :68). Articles that only point at a note (`linkedNote` set, no `externalUrl`) are filtered out while `NOTES_ENABLED` is false (:64-66) so the sitemap never lists a URL that 404s; `allArticles` itself already drops these at the data layer (`isNoteOnlyArticle` in `src/lib/content.ts`, a superset that also covers an `externalUrl` pointing at an own `/notes/` URL). `base` is hardcoded (:10). `.md` passthrough URLs are not listed.
 
@@ -310,7 +310,7 @@ Schedules come from `vercel.json` (Vercel Cron issues **GET**):
 ### `src/app/llms.txt/route.ts` and `src/app/llms-full.txt/route.ts`
 - **Roles:** `/llms.txt` returns `buildLlmsTxt()` — the curated index (~1-2KB); `/llms-full.txt` returns `buildCorpus()` — the full chatbot grounding corpus (~4-8KB).
 - **Exports:** `GET` in both; both set `Content-Type: text/plain; charset=utf-8`.
-- **Consumed by:** `/llms.txt` linked from `src/components/site-footer.tsx:105`, checked by `e2e/views.spec.ts:270`; both probed by `health-check/route.ts:63-64` with a **`< 1000` chars ⇒ fail** body-length assertion.
+- **Consumed by:** `/llms.txt` linked from `src/components/site-footer.tsx:105`, checked by `e2e/views.spec.ts:291`; both probed by `health-check/route.ts:63-64` with a **`< 1000` chars ⇒ fail** body-length assertion.
 - **Gotchas / invariants:** `llms-full.txt`'s docblock (:13-18) records that `dynamic = "force-dynamic"` was removed both because `cacheComponents` rejects it and because the original rationale was wrong — `buildCorpus()` reads build-time Velite content, so a static route already regenerates on every deploy.
 
 ### `src/proxy.ts`

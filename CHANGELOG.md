@@ -4,6 +4,50 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.15.0] — 2026-10-21
+
+**Minor** — Anvilry gets a drawn head that watches the cursor. A gearbot mascot can front the home hero and
+sit beside the About intro (both opt-in, so production is unchanged until the flags are set), and the 404
+page always shows one of thirteen things-with-a-face above its kernel-panic terminal, a different one on
+every visit. It is a minor because the 404 page every lost visitor sees gains a visual, the hero gains a
+third `NEXT_PUBLIC_HERO_MODE` value and two new build-time flags appear; no route or API changes.
+
+### Added
+- **A page-mascot head for the hero, opt-in** (#324). `NEXT_PUBLIC_HERO_MODE=mascot` renders the
+  `gearbot` character in flow above the name eyebrow at 9rem below `lg`, and in the right gutter beside
+  the headline from `lg` (13rem; 15rem from `xl`, where the head extends 1.5rem into the page margin so
+  its left edge stays on the gutter line). The head turns toward the pointer in eight directions with a
+  70 px dead zone and a hysteresis band, a click plays blink → heart / sparkle / delighted, four quick
+  clicks go dizzy, and the 420 ms squash is skipped under `prefers-reduced-motion` (the expression still
+  swaps). Tracking only attaches on fine-pointer devices; a tap still reacts. The knowledge-graph default
+  and the `avatar` mode are untouched. **Operator-visible:** set the flag in Vercel and redeploy; the
+  directions sheet is preloaded from the server-rendered head.
+- **An About portrait, opt-in** (#324). With `NEXT_PUBLIC_ABOUT_MASCOT=true` the same head sits beside
+  "I'm Sairam Ugge." from `sm` (176 px, level with the heading) and above the intro on phones.
+- **A rotating 404 mascot, on by default** (#324). One of thirteen characters (`crt`, `tv`, `radio`,
+  `toaster`, `clockwork`, `cube`, `drone`, `knight`, `lantern`, `postbot`, `rocket`, `scout`, `penguin`)
+  appears above the panic terminal, picked in the browser per view and never the same as the previous one
+  in that tab (`sessionStorage` `anvilry:404:mascot`); `/_not-found` stays a static file, so scanner
+  traffic never triggers a server render. Each character has its own screen-reader name
+  ("Boop the CRT monitor"). `NEXT_PUBLIC_404_MASCOT=false` removes it.
+- The component is vendored from [page-mascot](https://github.com/nilbuild/page-mascot) 0.1.0 (MIT,
+  Kamran Ahmed) as `src/components/mascot/mascot.tsx` with its sector math in
+  `src/lib/mascot-geometry.ts`; the fourteen sprite-sheet pairs under `src/assets/mascots/` are the
+  project's drawn characters, credited in `THIRD_PARTY_NOTICES.md`. Sheets ship as content-hashed,
+  immutable static media; a page downloads only the pair it renders.
+- The suite goes from 1208 to 1246 tests across 100 to 107 files (geometry, Mascot, SiteMascot,
+  registry and picker, flags, Hero modes, NotFoundMascot) and Playwright gains two assertions in
+  `e2e/views.spec.ts` (the About portrait is absent on a flag-less build; the 404 shows a rotating
+  mascot and reacts to a click).
+
+### Changed
+- First-load JavaScript for `/` is **1,188,350 B**, 4.6 KB below v3.14.0: the root `not-found.tsx` is
+  a client component whose graph Next bundles into the shared layout chunk, so the 404 mascot module
+  is loaded with `dynamic()` behind a same-size fallback and the flag readers live in an image-free
+  `src/lib/mascot-flags.ts`; the sheet registry never reaches a shared client chunk.
+- `src/types/next-image-assets.d.ts` references Next's image types so a bare `tsc` (CI types before
+  it builds; `next-env.d.ts` is git-ignored) can see static `.webp` imports.
+
 ## [3.14.0] — 2026-10-21
 
 **Minor** — the home page now shows the tools behind the case studies as a wall of brand glyphs, and the

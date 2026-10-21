@@ -3,21 +3,21 @@ kind: doc
 title: Config, Build, CI/CD & Infrastructure
 domain: [content]
 status: current
-version: v3.14.0
+version: v3.15.0
 ---
 
 # Config, Build, CI/CD & Infrastructure
 
-> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-**Verified against:** Anvilry v3.14.0 (`package.json` version `3.14.0`), i.e. `main` @ `a929932` (`package.json` version `3.6.0`) **plus five post-`a929932` fixes**:
+**Verified against:** Anvilry v3.15.0 (`package.json` version `3.15.0`), i.e. `main` @ `a929932` (`package.json` version `3.6.0`) **plus five post-`a929932` fixes**:
 (1) notes are hidden at the data layer when `NEXT_PUBLIC_NOTES_ENABLED` is off
 (`src/lib/content.ts`); (2) rate limiting has three per-class buckets — `chat`, `voice`, `beacon` — and a valid
 `CRON_SECRET` bearer (shared `src/lib/cron-auth.ts`) bypasses it so the eval cron does not self-throttle; (3) admin
 auth is one compare, `isAdminAuthorized` (`src/lib/admin-auth.ts`), shared by `src/proxy.ts`, `requireAdmin` and the
 telemetry page; (4) the command-palette talk-mode entry is gated by `isVoiceViewActive`; (5) `MIN_ROUTES = 17` in
 `scripts/bundle-budget.mjs` and removal of dead components. Fixes 1-3 and 5 change facts on this page; fix 4 does not
-touch this scope. Everything below was re-read from the `a929932`-plus-fixes tree, not carried over from the previous edition; `package.json`'s own version, bumped at the release cut, is `3.14.0`.
+touch this scope. Everything below was re-read from the `a929932`-plus-fixes tree, not carried over from the previous edition; `package.json`'s own version, bumped at the release cut, is `3.15.0`.
 
 **Scope:** `package.json`, `.nvmrc`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
 `postcss.config.mjs`, `pnpm-workspace.yaml`, `patches/`, `vercel.json`, `Makefile`, `next-env.d.ts`, `.gitignore`,
@@ -35,7 +35,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 
 | File | Role | Key exports |
 |---|---|---|
-| `package.json` | name `anvilry`, version `3.14.0`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 18 devDeps. **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.3.5`, `react`/`react-dom 19.3.0`, `@modelcontextprotocol/sdk 1.26.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
+| `package.json` | name `anvilry`, version `3.15.0`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 18 devDeps. **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.3.5`, `react`/`react-dom 19.3.0`, `@modelcontextprotocol/sdk 1.26.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
 | `.nvmrc` | Single line, `22`. Matches `engines.node` and the CI pin (`.github/workflows/ci.yml:26-29`) | n/a |
 | `next.config.ts` | 252-line Next config: enforced CSP + 6 other security headers (7 total, including COOP/CORP), `upgrade-insecure-requests` only when `process.env.VERCEL` is set, per-route `/resume` header override, 4 `.md` rewrites, `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper (**local-only** — inert unless `pnpm analyze` supplies both `ANALYZE=true` *and* `--webpack`) | `default` — `withBundleAnalyzer(nextConfig)` |
 | `tsconfig.json` | `strict`, `noEmit`, `allowJs`, `moduleResolution: "bundler"`, `target: ES2017`, `@/*` → `./src/*`, `next` TS plugin. `include` is `**/*.ts`, `**/*.tsx`, `**/*.mts` plus `.next/types` and `.next/dev/types`; `exclude` is only `node_modules` — so `scripts/`, `e2e/` and tests are all type-checked | n/a (JSON) |
@@ -45,7 +45,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 | `patches/@react-three__fiber@9.7.0.patch` | 42-line `pnpm patch` output: adds `if (!target) return;` to `connect()` in three `dist/events-*` bundles (esm, cjs.prod, cjs.dev) — upstream pmndrs/react-three-fiber#3754. Keyed to exactly `@react-three/fiber@9.7.0`; the lockfile records it at `pnpm-lock.yaml:21-24` | n/a (patch) |
 | `vercel.json` | Only key is `crons` — 5 cron schedules mapped to `/api/cron/*` routes. No `buildCommand`, `framework`, `regions`, `functions` or Node setting | n/a (JSON) |
 | `Makefile` | 373-line, 36-target ops runbook (`.DEFAULT_GOAL := help`, self-documenting `##` awk renderer) | n/a (make) |
-| `next-env.d.ts` | Generated Next ambient types + imports `.next/types/routes.d.ts` and `root-params.d.ts`. **Untracked and gitignored** (`.gitignore:42`, confirmed via `git check-ignore -v`) — written by `next dev`/`next build` (`node_modules/next/dist/lib/typescript/writeAppTypeDeclarations.js`), so it is absent from a fresh worktree until one of them runs; carries a "should not be edited" notice. Listed first in `tsconfig.json:26` `include` | n/a (d.ts) |
+| `next-env.d.ts` | Generated Next ambient types + imports `.next/types/routes.d.ts` and `root-params.d.ts`. **Untracked and gitignored** (`.gitignore:42`, confirmed via `git check-ignore -v`) — written by `next dev`/`next build` (`node_modules/next/dist/lib/typescript/writeAppTypeDeclarations.js`), so it is absent from a fresh worktree until one of them runs; carries a "should not be edited" notice. Listed first in `tsconfig.json:26` `include`. Since v3.15.0 the **tracked** `src/types/next-image-assets.d.ts` repeats its `/// <reference types="next/image-types/global" />` so a bare `tsc` (CI's Type-check runs before any build exists) still types the static `.webp` sprite-sheet imports | n/a (d.ts) |
 | `.gitignore` | 69 lines. Ignores `.env*` except `.env.example` (`:34-35`), `.vercel` (`:38`), `next-env.d.ts` (`:42`), `.velite` (`:45`), `.gstack/`, the generated Pagefind index `/public/pagefind/` (`:50`), `scratch-pad/`, Playwright output (`test-results/`, `playwright-report/`, `.playwright-mcp/`, `:56-58`), and the agent-tooling block `ruvector.db` / `agentdb.rvf` / `agentdb.rvf.*` / `.swarm/` / `.claude-flow/` / `.claude/proven-config.json` / `.claude/.proven-config-version` (`:60-69`) | n/a |
 | `.env.example` | 237-line annotated env template — the only committed env file; documents the core variables with rationale, but several real ones are absent (see the env table) | n/a |
 | `.coderabbit.yaml` | CodeRabbit review config: `quiet` profile, auto-review only for base branch `^develop$`, `dependabot[bot]` ignored, auto-pause after 5 reviewed commits, eslint + gitleaks tools on (`:6-14`, `:24-28`) | n/a (YAML) |
@@ -171,7 +171,7 @@ in the `ci`, `claims-integrity-autocommit` and `e2e` jobs (`.github/workflows/ci
 
 **Node version is pinned three ways, and the pin is load-bearing.** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }`, `.nvmrc:1` is `22` and every `setup-node` step in `ci.yml` uses `node-version: 22`
-(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:617-620` records the
+(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:661-664` records the
 failure that motivated it: a contributor on Node 26 saw **9 failing tests and a red `pnpm build` with no explanation**,
 because Node 26 exposes a native `localStorage` global (unavailable without `--localstorage-file`) that collides with
 vitest's happy-dom global injection. Widening the range re-opens that trap. Limits: `engines` **warns rather than
@@ -267,7 +267,7 @@ All defined in `next.config.ts`. `securityHeaders` (`next.config.ts:89-115`) has
 
 **`worker-src` outlived the package it was written for.** The directive was added for an R3F
 `@react-three/offscreen` worker/`OffscreenCanvas` offload that **never existed in `src/`** — that package was
-declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:636-640`). The
+declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:680-684`). The
 directive itself is still correct and still needed, but for a different reason than the one it was written for:
 `'self'` is what lets pdf.js start its worker. `blob:` is the residue — a repo-wide grep finds **no
 `new Worker(` and no `OffscreenCanvas` anywhere under `src/`**, and the only `URL.createObjectURL` call sites are
@@ -329,7 +329,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `FAQ_CACHE_SEMANTIC_MATCH` | No (default off) | `src/lib/chat-cache.ts:152` (`isSemanticMatchEnabled()`, `=== "true"`) | Adds a second lookup tier: a Bedrock Titan Embeddings V2 (`amazon.titan-embed-text-v2:0`, 512 dims, 5 s timeout — `src/lib/faq-embeddings.ts:20-28`) similarity scan, threshold 0.92 (`chat-cache.ts:298`) | One extra Bedrock `InvokeModel` per cache miss when on (`.env.example:55-65`). Exact-match tier constants: TTL 24 h (`chat-cache.ts:68`), index cap 500 (`:71`), answers over 4,000 chars are never cached (`:84`); a reasoning summary is stored beside the answer only when it is 1 to 4,000 chars (`:90`) and the normalized question is at most 200 chars (`:96`), and a semantic hit never carries it (the `FaqCacheHit` semantic variant omits the field, `:124`; `faqCacheSemanticGet` deletes it, `:329`) |
 | `GITHUB_TOKEN` | No | `src/lib/github.ts:96`; `src/app/api/github/stats/route.ts:19` | Raises the GitHub API rate limit for the `/projects` + `/stats` feeds | **Not documented in `.env.example` at all.** Server-only — `src/lib/github.ts:9` notes it must never reach the client (no `server-only` package; the single server-component import site is the guarantee) |
 | `FLAG_DRIVER` | No (default `local`) | `src/lib/flags.ts:13` | `"vercel"` → runtime Flags SDK; anything else → build-time env read | Evaluated **once at process start**; changing it without a restart has no effect (`src/lib/flags.ts:12`) |
-| `FLAGS_SECRET` | Required iff `FLAG_DRIVER=vercel` | `src/lib/flags.ts:51` (presence only, logged) | Signs Flags SDK override cookies | Presence-checked, never used directly outside the log line (`.env.example:235-237`) |
+| `FLAGS_SECRET` | Required iff `FLAG_DRIVER=vercel` | `src/lib/flags.ts:51` (presence only, logged) | Signs Flags SDK override cookies | Presence-checked, never used directly outside the log line (`.env.example:243-245`) |
 | `FLAGS` | No | `src/instrumentation.ts:50` (presence only) | The **Vercel Flags SDK's own** connection string (not a project concept) | Undocumented in `.env.example`; only surfaced as `flags_sdk_configured` in the `[config]` cold-start log |
 | `EXTENDED_THINKING` | No (default on) | `src/app/api/chat/route.ts:283` | Server-side toggle; `"false"` disables extended thinking and also stops an exact-tier FAQ-cache hit from replaying its stored reasoning summary (`src/app/api/chat/route.ts:309-311`) | Undocumented in `.env.example`. Distinct from the client-side `NEXT_PUBLIC_EXTENDED_THINKING` |
 | `NEXT_PUBLIC_BUILD_YEAR` | Set by build | written `next.config.ts:127`; read `src/components/site-footer.tsx:239` (`?? "2026"`) | Stable footer copyright year | Exists because under `cacheComponents`, `new Date()` during render fails the prerender and cannot be deferred with `instant = false` (`next.config.ts:121-126`) |
@@ -342,8 +342,8 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | No | `src/lib/writing-flags.ts:45` | Recommendations section | — |
 | `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | No | `src/lib/writing-flags.ts:50` | Inkforge-pipeline articles | Undocumented in `.env.example` |
 | `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | No | `src/lib/writing-flags.ts:55` | Homepage GitHub stats strip | — |
-| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | No (default `linkedNote`) | `src/lib/writing-flags.ts:78` | Cross-platform article dedup key; alt value `canonicalUrl` | `.env.example:221-226` |
-| `NEXT_PUBLIC_CHROME_TTS_BANNER` | No | `src/lib/writing-flags.ts:93` | Chrome TTS bug warning in talk mode | Default off — Chrome fixed the `paused_` guard bug (`.env.example:219`) |
+| `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | No (default `linkedNote`) | `src/lib/writing-flags.ts:78` | Cross-platform article dedup key; alt value `canonicalUrl` | `.env.example:229-234` |
+| `NEXT_PUBLIC_CHROME_TTS_BANNER` | No | `src/lib/writing-flags.ts:93` | Chrome TTS bug warning in talk mode | Default off — Chrome fixed the `paused_` guard bug (`.env.example:227`) |
 | `NEXT_PUBLIC_ENABLED_VIEWS` | No (unset = all) | `src/lib/enabled-views.ts:23` | CSV of views beyond Classic | **Empty string ≠ unset**: `""` means Classic-only, unset means all (`.env.example:94-101`) |
 | `NEXT_PUBLIC_ANVIL_ORB_MODE` | No (default `inplace`) | `src/components/chat/header-orb-trigger.tsx:36` | `inplace` \| `modal` \| `off` | — |
 | `NEXT_PUBLIC_ENABLE_ANVIL_ORB` | No (legacy) | `src/components/chat/header-orb-trigger.tsx:38` | `"false"` maps to `off` | Legacy alias retained for back-compat (`.env.example:91-92`) |
@@ -353,15 +353,17 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_ORB_POSTPROCESSING` | No (default off) | `src/components/chat/voice-orb-3d.tsx:300` | Bloom + Vignette + Noise + CA + Fluid on the 3D orb | Gated to high-tier devices (≥4 GB RAM, ≥4 cores) per `.env.example:179-180` |
 | `NEXT_PUBLIC_INK_TRANSITION` | No (default off) | `src/components/view-context.tsx:125` | Opt-in WebGL2 ink-bleed on view switch; the default is the plain View Transitions crossfade (`src/components/view-context.tsx:120-124`) | `prefers-reduced-motion` short-circuits before either path and swaps the view instantly (`src/components/view-context.tsx:106-117`) |
 | `NEXT_PUBLIC_SKILL_TREE` | No (default off) | `src/components/game/game-view.tsx:57` | SVG RPG skill tree in the Play view | — |
-| `NEXT_PUBLIC_404_ORB` | No (default off) | `src/app/not-found.tsx:34` | Distressed orb on the 404 page | — |
+| `NEXT_PUBLIC_404_ORB` | No (default off) | `src/app/not-found.tsx:46` | Distressed orb on the 404 page | — |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | No (default off) | `src/components/site-footer.tsx:118` | Footer visitor-count badge | Requires both Upstash vars (`.env.example:189-190`) |
 | `NEXT_PUBLIC_VOICE_TEST_AUDIO` | No (default off) | `src/components/chat/talk-mode.tsx:494` | "🔊 Test audio" button (dev/QA only) | — |
 | `NEXT_PUBLIC_RESUME_VARIANTS` | No (default off) | `src/app/resume/page.tsx:29`; `src/components/home/resume-view.tsx:46`; `src/components/command-palette-content.tsx:365`; `src/components/game/terminal/commands.ts:297` | Show every `resumeVariants` entry vs only `resumeVariants[0]` | **Undocumented in `.env.example`** despite 4 call sites. Currently a **no-op in effect**: `resumeVariants` has a single entry (`src/lib/profile.ts:136-142`), so "all" and "first" are the same list |
-| `NEXT_PUBLIC_HERO_MODE` | No | `src/components/home/hero.tsx:25`; `src/components/hero-avatar/index.tsx:50` | Selects hero treatment (`"avatar"` puts the 1.05 MB GLB on the hero path) | Undocumented in `.env.example`; referenced by `src/lib/avatar-glb.test.ts:18-20` |
-| `NEXT_PUBLIC_AVATAR_POSITION` | No (default `hero-side`) | `src/components/hero-avatar/index.tsx:51` | Avatar placement | Undocumented in `.env.example` |
-| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:636-640`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:599-601`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:99`) |
+| `NEXT_PUBLIC_HERO_MODE` | No | `src/components/home/hero.tsx:26`; `src/components/hero-avatar/index.tsx:50` | Selects hero treatment (`"avatar"` puts the 1.05 MB GLB on the hero path; `"mascot"` renders the drawn page-mascot head, `src/components/home/hero-mascot.tsx`) | Documented in `.env.example:199-201`; referenced by `src/lib/avatar-glb.test.ts:18-20` |
+| `NEXT_PUBLIC_AVATAR_POSITION` | No (default `hero-side`) | `src/components/hero-avatar/index.tsx:51` | Avatar placement | Documented in `.env.example:202` |
+| `NEXT_PUBLIC_ABOUT_MASCOT` | No (default off) | `src/lib/mascot-flags.ts:11` | About portrait beside the intro (`src/app/about/page.tsx`); only the exact string `"true"` enables it | Documented in `.env.example:203` |
+| `NEXT_PUBLIC_404_MASCOT` | No (default on) | `src/lib/mascot-flags.ts:16` | Rotating thirteen-character 404 mascot (`src/components/mascot/not-found-mascot.tsx`); only the exact string `"false"` removes it | Documented in `.env.example:204` |
+| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:680-684`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:643-645`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:99`) |
 | `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | No (default off) | `src/components/chat/chat-view.tsx:259` | Image/file attachments in chat | Undocumented in `.env.example` |
-| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:651-653`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
+| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:695-697`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
 | `NEXT_PUBLIC_EXTENDED_THINKING` | No (default on) | `src/components/chat/chat-messages.tsx:165` | Client-side thinking-block rendering (`!== "false"`) | Undocumented in `.env.example` |
 | `VERCEL` | Platform | `next.config.ts:84` | Set only by Vercel's own infrastructure (Preview and Production); gates `upgrade-insecure-requests` in the CSP | Never set by `next dev` or `next start`, even in production mode — this is what keeps local WebKit/Playwright `mobile-safari` runs working (see the CSP table) |
 | `VERCEL_URL` | Platform | `src/app/api/chat/route.ts:39-40`; `cron/{eval:105-106, github-sync:32-33, seo-audit:20-21}`; `src/lib/health-expectations.ts:56` | Self-referential base URL | Set by Vercel; absent locally. **`cron/health-check` never reads it directly** — it resolves its base through `probeBase()` (`src/app/api/cron/health-check/route.ts:155`), where `VERCEL_URL` is only the *fallback* (`src/lib/health-expectations.ts:56`). `VERCEL_URL` is the per-deployment host, which is SSO-protected on this project; `src/lib/health-expectations.test.ts:140-145` asserts the route never reads `process.env.VERCEL_URL` directly |
@@ -509,7 +511,7 @@ Three `ignore` entries on the npm ecosystem, each with a recorded root cause:
   `@babel/eslint-parser` lacks `ScopeManager#addGlobals`. Re-check trigger: `jsx-eslint/eslint-plugin-react#4022`
   (`:95-101`).
 
-**Gotcha:** `CHANGELOG.md:691-692` records that Dependabot reads `dependabot.yml` from the **default branch
+**Gotcha:** `CHANGELOG.md:735-736` records that Dependabot reads `dependabot.yml` from the **default branch
 only**, so these ignores were inert while they lived on `develop`.
 
 **CodeRabbit** (`.coderabbit.yaml`): `quiet` profile, auto-review only when the PR base is `^develop$`
@@ -522,7 +524,7 @@ it — `gitleaks.yml`'s header records it "currently lives only on develop" (`gi
 
 **`package.json` has no `pnpm` field at all.** Every setting group lives in `pnpm-workspace.yaml`, the single source
 of truth: two groups moved there in v3.5.0, one was already there, `allowBuilds` was added in v3.6.0 (see
-`CHANGELOG.md:450-490`). The `patchedDependencies` entry, the exact `fast-uri` pin and the `browserslist` / `qs` overrides landed later and have
+`CHANGELOG.md:494-534`). The `patchedDependencies` entry, the exact `fast-uri` pin and the `browserslist` / `qs` overrides landed later and have
 no CHANGELOG entry (`grep -n "browserslist\|patchedDependencies" CHANGELOG.md` finds nothing):
 
 | Setting | Location | Reads it | Value |
@@ -548,7 +550,7 @@ resolved tree and runs both inside `pnpm build` (via `vitest run`) and in the `i
 `13-dependencies-and-versions.md`.
 
 **Why it moved out of `package.json`, and why this counts as a security fix** (`pnpm-workspace.yaml:1-12`,
-`CHANGELOG.md:623-633` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
+`CHANGELOG.md:667-677` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
 `package.json`**. It prints `The "pnpm" field in package.json is no longer read by pnpm` and skips it — a warning line
 that reads like boilerplate. Nothing was broken yet, because `pnpm-lock.yaml` already encoded the resolved graph and CI
 pins pnpm 10 (`ci.yml:24`) — but **one `pnpm install` on pnpm 11 would have regenerated the lockfile without the
@@ -560,11 +562,11 @@ pnpm 10 → byte-identical again (the proof CI's resolution does not move); then
 exit 0. The ten pins that existed at the time were re-confirmed **applied in the resolved graph, not merely declared**:
 `hono` 4.13.2 · `@hono/node-server` 1.19.17 · `ip-address` 10.5.0 · `fast-uri` 3.1.5 · `js-yaml` 4.3.1 ·
 `postcss` 8.5.23/8.5.26 · `sharp` 0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9
-(`CHANGELOG.md:629-633`).
+(`CHANGELOG.md:673-677`).
 
 This is also what unblocked the v3.5.0 dependency removals: pruning `@react-three/rapier` and
 `@react-three/offscreen` requires regenerating the lockfile, which was unsafe until the overrides lived somewhere
-both pnpm majors read — `CHANGELOG.md:636-637` records the removal as "deferred until the overrides migration
+both pnpm majors read — `CHANGELOG.md:680-681` records the removal as "deferred until the overrides migration
 made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), which also added `.nvmrc` and
 `engines.node`. The third package the lockfile lost was `mitt`, a transitive of the two removed packages.
 
@@ -573,28 +575,28 @@ made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), wh
 one (`pnpm why <pkg>` plus the 3.4.2 CHANGELOG entry). The YAML carries those comments; `package.json` never could.
 Its header at `:5` still says "the ten security `overrides` shipped in v3.4.2" — historically accurate, because it
 is talking about that release. The lockfile mirrors all twelve ranges verbatim at `pnpm-lock.yaml:7-19`. The advisories
-for the first ten are transcribed from `CHANGELOG.md:645-674` (release 3.4.2, "resolves all 23 open Dependabot
-advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:644-645`); the last two are transcribed from the YAML
+for the first ten are transcribed from `CHANGELOG.md:689-718` (release 3.4.2, "resolves all 23 open Dependabot
+advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:688-689`); the last two are transcribed from the YAML
 comments, because no CHANGELOG entry covers them.
 
 | Override | Range pinned | Advisory / reason as stated in the source |
 |---|---|---|
-| `hono` | `^4.12.34` | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:657-659`) |
-| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:667`) |
-| `ip-address` | `^10.3.1` | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:654-656`) |
-| `fast-uri` | **exact** `3.1.6` (was `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:661`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
-| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:660`) |
-| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:668-669`) |
+| `hono` | `^4.12.34` | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:701-703`) |
+| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:711`) |
+| `ip-address` | `^10.3.1` | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:698-700`) |
+| `fast-uri` | **exact** `3.1.6` (was `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:705`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
+| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:704`) |
+| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:712-713`) |
 | `brace-expansion@1` | `^1.1.16` | (high) — the 1.x line, patched **within its line** |
-| `brace-expansion@>=3` | `^5.0.7` | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:662-664`) |
-| `sharp` | `^0.35.0` | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:665-666`) |
-| `body-parser` | `^2.3.0` | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:670`) |
+| `brace-expansion@>=3` | `^5.0.7` | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:706-708`) |
+| `sharp` | `^0.35.0` | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:709-710`) |
+| `body-parser` | `^2.3.0` | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:714`) |
 | `browserslist` | **exact** `4.28.8` | GHSA-covered crash/prototype-write + OOM (Dependabot #54/#55), transitive via `next` → `styled-jsx` and `eslint-config-next` → `@babel/core`. Exact for the same `minimumReleaseAge` reason as `fast-uri`: 4.28.8 (2026-08-08) has aged past the gate (`pnpm-workspace.yaml:34-38`) |
 | `qs` | **exact** `6.16.0` | GHSA-covered DoS + array-limit bypass (Dependabot #53/#56), transitive via `body-parser` → `express` → `@modelcontextprotocol/sdk`. 6.16.0 (2026-08-29) is the only patched version so far — newer than the usual aged-pin margin, but with no older patched release to fall back to; if pnpm 11's release-age gate rejects it, "that's the CI signal to wait and retry, not a reason to skip the fix" (`pnpm-workspace.yaml:39-44`) |
 
 Root cause for needing overrides at all: "Six were transitive and lockfile-pinned, so `pnpm update` could not
 move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which is why Dependabot reported
-`security_update_not_possible`" (`CHANGELOG.md:672-674`). `package.json:29` does indeed pin
+`security_update_not_possible`" (`CHANGELOG.md:716-718`). `package.json:29` does indeed pin
 `"@modelcontextprotocol/sdk": "1.26.0"` with no range operator. `pdfjs-dist` was fixable by a direct bump
 (`^6.2.108`, `package.json:48`) rather than an override. The exact pins (`fast-uri`, `browserslist`, `qs`) trade
 that away: they stop floating, so a later patch release is missed until someone bumps them deliberately.
@@ -979,7 +981,7 @@ project" now quotes the full `build` chain, including `vitest run` and `pagefind
   indirectly), which would put production on a different major than the `22` that `.nvmrc`, `engines.node` and every CI
   job use — the live project setting itself was not checked.
 - **Whether `MAX_FIRST_LOAD_BYTES = 1_336_000` (`scripts/bundle-budget.mjs:72`) is still comfortably above the
-  largest route.** The v3.14.0 cut measured `/` at 1,183,605 B (152,395 B under the ceiling) but not the other 16 routes; the ~2,479 B headroom is the docblock's own arithmetic against its
+  largest route.** The v3.14.0 cut measured `/` at 1,183,605 B and the v3.15.0 cut at 1,188,350 B (147,650 B under the ceiling), but not the other 16 routes; the ~2,479 B headroom is the docblock's own arithmetic against its
   quoted `/` measurement (`:61-67`). Every byte count in that docblock was measured on macOS locally; the gate also
   runs on `ubuntu-latest`, and the script states byte-exact determinism between the two is **not** verified. With
   ~0.19% margin, small global additions can turn CI red.

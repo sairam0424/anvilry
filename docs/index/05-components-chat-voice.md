@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.14.0
+version: v3.15.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows).
+> Describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows). v3.15.0 (the page-mascot head) changes no file in this scope; only the `app/not-found.tsx` consumer lines cited below moved and are already re-pointed.
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40
@@ -456,7 +456,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/voice-orb.tsx` / `voice-orb-canvas.tsx` / `voice-orb-3d.tsx`
 - **Role:** The orb renderer stack. `VoiceOrb` selects; `VoiceOrbCanvas` is the universal baseline; `VoiceOrb3D` is the desktop R3F enhancement.
 - **Exports:** `VoiceOrb`, `VoiceOrbCanvas`, `VoiceOrb3D` — all take `{ level: React.RefObject<number>, state: VoiceSessionState, size? }`; `VoiceOrb3D` additionally takes `errorMode?`.
-- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
+- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:30` with `state={"idle"}`.
 - **Behaviour notes:**
   - `use3D = isDesktop && webgl && !reduced && !glFailed` (`voice-orb.tsx:42`); the 3D orb is wrapped in `WebGLBoundary` whose `onFail` flips permanently to the canvas orb (:44-50). `VoiceOrb3D` is lazy so three/R3F never enters the talk-mode bundle on mobile / reduced-motion / no-WebGL (:11-16).
   - `VoiceOrbCanvas` draws a single static ring and returns early (no rAF loop) under `prefers-reduced-motion` (:54-63). Otherwise one rAF loop reads `level.current` directly — never through React state (:69-118). DPR is capped at 2 (:45). Accent is hard-coded `#38e1ff` to match `--accent` (:19).

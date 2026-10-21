@@ -11,6 +11,7 @@ import {
 import { profile, impactMetrics } from "@/lib/profile";
 import { HeroGraph } from "@/components/hero-graph";
 import { HeroAvatar } from "@/components/hero-avatar";
+import { HeroMascot, HeroMascotBackdrop } from "@/components/home/hero-mascot";
 import { GithubStatsStrip } from "@/components/github-stats-strip";
 import { GITHUB_STATS_ENABLED } from "@/lib/writing-flags";
 
@@ -26,9 +27,18 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden">
-      {/* WebGL slot: avatar when NEXT_PUBLIC_HERO_MODE=avatar, otherwise knowledge-graph (default). */}
-      {heroMode === "avatar" ? <HeroAvatar /> : <HeroGraph />}
+      {/* Visual slot by NEXT_PUBLIC_HERO_MODE: "avatar" = 3D head (WebGL, desktop only),
+          "mascot" = the drawn page-mascot head (no WebGL — only its glow backdrop lives here, the
+          head itself renders in flow below), anything else = knowledge graph (default). */}
+      {heroMode === "avatar" ? (
+        <HeroAvatar />
+      ) : heroMode === "mascot" ? (
+        <HeroMascotBackdrop />
+      ) : (
+        <HeroGraph />
+      )}
       <div className="relative mx-auto w-full max-w-5xl px-6 pt-20 pb-16 sm:pt-28 sm:pb-24">
+        {heroMode === "mascot" && <HeroMascot />}
         <p className="hero-rise font-mono text-sm text-fg-muted">
           {profile.name}
         </p>

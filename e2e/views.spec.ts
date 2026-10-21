@@ -61,6 +61,27 @@ test("about page: /about#skills is anchored and its tool chips carry glyphs", as
   expect(await glyphs.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
 });
 
+test("about page: the mascot portrait is opt-in (absent without NEXT_PUBLIC_ABOUT_MASCOT=true)", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page.getByRole("heading", { level: 1, name: /I'm Sairam Ugge/ })).toBeVisible();
+  // The e2e build sets no mascot flags, so the portrait (like the hero head) must stay dark.
+  await expect(page.getByRole("button", { name: "Boop the mascot" })).toHaveCount(0);
+});
+
+test("404 page: one of the rotating mascots sits above the panic terminal and reacts to a click", async ({ page }) => {
+  await page.goto("/this-route-does-not-exist");
+  // Default ON. The button is the only accessible surface of the mascot; its two sprite
+  // layers are presentational spans.
+  // One of the thirteen 404 characters is picked in the browser per view (never the same twice
+  // in a row); "mascot" is the site's own head and never appears here.
+  const mascot = page.getByRole("button", { name: /^Boop the (?!mascot$).+/ });
+  await expect(mascot).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeAttached();
+  await mascot.click();
+  // A click swaps to the reactions sheet: the second layer becomes opaque.
+  await expect(mascot.locator("span > span").nth(1)).toHaveCSS("opacity", "1");
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

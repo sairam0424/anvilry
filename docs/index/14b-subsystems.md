@@ -3,13 +3,13 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.14.0
+version: v3.15.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
+> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
 > post-a929932 fixes, each described by behaviour — notes are hidden at the data layer when `NOTES_ENABLED` is
 > off; rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
@@ -307,7 +307,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | false | `:40` | **Nav + sitemap only** (`site-nav.tsx:54`, `sitemap.ts:97`) — same as `/stats` |
 | `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | false | `:44-45` | `home/testimonials.tsx:13` — the only gate; with the flag on and an empty `testimonials` array it renders a "recommendations coming soon" card (`:15-36`). (`hasTestimonials` is consumed by the chat corpus, `corpus.ts:69`, not by this component.) |
 | `NEXT_PUBLIC_INKFORGE_ARTICLES_ENABLED` | `INKFORGE_ARTICLES_ENABLED` | false | `:49-50` | `articles/page.tsx:44` (`visibleInkforge`) |
-| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | `GITHUB_STATS_ENABLED` | false | `:54-55` | `GithubStatsStrip` on `/`, mounted from `home/hero.tsx:159-165` |
+| `NEXT_PUBLIC_GITHUB_STATS_ENABLED` | `GITHUB_STATS_ENABLED` | false | `:54-55` | `GithubStatsStrip` on `/`, mounted from `home/hero.tsx:169-175` |
 | `NEXT_PUBLIC_CHROME_TTS_BANNER` | `CHROME_TTS_BANNER_ENABLED` | false | `:92-93` | Chrome TTS advisory in `talk-mode.tsx:349-351` |
 | `NEXT_PUBLIC_ARTICLE_DEDUP_KEY` | `ARTICLE_DEDUP_KEY` | `"linkedNote"` | enum `:76-80` | `article-grouping.ts:30` `DEFAULT_CONFIG.primaryKey`; only matters for articles with **both** `linkedNote` and `canonicalUrl` |
 
@@ -330,10 +330,10 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 | `NEXT_PUBLIC_ORB_POSTPROCESSING` | `voice-orb-3d.tsx:300` | Fluid/Bloom/Vignette/Noise/CA — **and** `getDeviceTier() === "high"` (`:301,:327`) |
 | `NEXT_PUBLIC_INK_TRANSITION` | `view-context.tsx:123-126` (read at `:125`) | WebGL2 ink-burn view-transition path |
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
-| `NEXT_PUBLIC_404_ORB` | `not-found.tsx:34` (module scope) | distressed orb on the 404 page |
+| `NEXT_PUBLIC_404_ORB` | `not-found.tsx:46` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:118` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:14-16`) |
 | `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:29`, `home/resume-view.tsx:46`, `command-palette-content.tsx:365`, `game/terminal/commands.ts:297` | all `resumeVariants` vs only `resumeVariants[0]` — **currently a no-op**: `resumeVariants` (`src/lib/profile.ts:136-142`) has exactly one entry, so both branches yield the single master PDF. `developer-rail.tsx:45` is not gated at all; it maps the same one-entry list. |
-| `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:25` (branched `:30`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`, else `HeroGraph` |
+| `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:26` (branched `:33-39`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`; `"mascot"` → `HeroMascotBackdrop` + in-flow `HeroMascot` (`home/hero-mascot.tsx`); else `HeroGraph` |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `hero-avatar/index.tsx:51` | `hero-side` (default) \| `hero-split` \| `hero-top`; unknown values fall through to `hero-top` |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `hero-graph/index.tsx:10` (**module scope**) | `./scene-physics` vs `./scene` |
 | `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | `chat-view.tsx:259` | the file picker |
@@ -368,7 +368,7 @@ settings (`scroll-flags.tsx:15`).
 | A view silently disappears | A typo in the comma list — unknown entries are dropped by the `ALL_OPTIONAL.includes(v)` filter (`:33`). |
 | A section's default flips | Mixing the two polarity conventions: `ARTICLES_ENABLED` is `!== "false"`; every other boolean is `=== "true"`. |
 | Notes leak on one surface while dark | Reading `publishedNotes` (raw) instead of `allNotes` on a public surface — only the `/notes` route files may (`content.ts:47-49`), because `cacheComponents` needs `generateStaticParams` to return ≥1 slug even while the section is dark. `notes-dark.test.ts` guards llms.txt, the feed, MCP, the corpus and both `.md` handlers. |
-| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:28-29`, `home/resume-view.tsx:45-47`, `command-palette-content.tsx:363-366`, `commands.ts:296-299`, `hero.tsx:24-25`, `hero-avatar/index.tsx:49-51`. |
+| `vi.stubEnv` stops working in tests | Hoisting a flag read from inside a function body to module scope. Deliberately inside the body at `resume/page.tsx:28-29`, `home/resume-view.tsx:45-47`, `command-palette-content.tsx:363-366`, `commands.ts:296-299`, `hero.tsx:25-26`, `hero-avatar/index.tsx:49-51`. |
 | Route renders despite its flag being off | `/stats` and `/search` are not route-gated — only unlinked and un-sitemapped. |
 | Discovery badge never appears | The flag is resolved server-side and threaded as a prop; `providers.tsx:60` is the gate, not the component. |
 | Client shows a thinking block the server never requested (or vice versa) | `EXTENDED_THINKING` (server) and `NEXT_PUBLIC_EXTENDED_THINKING` (client) flipped independently. |
@@ -397,11 +397,11 @@ LAZY BOUNDARY   next/dynamic(..., { ssr: false })
   hero-graph/index.tsx:18-23   → ./scene-physics  OR  ./scene   (target fixed at module eval, :10)
   hero-avatar/index.tsx:10-13  → ./avatar-scene
   game/build-graph.tsx:16      → ./build-graph-scene
-  chat/voice-orb.tsx:13-16     → ./voice-orb-3d        (app/not-found.tsx:29-32 imports the same module)
+  chat/voice-orb.tsx:13-16     → ./voice-orb-3d        (app/not-found.tsx:30-33 imports the same module)
         ▼
 ERROR CONTAINMENT
   <WebGLBoundary> wraps: hero-graph/index.tsx:79 · hero-avatar/index.tsx:59 · build-graph.tsx:60 ·
-                         voice-orb.tsx:46 · not-found.tsx:47
+                         voice-orb.tsx:46 · not-found.tsx:66
   onFail latch passed by: hero-graph, build-graph, voice-orb (each flips to its fallback);
                           NOT by hero-avatar or the 404 orb
   render() returns null on failure; console.warn hardcoded "[build-graph]"   webgl-boundary.tsx:25,:30
@@ -441,7 +441,7 @@ SCENE       hero graph : 1 instancedMesh for all graphNodes + 1 lineSegments for
 |---|---|---|
 | 1 | `src/lib/use-media-query.ts:7-17,19-47` | `useMediaQuery` (server snapshot `false`, `:15`) and the memoized `useWebGLSupported` probe (`webgl2` → `webgl` → `experimental-webgl`, any throw ⇒ false, `:32-44`). |
 | 2 | `src/lib/use-reduced-motion.ts:8-22` | The native hook, written to avoid importing `motion/react` for this alone. The hero gates use it; `build-graph.tsx:5` and `voice-orb.tsx:5` still import `useReducedMotion` from `motion/react`. |
-| 3 | `src/components/home/hero.tsx:25,30` | The sole mount point for both hero slots. |
+| 3 | `src/components/home/hero.tsx:26,30` | The sole mount point for both hero slots. |
 | 4 | `src/components/hero-graph/index.tsx:10-23,51-64,71-85` | Flag-fixed dynamic target; the five-term gate (desktop, reduced motion, WebGL probe, boundary `onFail` latch, classic view); the always-rendered CSS glow fallback + radial mask + scrim. Guarded by `index.dom.test.tsx`. |
 | 5 | `src/components/hero-avatar/index.tsx:49-62,64-110` | Flags read **inside** the function body (for `vi.stubEnv`); `WebGLBoundary` (no probe, no `onFail`); three layout wrappers. Guarded by `index.dom.test.tsx`. |
 | 6 | `src/components/game/build-graph.tsx:26-50` | The five-term gate incl. the three voice stores (`:35-38`). |
@@ -468,7 +468,7 @@ surface (`VoiceOrb`), or rendering the 404 page with `NEXT_PUBLIC_404_ORB=true`.
 ### Exit point
 
 Pixels in a `<canvas>`. The hero graph, hero avatar, voice orb and 404 orb sit in `aria-hidden` wrappers
-(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:46`) and
+(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:65`) and
 are decorative; the Build Graph canvas is **not** `aria-hidden` but is a pointer-driven enhancement — the
 accessible content is elsewhere (`GraphIndex` for the graph, the visible caption + live region for the orb).
 
@@ -508,7 +508,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Failure | Mechanism |
 |---|---|
 | Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:64`; the rationale is stated at `:26-29`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
-| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:45-55`). |
+| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:64-74`). |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:106`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
 | Twin three.js chunks return (−876 KB lost) | Deleting `src/lib/r3f.ts`, or re-adding `three`/`@react-three/*` to `optimizePackageImports` (`next.config.ts:166-170`). **Still unguarded by CI:** `scripts/bundle-budget.mjs` asserts three.js stays *off the first-load critical path*, not that only one copy exists — two lazy copies change no route's first-load bytes and pass the gate. The barrel is the only defence. |
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 100 test files (65 node + 35 dom), 1208 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 107 test files (68 node + 39 dom), 1246 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -625,8 +625,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 100 test files
-(1208 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 107 test files
+(1246 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -735,7 +735,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:691-692`).
+(`CHANGELOG.md:735-736`).
 
 ### The Pagefind search-index step
 
@@ -772,8 +772,8 @@ pagefind failure fails the Vercel build.
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:662-664`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:672-674`) — the situation the `pnpm-workspace.yaml` overrides work around. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:706-708`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:716-718`) — the situation the `pnpm-workspace.yaml` overrides work around. |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4128`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -991,7 +991,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:524`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:568`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.)
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:145-147`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not

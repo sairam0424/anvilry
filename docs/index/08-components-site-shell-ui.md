@@ -3,17 +3,17 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.14.0
+version: v3.15.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-> **Baseline.** Describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more. v3.14.0 adds three files to this section: `src/components/home/stack.tsx` (the home Stack icon wall — the seventh home section, mounted between `FeaturedProjects` and `Achievements`), `src/components/stack-icons.tsx` (its 19 Simple Icons paths and 3 lucide glyphs) and `src/components/skill-chip.tsx` (the `/about` glyph chips); `ui/section.tsx`, `ui/reveal.tsx` and `ui/tooltip.tsx` each gain `Stack` as a consumer.
+> **Baseline.** Describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more. v3.14.0 adds three files to this section: `src/components/home/stack.tsx` (the home Stack icon wall — the seventh home section, mounted between `FeaturedProjects` and `Achievements`), `src/components/stack-icons.tsx` (its 19 Simple Icons paths and 3 lucide glyphs) and `src/components/skill-chip.tsx` (the `/about` glyph chips); `ui/section.tsx`, `ui/reveal.tsx` and `ui/tooltip.tsx` each gain `Stack` as a consumer. v3.15.0 adds four files to this section: `src/components/mascot/mascot.tsx` (the page-mascot 0.1.0 head, vendored under MIT — `THIRD_PARTY_NOTICES.md`), `src/components/mascot/site-mascot.tsx` (registry pick + optional preload), `src/components/mascot/not-found-mascot.tsx` (the rotating 404 character) and `src/components/home/hero-mascot.tsx` (the `mascot` hero mode's glow backdrop and head); `home/hero.tsx`'s visual slot becomes a three-way branch on `NEXT_PUBLIC_HERO_MODE` (`graph` default, `avatar`, `mascot`), and the 28 sprite sheets under `src/assets/mascots/` plus `src/types/next-image-assets.d.ts` (the ambient `next/image-types/global` reference that types `.webp` imports for a bare `tsc`, since `next-env.d.ts` is gitignored) are carried in Coverage only.
 
-**Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`. The `?scroll=` flag store (`src/lib/scroll/*`) is owned by [04](./04-lib-ai-voice-infra.md); the persisted theme store (`src/lib/theme-context.tsx`) is not indexed by any section (see the coverage reconciliation in the [README](./README.md)); this doc covers only their component touchpoints (`ThemeToggle`, `ScrollFlagsSync` in `Providers`).
-**Files indexed:** 42
+**Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`, `src/components/mascot/**` (v3.15.0), plus — Coverage-only, no detail section — the 28 sprite sheets in `src/assets/mascots/` that `src/lib/mascots.ts` imports and `src/types/next-image-assets.d.ts`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`. The `?scroll=` flag store (`src/lib/scroll/*`) is owned by [04](./04-lib-ai-voice-infra.md); the persisted theme store (`src/lib/theme-context.tsx`) is not indexed by any section (see the coverage reconciliation in the [README](./README.md)); this doc covers only their component touchpoints (`ThemeToggle`, `ScrollFlagsSync` in `Providers`).
+**Files indexed:** 75 — 46 component files (the 42 of v3.14.0 plus the four v3.15.0 mascot files) and, Coverage-only, the 28 sprite sheets under `src/assets/mascots/` and `src/types/next-image-assets.d.ts`
 
 ## At a glance
 
@@ -44,7 +44,7 @@ version: v3.14.0
 | `src/components/reading-progress.tsx` | 2px compositor-driven scroll progress bar; null under reduced motion | `ReadingProgress` |
 | `src/components/copy-button.tsx` | Copy-to-clipboard button with announced "Copied" state (used on `/mcp`) | `CopyButton` |
 | `src/components/icons.tsx` | Six inline brand SVGs (lucide-react 1.x dropped brand glyphs) | `Github`, `Linkedin`, `Npm`, `Pypi`, `Devto`, `Substack` |
-| `src/components/home/hero.tsx` | Above-the-fold hero; CSS `.hero-rise` entrance, WebGL slot switched by `NEXT_PUBLIC_HERO_MODE` | `Hero` |
+| `src/components/home/hero.tsx` | Above-the-fold hero; CSS `.hero-rise` entrance, visual slot switched by `NEXT_PUBLIC_HERO_MODE` — `graph` (default, WebGL) \| `avatar` (WebGL) \| `mascot` (v3.15.0, the drawn `HeroMascot` head in flow, no WebGL) | `Hero` |
 | `src/components/home/featured-work.tsx` | All work case studies with `register` eyebrow + metrics `<dl>` | `FeaturedWork` |
 | `src/components/home/featured-projects.tsx` | Featured OSS repos + "View all 8 projects" link (hardcoded 8) | `FeaturedProjects` |
 | `src/components/home/achievements.tsx` | Recognition grid from `achievements` in `@/lib/profile` | `Achievements` |
@@ -61,6 +61,10 @@ version: v3.14.0
 | `src/components/home/stack.tsx` | Home "Stack" icon wall (v3.14.0), the seventh home section between `FeaturedProjects` and `Achievements`: server component (no `"use client"`), `Section id="stack"`, `Reveal`-wrapped `<ul aria-label="Tools and technologies">` of 22 tiles from `stackItems` (40 px `StackIcon` brand mark or `StackGlyph`), each external `<a>` inside a `Tooltip` with `aria-label` as its only accessible name and an `aria-hidden` mono caption on coarse-pointer devices; closes with a `Link` to `/about#skills` | `Stack` |
 | `src/components/skill-chip.tsx` | `/about` "What I work with" chip (v3.14.0): a 14 px `StackIcon`/`StackGlyph` glyph (`aria-hidden`, `.skill-chip-glyph`) before the label when the skill has a `STACK_ENTRIES` record (22 of 34 chips), text only otherwise; brand colour on chip hover through `stackBrandVars()`; server-safe, not a link | `SkillChip` |
 | `src/components/stack-icons.tsx` | 19 Simple Icons brand paths (simple-icons@16.35.0, 24×24 `viewBox`, `currentColor`, `aria-hidden`) + 3 lucide glyphs (`Cloud`/`Network`/`Database`) for AWS, gRPC and ChromaDB, whose marks have no usable licence; the CC0 package's three per-icon exceptions (Apache Kafka, OpenTelemetry, Angular) are credited in `THIRD_PARTY_NOTICES.md` | `STACK_ICON_PATHS`, `StackIconKey` (type), `StackGlyphKey` (type), `StackIcon`, `StackGlyph` |
+| `src/components/mascot/mascot.tsx` | `Mascot` (v3.15.0, `"use client"`): the page-mascot 0.1.0 head vendored under MIT (Kamran Ahmed; credited in `THIRD_PARTY_NOTICES.md`; local changes: the sector maths moved to `src/lib/mascot-geometry.ts`, `element.animate` feature-detected, global timers, sheet URLs supplied by `SiteMascot`). Props `directions` / `reactions` (served sheet URLs), `size` (number or any CSS length, default 140), `label` (default `mascot`), `className`. Renders one `<button aria-label="Boop the {label}">` holding two absolutely positioned `background-image` layers (`background-size: 300% 300%`; the directions layer shows the current cell via `cellPosition`, the reactions layer is always mounted so its sheet is fetched up front and fades in on a click). Pointer tracking attaches only when `(hover: hover) and (pointer: fine)` matches — passive `pointermove` + `scroll` listeners feeding `aimSector` / `sectorDirection`. A click plays `blink` then `heart` / `sparkle` / `delighted` in turn (payoff at 120 ms, cleared at 560 ms); four boops inside 1.6 s give `dizzy` for 1.1 s. The squash is one Web Animations run (420 ms), skipped under `prefers-reduced-motion` (a sheet swap is not motion). Inline styles only — position it with a wrapper element, not `className`. Guarded by `mascot/mascot.dom.test.tsx`. | `MascotProps` (type), `Mascot` |
+| `src/components/mascot/site-mascot.tsx` | `SiteMascot` (v3.15.0): server-safe (no hooks) wrapper that resolves a `MascotCharacter` from `src/lib/mascots.ts` through `mascotSheets()` and renders `Mascot` beneath it — the only client boundary; `priority` additionally emits `<link rel="preload" as="image" fetchPriority="high">` for the directions sheet (React 19 hoists it into `<head>` during SSR; background images are discovered when styles resolve, not by the preload scanner, and `ReactDOM.preload()` from a server component was observed not to reach the prerendered head). Used by `home/hero-mascot.tsx` (`gearbot`, `priority`), `src/app/about/page.tsx` (`gearbot`, 176 px) and `not-found-mascot.tsx`. Guarded by `mascot/site-mascot.dom.test.tsx`. | `SiteMascot` |
+| `src/components/mascot/not-found-mascot.tsx` | `NotFoundMascot` (v3.15.0, `"use client"`): one of the thirteen `NOT_FOUND_MASCOTS` per view, picked **in the browser** — `useMounted` keeps the server/first-paint path static, `useMemo` on `mounted` picks once per instance via `pickNotFoundMascot(readLast())`, and an effect writes the pick to `sessionStorage["anvilry:404:mascot"]` (`NOT_FOUND_MASCOT_STORAGE_KEY`) so the next 404 in the tab never repeats it (storage errors fall back to a plain random pick). Renders a centred box with `minHeight: size` (default 120) before and after the pick, so the terminal below never shifts; the button's label comes from the registry. Loaded by `src/app/not-found.tsx:41-44` through `dynamic(..., { ssr: false })` with a same-size fallback, never imported statically. Guarded by `mascot/not-found-mascot.dom.test.tsx`. | `NOT_FOUND_MASCOT_STORAGE_KEY`, `NotFoundMascot` |
+| `src/components/home/hero-mascot.tsx` | The `NEXT_PUBLIC_HERO_MODE=mascot` pieces (v3.15.0, server components): `HeroMascotBackdrop` is the same two glow blurs the WebGL slots fall back to, so switching modes never shifts layout or changes the hero's ambient colour; `HeroMascot` renders the `gearbot` head once through `<SiteMascot character="gearbot" size="var(--mascot-size)" priority />` inside a `hero-rise` wrapper that owns the positioning — in flow above the name eyebrow at 9rem below `lg`, `lg:absolute lg:right-0 lg:top-24` at 13rem, `xl:-right-6 xl:top-20` at 15rem (`hero-mascot.tsx:32`; one instance, so the accessibility tree never carries a hidden duplicate). Mounted from `home/hero.tsx:36` and `:41`. | `HeroMascotBackdrop`, `HeroMascot` |
 
 ---
 
@@ -247,7 +251,7 @@ Two named transition groups exist in the tree:
 - **Role:** Client-fetched aggregate GitHub stat cards on the homepage.
 - **Exports:** `GithubStatsStrip` (no props). `StatCard` is module-private.
 - **Reads / depends on:** `GET /api/github/stats`, `motion/react` (`motion`, `AnimatePresence`), `ui/reveal` `Reveal`, `ui/skeleton` `SkeletonStatCard`, `pushedAgo` from `@/lib/github` (`:8`).
-- **Consumed by:** `src/components/home/hero.tsx:165`, itself gated by `GITHUB_STATS_ENABLED` (`NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true"`, default off, `hero.tsx:159`).
+- **Consumed by:** `src/components/home/hero.tsx:175`, itself gated by `GITHUB_STATS_ENABLED` (`NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true"`, default off, `hero.tsx:169`).
 - **Behaviour notes:** Three-state machine `"loading" | "ready" | "empty"` (`:18`). Enters `ready` only when `data.followers > 0 || data.publicRepos > 0`; anything else (including a non-OK response or a network throw) becomes `empty` (`:44-56`). `empty` returns `null` entirely — "a strip showing 0/0/— is worse than nothing" (`:58-59`). `AnimatePresence mode="wait"` crossfades skeleton → content; the loading grid carries `role="status"` + an `sr-only` announcement (`:63-78`). Content is up to **five** cards: followers, public repos, stars, forks (zero stars/forks render as `"—"`, `:102-119`) and a "last shipped" card from `mostRecentPush` via `pushedAgo`, present only when the field is non-null (`:120-126`); the grid is `sm:grid-cols-3 lg:grid-cols-5` so a lone fifth card never orphans (`:87-91`). Guarded by `github-stats-strip.dom.test.tsx:18-89`.
 - **Gotchas / invariants:** `stats!` non-null assertions at `:94-123` are only safe because `fetchState === "ready"` implies `stats` was set in the same `.then`.
 
@@ -280,10 +284,10 @@ Two named transition groups exist in the tree:
 ### `src/components/home/hero.tsx`
 - **Role:** Above-the-fold hero (server component).
 - **Exports:** `Hero` (no props).
-- **Reads / depends on:** `@/lib/profile` (`profile`, `impactMetrics`), `@/components/hero-graph` `HeroGraph`, `@/components/hero-avatar` `HeroAvatar`, `GithubStatsStrip`, `GITHUB_STATS_ENABLED`, env `NEXT_PUBLIC_HERO_MODE`.
+- **Reads / depends on:** `@/lib/profile` (`profile`, `impactMetrics`), `@/components/hero-graph` `HeroGraph`, `@/components/hero-avatar` `HeroAvatar`, `@/components/home/hero-mascot` `HeroMascot` + `HeroMascotBackdrop` (`:14`, v3.15.0), `GithubStatsStrip`, `GITHUB_STATS_ENABLED`, env `NEXT_PUBLIC_HERO_MODE`.
 - **Consumed by:** `src/app/page.tsx:27`.
-- **Behaviour notes:** `heroMode === "avatar" ? <HeroAvatar /> : <HeroGraph />` (`:30`). Entrance is pure CSS `.hero-rise` with staggered inline `animationDelay` of `0.05s / 0.1s / 0.15s / 0.2s / 0.25s` (`:39`, `:49`, `:56`, `:139`, `:160`) — no JS/hydration gate, so the hero never flashes invisible and does not delay LCP (`:17-22`). `.hero-rise` is defined at `src/app/globals.css:116-125` and is neutralised (`opacity: 1; animation: none`) under reduced motion (`globals.css:125`). The headline copy is hardcoded JSX, not from `profile` (`:41-44`). The social row is six icons: GitHub, LinkedIn, npm, PyPI, Dev.to, Substack (`:74-129`).
-- **Gotchas / invariants:** `NEXT_PUBLIC_HERO_MODE` is read inside the function body, not module scope, "required for `vi.stubEnv` in tests" (`:24-25`). The impact `<dl>` is `sm:grid-cols-3` to match exactly 3 `impactMetrics`; a 4th metric or a change to `impactMetrics.length` leaves a blank trailing cell — the comment records that this was previously `sm:grid-cols-4` and broke (`:132-138`).
+- **Behaviour notes:** the visual slot is a three-way branch on `heroMode` (`:33-39`): `"avatar"` → `<HeroAvatar />`, `"mascot"` (v3.15.0, opt-in) → `<HeroMascotBackdrop />` (the two glow blurs only) with `<HeroMascot />` mounted in flow above the name eyebrow at `:41` (9rem below `lg`, absolute in the right gutter at 13rem / 15rem from `lg` / `xl` through `--mascot-size`, `hero-mascot.tsx:32`), anything else → `<HeroGraph />` (default); `home/hero.dom.test.tsx` pins all three. Entrance is pure CSS `.hero-rise` with staggered inline `animationDelay` of `0.05s / 0.1s / 0.15s / 0.2s / 0.25s` (`:49`, `:59`, `:66`, `:149`, `:170`) — no JS/hydration gate, so the hero never flashes invisible and does not delay LCP (`:18-23`). `.hero-rise` is defined at `src/app/globals.css:116-125` and is neutralised (`opacity: 1; animation: none`) under reduced motion (`globals.css:125`). The headline copy is hardcoded JSX, not from `profile` (`:51-54`). The social row is six icons: GitHub, LinkedIn, npm, PyPI, Dev.to, Substack (`:84-139`).
+- **Gotchas / invariants:** `NEXT_PUBLIC_HERO_MODE` is read inside the function body, not module scope, "required for `vi.stubEnv` in tests" (`:25-26`). The impact `<dl>` is `sm:grid-cols-3` to match exactly 3 `impactMetrics`; a 4th metric or a change to `impactMetrics.length` leaves a blank trailing cell — the comment records that this was previously `sm:grid-cols-4` and broke (`:142-148`).
 
 ### `src/components/home/resume-view.tsx`
 - **Role:** The `?view=resume` recruiter surface and the `/resume` page body.
@@ -394,8 +398,41 @@ Two named transition groups exist in the tree:
 - `src/components/home/stack.tsx`
 - `src/components/skill-chip.tsx`
 - `src/components/stack-icons.tsx`
+- `src/components/mascot/mascot.tsx`
+- `src/components/mascot/site-mascot.tsx`
+- `src/components/mascot/not-found-mascot.tsx`
+- `src/components/home/hero-mascot.tsx`
+- `src/assets/mascots/gearbot-directions.webp`
+- `src/assets/mascots/gearbot-reactions.webp`
+- `src/assets/mascots/crt-directions.webp`
+- `src/assets/mascots/crt-reactions.webp`
+- `src/assets/mascots/tv-directions.webp`
+- `src/assets/mascots/tv-reactions.webp`
+- `src/assets/mascots/radio-directions.webp`
+- `src/assets/mascots/radio-reactions.webp`
+- `src/assets/mascots/toaster-directions.webp`
+- `src/assets/mascots/toaster-reactions.webp`
+- `src/assets/mascots/clockwork-directions.webp`
+- `src/assets/mascots/clockwork-reactions.webp`
+- `src/assets/mascots/cube-directions.webp`
+- `src/assets/mascots/cube-reactions.webp`
+- `src/assets/mascots/drone-directions.webp`
+- `src/assets/mascots/drone-reactions.webp`
+- `src/assets/mascots/knight-directions.webp`
+- `src/assets/mascots/knight-reactions.webp`
+- `src/assets/mascots/lantern-directions.webp`
+- `src/assets/mascots/lantern-reactions.webp`
+- `src/assets/mascots/postbot-directions.webp`
+- `src/assets/mascots/postbot-reactions.webp`
+- `src/assets/mascots/rocket-directions.webp`
+- `src/assets/mascots/rocket-reactions.webp`
+- `src/assets/mascots/scout-directions.webp`
+- `src/assets/mascots/scout-reactions.webp`
+- `src/assets/mascots/penguin-directions.webp`
+- `src/assets/mascots/penguin-reactions.webp`
+- `src/types/next-image-assets.d.ts`
 
-**Excluded from this section (owned elsewhere):** `src/components/ask-portfolio.tsx`, `src/components/chat/**`, `src/components/game/**`, `src/components/hero-avatar/**`, `src/components/hero-graph/**`. Tests colocated with this section's files, not indexed individually: `view-context.test.ts`, `view-context.dom.test.tsx`, `view-hint.dom.test.tsx`, `site-footer.dom.test.tsx`, `github-stats-strip.dom.test.tsx`, `command-palette-content.dom.test.tsx`, `home/stack.dom.test.tsx`, `skill-chip.dom.test.tsx` (and `ask-portfolio.dom.test.tsx`, owned elsewhere).
+**Excluded from this section (owned elsewhere):** `src/components/ask-portfolio.tsx`, `src/components/chat/**`, `src/components/game/**`, `src/components/hero-avatar/**`, `src/components/hero-graph/**`. Tests colocated with this section's files, not indexed individually: `view-context.test.ts`, `view-context.dom.test.tsx`, `view-hint.dom.test.tsx`, `site-footer.dom.test.tsx`, `github-stats-strip.dom.test.tsx`, `command-palette-content.dom.test.tsx`, `home/stack.dom.test.tsx`, `skill-chip.dom.test.tsx`, `home/hero.dom.test.tsx`, `mascot/mascot.dom.test.tsx`, `mascot/site-mascot.dom.test.tsx`, `mascot/not-found-mascot.dom.test.tsx` (and `ask-portfolio.dom.test.tsx`, owned elsewhere).
 
 ## UNVERIFIED
 

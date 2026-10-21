@@ -187,8 +187,8 @@ export const stackGroups = skills
   }))
   .filter((g) => g.items.length > 0);
 
-/** Per-tile CSS custom properties read by the `.stack-icon` utility in globals.css. */
-export function stackBrandVars(item: StackItem): Record<string, string> {
+/** Per-tile CSS custom properties read by the `.stack-icon` and `.skill-chip-glyph` utilities in globals.css. */
+export function stackBrandVars(item: StackEntry): Record<string, string> {
   if (item.kind !== "brand") return {};
   return {
     "--brand-dark": item.hoverDark ?? item.hex,

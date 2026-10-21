@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -75,6 +77,16 @@ export function Stack() {
           ))}
         </ul>
       </Reveal>
+      {/* The wall shows tools only; the grouped list on /about also carries the concept skills. */}
+      <div className="mt-8">
+        <Link
+          href="/about#skills"
+          className="group inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-strong"
+        >
+          See the full list, grouped by area
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
     </Section>
   );
 }

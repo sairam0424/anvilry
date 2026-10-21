@@ -370,6 +370,13 @@ body::before {
 [data-theme="light"] .stack-icon:hover,
 [data-theme="light"] .stack-icon:focus-visible { color: var(--brand-light, var(--fg)); }
 
+/* utility: About-page skill chip glyph (src/components/skill-chip.tsx). Same colour model
+   as .stack-icon, but the chip is the hover target and only its glyph takes the brand
+   colour; the label goes to --fg through the chip's own hover utility. */
+.skill-chip-glyph { color: var(--fg-muted); }
+.skill-chip:hover .skill-chip-glyph { color: var(--brand-dark, var(--fg)); }
+[data-theme="light"] .skill-chip:hover .skill-chip-glyph { color: var(--brand-light, var(--fg)); }
+
 /* utility: 10px dot grid for the stack wall panel — 1px dots at 6% foreground, so the
    pattern reads as texture in both themes without competing with the glyphs. */
 .dot-grid {

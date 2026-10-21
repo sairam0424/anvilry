@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Github } from "@/components/icons";
 import { allProjects, getProject, getArticle, repoLink } from "@/lib/content";
+import { getProjectBody } from "@/lib/content-bodies";
 import { profile } from "@/lib/profile";
 import { fetchRepo, pushedAgo, repoOwnerAndName } from "@/lib/github";
 import { MDXContent } from "@/components/mdx-content";
@@ -72,7 +73,8 @@ export default async function ProjectPage({
 
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) notFound();
+  const body = getProjectBody(slug);
+  if (!project || body === undefined) notFound();
 
   // Repo name is the last path segment of the declared repo URL, e.g.
   // "https://github.com/sairam0424/Tombstone" -> "Tombstone". fetchRepo() itself
@@ -108,7 +110,7 @@ export default async function ProjectPage({
             {/* Reading-time depth indicator — derived from compiled MDX body length.
                 ~200 words/min; only shown when content is substantive (>100 words). */}
             {(() => {
-              const words = project.body
+              const words = body
                 .replace(/<[^>]+>/g, " ")
                 .replace(/\s+/g, " ")
                 .trim()
@@ -174,7 +176,7 @@ export default async function ProjectPage({
         </Reveal>
 
         <div className="prose-portfolio mt-8">
-          <MDXContent code={project.body} />
+          <MDXContent code={body} />
         </div>
 
         <RelatedWriting articles={relatedArticles} />

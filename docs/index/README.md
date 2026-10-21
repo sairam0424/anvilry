@@ -450,7 +450,7 @@ here — and both are **Turbopack** measurements, since a bare `next build` in N
 The per-route half of them is no longer trust-only: `scripts/bundle-budget.mjs` re-asserts it on every CI run
 (`.github/workflows/ci.yml:190-191`; ceiling `MAX_FIRST_LOAD_BYTES = 1_336_000` at
 `scripts/bundle-budget.mjs:72`, route floor `MIN_ROUTES = 17` at `scripts/bundle-budget.mjs:40`, three.js
-marker `WebGLRenderer` at `scripts/bundle-budget.mjs:84`).
+marker `WebGLRenderer` at `scripts/bundle-budget.mjs:84`, compiled-MDX marker at `scripts/bundle-budget.mjs:96`).
 
 **Staleness is checked, not trusted.** Every fully-qualified `path:line` citation in this directory (and the
 partial-path and unique-basename forms) is fingerprinted into `.citations.json`.

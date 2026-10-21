@@ -62,11 +62,11 @@ version: v3.15.0
 
 ## Schemas
 
-All four collections are declared in `velite.config.ts` and registered at `velite.config.ts:160`
-(`collections: { projects, work, notes, articles }`). Global config: `root: "content"`
-(`velite.config.ts:148`), data output `.velite`, asset output `public/static` served from base
-`/static/` with filename pattern `[name]-[hash:6].[ext]` (`velite.config.ts:149-153`),
-`clean: false` (`velite.config.ts:158`), and `mdx: { gfm: true }` (`velite.config.ts:161`).
+The four metadata collections are declared in `velite.config.ts`, each with a body-only sibling built by `bodyOnly()` (`velite.config.ts:29`);
+all eight are registered at `velite.config.ts:181-190` (`projects`, `work`, `notes`, `articles`, `projectBodies`, `workBodies`, `noteBodies`, `articleBodies`). Global config: `root: "content"`
+(`velite.config.ts:169`), data output `.velite`, asset output `public/static` served from base
+`/static/` with filename pattern `[name]-[hash:6].[ext]` (`velite.config.ts:170-174`),
+`clean: false` (`velite.config.ts:179`), and `mdx: { gfm: true }` (`velite.config.ts:191`).
 
 Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 
@@ -80,7 +80,7 @@ Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 - `s.mdx()` compiles the file body to a JS function string; an empty body yields `body: ""`
   (all 15 Article files have empty bodies).
 
-### Project (`velite.config.ts:20-55`) — pattern `projects/**/*.mdx`
+### Project (`velite.config.ts:45-79`) — pattern `projects/**/*.mdx`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -99,17 +99,17 @@ Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 | `pinRank` | `s.number()` | **optional** | — | `:43` |
 | `featured` | `s.boolean()` | optional | `.default(false)` | `:44` |
 | `order` | `s.number()` | optional | `.default(100)` | `:45` |
-| `body` | `s.mdx()` | required | compiled MDX | `:46` |
+| `body` | — (moved) | — | not a Project field: compiled MDX is in the `ProjectBody` collection, see "Body collections" below | — |
 | `excerpt` | `s.string()` | required | — | `:47` |
 | `url` | — (derived) | added | `.transform((data) => ({ ...data, url: \`/projects/${data.slug}\` }))` | `:49` |
 
 The `themeGroup` enum (`velite.config.ts:4-9`) is duplicated as a literal tuple in
 `src/lib/content.ts:40-45` (`projectGroups`) — the ordering there drives `/projects` section order.
 `dateCreated`/`license` feed `SoftwareSourceCodeJsonLd`; `relatedArticles` is resolved by
-`src/app/projects/[slug]/page.tsx:86-88` via `getArticle` (unknown slugs are silently dropped) and
+`src/app/projects/[slug]/page.tsx:88-90` via `getArticle` (unknown slugs are silently dropped) and
 rendered by `src/components/related-writing.tsx`.
 
-### Work (`velite.config.ts:58-80`) — pattern `work/**/*.mdx`
+### Work (`velite.config.ts:82-103`) — pattern `work/**/*.mdx`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -125,7 +125,7 @@ rendered by `src/components/related-writing.tsx`.
 | `tradeoffs` | `s.string()` | **optional** | renders only when present; also a decisions-ledger source | `:69` |
 | `diagram` | `s.string()` | **optional** | path to an owner-authored diagram (e.g. `/static/...`) | `:70` |
 | `diagramAlt` | `s.string()` | **optional** | comment marks it "REQUIRED alt text when `diagram` is set (a11y) — asserted in a test" | `:71` |
-| `body` | `s.mdx()` | required | compiled MDX | `:72` |
+| `body` | — (moved) | — | not a Work field: compiled MDX is in the `WorkBody` collection, see "Body collections" below | — |
 | `url` | — (derived) | added | `.transform(... url: \`/work/${data.slug}\`)` | `:74` |
 
 There is **no `featured` field on Work** — the home page's "featured work" list is
@@ -136,7 +136,7 @@ There is **no `featured` field on Work** — the home page's "featured work" lis
 are >20 chars and free of `TODO|TBD|lorem`, and `:55-72` applies the same prose check to every
 project `decisions[]` entry (title >3 chars, body >20 chars).
 
-### Note (`velite.config.ts:86-111`) — pattern `notes/**/*.{md,mdx}`
+### Note (`velite.config.ts:109-133`) — pattern `notes/**/*.{md,mdx}`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -154,10 +154,10 @@ project `decisions[]` entry (title >3 chars, body >20 chars).
 | `generatedBy` | `s.string()` | **optional** | free-form string, **not** an enum; `"inkforge"` is the only value in use, and 2 of the 7 notes omit it | `:100` |
 | `category` | `s.string()` | **optional** | free-form | `:101` |
 | `platforms` | `s.array(s.string())` | optional | `.default([])` | `:102` |
-| `body` | `s.mdx()` | required | compiled MDX (both `.md` and `.mdx` go through the MDX compiler) | `:103` |
+| `body` | — (moved) | — | not a Note field: compiled MDX (both `.md` and `.mdx`) is in the `NoteBody` collection, see "Body collections" below | — |
 | `url` | — (derived) | added | `.transform(... url: \`/notes/${data.slug}\`)` | `:105` |
 
-### Article (`velite.config.ts:119-145`) — pattern `articles/**/*.{md,mdx}`
+### Article (`velite.config.ts:141-166`) — pattern `articles/**/*.{md,mdx}`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -172,15 +172,21 @@ project `decisions[]` entry (title >3 chars, body >20 chars).
 | `tags` | `s.array(s.string())` | optional | `.default([])` | `:134` |
 | `draft` | `s.boolean()` | optional | `.default(false)` | `:135` |
 | `readingTime` | `s.number()` | **optional** | estimated minutes | `:136` |
-| `body` | `s.mdx()` | required | compiled MDX; every shipped Article body is `""` | `:137` |
+| `body` | — (moved) | — | not an Article field: the `ArticleBody` collection holds it, and every shipped Article body is `""` | — |
 | `url` | — (derived) | added | `.transform(... url: \`/articles/${data.slug}\`)` | `:139` |
 
 Note the unenforced invariants written as comments only: `externalUrl` "required for
-non-native" (`velite.config.ts:136`) and `linkedNote` "slug of an existing /notes entry"
-(`velite.config.ts:138`). Neither is a Zod refinement, and no test enforces either
+non-native" (`velite.config.ts:158`) and `linkedNote` "slug of an existing /notes entry"
+(`velite.config.ts:160`). Neither is a Zod refinement, and no test enforces either
 (`relatedArticles` at `:39` is likewise unchecked). Today both hold in the data: every non-native
 article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a real note — see
 "Cross-references" §5.
+
+### Body collections (`velite.config.ts:29-34`)
+
+`body: s.mdx()` is **not** a field of Project, Work, Note or Article. Each has a body-only sibling collection over the same glob: `ProjectBody`, `WorkBody`, `NoteBody`, `ArticleBody`, built by `bodyOnly()` from shared `PATTERNS` and registered as `projectBodies` / `workBodies` / `noteBodies` / `articleBodies` (`velite.config.ts:181-190`). Their records are `{ slug, body }`; `slug` is a plain `s.string()` there because the metadata collection over the same files already validates its format and uniqueness. `.velite/` therefore holds eight JSON files, and `src/lib/content-bodies.ts` is the only reader of the four `*Bodies.json`.
+
+Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs`.
 
 ## Content inventory
 
@@ -383,7 +389,7 @@ stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11
 The printed `/resume` page (`src/app/resume/page.tsx`) does **not** import `@/lib/content`
 directly (verified by grep) — it is tab/PDF-driven; `register` reaches recruiters through
 `resume-json.ts` and through the `/work` pages (`src/app/work/page.tsx:53`,
-`src/app/work/[slug]/page.tsx:68`, and the OG image at
+`src/app/work/[slug]/page.tsx:70`, and the OG image at
 `src/app/work/[slug]/opengraph-image.tsx:26`).
 
 ### 4. Home page featured lists
@@ -435,17 +441,17 @@ per note, and all resolve to an existing note slug (the previously dangling targ
 | `tombstone-v1-2-release` | `tombstone-v1-2-devto` |
 | `trelix-code-intelligence-engine` | `trelix-v1-launch-devto`, `trelix-v1-launch-substack` |
 
-Nothing enforces resolution: `linkedNote` is a bare `s.string()` (`velite.config.ts:138`), and no
+Nothing enforces resolution: `linkedNote` is a bare `s.string()` (`velite.config.ts:160`), and no
 test asserts it (`notes-dark.test.ts` only re-implements the note-only predicate). A future typo
 would surface only when the flag is on, as a 404 redirect target. The consumers build the href
 unconditionally when `NOTES_ENABLED` — `src/components/article-group-card.tsx:21-22`,
 `src/app/articles/page.tsx:199-200` (and `:272`), `src/components/related-writing.tsx:13-14`, and the
-`redirect()` at `src/app/articles/[slug]/page.tsx:71-72`. `src/lib/llms-txt.ts:29-31` builds the same
+`redirect()` at `src/app/articles/[slug]/page.tsx:74-75`. `src/lib/llms-txt.ts:29-31` builds the same
 `/notes/<linkedNote>` URL for the AI-discovery file. With notes on, `tombstone-v1-2-devto` (whose
 `externalUrl` equals the note URL) yields a feed item whose `link`/`guid`
 (`src/app/feed.xml/route.ts:34-35`) duplicates the note's own item.
 
-`relatedArticles` (Project) is unchecked in the same way: `src/app/projects/[slug]/page.tsx:86-88`
+`relatedArticles` (Project) is unchecked in the same way: `src/app/projects/[slug]/page.tsx:88-90`
 maps each slug through `getArticle` and silently drops misses, so an article that is dark (a
 note-only article while notes are off, or a draft) simply disappears from "Related writing"
 (`src/components/related-writing.tsx`). Today `tombstone-launch-devto`, `tombstone-v1-2-devto`,
@@ -458,7 +464,7 @@ note-only article while notes are off, or a draft) simply disappears from "Relat
 → `/notes/how-dns-works`) and as `content/articles/how-dns-works.mdx` (group `article`,
 → `/articles/how-dns-works`). The article is `source: native` with a `linkedNote` pointing at
 its own name and no `externalUrl`, which makes it the "notes-only article" case handled at
-`src/app/articles/[slug]/page.tsx:43` (dropped from `generateStaticParams`), `:71-72` (redirect to
+`src/app/articles/[slug]/page.tsx:44` (dropped from `generateStaticParams`), `:71-72` (redirect to
 the note when notes are on) and `:84-86` (`notFound()`). While notes are off it is already absent
 from `allArticles`, so `getArticle` misses and the page 404s at `:67`. Because its body is empty,
 the native-inline render path is never reached.
@@ -511,7 +517,7 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
   - Each collection's `.transform()` is the only place `url` is created; nothing else in the repo
     constructs `/work/<slug>` or `/projects/<slug>` by hand (`src/lib/game-model.ts:95` returns
     `resolved.item.url` and comments as much), apart from the canonical-URL literals in the two
-    `generateMetadata` functions (`src/app/projects/[slug]/page.tsx:38`, `src/app/work/[slug]/page.tsx:25`).
+    `generateMetadata` functions (`src/app/projects/[slug]/page.tsx:39`, `src/app/work/[slug]/page.tsx:26`).
 - **Gotchas / invariants:**
   - Renaming a collection key in `collections` (`:155`) renames the generated `.velite/*.json`
     file and breaks the destructured import at `src/lib/content.ts:5-14`.
@@ -558,7 +564,7 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 
 - **Role:** Frontmatter-only "curator" pointers, not article bodies. Every file is 11-13 lines and
   ends immediately after the closing `---`; every article compiles to `body: ""`.
-- **Behaviour notes:** The schema comment (`velite.config.ts:113-118`) says native articles "render
+- **Behaviour notes:** The schema comment (`velite.config.ts:135-140`) says native articles "render
   their body inline like notes" — the one `source: native` file
   (`content/articles/how-dns-works.mdx`) has no body, and instead sets
   `linkedNote: how-dns-works`, so the native-inline path is unexercised today: the page redirects

@@ -50,7 +50,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 | `.env.example` | 237-line annotated env template — the only committed env file; documents the core variables with rationale, but several real ones are absent (see the env table) | n/a |
 | `.coderabbit.yaml` | CodeRabbit review config: `quiet` profile, auto-review only for base branch `^develop$`, `dependabot[bot]` ignored, auto-pause after 5 reviewed commits, eslint + gitleaks tools on (`:6-14`, `:24-28`) | n/a (YAML) |
 | `scripts/replay-trace.mjs` | Node CLI: reads 7 telemetry span kinds from Upstash Redis, filters by `traceId`, prints a chronological waterfall. The schema now defines **8** kinds — `chat.cache` is not in its list | n/a (top-level script) |
-| `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (Turbopack-only, no flag) and asserts a per-route first-load JS ceiling (`MAX_FIRST_LOAD_BYTES = 1_336_000`) **plus** that three.js stays off the first-load critical path. Exits 1 when it cannot measure (fewer than `MIN_ROUTES = 17` records) | n/a (top-level script) |
+| `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (Turbopack-only, no flag) and asserts a per-route first-load JS ceiling (`MAX_FIRST_LOAD_BYTES = 1_336_000`) **plus** that three.js and compiled MDX bodies (`MDX_MARKER`) stay off the first-load critical path. Exits 1 when it cannot measure (fewer than `MIN_ROUTES = 17` records) | n/a (top-level script) |
 | `.github/workflows/ci.yml` | 5 jobs: `ci` (lint/tsc/test **+ non-blocking `pnpm audit` + codebase-index citation check + claims-integrity verify**), `claims-integrity-autocommit` (opt-in, `needs: ci`, the only `contents: write` job), `e2e` (Playwright chromium + webkit, build → **bundle budget** → run), `install-pnpm-11` (cold `--frozen-lockfile` install on the *other* pnpm major), `security-alerts` (non-blocking Dependabot report) | n/a |
 | `.github/workflows/codeql.yml` | CodeQL Advanced, `javascript-typescript`, `build-mode: none`, push/PR on `develop` **and `main`**, weekly cron `35 1 * * 1` | n/a |
 | `.github/workflows/dependency-review.yml` | `actions/dependency-review-action` (SHA-pinned, `# v4`), `fail-on-severity: high`, `fail-on-scopes: runtime`, PRs into `develop`/`main` | n/a |
@@ -155,7 +155,7 @@ the other:
 
 The deliberate consequence: running the gate straight after `pnpm analyze` **fails**, because a `--webpack`
 build never writes `route-bundle-stats.json` — and the script's error message names `--webpack` as the likely
-cause (`scripts/bundle-budget.mjs:96-98`). Re-run `pnpm build` before the gate.
+cause (`scripts/bundle-budget.mjs:108-110`). Re-run `pnpm build` before the gate.
 
 Every citation in this paragraph points into `node_modules/`, so all of them are version-bound and **not**
 machine-checked by `scripts/check-index-citations.mjs` (its citable set is first-party source and the listed root
@@ -763,8 +763,8 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 
 ### `scripts/bundle-budget.mjs`
 - **Role:** The repo's bundle-size gate, and the direct replacement for `.github/workflows/bundle-analysis.yml`.
-  Asserts two things about the build that is *actually shipping*: a per-route first-load JS ceiling, and that
-  three.js stays **off** the first-load critical path.
+  Asserts three things about the build that is *actually shipping*: a per-route first-load JS ceiling, that three.js
+  stays **off** the first-load critical path, and that compiled MDX bodies do too (`MDX_MARKER`, `:96`; check `:168-177`).
 - **Exports:** none — top-level script with side effects (`node scripts/bundle-budget.mjs`, run after
   `next build` / `pnpm build`, `:33`).
 - **Reads / depends on:** only `node:fs` (`:35`) and `.next/diagnostics/route-bundle-stats.json` (`:37`). No
@@ -779,7 +779,7 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
   `firstLoadUncompressedJsBytes` exactly, so the number is a measurement, not a model. **Not re-measured for this
   edition** (no build was run) — the header's "16 routes" and "`/` is 1220794" are authoring-time figures that have
   since moved (see below).
-- **The two assertions:**
+- **The three assertions:**
   - **First-load ceiling** `MAX_FIRST_LOAD_BYTES = 1_336_000` (`:72`) — a ceiling, not a baseline, that has been
     **raised repeatedly**: 1,285,000 (initial) → 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000 (`git log -p -- scripts/bundle-budget.mjs`; the docblock only narrates the later steps). The docblock (`:42-71`) tells the story:
     the global theme toggle, hero name line and `Tooltip` rollout on the nav components; a lazy `Tooltip` was tried and
@@ -798,24 +798,25 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
     bytes barely move — the bytes were always shipped, they just stopped being deferred. Recorded as exactly **one**
     chunk containing the marker, at **897,249 B** (876.2 KiB, matching the `next.config.ts` twin-chunk block), and it
     appears in none of the routes' first-load sets (`:76-77`). The failure message names `next/dynamic(…, { ssr: false })`,
-    a `next.config.ts` line range (127-149) and `src/lib/r3f.ts` (`:146-154`) — **that range is stale**; the block is
+    a `next.config.ts` line range (127-149) and `src/lib/r3f.ts` (`:158-166`) — **that range is stale**; the block is
     now at `next.config.ts:147-169` (the docblock at `:70` and `:75` repeats the stale range).
+  - **Compiled MDX stays off the critical path**, checked by marker `MDX_MARKER = "_createMdxContent"` (`:96`, check `:168-177`) for the same reason: a total can hide it. Every Velite-compiled body contains that runtime function name, so finding it in a first-load chunk means a client module reached `src/lib/content-bodies.ts`, directly or through another module (only the four `[slug]/page.tsx` pages may import it). The failure message names the chunk, its size and that module.
 - **Gotchas / invariants:**
   - **A missing or malformed artifact EXITS 1 — that is the feature, not an oversight.** The predecessor's defining
     flaw was reporting success while measuring nothing, so "I could not measure" must be red. Four
-    separate `fail()` paths enforce it: unreadable/unparseable JSON (`:91-100`), fewer than `MIN_ROUTES = 17`
-    records (`:40`, `:102-107`), missing expected keys (`:108-113`), and first-load chunk paths that do not exist on
-    disk (`:135-144`).
+    separate `fail()` paths enforce it: unreadable/unparseable JSON (`:103-112`), fewer than `MIN_ROUTES = 17`
+    records (`:40`, `:114-119`), missing expected keys (`:120-125`), and first-load chunk paths that do not exist on
+    disk (`:147-156`).
   - **Do not add `continue-on-error` to the CI step**, and do not add `if-no-files-found`-style leniency. The
-    script's own closing message says so (`:159-162`), and the step's comment (`ci.yml:179-189`) records why
+    script's own closing message says so (`:182-185`), and the step's comment (`ci.yml:179-189`) records why
     the predecessor's runs were green while uploading nothing.
   - **`pnpm analyze` breaks it, by design.** A `--webpack` build emits no `route-bundle-stats.json`, so the gate
-    fails after one — with a message naming `--webpack` as the likely cause (`:96-98`). Re-run `pnpm build`.
+    fails after one — with a message naming `--webpack` as the likely cause (`:108-110`). Re-run `pnpm build`.
   - `MIN_ROUTES` is a **format tripwire, not a route-count assertion.** Its comment (`:39`) explains the current
     value, **17**: the 16 `src/app` `page.tsx` routes plus `/_not-found`; it was raised from 16 to match, because the
     stats file lists `/_not-found` too. Fewer records means "Next changed the artifact's shape and this gate is lying",
-    and the failure text says to fix the script rather than lower the constant (`:105`). Adding routes only ever
-    raises the real count; a *drop* means the diagnostics contract moved. Same for the key check at `:108` — an
+    and the failure text says to fix the script rather than lower the constant (`:117`). Adding routes only ever
+    raises the real count; a *drop* means the diagnostics contract moved. Same for the key check at `:120` — an
     upgrade that renames `firstLoadUncompressedJsBytes` turns the gate red rather than vacuously green. One comment
     in the script (the header at `:27`) still says "16 routes" from before that change; the three.js docblock at `:76` was
     updated to "17 routes".

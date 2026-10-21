@@ -265,8 +265,9 @@ Three structural facts a maintainer should know:
   `ci.yml:190-191` runs `node scripts/bundle-budget.mjs`, which fails the job if (a) any route's
   `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **1,336,000 B**
   (`scripts/bundle-budget.mjs:72`), (b) fewer than `MIN_ROUTES` = **17** route records are present
-  (`scripts/bundle-budget.mjs:40`, the 16 `page.tsx` routes plus `/_not-found`), or (c) the `WebGLRenderer`
-  marker (`LAZY_MARKER`, `scripts/bundle-budget.mjs:84`) turns up in any route's first-load chunk set. The
+  (`scripts/bundle-budget.mjs:40`, the 16 `page.tsx` routes plus `/_not-found`), (c) the `WebGLRenderer`
+  marker (`LAZY_MARKER`, `scripts/bundle-budget.mjs:84`) turns up in any route's first-load chunk set, or (d) the `_createMdxContent`
+  marker (`MDX_MARKER`, `scripts/bundle-budget.mjs:96`) does. The
   comment above the ceiling records `/` at 1,333,521 B after the last raise, leaving about 2,479 B of
   headroom on that dev-box figure (at the v3.15.0 cut `/` measures 1,188,350 B, 147,650 B under the ceiling). The single three.js chunk is 897,249 B, present in 0 of the 17 route
   records' first-load sets (the script's own comment says "17 routes"). The remaining **four** guards still fail *silently*, including "`src/lib/r3f.ts`

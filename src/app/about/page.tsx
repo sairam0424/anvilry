@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { profile, skills, impactMetrics } from "@/lib/profile";
 import { personal, now, hasNow, hasPersonalContent } from "@/lib/personal";
-import { allProjects } from "@/lib/content";
+import { publicProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProfilePageJsonLd } from "@/components/json-ld";
@@ -51,7 +51,7 @@ export default function AboutPage() {
             </p>
             <p>
               Beyond work, I build open-source AI infrastructure in the open — agent frameworks, code-intelligence
-              engines, and AI-native tooling ({allProjects.length}&nbsp;public repos). I also compete: Google Code Jam
+              engines, and AI-native tooling ({publicProjects.length}&nbsp;public repos). I also compete: Google Code Jam
               2023
               (AIR 420), Meta Hacker Cup 2022, and Institute Rank 1 on GeeksforGeeks &amp; InterviewBit.
             </p>

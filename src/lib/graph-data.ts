@@ -78,6 +78,19 @@ export const graphNodes: GraphNode[] = [
   { id: "tombstone", label: "Tombstone", kind: "tool", pos: [-1.7, -0.7, 0.9] },
   { id: "trelix", label: "trelix", kind: "engine", pos: [2.2, -0.6, -0.9] },
   { id: "inkforge", label: "Inkforge", kind: "tool", pos: [0.1, 1.7, 0.9] },
+  // Platform, guardrails & observability: gateways, limiters and guards for agent traffic.
+  // Positions are placed to stay inside the frustum and >= 0.45 apart in the view plane
+  // (graph-data.test.ts enforces both).
+  { id: "kelvran", label: "Kelvran", kind: "engine", pos: [-0.95, -0.2, 0.3] },
+  { id: "toolwarrant", label: "toolwarrant", kind: "engine", pos: [-0.3, -0.85, 0.7] },
+  { id: "ratecap", label: "RateCap", kind: "engine", pos: [1.1, 0.65, -0.5] },
+  { id: "cost-guard-mcp", label: "Cost Guard MCP", kind: "engine", pos: [2.5, -1.45, -0.2] },
+  { id: "tracehub-mcp", label: "tracehub-mcp", kind: "engine", pos: [2.4, 1.75, 0.2] },
+  // Tooling and lab
+  { id: "prompt-lift", label: "prompt-lift", kind: "tool", pos: [-2.4, 1.35, 0.6] },
+  { id: "anvilry", label: "Anvilry", kind: "tool", pos: [1.25, 1.65, -0.7] },
+  { id: "daily-dose", label: "Daily Dose", kind: "tool", pos: [-0.65, -1.75, -0.3] },
+  { id: "nh-deck", label: "nh-deck", kind: "tool", pos: [1.0, -1.75, 0.1] },
 ];
 
 export const graphEdges: GraphEdge[] = [
@@ -107,6 +120,17 @@ export const graphEdges: GraphEdge[] = [
   ["tombstone", "nhl"], // Tombstone is part of the Not-Humans-World workspace
   ["trelix", "graph-forge"], // trelix is a code-intelligence engine (sibling of Graph-Forge)
   ["inkforge", "commandvault"], // Inkforge generates content that CommandVault indexes
+  // Platform cluster: the gateway family and the MCP guards around agent traffic
+  ["kelvran", "ratecap"], // both sit in front of LLM/API traffic (cache + budgets vs four-tier limiting)
+  ["kelvran", "toolwarrant"], // toolwarrant enforces at an MCP gateway, Kelvran is the LLM gateway
+  ["kelvran", "tracehub-mcp"], // Kelvran emits the OpenTelemetry spans tracehub-mcp queries
+  ["toolwarrant", "cost-guard-mcp"], // MCP guardrails on the agent's tools and its data-warehouse spend
+  ["cost-guard-mcp", "tracehub-mcp"], // the two mcpsmiths MCP servers
+  // Tooling and lab
+  ["prompt-lift", "mindforge"], // both extend Claude Code
+  ["daily-dose", "nhl"], // Not-Humans-Lab sub-projects
+  ["nh-deck", "nhl"],
+  ["anvilry", "inkforge"], // Inkforge mirrors generated articles into Anvilry's content
 ];
 
 export const kindColor: Record<GraphNode["kind"], string> = {

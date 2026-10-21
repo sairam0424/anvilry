@@ -6,6 +6,7 @@ import {
   allNotes,
   getProject,
   getWork,
+  repoLink,
 } from "@/lib/content";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
 import { allDecisions } from "@/lib/decisions";
@@ -102,7 +103,7 @@ export function listProjectsData() {
     name: p.name,
     tagline: p.tagline,
     group: p.group,
-    repo: p.repo,
+    repo: repoLink(p),
     tech: p.tech,
     url: `${BASE}${p.url}`,
   }));
@@ -116,7 +117,7 @@ export function getProjectData(slug: string) {
     name: p.name,
     tagline: p.tagline,
     group: p.group,
-    repo: p.repo,
+    repo: repoLink(p),
     commits: p.commits ?? null,
     tech: p.tech,
     excerpt: p.excerpt,

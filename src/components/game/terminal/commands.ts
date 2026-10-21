@@ -1,4 +1,4 @@
-import { allWork, allProjects, getWork, getProject } from "@/lib/content";
+import { allWork, allProjects, publicProjects, getWork, getProject } from "@/lib/content";
 import { questNodes, dossierFor, questGroups } from "@/lib/game-model";
 import { buildCorpus } from "@/lib/corpus";
 import { profile, skills, achievements, resumeVariants } from "@/lib/profile";
@@ -514,7 +514,7 @@ const stats: Command = {
     return {
       lines: fmt.statsBox("// PORTFOLIO STATS", [
         { label: "production systems", value: allWork.length },
-        { label: "open-source repos", value: allProjects.length },
+        { label: "open-source repos", value: publicProjects.length },
         { label: "OSS commits", value: `${commits} (snapshot)` },
         { label: "distinct tech", value: distinctTech },
         { label: "skill groups", value: skills.length },

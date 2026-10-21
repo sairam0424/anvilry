@@ -5,7 +5,7 @@ import {
   COMMAND_NAMES,
   commandEventName,
 } from "./commands";
-import { allWork, allProjects } from "@/lib/content";
+import { allWork, allProjects, publicProjects } from "@/lib/content";
 import { profile, skills, achievements, impactMetrics } from "@/lib/profile";
 import { personal, now, hasPersonalContent } from "@/lib/personal";
 
@@ -285,7 +285,8 @@ describe("terminal command registry", () => {
     const repoMetric = impactMetrics.find(
       (m) => m.label === "open-source repos",
     );
-    expect(repoMetric?.value).toBe(`${allProjects.length}`);
+    // Only repos a visitor can open count as open source: the private ones are listed, not counted.
+    expect(repoMetric?.value).toBe(`${publicProjects.length}`);
   });
 
   it("contact/email/social surface real profile links; email navs to mailto", () => {
@@ -367,9 +368,8 @@ describe("terminal command registry", () => {
       .lines.map((l) => l.text)
       .join("\n");
     // Stats now uses box/row format: "● open-source repos   8"
-    expect(text).toContain(`${allProjects.length}`);
+    expect(text).toMatch(new RegExp(`open-source repos\\s+${publicProjects.length}\\b`));
     expect(text).toContain(`${allWork.length}`);
-    expect(text).toMatch(/open-source repos/i);
     expect(text).toMatch(/production systems/i);
   });
 

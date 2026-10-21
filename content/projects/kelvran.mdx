@@ -1,0 +1,59 @@
+---
+slug: kelvran
+name: Kelvran
+tagline: Self-hosted Go LLM gateway with a correctness-gated cache and per-run cost attribution
+group: "Platform, Guardrails & Observability"
+repo: https://github.com/kelvran/gateway
+commits: 863
+dateCreated: 2026-09-03
+license: Apache-2.0
+tech: [Go, Python, Redis, bbolt, OpenTelemetry, Protobuf, AWS Bedrock, Docker, Kubernetes, Terraform]
+pinned: false
+featured: true
+order: 1
+excerpt: "Self-hosted LLM gateway in Go that speaks OpenAI's Chat Completions and Embeddings wire format, plus Anthropic's Messages API, in front of OpenAI, Anthropic, Gemini, AWS Bedrock and any OpenAI-compatible server. One binary carries a three-layer response cache whose near-duplicate hits must pass non-configurable correctness gates, per-tenant virtual keys with Decimal budgets and Redis-backed rate limits, regex guardrails, and OpenTelemetry spans that attribute cost to an agent_run_id. A separate Python CLI, evals, scores agent outputs with Wilson intervals and an opt-in two-judge panel. 23 gateway releases through v0.20.0 (2026-10-15); solo-maintained."
+decisions:
+  - title: "Cache as an in-process Go package over a standalone cache service"
+    body: "I kept the cache inside the gateway binary, called in-process as `cache.Cache { Get, Put, Delete }`, instead of running it as its own service. A standalone cache would have grown its own auth, tenant resolution and upstream router, duplicating much of the gateway, and every product I surveyed that ships both embeds caching in-process. The cost is real: the cache is per replica, empty after every restart, and cannot scale apart from routing. The dormant gRPC adapters are only a typed Go seam with no written wire contract (ADR 0002, correction of 2026-09-12), and a Redis-backed shared cache exists only as a design RFC."
+    tags: [architecture, cache, monorepo]
+  - title: "Lexical near-duplicate matching behind hard gates over an embedding semantic cache"
+    body: "The third cache layer is MinHash/Jaccard over word shingles at a 0.9 floor in pure Go stdlib, and every hit must also pass entity/number/date, negation, 24-hour freshness, exact-model, `response_format` and guardrail-policy-version gates that no config knob disables. I chose that over the usual similarity-threshold semantic cache because CacheAttack-style hijacking is a founding threat in the PRD and a bare threshold has no answer to it. The cost: it catches typos and single-word swaps, not paraphrases. A live dry-run scored a genuine paraphrase at about 0.0078 Jaccard, so the hit-rate ceiling is low by construction, and this layer has no erasure path."
+    tags: [cache, security, trade-off]
+  - title: "Two Bedrock Claude judges over a cross-vendor panel, failing closed on a tie"
+    body: "`evals run --llm-judge-panel` sends the identical prompt to Claude Sonnet 5 and Claude Haiku 4.5, both through Bedrock, reduces by strict majority and fails closed on a 1-1 tie. The original design was cross-vendor, which defends best against correlated judge bias; I revised it the same day because one shared AWS credential already existed and a second vendor key did not. That is an accepted weakness: both judges are Claude models, the panel is opt-in, the default scorer stays deterministic exact or regex matching, and Bedrock judge cost is reported as unknown rather than estimated."
+    tags: [evals, llm-judge, trade-off]
+  - title: "Single Lua EVALs for the rate-limit gate and settlement over pipelined Redis calls"
+    body: "I measured first: a go-redis hook counts round trips per store into OpenTelemetry counters before any change. Folding spend reads into the budget scripts took a capped key from 11.0 to 8.0 round trips, and one gate script for RPM, TPM and tokens-per-day plus one paired settlement took it to 5.0. I used single EVALs because go-redis's NOSCRIPT fallback is inert inside a pipeline and a retried pipeline would settle twice. The cost: a refused request now consumes no RPM token, a behaviour change, and a lost-reply settlement can still apply twice on retry, which the failure-modes doc lists as known."
+    tags: [performance, redis, rate-limiting]
+---
+
+**Kelvran** is a self-hosted LLM gateway written in Go, for operators who want one endpoint in front of several model providers, with budgets and cost attribution per agent run. It is solo-maintained under the `kelvran` GitHub organization and openly AI-assisted: the owner makes the recorded decisions, and 415 of the 863 commits on main carry a `Co-Authored-By: Claude` trailer.
+
+- **Two client wire formats** — OpenAI Chat Completions and Embeddings, plus Anthropic's Messages API for the Anthropic SDKs and Claude Code.
+- **Five provider adapters** — OpenAI, Anthropic, Gemini, Bedrock and OpenAI-compatible servers such as vLLM and Ollama.
+- **Three-layer cache** — exact match, light normalization and lexical near-duplicate matching, partitioned per virtual key; hits are never billed.
+- **Non-configurable gates** — near-duplicate hits must also pass entity, number, date, negation, freshness and model checks, and no setting disables them.
+- **Virtual keys and budgets** — Decimal-precision spend (never float64) plus RPM, TPM and tokens-per-day limits, on bbolt for one replica or Redis for several.
+- **Regex guardrails** — scans for email, phone, SSN, IBAN, credit card, IP, secret keys and prompt injection; credential and ID matches return a 400, the rest warn.
+- **Cost attribution** — a GenAI span per chat request carries `kelvran.agent_run_id` from W3C baggage and `kelvran.cost.usd`.
+- **evals CLI** — a separate Python tool (not on PyPI, run from source) scoring agent outputs with Wilson intervals and an opt-in two-judge panel.
+
+> 863 commits on main, 23 gateway releases and 0 stars as of 2026-10-21, OpenSSF Scorecard 8/10 on 2026-10-19; main is ahead of v0.20.0, and the benchmark figures are developer-laptop trend numbers, not production latency.
+
+## Architecture
+
+Kelvran is one monorepo with two deployables: `gateway/`, a single static Go binary with the cache compiled in as a package rather than a network hop, and `evals/`, a Python CLI. They share only the protobuf contract in `api/`, generated into both languages and guarded by `buf breaking` in CI.
+
+Package boundaries are enforced: `gateway/.go-arch-lint.yml` declares an explicit `mayDependOn` graph checked in `make lint-gateway`, and evals mirrors it with import-linter contracts. Identity, budgets, rate limits and the spend ledger each have a stdlib-only core with bbolt or Redis backends; the response cache, prompts and Idempotency-Key replay stay per replica by design. The `gateway/compat` SDK matrix runs against replaying test upstreams, not live providers. Observability is OpenTelemetry-first, with a protobuf `GatewayDecisionEvent` log line per request that feeds `evals ingest`.
+
+The README marks only the Bedrock adapter as having seen live pilot traffic, and the Kubernetes base was applied only to a local kind cluster (2026-09-21), never to a production or EKS cluster. The Redis round-trip reduction and the R19 budget fix are on main but not in v0.20.0, which still has R19: with `budget.redis_addr` set, a key with `budget_usd` admits one in-flight request at a time.
+
+## How It Works
+
+1. **Request in** — a client sends a W3C `traceparent` and optionally `baggage: agent_run_id=...`; the bearer secret resolves to a virtual key by SHA-256 hash, then its allowlists are checked.
+2. **Idempotency and prompts** — an `Idempotency-Key` is claimed in a 10-minute in-process window, then server-side prompt templates resolve.
+3. **Reserve** — rate limit and budget are reserved before the upstream call; in Redis mode on main that is two round trips.
+4. **Cache lookup** — L1, L2, then L3; a hit returns at once and is never billed, and concurrent identical misses share one upstream call.
+5. **Guard and route** — pre-call guardrails scan every message role, the router picks a healthy deployment by weighted round-robin, and error-classified `fallback_chains` retry across models and providers.
+6. **Finalize** — post-call guardrails run (audit-only on streams), the response is cached, and settlement, Decimal cost, the spend ledger entry, the GenAI span and the decision event follow.
+7. **Evals, offline** — `evals run` scores by exact match, regex or LLM judge, `--llm-judge-panel` adds a second judge, and `evals report --fail-under` gates on the Wilson lower bound.

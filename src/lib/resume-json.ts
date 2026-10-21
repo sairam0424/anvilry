@@ -1,5 +1,5 @@
 import { profile, skills, achievements } from "@/lib/profile";
-import { allWork, allProjects } from "@/lib/content";
+import { allWork, allProjects, repoLink } from "@/lib/content";
 
 const BASE = "https://anvilry.vercel.app";
 
@@ -59,7 +59,8 @@ export function buildResumeJson() {
       name: p.name,
       description: p.tagline,
       keywords: p.tech,
-      url: p.repo,
+      // A private repository has no public URL: point at the portfolio page instead of a 404.
+      url: repoLink(p) ?? `${BASE}${p.url}`,
       // The portfolio dossier page (distinct from the source repo).
       entity: `${BASE}${p.url}`,
     })),

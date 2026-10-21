@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, GitCommitHorizontal } from "lucide-react";
+import { repoLink } from "@/lib/content";
 import { Github } from "@/components/icons";
 import type { CardSegment } from "@/components/chat/parse-cards";
 
@@ -18,15 +19,19 @@ export function ChatCard({ segment }: { segment: Extract<CardSegment, { type: "p
           <Link href={p.url} className="text-base font-semibold tracking-tight hover:text-accent">
             {p.name}
           </Link>
-          <a
-            href={p.repo}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${p.name} on GitHub`}
-            className="shrink-0 text-fg-subtle transition-colors hover:text-accent"
-          >
-            <Github size={16} />
-          </a>
+          {repoLink(p) ? (
+            <a
+              href={repoLink(p) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${p.name} on GitHub`}
+              className="shrink-0 text-fg-subtle transition-colors hover:text-accent"
+            >
+              <Github size={16} />
+            </a>
+          ) : (
+            <span className="shrink-0 font-mono text-[11px] text-fg-subtle">Private repository</span>
+          )}
         </div>
         <p className="mt-1 text-sm text-fg-muted">{p.tagline}</p>
         <div className="mt-3 flex flex-wrap gap-1.5">

@@ -50,6 +50,14 @@ describe("mcp tools", () => {
     expect(listWorkData().length).toBe(allWork.length);
   });
 
+  it("list_projects and get_project give no repo URL for a private project", () => {
+    for (const p of allProjects) {
+      const expected = p.visibility === "private" ? null : p.repo;
+      expect(listProjectsData().find((x) => x.slug === p.slug)?.repo, `list_projects ${p.slug}`).toBe(expected);
+      expect((getProjectData(p.slug) as { repo: string | null }).repo, `get_project ${p.slug}`).toBe(expected);
+    }
+  });
+
   it("get_project / get_work resolve a real slug and fail closed on a fake one", () => {
     const realP = allProjects[0].slug;
     expect((getProjectData(realP) as { slug: string }).slug).toBe(realP);

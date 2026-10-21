@@ -82,6 +82,31 @@ test("404 page: one of the rotating mascots sits above the panic terminal and re
   await expect(mascot.locator("span > span").nth(1)).toHaveCSS("opacity", "1");
 });
 
+test("home: the featured projects list counts the whole collection", async ({ page }) => {
+  await page.goto("/");
+  const section = page.locator("#projects");
+  await expect(section.getByRole("link", { name: /^View all \d+ projects$/ })).toBeVisible();
+  // Featured cards are public repos (a private one would link a GitHub 404): every card here has its repo link.
+  const cards = section.locator(".card-surface");
+  expect(await cards.count()).toBeGreaterThanOrEqual(6);
+  await expect(section.getByText("Private repository")).toHaveCount(0);
+});
+
+test("projects page: four groups, and a private repository is marked instead of linked", async ({ page }) => {
+  await page.goto("/projects");
+  for (const group of [
+    "Platform, Guardrails & Observability",
+    "Agent Frameworks & Infrastructure",
+    "Code Intelligence & Engines",
+    "Tooling & Lab",
+  ]) {
+    await expect(page.getByRole("heading", { level: 2, name: group })).toBeVisible();
+  }
+  await expect(page.getByText("Private repository").first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Agent-Forge on GitHub" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Kelvran on GitHub" })).toBeVisible();
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

@@ -1,0 +1,57 @@
+---
+slug: tracehub-mcp
+name: tracehub-mcp
+tagline: Read-only MCP server for querying LLM traces across eight OpenTelemetry backends
+group: Platform, Guardrails & Observability
+repo: https://github.com/mcpsmiths/tracehub-mcp
+commits: 322
+dateCreated: 2026-09-12
+license: Apache-2.0
+tech: [Python, FastMCP, MCP, OpenTelemetry, Pydantic, httpx, boto3, Hypothesis, Docker, uv]
+pinned: false
+featured: false
+order: 9
+excerpt: "Fork of traceloop/opentelemetry-mcp-server grown into an independently released MCP server for debugging LLM traces: 8 OpenTelemetry backends (Jaeger, Tempo and Traceloop inherited; Datadog, Sentry, AWS X-Ray, New Relic and Honeycomb added) behind one BaseBackend interface, 19 read-only tools (11 inherited) including deterministic root-cause triage and best-effort cross-backend correlation, gen_ai.* attribute parsing with litellm-backed cost attribution, a TTL cache with request coalescing, and SSRF, redirect and response-size guards. At v0.13.0 it is on PyPI, the MCP registry and GHCR; 303 of its 322 commits post-date the fork."
+decisions:
+  - title: "Forked with git clone and a second remote, not GitHub's fork button"
+    body: "I wanted the upstream history inside the repo so `git merge-base` shows exactly what was inherited — 19 commits, 3 backends, 11 tools, 77 test functions — and NOTICE and the README say so plainly. The cost: GitHub records `isFork: false` with no parent link, so the platform's fork graph never connects tracehub-mcp to traceloop/opentelemetry-mcp-server; attribution survives only because I wrote it down. It also means none of this work has gone back upstream, whose last push was 2026-06-21."
+    tags: [provenance, licensing, open-source]
+  - title: "Shipping New Relic and Honeycomb from API docs alone over waiting for a live account"
+    body: "Both backends were built from API documentation, every unverified assumption is named in the module docstrings and the README, and the VCR cassettes cover only Jaeger, Tempo and Traceloop. The cost is real: New Relic's trace-hydration response shape is a guess mitigated by overlaying search-row attributes, and Honeycomb's Query Data API is documented as Enterprise-plan only, so a Free or Pro user may be unable to run a single query. I preferred shipping with the gaps stated over omitting the backends or claiming parity."
+    tags: [backends, honesty, testing]
+  - title: "Deterministic triage and best-effort correlation over an LLM in the loop"
+    body: "`triage_trace` and `correlate_trace` are pure functions over already-fetched spans — critical path, self-time, deepest error chain, confidence labels — so results are reproducible and unit-testable, and the tree walks are iterative and cycle-safe. `correlate_trace` is explicitly not a schema-level join: exact trace id first, else a time-window and service-overlap heuristic capped at 24 hours and 10 services. The cost: a genuine cross-vendor match outside those caps comes back as not found or low confidence, and clock skew or sampling mismatch can produce a wrong pairing that the result can only warn about."
+    tags: [algorithms, agent-tools, trade-offs]
+  - title: "Hand-rolled HTTP transport, cache and pricing table over libraries"
+    body: "`base.py` carries its own retrying transport (origin pinning, metadata-host blocking, one deadline across retries and redirects, byte-capped decoding), `cache.py` hand-rolls TTL plus in-flight coalescing under one lock because no cache library coalesces natively, and pricing vendors litellm's 3 MB table and refreshes it with `sync_model_prices.py` instead of fetching prices at runtime, because litellm's own automated updater has failed silently before. A weekly `pricing-drift-check.yml` job runs the script and opens a pull request on drift for me to review. The cost: `base.py` is over 1,000 lines I now own, the price table is only as fresh as the last merged drift pull request, and fixes to that surface are mine to write instead of a dependency bump."
+    tags: [security, dependencies, maintenance]
+---
+
+**tracehub-mcp** is a Python MCP server that gives Claude, Cursor or any MCP client a read-only query surface over OpenTelemetry traces from LLM applications, for engineers debugging LLM pipelines. It began as a fork of traceloop/opentelemetry-mcp-server, which contributed the architecture, 3 of the 8 backends and 11 of the 19 tools. GitHub does not show it as a fork because it was created with `git clone` and a second remote; attribution lives in NOTICE and the README.
+
+- **Eight backends, one interface** — Jaeger, Grafana Tempo, Traceloop, Datadog, Sentry, AWS X-Ray, New Relic and Honeycomb sit behind one `BaseBackend`; the first three are inherited.
+- **19 read-only tools** — trace and span search, token and cost aggregation, error hunting, session and prompt-version stats, triage and correlation.
+- **Deterministic triage** — `triage_trace` returns a critical path, self-time ranking and deepest error chain with a confidence label and no LLM call.
+- **Best-effort correlation** — `correlate_trace` matches by exact trace id, else a time-window and service-overlap heuristic, and always returns its limitations.
+- **Cost attribution** — usage tools attach `cost_usd` from a vendored litellm table of 4,473 models, flagged partial when a model is unresolved.
+- **Guarded transport** — requests stay pinned to the configured origin, cloud-metadata hosts are blocked, and response bodies are byte-capped.
+
+> At v0.13.0 (2026-10-14): 322 commits (303 after the fork point), 20 releases in 33 days and 1,737 test functions by static count, with 95% coverage read from the Codecov badge; a solo-maintained repo with no stars, no forks and no outside contributors, whose New Relic and Honeycomb backends have never run against a live account, and recorded integration cassettes exist only for the inherited Jaeger, Tempo and Traceloop backends.
+
+## Architecture
+
+One Python package, `src/opentelemetry_mcp/`, holds the server (43 files, 19,077 lines at v0.13.0). The import name is still upstream's `opentelemetry_mcp`; only the distribution and CLI are named tracehub-mcp. `server.py` carries the FastMCP app, the Click CLI, the 19 tool handlers, Origin and Host validation, rate limiting and bearer-token middleware.
+
+`backends/base.py` defines the abstract `BaseBackend` and a shared retrying httpx transport that spends one retry and redirect budget under a single deadline; X-Ray uses boto3 on a private 8-thread executor instead. A hybrid filter engine pushes supported operators down into each backend's native language (TraceQL, NRQL and others) and applies the rest client-side. Each tool has its own module under `tools/`; `triage.py` and `correlate.py` compose the iterative, cycle-safe walks in `span_tree.py`.
+
+Delivery is a non-root multi-stage Dockerfile, a Claude Desktop `mcpb/` bundle and 9 GitHub Actions workflows (mypy --strict, pytest with Codecov, MCP conformance, Trivy, CodeQL, Scorecard, TruffleHog). Releases go to [PyPI](https://pypi.org/project/tracehub-mcp/), the [MCP registry](https://registry.modelcontextprotocol.io/v0/servers/io.github.mcpsmiths%2Ftracehub-mcp/versions) and [GHCR](https://github.com/mcpsmiths/tracehub-mcp/pkgs/container/tracehub-mcp). v0.13.0 is a 0.x release with 14 breaking changes and 90 `fix(security)` commits, the output of a security-audit remediation programme rather than feature work.
+
+## How It Works
+
+1. **Configure** — `BACKEND_TYPE`, `BACKEND_URL` and backend credentials come from env, `.env` or CLI flags; `config.py` refuses credentialed URLs, cloud-metadata hosts and out-of-range values at startup.
+2. **Serve** — The server runs on stdio or streamable HTTP; HTTP binds to loopback by default, and a non-loopback bind will not start without `MCP_HTTP_BEARER_TOKEN`.
+3. **Query** — A call such as `search_traces` builds a `TraceQuery`; the filter engine splits it into native pushdown and client-side evaluation, and the backend sends it through the origin-pinned, byte-capped transport.
+4. **Reconstruct** — Datadog, X-Ray, New Relic and Honeycomb have no trace-level search, so traces are rebuilt from spans or summaries and re-verified against the requested trace id. Datadog and Sentry reject malformed spans rather than invent timestamps, per the README; the three inherited backends were deliberately not retrofitted.
+5. **Price** — Spans become typed `SpanData` and `TraceData` with `gen_ai.*` fields, and aggregation tools add `cost_usd`.
+6. **Diagnose** — `triage_trace` walks the span tree; `correlate_trace` queries a configured secondary backend by trace id, then falls back to its heuristic.
+7. **Cache and observe** — With `QUERY_CACHE_TTL_SECONDS` set, repeat queries come from a TTL cache that coalesces concurrent duplicates; `/health` and `/ready` serve orchestrators, and `OTEL_EXPORTER_OTLP_ENDPOINT` adds an opt-in span per `tools/call`.

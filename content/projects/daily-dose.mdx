@@ -1,0 +1,58 @@
+---
+slug: daily-dose
+name: Daily Dose
+tagline: "AI-curated daily tech digest: four sources, one batched Bedrock call, per-run cost ledger"
+group: Tooling & Lab
+repo: https://github.com/sairam0424/daily-dose
+commits: 179
+dateCreated: 2026-09-02
+license: Apache-2.0
+tech: [TypeScript, Astro, Node.js, Bedrock, Zod, Vitest, GitHub Actions, Vercel, axe-core]
+pinned: false
+featured: false
+order: 18
+excerpt: "A cron-driven Astro static site that pulls Hacker News, arXiv, GitHub and Dev.to through free keyless APIs, scores all twenty daily items in one forced-tool-use AWS Bedrock call (Sonnet 5 leading a four-model fallback chain), and validates the output against one Zod schema shared by the pipeline and the Astro content collection. GitHub Actions commits the result back to `main` each night. Every run's token usage and dollar cost goes into a committed JSONL ledger (52 runs, $3.10 total at 2026-10-20) with a 5x trailing-average anomaly flag that files a GitHub Issue."
+decisions:
+  - title: "One batched forced-tool-use Bedrock call per run, over per-item calls or the structured-outputs beta"
+    body: "I send the whole day's items in a single non-streaming call with `tool_choice` pinned to a `record_scores` tool, because Bedrock has rejected newly added top-level fields before and the JSON-schema beta is direct-API-first; Zod on the tool input is the real guard. The cost: one truncated or malformed response fails the whole batch, a retry on the next model re-bills every item, `max_tokens` had to grow to 16,000 once the per-item analysis field landed, and a Bedrock quirk that returns `scores` as a JSON string instead of an array needed its own special case."
+    tags: [llm, bedrock, structured-output]
+  - title: "The cron commits generated data straight to `main`, over a PR gate"
+    body: "`Branches.md` says every change goes through a PR even solo, so letting a bot push to `main` is a documented exception (ADR 0004), scoped by `file_pattern` to `src/data/digest/**` and `stats.jsonl`, never `git add -A`. The cost: GitHub branch protection cannot require reviews or status checks without blocking that bot, so the API shows both unset and protection reduces to no-force-push plus enforce-admins. A competing push between checkout and commit also fails the run after the paid Bedrock call; `git pull --rebase --autostash` narrows that window without closing it."
+    tags: [ci, governance, git]
+  - title: "A dynamic 5x trailing-average anomaly flag, over a fixed dollar ceiling"
+    body: "At twenty items a day a guessed ceiling is either meaningless or trips on a long-abstract day, so a run is flagged only when it costs more than five times the average of the last seven runs, once three runs of history exist, with a $0.05 seed baseline before that. The cost: it is a warning after the money is spent, because the single batched call has already finished, so the only real prevention is the 50-item pre-flight refusal; and until a later workflow fix, a successful but anomalous run reached only `console.warn`, never a durable alert."
+    tags: [cost, observability]
+  - title: "Pipeline in GitHub Actions and a build-only Vercel project, over generating content in the Vercel build command"
+    body: "The project it is modelled on, arpitbbhayani/the-daily-diff, appears to generate its content inside the site's build command. I rejected that: it would run a paid Bedrock call on every PR preview, commit nothing, which breaks the rule that digest JSON is permanent history, and put the Bedrock credential into Vercel. ADR 0004 therefore pins Vercel's Build Command to `npm run build`. The cost: freshness rides a cron, commit and redeploy chain where GitHub's scheduler starts 1.5-5.5 hours late, so some calendar days got two digests and others none, and the credential is shared with the Anvilry chatbot, so rotating it touches two repos."
+    tags: [deployment, security, vercel]
+---
+
+**Daily Dose** is a nightly AI-curated tech digest: a scheduled GitHub Actions job fetches five items each from Hacker News, arXiv, GitHub and Dev.to, has an AWS Bedrock model score all twenty in one call, and commits the result for an Astro static site on Vercel ([live site](https://daily-dose-hazel-delta.vercel.app)). It is the maintainer's own take on arpitbbhayani/the-daily-diff (not a fork), is solo-maintained, and is not published to any package registry.
+
+- **Four keyless sources** — Hacker News via Algolia, arXiv cs.AI/cs.LG/cs.CL via the Atom API, new GitHub repos by stars, and Dev.to top articles.
+- **One scored batch** — each item gets a 0-10 `interest_score`, a one-sentence `why_read`, a short `analysis` and an `exclude` flag; items go in as `<item>` blocks with escaped titles, marked untrusted.
+- **Four-model fallback** — Sonnet 5, then Sonnet 4.6, Opus 4.6 and Haiku 4.5; API and JSON-parse errors advance to the next model.
+- **Logged placeholder scoring** — deterministic scorers cover items the model omits, or whole runs without credentials, with a warning in the log.
+- **Committed cost ledger** — every run's tokens and dollars are appended to `src/data/stats.jsonl`, read by a password-gated `/stats` page and the anomaly check.
+- **One schema, two enforcement points** — a single Zod schema validates items when the pipeline writes them and again when Astro reads them.
+- **Reader surfaces** — a dated `/archive/`, five RSS feeds (combined plus per source) and `/latest.json`.
+
+> As of 2026-10-20: 52 ledgered Bedrock runs cost $3.10 in total (about $0.06 a run, none flagged) and 36 digest days are committed, but 11 of 58 pipeline runs failed, six of them consecutive scheduled runs (2026-09-11 to 2026-09-16) with an unverified cause. Zero stars; 457 Vitest tests passed on the last green CI run (2026-09-17), issue #132 (automated-failure) is still open and 10 Dependabot pull requests are open with failing CI.
+
+## Architecture
+
+Two halves share one schema. `scripts/pipeline.ts` writes one JSON file per item into `src/data/digest/YYYY-MM-DD/`; Astro's content collection reads the same folder through a glob loader, and both import `src/lib/digestSchema.ts`. The "zero drift" guarantee is design intent: `Context.md` says it has not yet met a real schema-breaking change.
+
+`src/lib/llmCuration.ts` makes one non-streaming call per model attempt, with `tool_choice` forced to `record_scores`, `max_tokens` at 16,000 and a 50-item pre-flight ceiling. `src/lib/costTracking.ts` prices runs from a per-model table and flags one only above five times the trailing seven-run average, after three runs of history. Totals are computed from list prices, not an AWS invoice, and the first three entries used a since-corrected rate (ADR 0005).
+
+Delivery is Astro 7 static output on Vercel; `/stats` is the one server-rendered route, behind Basic Auth middleware (digests compared with `timingSafeEqual`; a 500 if `STATS_PASSWORD` is unset). `daily-pipeline.yml` is the only workflow with write permissions. Checks include an axe-core accessibility gate, CodeQL, gitleaks and SHA-pinned actions, but the type check is non-blocking over 37 pre-existing errors, and `package.json` still says 0.1.0 against the [v1.0.0 release](https://github.com/sairam0424/daily-dose/releases/tag/v1.0.0) of 2026-09-08.
+
+## How It Works
+
+1. **Trigger** — at 21:00 UTC `daily-pipeline.yml` runs `npm run pipeline`; GitHub typically starts it 1.5-5.5 hours late, and a concurrency group stops overlapping runs.
+2. **Fetch** — five items per source, with retries; if every source fails, no empty digest is written.
+3. **Score** — all twenty items go to Bedrock in one call down the four-model chain, and tokens from every attempt are summed so retries are never under-billed.
+4. **Tier** — excluded items are dropped, missing ones get the placeholder score, and tiers follow: 8+ must-read, 6+ recommended, else notable.
+5. **Ledger** — `recordAndCheckCost` prices the run from real token usage, appends to `stats.jsonl` and sets the anomaly flag.
+6. **Commit** — items are Zod-validated and written one file each, and `git-auto-commit-action` commits only `src/data/digest/**` and `stats.jsonl` as `github-actions[bot]`.
+7. **Deploy and alert** — the push triggers Vercel, whose Build Command ADR 0004 pins to `npm run build` (project settings not re-inspected); failures and anomalies file or comment on an `automated-failure` issue.

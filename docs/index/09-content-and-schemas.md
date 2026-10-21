@@ -62,11 +62,11 @@ version: v3.15.0
 
 ## Schemas
 
-All four collections are declared in `velite.config.ts` and registered at `velite.config.ts:155`
+All four collections are declared in `velite.config.ts` and registered at `velite.config.ts:160`
 (`collections: { projects, work, notes, articles }`). Global config: `root: "content"`
-(`velite.config.ts:143`), data output `.velite`, asset output `public/static` served from base
-`/static/` with filename pattern `[name]-[hash:6].[ext]` (`velite.config.ts:144-148`),
-`clean: false` (`velite.config.ts:153`), and `mdx: { gfm: true }` (`velite.config.ts:156`).
+(`velite.config.ts:148`), data output `.velite`, asset output `public/static` served from base
+`/static/` with filename pattern `[name]-[hash:6].[ext]` (`velite.config.ts:149-153`),
+`clean: false` (`velite.config.ts:158`), and `mdx: { gfm: true }` (`velite.config.ts:161`).
 
 Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 
@@ -80,7 +80,7 @@ Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 - `s.mdx()` compiles the file body to a JS function string; an empty body yields `body: ""`
   (all 15 Article files have empty bodies).
 
-### Project (`velite.config.ts:19-50`) — pattern `projects/**/*.mdx`
+### Project (`velite.config.ts:20-55`) — pattern `projects/**/*.mdx`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -103,13 +103,13 @@ Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 | `excerpt` | `s.string()` | required | — | `:47` |
 | `url` | — (derived) | added | `.transform((data) => ({ ...data, url: \`/projects/${data.slug}\` }))` | `:49` |
 
-The `themeGroup` enum (`velite.config.ts:4-8`) is duplicated as a literal tuple in
-`src/lib/content.ts:31-35` (`projectGroups`) — the ordering there drives `/projects` section order.
+The `themeGroup` enum (`velite.config.ts:4-9`) is duplicated as a literal tuple in
+`src/lib/content.ts:40-45` (`projectGroups`) — the ordering there drives `/projects` section order.
 `dateCreated`/`license` feed `SoftwareSourceCodeJsonLd`; `relatedArticles` is resolved by
-`src/app/projects/[slug]/page.tsx:83-85` via `getArticle` (unknown slugs are silently dropped) and
+`src/app/projects/[slug]/page.tsx:86-88` via `getArticle` (unknown slugs are silently dropped) and
 rendered by `src/components/related-writing.tsx`.
 
-### Work (`velite.config.ts:53-75`) — pattern `work/**/*.mdx`
+### Work (`velite.config.ts:58-80`) — pattern `work/**/*.mdx`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -136,7 +136,7 @@ There is **no `featured` field on Work** — the home page's "featured work" lis
 are >20 chars and free of `TODO|TBD|lorem`, and `:55-72` applies the same prose check to every
 project `decisions[]` entry (title >3 chars, body >20 chars).
 
-### Note (`velite.config.ts:81-106`) — pattern `notes/**/*.{md,mdx}`
+### Note (`velite.config.ts:86-111`) — pattern `notes/**/*.{md,mdx}`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -157,7 +157,7 @@ project `decisions[]` entry (title >3 chars, body >20 chars).
 | `body` | `s.mdx()` | required | compiled MDX (both `.md` and `.mdx` go through the MDX compiler) | `:103` |
 | `url` | — (derived) | added | `.transform(... url: \`/notes/${data.slug}\`)` | `:105` |
 
-### Article (`velite.config.ts:114-140`) — pattern `articles/**/*.{md,mdx}`
+### Article (`velite.config.ts:119-145`) — pattern `articles/**/*.{md,mdx}`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
@@ -176,8 +176,8 @@ project `decisions[]` entry (title >3 chars, body >20 chars).
 | `url` | — (derived) | added | `.transform(... url: \`/articles/${data.slug}\`)` | `:139` |
 
 Note the unenforced invariants written as comments only: `externalUrl` "required for
-non-native" (`velite.config.ts:131`) and `linkedNote` "slug of an existing /notes entry"
-(`velite.config.ts:133`). Neither is a Zod refinement, and no test enforces either
+non-native" (`velite.config.ts:136`) and `linkedNote` "slug of an existing /notes entry"
+(`velite.config.ts:138`). Neither is a Zod refinement, and no test enforces either
 (`relatedArticles` at `:39` is likewise unchecked). Today both hold in the data: every non-native
 article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a real note — see
 "Cross-references" §5.
@@ -258,7 +258,7 @@ No Note is a draft, so `publishedNotes.length === 7` always; `allNotes.length` i
 
 The five June notes carry the full Inkforge extended set except `category`, which
 `content/notes/how-dns-works.mdx` omits; the two 2026-07-05 notes carry no `generatedBy` and no
-`wordCount`. Consequently **`inkforgeNotes` / `inkforgeArticles` (`src/lib/content.ts:62`,
+`wordCount`. Consequently **`inkforgeNotes` / `inkforgeArticles` (`src/lib/content.ts:72`,
 `:67`) match 5 of the 7 notes** (and are empty while `NOTES_ENABLED` is off, because they derive
 from `allNotes`); the other 2 are the hand-authored ones. File extension is not a provenance
 signal: both `.mdx` notes among the five carry `generatedBy: inkforge`, while the two hand-authored
@@ -314,25 +314,25 @@ after their notes), and `readingTime` differs for `inkforge` (note 14, article 1
 
 ### 1. Game-model node IDs → content slugs
 
-`src/lib/game-model.ts:28-50` (`NODE_CONTENT`) maps **16** hero-graph node IDs to
+`src/lib/game-model.ts:37-70` (`NODE_CONTENT`) maps **16** hero-graph node IDs to
 `{ kind, slug }` pairs, covering all 5 Work slugs and all 11 Project slugs — a total bijection
 with `content/work` + `content/projects`. The node list itself is `graphNodes` in
-`src/lib/graph-data.ts:18-81` (16 entries). `resolveNode()` (`src/lib/game-model.ts:62-71`) looks
+`src/lib/graph-data.ts:18-94` (16 entries). `resolveNode()` (`src/lib/game-model.ts:82-91`) looks
 the slug up via `getWork`/`getProject`, returning `null` when absent, and `hrefFor()`
 (`:74-76`) returns the Velite-derived `item.url`.
 
-**The three intentional node-id / slug mismatches** (comment at `src/lib/game-model.ts:16-27`,
+**The three intentional node-id / slug mismatches** (comment at `src/lib/game-model.ts:25-36`,
 also recorded in the `CLAUDE.md` "Testing Notes" section):
 
 | Graph node id | Content slug | Kind | Cite |
 |---|---|---|---|
-| `aava` | `aava-code` | work | `src/lib/game-model.ts:31` |
-| `grpc` | `grpc-microservices` | project | `src/lib/game-model.ts:42` |
-| `nhl` | `not-humans-lab` | project | `src/lib/game-model.ts:45` |
+| `aava` | `aava-code` | work | `src/lib/game-model.ts:40` |
+| `grpc` | `grpc-microservices` | project | `src/lib/game-model.ts:51` |
+| `nhl` | `not-humans-lab` | project | `src/lib/game-model.ts:54` |
 
-Every other node id equals its slug exactly. The docblock line `src/lib/game-model.ts:19` reads
-"3 of the **16** graph node ids", agreeing with the 16 entries that `graphNodes`
-(`src/lib/graph-data.ts:18-81`) and `NODE_CONTENT` (`src/lib/game-model.ts:28-50`) each hold. The
+Every other node id equals its slug exactly. The docblock line `src/lib/game-model.ts:28` reads
+"3 of the graph node ids" without a count, unlike the 25 entries that `graphNodes`
+(`src/lib/graph-data.ts:18-94`) and `NODE_CONTENT` (`src/lib/game-model.ts:37-70`) each hold. The
 bijection is guarded at build time by `src/lib/game-model.test.ts` (build-chained through
 `vitest run` in the `build` script; `ARCHITECTURE.md` "Bijection guard"): forward coverage (`:22`,
 `:27`), slug exists in Velite (`:34`), reverse coverage — every content item has a node (`:42`),
@@ -362,7 +362,7 @@ anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metri
 - Articles, note bodies, project `decisions`/bodies, and Work `constraints`/`tradeoffs`/`body`
   never enter the corpus.
 
-`src/lib/corpus.test.ts:13-18` asserts the corpus always contains `profile.name`,
+`src/lib/corpus.test.ts:26-31` asserts the corpus always contains `profile.name`,
 `## Production Work`, and `## Skills`; `:20-28` asserts `## Personal` appears iff `personal.ts` is
 populated. The `register` string reaching the LLM verbatim is also reinforced in the chat system
 prompt at `src/app/api/chat/route.ts:90`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
@@ -370,14 +370,14 @@ stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11
 
 ### 3. Resume → content
 
-`src/lib/resume-json.ts:2` imports `allWork, allProjects`.
+`src/lib/resume-json.ts:2` imports `allWork, allProjects, repoLink`.
 
 - `work[]` (`:51-57`): `position: w.role`, `summary: \`${w.register}. ${w.summary}\`` (**the
   register is prefixed into the résumé summary verbatim**, `:54`), `highlights` from
   `w.metrics` as `value label`, and `url: BASE + w.url`. All 5 Work items.
 - `projects[]` (`:58-65`): `name`, `description: p.tagline`, `keywords: p.tech`,
   `url: p.repo`, `entity: BASE + p.url`. All 11 Project items.
-- `education` is deliberately omitted (`src/lib/resume-json.ts:68` — "no data; we don't
+- `education` is deliberately omitted (`src/lib/resume-json.ts:69` — "no data; we don't
   fabricate it"). Notes and Articles are not in the résumé JSON.
 
 The printed `/resume` page (`src/app/resume/page.tsx`) does **not** import `@/lib/content`
@@ -392,14 +392,14 @@ directly (verified by grep) — it is tab/PDF-driven; `register` reaches recruit
   in full at `:12`. There is no `featured` flag on the Work schema, so **all 5 Work case studies
   render**, in `order` (pensieve, aava-code, wireframe-generator, prompt-to-react,
   execution-engine).
-- **Featured projects** — `src/components/home/featured-projects.tsx:3` imports
+- **Featured projects** — `src/components/home/featured-projects.tsx:3` imports `allProjects` (the CTA count) and
   `featuredProjects`, defined as `allProjects.filter((p) => p.featured)`
   (`src/lib/content.ts:24`). That resolves to **7** projects: `mindforge`, `graph-forge`,
   `agent-forge`, `tombstone`, `trelix`, `inkforge`, `grpc-microservices` (order-sorted).
   The 4 non-featured projects are `contextos`, `ag-bash`, `not-humans-lab`, `commandvault`.
-- `pinnedProjects` (`src/lib/content.ts:27-29`) is the separate GitHub-pin-mirroring list:
+- `pinnedProjects` (`src/lib/content.ts:36-38`) is the separate GitHub-pin-mirroring list:
   9 projects have `pinned: true` with a `pinRank`; `not-humans-lab` and `commandvault` are
-  excluded. `src/lib/github.ts:30-44` (`REPO_ALLOWLIST`, 13 entries) is a third, independent list
+  excluded. `src/lib/github.ts:32-55` (`REPO_ALLOWLIST`, 13 entries) is a third, independent list
   keyed on **GitHub repo names** (not slugs) — it now covers all 11 content projects and adds
   `Thunderboard-Labs` and `Shop.this`, which have no content file.
 
@@ -435,7 +435,7 @@ per note, and all resolve to an existing note slug (the previously dangling targ
 | `tombstone-v1-2-release` | `tombstone-v1-2-devto` |
 | `trelix-code-intelligence-engine` | `trelix-v1-launch-devto`, `trelix-v1-launch-substack` |
 
-Nothing enforces resolution: `linkedNote` is a bare `s.string()` (`velite.config.ts:133`), and no
+Nothing enforces resolution: `linkedNote` is a bare `s.string()` (`velite.config.ts:138`), and no
 test asserts it (`notes-dark.test.ts` only re-implements the note-only predicate). A future typo
 would surface only when the flag is on, as a 404 redirect target. The consumers build the href
 unconditionally when `NOTES_ENABLED` — `src/components/article-group-card.tsx:21-22`,
@@ -445,7 +445,7 @@ unconditionally when `NOTES_ENABLED` — `src/components/article-group-card.tsx:
 `externalUrl` equals the note URL) yields a feed item whose `link`/`guid`
 (`src/app/feed.xml/route.ts:34-35`) duplicates the note's own item.
 
-`relatedArticles` (Project) is unchecked in the same way: `src/app/projects/[slug]/page.tsx:83-85`
+`relatedArticles` (Project) is unchecked in the same way: `src/app/projects/[slug]/page.tsx:86-88`
 maps each slug through `getArticle` and silently drops misses, so an article that is dark (a
 note-only article while notes are off, or a draft) simply disappears from "Related writing"
 (`src/components/related-writing.tsx`). Today `tombstone-launch-devto`, `tombstone-v1-2-devto`,
@@ -471,7 +471,7 @@ the native-inline render path is never reached.
 `constraints` and `tradeoffs` (`:36-63`, id `work:<slug>:constraints|tradeoffs`, titled
 "Constraints"/"Tradeoffs", empty `tags`). Today that is 33 project entries + 10 work entries = 43
 (`DECISION_COUNTS`, `:72-76`); `decisionsByTag(tag)` is at `:67`. Consumers: the `/decisions` page
-(`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:205-226`,
+(`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:206-227`,
 registered at `src/app/api/mcp/[transport]/route.ts:109`, documented at `src/app/mcp/page.tsx:57`).
 `src/lib/decisions.test.ts` (build-chained) enforces bidirectional coverage — an entry per populated
 project decision (`:16`) and per populated work field (`:31`), verbatim title/body tracing to real
@@ -509,9 +509,9 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
   - `mdx: { gfm: true }` (`:156`) — GitHub-flavoured markdown for all four collections,
     including the `.md` Inkforge notes.
   - Each collection's `.transform()` is the only place `url` is created; nothing else in the repo
-    constructs `/work/<slug>` or `/projects/<slug>` by hand (`src/lib/game-model.ts:75` returns
+    constructs `/work/<slug>` or `/projects/<slug>` by hand (`src/lib/game-model.ts:95` returns
     `resolved.item.url` and comments as much), apart from the canonical-URL literals in the two
-    `generateMetadata` functions (`src/app/projects/[slug]/page.tsx:37`, `src/app/work/[slug]/page.tsx:25`).
+    `generateMetadata` functions (`src/app/projects/[slug]/page.tsx:38`, `src/app/work/[slug]/page.tsx:25`).
 - **Gotchas / invariants:**
   - Renaming a collection key in `collections` (`:155`) renames the generated `.velite/*.json`
     file and breaks the destructured import at `src/lib/content.ts:5-14`.
@@ -552,13 +552,13 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 - **Gotchas / invariants:** Extension is **not** a reliable proxy for provenance: two `.mdx` notes
   are Inkforge-generated and two `.mdx` notes (`tombstone-v1-2-release`,
   `trelix-code-intelligence-engine`) are hand-authored. Use `generatedBy` (which is what
-  `src/lib/content.ts:62` and `:67` actually filter on): 5 of 7 notes.
+  `src/lib/content.ts:72` and `:67` actually filter on): 5 of 7 notes.
 
 ### `content/articles/*.mdx` (all 15, as a class)
 
 - **Role:** Frontmatter-only "curator" pointers, not article bodies. Every file is 11-13 lines and
   ends immediately after the closing `---`; every article compiles to `body: ""`.
-- **Behaviour notes:** The schema comment (`velite.config.ts:108-113`) says native articles "render
+- **Behaviour notes:** The schema comment (`velite.config.ts:113-118`) says native articles "render
   their body inline like notes" — the one `source: native` file
   (`content/articles/how-dns-works.mdx`) has no body, and instead sets
   `linkedNote: how-dns-works`, so the native-inline path is unexercised today: the page redirects

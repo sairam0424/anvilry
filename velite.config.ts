@@ -2,6 +2,7 @@ import { defineConfig, defineCollection, s } from "velite";
 
 /* Theme group for the OSS projects (mirrors the GitHub pin strategy). */
 const themeGroup = s.enum([
+  "Platform, Guardrails & Observability",
   "Agent Frameworks & Infrastructure",
   "Code Intelligence & Engines",
   "Tooling & Lab",
@@ -27,6 +28,10 @@ const projects = defineCollection({
       tagline: s.string(),
       group: themeGroup,
       repo: s.string().url(),
+      // "private" = the repository exists but a visitor cannot open it (GitHub 404s). The entry stays
+      // (the dossier page is the product); every surface drops the repo link and says so, the repo
+      // does not count as open source, and a private project must not be featured (content.test.ts).
+      visibility: s.enum(["public", "private"]).default("public"),
       commits: s.number().optional(),
       // Real GitHub repo creation date + SPDX license ID, verified against the GitHub API
       // per-repo. Omitted (not fabricated) for repos that are private (404 unauthenticated)

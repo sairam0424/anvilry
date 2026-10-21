@@ -32,6 +32,23 @@ test("classic view: navigation to articles page works", async ({ page }) => {
   await expect(page.locator("main")).toBeVisible();
 });
 
+// Stack tiles are derived from profile.skills (src/lib/stack.ts); 22 today. The floor tolerates
+// removing up to three tools from the profile without touching this spec.
+const MIN_STACK_TILES = 19;
+
+test("classic view: stack wall renders external tool links", async ({ page }) => {
+  await page.goto("/");
+  const links = page.locator("#stack a[target=_blank]");
+  await expect(links.first()).toBeVisible();
+  await expect(links).not.toHaveCount(0);
+  expect(await links.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
+  await expect(links.first()).toHaveAttribute("rel", /noopener/);
+  await expect(links.first()).toHaveAttribute("href", /^https:\/\//);
+  // One accessible-name source per tile (aria-label); the SVG is decorative.
+  await expect(links.first()).toHaveAttribute("aria-label", /.+/);
+  await expect(links.first().locator("svg")).toHaveAttribute("aria-hidden", "true");
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

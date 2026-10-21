@@ -357,6 +357,27 @@ body::before {
   color: var(--accent);
 }
 
+/* utility: stack wall tile colour (src/components/home/stack.tsx). Plain CSS because the
+   light-theme branch needs the [data-theme="light"] ancestor selector with a custom-property
+   fallback, which no Tailwind variant expresses. Rest = --fg-muted. Hover and keyboard focus
+   = the brand colour, supplied per tile as --brand-dark / --brand-light inline variables from
+   src/lib/stack.ts; brands that fail 3:1 on a theme's hovered panel surface carry a per-theme
+   override there (enforced by src/lib/stack.test.ts). Glyph tiles set no variable and fall
+   back to --fg. Colour transitions are not motion, so they stay on under reduced motion. */
+.stack-icon { color: var(--fg-muted); }
+.stack-icon:hover,
+.stack-icon:focus-visible { color: var(--brand-dark, var(--fg)); }
+[data-theme="light"] .stack-icon:hover,
+[data-theme="light"] .stack-icon:focus-visible { color: var(--brand-light, var(--fg)); }
+
+/* utility: 10px dot grid for the stack wall panel — 1px dots at 6% foreground, so the
+   pattern reads as texture in both themes without competing with the glyphs. */
+.dot-grid {
+  background-image: radial-gradient(color-mix(in oklab, var(--fg) 6%, transparent) 1px, transparent 0);
+  background-size: 10px 10px;
+  background-position: center;
+}
+
 /*
   View transitions — cross-fade when switching the top-level view (Classic / Chat /
   Play / Developer). Driven from setViewInternal via document.startViewTransition.

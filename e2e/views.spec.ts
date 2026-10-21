@@ -68,11 +68,12 @@ test("about page: the mascot portrait is opt-in (absent without NEXT_PUBLIC_ABOU
   await expect(page.getByRole("button", { name: "Boop the mascot" })).toHaveCount(0);
 });
 
-test("404 page: the CRT mascot sits above the panic terminal and reacts to a click", async ({ page }) => {
+test("404 page: one of the three receiver mascots sits above the panic terminal and reacts to a click", async ({ page }) => {
   await page.goto("/this-route-does-not-exist");
   // Default ON. The button is the only accessible surface of the mascot; its two sprite
   // layers are presentational spans.
-  const mascot = page.getByRole("button", { name: "Boop the CRT monitor" });
+  // One of three receivers is picked in the browser per view (never the same twice in a row).
+  const mascot = page.getByRole("button", { name: /^Boop the (CRT monitor|television|radio)$/ });
   await expect(mascot).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeAttached();
   await mascot.click();

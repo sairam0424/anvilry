@@ -401,7 +401,7 @@ LAZY BOUNDARY   next/dynamic(..., { ssr: false })
         ▼
 ERROR CONTAINMENT
   <WebGLBoundary> wraps: hero-graph/index.tsx:79 · hero-avatar/index.tsx:59 · build-graph.tsx:60 ·
-                         voice-orb.tsx:46 · not-found.tsx:59
+                         voice-orb.tsx:46 · not-found.tsx:56
   onFail latch passed by: hero-graph, build-graph, voice-orb (each flips to its fallback);
                           NOT by hero-avatar or the 404 orb
   render() returns null on failure; console.warn hardcoded "[build-graph]"   webgl-boundary.tsx:25,:30
@@ -468,7 +468,7 @@ surface (`VoiceOrb`), or rendering the 404 page with `NEXT_PUBLIC_404_ORB=true`.
 ### Exit point
 
 Pixels in a `<canvas>`. The hero graph, hero avatar, voice orb and 404 orb sit in `aria-hidden` wrappers
-(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:58`) and
+(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:55`) and
 are decorative; the Build Graph canvas is **not** `aria-hidden` but is a pointer-driven enhancement — the
 accessible content is elsewhere (`GraphIndex` for the graph, the visible caption + live region for the orb).
 
@@ -508,7 +508,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Failure | Mechanism |
 |---|---|
 | Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:64`; the rationale is stated at `:26-29`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
-| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:57-67`). |
+| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:54-64`). |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:106`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
 | Twin three.js chunks return (−876 KB lost) | Deleting `src/lib/r3f.ts`, or re-adding `three`/`@react-three/*` to `optimizePackageImports` (`next.config.ts:166-170`). **Still unguarded by CI:** `scripts/bundle-budget.mjs` asserts three.js stays *off the first-load critical path*, not that only one copy exists — two lazy copies change no route's first-load bytes and pass the gate. The barrel is the only defence. |

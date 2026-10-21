@@ -25,7 +25,7 @@ import { Terminal } from "@/components/game/terminal/terminal";
 import { bootBanner404 } from "@/components/game/terminal/boot-banner";
 import { WebGLBoundary } from "@/components/game/webgl-boundary";
 import type { VoiceSessionState } from "@/components/chat/use-voice-session";
-import { SiteMascot } from "@/components/mascot/site-mascot";
+import { NotFoundMascot } from "@/components/mascot/not-found-mascot";
 import { isNotFoundMascotEnabled } from "@/lib/mascots";
 
 const VoiceOrb3D = dynamic(
@@ -42,14 +42,11 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-1 flex-col items-center justify-center bg-bg-base px-4 py-12">
       <div className="w-full max-w-2xl">
-        {/* CRT-with-a-face mascot (page-mascot, src/lib/mascots.ts): a drawn 2D head above the
-            panic terminal, no WebGL, tracks the cursor and reacts to a click. Default ON;
-            NEXT_PUBLIC_404_MASCOT=false removes it. */}
-        {showMascot && (
-          <div className="mb-6 flex justify-center">
-            <SiteMascot character="crt" size={120} label="CRT monitor" />
-          </div>
-        )}
+        {/* One of three retro receivers with a face (crt / tv / radio — src/lib/mascots.ts) above
+            the panic terminal: no WebGL, tracks the cursor, reacts to a click. Picked in the
+            browser, never the same one twice in a row (components/mascot/not-found-mascot.tsx).
+            Default ON; NEXT_PUBLIC_404_MASCOT=false removes it. */}
+        {showMascot && <NotFoundMascot size={120} />}
 
         {/* Distressed 3D orb — only when NEXT_PUBLIC_404_ORB=true.
             WebGLBoundary falls back silently if WebGL is unavailable.

@@ -2062,42 +2062,42 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
-    "e2e/views.spec.ts:182": {
+    "e2e/views.spec.ts:183": {
       "fp": "e613c6c8961d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "test.skip("
     },
-    "e2e/views.spec.ts:185": {
+    "e2e/views.spec.ts:186": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ");"
     },
-    "e2e/views.spec.ts:262": {
+    "e2e/views.spec.ts:263": {
       "fp": "19f5206389e0",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:285": {
+    "e2e/views.spec.ts:286": {
       "fp": "29576b54e255",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "});"
     },
-    "e2e/views.spec.ts:289": {
+    "e2e/views.spec.ts:290": {
       "fp": "8e5c494d0c11",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:294": {
+    "e2e/views.spec.ts:295": {
       "fp": "7ba9677d7b80",
       "citedBy": [
         "02-api-routes.md"
@@ -7558,21 +7558,21 @@
       ],
       "preview": "const showOrb = process.env.NEXT_PUBLIC_404_ORB === \"true\";"
     },
-    "src/app/not-found.tsx:57": {
+    "src/app/not-found.tsx:54": {
       "fp": "c8e0f9bf6ba6",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "{showOrb && ("
     },
-    "src/app/not-found.tsx:58": {
+    "src/app/not-found.tsx:55": {
       "fp": "2b77782f839b",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "<div className=\"mb-6 flex justify-center\" aria-hidden=\"true\">"
     },
-    "src/app/not-found.tsx:59": {
+    "src/app/not-found.tsx:56": {
       "fp": "5682a37ed4db",
       "citedBy": [
         "14b-subsystems.md",
@@ -7580,7 +7580,7 @@
       ],
       "preview": "<WebGLBoundary>"
     },
-    "src/app/not-found.tsx:67": {
+    "src/app/not-found.tsx:64": {
       "fp": "aac32651b10f",
       "citedBy": [
         "14b-subsystems.md"

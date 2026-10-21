@@ -3,17 +3,17 @@ kind: doc
 title: lib — Content, Data Derivation & Domain Model
 domain: [content]
 status: current
-version: v3.13.0
+version: v3.14.0
 ---
 
 # lib — Content, Data Derivation & Domain Model
 
-> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. main @ a929932 (v3.6.0) plus five later fixes that touch this domain: notes are hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets (chat/voice/beacon) with a cron-secret bypass, admin auth shared through `isAdminAuthorized`, command-palette talk mode gated by `isVoiceViewActive`, and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the first changes code owned by this doc (`content.ts`, `llms-txt.ts`); the others are listed so a reader does not look for them here (rate limiting and auth live in the infra half of `src/lib`).
+> Describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. main @ a929932 (v3.6.0) plus five later fixes that touch this domain: notes are hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets (chat/voice/beacon) with a cron-secret bypass, admin auth shared through `isAdminAuthorized`, command-palette talk mode gated by `isVoiceViewActive`, and the bundle-budget `MIN_ROUTES` floor plus removal of dead components. Only the first changes code owned by this doc (`content.ts`, `llms-txt.ts`); the others are listed so a reader does not look for them here (rate limiting and auth live in the infra half of `src/lib`). v3.14.0 adds one module to this domain: `src/lib/stack.ts`, the home Stack wall's data — `STACK_ENTRIES` keyed by the exact `profile.skills` item strings, `stackItems` derived in profile order, `stackBrandVars()` — consumed by `src/components/home/stack.tsx` and `src/components/skill-chip.tsx`, with `src/lib/stack.test.ts` enforcing membership and 3:1 hover contrast; `profile.ts` itself is unchanged.
 
-**Scope:** `src/lib/*.ts` (top level only), content/data/domain half — `content.ts`, `corpus.ts`, `decisions.ts`, `game-model.ts`, `graph-data.ts`, `article-grouping.ts`, `llms-txt.ts`, `profile.ts`, `personal.ts`, `testimonials.ts`, `resume-json.ts`, `mcp-tools.ts`, `claims-integrity.ts`, `integrity-chain.ts`, `discovery-store.ts`, `enabled-views.ts`, `flags.ts`, `writing-flags.ts`, `github.ts`, `utils.ts`, `highlight-store.ts`; plus the CLI `scripts/seal-claims.ts` and the committed ledger `data/integrity-chain.json`. Excludes `*.test.ts` and the AI/voice/infra half (`llm*.ts`, `llm-trace.ts`, `agent-trace.ts`, `chat-cache.ts`, `faq-embeddings.ts`, `voice-*`, `rate-limit.ts`, `redis.ts`, `admin-auth.ts`, `cron-auth.ts`, `health-expectations.ts`, `metadata-colors.ts`, `theme-context.tsx`, `r3f.ts`, `use-*.ts`, `telemetry/`, `scroll/`).
-**Files indexed:** 21 `src/lib` modules + 1 script + 1 data file
+**Scope:** `src/lib/*.ts` (top level only), content/data/domain half — `content.ts`, `corpus.ts`, `decisions.ts`, `game-model.ts`, `graph-data.ts`, `article-grouping.ts`, `llms-txt.ts`, `profile.ts`, `stack.ts`, `personal.ts`, `testimonials.ts`, `resume-json.ts`, `mcp-tools.ts`, `claims-integrity.ts`, `integrity-chain.ts`, `discovery-store.ts`, `enabled-views.ts`, `flags.ts`, `writing-flags.ts`, `github.ts`, `utils.ts`, `highlight-store.ts`; plus the CLI `scripts/seal-claims.ts` and the committed ledger `data/integrity-chain.json`. Excludes `*.test.ts` and the AI/voice/infra half (`llm*.ts`, `llm-trace.ts`, `agent-trace.ts`, `chat-cache.ts`, `faq-embeddings.ts`, `voice-*`, `rate-limit.ts`, `redis.ts`, `admin-auth.ts`, `cron-auth.ts`, `health-expectations.ts`, `metadata-colors.ts`, `theme-context.tsx`, `r3f.ts`, `use-*.ts`, `telemetry/`, `scroll/`).
+**Files indexed:** 22 `src/lib` modules + 1 script + 1 data file
 
 There is **no `src/lib/avatar-glb.ts`** — `src/lib/avatar-glb.test.ts` is a standalone binary-asset invariant test that parses `public/avatar/sairam.glb` directly (`avatar-glb.test.ts:16`, budget `MAX_BYTES = 1.5 * 1024 * 1024` at `:21`). Likewise `notes.test.ts`, `notes-dark.test.ts` and `case-study-depth.test.ts` have no matching source module — all three test `content.ts`.
 
@@ -29,6 +29,7 @@ There is **no `src/lib/avatar-glb.ts`** — `src/lib/avatar-glb.test.ts` is a st
 | `src/lib/article-grouping.ts` | Groups multi-platform syndications of the same article into one canonical group; flag-driven dedup key. | `GroupingConfig`, `ArticleGroup`, `groupArticles()`, `getGroupSources()`, `filterGroupsBySource()` |
 | `src/lib/llms-txt.ts` | Renders `/llms.txt` (llmstxt.org spec) from the content layer. | `buildLlmsTxt()` |
 | `src/lib/profile.ts` | Static identity/skills/achievements/résumé source of truth; repo count derived from content. | `profile`, `impactMetrics`, `skills`, `achievements`, `resumeVariants` |
+| `src/lib/stack.ts` | Home Stack wall data (v3.14.0), derived from `profile.skills`: `STACK_ENTRIES` is keyed by the exact `profile.skills` item string (22 tools — 19 `brand` entries with a Simple Icons key, hex and optional per-theme `hoverDark`/`hoverLight` override, 3 `glyph` entries for AWS, gRPC, ChromaDB); `stackItems` flattens the matches in profile order; `stackBrandVars()` emits `--brand-dark`/`--brand-light` for brand entries only. Consumed by `src/components/home/stack.tsx` and `src/components/skill-chip.tsx`. `src/lib/stack.test.ts` fails if a key is not a profile skill and if the effective hover colour is below 3:1 on either theme's hovered panel surface (`bg-surface` + 5 % `--fg` tint). | `StackEntry`, `STACK_ENTRIES`, `StackItem`, `stackItems`, `stackGroups` (grouped variant, no caller yet), `stackBrandVars()` |
 | `src/lib/personal.ts` | Owner-authored "beyond the résumé" content + empty-safe gates for easter eggs. | `UsesGroup`, `personal`, `now`, `hasPersonalContent`, `hasNow` |
 | `src/lib/testimonials.ts` | Testimonials source (currently empty array) + dark-ship gate; requires `sourceUrl` per entry. | `Testimonial`, `testimonials`, `hasTestimonials` |
 | `src/lib/resume-json.ts` | Builds the jsonresume.org v1.0.0 payload served at `/api/resume.json`. | `buildResumeJson()` |
@@ -216,7 +217,7 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 - **Role:** Static, hand-maintained identity/skills/achievements/résumé record.
 - **Exports:** `profile` (`as const` object), `impactMetrics`, `skills`, `achievements`, `resumeVariants`.
 - **Reads / depends on:** `@/lib/content` (`allProjects`) — its only import (`profile.ts:6`).
-- **Consumed by:** 44 non-test `src/` files — every page/layout, all `opengraph-image.tsx` files, `manifest.ts`, `json-ld.tsx`, `site-nav`/`site-footer`/`mobile-nav`, the terminal, and the lib derivations `corpus.ts`, `github.ts`, `llm.ts`, `llms-txt.ts`, `mcp-tools.ts`, `resume-json.ts`, plus `scripts/seal-claims.ts`.
+- **Consumed by:** 45 non-test `src/` files — every page/layout, all `opengraph-image.tsx` files, `manifest.ts`, `json-ld.tsx`, `site-nav`/`site-footer`/`mobile-nav`, the terminal, and the lib derivations `corpus.ts`, `github.ts`, `llm.ts`, `llms-txt.ts`, `mcp-tools.ts`, `resume-json.ts`, `stack.ts` (v3.14.0: its `STACK_ENTRIES` keys must be `skills` items), plus `scripts/seal-claims.ts`.
 - **Behaviour notes:** `profile` (`:8-40`) holds `name`, `role`, `company`, `tenure`, `location`, `locationCity`/`locationCountry` (structured for JSON-LD), `headline`, `subhead`, `email`, `calendlyUrl`, `links.{github,linkedin,npm,pypi,devto,substack,resume}` (`:23-38`) and `githubUser` (`:39`). `impactMetrics` (`:46-70`) has 3 entries; the third value is **derived** — `` `${allProjects.length}` `` (`:65`) — explicitly so the banner number cannot drift from published content (rationale `:42-45`). `skills` is 6 groups (`:72-122`); `achievements` is 5 entries (`:124-133`); `resumeVariants` (`:135-142`) has **exactly one** entry, "Sairam Resume" → `/resume/Sairam_Resume_MX_E.pdf` (tag "Backend & GenAI"), the single canonical résumé.
 - **Gotchas / invariants:** `location` and `locationCity`/`locationCountry` are duplicated data that must be kept in sync — the comment says so at `:14`. `resumeVariants[].label` is the join key for `mcp-tools.ts`'s `ROLE_TO_LABEL` (`mcp-tools.ts:28-34`); renaming the label breaks `get_resume_variant`, and `mcp-tools.test.ts:82` asserts every role resolves to a variant whose PDF exists on disk. `impactMetrics` and `achievements` are the two fields hashed into the Claims Integrity Ledger (see below): editing either — or adding/removing a project, which changes the derived count — fails the CI seal check until a new entry is sealed. No dedicated `profile.test.ts`.
 
@@ -327,7 +328,7 @@ Error contract: `notFound()` returns `{ notFound: true, kind, given, valid }` (`
 | `personal.ts` | `src/lib/personal.test.ts` |
 | `testimonials.ts` | `src/lib/testimonials.test.ts` |
 | `github.ts` | `src/lib/github.test.ts` |
-| `profile.ts` (indirect) | `src/lib/mcp-tools.test.ts:82` (résumé PDFs exist), `src/components/game/terminal/commands.test.ts` |
+| `profile.ts` (indirect) | `src/lib/mcp-tools.test.ts:82` (résumé PDFs exist), `src/components/game/terminal/commands.test.ts`, `src/lib/stack.test.ts` (every `STACK_ENTRIES` key is a `skills` item) |
 | `article-grouping.ts`, `resume-json.ts`, `flags.ts`, `writing-flags.ts`, `enabled-views.ts`, `highlight-store.ts`, `integrity-chain.ts`, `utils.ts` | **no dedicated test file** |
 
 Standalone tests with no matching source module: `src/lib/avatar-glb.test.ts` (binary-asset invariant on `public/avatar/sairam.glb`), `src/lib/notes.test.ts`, `src/lib/notes-dark.test.ts` and `src/lib/case-study-depth.test.ts` (all test `content.ts`).
@@ -357,5 +358,6 @@ Standalone tests with no matching source module: `src/lib/avatar-glb.test.ts` (b
 - `src/lib/utils.ts`
 - `scripts/seal-claims.ts`
 - `data/integrity-chain.json`
+- `src/lib/stack.ts`
 
 Read for context but owned by other sections: `velite.config.ts`, `src/app/api/mcp/[transport]/route.ts`, `src/app/.well-known/vercel/flags/route.ts`, `src/app/llms.txt/route.ts`, `src/app/decisions/page.tsx`, `.velite/index.d.ts`.

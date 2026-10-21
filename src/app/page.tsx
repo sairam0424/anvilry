@@ -3,6 +3,7 @@ import { Hero } from "@/components/home/hero";
 import { FeaturedWork } from "@/components/home/featured-work";
 import { FeaturedProjects } from "@/components/home/featured-projects";
 import { Achievements } from "@/components/home/achievements";
+import { Stack } from "@/components/home/stack";
 import { Testimonials } from "@/components/home/testimonials";
 import { Contact } from "@/components/home/contact";
 import { ViewRouter } from "@/components/view-router";
@@ -26,6 +27,7 @@ export default function Home() {
         <Hero />
         <FeaturedWork />
         <FeaturedProjects />
+        <Stack />
         <Achievements />
         <WritingPreview />
         <Testimonials />

@@ -32,6 +32,35 @@ test("classic view: navigation to articles page works", async ({ page }) => {
   await expect(page.locator("main")).toBeVisible();
 });
 
+// Stack tiles are derived from profile.skills (src/lib/stack.ts); 22 today. The floor tolerates
+// removing up to three tools from the profile without touching this spec.
+const MIN_STACK_TILES = 19;
+
+test("classic view: stack wall renders external tool links", async ({ page }) => {
+  await page.goto("/");
+  const links = page.locator("#stack a[target=_blank]");
+  await expect(links.first()).toBeVisible();
+  await expect(links).not.toHaveCount(0);
+  expect(await links.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
+  await expect(links.first()).toHaveAttribute("rel", /noopener/);
+  await expect(links.first()).toHaveAttribute("href", /^https:\/\//);
+  // One accessible-name source per tile (aria-label); the SVG is decorative.
+  await expect(links.first()).toHaveAttribute("aria-label", /.+/);
+  await expect(links.first().locator("svg")).toHaveAttribute("aria-hidden", "true");
+});
+
+test("about page: /about#skills is anchored and its tool chips carry glyphs", async ({ page }) => {
+  await page.goto("/about#skills");
+  const section = page.locator("#skills");
+  await expect(section).toBeVisible();
+  await expect(section.getByRole("heading", { level: 2, name: "What I work with" })).toBeVisible();
+  // Tool chips carry a decorative glyph; concept chips stay text-only, so the glyph count
+  // equals the number of Stack entries (22 today), never the full skills count.
+  const glyphs = section.locator(".skill-chip-glyph svg");
+  await expect(glyphs).not.toHaveCount(0);
+  expect(await glyphs.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

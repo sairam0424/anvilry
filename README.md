@@ -134,3 +134,8 @@ The public base URL `https://anvilry.vercel.app` is hard-coded in about two doze
 ---
 
 <sub>Anvilry is the project codename; the deployed site is **[anvilry.vercel.app](https://anvilry.vercel.app)**.</sub>
+
+## 📜 Licence
+
+MIT, see [LICENSE](./LICENSE). Brand glyphs are from Simple Icons (CC0) with three attributed
+exceptions listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

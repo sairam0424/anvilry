@@ -5,6 +5,7 @@ import { allProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProfilePageJsonLd } from "@/components/json-ld";
+import { SkillChip } from "@/components/skill-chip";
 
 /** Format an ISO date as an absolute, human-readable string (no relative drift). */
 function formatUpdated(iso: string): string {
@@ -78,7 +79,7 @@ export default function AboutPage() {
       {/* Uses — a compact toolkit teaser (the full list lives behind the `uses`
           terminal command). Empty-safe. */}
       {hasPersonalContent && personal.uses.length > 0 && (
-        <Section label="// uses" title="My toolkit">
+        <Section id="uses" label="// uses" title="My toolkit">
           <div className="grid gap-5 sm:grid-cols-2">
             {personal.uses.map((g, i) => (
               <Reveal key={g.group} delay={(i % 2) * 0.06}>
@@ -98,7 +99,7 @@ export default function AboutPage() {
         </Section>
       )}
 
-      <Section label="// skills" title="What I work with">
+      <Section id="skills" label="// skills" title="What I work with">
         <div className="grid gap-5 sm:grid-cols-2">
           {skills.map((s, i) => (
             <Reveal key={s.group} delay={(i % 2) * 0.06}>
@@ -106,9 +107,7 @@ export default function AboutPage() {
                 <p className="mono-label">{s.group}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {s.items.map((item) => (
-                    <span key={item} className="rounded-md border border-border px-2 py-1 text-xs text-fg-muted">
-                      {item}
-                    </span>
+                    <SkillChip key={item} name={item} />
                   ))}
                 </div>
               </div>

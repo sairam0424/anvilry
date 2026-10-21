@@ -25,12 +25,22 @@ import { Terminal } from "@/components/game/terminal/terminal";
 import { bootBanner404 } from "@/components/game/terminal/boot-banner";
 import { WebGLBoundary } from "@/components/game/webgl-boundary";
 import type { VoiceSessionState } from "@/components/chat/use-voice-session";
-import { NotFoundMascot } from "@/components/mascot/not-found-mascot";
-import { isNotFoundMascotEnabled } from "@/lib/mascots";
+import { isNotFoundMascotEnabled } from "@/lib/mascot-flags";
 
 const VoiceOrb3D = dynamic(
   () => import("@/components/chat/voice-orb-3d").then((m) => m.VoiceOrb3D),
   { ssr: false },
+);
+
+/**
+ * Lazy on purpose: the root not-found boundary's CLIENT graph is bundled into the shared layout
+ * chunk, so every page would otherwise carry the thirteen 404 characters' image descriptors
+ * (~16 KB of first-load JS measured on /). The async chunk loads only when a 404 renders; the
+ * fallback reserves the same 120 px box the component itself reserves before its pick.
+ */
+const NotFoundMascot = dynamic(
+  () => import("@/components/mascot/not-found-mascot").then((m) => m.NotFoundMascot),
+  { ssr: false, loading: () => <div className="mb-6" style={{ minHeight: 120 }} aria-hidden="true" /> },
 );
 
 const showOrb = process.env.NEXT_PUBLIC_404_ORB === "true";
@@ -42,9 +52,9 @@ export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-1 flex-col items-center justify-center bg-bg-base px-4 py-12">
       <div className="w-full max-w-2xl">
-        {/* One of three retro receivers with a face (crt / tv / radio — src/lib/mascots.ts) above
-            the panic terminal: no WebGL, tracks the cursor, reacts to a click. Picked in the
-            browser, never the same one twice in a row (components/mascot/not-found-mascot.tsx).
+        {/* One of thirteen things-with-a-face (crt, tv, radio, toaster, … penguin — see
+            src/lib/mascots.ts) above the panic terminal: no WebGL, tracks the cursor, reacts to a
+            click. Picked in the browser, never the same twice in a row (not-found-mascot.tsx).
             Default ON; NEXT_PUBLIC_404_MASCOT=false removes it. */}
         {showMascot && <NotFoundMascot size={120} />}
 

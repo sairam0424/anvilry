@@ -1,25 +1,45 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   MASCOT_CHARACTERS,
   NOT_FOUND_MASCOTS,
   mascotSheets,
   pickNotFoundMascot,
-  isAboutMascotEnabled,
-  isNotFoundMascotEnabled,
 } from "./mascots";
 
-afterEach(() => vi.unstubAllEnvs());
+/** The 404 rotation: the three receivers first, then the rest of the "things", then the penguin. */
+const ROTATION = [
+  "crt", "tv", "radio", "toaster", "clockwork", "cube", "drone",
+  "knight", "lantern", "postbot", "rocket", "scout", "penguin",
+];
+
+const LABELS: Record<string, string> = {
+  gearbot: "mascot",
+  crt: "CRT monitor",
+  tv: "television",
+  radio: "radio",
+  toaster: "toaster",
+  clockwork: "clockwork robot",
+  cube: "cube robot",
+  drone: "drone",
+  knight: "knight",
+  lantern: "lantern robot",
+  postbot: "mail robot",
+  rocket: "rocket",
+  scout: "scout robot",
+  penguin: "penguin",
+};
 
 describe("mascot character registry", () => {
-  it("ships gearbot (hero + about) and the 404 trio crt, tv, radio", () => {
-    expect(Object.keys(MASCOT_CHARACTERS).sort()).toEqual(["crt", "gearbot", "radio", "tv"]);
+  it("ships the site head (gearbot) plus the thirteen 404 characters", () => {
+    expect(Object.keys(MASCOT_CHARACTERS).sort()).toEqual(["gearbot", ...ROTATION].sort());
   });
 
-  it("names every character for the screen reader ('Boop the {label}')", () => {
-    expect(MASCOT_CHARACTERS.gearbot.label).toBe("mascot");
-    expect(MASCOT_CHARACTERS.crt.label).toBe("CRT monitor");
-    expect(MASCOT_CHARACTERS.tv.label).toBe("television");
-    expect(MASCOT_CHARACTERS.radio.label).toBe("radio");
+  it("names every character for the screen reader ('Boop the {label}'), no two alike", () => {
+    for (const [name, label] of Object.entries(LABELS)) {
+      expect(MASCOT_CHARACTERS[name as keyof typeof MASCOT_CHARACTERS].label).toBe(label);
+    }
+    const labels = Object.values(MASCOT_CHARACTERS).map((c) => c.label);
+    expect(new Set(labels).size).toBe(labels.length);
   });
 
   it("resolves each character to two served .webp sheet URLs", () => {
@@ -31,27 +51,10 @@ describe("mascot character registry", () => {
   });
 });
 
-describe("mascot flags", () => {
-  it("keeps the About portrait OFF until NEXT_PUBLIC_ABOUT_MASCOT is exactly 'true'", () => {
-    expect(isAboutMascotEnabled()).toBe(false);
-    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "1");
-    expect(isAboutMascotEnabled()).toBe(false);
-    vi.stubEnv("NEXT_PUBLIC_ABOUT_MASCOT", "true");
-    expect(isAboutMascotEnabled()).toBe(true);
-  });
-
-  it("shows the 404 mascot by default and hides it only on an explicit 'false'", () => {
-    expect(isNotFoundMascotEnabled()).toBe(true);
-    vi.stubEnv("NEXT_PUBLIC_404_MASCOT", "0");
-    expect(isNotFoundMascotEnabled()).toBe(true);
-    vi.stubEnv("NEXT_PUBLIC_404_MASCOT", "false");
-    expect(isNotFoundMascotEnabled()).toBe(false);
-  });
-});
-
 describe("pickNotFoundMascot", () => {
-  it("rotates through the three 404 receivers", () => {
-    expect([...NOT_FOUND_MASCOTS]).toEqual(["crt", "tv", "radio"]);
+  it("rotates through the thirteen 404 characters and never the site's own head", () => {
+    expect([...NOT_FOUND_MASCOTS]).toEqual(ROTATION);
+    expect(NOT_FOUND_MASCOTS as readonly string[]).not.toContain("gearbot");
   });
 
   it("never repeats the character shown last, for any random draw", () => {
@@ -64,19 +67,21 @@ describe("pickNotFoundMascot", () => {
     }
   });
 
-  it("draws from all three when nothing was shown before or the stored value is junk", () => {
-    expect(pickNotFoundMascot(null, () => 0)).toBe("crt");
-    expect(pickNotFoundMascot(null, () => 0.5)).toBe("tv");
-    expect(pickNotFoundMascot(null, () => 0.99)).toBe("radio");
-    expect(pickNotFoundMascot("gearbot", () => 0.99)).toBe("radio");
-    expect(pickNotFoundMascot("not-a-character", () => 0)).toBe("crt");
+  it("can reach every character when nothing was shown before or the stored value is junk", () => {
+    const n = NOT_FOUND_MASCOTS.length;
+    const reached = new Set(NOT_FOUND_MASCOTS.map((_, i) => pickNotFoundMascot(null, () => i / n)));
+    expect(reached.size).toBe(n);
+    expect(pickNotFoundMascot("gearbot", () => 0)).toBe("crt");
+    expect(pickNotFoundMascot("not-a-character", () => 0.999)).toBe("penguin");
   });
 
-  it("maps the random draw evenly over the remaining two", () => {
+  it("maps the draw evenly over the remaining characters, in rotation order", () => {
     expect(pickNotFoundMascot("crt", () => 0)).toBe("tv");
-    expect(pickNotFoundMascot("crt", () => 0.49)).toBe("tv");
-    expect(pickNotFoundMascot("crt", () => 0.5)).toBe("radio");
-    expect(pickNotFoundMascot("tv", () => 0.99)).toBe("radio");
-    expect(pickNotFoundMascot("radio", () => 0.99)).toBe("tv");
+    expect(pickNotFoundMascot("crt", () => 0.999)).toBe("penguin");
+    expect(pickNotFoundMascot("penguin", () => 0.999)).toBe("scout");
+    const n = NOT_FOUND_MASCOTS.length - 1;
+    const reached = new Set(Array.from({ length: n }, (_, i) => pickNotFoundMascot("tv", () => i / n)));
+    expect(reached.size).toBe(n);
+    expect(reached.has("tv")).toBe(false);
   });
 });

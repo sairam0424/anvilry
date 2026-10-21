@@ -330,7 +330,7 @@ silently dropped (`:33`). Gates `view-router.tsx:62-69` and `view-switcher.tsx:1
 | `NEXT_PUBLIC_ORB_POSTPROCESSING` | `voice-orb-3d.tsx:300` | Fluid/Bloom/Vignette/Noise/CA — **and** `getDeviceTier() === "high"` (`:301,:327`) |
 | `NEXT_PUBLIC_INK_TRANSITION` | `view-context.tsx:123-126` (read at `:125`) | WebGL2 ink-burn view-transition path |
 | `NEXT_PUBLIC_SKILL_TREE` | `game-view.tsx:57` | the SVG skill tree in the Play view |
-| `NEXT_PUBLIC_404_ORB` | `not-found.tsx:36` (module scope) | distressed orb on the 404 page |
+| `NEXT_PUBLIC_404_ORB` | `not-found.tsx:46` (module scope) | distressed orb on the 404 page |
 | `NEXT_PUBLIC_VISITOR_COUNTER` | `site-footer.tsx:118` | footer visitor badge (client-side gate only; `/api/visit` has no flag check, `api/visit/route.ts:14-16`) |
 | `NEXT_PUBLIC_RESUME_VARIANTS` | `resume/page.tsx:29`, `home/resume-view.tsx:46`, `command-palette-content.tsx:365`, `game/terminal/commands.ts:297` | all `resumeVariants` vs only `resumeVariants[0]` — **currently a no-op**: `resumeVariants` (`src/lib/profile.ts:136-142`) has exactly one entry, so both branches yield the single master PDF. `developer-rail.tsx:45` is not gated at all; it maps the same one-entry list. |
 | `NEXT_PUBLIC_HERO_MODE` | `home/hero.tsx:26` (branched `:33-39`), re-checked `hero-avatar/index.tsx:50` | `"avatar"` → `HeroAvatar`; `"mascot"` → `HeroMascotBackdrop` + in-flow `HeroMascot` (`home/hero-mascot.tsx`); else `HeroGraph` |
@@ -397,11 +397,11 @@ LAZY BOUNDARY   next/dynamic(..., { ssr: false })
   hero-graph/index.tsx:18-23   → ./scene-physics  OR  ./scene   (target fixed at module eval, :10)
   hero-avatar/index.tsx:10-13  → ./avatar-scene
   game/build-graph.tsx:16      → ./build-graph-scene
-  chat/voice-orb.tsx:13-16     → ./voice-orb-3d        (app/not-found.tsx:31-34 imports the same module)
+  chat/voice-orb.tsx:13-16     → ./voice-orb-3d        (app/not-found.tsx:30-33 imports the same module)
         ▼
 ERROR CONTAINMENT
   <WebGLBoundary> wraps: hero-graph/index.tsx:79 · hero-avatar/index.tsx:59 · build-graph.tsx:60 ·
-                         voice-orb.tsx:46 · not-found.tsx:56
+                         voice-orb.tsx:46 · not-found.tsx:66
   onFail latch passed by: hero-graph, build-graph, voice-orb (each flips to its fallback);
                           NOT by hero-avatar or the 404 orb
   render() returns null on failure; console.warn hardcoded "[build-graph]"   webgl-boundary.tsx:25,:30
@@ -468,7 +468,7 @@ surface (`VoiceOrb`), or rendering the 404 page with `NEXT_PUBLIC_404_ORB=true`.
 ### Exit point
 
 Pixels in a `<canvas>`. The hero graph, hero avatar, voice orb and 404 orb sit in `aria-hidden` wrappers
-(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:55`) and
+(`hero-graph/index.tsx:68`, `hero-avatar/index.tsx:68,88,104`, `voice-orb-3d.tsx:304`, `not-found.tsx:65`) and
 are decorative; the Build Graph canvas is **not** `aria-hidden` but is a pointer-driven enhancement — the
 accessible content is elsewhere (`GraphIndex` for the graph, the visible caption + live region for the orb).
 
@@ -508,7 +508,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Failure | Mechanism |
 |---|---|
 | Two live WebGL contexts on low-end mobile | Dropping the `view === "classic"` term from the hero gates (`hero-graph/index.tsx:64`; the rationale is stated at `:26-29`), or changing the gamified branch in `view-router.tsx` from unmount to `hidden`. |
-| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:54-64`). |
+| Uncatchable crash on a GL-less client | Relying on `WebGLBoundary` alone: R3F surfaces context-creation failure as an async unhandled rejection (`use-media-query.ts:21-26`). `hero-avatar/index.tsx` neither probes nor passes `onFail` (the graph, build graph and voice orb do both), and the 404 orb wraps a boundary with no probe (`not-found.tsx:64-74`). |
 | Demand loop becomes a perpetual loop | Removing the `> 0.0006` invalidate threshold (`scene.tsx:106`). Note the avatar's demand loop already never settles: `useAvatarIdle` invalidates unconditionally (`use-avatar-idle.ts:27`). |
 | Avatar freezes between mouse moves | Removing `useAvatarIdle`'s `invalidate()` — it is one of only two wake sources on the avatar's demand loop (`avatar-scene.tsx:22`, `avatar-controls.tsx`). |
 | Twin three.js chunks return (−876 KB lost) | Deleting `src/lib/r3f.ts`, or re-adding `three`/`@react-three/*` to `optimizePackageImports` (`next.config.ts:166-170`). **Still unguarded by CI:** `scripts/bundle-budget.mjs` asserts three.js stays *off the first-load critical path*, not that only one copy exists — two lazy copies change no route's first-load bytes and pass the gate. The barrel is the only defence. |

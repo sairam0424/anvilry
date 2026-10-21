@@ -6,7 +6,7 @@ import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProfilePageJsonLd } from "@/components/json-ld";
 import { SiteMascot } from "@/components/mascot/site-mascot";
-import { isAboutMascotEnabled } from "@/lib/mascots";
+import { isAboutMascotEnabled } from "@/lib/mascot-flags";
 import { SkillChip } from "@/components/skill-chip";
 
 /** Format an ISO date as an absolute, human-readable string (no relative drift). */

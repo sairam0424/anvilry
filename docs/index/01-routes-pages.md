@@ -104,7 +104,7 @@ facts (`"use cache"`, `cacheLife`, `instant`, `generateStaticParams`, `notFound(
 | `/manifest.webmanifest` | `src/app/manifest.ts` | static metadata route | none | no | n/a | none | `profile`; icon routes `/icon` + `/apple-icon` (`manifest.ts:15-19`) — the two `/static/screenshot-*.png` entries were removed, see FIXED note below |
 | `/robots.txt` | `src/app/robots.ts` | static metadata route | none | no | n/a | none | none (hardcoded sitemap URL, `robots.ts:16`; `Content-Signal` at `:14`) |
 | `/sitemap.xml` | `src/app/sitemap.ts` | static metadata route | none | no | n/a | none | all four Velite collections + `ARTICLES_ENABLED`/`NOTES_ENABLED`/`STATS_ENABLED`/`SEARCH_ENABLED`; `/decisions` is **not** listed |
-| 404 fallback (`/_not-found`) | `src/app/not-found.tsx` | prerendered (`.next/server/app/_not-found.html`); page is `"use client"` | none | no | no (client component) | none | `Terminal`, `bootBanner404()`, `NEXT_PUBLIC_404_ORB` (`not-found.tsx:36`) |
+| 404 fallback (`/_not-found`) | `src/app/not-found.tsx` | prerendered (`.next/server/app/_not-found.html`); page is `"use client"` | none | no | no (client component) | none | `Terminal`, `bootBanner404()`, `NEXT_PUBLIC_404_ORB` (`not-found.tsx:46`) |
 | root error boundary (`/_global-error`) | `src/app/global-error.tsx` | prerendered (`.next/server/app/_global-error.html`) | none | no | no | none | dynamic `import("@/lib/telemetry/beacon")` |
 | segment error boundary | `src/app/error.tsx` | client boundary, no URL of its own | n/a | no | no | none | dynamic `import("@/lib/telemetry/beacon")` |
 

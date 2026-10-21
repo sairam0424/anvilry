@@ -23,8 +23,10 @@ identify the tools they stand for. No endorsement is implied.
 ## Mascot (src/components/mascot/mascot.tsx, src/lib/mascot-geometry.ts, src/assets/mascots/)
 
 The cursor-tracking mascot component is vendored from
-[page-mascot](https://github.com/nilbuild/page-mascot) 0.1.0 by Kamran Ahmed, and the `gearbot`,
-`crt`, `tv` and `radio` sprite sheets under `src/assets/mascots/` are four of that project's drawn characters
+[page-mascot](https://github.com/nilbuild/page-mascot) 0.1.0 by Kamran Ahmed, and the fourteen
+sprite-sheet pairs under `src/assets/mascots/` (`gearbot`, `crt`, `tv`, `radio`, `toaster`,
+`clockwork`, `cube`, `drone`, `knight`, `lantern`, `postbot`, `rocket`, `scout`, `penguin`) are
+that project's drawn characters
 (from https://koboyo.com/page-mascot/mascots/). Both are used under the project's MIT License:
 
 > Copyright (c) 2026 Kamran Ahmed <https://kamran.fyi>

@@ -25,8 +25,8 @@ function writeLast(character: NotFoundMascotCharacter): void {
 }
 
 /**
- * One of the three 404 receivers (crt / tv / radio), picked PER VIEW IN THE BROWSER and never
- * the same one twice in a row within a tab.
+ * One of the thirteen 404 characters (NOT_FOUND_MASCOTS in src/lib/mascots.ts), picked PER VIEW
+ * IN THE BROWSER and never the same one twice in a row within a tab.
  *
  * Why client-side: `/_not-found` is prerendered as a static file (one HTML for every missing
  * URL), so the server cannot roll a die per request without turning the 404 into a serverless

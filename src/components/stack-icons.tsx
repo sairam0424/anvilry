@@ -5,6 +5,7 @@
  * fill currentColor, aria-hidden — the same convention as src/components/icons.tsx.
  * Licence: the simple-icons package is CC0-1.0. Simple Icons records three per-icon
  * exceptions that we must keep crediting when this file is edited:
+ * THIRD_PARTY_NOTICES.md at the repo root carries the user-facing notice and must stay in step.
  *   apachekafka   Apache-2.0  (Apache Software Foundation)
  *   opentelemetry CC-BY-4.0   (OpenTelemetry Authors)
  *   angular       CC-BY-4.0   (Google)

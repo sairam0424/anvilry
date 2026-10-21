@@ -357,13 +357,13 @@ body::before {
   color: var(--accent);
 }
 
-/* utility: stack wall tile colour (src/components/home/stack.tsx). Plain CSS for the same
-   reason as .card-surface above. Rest = --fg-muted (7.91:1 dark / 7.43:1 light on bg-base).
-   Hover and keyboard focus = the brand colour, supplied per tile as --brand-dark /
-   --brand-light inline variables from src/lib/stack.ts; brands that fail 3:1 on a theme
-   bg-base carry a per-theme override there (enforced by src/lib/stack.test.ts). Glyph
-   tiles set no variable and fall back to --fg. Colour transitions are not motion, so they
-   stay on under prefers-reduced-motion. */
+/* utility: stack wall tile colour (src/components/home/stack.tsx). Plain CSS because the
+   light-theme branch needs the [data-theme="light"] ancestor selector with a custom-property
+   fallback, which no Tailwind variant expresses. Rest = --fg-muted. Hover and keyboard focus
+   = the brand colour, supplied per tile as --brand-dark / --brand-light inline variables from
+   src/lib/stack.ts; brands that fail 3:1 on a theme's hovered panel surface carry a per-theme
+   override there (enforced by src/lib/stack.test.ts). Glyph tiles set no variable and fall
+   back to --fg. Colour transitions are not motion, so they stay on under reduced motion. */
 .stack-icon { color: var(--fg-muted); }
 .stack-icon:hover,
 .stack-icon:focus-visible { color: var(--brand-dark, var(--fg)); }

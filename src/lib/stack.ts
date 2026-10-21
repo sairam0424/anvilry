@@ -13,8 +13,9 @@
  *
  * Colour: tiles are --fg-muted at rest and take the brand colour on hover/focus through
  * per-tile CSS variables (--brand-dark / --brand-light, see .stack-icon in globals.css).
- * Brands whose hex fails 3:1 against a theme's --bg-base carry an override for that theme;
- * the test enforces this with the WCAG contrast formula.
+ * Brands whose hex fails 3:1 against a theme's hovered panel surface (bg-surface with the
+ * 5% foreground hover tint) carry an override for that theme; the test enforces this with
+ * the WCAG contrast formula and resolves the override variables to their theme values.
  */
 import { skills } from "@/lib/profile";
 import type { StackGlyphKey, StackIconKey } from "@/components/stack-icons";
@@ -26,15 +27,15 @@ export type StackEntry =
       icon: StackIconKey;
       /** Simple Icons brand hex, "#RRGGBB" (simple-icons@16.35.0). */
       hex: `#${string}`;
-      /** Hover/focus colour when `hex` is below 3:1 on the dark --bg-base (#07080d). */
-      hoverDark?: string;
-      /** Hover/focus colour when `hex` is below 3:1 on the light --bg-base (#f7f8fb). */
-      hoverLight?: string;
+      /** Hover/focus colour when `hex` is below 3:1 on the dark hovered panel surface. */
+      hoverDark?: "var(--fg)" | "var(--accent)" | "var(--green)";
+      /** Hover/focus colour when `hex` is below 3:1 on the light hovered panel surface. */
+      hoverLight?: "var(--fg)" | "var(--accent)" | "var(--green)";
     }
   | { kind: "glyph"; href: string; glyph: StackGlyphKey };
 
-/** Keyed by the EXACT profile.skills item string. */
-export const STACK_ENTRIES: Record<string, StackEntry> = {
+/** Keyed by the EXACT profile.skills item string; a lookup may miss (concept skills). */
+export const STACK_ENTRIES: Partial<Record<string, StackEntry>> = {
   Python: {
     kind: "brand",
     href: "https://www.python.org/",
@@ -84,7 +85,7 @@ export const STACK_ENTRIES: Record<string, StackEntry> = {
     kind: "brand",
     href: "https://www.mongodb.com/",
     icon: "mongodb",
-    hex: "#47A248",
+    hex: "#47A248", hoverLight: "var(--green)",
   },
   Redis: {
     kind: "brand",

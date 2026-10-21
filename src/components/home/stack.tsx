@@ -16,16 +16,17 @@ import { stackBrandVars, stackItems } from "@/lib/stack";
  * (node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md,
  * "Passing Server Components as props").
  *
- * Accessibility, deliberately different from the reference site we studied:
+ * Accessibility rules this component follows:
  *   - ONE accessible-name source per link: aria-label. The SVG is aria-hidden and the
- *     mobile caption repeats the same text, so WCAG 2.5.3 (Label in Name) holds and a
- *     screen reader hears "Python, link" once instead of three times.
- *   - Tooltips never open on touch (Radix behaviour), so below `sm` every tile shows a
- *     visible mono caption; at `sm` and above the caption hides and the tooltip carries the
- *     name plus the skill group.
+ *     caption repeats the same text, so WCAG 2.5.3 (Label in Name) holds and a screen
+ *     reader hears "Python, link" once.
+ *   - Tooltips never open on touch (Radix behaviour), so the caption is gated on input
+ *     capability, not viewport width: coarse-pointer devices (phones AND tablets) show a
+ *     visible mono caption under every tile; fine-pointer devices hide it and the tooltip
+ *     carries the name plus the skill group.
  *   - Hit target: 40px glyph + p-2 = 56x56px, above the 44px WCAG 2.5.5 floor.
  *   - Focus ring: the global :focus-visible rule in globals.css (3px --accent outline).
- *   - Hover tint is theme-aware (bg-fg/5), unlike the white-on-white tint we observed.
+ *   - Hover tint is theme-aware (bg-fg/5), so it is visible in light mode too.
  *
  * Colour: .stack-icon (globals.css) paints --fg-muted at rest and the per-tile
  * --brand-dark / --brand-light variable on hover and focus. Colour transitions are not
@@ -45,7 +46,7 @@ export function Stack() {
                 content={
                   <>
                     {item.name}
-                    <span className="ml-1.5 text-fg-subtle">{item.group}</span>
+                    <span className="ml-1.5 text-fg-muted">{item.group}</span>
                   </>
                 }
               >
@@ -63,7 +64,7 @@ export function Stack() {
                     <StackGlyph glyph={item.glyph} size={40} />
                   )}
                   <span
-                    className="font-mono text-[10px] leading-none tracking-tight whitespace-nowrap text-fg-subtle sm:hidden"
+                    className="font-mono text-[11px] leading-none whitespace-nowrap text-fg-muted pointer-fine:hidden"
                     aria-hidden="true"
                   >
                     {item.name}

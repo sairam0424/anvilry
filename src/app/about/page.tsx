@@ -57,8 +57,8 @@ export default function AboutPage() {
             </p>
             </div>
             {isAboutMascotEnabled() && (
-              <div className="order-first shrink-0 sm:order-none sm:-mt-24">
-                <SiteMascot character="gearbot" size={144} />
+              <div className="order-first shrink-0 sm:order-none sm:-mt-28">
+                <SiteMascot character="gearbot" size={176} />
               </div>
             )}
           </div>

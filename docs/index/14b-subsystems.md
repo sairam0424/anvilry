@@ -3,13 +3,13 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.13.0
+version: v3.14.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
+> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
 > post-a929932 fixes, each described by behaviour — notes are hidden at the data layer when `NOTES_ENABLED` is
 > off; rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
@@ -499,7 +499,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Build graph | Never mounts; `GraphIndex` (the accessible DOM-first list) is the whole experience (`build-graph.tsx:50`) |
 | Voice orb | 3D skipped; `VoiceOrbCanvas` draws **one static ring** and returns early with no rAF loop (`voice-orb-canvas.tsx:53-62`) |
 | Physics variant | The `useFrame` callback early-returns, but `frameloop="always"` still renders every frame — a static scene, continuously drawn (`scene-physics.tsx:37-38`) |
-| View transitions | JS snap branch (`view-context.tsx:105-117`) **and** a CSS `animation: none !important` kill switch (`globals.css:396-402`) |
+| View transitions | JS snap branch (`view-context.tsx:105-117`) **and** a CSS `animation: none !important` kill switch (`globals.css:424-430`) |
 | Global CSS | **Ten** separate `@media (prefers-reduced-motion: reduce)` blocks in `globals.css` (`:107,124,131,139,208,319,396,418,449,483`); the orb block deliberately keeps `blur(1.4px) contrast(4.5)` because dropping the filter shatters the metaballs (`:208-218`) |
 | Skill tree | Injects an **unscoped** global `* { animation: none !important; transition: none !important }` from inside the SVG (`skill-tree.tsx:664-666`) |
 
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:153`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 97 test files (64 node + 33 dom), 1195 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 100 test files (65 node + 35 dom), 1208 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:146-154`). Exits 1 when the artifact is unreadable (`:95-99`) or its shape has changed (`:102-113`). |
@@ -625,8 +625,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 97 test files
-(1195 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 100 test files
+(1208 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -735,7 +735,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:663-664`).
+(`CHANGELOG.md:691-692`).
 
 ### The Pagefind search-index step
 
@@ -772,8 +772,8 @@ pagefind failure fails the Vercel build.
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:634-636`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:644-646`) — the situation the `pnpm-workspace.yaml` overrides work around. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:662-664`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:672-674`) — the situation the `pnpm-workspace.yaml` overrides work around. |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4128`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -813,7 +813,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:47` (fetch loop over `KIND_LITERALS`) and its render switches (`:384,:414-416`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:729-762`) stay on their empty placeholders |
 | Redis key literals | `src/app/admin/telemetry/page.tsx:29,244,278,281,284,287,293` · the five `api/cron/*` writers (`eval/route.ts:176`, `health-check/route.ts:208-221`, `github-sync/route.ts:27,53`, `seo-audit/route.ts:66`, `content-audit/route.ts:43`) · `src/lib/telemetry/emit.ts:70` · `src/instrumentation.ts:98` and `src/lib/chat-cache.ts:57-59` (the corpus stamp and the FAQ-cache entry/index keys) · rate-limit prefixes `rate-limit.ts:25-29` and `api/visit/route.ts:42` |
 | Nav height `3.5rem` / `h-14`, and the open-to-work banner height `2.3125rem` | `src/components/site-nav.tsx:67,70` · `src/components/ui/skeleton.tsx:106` (`SkeletonViewTransition`) · `chat-view.tsx:79-81` · `game/developer-view.tsx:38-41` · `globals.css:94-97` (`scroll-padding-top`) · the banner literal in `chat-view.tsx:80` / `developer-view.tsx:40` must equal `OPEN_TO_WORK_BANNER_HEIGHT_REM` (exported from `src/lib/writing-flags.ts`, `:34`) — spelled out as literal Tailwind classes because the JIT scanner cannot see interpolated ones |
-| View-transition names | `view-router.tsx:56` (`view-body`) · `site-nav.tsx:68` (`site-header`) · `globals.css:360-402`; direction is stamped on `<html data-view-dir>` at `view-context.tsx:207-210` and consumed at `globals.css:373-385` |
+| View-transition names | `view-router.tsx:56` (`view-body`) · `site-nav.tsx:68` (`site-header`) · `globals.css:388-430`; direction is stamped on `<html data-view-dir>` at `view-context.tsx:207-210` and consumed at `globals.css:401-413` |
 | Résumé label / variants | `src/lib/profile.ts:136-142` (`resumeVariants`, one entry) · `src/lib/mcp-tools.ts:24` (`RESUME_ROLES`) and `:28-34` (`ROLE_TO_LABEL`) · the PDF `public/resume/Sairam_Resume_MX_E.pdf` — re-adding a role is a three-place edit or `get_resume_variant` returns `notFound` (`mcp-tools.ts:30-32`) |
 | Article `source` enum | `velite.config.ts:123-130` · `src/components/platform-badge.tsx:5-23` (`ArticleSource`, `SOURCE_CONFIG`) · `src/app/articles/page.tsx:34-41` (`SOURCE_LABELS`) · `src/app/articles/[slug]/page.tsx:30-37` (its own `SOURCE_LABELS`, rendered at `:108`) · `articles/[slug]/opengraph-image.tsx:20-27` (`SOURCE_LABEL`). **All four maps are keyed by `ArticleSource` (`platform-badge.tsx:5-11`), so adding a source to the Velite enum without adding it everywhere is a `tsc` error.** `opengraph-image.tsx` was the exception — `Record<string, string>` with a `?? "> article"` fallback — and it had silently drifted two members behind (`devto` and `hashnode` missing; the file's own comment counts 8 of 14 published articles, 9 of 15 files, rendering the generic `> article`). Widening any of these back to `Record<string, …>` re-opens the hole, because the fallback then absorbs the omission instead of failing the build |
 | Terminal command visibility filter | `src/components/game/terminal/commands.ts:745-747` (`COMMAND_NAMES`) · `terminal.tsx:17-19` (independent re-filter for the fuzzy dropdown) |
@@ -851,7 +851,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Add a card or command token the model can emit | `src/components/chat/parse-cards.ts:29-33` (grammar) + `:54-68` (resolution) | Charset is locked to `[a-z0-9-]`. Dispatch lives in `chat-messages.tsx:323-338`. Gate: `parse-cards.test.ts`. |
 | Change markdown rendering of assistant text | `src/components/chat/markdown-message.tsx:47-95` | Do not remove `skipHtml` or override `urlTransform` — that is the XSS posture (`:9-16`). |
 | Add or reorder a **view** | `src/components/view-context.tsx:24-45` (union, `VIEWS`, `VIEW_ORDER`) | Then `view-router.tsx:62-69`, `enabled-views.ts:20-21`, `view-switcher.tsx:25-59,101-104`, and `parse-cards.ts:60-63` (which validates `cmd:view` against `VIEWS`). `view-context.test.ts` pins the SSR default. |
-| Change the view-transition animation | `src/app/globals.css:360-402` | The named groups come from `view-router.tsx:56` and `site-nav.tsx:68`; direction from `view-context.tsx:207-210`. |
+| Change the view-transition animation | `src/app/globals.css:388-430` | The named groups come from `view-router.tsx:56` and `site-nav.tsx:68`; direction from `view-context.tsx:207-210`. |
 | Change SSR/first-paint view behaviour | `src/components/view-context.tsx:90-91` | `getServerSnapshot` must stay `DEFAULT_VIEW` — `view-context.test.ts:30-35` is the guard. |
 | Add or change a voice engine | `src/lib/voice-catalog.ts` (add to `CURATED_VOICES` `:134` / `EXTENDED_VOICES` `:283`) | Three lookup Maps build at module load (`:298-312`); adding a voice anywhere else leaves it un-lookupable and un-allowlisted. Then `use-speech-synthesis.ts` and, for a new server engine, a new `api/tts-*` route + cache and a `voice`-class `checkRateLimit` call. |
 | Change voice defaults or add a persisted setting | `src/lib/voice-settings-context.tsx:77-88` (`DEFAULTS`) + `:129-158` (`parse`) | Every capability must stay default-OFF; `voice-settings-context.test.ts` asserts it. `parse` must never throw. |
@@ -991,7 +991,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:496`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:524`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.)
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:145-147`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not

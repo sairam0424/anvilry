@@ -4,6 +4,34 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.14.0] — 2026-10-21
+
+**Minor** — the home page now shows the tools behind the case studies as a wall of brand glyphs, and the
+About page's skills grid carries the same glyphs, so a visitor can see *with what* the work was built
+without reading a list. It is a minor because the home page gains a section (every visitor sees it, the
+page's HTML grows by about 42 KB raw) and `/about` changes how 22 of its 34 skill chips render; no route,
+API, flag or environment variable changes.
+
+### Added
+- **A "Stack" section on the home page, after Featured Projects** (#318). One flat, wrapping wall of
+  40 px tool glyphs for the 22 tools in `profile.skills` that have one (19 brand marks from Simple Icons
+  16.35.0, CC0, with the Apache Kafka, OpenTelemetry and Angular credits kept; neutral lucide glyphs for
+  AWS, gRPC and ChromaDB, which have no freely licensed mark). Glyphs are muted at rest and take the brand
+  colour on hover and keyboard focus, with per-theme overrides for the ten brands that fail 3:1 against a
+  theme's background. Each tile is one external link with one accessible name, a 56 px hit target and the
+  accent focus ring; below `sm` a mono caption appears under every tile because tooltips never open on
+  touch. The list is derived from `profile.skills` in `src/lib/stack.ts`, so the wall, the résumé Skills
+  block, the Play skill tree and the chat corpus cannot drift (`src/lib/stack.test.ts` fails on any
+  entry that is not a profile skill). **Operator-visible:** nothing to configure; the section is a server
+  component and adds 0 B of client JavaScript (first-load for `/` stays 1,183,605 B).
+- **Glyph skill chips and anchors on `/about`** (#319). "What I work with" renders a 14 px glyph before
+  every skill that has a Stack entry (same marks, same hover colour); concept skills stay text-only. The
+  `// skills` and `// uses` sections gain the ids `#skills` and `#uses`, and the home wall ends with
+  "See the full list, grouped by area" pointing at `/about#skills`. **Operator-visible:** none.
+- The suite goes from 1195 to 1208 tests across 97 to 100 files (`src/lib/stack.test.ts` 5,
+  `src/components/home/stack.dom.test.tsx` 4, `src/components/skill-chip.dom.test.tsx` 4) and Playwright
+  gains two assertions in `e2e/views.spec.ts`.
+
 ## [3.13.0] — 2026-10-02
 
 **Minor** — a cached FAQ answer, and the reasoning summary stored with it, now lasts until the next deploy or

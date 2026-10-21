@@ -3,17 +3,17 @@ kind: doc
 title: Components — Site Shell, Home Sections, View System & UI Kit
 domain: [content]
 status: current
-version: v3.13.0
+version: v3.14.0
 ---
 
 # Components — Site Shell, Home Sections, View System & UI Kit
 
-> Part of the Anvilry v3.13.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.14.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-> **Baseline.** Describes Anvilry v3.13.0 (`package.json` 3.13.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more.
+> **Baseline.** Describes Anvilry v3.14.0 (`package.json` 3.14.0), i.e. `main` at a929932 plus five post-a929932 fixes: notes hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty, so every consumer — nav link, cards, `/articles` note section — sees no notes); per-class rate-limit buckets; a shared admin-auth check; the command-palette talk-mode entry gated by `isVoiceViewActive`; and `MIN_ROUTES = 17` in the bundle-budget gate plus removal of dead components. Only the notes gating and the palette gate change how this section behaves; the dead-code removal deleted three components (an unused article card, an unused `ui/button`, an unused `ui/empty-state`) and the unused `ArticleJsonLd` export from `json-ld.tsx`, none of which is indexed here any more. v3.14.0 adds three files to this section: `src/components/home/stack.tsx` (the home Stack icon wall — the seventh home section, mounted between `FeaturedProjects` and `Achievements`), `src/components/stack-icons.tsx` (its 19 Simple Icons paths and 3 lucide glyphs) and `src/components/skill-chip.tsx` (the `/about` glyph chips); `ui/section.tsx`, `ui/reveal.tsx` and `ui/tooltip.tsx` each gain `Stack` as a consumer.
 
 **Scope:** `src/components/*.tsx` (root level, excluding `ask-portfolio.tsx` and all `*.test.*` / `*.dom.test.*`), `src/components/home/**`, `src/components/ui/**`, `src/components/scroll/**`. Explicitly excludes `src/components/chat/`, `src/components/game/`, `src/components/hero-avatar/`, `src/components/hero-graph/`. The `?scroll=` flag store (`src/lib/scroll/*`) is owned by [04](./04-lib-ai-voice-infra.md); the persisted theme store (`src/lib/theme-context.tsx`) is not indexed by any section (see the coverage reconciliation in the [README](./README.md)); this doc covers only their component touchpoints (`ThemeToggle`, `ScrollFlagsSync` in `Providers`).
-**Files indexed:** 39
+**Files indexed:** 42
 
 ## At a glance
 
@@ -58,6 +58,9 @@ version: v3.13.0
 | `src/components/ui/skeleton.tsx` | Base skeleton + 4 composite shapes + full-viewport view-transition fallback | `Skeleton`, `SkeletonStatCard`, `SkeletonCard`, `SkeletonIframe`, `SkeletonMarkdownLine`, `SkeletonViewTransition` |
 | `src/components/ui/ink-transition.tsx` | Raw WebGL2 fBm ink-burn overlay + module-level `inkTransitionRef` handle | `InkTransitionHandle` (type), `inkTransitionRef` (mutable let), `InkTransition` |
 | `src/components/scroll/jump-to-latest.tsx` | Presentational "Jump to latest" pill (WCAG 2.2.2 resume control for autoscroll) | `JumpToLatest` |
+| `src/components/home/stack.tsx` | Home "Stack" icon wall (v3.14.0), the seventh home section between `FeaturedProjects` and `Achievements`: server component (no `"use client"`), `Section id="stack"`, `Reveal`-wrapped `<ul aria-label="Tools and technologies">` of 22 tiles from `stackItems` (40 px `StackIcon` brand mark or `StackGlyph`), each external `<a>` inside a `Tooltip` with `aria-label` as its only accessible name and an `aria-hidden` mono caption on coarse-pointer devices; closes with a `Link` to `/about#skills` | `Stack` |
+| `src/components/skill-chip.tsx` | `/about` "What I work with" chip (v3.14.0): a 14 px `StackIcon`/`StackGlyph` glyph (`aria-hidden`, `.skill-chip-glyph`) before the label when the skill has a `STACK_ENTRIES` record (22 of 34 chips), text only otherwise; brand colour on chip hover through `stackBrandVars()`; server-safe, not a link | `SkillChip` |
+| `src/components/stack-icons.tsx` | 19 Simple Icons brand paths (simple-icons@16.35.0, 24×24 `viewBox`, `currentColor`, `aria-hidden`) + 3 lucide glyphs (`Cloud`/`Network`/`Database`) for AWS, gRPC and ChromaDB, whose marks have no usable licence; the CC0 package's three per-icon exceptions (Apache Kafka, OpenTelemetry, Angular) are credited in `THIRD_PARTY_NOTICES.md` | `STACK_ICON_PATHS`, `StackIconKey` (type), `StackGlyphKey` (type), `StackIcon`, `StackGlyph` |
 
 ---
 
@@ -106,17 +109,17 @@ Two named transition groups exist in the tree:
 - `view-router.tsx:56` — the wrapper `<div style={{ viewTransitionName: "view-body" }}>`
 - `site-nav.tsx:68` — the sticky `<header style={{ viewTransitionName: "site-header" }}>`
 
-`src/app/globals.css:361-402` drives them:
+`src/app/globals.css:389-430` drives them:
 
-- Four slide keyframes `vt-slide-in-from-right` / `-from-left` / `vt-slide-out-to-left` / `-to-right` (`globals.css:367-370`).
-- Forward: `[data-view-dir="forward"]::view-transition-new(view-body)` slides in from right, `::view-transition-old(view-body)` slides out left — `0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both` (`globals.css:373-378`).
-- Backward: mirrored, comment plus both rules (`globals.css:380-386`).
-- `::view-transition-old(site-header), ::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }` pins the sticky nav so it does not fade with the body (`globals.css:387-392`).
-- A belt-and-suspenders reduced-motion kill switch sets `animation: none !important` on `::view-transition-group(*)`, `-old(*)`, `-new(*)` (`globals.css:396-402`) — redundant with the JS gate at `view-context.tsx:106-117`, intentionally so.
+- Four slide keyframes `vt-slide-in-from-right` / `-from-left` / `vt-slide-out-to-left` / `-to-right` (`globals.css:395-398`).
+- Forward: `[data-view-dir="forward"]::view-transition-new(view-body)` slides in from right, `::view-transition-old(view-body)` slides out left — `0.28s cubic-bezier(0.21, 0.47, 0.32, 0.98) both` (`globals.css:401-406`).
+- Backward: mirrored, comment plus both rules (`globals.css:408-414`).
+- `::view-transition-old(site-header), ::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }` pins the sticky nav so it does not fade with the body (`globals.css:415-420`).
+- A belt-and-suspenders reduced-motion kill switch sets `animation: none !important` on `::view-transition-group(*)`, `-old(*)`, `-new(*)` (`globals.css:424-430`) — redundant with the JS gate at `view-context.tsx:106-117`, intentionally so.
 
 ### Surrounding machinery
 
-**`view-router.tsx`** — Classic arrives as `children` (the server-rendered `page.tsx` tree, wired at `src/app/page.tsx:24-34`) and is **always mounted**, toggled with `hidden={view !== "classic"}` + matching `aria-hidden` (`:58`) so scroll position survives a round trip. Chat / Play / Developer / Voice / Resume are `next/dynamic` with `ssr: false` and a `SkeletonViewTransition` loading fallback each (`:25-50`), and are **unmounted** when inactive — the comment at `:9-24` records that unmounting (not hiding) the gamified view is what lets R3F dispose the WebGL context, since a hidden-but-live context leaks GPU memory on low-end mobile. Every optional view is additionally gated by `isViewEnabled(...)` (`:64-69`; `src/lib/enabled-views.ts:37` — Classic and Resume are always on, an unset `NEXT_PUBLIC_ENABLED_VIEWS` enables everything else), so `?view=chat` on a build with chat disabled silently stays on Classic. Voice receives `onClose={() => setView("classic")}` (`:67`).
+**`view-router.tsx`** — Classic arrives as `children` (the server-rendered `page.tsx` tree, wired at `src/app/page.tsx:25-36`) and is **always mounted**, toggled with `hidden={view !== "classic"}` + matching `aria-hidden` (`:58`) so scroll position survives a round trip. Chat / Play / Developer / Voice / Resume are `next/dynamic` with `ssr: false` and a `SkeletonViewTransition` loading fallback each (`:25-50`), and are **unmounted** when inactive — the comment at `:9-24` records that unmounting (not hiding) the gamified view is what lets R3F dispose the WebGL context, since a hidden-but-live context leaks GPU memory on low-end mobile. Every optional view is additionally gated by `isViewEnabled(...)` (`:64-69`; `src/lib/enabled-views.ts:37` — Classic and Resume are always on, an unset `NEXT_PUBLIC_ENABLED_VIEWS` enables everything else), so `?view=chat` on a build with chat disabled silently stays on Classic. Voice receives `onClose={() => setView("classic")}` (`:67`).
 
 **`view-switcher.tsx`** — `OPTIONS` holds only 4 entries: classic/gamified(label "Play")/chat/developer (`:25-60`), each carrying a `description` shown in a `Tooltip` around the button (`:127`). `VOICE_OPTION` (`:67-73`) is appended **only** when `mounted && !compact && isViewEnabled("voice")` (`:99-105`). The `useMounted()` gate (`src/lib/use-mounted.ts`, server snapshot `false` / client `true`) is described in-file as "the hydration contract; it is NOT a feature flag" (`:62-66`) — the switcher must render 4-way on the server to match the always-classic SSR snapshot, then upgrade to 5-way on the full (non-compact) instance. `resume` is **never** in the switcher; it is reachable only via ⌘K "Recruiter view" or `?view=resume`. **Three** instances can be in the DOM at once: full (`site-nav.tsx:102`, `lg:block`), compact (`site-nav.tsx:105`, `sm:block lg:hidden`), and a compact `scope="drawer"` one inside the open MobileNav (`mobile-nav.tsx:113`, `sm:hidden`). `layoutId` is `` `view-switcher-active-${compact ? "compact" : "full"}${scope ? `-${scope}` : ""}` `` (`:112`), with the `scope` prop (`:93`) needed because the top-row compact pill is always mounted (CSS-only visibility) and the drawer opens in the sm–lg range too; a shared `layoutId` would make Motion animate one pill between instances (`:106-111`). The pill content sits in a `relative z-10` wrapper, never a negative z-index (`:147-150`).
 
@@ -154,7 +157,7 @@ Two named transition groups exist in the tree:
 - **Reads / depends on:** `usePathname`, `@/lib/profile` `profile`, `@/lib/writing-flags` `ARTICLES_ENABLED`/`NOTES_ENABLED`/`STATS_ENABLED`/`SEARCH_ENABLED`, `ViewSwitcher`, `chat/header-orb-trigger` `HeaderOrbTrigger`, `MobileNav`, `ThemeToggle`, `ui/tooltip` `Tooltip`, `icons`, lucide `FileText`.
 - **Consumed by:** `src/app/layout.tsx:133` — `<SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />`.
 - **Behaviour notes:** `navLinks` is built inside the component body (`:42-55`): Work, Projects, Articles (flag **and** content), **Writing** (`/notes`, flag **and** content — the label is "Writing", not "Notes"), About, Résumé, then Stats / Search when their flags are on. `isActive` (`:31-36`) treats `/` exactly, `/#…` anchors as homepage-active, and everything else as prefix-match on `${href}/`; it drives both the accent class and `aria-current="page"` (`:85`, `:89`). Two `ViewSwitcher` instances render here — full at `lg:block` (`:101-103`), `compact` at `sm:block lg:hidden` (`:104-106`); below `sm` the switcher lives only in the MobileNav drawer (comment `:96-100`). `HeaderOrbTrigger` (`:110`) is the Anvil voice door on every viewport and route; it renders nothing when `NEXT_PUBLIC_ANVIL_ORB_MODE=off` or speech recognition is unsupported, and is disabled on the voice view. The desktop icon cluster (`lg:flex`, `:119-152`) is GitHub, LinkedIn, a Résumé file icon (all inside `Tooltip`) and `ThemeToggle` (`:151`); the full profile set (npm/PyPI/Dev.to/Substack) is deliberately kept out of the nav (comment `:112-118`). `<MobileNav links={navLinks} />` at `:155` receives the same filtered list.
-- **Gotchas / invariants:** `style={{ viewTransitionName: "site-header" }}` (`:68`) is what `globals.css:387-392` pins; removing it would make the sticky nav fade on every view switch. `h-14` is set on the `<header>` itself, not just the inner `<nav>` (`:59-67`, `:70`), so the border-box height is exactly 3.5rem — every "header is 3.5rem" assumption (`scroll-padding-top`, the `h-[calc(100dvh-3.5rem)]` mains of chat/developer, `SkeletonViewTransition`, the drawer's `top-14`) depends on that; the comment records a 1px permanent overflow bug when only the inner nav had it.
+- **Gotchas / invariants:** `style={{ viewTransitionName: "site-header" }}` (`:68`) is what `globals.css:415-420` pins; removing it would make the sticky nav fade on every view switch. `h-14` is set on the `<header>` itself, not just the inner `<nav>` (`:59-67`, `:70`), so the border-box height is exactly 3.5rem — every "header is 3.5rem" assumption (`scroll-padding-top`, the `h-[calc(100dvh-3.5rem)]` mains of chat/developer, `SkeletonViewTransition`, the drawer's `top-14`) depends on that; the comment records a 1px permanent overflow bug when only the inner nav had it.
 
 ### `src/components/site-footer.tsx`
 - **Role:** Global footer, machine-readable link row, optional visitor counter, copyright/RSS strip.
@@ -278,7 +281,7 @@ Two named transition groups exist in the tree:
 - **Role:** Above-the-fold hero (server component).
 - **Exports:** `Hero` (no props).
 - **Reads / depends on:** `@/lib/profile` (`profile`, `impactMetrics`), `@/components/hero-graph` `HeroGraph`, `@/components/hero-avatar` `HeroAvatar`, `GithubStatsStrip`, `GITHUB_STATS_ENABLED`, env `NEXT_PUBLIC_HERO_MODE`.
-- **Consumed by:** `src/app/page.tsx:26`.
+- **Consumed by:** `src/app/page.tsx:27`.
 - **Behaviour notes:** `heroMode === "avatar" ? <HeroAvatar /> : <HeroGraph />` (`:30`). Entrance is pure CSS `.hero-rise` with staggered inline `animationDelay` of `0.05s / 0.1s / 0.15s / 0.2s / 0.25s` (`:39`, `:49`, `:56`, `:139`, `:160`) — no JS/hydration gate, so the hero never flashes invisible and does not delay LCP (`:17-22`). `.hero-rise` is defined at `src/app/globals.css:116-125` and is neutralised (`opacity: 1; animation: none`) under reduced motion (`globals.css:125`). The headline copy is hardcoded JSX, not from `profile` (`:41-44`). The social row is six icons: GitHub, LinkedIn, npm, PyPI, Dev.to, Substack (`:74-129`).
 - **Gotchas / invariants:** `NEXT_PUBLIC_HERO_MODE` is read inside the function body, not module scope, "required for `vi.stubEnv` in tests" (`:24-25`). The impact `<dl>` is `sm:grid-cols-3` to match exactly 3 `impactMetrics`; a 4th metric or a change to `impactMetrics.length` leaves a blank trailing cell — the comment records that this was previously `sm:grid-cols-4` and broke (`:132-138`).
 
@@ -290,9 +293,9 @@ Two named transition groups exist in the tree:
 - **Behaviour notes:** Shared `WRAPPER_CLASS` includes `print:bg-white print:text-black` (`:41-42`); every text node carries a `print:` colour override so Cmd-P yields black-on-white with no extra tooling. Sections in order: Identity header, Production Work (`:143`), Open-Source Projects (`:180`), Skills (`:207`), Recognition (`:224`), PDF Downloads (`print:hidden`, `:241`), Contact CTA footer. No Three.js, no Motion, no animation by design.
 - **Gotchas / invariants:** Two exports exist purely so `/resume` does not nest two `<main>` landmarks. `NEXT_PUBLIC_RESUME_VARIANTS` is read inside `ResumeContent`, not module scope, so `vi.stubEnv` works (`:45-47`); unset → master pill only. The docblock at `:14-16` claims `ViewEscapeHatch` is "auto-rendered by view-router for non-classic views" — **it is not**; `view-router.tsx` renders no escape hatch, and `ResumeView` does not render one either, so the resume view has no in-page "back to Classic" control.
 
-### `src/components/home/featured-work.tsx` · `featured-projects.tsx` · `achievements.tsx` · `writing-preview.tsx` · `testimonials.tsx` · `contact.tsx`
-- **Role:** The six homepage sections between `Hero` and the footer, rendered in this order from `src/app/page.tsx:26-32` inside a shared `<main className="flex-1">`.
-- **Exports:** `FeaturedWork`, `FeaturedProjects`, `Achievements`, `WritingPreview`, `Testimonials`, `Contact` — all no-prop.
+### `src/components/home/featured-work.tsx` · `featured-projects.tsx` · `stack.tsx` · `achievements.tsx` · `writing-preview.tsx` · `testimonials.tsx` · `contact.tsx`
+- **Role:** The seven homepage sections between `Hero` and the footer, rendered in `page.tsx` order — `FeaturedWork`, `FeaturedProjects`, `Stack`, `Achievements`, `WritingPreview`, `Testimonials`, `Contact` — from `src/app/page.tsx:27-34` inside a shared `<main className="flex-1">`. `Stack` (v3.14.0) is a server component: `Section id="stack"`, a `Reveal`-wrapped `<ul aria-label="Tools and technologies">` of 22 tiles from `stackItems` (40 px `StackIcon` brand mark or `StackGlyph`), each `<a target="_blank" rel="noopener noreferrer">` inside a `Tooltip` (name + skill group) with `aria-label` as the single accessible-name source and an `aria-hidden` mono caption shown only on coarse-pointer devices, then a closing `Link` to `/about#skills`; guarded by `home/stack.dom.test.tsx`.
+- **Exports:** `FeaturedWork`, `FeaturedProjects`, `Stack`, `Achievements`, `WritingPreview`, `Testimonials`, `Contact` — all no-prop.
 - **Behaviour notes:**
   - `FeaturedWork` iterates **all** `allWork` (not a slice), surfacing `w.register` in the `mono-label` eyebrow and `w.metrics` in a `<dl>` (`featured-work.tsx:12-33`). Reveal delay is `i * 0.08`.
   - `FeaturedProjects` iterates `featuredProjects` from `@/lib/content` but the CTA text is the hardcoded string `"View all 8 projects"` (`featured-projects.tsx:24`) — it does not read `allProjects.length`, which is 11 (the `impactMetrics` repo count in the hero does).
@@ -300,27 +303,27 @@ Two named transition groups exist in the tree:
   - `WritingPreview` returns `null` when `!ARTICLES_ENABLED || allArticles.length === 0` (`writing-preview.tsx:11`), then calls `groupArticles(allArticles)` and slices to 2 — deduping **before** slicing so you get 2 unique articles, not 2 platform variants of one (`:13-15`).
   - `Testimonials` returns `null` when `!TESTIMONIALS_ENABLED` (default off) (`testimonials.tsx:13`); when enabled with an empty `testimonials` array it renders a "coming soon" card linking to a hardcoded `https://linkedin.com/in/sairam0424` (`:15-38`); populated it renders `<figure>`/`<blockquote>`/`<figcaption>` with a "verify on LinkedIn" link per entry (`:46-67`).
   - `Contact` (`"use client"`) copies `profile.email` with a 2000 ms confirmation and falls back to `window.location.href = mailto:` on clipboard failure (`contact.tsx:20-29`); the section id is `contact` (`:33`), which is the `/#contact` anchor target used by the nav and palette. It links Calendly plus LinkedIn, GitHub, npm, PyPI, Dev.to and Substack.
-- **Gotchas / invariants:** Only `contact.tsx` is a client component; the other five are RSC. All six wrap their content in `<Section>` + `<Reveal>`, so both must stay SSR-safe or the homepage regresses to invisible content.
+- **Gotchas / invariants:** Only `contact.tsx` is a client component; the other six are RSC (`stack.tsx` deliberately so — its inline SVG path data ships as HTML + RSC payload, not client JS). All seven wrap their content in `<Section>` + `<Reveal>`, so both must stay SSR-safe or the homepage regresses to invisible content.
 
 ### `src/components/ui/section.tsx`
 - **Role:** Standard page section wrapper.
 - **Exports:** `Section` — props `{ id?, label?, title?, titleAs?: "h1" | "h2" (default "h2"), children, className? }`.
-- **Consumed by:** 10 route files (`about`, `articles`, `decisions`, `mcp`, `notes`, `projects`, `resume`, `search`, `stats`, `work` — each `page.tsx`) and all 6 home sections.
-- **Behaviour notes:** Base classes `mx-auto w-full max-w-5xl px-6 py-20 sm:py-24 scroll-reveal` (`:28`) — the `scroll-reveal` class is a CSS-only scroll-timeline reveal defined at `src/app/globals.css:435-439`, disabled under reduced motion (`globals.css:450-451`). The header block renders only when `label || title` (`:29`).
+- **Consumed by:** 10 route files (`about`, `articles`, `decisions`, `mcp`, `notes`, `projects`, `resume`, `search`, `stats`, `work` — each `page.tsx`) and all 7 home sections (`Stack` passes `id="stack"`).
+- **Behaviour notes:** Base classes `mx-auto w-full max-w-5xl px-6 py-20 sm:py-24 scroll-reveal` (`:28`) — the `scroll-reveal` class is a CSS-only scroll-timeline reveal defined at `src/app/globals.css:463-467`, disabled under reduced motion (`globals.css:478-479`). The header block renders only when `label || title` (`:29`).
 - **Gotchas / invariants:** Each standalone page must pass `titleAs="h1"` to its **first** section or the page's highest heading is an `h2`, leaving a screen-reader heading list with no top anchor (WCAG 1.3.1 / 2.4.6) (`:4-11`).
 
 ### `src/components/ui/reveal.tsx`
 - **Role:** Scroll-into-view fade/rise wrapper.
 - **Exports:** `Reveal` — props `{ children, delay?: number = 0, className? }`.
 - **Reads / depends on:** `motion/react` `motion`, `@/lib/use-reduced-motion` `useReducedMotion`, `@/lib/use-mounted` `useMounted`.
-- **Consumed by:** 11 route files (`about`, `articles`, `articles/[slug]`, `decisions`, `notes`, `notes/[slug]`, `projects`, `projects/[slug]`, `stats`, `work`, `work/[slug]`) + `github-stats-strip.tsx` + all 6 home sections.
+- **Consumed by:** 11 route files (`about`, `articles`, `articles/[slug]`, `decisions`, `notes`, `notes/[slug]`, `projects`, `projects/[slug]`, `stats`, `work`, `work/[slug]`) + `github-stats-strip.tsx` + all 7 home sections.
 - **Behaviour notes:** When `reduced || !mounted` it returns a plain `<div>` (`:28`) — so crawlers, JS-disabled visitors, pre-hydration paint, and a hydration failure all see fully visible content rather than `opacity: 0` (`:8-15`). Animated path: `initial={{ opacity: 0, y: 16 }}`, `whileInView={{ opacity: 1, y: 0 }}`, `viewport={{ once: true, margin: "-80px" }}`, `0.5s cubic-bezier(0.21, 0.47, 0.32, 0.98)` (`:31-36`). `useReducedMotion` here is the native `matchMedia` hook (seeded from `matchMedia` in its `useState` initialiser), not Motion's.
 - **Gotchas / invariants:** The `!mounted` branch is the no-JS safety net — removing it makes every below-fold section permanently invisible whenever hydration fails.
 
 ### `src/components/ui/tooltip.tsx`
 - **Role:** Thin Radix tooltip primitive shared by icon buttons.
 - **Exports:** `TooltipProvider` (`delayDuration={300}`, `:6-12`), `Tooltip({ content, children, side = "bottom" })` (`:14-40`). The trigger is `asChild`, so the child must accept a ref and props.
-- **Consumed by:** `Providers` (provider), `view-switcher.tsx`, `site-nav.tsx`, `mobile-nav.tsx`, `theme-toggle.tsx`, `copy-button.tsx`, `command-palette.tsx`, plus chat/game controls (`mic-button`, `read-aloud-button`, `voice-picker`, `voice-settings-dialog`, `developer-rail`, `terminal-overlay`).
+- **Consumed by:** `Providers` (provider), `view-switcher.tsx`, `site-nav.tsx`, `mobile-nav.tsx`, `theme-toggle.tsx`, `copy-button.tsx`, `command-palette.tsx`, `home/stack.tsx` (one per tile, v3.14.0), plus chat/game controls (`mic-button`, `read-aloud-button`, `voice-picker`, `voice-settings-dialog`, `developer-rail`, `terminal-overlay`).
 - **Gotchas / invariants:** Any `Tooltip` rendered outside `Providers`' `TooltipProvider` throws in Radix; the provider sits inside `ViewProvider` and wraps only `children` (`providers.tsx:54-56`), not the sibling ink canvas or badge.
 
 ### `src/components/ui/skeleton.tsx`
@@ -328,7 +331,7 @@ Two named transition groups exist in the tree:
 - **Exports:** `Skeleton({ className? })`, `SkeletonStatCard()`, `SkeletonCard()`, `SkeletonIframe()`, `SkeletonMarkdownLine()`, `SkeletonViewTransition({ label? })`.
 - **Reads / depends on:** `@/lib/use-reduced-motion`, `@/lib/utils` `cn`, `lucide-react` `FileText`.
 - **Consumed by:** `src/app/resume/page.tsx`, `ask-portfolio.tsx`, `github-stats-strip.tsx`, `view-router.tsx`, `chat/chat-messages.tsx`, `chat/anvil-core-surface.tsx`.
-- **Behaviour notes:** `Skeleton` applies `skeleton-shimmer rounded-md` and is `aria-hidden="true"` — decorative, so only the enclosing `role="status"` container is announced (`:9-11`); `.skeleton-shimmer` is defined at `src/app/globals.css:469-481` (static fallback under reduced motion, `:483-488`). `SkeletonStatCard` (`:28`) mirrors `GithubStatsStrip`'s `StatCard`; `SkeletonCard` (`:44`) mirrors the `card-surface` article/note/project shape; `SkeletonIframe` (`:76`) is absolutely positioned for the résumé PDF `h-[80vh]` frame; `SkeletonMarkdownLine` (`:88`) is 3 lines for streamed markdown. `SkeletonViewTransition` (`:102`) is `h-[calc(100dvh-3.5rem)]` (nav height subtracted, `:106`), `role="status"`, with a pulsing orb ring that drops `animate-pulse` under reduced motion (`:114`).
+- **Behaviour notes:** `Skeleton` applies `skeleton-shimmer rounded-md` and is `aria-hidden="true"` — decorative, so only the enclosing `role="status"` container is announced (`:9-11`); `.skeleton-shimmer` is defined at `src/app/globals.css:497-509` (static fallback under reduced motion, `:483-488`). `SkeletonStatCard` (`:28`) mirrors `GithubStatsStrip`'s `StatCard`; `SkeletonCard` (`:44`) mirrors the `card-surface` article/note/project shape; `SkeletonIframe` (`:76`) is absolutely positioned for the résumé PDF `h-[80vh]` frame; `SkeletonMarkdownLine` (`:88`) is 3 lines for streamed markdown. `SkeletonViewTransition` (`:102`) is `h-[calc(100dvh-3.5rem)]` (nav height subtracted, `:106`), `role="status"`, with a pulsing orb ring that drops `animate-pulse` under reduced motion (`:114`).
 - **Gotchas / invariants:** `SkeletonViewTransition`'s `3.5rem` must track the `h-14` header in `site-nav.tsx:67`.
 
 ### `src/components/ui/ink-transition.tsx`
@@ -388,8 +391,11 @@ Two named transition groups exist in the tree:
 - `src/components/ui/skeleton.tsx`
 - `src/components/ui/tooltip.tsx`
 - `src/components/scroll/jump-to-latest.tsx`
+- `src/components/home/stack.tsx`
+- `src/components/skill-chip.tsx`
+- `src/components/stack-icons.tsx`
 
-**Excluded from this section (owned elsewhere):** `src/components/ask-portfolio.tsx`, `src/components/chat/**`, `src/components/game/**`, `src/components/hero-avatar/**`, `src/components/hero-graph/**`. Tests colocated with this section's files, not indexed individually: `view-context.test.ts`, `view-context.dom.test.tsx`, `view-hint.dom.test.tsx`, `site-footer.dom.test.tsx`, `github-stats-strip.dom.test.tsx`, `command-palette-content.dom.test.tsx` (and `ask-portfolio.dom.test.tsx`, owned elsewhere).
+**Excluded from this section (owned elsewhere):** `src/components/ask-portfolio.tsx`, `src/components/chat/**`, `src/components/game/**`, `src/components/hero-avatar/**`, `src/components/hero-graph/**`. Tests colocated with this section's files, not indexed individually: `view-context.test.ts`, `view-context.dom.test.tsx`, `view-hint.dom.test.tsx`, `site-footer.dom.test.tsx`, `github-stats-strip.dom.test.tsx`, `command-palette-content.dom.test.tsx`, `home/stack.dom.test.tsx`, `skill-chip.dom.test.tsx` (and `ask-portfolio.dom.test.tsx`, owned elsewhere).
 
 ## UNVERIFIED
 

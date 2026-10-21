@@ -111,10 +111,21 @@ describe("Mascot", () => {
 
   it("survives a browser without the Web Animations API", () => {
     stubMedia({});
+    // happy-dom implements animate on Element.prototype and the beforeEach stubs it on
+    // HTMLElement.prototype; neutralise both so the component really sees no `animate`.
+    const inherited = Object.getOwnPropertyDescriptor(Element.prototype, "animate");
     // @ts-expect-error — simulate an engine without element.animate
     delete HTMLElement.prototype.animate;
-    render(<Mascot directions={DIRECTIONS} reactions={REACTIONS} />);
-    expect(() => fireEvent.click(screen.getByRole("button"))).not.toThrow();
+    Object.defineProperty(Element.prototype, "animate", { value: undefined, configurable: true, writable: true });
+    try {
+      render(<Mascot directions={DIRECTIONS} reactions={REACTIONS} />);
+      const button = screen.getByRole("button");
+      expect(typeof (button.querySelector("span") as HTMLElement).animate).toBe("undefined");
+      expect(() => fireEvent.click(button)).not.toThrow();
+    } finally {
+      if (inherited) Object.defineProperty(Element.prototype, "animate", inherited);
+      else delete (Element.prototype as { animate?: unknown }).animate;
+    }
   });
 });
 
@@ -125,5 +136,17 @@ describe("Mascot size", () => {
     const button = screen.getByRole("button");
     expect(button.style.width).toBe("var(--mascot-size)");
     expect(button.style.height).toBe("var(--mascot-size)");
+  });
+});
+
+describe("Mascot unmount", () => {
+  it("clears the reaction timers started by a boop when it unmounts", () => {
+    vi.useFakeTimers();
+    stubMedia({});
+    const { unmount } = render(<Mascot directions={DIRECTIONS} reactions={REACTIONS} />);
+    fireEvent.click(screen.getByRole("button"));
+    expect(vi.getTimerCount()).toBeGreaterThan(0); // payoff + end timers are pending
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

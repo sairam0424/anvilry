@@ -108,8 +108,8 @@ export function Mascot({ directions, reactions, size = 140, className, label = "
   }, []);
 
   const boop = () => {
-    timersRef.current.forEach(clearTimeout);
-    timersRef.current = [];
+    // Empty in place: the unmount cleanup captured this array once, so it must keep its identity.
+    timersRef.current.splice(0).forEach(clearTimeout);
     const later = (ms: number, next: Reaction | null) => {
       timersRef.current.push(setTimeout(() => setReaction(next), ms));
     };

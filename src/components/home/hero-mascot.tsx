@@ -17,8 +17,9 @@ export function HeroMascotBackdrop() {
  * The hero head (src/lib/mascots.ts `gearbot`). Below `lg` it sits in flow above the name
  * eyebrow at 9rem, left-aligned like the page-mascot demo. From `lg` it leaves the flow for the
  * right gutter beside the headline: the copy is max-w-3xl inside a max-w-5xl container, which
- * leaves exactly 13rem there, so 13rem at `lg` (the viewport IS the container, nothing may
- * spill). From `xl` the container is centred with ≥ 8rem of page margin either side, so the head
+ * leaves exactly 13rem there, so 13rem at `lg` sitting on the padding edge (`right-0`): the
+ * viewport IS the container, nothing may spill, and the 1.5rem of padding is the slack that keeps
+ * a 17 px classic scrollbar from pushing the head into the headline box. From `xl` the container is centred with ≥ 8rem of page margin either side, so the head
  * grows to 15rem by extending 1.5rem INTO that margin (`-right-6`) — its left edge stays on the
  * same gutter line and never crosses the headline box (sized against the 4-line, 264 px h1 at
  * 1440; 12rem read small, 16rem started to dominate). One instance, sized through
@@ -28,7 +29,7 @@ export function HeroMascotBackdrop() {
  */
 export function HeroMascot() {
   return (
-    <div className="hero-rise mb-6 [--mascot-size:9rem] lg:absolute lg:right-6 lg:top-24 lg:mb-0 lg:[--mascot-size:13rem] xl:-right-6 xl:top-20 xl:[--mascot-size:15rem]">
+    <div className="hero-rise mb-6 [--mascot-size:9rem] lg:absolute lg:right-0 lg:top-24 lg:mb-0 lg:[--mascot-size:13rem] xl:-right-6 xl:top-20 xl:[--mascot-size:15rem]">
       <SiteMascot character="gearbot" size="var(--mascot-size)" priority />
     </div>
   );

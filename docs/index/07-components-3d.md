@@ -230,7 +230,7 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 
 ## Cross-references outside this section
 
-- `src/components/home/hero.tsx:26,30` is the sole mount point for both hero WebGL slots and the place `NEXT_PUBLIC_HERO_MODE` is branched.
+- `src/components/home/hero.tsx:26` reads `NEXT_PUBLIC_HERO_MODE` and `:33-39` branches it — the sole mount point for both hero WebGL slots (and, in `mascot` mode, the glow backdrop).
 - `src/lib/graph-data.ts` supplies `graphNodes` (16 entries: work 5, engine 4, tool 4, agent 3), `graphEdges` (19 pairs), `resolveKindColor` (the live-theme mapping `scene.tsx` uses) and `kindColor` (`work: #38e1ff`, `agent: #a78bfa`, `engine: #4ade80`, `tool: #fbbf24`); positions are deliberately deterministic — "Positions are deterministic (no Math.random) so SSR/build stays stable" (`graph-data.ts:6`).
 - `src/lib/use-reduced-motion.ts` and `src/lib/use-media-query.ts` (`useMediaQuery`, `useWebGLSupported`) are the gate primitives; both return `false` on the server.
 - `patches/@react-three__fiber@9.7.0.patch` (registered at `pnpm-workspace.yaml:54`, rationale at `:50-53`) guards `createPointerEvents().connect()` against a null target (pmndrs/react-three-fiber#3754), which otherwise crashes a canvas on unmount/remount races. Drop the patch when a fiber release contains the upstream fix; upgrading `@react-three/fiber` past 9.7.0 without doing so breaks `pnpm install` (the patch key is the exact version `@react-three/fiber@9.7.0`, `package.json` allows `^9.7.0`, and `allowUnusedPatches` is unset, so pnpm's default of failing on an unapplied patch applies).

@@ -247,7 +247,7 @@ Two named transition groups exist in the tree:
 - **Role:** Client-fetched aggregate GitHub stat cards on the homepage.
 - **Exports:** `GithubStatsStrip` (no props). `StatCard` is module-private.
 - **Reads / depends on:** `GET /api/github/stats`, `motion/react` (`motion`, `AnimatePresence`), `ui/reveal` `Reveal`, `ui/skeleton` `SkeletonStatCard`, `pushedAgo` from `@/lib/github` (`:8`).
-- **Consumed by:** `src/components/home/hero.tsx:165`, itself gated by `GITHUB_STATS_ENABLED` (`NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true"`, default off, `hero.tsx:159`).
+- **Consumed by:** `src/components/home/hero.tsx:175`, itself gated by `GITHUB_STATS_ENABLED` (`NEXT_PUBLIC_GITHUB_STATS_ENABLED === "true"`, default off, `hero.tsx:169`).
 - **Behaviour notes:** Three-state machine `"loading" | "ready" | "empty"` (`:18`). Enters `ready` only when `data.followers > 0 || data.publicRepos > 0`; anything else (including a non-OK response or a network throw) becomes `empty` (`:44-56`). `empty` returns `null` entirely — "a strip showing 0/0/— is worse than nothing" (`:58-59`). `AnimatePresence mode="wait"` crossfades skeleton → content; the loading grid carries `role="status"` + an `sr-only` announcement (`:63-78`). Content is up to **five** cards: followers, public repos, stars, forks (zero stars/forks render as `"—"`, `:102-119`) and a "last shipped" card from `mostRecentPush` via `pushedAgo`, present only when the field is non-null (`:120-126`); the grid is `sm:grid-cols-3 lg:grid-cols-5` so a lone fifth card never orphans (`:87-91`). Guarded by `github-stats-strip.dom.test.tsx:18-89`.
 - **Gotchas / invariants:** `stats!` non-null assertions at `:94-123` are only safe because `fetchState === "ready"` implies `stats` was set in the same `.then`.
 

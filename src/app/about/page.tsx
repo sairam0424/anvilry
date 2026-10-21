@@ -5,6 +5,8 @@ import { allProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProfilePageJsonLd } from "@/components/json-ld";
+import { SiteMascot } from "@/components/mascot/site-mascot";
+import { isAboutMascotEnabled } from "@/lib/mascots";
 import { SkillChip } from "@/components/skill-chip";
 
 /** Format an ISO date as an absolute, human-readable string (no relative drift). */
@@ -30,7 +32,11 @@ export default function AboutPage() {
     <main className="flex-1">
       <Section label="// whoami" title={`I'm ${profile.name}.`} titleAs="h1">
         <Reveal>
-          <div className="max-w-2xl space-y-4 text-fg-muted">
+          {/* Portrait: the site's drawn head (src/lib/mascots.ts) beside the intro from `sm`,
+              lifted to the heading line; above the intro on phones. It only tracks fine
+              pointers and a tap plays a reaction. NEXT_PUBLIC_ABOUT_MASCOT=false removes it. */}
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
+            <div className="max-w-2xl space-y-4 text-fg-muted">
             <p>
               I&apos;m a <span className="text-fg">GenAI &amp; Backend engineer</span> at {profile.company} (since
               Jun 2024), building production multi-agent LLM systems and the event-driven backends that keep them
@@ -49,6 +55,12 @@ export default function AboutPage() {
               2023
               (AIR 420), Meta Hacker Cup 2022, and Institute Rank 1 on GeeksforGeeks &amp; InterviewBit.
             </p>
+            </div>
+            {isAboutMascotEnabled() && (
+              <div className="order-first shrink-0 sm:order-none sm:-mt-24">
+                <SiteMascot character="gearbot" size={144} />
+              </div>
+            )}
           </div>
         </Reveal>
       </Section>

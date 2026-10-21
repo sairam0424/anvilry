@@ -198,40 +198,26 @@
       ],
       "preview": "AWS_REGION=us-east-1"
     },
-    ".env.example:219": {
+    ".env.example:227": {
       "fp": "a24733f17840",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_CHROME_TTS_BANNER=true     # Show Chrome TTS bug warning in talk mode (default off — C"
     },
-    ".env.example:221": {
+    ".env.example:229": {
       "fp": "d6c6d11c877c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_ARTICLE_DEDUP_KEY — controls which frontmatter field is the primary"
     },
-    ".env.example:226": {
+    ".env.example:234": {
       "fp": "50fb409854eb",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "# NEXT_PUBLIC_ARTICLE_DEDUP_KEY=canonicalUrl"
-    },
-    ".env.example:235": {
-      "fp": "8e1590f9a23e",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "# FLAGS_SECRET — required when FLAG_DRIVER=vercel. Signs override cookies."
-    },
-    ".env.example:237": {
-      "fp": "15e1e441829b",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "# FLAGS_SECRET=<your-32-byte-base64url-secret>"
     },
     ".env.example:24": {
       "fp": "bd83203ad90e",
@@ -239,6 +225,20 @@
         "11-config-build-ci-infra.md"
       ],
       "preview": "# ANTHROPIC_API_KEY=sk-ant-..."
+    },
+    ".env.example:243": {
+      "fp": "8e1590f9a23e",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# FLAGS_SECRET — required when FLAG_DRIVER=vercel. Signs override cookies."
+    },
+    ".env.example:245": {
+      "fp": "15e1e441829b",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# FLAGS_SECRET=<your-32-byte-base64url-secret>"
     },
     ".env.example:4": {
       "fp": "b1a9446ea22e",
@@ -2062,42 +2062,42 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
-    "e2e/views.spec.ts:163": {
+    "e2e/views.spec.ts:181": {
       "fp": "e613c6c8961d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "test.skip("
     },
-    "e2e/views.spec.ts:166": {
+    "e2e/views.spec.ts:184": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ");"
     },
-    "e2e/views.spec.ts:243": {
+    "e2e/views.spec.ts:261": {
       "fp": "19f5206389e0",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:266": {
+    "e2e/views.spec.ts:284": {
       "fp": "29576b54e255",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "});"
     },
-    "e2e/views.spec.ts:270": {
+    "e2e/views.spec.ts:288": {
       "fp": "8e5c494d0c11",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:275": {
+    "e2e/views.spec.ts:293": {
       "fp": "7ba9677d7b80",
       "citedBy": [
         "02-api-routes.md"
@@ -4516,21 +4516,21 @@
       ],
       "preview": "return NextResponse.json("
     },
-    "src/app/about/page.tsx:11": {
+    "src/app/about/page.tsx:13": {
       "fp": "cfeff0da6803",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "function formatUpdated(iso: string): string {"
     },
-    "src/app/about/page.tsx:15": {
+    "src/app/about/page.tsx:17": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/about/page.tsx:18": {
+    "src/app/about/page.tsx:20": {
       "fp": "60aaa8cc585c",
       "citedBy": [
         "01-routes-pages.md"
@@ -7534,7 +7534,7 @@
       ],
       "preview": "import type { VoiceSessionState } from \"@/components/chat/use-voice-session\";"
     },
-    "src/app/not-found.tsx:29": {
+    "src/app/not-found.tsx:31": {
       "fp": "52bab0dd464a",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -7542,14 +7542,14 @@
       ],
       "preview": "const VoiceOrb3D = dynamic("
     },
-    "src/app/not-found.tsx:32": {
+    "src/app/not-found.tsx:34": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": ");"
     },
-    "src/app/not-found.tsx:34": {
+    "src/app/not-found.tsx:36": {
       "fp": "f52863c128e2",
       "citedBy": [
         "01-routes-pages.md",
@@ -7558,21 +7558,21 @@
       ],
       "preview": "const showOrb = process.env.NEXT_PUBLIC_404_ORB === \"true\";"
     },
-    "src/app/not-found.tsx:45": {
+    "src/app/not-found.tsx:57": {
       "fp": "c8e0f9bf6ba6",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "{showOrb && ("
     },
-    "src/app/not-found.tsx:46": {
+    "src/app/not-found.tsx:58": {
       "fp": "2b77782f839b",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "<div className=\"mb-6 flex justify-center\" aria-hidden=\"true\">"
     },
-    "src/app/not-found.tsx:47": {
+    "src/app/not-found.tsx:59": {
       "fp": "5682a37ed4db",
       "citedBy": [
         "14b-subsystems.md",
@@ -7580,7 +7580,7 @@
       ],
       "preview": "<WebGLBoundary>"
     },
-    "src/app/not-found.tsx:55": {
+    "src/app/not-found.tsx:67": {
       "fp": "aac32651b10f",
       "citedBy": [
         "14b-subsystems.md"
@@ -13870,21 +13870,21 @@
       ],
       "preview": "import { HeroAvatar } from \"@/components/hero-avatar\";"
     },
-    "src/components/home/hero.tsx:132": {
+    "src/components/home/hero.tsx:142": {
       "fp": "d1e964a41923",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "{/* Impact strip — headline metrics above the fold (all real, work-context)."
     },
-    "src/components/home/hero.tsx:138": {
+    "src/components/home/hero.tsx:148": {
       "fp": "ab2d6bd4213b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "className=\"hero-rise mt-14 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border b"
     },
-    "src/components/home/hero.tsx:159": {
+    "src/components/home/hero.tsx:169": {
       "fp": "30983b06d1da",
       "citedBy": [
         "01-routes-pages.md",
@@ -13893,7 +13893,7 @@
       ],
       "preview": "{GITHUB_STATS_ENABLED && ("
     },
-    "src/components/home/hero.tsx:165": {
+    "src/components/home/hero.tsx:175": {
       "fp": "14bce61440e9",
       "citedBy": [
         "01-routes-pages.md",
@@ -13902,14 +13902,14 @@
       ],
       "preview": "<GithubStatsStrip />"
     },
-    "src/components/home/hero.tsx:24": {
+    "src/components/home/hero.tsx:25": {
       "fp": "bd8268722999",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// Read flag inside function body — NOT module scope (required for vi.stubEnv in tests)."
     },
-    "src/components/home/hero.tsx:25": {
+    "src/components/home/hero.tsx:26": {
       "fp": "2099d7c5bae0",
       "citedBy": [
         "07-components-3d.md",
@@ -13918,12 +13918,26 @@
       ],
       "preview": "const heroMode = process.env.NEXT_PUBLIC_HERO_MODE;"
     },
-    "src/components/home/hero.tsx:30": {
-      "fp": "a20daae043f4",
+    "src/components/home/hero.tsx:33": {
+      "fp": "3aa6c6847a83",
       "citedBy": [
         "07-components-3d.md"
       ],
-      "preview": "{heroMode === \"avatar\" ? <HeroAvatar /> : <HeroGraph />}"
+      "preview": "{heroMode === \"avatar\" ? ("
+    },
+    "src/components/home/hero.tsx:38": {
+      "fp": "a7f40b0c6eae",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "<HeroGraph />"
+    },
+    "src/components/home/hero.tsx:41": {
+      "fp": "655590d0647b",
+      "citedBy": [
+        "07-components-3d.md"
+      ],
+      "preview": "{heroMode === \"mascot\" && <HeroMascot />}"
     },
     "src/components/home/resume-view.tsx:13": {
       "fp": "941ad5225a7b",

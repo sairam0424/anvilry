@@ -138,4 +138,5 @@ The public base URL `https://anvilry.vercel.app` is hard-coded in about two doze
 ## 📜 Licence
 
 MIT, see [LICENSE](./LICENSE). Brand glyphs are from Simple Icons (CC0) with three attributed
-exceptions listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
+exceptions, and the cursor-tracking mascot and its two characters are from page-mascot (MIT); both
+are listed in [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).

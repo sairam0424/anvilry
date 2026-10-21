@@ -61,6 +61,24 @@ test("about page: /about#skills is anchored and its tool chips carry glyphs", as
   expect(await glyphs.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
 });
 
+test("about page: the whoami section carries the mascot portrait", async ({ page }) => {
+  await page.goto("/about");
+  // Default ON (NEXT_PUBLIC_ABOUT_MASCOT unset). The button is the only accessible surface of
+  // the mascot; its two sprite layers are presentational spans.
+  const mascot = page.getByRole("button", { name: "Boop the mascot" });
+  await expect(mascot).toBeVisible();
+  await mascot.click();
+  // A click swaps to the reactions sheet: the second layer becomes opaque.
+  const reactions = mascot.locator("span > span").nth(1);
+  await expect(reactions).toHaveCSS("opacity", "1");
+});
+
+test("404 page: the CRT mascot sits above the panic terminal", async ({ page }) => {
+  await page.goto("/this-route-does-not-exist");
+  await expect(page.getByRole("button", { name: "Boop the CRT monitor" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeAttached();
+});
+
 test("classic view: navigation to projects page works", async ({ page }) => {
   await page.goto("/projects");
   await expect(page).toHaveURL("/projects");

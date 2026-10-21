@@ -183,6 +183,13 @@
       ],
       "preview": "#                                        # Requires UPSTASH_REDIS_REST_URL + _TOKEN"
     },
+    ".env.example:199": {
+      "fp": "b724cd5aa1c8",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# NEXT_PUBLIC_HERO_MODE=mascot           # \"graph\" (default: WebGL knowledge graph, desktop only),"
+    },
     ".env.example:2": {
       "fp": "c904e8eb9eac",
       "citedBy": [
@@ -197,6 +204,34 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "AWS_REGION=us-east-1"
+    },
+    ".env.example:201": {
+      "fp": "0f8c8a4ab228",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "#                                        # head that follows the cursor — no WebGL, works on phones)"
+    },
+    ".env.example:202": {
+      "fp": "4d1eccab2aa9",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# NEXT_PUBLIC_AVATAR_POSITION=hero-side  # avatar mode only: hero-side | hero-split | hero-top"
+    },
+    ".env.example:203": {
+      "fp": "89eee3dbfb93",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# NEXT_PUBLIC_ABOUT_MASCOT=true          # About portrait beside \"I'm Sairam Ugge.\" (OFF by default)"
+    },
+    ".env.example:204": {
+      "fp": "d89e1a91fd78",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "# NEXT_PUBLIC_404_MASCOT=false           # 404 mascot (13 rotating characters) is ON by default; \"fa"
     },
     ".env.example:227": {
       "fp": "a24733f17840",
@@ -19233,6 +19268,20 @@
         "09-content-and-schemas.md"
       ],
       "preview": "## Markdown Versions"
+    },
+    "src/lib/mascot-flags.ts:11": {
+      "fp": "b7df990c0eba",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "return process.env.NEXT_PUBLIC_ABOUT_MASCOT === \"true\";"
+    },
+    "src/lib/mascot-flags.ts:16": {
+      "fp": "206fd3d19c60",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "return process.env.NEXT_PUBLIC_404_MASCOT !== \"false\";"
     },
     "src/lib/mcp-tools.test.ts:107": {
       "fp": "1698b4ee672d",

@@ -4,37 +4,37 @@ name: ag-bash
 tagline: AI-native bash interpreter, in TypeScript.
 group: Code Intelligence & Engines
 repo: https://github.com/sairam0424/ag-bash
-commits: 449
+commits: 512
 dateCreated: 2026-04-14
 license: Apache-2.0
 tech: [TypeScript, WebAssembly, MCP, Tree-sitter, pnpm]
 pinned: true
-pinRank: 4
+pinRank: 5
 featured: false
 order: 16
 excerpt: A sandboxed bash interpreter for AI agents — Tree-sitter WASM parser, in-process WASM runtimes (CPython, QuickJS, SQLite3), exposed over MCP.
 decisions:
   - title: "FNV-1a over SHA-256 for the AST cache key"
     body: "a non-cryptographic hash gives roughly 10x faster key generation and works in the browser, at the cost of weaker collision resistance; the project's own architecture notes defend it only as \"sufficient distribution for realistic script populations,\" not a formal guarantee."
-  - title: "`DestructiveStage` defaults to `warn`, not `block`"
-    body: "a detected `rm -rf /` or fork bomb surfaces as an Observation rather than a refusal, trading hard-stop safety for agent throughput. Callers who want the refusal have to opt in explicitly with `destructivePolicy: 'block'`."
-  - title: "Node floor of >=20.6.0 despite full ESM-hook sandbox hardening needing >=23.5"
-    body: "chose broad compatibility over guaranteeing the complete hardening story on the officially supported minimum runtime."
+  - title: "`DestructiveStage` default moved from `warn` to `block`"
+    body: "6.0.x releases default to `warn`: a detected `rm -rf /` or fork bomb surfaces as an Observation and still runs, trading hard-stop safety for agent throughput. The default branch reversed that on 2026-09-25 (#183): `new Bash()` now refuses with exit code 126, unreleased as of 2026-10-21. Callers who want warn-and-continue now have to opt in with `destructivePolicy: 'warn'`."
+  - title: "Node floor of >=22.12.0, short of the >=23.5 that full ESM-hook hardening wants"
+    body: "the default branch raised the three synchronized packages from >=20.6.0 on 2026-09-25 because Node 20 is end-of-life, but not to >=23.5, choosing broad compatibility over guaranteeing the complete hardening story on the minimum runtime; npm 6.0.5 still says >=20.6.0."
 ---
 
 AI agents need **deterministic, sandboxed shell execution** for tool-calling. **ag-bash** is a bash interpreter implemented entirely in TypeScript that gives them exactly that — exposed as the `@ag-bash/bash` shell engine plus an MCP server and an agent terminal bridge.
 
-It parses shell syntax with a **Tree-sitter WASM grammar** and executes against sandboxed **WASM runtimes (CPython, QuickJS, SQLite3)** instead of the host shell, enabling patterns like fork-speculation (try N approaches, keep the winner) and self-healing recovery. Built and bundled with esbuild (ESM + CJS); 5 green CI workflows including CodeQL and security fuzzing.
+It parses shell syntax with a **Tree-sitter WASM grammar** and executes against sandboxed **WASM runtimes (CPython, QuickJS, SQLite3)** instead of the host shell, enabling patterns like fork-speculation (try N approaches, keep the winner) and self-healing recovery. Built and bundled with esbuild (ESM + CJS); 17 CI workflows including CodeQL, though the fuzz job in its nightly canary has failed every run since 2026-09-26.
 
 - In-process **sandboxed** execution, no host shell
 - Tree-sitter WASM parser · WASM language runtimes
 - MCP server · fork-speculation · self-healing
 
-> Systems + security breadth. 449 commits, 5 CI gates.
+> Systems + security breadth. 512 commits as of 2026-10-21, 17 CI workflows.
 
 ## Architecture
 
-Three packages ship from one pnpm monorepo at a synchronized version (currently 6.0.4): **`@ag-bash/bash`** (the core interpreter and its `ExecutionPipeline`), **`@ag-bash/mcp-server`** (a standalone MCP server exposing **70 tools** over stdio, published to the MCP Registry as `io.github.sairam0424/ag-bash`), and **`@ag-bash/agent-bridge`** (the terminal UI bridge). Everything is TypeScript end to end — there is no Rust or native binding anywhere in the tree; the Tree-sitter grammar itself compiles to WASM rather than linking a native parser. The one binary the repo can't express in source is `vendor/cpython-emscripten/python.wasm`, the CPython WASM runtime, tracked via Git LFS — any CI job touching Python or the WASM suite has to check out with `lfs: true` or it runs against a 132-byte pointer file instead of the real interpreter.
+Four packages ship from one pnpm monorepo, three at a synchronized version (currently 6.0.5): **`@ag-bash/bash`** (the core interpreter and its `ExecutionPipeline`), **`@ag-bash/mcp-server`** (a standalone MCP server exposing **70 tools** over stdio, published to the MCP Registry as `io.github.sairam0424/ag-bash`, where the listing is still 6.0.4), **`@ag-bash/agent-bridge`** (the terminal UI bridge), and the optional **`@ag-bash/browser`** (6.1.0), a browser-automation tool suite. Everything is TypeScript end to end — there is no Rust or native binding anywhere in the tree; the Tree-sitter grammar itself compiles to WASM rather than linking a native parser. The one binary the repo can't express in source is `vendor/cpython-emscripten/python.wasm`, the CPython WASM runtime, tracked via Git LFS — any CI job touching Python or the WASM suite has to check out with `lfs: true` or it runs against a 132-byte pointer file instead of the real interpreter.
 
 ## How It Works
 

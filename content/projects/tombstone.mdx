@@ -4,51 +4,51 @@ name: Tombstone
 tagline: Production intelligence layer for 5,000+ feature flags.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/Tombstone
-commits: 775
+commits: 1034
 dateCreated: 2026-06-21
 license: MIT
 relatedArticles: [tombstone-launch-devto, tombstone-v1-2-devto]
 tech: [Go, Python, TypeScript, React, PostgreSQL, Redis, Kafka, pgvector, Docker, Kubernetes]
 pinned: true
-pinRank: 4
+pinRank: 2
 featured: true
 order: 7
 excerpt: Self-hosted feature flag intelligence with blast-radius gating, circuit-breaker auto-rollback, causal incident correlation ("What Changed?"), and Knight Capital–style tombstoning. Go + Python + TypeScript polyglot.
 decisions:
   - title: "Fail-open, async Rekor submission over a blocking write"
-    body: "A third-party outage should never stop a flag mutation, so Rekor submission sits off the critical path and swallows its own failures by design. That same posture let a real bug — AUD-1b — go unnoticed for an unknown stretch: the Rekor client submitted a \"rekord\" entry claiming signature format `x509` but never actually included a signature or public key, so Rekor's server-side validation rejected every entry and the existing fail-open handling swallowed the failure silently. Every `REKOR_ENABLED=true` deployment believed it was writing to the transparency log while, very likely, no entry had ever been successfully recorded."
+    body: "A third-party outage should never stop a flag mutation, so Rekor submission sits off the critical path and swallows its own failures by design. That same posture let a real bug — AUD-1b — go unnoticed for an unknown stretch: the Rekor client submitted a \"rekord\" entry claiming signature format `x509` but never actually included a signature or public key, so Rekor's server-side validation rejected every entry and the existing fail-open handling swallowed the failure silently. Every `REKOR_ENABLED=true` deployment believed it was writing to the transparency log while, very likely, no entry had ever been successfully recorded. PR #177 fixed it on 2026-09-02 (signed `hashedrekord` entries; submission off without `REKOR_SIGNING_KEY`). The cost is unchanged: a live rejection would again surface only as a log line."
   - title: "Duplicated HTTP clients over one shared Go module"
-    body: "The retry/backoff/circuit-breaker logic above is copied byte-for-byte into six-plus services rather than factored out. The cost: any tuning change has to be hand-applied to every copy instead of landing with one version bump."
-  - title: "Audit-log correlation over a real dependency graph for blast-radius \"dependent flags.\""
-    body: "Scoring counts how often two flags changed together in the last 30 days — cheap and always available, but correlation, not causation. Two flags toggled by the same engineer in the same sprint count as dependent; a flag with a genuine hard dependency that hasn't been co-changed recently scores as having none."
+    body: "The inter-service HTTP client's retry, backoff and circuit-breaker logic is copied into six services, identical apart from comments, rather than factored out. The cost: any tuning change has to be hand-applied to every copy instead of landing with one version bump."
+  - title: "Declared prerequisites over audit-log correlation for blast-radius \"dependent flags.\""
+    body: "Blast radius first counted flags as dependent when they changed together in the audit log, which conflated \"changed around the same time\" with \"actually depends on.\" Since 2026-09-05 (PR #222) it counts only flags that declare the changed flag as a prerequisite. The cost: a coupling nobody declared scores as none. The causal graph behind the dependency view is still audit-log correlation (flags changed within five minutes of each other), not causation."
 ---
 
 **Tombstone** is a self-hosted production intelligence layer for feature flags at scale — built to answer the question that every SRE asks at 2am but no flag system answers: *which flag caused this incident, and can I roll it back safely right now?*
 
-At its core, Tombstone treats flags as **causal agents in a live production system**, not boolean configuration. It combines an 8-service polyglot backend (Go for performance, Python for ML, TypeScript for the management UI) with a **circuit-breaker auto-rollback** engine, a **causal dependency graph** for "What Changed?" incident correlation, and a **Merkle-linked audit trail** connected to Sigstore Rekor for SOC2-grade immutability.
+At its core, Tombstone treats flags as **causal agents in a live production system**, not boolean configuration. It combines a polyglot backend (Go for performance, Python for ML) and a TypeScript management UI with a **circuit-breaker auto-rollback** engine, a **causal dependency graph** plus a "What Changed?" incident timeline, and a **Merkle-linked audit trail** with opt-in Sigstore Rekor submission.
 
-- **Circuit-breaker auto-rollback** — 5%+ error rate over 100 requests in 10s auto-disables the flag; no human in the loop
-- **Blast-radius gating** — BLOCKED / HIGH / MEDIUM / LOW tiers; BLOCKED changes require a 10-char justification
-- **3-model ensemble anomaly detection** — Z-score + Isolation Forest + EWMA with 2/3 vote, eliminating false positives
+- **Circuit-breaker auto-rollback** — an error rate above 5% over at least 100 requests in 10s auto-disables the flag; no human in the loop
+- **Blast-radius gating** — BLOCKED / HIGH / MEDIUM / LOW tiers; BLOCKED changes need a 10-character justification in the dashboard
+- **3-model ensemble anomaly detection** — Z-score + Isolation Forest + EWMA with 2/3 vote, limiting single-model false positives
 - **Thompson Sampling + LinUCB bandit** for ML-driven rollout recommendations
 - **Causal dependency graph** — Redis sorted sets (O(log n) updates), daily rebuild at 02:00 UTC
-- **Merkle audit chains** — SHA-256 coverage of every state transition, Rekor transparency log submission
-- **WASM evaluation engine** (`@flagmind/eval`) — zero-dependency, runs on Cloudflare Workers
+- **Merkle audit chains** — keyed HMAC-SHA256 chain over every audit entry; opt-in Rekor transparency-log submission for flag changes
+- **Evaluation engine** (`@tombstone/eval`, 0.1.0, not on npm) — zero-dependency TypeScript, no WebAssembly shipped, built for Cloudflare Workers
 
-> Inspired by Knight Capital's $440M flag incident (2012). 775 commits, 8 services, full Kubernetes operator.
+> Inspired by Knight Capital's $440M flag incident (2012). 1,034 commits on main and 0 stars as of 2026-10-21, latest release v2.0.3; eight services in the tree, seven of them active (gitops-sync is deprecated in favour of the v1alpha1 Kubernetes operator).
 
-The production resilience work hardened Tombstone against distributed failure modes discovered during real-world pressure testing: resilient inter-service HTTP with `failsafe-go` retry + jitter, distributed Redis Lua rate limiting (shared across replicas), dependency-aware `/readyz` probes, idempotency keys on mutation endpoints, Redis Streams dead-letter queue, and multi-replica-safe scheduler via `FOR UPDATE SKIP LOCKED`.
+The v1.2.0 resilience work (2026-07-05) hardened Tombstone against distributed failure modes: resilient inter-service HTTP with `failsafe-go` retry + jitter, distributed Redis Lua rate limiting (shared across replicas), dependency-aware `/readyz` probes, idempotency keys on mutation endpoints, Redis Streams dead-letter queue, and multi-replica-safe scheduler via `FOR UPDATE SKIP LOCKED`.
 
 ## Architecture
 
-Tombstone runs as 8 polyglot services split by workload. Go handles the request path — `flag-api` (mutations, scheduling, Rekor submission), `gateway` (stream hub, dead-letter queue), `evaluator` (circuit breakers, blast-radius scoring) — suited to latency-sensitive eval. Python's `intelligence` service owns the ML surface: the anomaly ensemble, the LinUCB/Thompson Sampling rollout bandit, CUPED experiment analysis, and the causal-graph builder. TypeScript covers `workspace-dashboard` (the management UI, including the client-side blast-radius justification gate) and `@tombstone/eval`, a zero-dependency WASM engine that hand-ports MurmurHash3 and FNV-32a so it runs identically across five JS runtimes, Cloudflare Workers included.
+Tombstone runs as eight polyglot services split by workload (`gitops-sync` is deprecated in favor of the `tombstone-operator`). Go handles the request path — `flag-api` (mutations, scheduling, Rekor submission), `gateway` (stream hub, dead-letter queue), `evaluator` (circuit breakers, blast-radius scoring) — suited to latency-sensitive eval. Python's `intelligence` service owns the ML surface: the anomaly ensemble, the LinUCB/Thompson Sampling rollout bandit, CUPED experiment analysis, and the causal-graph builder. TypeScript covers `workspace-dashboard` (the management UI, including the client-side blast-radius justification gate) and `@tombstone/eval`, a zero-dependency engine that hand-ports MurmurHash3 and FNV-32a so it can run in five JS runtimes, Cloudflare Workers included; CI tests it under Node 22 only.
 
-Each Go service carries its own copy of a resilient HTTP client (retry, backoff, a service-level circuit breaker via `failsafe-go`) rather than sharing one module — deliberate duplication across 6+ services, matching the repo's existing OpenTelemetry-setup convention. Redis holds per-flag circuit-breaker state, the causal dependency graph, and the gateway's dead-letter queue; Postgres holds the audit log and scheduled-change queue, claimed via `FOR UPDATE SKIP LOCKED` so replicas never double-fire.
+Six of the seven Go services (one of them the deprecated gitops-sync) carry their own copy of a resilient HTTP client (retry, backoff, a service-level circuit breaker via `failsafe-go`) rather than sharing one module — deliberate duplication, matching the repo's existing OpenTelemetry-setup convention. Redis holds per-flag circuit-breaker state, the causal dependency graph, and the gateway's dead-letter queue; Postgres holds the audit log and scheduled-change queue, claimed via `FOR UPDATE SKIP LOCKED` so replicas never double-fire.
 
 ## How It Works
 
-The evaluator exposes blast-radius scoring as a standalone query at `GET /api/v1/blast-radius`: `blast.Calculator.Compute()` estimates traffic-percentage exposure from the proposed rollout, cross-references the last 30 days of the audit log for flags changed together (dependent-flag correlation), and factors in historical error-rate delta to produce a LOW / MEDIUM / HIGH / BLOCKED score. Scheduled changes wait in Postgres until the scheduler claims them via `FOR UPDATE SKIP LOCKED`.
+The evaluator exposes blast-radius scoring as a standalone query at `GET /api/v1/blast-radius`: `blast.Calculator.Compute()` takes the proposed rollout percentage as the exposure, reads 24 hours of per-flag, per-environment telemetry for volume and error rate, and counts the flags that declare this one as a prerequisite to produce a LOW / MEDIUM / HIGH / BLOCKED score. A rollout of 50% or more is BLOCKED when that error rate exceeds 5% or fewer than 100 evaluations were seen. Scheduled changes wait in Postgres until the scheduler claims them via `FOR UPDATE SKIP LOCKED`.
 
 Live, the evaluator's Redis-backed circuit breaker watches error rate per environment: 100+ requests in 10 seconds above 5% errors flips the flag off, no human involved. In parallel, the anomaly ensemble — Z-score, Isolation Forest, EWMA — scores metrics at 10s/60s/5m granularities and only fires on a 2-of-3 vote, limiting single-model false positives. Rollout recommendations come from a LinUCB bandit persisting per-arm matrices to Redis, falling back to Thompson Sampling below 50 observations per flag-environment pair.
 
-Every state transition is Merkle-chained (`sha256` of id, event type, actor, prev/new state, timestamp) and submitted asynchronously — fail-open — to a Sigstore Rekor log. A daily 02:00 UTC job rebuilds the causal graph in Redis sorted sets, which backs the dependency-graph view (`GET /api/v1/graph/dependencies`); the "What Changed?" incident timeline is sourced separately, straight from the audit log (`GET /api/v1/audit`).
+Every audit entry is Merkle-chained: an HMAC-SHA256 under `AUDIT_HMAC_KEY` over its fields and the previous hash. Flag changes made through `flag-api` can also be submitted asynchronously — fail-open, off unless `REKOR_ENABLED=true` — to a Sigstore Rekor log. A daily 02:00 UTC job rebuilds the causal graph in Redis sorted sets from the audit log, which backs the dependency-graph view (`GET /api/v1/graph/dependencies`); the "What Changed?" incident timeline is sourced separately, straight from the audit log (`GET /api/v1/audit`).

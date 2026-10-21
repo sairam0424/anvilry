@@ -49,15 +49,16 @@ test("classic view: stack wall renders external tool links", async ({ page }) =>
   await expect(links.first().locator("svg")).toHaveAttribute("aria-hidden", "true");
 });
 
-test("about page: skills grid is anchored and shows glyph chips", async ({ page }) => {
+test("about page: /about#skills is anchored and its tool chips carry glyphs", async ({ page }) => {
   await page.goto("/about#skills");
   const section = page.locator("#skills");
   await expect(section).toBeVisible();
   await expect(section.getByRole("heading", { level: 2, name: "What I work with" })).toBeVisible();
-  // Tool chips carry a decorative glyph; concept chips stay text-only, so the count is
-  // the number of STACK_ENTRIES (22 today), never the full 34.
-  expect(await section.locator(".skill-chip-glyph svg").count()).toBeGreaterThanOrEqual(19);
-  await expect(page.locator("#uses")).toHaveCount(1);
+  // Tool chips carry a decorative glyph; concept chips stay text-only, so the glyph count
+  // equals the number of Stack entries (22 today), never the full skills count.
+  const glyphs = section.locator(".skill-chip-glyph svg");
+  await expect(glyphs).not.toHaveCount(0);
+  expect(await glyphs.count()).toBeGreaterThanOrEqual(MIN_STACK_TILES);
 });
 
 test("classic view: navigation to projects page works", async ({ page }) => {

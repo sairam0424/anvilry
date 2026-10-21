@@ -456,7 +456,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/voice-orb.tsx` / `voice-orb-canvas.tsx` / `voice-orb-3d.tsx`
 - **Role:** The orb renderer stack. `VoiceOrb` selects; `VoiceOrbCanvas` is the universal baseline; `VoiceOrb3D` is the desktop R3F enhancement.
 - **Exports:** `VoiceOrb`, `VoiceOrbCanvas`, `VoiceOrb3D` — all take `{ level: React.RefObject<number>, state: VoiceSessionState, size? }`; `VoiceOrb3D` additionally takes `errorMode?`.
-- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:29` with `state={"idle"}`.
+- **Consumed by:** `talk-mode.tsx:18` → `VoiceOrb` (`size={160}`, :329). `VoiceOrb3D` is also lazy-imported directly by `app/not-found.tsx:30` with `state={"idle"}`.
 - **Behaviour notes:**
   - `use3D = isDesktop && webgl && !reduced && !glFailed` (`voice-orb.tsx:42`); the 3D orb is wrapped in `WebGLBoundary` whose `onFail` flips permanently to the canvas orb (:44-50). `VoiceOrb3D` is lazy so three/R3F never enters the talk-mode bundle on mobile / reduced-motion / no-WebGL (:11-16).
   - `VoiceOrbCanvas` draws a single static ring and returns early (no rAF loop) under `prefers-reduced-motion` (:54-63). Otherwise one rAF loop reads `level.current` directly — never through React state (:69-118). DPR is capped at 2 (:45). Accent is hard-coded `#38e1ff` to match `--accent` (:19).

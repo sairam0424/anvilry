@@ -72,7 +72,7 @@ Excluded from this section (co-located tests, out of scope by assignment): `src/
 
 | Flag | Read at | Effect |
 |---|---|---|
-| `NEXT_PUBLIC_HERO_MODE` | `src/components/home/hero.tsx:25` and `src/components/hero-avatar/index.tsx:50` | `"avatar"` → `<HeroAvatar />`; anything else (default) → `<HeroGraph />` (`hero.tsx:30`). `HeroAvatar` independently re-checks and returns `null` when `!== "avatar"` (`index.tsx:54`). |
+| `NEXT_PUBLIC_HERO_MODE` | `src/components/home/hero.tsx:26` and `src/components/hero-avatar/index.tsx:50` | `"avatar"` → `<HeroAvatar />`; `"mascot"` → `<HeroMascotBackdrop />` in the slot plus the in-flow `<HeroMascot />` (`hero.tsx:33-41`, `src/components/home/hero-mascot.tsx`); anything else (default) → `<HeroGraph />` (`hero.tsx:38`). `HeroAvatar` independently re-checks and returns `null` when `!== "avatar"` (`index.tsx:54`). |
 | `NEXT_PUBLIC_AVATAR_POSITION` | `src/components/hero-avatar/index.tsx:51` | `"hero-side"` (default via `?? "hero-side"`), `"hero-split"`, `"hero-top"` — three different wrapper layouts (lines 65, 85, 102). |
 | `NEXT_PUBLIC_GRAPH_PHYSICS` | `src/components/hero-graph/index.tsx:10` (**module scope**) | `"true"` → import `./scene-physics`; otherwise `./scene`. No physics engine is involved either way — the comment at `index.tsx:14-17` states that outright and records that `@react-three/rapier` was declared but imported nowhere and was **removed in v3.5.0** (`CHANGELOG.md:635-640`); the flag and filename are historical residue. |
 
@@ -230,13 +230,13 @@ There is no flag gating physics-vs-effects beyond the above; `NEXT_PUBLIC_GRAPH_
 
 ## Cross-references outside this section
 
-- `src/components/home/hero.tsx:25,30` is the sole mount point for both hero WebGL slots and the place `NEXT_PUBLIC_HERO_MODE` is branched.
+- `src/components/home/hero.tsx:26` reads `NEXT_PUBLIC_HERO_MODE` and `:33-39` branches it — the sole mount point for both hero WebGL slots (and, in `mascot` mode, the glow backdrop).
 - `src/lib/graph-data.ts` supplies `graphNodes` (16 entries: work 5, engine 4, tool 4, agent 3), `graphEdges` (19 pairs), `resolveKindColor` (the live-theme mapping `scene.tsx` uses) and `kindColor` (`work: #38e1ff`, `agent: #a78bfa`, `engine: #4ade80`, `tool: #fbbf24`); positions are deliberately deterministic — "Positions are deterministic (no Math.random) so SSR/build stays stable" (`graph-data.ts:6`).
 - `src/lib/use-reduced-motion.ts` and `src/lib/use-media-query.ts` (`useMediaQuery`, `useWebGLSupported`) are the gate primitives; both return `false` on the server.
 - `patches/@react-three__fiber@9.7.0.patch` (registered at `pnpm-workspace.yaml:54`, rationale at `:50-53`) guards `createPointerEvents().connect()` against a null target (pmndrs/react-three-fiber#3754), which otherwise crashes a canvas on unmount/remount races. Drop the patch when a fiber release contains the upstream fix; upgrading `@react-three/fiber` past 9.7.0 without doing so breaks `pnpm install` (the patch key is the exact version `@react-three/fiber@9.7.0`, `package.json` allows `^9.7.0`, and `allowUnusedPatches` is unset, so pnpm's default of failing on an unapplied patch applies).
 - `src/components/game/build-graph.tsx` / `build-graph-scene.tsx` are the Play-view R3F surface (game section) and share `WebGLBoundary`, the barrel, `frameloop="demand"` and `dpr={[1,1.75]}`.
 - `src/components/chat/voice-orb-3d.tsx` is the only post-processing consumer of the barrel and the only canvas that toggles `frameloop` at runtime (`errorMode ? "demand" : "always"`, `voice-orb-3d.tsx:306`). It is mounted by `src/components/chat/voice-orb.tsx` (talk mode; `useWebGLSupported()` probe at `voice-orb.tsx:38`, `onFail` at `:46`, falls back to the 2D `VoiceOrbCanvas`) and by `src/app/not-found.tsx` under `NEXT_PUBLIC_404_ORB=true` (`errorMode`, plain `WebGLBoundary`, no probe). Owned by the chat/game sections, not this one.
-- `e2e/views.spec.ts:243-266` asserts a canvas appears for `?view=gamified` — but only above 768px (matching `build-graph.tsx`'s own gate); below that it asserts on `GraphIndex`'s accessible region instead, since `BuildGraph` renders nothing there by design. The canvas assertion itself is scoped to `#main-content` because a bare `canvas` locator matches two canvases (the graph plus an aria-hidden decorative one).
+- `e2e/views.spec.ts:264-287` asserts a canvas appears for `?view=gamified` — but only above 768px (matching `build-graph.tsx`'s own gate); below that it asserts on `GraphIndex`'s accessible region instead, since `BuildGraph` renders nothing there by design. The canvas assertion itself is scoped to `#main-content` because a bare `canvas` locator matches two canvases (the graph plus an aria-hidden decorative one).
 
 ## Coverage
 

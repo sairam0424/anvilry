@@ -222,7 +222,7 @@ Anvilry/                                  parent wrapper — NOT the app
     ├── .github/                           workflows/ (ci · codeql · dependency-review · deploy-smoke · gitleaks · scorecard) ·
     │                                      dependabot.yml · ISSUE_TEMPLATE/ · PR template · CONTRIBUTING.md
     ├── scripts/                           bundle-budget.mjs (CI budget gate) · check-index-citations.mjs (this index's gate) ·
-    │                                      seal-claims.ts (claims ledger seal/verify) · replay-trace.mjs (telemetry replay CLI) · post-deploy-smoke.mjs (production-gate smoke checks)
+    │                                      seal-claims.ts (claims ledger seal/verify) · replay-trace.mjs (telemetry replay CLI) · post-deploy-smoke.mjs (production-gate smoke checks) · ci-install-playwright.sh (bounded, retried browser install for the E2E job)
     ├── velite.config.ts · next.config.ts · vitest.config.ts · playwright.config.ts
     ├── package.json · pnpm-lock.yaml · pnpm-workspace.yaml · vercel.json · Makefile
     ├── CLAUDE.md · AGENTS.md · ARCHITECTURE.md · CHANGELOG.md · LOG.md

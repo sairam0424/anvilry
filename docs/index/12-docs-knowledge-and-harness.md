@@ -33,7 +33,7 @@ plus an appendix for the parent-directory wrappers `../PLAN.md`, `../RESEARCH.md
 | `LOG.md` | Append-only activity journal, newest first, with a strict entry grammar, tag vocabulary, and grep/awk retrieval recipes. Newest entry is 2026-08-15, so it has nothing for v3.5/v3.6 or later work. | §Entry grammar, §Tags, §Retrieval recipes, 3 entries |
 | `VOICE.md` | Canonical voice-layer reference (940 lines): architecture, 4 opt-in features, settings/flag tables, env+IAM+cost, privacy & a11y model, developer notes, v1.7 voice picker. | §1 Overview, §2 Features, §3 Flags/Settings, §4 Env/IAM/Cost, §5 Privacy & A11y, §6 Dev Notes, §7 Voice picker |
 | `TELEMETRY.md` | Canonical observability reference (v1.8 header): dual-sink pipeline, `TelemetryEvent` schema, all 8 span kinds (`KIND_LITERALS` in `src/lib/telemetry/schema.ts`; `tts.request`, `transcribe.request` and `budget.tick` are declared but never emitted), trace-ID correlation, PII policy, admin dashboard, replay CLI, debugging cookbook, file map. | §1–§9 |
-| `DEPLOY.md` | Vercel production deploy guide: import, env-var table, Upstash rate-limit setup, verified Bedrock chain + IAM policy, custom domain, verify checklist, gotchas, and (§7) the cron, admin and optional-feature variables. | §0–§7 |
+| `DEPLOY.md` | Vercel production deploy guide: import, env-var table, Upstash rate-limit setup, verified Bedrock chain + IAM policy, custom domain, verify checklist, gotchas, (§7) the cron, admin and optional-feature variables, and (§8) the Deployment Checks production gate with its escape hatches. | §0–§8 |
 | `SECURITY.md` | Responsible-disclosure policy: in/out-of-scope list, private email reporting, 48h ack / 7-day critical SLA, no bounty. | §Scope, §Reporting |
 | `CODE_OF_CONDUCT.md` | Contributor Covenant v2.1 verbatim, maintainer named as sole enforcer, scoped to Issues/PRs/Discussions. | §Our Pledge … §Attribution |
 | `LICENSE` | MIT (2024–2026 Sairam Ugge) **plus** a CONTENT EXCLUSION carve-out reserving all rights on `content/`, `src/lib/profile.ts`, `public/resume/`, branding assets. | MIT body, `CONTENT EXCLUSION` |
@@ -284,8 +284,8 @@ Three structural facts a maintainer should know:
 
 ### CI-enforced gates (all in `.github/workflows/ci.yml`)
 
-`ci.yml` has **five** jobs and the repo has **five** workflow files (`ci.yml`, `codeql.yml`,
-`dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`).
+`ci.yml` has **five** jobs and the repo has **six** workflow files (`ci.yml`, `codeql.yml`,
+`dependency-review.yml`, `deploy-smoke.yml`, `gitleaks.yml`, `scorecard.yml`).
 
 | gate | where | what it enforces |
 |---|---|---|

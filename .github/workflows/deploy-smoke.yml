@@ -1,0 +1,141 @@
+name: Deploy smoke
+
+# Gates the PRODUCTION DOMAIN, not the merge.
+#
+# Vercel builds every production deployment from `main`. This workflow tests that exact built
+# deployment over HTTP (scripts/post-deploy-smoke.mjs) and reports a commit status named
+# "Post-deploy smoke" on the deployed commit. A Vercel Deployment Check (Project Settings >
+# Build and Deployment > Deployment Checks; registered with `vercel project checks add` AFTER one
+# green production run, see DEPLOY.md section 8) requires that status before Vercel assigns the
+# production domain. Until it is green the previous deployment keeps serving; if it is red the new
+# one stays unaliased.
+#
+# HOW IT IS WIRED (checked against Vercel's docs and the status action's source, 2026-10-22)
+#  - Vercel sends `repository_dispatch` with type `vercel.deployment.ready` when a deployment is
+#    built but NOT yet promoted. `.success` would fire after promotion and could only alert.
+#    The workflow file must exist on the default branch for the event to trigger it.
+#  - vercel/repository-dispatch/actions/status sets a PENDING commit status when the job starts and
+#    the final success/failure in its post step, on `client_payload.git.sha` (a repository_dispatch
+#    run's own GITHUB_SHA is the default-branch HEAD, which may be a different commit).
+#  - The unique deployment URL is behind Vercel Authentication, so the script sends the Protection
+#    Bypass for Automation secret (repo secret VERCEL_AUTOMATION_BYPASS_SECRET) as a header, to that
+#    one origin only.
+#
+# THE FALSE-GREEN TRAP, AND HOW IT IS CLOSED
+#  The status action turns the job into `failure` only when some step's conclusion is exactly
+#  `failure`; a step that was cancelled or skipped reads as success. So a hang must end as a FAILED
+#  step, never a cancelled job: every step has its own `timeout-minutes` (a step that overruns it
+#  fails), their sum stays under the job timeout, nothing cancels a run (`cancel-in-progress: false`),
+#  and a final `if: always()` step fails the job unless the smoke step succeeded.
+#
+# TRUST MODEL
+#  The smoke script comes from the commit under test (so its checks match that code), which means a
+#  commit that weakens the script passes its own gate. This protects against accidental regressions
+#  and broken builds, not against a malicious committer, who could push to `main` anyway. The
+#  `client_payload` values are validated before use; only collaborators with write access can send
+#  the event.
+#
+# ESCAPE HATCHES (DEPLOY.md section 8)
+#  Red or stuck: "Force Promote" on the deployment's page in the Vercel dashboard, or remove the check
+#  with `vercel project checks remove <id> anvilry --scope sairams-projects-d50d7437`.
+#
+# NOTES
+#  - The job is named "Smoke the deployment", NOT "Post-deploy smoke": the status context is
+#    "Post-deploy smoke" and Vercel matches on that name; a job (check run) with the same name on the
+#    same commit would be ambiguous.
+#  - Previews are not gated. The guard is `!= 'preview'` (not `== 'production'`) on purpose: if the
+#    payload ever spells production differently the job still runs and reports; the only cost of the
+#    opposite mistake would be a production deployment held forever by a status that never arrives.
+#  - Never add a step that calls the chat, voice or cron routes: they cost money or need secrets.
+on:
+  repository_dispatch:
+    types: [vercel.deployment.ready]
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Deployment URL to smoke (https://... or a bare host). Runs the checks only; no commit status is set."
+        required: true
+
+permissions:
+  contents: read
+
+# Preview and production dispatches for the same commit must not queue behind each other.
+concurrency:
+  group: deploy-smoke-${{ github.event.client_payload.environment || 'manual' }}-${{ github.event.client_payload.git.sha || inputs.url }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke the deployment
+    if: github.event_name == 'workflow_dispatch' || github.event.client_payload.environment != 'preview'
+    runs-on: ubuntu-latest
+    # Backstop only, deliberately ABOVE the sum of the per-step limits (15 minutes if every step ran to
+    # its limit, which it never does: the whole job takes about a minute). A step that overruns its own
+    # limit FAILS, which is what we want; the job-level timeout must never be what ends a run.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      statuses: write # the status action creates the commit status
+      actions: read # ... and reads this run's job steps to decide success or failure
+    steps:
+      - name: Report the status on the deployed commit
+        if: github.event_name == 'repository_dispatch'
+        timeout-minutes: 2
+        uses: vercel/repository-dispatch/actions/status@30f760c6640485cd92f8c785ef361382555fb712 # v1
+        with:
+          name: Post-deploy smoke
+
+      # client_payload is caller-supplied (only collaborators with write access can send the event, but
+      # it is still input): accept nothing but a 40-hex commit SHA and a *.vercel.app host before either
+      # reaches a checkout ref or a request that carries the bypass secret. Values go through env, never
+      # into the script text, and a rejected value is never echoed.
+      - name: Validate the dispatch payload
+        timeout-minutes: 1
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOYED_SHA: ${{ github.event.client_payload.git.sha }}
+          DEPLOYMENT_URL: ${{ github.event.client_payload.url || inputs.url }}
+        run: |
+          set -euo pipefail
+          url_re='^(https://)?[a-z0-9][a-z0-9-]*\.vercel\.app/?$'
+          if ! [[ "$DEPLOYMENT_URL" =~ $url_re ]]; then
+            echo "::error::The deployment URL is missing or is not a *.vercel.app host."
+            exit 1
+          fi
+          if [ "$EVENT_NAME" = "repository_dispatch" ] && ! [[ "$DEPLOYED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The dispatch payload has no valid commit SHA."
+            exit 1
+          fi
+
+      - name: Checkout the deployed commit (the smoke script only)
+        timeout-minutes: 3
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.client_payload.git.sha || github.sha }}
+          sparse-checkout: scripts/post-deploy-smoke.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Setup Node.js 22
+        timeout-minutes: 3
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Smoke the deployment
+        id: smoke
+        timeout-minutes: 5
+        env:
+          DEPLOYMENT_URL: ${{ github.event.client_payload.url || inputs.url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node scripts/post-deploy-smoke.mjs "$DEPLOYMENT_URL"
+
+      # Last step, always runs. If the smoke step did not succeed for ANY reason (failed, timed out,
+      # was cancelled or skipped because an earlier step failed), make the job visibly fail so the
+      # status action cannot read it as success.
+      - name: Fail the status unless the smoke succeeded
+        if: always() && github.event_name == 'repository_dispatch' && steps.smoke.outcome != 'success'
+        timeout-minutes: 1
+        run: |
+          echo "::error::The deployment smoke did not succeed (outcome: ${{ steps.smoke.outcome }})."
+          exit 1

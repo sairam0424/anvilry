@@ -574,7 +574,8 @@ CI  .github/workflows/ci.yml   — 5 jobs; only claims-integrity-autocommit has 
   + dependency-review.yml (PRs → develop/main): fail-on-severity high, fail-on-scopes runtime (dependency-review.yml:26-29)
   + gitleaks.yml (push + PRs on develop/main, full-history checkout) · scorecard.yml (OSSF Scorecard: push to main,
                                      weekly cron, manual)
-  every third-party `uses:` in all five workflows is SHA-pinned with a `# vX` comment; Dependabot's github-actions
+  + deploy-smoke.yml (vercel.deployment.ready dispatch -> scripts/post-deploy-smoke.mjs; reports the `Post-deploy smoke` commit status; DEPLOY.md section 8)
+  every third-party `uses:` in all six workflows is SHA-pinned with a `# vX` comment; Dependabot's github-actions
   ecosystem moves the pins (.github/dependabot.yml:103-116)
         │
         ▼  PR: feature → develop  (make pr)      Vercel PREVIEW deploy
@@ -601,7 +602,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:179`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 113 test files (71 node + 42 dom), 1288 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 114 test files (72 node + 42 dom), 1318 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:158-166`) and compiled MDX bodies do too (marker `:96`, checked at `:168-177`). Exits 1 when the artifact is unreadable (`:107-111`) or its shape has changed (`:114-125`). |
@@ -625,8 +626,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 113 test files
-(1288 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 114 test files
+(1318 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`

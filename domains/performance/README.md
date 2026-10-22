@@ -61,10 +61,10 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   runs `node scripts/bundle-budget.mjs` immediately after the "Build" step, so it rides the build that already happens — no second build.
   It reads `.next/diagnostics/route-bundle-stats.json`, which `next build` writes with no flag but **only under Turbopack**, and fails the job if any of:
   (a) the artifact has fewer than `MIN_ROUTES` = **17** records (the 16 `src/app` page routes plus `/_not-found`);
-  (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **1,336,000 B** (1,285,000 B at v3.6.0; each raise is recorded with measured
-  before/after bytes in the script's docblock, which quotes `/` at 1,333,521 B when it was last raised — small, baseline-dependent headroom, so re-measure
-  with `pnpm build && node scripts/bundle-budget.mjs` instead of quoting a percentage);
-  (c) the `WebGLRenderer` marker (`LAZY_MARKER`) turns up in any route's first-load chunk set — today it sits in exactly one chunk, **897,249 B**,
+  (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **988,000 B** (1,285,000 B at v3.6.0, raised four times to 1,336,000 B, then lowered once to 988,000 B after v3.16.0, in a commit that is not in a tagged release yet. `/` was 1,298,585 B before #329, 976,936 B at the v3.16.0 cut (#329 took it down by about a quarter) and 972,887 B on CI and on macOS at #333 (commit a665991), the later prune of three low-priority open-source items; the ceiling had stayed at 1,336,000 B, leaving 363,113 B of slack. On a fresh build of this tree `/` is 972,920 B (972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx`), so 15,080 B (about 1.5%) of headroom remain. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two project cards, their graph nodes and the Shop.this feed entry, so it covers a handful of cards, while any eager import of about 15 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added; each raise is recorded with measured
+  before/after bytes in the script's docblock, which still quotes `/` at 1,333,521 B from the last raise (history, not the current baseline), so re-measure
+  with `pnpm build && node scripts/bundle-budget.mjs` before quoting headroom);
+  (c) the `WebGLRenderer` marker (`LAZY_MARKER`) turns up in any route's first-load chunk set — today it sits in exactly one chunk, **909,796 B** in the current `.next` (897,249 B is the older figure in the `bundle-budget.mjs` comment),
   present in **0 of 17** route records' first-load sets; or
   (d) the `_createMdxContent` marker (`MDX_MARKER`) turns up there, meaning a client module reached the compiled MDX bodies that only the four detail pages may read (`src/lib/content-bodies.ts`). A missing or malformed artifact **exits 1 by design**: "I could not measure" must be RED,
   which is exactly what the deleted `bundle-analysis.yml` got wrong for its entire 222-run life (211 green, 11 red). There is deliberately no
@@ -92,8 +92,8 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   `grep -l "WebGLRenderer" | wc -l`, which must be 1.
   **Every KB figure in this section is a TURBOPACK measurement** — Turbopack is what `next build`
   runs and therefore what ships. None of them came from the `@next/bundle-analyzer` treemap, and the
-  two are not comparable: the shipped single three.js chunk is **897,249 B** (876.2 KiB, matching
-  the "R3F TWIN-CHUNK" note in `next.config.ts`), which the CI gate re-verifies every run.
+  two are not comparable: the shipped single three.js chunk is **909,796 B** (888.5 KiB) in the current `.next`; the older 897,249 B (876.2 KiB) is the figure in the `bundle-budget.mjs` comment, matching
+  the "R3F TWIN-CHUNK" note in `next.config.ts`; the CI gate re-verifies on every run that the chunk stays off the first-load path.
 
 ## Evidence & analysis
 *(link signals and docs here as they accumulate)*
@@ -114,7 +114,7 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   no instruction: it looked like it worked.) The analyzer is still wired at the top of `next.config.ts` (`withBundleAnalyzer`) and
   still a devDependency purely for this. Treat the treemap as "**which modules are heavy**", never as
   shipped bytes — webpack chunks differently from Turbopack, and the three.js chunk Turbopack really
-  emits is 897,249 B in exactly one chunk.
+  emits is 909,796 B in exactly one chunk in the current `.next` (897,249 B was the figure in the `bundle-budget.mjs` comment).
 - Core Web Vitals: Vercel Speed Insights dashboard
 - R3F chunk count: `find .next -name "*.js" | xargs grep -lE "react-three|THREE\." | wc -l`
   (chunks REFERENCING R3F, currently 5 — **not** the copy count; for that swap the pattern for

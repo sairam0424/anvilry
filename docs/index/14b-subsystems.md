@@ -484,7 +484,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Chunk dedup | the `src/lib/r3f.ts` barrel; `three`/`fiber`/`drei` deliberately **excluded** from `optimizePackageImports` (which is `["lucide-react","motion"]`) | `next.config.ts:146-151,166-170` |
 | Recorded chunk measurement | 16.2.9: 2036 KB / 5 chunks (two 876 KB copies) → 16.3.0: 1160 KB / 4 chunks (one copy), −876 KB | `next.config.ts:153-164` |
 | Live perf contract | exactly 1 three.js copy (`grep -l WebGLRenderer \| wc -l` must be 1 — the `react-three` grep returns 5 and is **not** the copy count), 1248 KB across R3F chunks, 113/113 static pages — recorded on 2026-08-15 (post-#121/#123/#124, before the 3.6.0 cut) and **not re-measured** for a929932 (no build was made for this index) | `domains/performance/README.md:85-91` |
-| Enforced in CI | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B per the script's comment) must appear in **zero** routes' first-load sets, and no route may exceed `MAX_FIRST_LOAD_BYTES = 1_336_000`. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:72,76-83,84,146-154`; step at `.github/workflows/ci.yml:190-191`; § 10 The bundle budget gate |
+| Enforced in CI | the same `WebGLRenderer` marker, asserted mechanically: the chunk carrying it (897,249 B per the script's comment) must appear in **zero** routes' first-load sets, and no route may exceed `MAX_FIRST_LOAD_BYTES = 988_000`. Runs on the `e2e` job's existing build, reading `.next/diagnostics/route-bundle-stats.json` | `scripts/bundle-budget.mjs:72,76-83,84,158-166`; step at `.github/workflows/ci.yml:190-191`; § 10 The bundle budget gate |
 | Asset budget | `MAX_BYTES = 1.5 * 1024 * 1024`; current asset 1,105,768 B | `src/lib/avatar-glb.test.ts:21,58-61` |
 | LOD | **none exists** — no `<Detailed>`, no `THREE.LOD`, no distance swap (re-grepped `src/`). The only quality knobs are the dpr clamp and the 768 px cutoff. | verified absence |
 | Worker offload | **not present in source.** `@react-three/offscreen` was declared but imported by no file in `src/`, and was **removed from `package.json` in v3.5.0** (re-grep of `src/` for `OffscreenCanvas` / `new Worker`: none). | verified absence, section 13 |
@@ -557,7 +557,8 @@ CI  .github/workflows/ci.yml   — 5 jobs; only claims-integrity-autocommit has 
                   production deploy (ci.yml:66-72,79-82)
    job `claims-integrity-autocommit` : opt-in — runs only when repo variable SEAL_CLAIMS_AUTO_COMMIT == 'true'
                              (needs: ci); re-seals data/integrity-chain.json and pushes with [skip ci]   (ci.yml:86-135)
-   job `e2e`  : pnpm install → playwright install --with-deps chromium webkit → pnpm build
+   job `e2e`  : pnpm install → scripts/ci-install-playwright.sh (playwright install --with-deps chromium webkit;
+                             3 attempts of 240 s, apt/dpkg stopped and repaired between attempts) → pnpm build
                              → node scripts/bundle-budget.mjs (ci.yml:190-191) → pnpm e2e
                 ↑ pnpm build re-runs vitest, so tests execute TWICE per CI run (once in `ci`, once here)
                 ↑ playwright.config.ts webServer runs `pnpm start`, which needs a prior build
@@ -574,7 +575,9 @@ CI  .github/workflows/ci.yml   — 5 jobs; only claims-integrity-autocommit has 
   + dependency-review.yml (PRs → develop/main): fail-on-severity high, fail-on-scopes runtime (dependency-review.yml:26-29)
   + gitleaks.yml (push + PRs on develop/main, full-history checkout) · scorecard.yml (OSSF Scorecard: push to main,
                                      weekly cron, manual)
-  + deploy-smoke.yml (vercel.deployment.ready dispatch -> scripts/post-deploy-smoke.mjs; reports the `Post-deploy smoke` commit status; DEPLOY.md section 8)
+  + deploy-smoke.yml (vercel.deployment.ready dispatch -> scripts/post-deploy-smoke.mjs; reports the `Post-deploy smoke` commit status;
+                     when the smoke step did not succeed (it failed, or it was skipped after an earlier step failed) it also opens one issue per held commit via scripts/deploy-gate-alert.mjs (dedupe is best effort: newest 100 open items), in
+                     best-effort steps before the guard step, never yet run in Actions; DEPLOY.md section 8)
   every third-party `uses:` in all six workflows is SHA-pinned with a `# vX` comment; Dependabot's github-actions
   ecosystem moves the pins (.github/dependabot.yml:103-116)
         │
@@ -602,7 +605,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:179`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 114 test files (72 node + 42 dom), 1318 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 115 test files (73 node + 42 dom), 1356 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:158-166`) and compiled MDX bodies do too (marker `:96`, checked at `:168-177`). Exits 1 when the artifact is unreadable (`:107-111`) or its shape has changed (`:114-125`). |
@@ -612,6 +615,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 | 10 | `.github/dependabot.yml` | Two ecosystems (`npm`, `github-actions`), weekly Monday 09:00 America/Chicago, `target-branch: develop`. The `npm` block has five version-update groups (first-match-wins ordering, `:14-16`) plus a `security-patches` group with `applies-to: security-updates` (`:68-71`), and 3 `ignore` rules (`@react-three/postprocessing` `3.0.5`, `typescript` major, `eslint` major, `:82-101`). |
 | 11 | `pnpm-workspace.yaml:18-44,49-54,70-84` + `pnpm-lock.yaml:7-24` | The **12** security `overrides` (`:18-44`), the `@react-three/fiber@9.7.0` patch (`:49-54`, `patches/@react-three__fiber@9.7.0.patch`), and the build-script allowlist (`allowBuilds` `:81-84`; legacy `onlyBuiltDependencies` / `ignoredBuiltDependencies` `:70-76`). **No longer in `package.json`** — the whole `pnpm` field moved to `pnpm-workspace.yaml` in v3.5.0 because pnpm 11 stopped reading that field, which had silently disarmed the v3.4.2 overrides on any pnpm-11 install (rationale at `:1-12`). |
 | 12 | `scripts/seal-claims.ts` + `data/integrity-chain.json` + `src/lib/claims-integrity.ts` | The Claims Integrity Ledger: verify mode (the `ci` job's last step) fails if `impactMetrics` / `achievements` in `profile.ts` no longer match the chain head or the chain's own linkage is broken; `--write` appends a new sealed entry. Unit-tested by `claims-integrity.test.ts`, which does run inside `pnpm build`. |
+| 13 | `.github/workflows/deploy-smoke.yml` + `scripts/post-deploy-smoke.mjs` + `scripts/deploy-gate-alert.mjs` | The production gate, which sits AFTER the build: on Vercel's `vercel.deployment.ready` dispatch (built, not yet promoted) the workflow validates the payload, checks out and runs the smoke script (20 GET checks) against that exact deployment, and reports the `Post-deploy smoke` commit status that a Vercel Deployment Check requires before the production domain is assigned (`.github/workflows/deploy-smoke.yml:3-29`). Both scripts decide whether they are the program being run by comparing real paths (`scripts/post-deploy-smoke.mjs:390`, `scripts/deploy-gate-alert.mjs:194-202`): a raw `argv[1]` comparison made the smoke script exit 0 without running a single check when started behind a symlink, a false green, and `src/lib/deploy-smoke.test.ts` (32 tests, 479 lines) now starts it by its real path and through a symlink and expects the usage error, exit 2. When the smoke step of a dispatch run does not succeed (it failed, or it was skipped because an earlier step such as payload validation failed), two best-effort steps (`continue-on-error: true`, added after v3.16.0) tell a human: "Checkout the alert script (default branch)" (2 minutes) sparse-checks-out `scripts/deploy-gate-alert.mjs` from the run's own `github.sha` (the default branch, never the commit under test) and "Open an issue because the gate is holding a deployment" (1 minute) runs it (`.github/workflows/deploy-smoke.yml:142-165`). It opens one GitHub issue per held commit, titled `Production deployment held: smoke failed for <7-char sha>` (or `an unknown commit` when the dispatch had no valid sha), and its Smoke result line says failure, cancelled or skipped. Dedupe is best effort: it lists the newest 100 open items (the issues API also returns pull requests, which count toward the 100 and are then ignored) and skips creating when an open ISSUE with that title opened by `github-actions[bot]` is among them, so a same-title issue opened by anyone else cannot silence the alert, and a closed issue never dedupes; a match outside that window, or a create that was retried after its first attempt had already succeeded, can leave a duplicate (`scripts/deploy-gate-alert.mjs:148-169`). One retry after a network error, a 5xx or a 429; an error carries GitHub's own message but never the token, which goes only to api.github.com, and any API error exits 1. Every payload value is validated first (40-hex sha, `*.vercel.app` host, github.com Actions run URL, known outcome) and an invalid value is dropped, never echoed. It runs whenever the smoke step did not succeed, not only after a failed smoke; a deployment held because no status ever arrives is NOT announced (a watchdog was considered and not built), and closing the issue is manual. Both alert steps sit BEFORE the last step, a guard that fails the job unless the smoke succeeded (`.github/workflows/deploy-smoke.yml:167-175`), so a broken alert can neither hide a failed smoke nor turn it into a pass. Every step has its own `timeout-minutes` (18 minutes summed against the job's 20, `:80-83`), nothing cancels a run (`:70-73`), and the job permissions are `contents: read`, `statuses: write`, `actions: read` and `issues: write` (`:84-88`). **The alert steps have never run in Actions:** the last live run of the workflow (39780637626) predates them and they are not on `main` yet. They are covered by `src/lib/deploy-gate-alert.test.ts` (36 tests, 373 lines) against a mocked GitHub API, plus checks on the workflow text, and that file runs inside `pnpm build`. |
 
 ### Entry point
 
@@ -626,8 +630,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 114 test files
-(1318 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 115 test files
+(1356 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -653,6 +657,10 @@ is the gate: a failing Vitest assertion aborts before `next build`, so every one
   `src/lib/pnpm-build-allowlist-consistency.test.ts` (every dependency with an install script must have an
   `allowBuilds` decision) and `src/lib/health-expectations.test.ts:160-185` (pins the installed `mcp-handler`
   version and asserts its GET branch is still unconditional)
+- the production gate's alert and shape — `src/lib/deploy-gate-alert.test.ts` (36 tests: 28 on `scripts/deploy-gate-alert.mjs`, 8 that
+  read `.github/workflows/deploy-smoke.yml` as text: guard step last, every step bounded with the sum below the job limit,
+  no `cancel-in-progress: true`, one concurrency group per environment and commit, alert steps best effort and before the guard,
+  alert script from the default branch, least-privilege permissions). A careless edit of `deploy-smoke.yml` reds the **build**, not only a CI job
 
 **Playwright is a separate CI job and does *not* block `pnpm build`** (`ci.yml:137-202`).
 `agent-trace.test.ts` is a **consistency** check, not a ship block: `expect(traceApproved).toBe(!hasSentinel)`
@@ -692,11 +700,11 @@ records.
 
 | Assertion | Value | Cite |
 |---|---|---|
-| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 1_336_000`, raised four times since the gate landed at 1,285,000. The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes. The in-file comment measures `/` at 1,333,521 B after the last raise (~2,479 B headroom, `:57-67`) but also opens with a different figure (1,322,132 B, `:43`), and the local artifact above shows `/` at 1,184,096 B — headroom depends entirely on which baseline you use, so no percentage is quoted here | `scripts/bundle-budget.mjs:72` |
-| Route-count floor | `MIN_ROUTES = 17`; fewer means the artifact's shape changed and the gate is lying about coverage. (The script's header still quotes an older measurement — "16 routes; … `/` is 1220794", `:27` — while the `MIN_ROUTES` docblock at `:39` says 17; the assertion uses the constant.) | `:40,:102-107` |
-| three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:153-164` — and it appears in **0** of the routes' first-load sets | `:76-77` (comment), `:84` (marker), `:146-154` (check) |
-| Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:137-144` |
-| Missing or malformed artifact ⇒ exit 1 | by design; the predecessor's defining flaw was reporting success while measuring nothing | `:30-31`, `:95-99`, `:102-113` |
+| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 988_000`, raised four times since the gate landed at 1,285,000 (→ 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000), then lowered once to 988,000 after v3.16.0 (in no tagged release yet). The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four raises (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes; the lowering is a standalone commit as well. The in-file comment now says why (`:66-67`): `/` measured 976,936 B at the v3.16.0 cut (#329 had taken it from 1,298,585 B, about a quarter), 972,887 B after the later prune of three low-priority open-source items (#333, `a665991`: two project cards and the Shop.this feed entry) and 972,920 B when the ceiling was set. The 972,887 B was the same on CI (ubuntu-latest, run 39779046431) and on a local macOS build, and the 33 B since is the one-sentence rewrite in `content/projects/anvilry.mdx` line 26. Until the lowering the ceiling had stayed at 1,336,000 B and left 363,113 B of slack. A fresh build of this tree measures `/` at 972,920 B (`node scripts/bundle-budget.mjs` prints it), so 15,080 B (about 1.5%) of headroom remain under 988,000 B. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two cards and their graph nodes, so it covers a handful of cards, while any eager import of about 15 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added. The 972,920 B and 15,080 B figures were measured by running the gate on a fresh build of this tree; the 972,887 B, run and macOS figures are quoted from the in-file comment and the CI log. The comment still narrates the last raise (1,333,521 B, `:57-64`) and opens with an older figure (1,322,132 B, now worded "at the time", `:43`), and the local artifact above shows `/` at 1,184,096 B — all history, none of them is the current baseline | `scripts/bundle-budget.mjs:72` |
+| Route-count floor | `MIN_ROUTES = 17`; fewer means the artifact's shape changed and the gate is lying about coverage. (The script's header still quotes an older measurement — "16 routes; … `/` is 1220794", `:27` — while the `MIN_ROUTES` docblock at `:39` says 17; the assertion uses the constant.) | `:40,:114-119` |
+| three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:153-164` — and it appears in **0** of the routes' first-load sets | `:76-77` (comment), `:84` (marker), `:158-166` (check) |
+| Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:149-156` |
+| Missing or malformed artifact ⇒ exit 1 | by design; the predecessor's defining flaw was reporting success while measuring nothing | `:30-31`, `:107-111`, `:114-125` |
 
 **What it deliberately does not do.** No `continue-on-error`, no `if-no-files-found` — the two settings
 that made the predecessor unable to fail on a missing measurement; the rationale is recorded inline at
@@ -705,7 +713,7 @@ copies, both still lazy) passes it untouched — that regression is still guarde
 twin-chunk row in § 9's failure table. And like the index-citation check it is a **merge** gate, not a
 **deploy** gate: Vercel runs `pnpm build` alone, so a bundle regression fails the PR rather than blocking a
 production deploy. Three references in the script — comments at `bundle-budget.mjs:70` and `:75`, and the
-failure message at `:152` — cite lines 127–149 of `next.config.ts` for the three.js chunk record; that block is now
+failure message at `:164` — cite lines 127–149 of `next.config.ts` for the three.js chunk record; that block is now
 `next.config.ts:153-169`.
 
 **`@next/bundle-analyzer` survives as a local attribution tool.** It is still a devDependency
@@ -715,7 +723,7 @@ failure message at `:152` — cite lines 127–149 of `next.config.ts` for the t
 plugin do anything at all; it writes `.next/analyze/{client,edge,nodejs}.html`.
 The consequence is deliberate and one-directional: a `--webpack`
 build emits no `route-bundle-stats.json`, so `scripts/bundle-budget.mjs` fails after `pnpm analyze` and
-names `--webpack` as the cause (`:97`). Re-run `pnpm build` before the gate. The plugin says as much
+names `--webpack` as the cause (`:109`). Re-run `pnpm build` before the gate. The plugin says as much
 itself: its Turbopack warning ends "To run this analysis pass the `--webpack` flag to `next build`", and it
 suggests a Turbopack-native analyzer (`node_modules/@next/bundle-analyzer/index.js:10,12`). The plugin's
 wording for that alternative — `next experimental-analyze` — is real: 16.3.5 ships it as a subcommand that
@@ -770,6 +778,7 @@ pagefind failure fails the Vercel build.
 | **CI red immediately after the build step**, "cannot read .next/diagnostics/route-bundle-stats.json" | Only Turbopack writes that artifact (`node_modules/next/dist/build/index.js:2843-2844`), so any build that opted into webpack — `pnpm analyze`, or a `--webpack` flag added to `pnpm build` — leaves the gate nothing to read. It exits 1 and names `--webpack` (`scripts/bundle-budget.mjs:107-111`). This is the intended behaviour, not a false positive: unmeasurable must be red. |
 | First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:190-191`). Raising `MAX_FIRST_LOAD_BYTES` (`:72`) is allowed but must be its own commit quoting measured before/after bytes (`:69-71`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:79-82`). |
 | A bundle regression ships green again | Re-adding `continue-on-error` / `if-no-files-found` to the budget step, which is exactly how `bundle-analysis.yml` ran 222 times (211 green, 11 red) and produced zero artifacts, ever (`ci.yml:179-189`). |
+| A production deployment is READY but the production domain still serves the previous one | The Deployment Check `Post-deploy smoke` is pending or red, so Vercel has not assigned the alias (`.github/workflows/deploy-smoke.yml:3-11`). A smoke step that did not succeed (a red smoke, or one skipped because an earlier step failed) is meant to open one issue per held commit, titled `Production deployment held: smoke failed for <7-char sha>` (`an unknown commit` when the dispatch had no valid sha), with best-effort dedupe over the newest 100 open items (`scripts/deploy-gate-alert.mjs`, two `continue-on-error` steps before the guard, `.github/workflows/deploy-smoke.yml:142-165`; those steps have never run in Actions yet); if they fail, or if the deployment is held because no status ever arrives (not announced; no watchdog was built), no issue appears and the red (or missing) status on the commit is the only trace. Force Promote and removing the check are in DEPLOY.md section 8. Preview dispatches are skipped by the `environment != preview` guard (`:78`) and are never held. |
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
@@ -1053,7 +1062,7 @@ record the outcome rather than the original open question.
 - **Runtime bundle boundaries** are inferred from `use client` directives, `dynamic()/ssr:false` wrappers,
   and route-handler placement — not from reading `.next/` chunk manifests. Narrowed: the first-load surface
   is no longer inferred at all, because `scripts/bundle-budget.mjs` reads Next's own per-route artifact in
-  CI (`MIN_ROUTES = 17`, ceiling 1,336,000 B, three.js in 0 routes' first-load sets) — but that gate
+  CI (`MIN_ROUTES = 17`, ceiling 988,000 B, three.js in 0 routes' first-load sets) — but that gate
   reports first-load bytes and chunk paths, not which module put them there, so *why* a boundary falls
   where it does is still inference. The three.js single-chunk figure is measured twice over:
   `next.config.ts:153-164`'s recorded build and `scripts/bundle-budget.mjs:76`'s 897,249 B. **Neither was
@@ -1093,7 +1102,7 @@ record the outcome rather than the original open question.
 - **Stale in-file comments found in this refresh:** `next.config.ts:19-20` ("shipped as Report-Only first" —
   the header at `:114` is enforced); `src/app/search/page.tsx:6` (bundle "generated post-build by
   `make search-index`" — it is the last step of `pnpm build`); `scripts/bundle-budget.mjs:27` (the header's
-  "16 routes" measurement, against `MIN_ROUTES = 17`) and `:70,75,152` (cite lines 127–149 of `next.config.ts`, now
+  "16 routes" measurement, against `MIN_ROUTES = 17`) and `:70,75,164` (cite lines 127–149 of `next.config.ts`, now
   `:153-169`); `src/app/api/github/stats/route.ts:5-6` (cites line 101 of `github.ts`, now `:142`); `.github/dependabot.yml:80`
   ("Pinned to 3.0.4" — `package.json:34` pins `3.1.1`); `src/app/articles/[slug]/page.tsx:26-29` (cites
   `:59` for the external-article redirect — it is `:77-81` — and line 103 of `velite.config.ts` for the optional

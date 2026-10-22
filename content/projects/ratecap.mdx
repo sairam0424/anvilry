@@ -1,0 +1,57 @@
+---
+slug: ratecap
+name: RateCap
+tagline: Recreation of Stripe's four-tier rate limiter and load shedder, as a Go sidecar and core
+group: Platform, Guardrails & Observability
+repo: https://github.com/sairam0424/RateCap
+commits: 347
+dateCreated: 2026-07-13
+license: MIT
+tech: [Go, Python, gRPC, Redis, Lua, Prometheus, OpenTelemetry, Helm, "Docker Compose", Sigstore]
+pinned: false
+featured: true
+order: 5
+excerpt: "Open-source recreation of the four-tier rate limiter and load shedder Stripe described in a 2017 engineering post: a per-key token bucket, a per-key concurrent-request cap, a fleet-wide shedder that reserves capacity for critical traffic, and a sidecar-local in-flight shedder. Thin Go and Python HTTP clients call a per-host Go sidecar, which forwards checks over gRPC to a central Go core that keeps shared state in Redis through atomic Lua scripts. Every tier has a shadow mode. One author, 22 releases through v2.13.1 (2026-09-02)."
+decisions:
+  - title: "A sidecar and a gRPC core instead of an in-process limiter library"
+    body: "Stripe's limiters run in-process inside its API workers. I put every decision behind a per-host sidecar and a central Go core instead, so the Go and Python SDKs are thin HTTP clients with no limiter logic and there is no second token bucket to keep behaviourally identical across languages. The cost is latency on every call: localhost HTTP, then gRPC, then Redis. In the 2026-07-18 benchmark on one Apple M4, with limits loosened so nothing rejected, a Tier 1 Allow() measured P50 3.88 ms and a Tier 2 Acquire()/Release() pair P50 12.96 ms. An in-process bucket is faster; only the Tier 4 shed path skips the round trip."
+    tags: [architecture, latency, sdk]
+  - title: "Tier 1 fails open while Tiers 2 and 3 fail closed, per tier rather than per pipeline"
+    body: "When Redis is unreachable, Tier 1 fails open and Tiers 2 and 3 fail closed, and I made that a per-tier contract instead of one pipeline-wide setting. Stripe's post sets the precedent of failing open on request-rate limiting; the concurrency tiers exist to bound resource use, and failing them open would remove that bound during the outage that most needs it. The cost: a total Redis outage still surfaces as HTTP 500s once a request reaches Tier 2, even though Tier 1 let it through, so failing open like Stripe is true for one tier only. Toxiproxy network-fault tests pin the contract, not mocks."
+    tags: [reliability, redis, fail-open]
+  - title: "Tier 4 as an in-flight request counter instead of a worker-utilization signal"
+    body: "Stripe's fourth tier is its least documented, and RateCap's own design spec says there was no confirmed mechanism to recreate. I built an atomic in-flight counter in the sidecar with an optional linear shed ramp, rather than add a worker-pool abstraction nothing else would use. The cost: the tier is named for a signal it does not measure, which is worker or CPU saturation. The spec's max_worker_utilization_pct knob was dropped, and the config sync meant to deliver Tier 4 thresholds from core was never built, so they come from an environment variable with no hot reload."
+    tags: [load-shedding, tier-4, scope]
+  - title: "Signed, header-carried Tier 2 tokens shipped as a patch release, not a minor"
+    body: "v2.3.2 moved the release key and token from URL query parameters into headers and began HMAC-SHA256-signing every Tier 2 token, after two CVE precedents for bearer tokens leaking through access logs and Referer headers. That broke every direct HTTP caller that bypassed the SDKs, yet I tagged it as a patch. The cost: a semver violation, which CHANGELOG.md records as an acknowledged exception because re-tagging a published release would be worse, and a signature that proves a token was issued by this core but not who owns it. Any sidecar holding the shared secret can still release any valid token."
+    tags: [security, semver, wire-format]
+---
+
+**RateCap** is an open-source rate limiter and load shedder for HTTP services, written as a recreation of the four-tier design Stripe described in a 2017 engineering post. It exposes per-key limits, concurrency caps and priority-aware shedding through Go and Python HTTP clients. It is a one-author project, and its fidelity to Stripe rests on that post and a companion Redis-Lua gist, not on Stripe's production code.
+
+- **Token bucket (Tier 1)** — a per-key bucket refilled and decremented in one atomic Redis Lua call.
+- **Concurrency cap (Tier 2)** — a per-key in-flight limit with optional Redis-backed bounded queueing, fleet-wide since v2.5.0.
+- **Fleet shedder (Tier 3)** — a global concurrency counter that holds back a configurable share of capacity for critical traffic.
+- **Sidecar shedder (Tier 4)** — an in-flight counter with an optional linear shed ramp that rejects before any network call.
+- **Shadow mode** — per tier or global; a would-be rejection is allowed but counted, so enforcement can be previewed.
+- **Token-cost refunds** — a caller reserves an estimated LLM token cost up front and refunds the unused part.
+- **Operations** — Prometheus metrics, one-hop OpenTelemetry tracing, opt-in mTLS, hot-reloaded config and an admin set-limit lever.
+
+> At v2.13.1 (2026-09-02): 347 commits on main, 22 releases, 445 Go test functions (a grep count, not a run), 0 stars and one human author; the benchmark figures are a one-time same-host Apple M4 snapshot of pass-through overhead, not capacity.
+
+## Architecture
+
+Seven Go modules share one `go.work`: proto, core, core integration tests, sidecar, Go SDK, CLI and a sample app. The Python SDK sits outside it, uses only the standard library, and is on [PyPI as ratecap](https://pypi.org/project/ratecap/) (0.1.1); the Go SDK is consumed from the repo path only. The core runs a pipeline of limiters behind a `StateStore` interface whose only implementation is Redis with three Lua scripts.
+
+Applications talk to the sidecar over plain HTTP. It resolves priority from a request header, then a hot-reloaded critical-routes file, then a sheddable default, and it owns shadow-mode coercion and a negative cache of recently denied keys. Sidecar-to-core calls carry a shared secret, with optional mTLS, and core signs Tier 2 tokens so a forged release is refused. Priority claims are unauthenticated, and every key shares one default rate and burst.
+
+Releases ship as GHCR images, a Helm chart on Artifact Hub, and `ratecapctl` binaries with cosign-signed checksums. CI runs race-detector tests with a 50% per-module coverage floor, Toxiproxy fault injection and a mutation gate. OpenSSF Scorecard scored 7.2/10 on 2026-10-18, with Code-Review 0 and Branch-Protection 4 because a solo workflow has no required reviews. The latest release is v2.13.1 (2026-09-02); `develop` is eight commits ahead with unreleased fixes. `ARCHITECTURE.md` still calls the Tier 2 backlog per-instance, which the code and CHANGELOG contradict.
+
+## How It Works
+
+1. The app calls `Allow` or `Acquire` on the Go or Python SDK, which sends `GET /check` to the localhost sidecar with priority and route headers.
+2. The sidecar skips Tier 4 for critical requests; the rest pass the in-flight shedder, which returns 503 before any network call, probabilistically once past the ramp start.
+3. Core's `CheckRateLimit` runs the tiers in order. Tier 3, driven by one global concurrency counter in Redis rather than CPU or GC telemetry, gives sheddable traffic a reduced cap of `cap * (100 - reserved_critical_pct) / 100`, and the first non-ALLOW result short-circuits. In shadow mode a would-be rejection becomes an allow.
+4. If Tier 2 is full and queueing is on, the request takes a Redis backlog slot and polls until a slot frees, the maximum wait passes, or the context cancels.
+5. The sidecar replies 200, 429 or 503 with rate-limit headers and one signed token per reservation; `Ticket.Release` posts each back, and `Ticket.Refund` returns unused token cost.
+6. On a Redis error Tier 1 fails open and Tiers 2 and 3 fail closed with HTTP 500; a slot whose release never arrives is reaped after `max_request_duration_ms`.

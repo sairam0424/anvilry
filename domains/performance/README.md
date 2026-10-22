@@ -63,9 +63,10 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   (a) the artifact has fewer than `MIN_ROUTES` = **17** records (the 16 `src/app` page routes plus `/_not-found`);
   (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **1,336,000 B** (1,285,000 B at v3.6.0; each raise is recorded with measured
   before/after bytes in the script's docblock, which quotes `/` at 1,333,521 B when it was last raised — small, baseline-dependent headroom, so re-measure
-  with `pnpm build && node scripts/bundle-budget.mjs` instead of quoting a percentage); or
+  with `pnpm build && node scripts/bundle-budget.mjs` instead of quoting a percentage);
   (c) the `WebGLRenderer` marker (`LAZY_MARKER`) turns up in any route's first-load chunk set — today it sits in exactly one chunk, **897,249 B**,
-  present in **0 of 17** route records' first-load sets. A missing or malformed artifact **exits 1 by design**: "I could not measure" must be RED,
+  present in **0 of 17** route records' first-load sets; or
+  (d) the `_createMdxContent` marker (`MDX_MARKER`) turns up there, meaning a client module reached the compiled MDX bodies that only the four detail pages may read (`src/lib/content-bodies.ts`). A missing or malformed artifact **exits 1 by design**: "I could not measure" must be RED,
   which is exactly what the deleted `bundle-analysis.yml` got wrong for its entire 222-run life (211 green, 11 red). There is deliberately no
   `continue-on-error` and no `if-no-files-found` — do not add them. The step also fails if a listed first-load chunk is missing on disk.
   **This does NOT catch a duplicate `three` copy that stays off the critical path** — the marker scan

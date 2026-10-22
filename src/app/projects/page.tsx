@@ -9,7 +9,7 @@ import { GithubFeed } from "@/components/github-feed";
 import { getRepoFeed } from "@/lib/github";
 import { cacheLife } from "next/cache";
 
-const description = `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, and developer tooling.`;
+const description = `Open-source AI infrastructure by ${profile.name} — agent frameworks, code-intelligence engines, LLM gateways and MCP guardrails, and developer tooling.`;
 export const metadata: Metadata = {
   title: "Projects",
   description,
@@ -49,7 +49,7 @@ export default async function ProjectsPage() {
       >
         <Reveal>
           <p className="max-w-2xl text-fg-muted">
-            Agent frameworks, code-intelligence engines, and AI-native tooling.
+            Agent frameworks, code-intelligence engines, LLM gateways and MCP guardrails, and AI-native tooling.
             Each card describes architecture and tech, not adoption — clone any
             repo and inspect it.
           </p>

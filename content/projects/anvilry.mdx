@@ -1,0 +1,58 @@
+---
+slug: anvilry
+name: Anvilry
+tagline: Portfolio with four switchable views and a read-only MCP server over one MDX source
+group: Tooling & Lab
+repo: https://github.com/sairam0424/anvilry
+commits: 865
+dateCreated: 2026-06-12
+tech: [Next.js, React, TypeScript, Tailwind CSS, Velite, AWS Bedrock, Upstash Redis, React Three Fiber, MCP, Vitest]
+pinned: true
+pinRank: 3
+featured: false
+order: 10
+excerpt: "A personal engineering portfolio with four switchable experiences over one Velite content source: a static Classic site, an AI concierge chat grounded on the résumé corpus through AWS Bedrock with a model fallback chain and a deployment-tagged FAQ cache, a WebGL build graph, and a keyboard-native developer terminal. Agents read the same content through a read-only MCP server, llms.txt and resume.json. A fingerprinted citation gate, a hash-chained claims ledger and a first-load bundle budget check the docs and numbers in CI; none is a required merge check."
+decisions:
+  - title: "One client-side view store on a single URL over four separate routes"
+    body: "I chose a module-level external store so one URL serves Classic, Play, Chat and Developer (plus Voice and Recruiter views), and crawlers only ever receive the static Classic HTML. The cost: the other views are invisible to search engines by construction, a `?view=` deep link applies only after hydration, the choice is deliberately not remembered between visits, and every addition to the shared shell counts against the first-load budget of every route."
+    tags: [architecture, rendering, seo]
+  - title: "Whole grounding corpus in the prompt over a vector database"
+    body: "I put the grounding corpus, roughly 9 to 11 KB, in the system prompt behind a one-hour cache breakpoint instead of running retrieval. That removes a service and an index to keep in sync. The cost is a hard ceiling: the corpus must stay small and byte-stable, and a fallback to a different model re-pays the whole corpus as input. The documented upgrade path is pgvector with BM25 if the corpus outgrows the context window."
+    tags: [rag, context-window, cost]
+  - title: "Fall back only before the first byte, with Opus opt-in rather than default"
+    body: "I let the model chain advance only before any answer byte reaches the client; after that, an error appends an apology and closes the stream, since the client already holds part of an answer. I also took Opus out of the default chain, since the reference AWS account IAM-denies the whole family and the rung could only answer 403. The cost: the last resort is Haiku 4.5, a weaker model, and a mid-stream failure ends the answer early."
+    tags: [resilience, llm, bedrock]
+  - title: "Documentation and claims gates in CI over inside the production build"
+    body: "I run the citation gate, the claims-ledger seal and the bundle budget in CI and keep only Vitest inside `pnpm build`, so stale documentation fails a pull request and never a production deploy. At v3.15.0 the codebase index is 9,623 lines carrying 2,910 fingerprinted citations. The cost: the gates are advisory at merge time, since the branch ruleset requires a pull request but no status check, and the citation snapshot is regenerated in the same commit as the prose, so green shows the cited text still exists, not that the prose is right."
+    tags: [quality-gates, ci, documentation]
+---
+
+**Anvilry** is the engineering portfolio of Sairam Ugge: a Next.js 16 site that lets a recruiter explore the same work as a static page, an AI chat, a 3D graph or a terminal, and lets AI agents read it as structured data. It is a personal site with a single author and 0 GitHub stars; the MIT licence covers the code only, and `content/` and the profile data are all rights reserved.
+
+- **Classic view** — a static (SSG) page that crawlers and first paint always receive; the other views swap in client-side.
+- **Chat view** — a streaming concierge on AWS Bedrock that answers in the owner's first person from an in-context corpus, with a visible notice that the answers are AI-generated, and optional browser voice.
+- **FAQ cache** — repeated first-turn questions are served from Upstash Redis with no model call, each entry tagged with the deployment that wrote it.
+- **Play view** — a React Three Fiber build graph whose nodes open project and work cards, with a DOM index as the fallback.
+- **Developer view** — a keyboard-native terminal with 32 commands (28 visible, 4 hidden), including `integrity`, which prints the claims ledger.
+- **Agent surface** — a read-only MCP server with 10 tools, plus `llms.txt`, `llms-full.txt`, `resume.json` and RSS.
+- **Consistency gates** — a citation check over the codebase index, a hash-chained ledger of the headline metrics, and a first-load bundle budget, all run in CI.
+
+> At v3.15.0 (2026-10-21): 865 commits on `main` (28 of them Dependabot's) with one human maintainer, 33 GitHub releases and 0 stars; CI was green on `main` that day, but no CI job is a required check, and the claims ledger holds one sealed entry, from 2026-09-07.
+
+## Architecture
+
+Anvilry is one Next.js 16.3.5 App Router app (`cacheComponents: true`, React 19.3.0, Tailwind v4) on Vercel. Velite validates the MDX in `content/` into typed collections read through `src/lib/content.ts`, and derivation modules turn it into the Play graph, the chat corpus, the decisions ledger, the MCP results and `llms.txt`.
+
+Views are a six-member `View` union in a module-level external store; the server and the first client render always return Classic. The chat route applies a per-IP Upstash limit (8 requests a minute per route class), then the FAQ cache, then `src/lib/llm.ts`. Cost guards fail open when Upstash is absent.
+
+Vitest runs inside `pnpm build`. The citation check, claims seal and bundle budget run in CI, so they fail a pull request, never a deploy. The budget caps first-load JavaScript at 1,336,000 B per route and keeps three.js out of the first-load chunks. The claims ledger shows a claim was not edited since sealing, not that it was accurate.
+
+## How It Works
+
+1. **Author** — MDX in `content/`; `pnpm build` runs `velite --clean && vitest run && next build && pagefind`, so a schema error or failing test stops it.
+2. **Derive** — the graph, corpus, MCP tools, `llms.txt` and decisions ledger read the same collections; Vitest bijection checks fail the build on any node, entry or tool without a source.
+3. **Ask** — a chat request passes the per-IP limiter and, for a first-turn question, the FAQ cache; a miss streams from Bedrock with the corpus in a one-hour cached system block.
+4. **Fall back** — by default Sonnet 4.6, then Haiku 4.5 (opt-in flags can put Sonnet 5 or 5.5 in front, and Opus behind the primary), 15 s to response headers per try. The chain advances only before the first answer byte.
+5. **Render** — the client resolves `[[card:work:slug]]` tokens against build-time content and drops unknown slugs; answers render through `react-markdown` with `rehype-sanitize`.
+6. **Release** — work lands on `develop` (Preview), reaches `main` (Production) by merge-commit PR, and each version bump is tagged and released. Tagging lapsed after v2.1.1 (2026-06-18); ten releases, v3.0.0 to v3.6.0, were backfilled on 2026-09-17.
+7. **Operate** — five Vercel crons fail closed without `CRON_SECRET`. DEPLOY.md still lists the weekly eval cron as unfixed at v3.15.0: checked on 2026-10-01, its requests were refused by Vercel deployment protection, so its pass-rate tile records 0 of 12.

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowUpRight, GitCommitHorizontal } from "lucide-react";
+import { ArrowUpRight, GitCommitHorizontal, Lock } from "lucide-react";
 import { Github } from "@/components/icons";
-import type { Project } from "@/lib/content";
+import { repoLink, type Project } from "@/lib/content";
 
 export function ProjectCard({ project }: { project: Project }) {
+  const repo = repoLink(project);
   return (
     <div className="card-surface group flex flex-col p-5 transition-colors">
       <div className="flex items-start justify-between gap-3">
@@ -13,15 +14,22 @@ export function ProjectCard({ project }: { project: Project }) {
         >
           {project.name}
         </Link>
-        <a
-          href={project.repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${project.name} on GitHub`}
-          className="shrink-0 text-fg-subtle transition-colors hover:text-accent"
-        >
-          <Github size={18} />
-        </a>
+        {repo ? (
+          <a
+            href={repo}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${project.name} on GitHub`}
+            className="shrink-0 text-fg-subtle transition-colors hover:text-accent"
+          >
+            <Github size={18} />
+          </a>
+        ) : (
+          <span className="inline-flex shrink-0 items-center gap-1 font-mono text-[11px] text-fg-subtle">
+            <Lock size={12} aria-hidden="true" />
+            Private repository
+          </span>
+        )}
       </div>
 
       <p className="mt-2 text-sm text-fg-muted">{project.tagline}</p>

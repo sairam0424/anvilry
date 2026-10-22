@@ -1,4 +1,4 @@
-import { allProjects, allWork, allNotes } from "@/lib/content";
+import { allProjects, allWork, allNotes, repoLink } from "@/lib/content";
 import { profile, skills, achievements } from "@/lib/profile";
 import { personal, now, hasPersonalContent, hasNow } from "@/lib/personal";
 import { testimonials, hasTestimonials } from "@/lib/testimonials";
@@ -25,7 +25,7 @@ export function buildCorpus(): string {
       (p) =>
         `### ${p.name} — ${p.tagline}\nGroup: ${p.group}${
           p.commits ? ` · ${p.commits} commits` : ""
-        }\nRepo: ${p.repo}\n${p.excerpt}\nTech: ${p.tech.join(", ")}`,
+        }\nRepo: ${repoLink(p) ?? "private repository"}\n${p.excerpt}\nTech: ${p.tech.join(", ")}`,
     )
     .join("\n\n");
 

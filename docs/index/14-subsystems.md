@@ -3,17 +3,17 @@ kind: doc
 title: Cross-cutting subsystem maps (part 1 of 2)
 domain: [content]
 status: current
-version: v3.15.0
+version: v3.16.0
 ---
 
 # Cross-cutting subsystem maps — part 1 of 2
 
-> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 plus five post-a929932 fixes, each described by behaviour — notes are
+> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.16.0 (`package.json` 3.16.0), i.e. `main` at a929932 plus five post-a929932 fixes, each described by behaviour — notes are
 > hidden at the data layer when `NOTES_ENABLED` is off; rate limiting has per-class buckets (`chat` / `voice` /
 > `beacon`) with an eval-cron bypass, built on `src/lib/cron-auth.ts`; admin auth goes through the shared
 > `isAdminAuthorized` (`src/proxy.ts`, `requireAdmin`, the telemetry page); overlay voice entry points are gated
-> by `isVoiceViewActive`; the bundle-budget gate asserts `MIN_ROUTES = 17` and dead components were removed.
+> by `isVoiceViewActive`; the bundle-budget gate asserts `MIN_ROUTES = 17` and dead components were removed. v3.16.0 adds three more, all landing in subsystem 1 (content pipeline): nine new projects in a fourth group (20 projects, 25 graph nodes), a private-repository marker (`visibility` on the Project schema, `repoLink()` in `src/lib/content.ts`), and compiled MDX moved out of `content.ts` into body-only collections that only `src/lib/content-bodies.ts` reads.
 > Continued in [`14b-subsystems.md`](./14b-subsystems.md) — subsystems 7–10, the cross-subsystem coupling
 > table, the entry-point cheat sheet, and the UNVERIFIED ledger for both parts.
 
@@ -90,7 +90,7 @@ decisions.ts  ← content.ts (allProjects[].decisions + allWork[].constraints/tr
 
 Four route trees (`/work`, `/projects`, `/notes`, `/articles`) consume `content.ts` directly, as do
 `sitemap.ts`, `feed.xml/route.ts`, the four `/api/md/*` handlers, the four `<collection>/[slug].md`
-handlers, and `command-palette-content.tsx` (47 non-test files import `@/lib/content` at this baseline, counted
+handlers, and `command-palette-content.tsx` (48 non-test files import `@/lib/content` at this baseline - 47 at v3.15.0, plus `chat-card.tsx` for `repoLink` - counted
 by grepping the `from "@/lib/content"` clause — a bare-string grep also matches a comment in `site-nav.tsx`; section 03
 carries the list). The `/decisions` page reads only `decisions.ts`.
 
@@ -98,17 +98,17 @@ carries the list). The `/decisions` page reads only `decisions.ts`.
 
 | # | File | Exact role in the flow |
 |---|---|---|
-| 1 | `content/**/*.{md,mdx}` | Authored frontmatter + MDX body. 5 work, 11 projects, 7 notes, 15 articles. |
-| 2 | `velite.config.ts:19-50,53-75,81-106,114-140` | The four Zod collections (project · work · note · article); registered at `:155`. Each ends in a `.transform()` that is the **only** place `url` is created (`:49,74,105,139`). Projects also carry `decisions: s.array(decision).default([])` (`:40`, shape at `:13-17`). |
-| 3 | `velite.config.ts:142-157` | Output layout: `root: "content"`, data → `.velite`, assets → `public/static` (base `/static/`), `clean: false` (`:153`), `mdx: { gfm: true }` (`:156`). |
-| 4 | `.velite/*.json` + `index.d.ts` | Generated, gitignored. Every Article file is frontmatter-only (empty body); every Note body is compiled MDX. |
-| 5 | `src/lib/content.ts:19,21-22,27-29,31-35,44-45,50-59,62-67,73-83` | Copies before sorting (`[...raw]`), `byOrder` ascending. `publishedNotes` (`:50-52`, drafts dropped, newest-first by **ISO string compare**) is read only by the `/notes` route files; every other consumer reads `allNotes` (`:56`), which is `[]` unless `NOTES_ENABLED` — so hiding notes happens **at the data layer**, not per surface. `allArticles` (`:80-83`) drops drafts and, while notes are dark, any article whose only destination is a note (`isNoteOnlyArticle`, `:73-74`). Drafts are excluded here so nothing downstream re-checks `draft`. |
-| 6 | `src/lib/game-model.ts:28-50` | `NODE_CONTENT`: 16 graph-node ids → `{kind, slug}`. `resolveNode()` (`:62-71`) returns `null` on a miss; `questNodes` `flatMap`s nulls away (`:96-109`). |
-| 7 | `src/lib/graph-data.ts:18-81` | Hand-authored 16 nodes + 19 edges (`graphEdges` `:83-110`) + `kindColor` (`:112-117`). No `Math.random` — build output is stable (`:1-6`); the docblock defers the node count to `graphNodes` instead of hardcoding it (`:3`). |
+| 1 | `content/**/*.{md,mdx}` | Authored frontmatter + MDX body. 5 work, 20 projects (18 public, 2 private), 7 notes, 15 articles. |
+| 2 | `velite.config.ts:45-79,82-103,109-133,141-166` | The four Zod collections (project · work · note · article); registered at `:181-190`. Each ends in a `.transform()` that is the **only** place `url` is created (`:78,102,132,165`). Projects also carry `decisions: s.array(decision).default([])` (`:70`, shape at `:39-43`). |
+| 3 | `velite.config.ts:168-192` | Output layout: `root: "content"`, data → `.velite`, assets → `public/static` (base `/static/`), `clean: false` (`:179`), `mdx: { gfm: true }` (`:191`). |
+| 4 | `.velite/*.json` + `index.d.ts` | Generated, gitignored. Every Article file is frontmatter-only (empty body); every Note body is compiled MDX. Since v3.16.0 it holds eight JSON files: the four metadata collections (`projects`, `work`, `notes`, `articles`) plus `projectBodies`, `workBodies`, `noteBodies` and `articleBodies` (`{ slug, body }` records), read only by `src/lib/content-bodies.ts`. |
+| 5 | `src/lib/content.ts:19,21-22,26-33,36-38,40-45,54-55,60-69,72-77,83-93` | Copies before sorting (`[...raw]`), `byOrder` ascending. `publishedNotes` (`:60-62`, drafts dropped, newest-first by **ISO string compare**) is read only by the `/notes` route files; every other consumer reads `allNotes` (`:66`), which is `[]` unless `NOTES_ENABLED` — so hiding notes happens **at the data layer**, not per surface. `allArticles` (`:90-93`) drops drafts and, while notes are dark, any article whose only destination is a note (`isNoteOnlyArticle`, `:83-84`). Drafts are excluded here so nothing downstream re-checks `draft`. |
+| 6 | `src/lib/game-model.ts:37-70` | `NODE_CONTENT`: 25 graph-node ids → `{kind, slug}`. `resolveNode()` (`:82-91`) returns `null` on a miss; `questNodes` `flatMap`s nulls away (`:116-129`). |
+| 7 | `src/lib/graph-data.ts:18-94` | Hand-authored 25 nodes + 28 edges (`graphEdges` `:96-134`) + `kindColor` (`:136-141`). No `Math.random` — build output is stable (`:1-6`); the docblock defers the node count to `graphNodes` instead of hardcoding it (`:3`). |
 | 8 | `src/lib/corpus.ts:13-96` | The whole chatbot grounding document as one markdown string: work, projects, skills, achievements, optional personal + testimonials sections, and the `## Writing` notes section (`:75-77`) — which is omitted when `allNotes` is empty (notes dark). Never reads articles. |
 | 9 | `src/lib/llms-txt.ts:13-104` | `/llms.txt`. Dedupes articles through `groupArticles` (`:23`), truncates summaries (100/80 chars, `:32,43`), emits a `## Markdown Versions` block (`:88-102`) whose notes list is `(none yet)` while notes are dark. |
-| 10 | `src/lib/resume-json.ts:12-71` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:54`) and stamps `meta.canonical` (`resume-json.ts:69`). |
-| 11 | `src/lib/mcp-tools.ts:73-330` | Ten pure tool functions + Zod input shapes + `wrapToolResult`. |
+| 10 | `src/lib/resume-json.ts:12-72` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:54`) and stamps `meta.canonical` (`resume-json.ts:70`). |
+| 11 | `src/lib/mcp-tools.ts:74-331` | Ten pure tool functions + Zod input shapes + `wrapToolResult`. |
 | 12 | `src/lib/article-grouping.ts:51-118` | Two-pass syndication dedup keyed by `linkedNote` or `canonicalUrl` (the per-article key choice is `article-grouping.ts:62`). |
 | 13 | `src/lib/decisions.ts:1-76` | Pure derivation: `Project.decisions[]` + `Work.constraints` / `Work.tradeoffs` → flat `allDecisions: LedgerEntry[]` (`:65`), `decisionsByTag` (`:67`). Consumed by `src/app/decisions/page.tsx` and `mcp-tools.ts` (`list_decisions`). Zero duplication of prose; `decisions.test.ts` asserts bidirectional coverage. |
 
@@ -136,9 +136,9 @@ the gamified view's `questNodes` and dossiers; the terminal's `ls`/`cat`/`tree`/
    (`.github/workflows/ci.yml:54-63`). That is the **only** standalone Velite step in CI — the
    second copy lived in `bundle-analysis.yml`, which is **deleted**; the `e2e` job gets
    `.velite/` from the `velite --clean` inside `pnpm build` (`ci.yml:177`).
-4. **`predev` deliberately omits `--clean`** and `velite.config.ts:153` sets `clean: false`, because
+4. **`predev` deliberately omits `--clean`** and `velite.config.ts:179` sets `clean: false`, because
    `--clean` in dev deletes `.velite/*.json` mid-session and the bundler then fails "Can't resolve
-   './projects.json'" (`velite.config.ts:149-152`). The comment's "webpack" is historical wording: in
+   './projects.json'" (`velite.config.ts:175-178`). The comment's "webpack" is historical wording: in
    Next 16 `next dev` resolves its bundler through the same default as `next build`
    (`node_modules/next/dist/cli/next-dev.js:173` → `node_modules/next/dist/lib/bundler.js:142-144`), so
    the bundler being raced today is Turbopack. The race mechanism — a file vanishing mid-compile — is
@@ -151,18 +151,19 @@ the gamified view's `questNodes` and dossiers; the terminal's `ls`/`cat`/`tree`/
 | Failure | Mechanism |
 |---|---|
 | Module resolution error in vitest and next build | `.velite/` absent (fresh clone, after `pnpm clean`, or CI without `pnpm content`) — `src/lib/content.ts:14`. |
-| **Deploy blocked** — added a content file without a graph node, or vice versa | `src/lib/game-model.test.ts:22-40` (forward), `:42-53` (reverse), `:55-58` (`work + projects === nodes`). Current counts: 16 nodes = 5 work + 11 projects. |
+| **Deploy blocked** — added a content file without a graph node, or vice versa | `src/lib/game-model.test.ts:22-40` (forward), `:42-53` (reverse), `:55-58` (`work + projects === nodes`). Current counts: 25 nodes = 5 work + 20 projects. |
 | **Deploy blocked** — invented a dossier fact | `game-model.test.ts:73-100` requires every fact to be a verbatim real metric or a derived count. |
 | **Deploy blocked** — a decision entry with no source, or a source field with no entry | `src/lib/decisions.test.ts:16,31` (every populated `decisions[]` / `constraints` / `tradeoffs` has an entry), `:44` (every entry's title and body trace to real content), `:88` (counts line up). `src/lib/case-study-depth.test.ts:38,55` rejects placeholder prose in those fields. |
-| Velite drops *every* existing record at once, and the deploy then breaks at `vitest run` | A newly-**required** field on Work/Project. Velite runs non-strict (no `--strict` in any script): it logs `error Required <field>` per file, emits an empty collection and still exits 0, so the failure surfaces in `vitest run` (e.g. `game-model.test.ts`), not at the Velite step. This is why the hiring-depth fields at `velite.config.ts:68-71` are `.optional()` and `decisions` (`:40`) is `.default([])`. |
-| Destructured import breaks | Renaming a key in `collections` (`velite.config.ts:155`) renames `.velite/<key>.json`, breaking `src/lib/content.ts:5-14`. |
-| Group-name drift (three copies) | `velite.config.ts:4-8` (Zod enum) / `src/lib/content.ts:31-35` (`projectGroups`) / `src/lib/game-model.ts:177-181` (`projectGroupOrder`) hold the same three strings. |
-| A project silently disappears from `pinnedProjects` | `pinned: true` without `pinRank` is dropped at `src/lib/content.ts:27-29`. |
-| A note leaks while the section is dark | Any consumer reading `publishedNotes` instead of `allNotes` (`src/lib/content.ts:47-52` declares the former, `:54-59` the latter). Only the `/notes` route files may — `generateStaticParams` there needs at least one entry under `cacheComponents` even while the section is dark (`:47-49`). `src/lib/notes-dark.test.ts:25-81` pins that the content layer, `llms.txt`, `feed.xml`, the MCP tools, the chat corpus and both note `.md` handlers publish nothing when `NOTES_ENABLED` is off, and `:83` that turning it on changes nothing else (the on case asserts only the legacy `notes/[slug].md` handler, not `api/md/notes`). |
-| Dangling `/notes/<slug>` link | `linkedNote` is a bare `s.string()` with no referential check (`velite.config.ts:133`). At this baseline all 15 articles' `linkedNote` values name a note file that exists, but nothing enforces it — a typo would 404 once `NEXT_PUBLIC_NOTES_ENABLED=true`. While notes are dark, `isNoteOnlyArticle` (`src/lib/content.ts:73-74`) drops every article whose only destination is a note (`:82`) so no article card links to a hidden note (`notes-dark.test.ts:25`). |
-| Tied sort order shifts | Project `order` duplicates 5/6/7 and `pinRank` duplicates 4/5 resolve by Velite's file-walk order — the comparators at `src/lib/content.ts:19-22,27-29` are plain numeric. |
+| Velite drops *every* existing record at once, and the deploy then breaks at `vitest run` | A newly-**required** field on Work/Project. Velite runs non-strict (no `--strict` in any script): it logs `error Required <field>` per file, emits an empty collection and still exits 0, so the failure surfaces in `vitest run` (e.g. `game-model.test.ts`), not at the Velite step. This is why the hiring-depth fields at `velite.config.ts:97-100` are `.optional()` and `decisions` (`:70`) is `.default([])`. |
+| Destructured import breaks | Renaming a key in `collections` (`velite.config.ts:181-190`) renames `.velite/<key>.json`, breaking `src/lib/content.ts:5-14` (or `src/lib/content-bodies.ts` for the four `*Bodies` keys). |
+| **First-load JS jumps by about 300 KB** — a client module imports the compiled MDX | `src/lib/content-bodies.ts` imported (directly or through a helper) from a `"use client"` module puts every body back into the shared chunk. `src/lib/content-bodies.test.ts` pins the importer set; `scripts/bundle-budget.mjs:168-177` fails the build on the `_createMdxContent` marker. |
+| Group-name drift (two copies) | `velite.config.ts:4-9` (Zod enum) / `src/lib/content.ts:40-45` (`projectGroups`, which `game-model.ts` now iterates, `:197`) hold the same four strings. |
+| A project silently disappears from `pinnedProjects` | `pinned: true` without `pinRank` is dropped at `src/lib/content.ts:36-38`. |
+| A note leaks while the section is dark | Any consumer reading `publishedNotes` instead of `allNotes` (`src/lib/content.ts:57-62` declares the former, `:64-66` the latter). Only the `/notes` route files may — `generateStaticParams` there needs at least one entry under `cacheComponents` even while the section is dark (`:57-59`). `src/lib/notes-dark.test.ts:25-81` pins that the content layer, `llms.txt`, `feed.xml`, the MCP tools, the chat corpus and both note `.md` handlers publish nothing when `NOTES_ENABLED` is off, and `:83` that turning it on changes nothing else (the on case asserts only the legacy `notes/[slug].md` handler, not `api/md/notes`). |
+| Dangling `/notes/<slug>` link | `linkedNote` is a bare `s.string()` with no referential check (`velite.config.ts:160`). At this baseline all 15 articles' `linkedNote` values name a note file that exists, but nothing enforces it — a typo would 404 once `NEXT_PUBLIC_NOTES_ENABLED=true`. While notes are dark, `isNoteOnlyArticle` (`src/lib/content.ts:83-84`) drops every article whose only destination is a note (`:92`) so no article card links to a hidden note (`notes-dark.test.ts:25`). |
+| Tied sort order shifts | Project `order` is unique 1 to 20 and `pinRank` unique 1 to 6 (`src/lib/content.test.ts:78` and `:90` fail the build on a duplicate), so the project comparators (`src/lib/content.ts:19-22`, `:36-38`) never tie; notes and articles still tie on equal dates (`src/lib/content.ts:62`, `:93`). |
 | `.md` passthrough 404s in production | `src/app/<collection>/[slug].md/route.ts` and `/api/md/*` read `content/<collection>/<slug>.{mdx,md}` from disk **at request time**, so `content/` must ship in the deployed bundle. The two note handlers 404 by design while notes are dark (they look the slug up in `allNotes`). |
-| Corpus loses attribution | `register` is required by Zod (`velite.config.ts:61`) and flows verbatim into `src/lib/corpus.ts:17` and `src/lib/resume-json.ts:54`. |
+| Corpus loses attribution | `register` is required by Zod (`velite.config.ts:90`) and flows verbatim into `src/lib/corpus.ts:17` and `src/lib/resume-json.ts:54`. |
 
 ### Flags / env that alter it
 
@@ -363,7 +364,7 @@ CLIENT
 | 11 | `src/components/chat/parse-cards.ts:29-33,54-68` | Token grammar with a locked `[a-z0-9-]+` slug charset; every token resolved against the build-time allowlist or dropped. |
 | 12 | `src/components/chat/markdown-message.tsx:88-93` | `remarkGfm` + `rehypeSanitize` + `skipHtml`, default `urlTransform` left in place. |
 | 13 | `src/components/chat/chat-messages.tsx` | Transcript renderer: thinking block (a replayed FAQ-cache hit arrives at once, so it settles collapsed as "Thought for a moment", `chat-messages.tsx:260`), read-aloud, cmd dispatch, autoscroll, `useChatA11y` live region. |
-| 14 | `src/components/chat/chat-card.tsx:12-78` | Renders only Velite fields — the model chooses *which* card, never its contents or href. |
+| 14 | `src/components/chat/chat-card.tsx:13-83` | Renders only Velite fields — the model chooses *which* card, never its contents or href. |
 | 15 | `src/lib/chat-cache.ts` / `src/lib/faq-embeddings.ts` | The Upstash-backed FAQ response cache (see the section below). |
 | 16 | `src/app/api/admin/faq-cache/purge/route.ts` | Operator remediation: `POST` a question, its cache entry is deleted. `requireAdmin` (Basic auth, `ADMIN_PASSWORD`). |
 
@@ -644,7 +645,7 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
                                        getProject, getWork) + @/lib/profile + @/lib/decisions
    → wrapToolResult(data)  →  { content: [{ type:"text", text: JSON.stringify(data,null,2) }],
                       structuredContent: data (a bare array is wrapped as { items: data }),
-                      isError: true  ⟸ IFF the payload has a `notFound` key }   mcp-tools.ts:241-251
+                      isError: true  ⟸ IFF the payload has a `notFound` key }   mcp-tools.ts:242-252
    → JSON-RPC response over Streamable HTTP
 ```
 
@@ -652,7 +653,7 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 
 | Tool | Input schema | Impl | Not-found |
 |---|---|---|---|
-| `get_profile` | `{}` | `getProfileData()` `mcp-tools.ts:73` | n/a |
+| `get_profile` | `{}` | `getProfileData()` `mcp-tools.ts:74` | n/a |
 | `list_projects` | `{}` | `listProjectsData()` `:99` | n/a |
 | `get_project` | `projectSlugSchema` `:37-39` | `getProjectData()` `:111` | `notFound("project", slug, projectSlugs())` `:113` |
 | `list_work` | `{}` | `listWorkData()` `:127` | n/a |
@@ -668,7 +669,7 @@ Registration sites: `route.ts:20, 30, 40, 49, 59, 68, 78, 88, 98, 109` (`list_de
 (`src/app/api/mcp/[transport]/route.ts:12`), `CLAUDE.md` (its MCP Server section and Key Files table) says 10 in both places, the hand-written
 `TOOLS` table on `/mcp` lists all ten rows (`src/app/mcp/page.tsx:40-60`), and `src/lib/mcp-tools.ts` exports
 ten `*Data` functions (`:73,99,111,127,139,155,193,214,253,287`). History: the server grew 7 → 9 at v3.0.0
-(`CHANGELOG.md:938-939`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:603-605`); the tenth
+(`CHANGELOG.md:994-995`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:659-661`); the tenth
 tool has **no CHANGELOG entry** yet.
 
 ### Participating files, in flow order
@@ -676,12 +677,12 @@ tool has **no CHANGELOG entry** yet.
 | # | File | Exact role |
 |---|---|---|
 | 1 | `src/app/api/mcp/[transport]/route.ts:1,18-130` | Thin transport wiring: ten `registerTool` calls (`:20-118`), the `createMcpHandler` options (`:120-127`), `GET`/`POST`/`DELETE` all bound to the same handler (`:130`). Result wrapping is **not** here — it is `T.wrapToolResult` in `mcp-tools.ts`. |
-| 2 | `src/lib/mcp-tools.ts` | Ten pure data functions, six Zod **raw-shape** input schemas (plain objects of `z.*` fields, which is what `registerTool` takes — `:37-54,205-210,228-231`), `notFound()` (`:66-71`), `wrapToolResult` (`:241-251`), `ROLE_TO_LABEL` (`:28-34`), hardcoded `BASE` (`:22`). |
+| 2 | `src/lib/mcp-tools.ts` | Ten pure data functions, six Zod **raw-shape** input schemas (plain objects of `z.*` fields, which is what `registerTool` takes — `:38-55,206-211,229-232`), `notFound()` (`:67-72`), `wrapToolResult` (`:242-252`), `ROLE_TO_LABEL` (`:29-35`), hardcoded `BASE` (`:23`). |
 | 3 | `src/lib/content.ts` | The allowlist the tools resolve against; `allNotes` is empty while notes are dark, so `list_all_content` / `get_content_item` expose no note then (`src/lib/notes-dark.test.ts:55`). |
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
 | 5 | `src/lib/decisions.ts` | Source of `list_decisions` (`allDecisions`, project `decisions[]` + work `constraints`/`tradeoffs`). |
 | 6 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:40-60`) is a hand-maintained duplicate, but it is **enforced** rather than trusted — the comment at `:37-39` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
-| 7 | `src/lib/llms-txt.ts:75` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:596-599`). |
+| 7 | `src/lib/llms-txt.ts:75` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:652-655`). |
 | 8 | `src/app/api/cron/health-check/route.ts:62` | Probes `/api/mcp/mcp` as a P2 check. The expected status is per-check (`expectedStatus`, `:107`, gated by `isExpectedStatus` at `:109`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30-32`). |
 
 ### Entry point
@@ -696,35 +697,35 @@ A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `s
 ### What is deliberately excluded
 
 - **`src/lib/personal.ts` is never imported** — the professional-only boundary is stated at
-  `src/lib/mcp-tools.ts:19-21` and asserted by `src/lib/mcp-tools.test.ts:24` ("does NOT leak personal.ts").
+  `src/lib/mcp-tools.ts:20-22` and asserted by `src/lib/mcp-tools.test.ts:24` ("does NOT leak personal.ts").
 - **`getProfileData()` hand-picks fields** rather than spreading `profile`: `links` carries only the public
   profile URLs (github, linkedin, npm, pypi, devto, substack, site); `email` and `calendlyUrl` are not returned
-  (`mcp-tools.ts:73-97`).
+  (`mcp-tools.ts:74-98`).
 - **Legacy SSE transport** — `disableSse: true` (`route.ts:127`).
 - **`export const runtime`** — removed because `cacheComponents` rejects the export's mere presence
   (`route.ts:6-8`).
 
 ### The not-found (`isError`) contract
 
-`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:66-71`). `wrapToolResult()`
-detects the **literal `notFound` property** and sets `isError: true` (`mcp-tools.ts:242,249`), so the calling
+`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:67-72`). `wrapToolResult()`
+detects the **literal `notFound` property** and sets `isError: true` (`mcp-tools.ts:243,249`), so the calling
 agent receives the list of valid options instead of a fabricated answer. Renaming that field turns every
 not-found into a silent success. The same function guards a second contract: MCP requires
 `structuredContent` to be an object, and the SDK's runtime validation rejected the bare arrays the
 `list_*` / `search_*` tools return on every real call until they were wrapped as `{ items }` (`:243-245`,
-pinned by `mcp-tools.test.ts:107`); `content[0].text` keeps the raw array.
+pinned by `mcp-tools.test.ts:115`); `content[0].text` keeps the raw array.
 
 ### Failure modes
 
 | Failure | Mechanism |
 |---|---|
 | Unhandled 500 on `/api/mcp/sse` | Removing `disableSse: true` — the `[transport]` segment matches `"sse"`, mcp-handler enters its Redis init and throws `redisUrl is required`, because this project uses Upstash REST, not `REDIS_URL`/`KV_URL` (`route.ts:121-127`). |
-| Every not-found reported as success | Renaming the `notFound` key in `mcp-tools.ts` (`:242`). |
-| Every array-returning tool errors | Passing a bare array as `structuredContent` instead of `{ items }` (`mcp-tools.ts:243-245`; `mcp-tools.test.ts:107`). |
+| Every not-found reported as success | Renaming the `notFound` key in `mcp-tools.ts` (`:243`). |
+| Every array-returning tool errors | Passing a bare array as `structuredContent` instead of `{ items }` (`mcp-tools.ts:244-246`; `mcp-tools.test.ts:115`). |
 | `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:6-8`). |
-| `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:28-34`) hardcodes the exact string `"Sairam Resume"` for the only role, `master`. Adding a role needs three edits (the `RESUME_ROLES` keyword, its exact label, the PDF in `public/resume/`) or it returns `notFound` (`:29-33`). `mcp-tools.test.ts:82` asserts every role resolves to a PDF that exists on disk. |
-| Tool list drifts from content | `mcp-tools.test.ts:48` asserts `list_projects`/`list_work` cover the whole content layer; `:93` covers `list_decisions`. |
-| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:75` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:596-599`), and `src/lib/llms-txt.test.ts:25` pins the live path and `:29` the absence of `/api/mcp/sse`. |
+| `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:29-35`) hardcodes the exact string `"Sairam Resume"` for the only role, `master`. Adding a role needs three edits (the `RESUME_ROLES` keyword, its exact label, the PDF in `public/resume/`) or it returns `notFound` (`:29-33`). `mcp-tools.test.ts:90` asserts every role resolves to a PDF that exists on disk. |
+| Tool list drifts from content | `mcp-tools.test.ts:48` asserts `list_projects`/`list_work` cover the whole content layer; `:101` covers `list_decisions`. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:75` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:652-655`), and `src/lib/llms-txt.test.ts:25` pins the live path and `:29` the absence of `/api/mcp/sse`. |
 | `/mcp` docs drift | `src/app/mcp/page.tsx:40-60` is hand-maintained, but **guarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
 | Health check flaps on MCP | The cron probes `GET /api/mcp/mcp`, which `mcp-handler` answers **405** by itself, so `mcp_get` must expect 405 (`health-expectations.ts:30-32`); `health-expectations.test.ts:27,41` pins it and `:161,173` pin the installed `mcp-handler` behaviour it depends on. |
 
@@ -832,7 +833,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Failure | Mechanism |
 |---|---|
 | Every error double-beacons | Renaming `DEDUPE_FLAG = "__anvilry_error_recently__"` in one of its three homes: `src/app/error.tsx:39`, `src/app/global-error.tsx:34`, `src/instrumentation-client.ts:65-71` (100 ms window). |
-| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:628-633`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
+| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All three copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, and `src/app/api/visit/route.ts:34` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:684-689`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`:25`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:140` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed three (`:101,118`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:59-69`). |
 | Secrets in the trace log | A producer emitting without `redact()` first — `emit` does none (`emit.ts:30-35`). `src/app/api/error/route.test.ts:294-331` pins redact-before-emit. `componentStack` is deliberately **not** redacted (React-internal, `api/error/route.ts:147-165`). |
 | Retention stops trimming | The trim is piggybacked on writes **and** sampled: it runs only when `event.ts % 20 === 0` (`emit.ts:54,85-87`), so a kind that stops receiving events is never trimmed again, and even a busy kind is trimmed on ~5% of writes (each cheap `ZADD` is unconditional; the `ZREMRANGEBYSCORE` is what was cut to spare Upstash's command quota). |
 | Telemetry failure becomes request failure | Removing a `.catch()` from either Redis promise, or awaiting `emit` (it returns `void` by design, `emit.ts:25-35,56`). |
@@ -869,7 +870,7 @@ cron).
 `src/lib/telemetry/schema.test.ts:151`, and consumed by the dashboard's `case "budget.tick"`
 (`src/app/admin/telemetry/page.tsx:414`) — but a grep of `src/` for `budget.tick` returns only those
 four sites (`schema.ts:60` is a docblock mention; `scripts/replay-trace.mjs:54` lists it in `KINDS`).
-**No producer emits it at v3.15.0.** (Section 04 left this open; resolved by direct grep.)
+**No producer emits it at v3.16.0.** (Section 04 left this open; resolved by direct grep.)
 
 `tts.request` and `transcribe.request` are in the same state, which the earlier pass missed: declared
 (`schema.ts:40-41`), fetched by the dashboard (`page.tsx:495-496`, feeding the two latency tiles at

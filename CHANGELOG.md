@@ -4,6 +4,62 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.0] — 2026-10-22
+
+**Minor** — The portfolio grows from eleven projects to twenty. Nine new cards (an LLM gateway, an MCP
+tool-integrity control plane, two MCP servers, a rate limiter, a Claude Code mod, Anvilry itself and two
+Not-Humans tools) join a fourth group, "Platform, Guardrails & Observability", that now heads `/projects`;
+the two private repositories are marked instead of linked to a 404; the eleven older entries were
+re-checked against their repositories; and first-load JavaScript drops by about a quarter because
+compiled MDX no longer ships to the browser. It is a minor because the content schema gains a field and a
+group and the projects list, the chat corpus, the MCP tools and the résumé JSON gain entries; no route or
+API shape changes.
+
+### Added
+- **Nine project cards** (#327): Kelvran, toolwarrant, Cost Guard MCP, prompt-lift, RateCap, tracehub-mcp
+  (a disclosed fork of traceloop/opentelemetry-mcp-server), Anvilry itself, Daily Dose and nh-deck. Every
+  fact traces to a repo, a registry or the GitHub API; zero stars and solo maintenance are stated, not
+  hidden. Eighteen independent skeptic passes fixed eight important findings before the commit.
+- **A fourth project group**, "Platform, Guardrails & Observability" (#327): the `themeGroup` enum in
+  `velite.config.ts` and `projectGroups` in `src/lib/content.ts`, shown first on `/projects`.
+  `game-model.ts` now iterates that list instead of keeping a third copy of the group names.
+- **`visibility: private`** on the Project schema, default public (#327). Agent-Forge and Graph-Forge are
+  private repositories that were featured first and linked to GitHub 404s. Cards, detail pages, the chat
+  card, the 3D dossier, the corpus, the MCP tools, the résumé JSON and JSON-LD now drop the repo link and
+  say "Private repository" (the corpus says it in lowercase; MCP tools and JSON-LD simply omit it). The hero metric, About and the terminal count only public repositories, and
+  the claims-ledger entry for that count is resealed.
+- **Nine graph nodes** with lineage edges, 25 in all, placed by a maximin search; `graph-data.test.ts`
+  holds the frustum box, a view-plane separation and edge sanity (#327). `github.ts` accepts `owner/name`
+  allowlist entries, so pages for `kelvran/*` and `mcpsmiths/*` show "updated X ago".
+- **`src/lib/content-bodies.ts`** and four body-only Velite collections (#329), see Changed.
+- The suite goes from 1246 to 1287 tests across 107 to 113 files (content invariants, project cards,
+  featured projects, JSON-LD, graph placement, the body split), and Playwright gains two assertions in
+  `e2e/views.spec.ts`.
+
+### Changed
+- **First-load JavaScript for `/` is 976,936 B**, 211 KB below v3.15.0 (1,188,350 B) and 321 KB below
+  where the project work stood before this fix (1,298,585 B) (#329). `src/lib/content.ts` is imported by
+  about a dozen client modules and a bundler cannot tree-shake a JSON module, so every route shipped all
+  four Velite collections with their compiled MDX, about 300 KB, and each new project card cost about
+  11 KB. Bodies now live in four sibling collections (`ProjectBody`, `WorkBody`, `NoteBody`,
+  `ArticleBody`) that emit only `{ slug, body }`; the metadata collections no longer have a `body` field,
+  and only the four `[slug]/page.tsx` detail pages read them. The ceiling stays 1,336,000 B, so headroom
+  is 359,064 B.
+- **`scripts/bundle-budget.mjs` asserts a fourth thing**: no first-load chunk contains the compiled-MDX
+  marker `_createMdxContent`. It failed on the pre-fix build (one 406 KB chunk) before the fix landed, and
+  it also catches a transitive import through a helper that `content-bodies.test.ts` cannot see.
+- **The eleven older project entries were refreshed** (#328) against their repositories, registries and
+  the GitHub API: live default-branch commit counts, the Inkforge publisher story, one set of trelix
+  figures, the gRPC outbox and saga defaults, MindForge's 221 commands, 164 subagents and 354 skills, and
+  more. Each correction was checked by an independent skeptic pass, and real findings were fixed.
+- **`pinned` and `pinRank` mirror the real GitHub pin set** (trelix, Tombstone, Anvilry, MindForge,
+  ag-bash, CommandVault) and nothing else is pinned; `content.test.ts` fails on a duplicate rank, a pin
+  without a rank, or a rank without a pin. No code reads pins today, so this is data hygiene.
+- **The featured set is eight**: Kelvran, toolwarrant, Cost Guard MCP, prompt-lift, RateCap, trelix,
+  Tombstone and MindForge. "View all N projects" on the home page derives from the collection instead of
+  the literal 8. The `/projects` intro, its meta description and About name the platform and guardrails
+  category.
+
 ## [3.15.0] — 2026-10-21
 
 **Minor** — Anvilry gets a drawn head that watches the cursor. A gearbot mascot can front the home hero and

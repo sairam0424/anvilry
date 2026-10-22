@@ -21,11 +21,13 @@ const GITHUB_API = "https://api.github.com";
 
 /**
  * Repos shown in the feed and eligible for the per-project "last updated" fetch.
- * The 11 Velite-featured projects + two extras the owner called out (Thunderboard-Labs,
+ * The public Velite projects + two extras the owner called out (Thunderboard-Labs,
  * Shop.this). Private repos that 404 unauthenticated (Agent-Forge, Graph-Forge) simply
  * don't render until a token with access is configured — by design (render only what
- * resolves; verified this session that not-humans-lab is no longer private and
- * resolves fine unauthenticated). Casing matches the canonical GitHub repo name.
+ * resolves). Casing matches the canonical GitHub repo name. A bare name belongs to
+ * profile.githubUser; a repo under another account or organisation is written
+ * "owner/name" (content.test.ts-style coupling: github.test.ts fails if a public project's
+ * repo is missing here, so its page can show "updated X ago").
  */
 export const REPO_ALLOWLIST: readonly string[] = [
   "ag-bash",
@@ -41,7 +43,36 @@ export const REPO_ALLOWLIST: readonly string[] = [
   "Shop.this",
   "Tombstone",
   "trelix",
+  "claude-prompt-lift",
+  "toolwarrant",
+  "RateCap",
+  "daily-dose",
+  "nh-deck",
+  "anvilry",
+  "kelvran/gateway",
+  "mcpsmiths/cost-guard-mcp",
+  "mcpsmiths/tracehub-mcp",
 ] as const;
+
+/** True when `owner/name` may be fetched: listed as "owner/name", or a bare name under the profile owner. */
+export function isRepoAllowed(owner: string, name: string): boolean {
+  return (
+    REPO_ALLOWLIST.includes(`${owner}/${name}`) ||
+    (owner === profile.githubUser && REPO_ALLOWLIST.includes(name))
+  );
+}
+
+/** "https://github.com/o/r" -> { owner, name }; null when it is not a two-segment GitHub URL. */
+export function repoOwnerAndName(url: string): { owner: string; name: string } | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname !== "github.com") return null;
+    const [owner, name] = u.pathname.split("/").filter(Boolean);
+    return owner && name ? { owner, name } : null;
+  } catch {
+    return null;
+  }
+}
 
 /** The slice of the GitHub repo payload we render — nothing more. */
 export type GithubRepo = {
@@ -106,7 +137,7 @@ export async function fetchRepo(
   owner: string,
   name: string,
 ): Promise<GithubRepo | null> {
-  if (!REPO_ALLOWLIST.includes(name)) return null;
+  if (!isRepoAllowed(owner, name)) return null;
   try {
     const res = await fetch(`${GITHUB_API}/repos/${owner}/${name}`, {
       headers: headers(),
@@ -126,9 +157,11 @@ export async function fetchRepo(
  * Returns [] on total failure (e.g. all rate-limited) — the feed just hides.
  */
 export async function getRepoFeed(): Promise<GithubRepo[]> {
-  const owner = profile.githubUser;
   const results = await Promise.all(
-    REPO_ALLOWLIST.map((name) => fetchRepo(owner, name)),
+    REPO_ALLOWLIST.map((entry) => {
+      const [owner, name] = entry.includes("/") ? entry.split("/") : [profile.githubUser, entry];
+      return fetchRepo(owner, name);
+    }),
   );
   return results
     .filter((r): r is GithubRepo => r !== null)

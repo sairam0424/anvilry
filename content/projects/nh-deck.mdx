@@ -1,0 +1,57 @@
+---
+slug: nh-deck
+name: nh-deck
+tagline: Local-first CLI that turns one Markdown file into a presentable slide deck
+group: Tooling & Lab
+repo: https://github.com/sairam0424/nh-deck
+commits: 58
+dateCreated: 2026-09-02
+license: Apache-2.0
+tech: [TypeScript, Node.js, Commander, marked, puppeteer-core, KaTeX, Mermaid, highlight.js, Vitest, GitHub Actions]
+pinned: false
+featured: false
+order: 19
+excerpt: "One Markdown file in, a slide deck out: served on 127.0.0.1 with live reload, presented in the browser, or exported to PDF, per-slide PNGs or a static index.html, all from a single generateHtml() pipeline. Slides split at marked's hr tokens, KaTeX fonts ship as base64, the Google Fonts @import is stripped from every Mermaid SVG, and PDF export drives a Chrome-family browser the user already has through puppeteer-core, so there is no bundled browser, no CDN and no telemetry. 13 ADRs and 563 Vitest tests back it. The repo is tagged v1.10.0; npm still serves 1.7.0."
+decisions:
+  - title: "Detect the user's installed browser over bundling Chromium (puppeteer or Playwright)"
+    body: "PDF and PNG export run through `puppeteer-core` and `chrome-launcher` against whatever Chrome, Chromium, Edge or Brave is already installed; ADR 0001 rejected full `puppeteer` (a Chromium download of roughly 300 MB at install time) and Playwright (a second browser cache that can drift). I chose a small install over reproducible output. The cost is real: export fidelity depends on the first binary found, a machine with no browser fails outright, PDF outlines need a Chromium M126+ build, and Brave, named in my own error messages, is never exercised in CI."
+    tags: [export, dependencies, local-first]
+  - title: "Slide splits delegated to marked's hr tokens over a regex on `---`"
+    body: "`generateHtml()` lexes once with `marked.lexer()`, groups the top-level tokens at each `hr`, and renders every group into its own section, so CommonMark decides what `---` means: a `---` inside a fence never splits, and one directly under a paragraph is a setext heading, not a slide break. The cost is that authors must leave a blank line before every separator or silently lose a slide. The v1.4.1 fix came from the same place: marked wrapped a trailing fragment marker in a text token my renderer never read, so the documented syntax did nothing."
+    tags: [rendering, markdown, correctness]
+  - title: "Embedded KaTeX fonts and a stripped Mermaid font import over a lighter CDN-linked page"
+    body: "KaTeX's woff2 files are rewritten to base64 data URIs, and the hardcoded Google Fonts `@import` in `beautiful-mermaid` output is regex-stripped before embedding, because rendered HTML must never need a CDN to be correct. The price: a deck with one formula carries about 360 KB of fonts it mostly will not use (the ADR 0004 figure; I chose not to subset per deck), Mermaid text falls back to the system font instead of Inter, and the strip relies on an unstated CSS layout inside a dependency. A CDN-hostname test is there to fail loudly if a release brings the fetch back."
+    tags: [local-first, assets, dependencies]
+  - title: "Four fixed themes where `--css` replaces the stylesheet, over layered overrides"
+    body: "`light`, `dark`, `dracula` and `nord` re-export `beautiful-mermaid`'s palettes as `:root` custom properties so diagrams and slides share colours, and `--css` replaces the theme outright instead of layering on top, so there are no cascade rules to document. The cost is reach: nobody can add a fifth theme or change one colour without replacing the whole stylesheet, themes change colour only (no fonts or spacing), an explicit `--theme light` is not byte-identical to the unthemed default, and a typo such as `drakula` falls back to `light` with only a stderr warning."
+    tags: [theming, cli, yagni]
+---
+
+**nh-deck** is a TypeScript/Node command-line tool that turns a single Markdown file into a slide deck, for one author who wants to write, present and export slides without an account or a network. It is one of three independent siblings under the Not-Humans-Lab umbrella, and a solo project: 53 of its 58 commits are the owner's, the other five are Dependabot's.
+
+- **Six subcommands** — `init`, `list-themes`, `render`, `pdf`, `png` and `build`, built with Commander (`build` exists in the repo at v1.10.0 but not in the npm 1.7.0 release).
+- **Local-first HTML** — KaTeX fonts are inlined as base64 and Mermaid SVGs lose their Google Fonts import, so the page needs no CDN.
+- **Live preview** — `render --watch` serves on 127.0.0.1 and reloads over Server-Sent Events.
+- **Presentation mode** — `?present` adds fragments, a grid overview, and a second-window presenter view with notes and a timer.
+- **PDF and PNG export** — landscape 16:9 pages with heading-derived bookmarks, or one PNG per slide, through a browser already installed.
+- **Static build** — `build` writes the same HTML to `<name>-site/index.html`, which opens from `file://`.
+
+> 563 Vitest tests passed on the last CI run on main (2026-09-17) across Linux, macOS and Windows; the repo is tagged v1.10.0 but npm serves only 1.7.0, and the project has 0 stars and 39 npm downloads in the 30 days to 2026-10-18.
+
+## Architecture
+
+A flat `src/` of 21 TypeScript files (6,742 lines) compiles with plain `tsc` to `dist/index.js`, with no bundler, on Node 22 or newer. `src/render.ts` holds the pure, synchronous `generateHtml()`, which lexes the Markdown once and renders each `hr`-delimited group into its own `<section>`. Frontmatter uses a narrow hand-written `key: value` parser instead of a YAML dependency, falling back to whole-file-as-body so a deck opening with a bare `---` is not misread.
+
+The local-asset modules are small: `katexAssets.ts` inlines KaTeX fonts, `mermaidRenderer.ts` renders through `beautiful-mermaid`, and `codeHighlight.ts` registers 12 highlight.js grammars. `server.ts` is a plain `node:http` server on loopback, and watch mode uses Server-Sent Events. The presentation client is driven only by `location.hash` and `location.search`, which is why `build` output works off `file://`.
+
+The repo is tagged v1.10.0 (2026-09-16), but npm has one version, 1.7.0, published the same day. 1.8.0 through 1.10.0 were never pushed and no workflow has a publish step. All twelve releases landed in five days, and the last non-Dependabot commit to main is dated 2026-09-17. CI covers three operating systems on Node 22 and latest, a two-Chromium pixel diff (its 2% tolerance has only ever seen 0.000%, so it is unproven as a detector) and an axe-core scan; main requires 8 status checks but no PR review.
+
+## How It Works
+
+1. **Write** `deck.md`: a `---` after a blank line is a slide boundary, markers such as `<!-- note -->` and `<!-- fragment -->` apply per slide, and optional frontmatter sets `theme:`, `dir:` and `transition:`.
+2. **Resolve options** — `--theme` beats frontmatter `theme:`, and `--css <path>` beats both with a full stylesheet replacement; an unknown theme warns and falls back to `light` instead of failing.
+3. **Generate HTML** — `generateHtml()` lexes once and splits at `hr` tokens; `mermaid` fences go to `beautiful-mermaid`, math to KaTeX (fonts inlined only when math is present), other fences to highlight.js.
+4. **Serve** — `startServer()` binds 127.0.0.1 on an OS-assigned port and opens the browser unless `--no-open`; with `--watch`, a file change re-renders and reloads the page.
+5. **Present** — `?present` switches to one slide at a time with keyboard, click and swipe navigation, fragment reveal, an `o` overview and a `p` presenter window.
+6. **Export** — `pdf` and `png` pick the first installed Chrome, Chromium, Edge or Brave, or exit non-zero with a message; puppeteer-core prints 16:9 pages with a heading-derived outline or crops one PNG per slide, and `build` writes the same HTML to `deck-site/index.html`.
+7. **Gate** — every PR runs typecheck, Biome and Vitest on six OS and Node combinations, the pixel diff and an axe-core scan; the repo still has 10 open code-scanning alerts (9 OpenSSF Scorecard findings and 1 CodeQL hit in a test file).

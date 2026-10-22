@@ -4,45 +4,49 @@ name: MindForge
 tagline: Agentic-intelligence framework for Claude Code.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/MindForge
-commits: 1677
+commits: 1822
 dateCreated: 2026-03-19
 license: MIT
-tech: [Node.js, TypeScript, MCP, sql.js, WebSocket]
+tech: [Node.js, TypeScript, MCP, sql.js, SSE]
 pinned: true
-pinRank: 6
+pinRank: 4
 featured: true
-order: 1
-excerpt: Command-driven multi-agent orchestration for Claude Code — 174 commands, 154 subagents, cost-aware model routing, and true wave parallelism. Ships as npx mindforge-cc.
+order: 8
+excerpt: Command-driven multi-agent orchestration for Claude Code — 221 commands, 164 subagents (152 adapted from VoltAgent, MIT), 354 skills, and cost-aware model routing. Ships as npx mindforge-cc.
 decisions:
   - title: "Advisory governance over fail-closed hooks"
     body: "Outside Claude Code's own hook channel, MindForge enforces policy by convention rather than by blocking — a trade its own README states outright, made against a fail-closed tail that was measured denying benign commands on a fresh clone."
   - title: "A single canonical version source over a \"bump N files\" heuristic"
-    body: "`package.json` feeds a sync script and test gate fanning out across 16 channels — the SDK, the MCP server, three lockfiles, the Homebrew formula, the Dockerfile, the marketplace listing. The cost of skipping that gate already happened once: v11.9.2 shipped with the Homebrew formula and Dockerfile still pinned four releases behind."
+    body: "`package.json` feeds a sync script and test gate fanning out across every file that carries a version — the SDK, the MCP server, three lockfiles, the Homebrew formula, the Dockerfile, the marketplace listing, the shipped docs. The cost of skipping that gate already happened once: v11.9.2 shipped with the Homebrew formula and Dockerfile still pinned four releases behind."
   - title: "A zero-dependency SDK over a bundled WebSocket client"
     body: "Shipping `sdk/` with no runtime dependencies keeps it lean, but it means `WebSocketEventStream` can't function on Node 18 or 20 unless the caller manually installs and polyfills `ws` onto `globalThis` — a real enough gap that the code now throws a descriptive error instead of the bare `ReferenceError` it used to."
 ---
 
 Multi-agent AI workflows are powerful but chaotic: unbounded token spend, logic drift in long loops, and no audit trail. **MindForge** is a command-driven orchestration framework for Claude Code that brings governance to that chaos.
 
-It exposes **174 slash commands, 154 specialized subagents, and 73 skills** plus a hooks system, cost-aware model routing (Haiku/Sonnet/Opus tier escalation), SHA-256 audit chains, and stuck-detection with auto-repair. Execution runs on a semaphore-based **wave (parallel) model** with a streaming WebSocket SDK, persisted through an embedded `sql.js` datastore. Ships as `npx mindforge-cc`.
+It exposes **221 slash commands, 164 specialized subagents, and 354 skills** plus a hooks system, cost-aware model routing (Haiku/Sonnet/Opus tier escalation), and SHA-256 audit chains. A unit-tested **wave engine** over a dependency DAG, with audit events streamed over SSE and an embedded `sql.js` store. Ships as `npx mindforge-cc`, which also installs for Antigravity, Cursor, Copilot, Gemini CLI and OpenCode, with hooks enforced on Claude Code only.
 
-- **174 commands · 154 subagents · 73 skills**
-- **Wave parallelism** via a DAG + dependency tracking
+- **221 commands · 164 subagents · 354 skills** — 152 subagents adapted from VoltAgent's `awesome-claude-code-subagents` (MIT)
+- **Wave execution** via a DAG + dependency tracking in a unit-tested JS engine
 - **Cost-aware routing** + audit/replay via hash-linked logs
 - Built on a pure Node.js + WASM runtime with a strict-TypeScript SDK
 
-> 1,677 commits — the most-invested project in the portfolio.
+> 1,822 commits on `main` as of 2026-10-21, the most of any project in this portfolio; 0 stars.
 
 ## Architecture
 
-MindForge splits into four load-bearing subsystems. **Wave execution** (`bin/autonomous/wave-executor.js` + `bin/autonomous/dependency-dag.js`) topologically sorts tasks with Kahn's algorithm, detects cycles explicitly, and groups the result into waves bounded by a hand-rolled `Semaphore`. **Model routing** (`bin/models/model-router.js`) maps personas to model tiers — planner and security personas escalate to Opus, executor/reviewer/QA run on Sonnet, quick tasks run on Haiku — configurable via `MINDFORGE.md`; a separate `difficulty-scorer.js` computes a per-task difficulty score but runs in shadow mode, logging intended routing to stderr without touching the real model call. **Governance** (`bin/governance/audit-hash.js` + `audit-verifier.js`, paired with `bin/autonomous/audit-writer.js`) is a single canonical SHA-256 hasher shared by the writer and the verifier, chaining each audit entry to the one before it. **Persistence** splits in two: resumable session state (tasks, waves, audit pointers) lives in `.planning/HANDOFF.json` via `bin/autonomous/state-manager.js`, while a separate embedded `sql.js` (WASM SQLite) datastore (`celestial.db`) holds traces, remediations, skills, and knowledge — not task/wave resumability. **Streaming** is a WebSocket SDK (`sdk/src/events.ts`) that ships with zero runtime dependencies.
+MindForge splits into four load-bearing subsystems. **Wave execution** (`bin/autonomous/wave-executor.js` + `dependency-dag.js`) topologically sorts tasks with Kahn's algorithm, detects cycles explicitly, and groups the result into waves bounded by a hand-rolled `Semaphore`. **Model routing** (`bin/models/model-router.js`) maps personas to model tiers — planner and security personas escalate to Opus, executor/reviewer/QA run on Sonnet, quick tasks run on Haiku — configurable via `MINDFORGE.md`. **Governance** (`bin/governance/audit-hash.js` + `audit-verifier.js`, paired with `bin/autonomous/audit-writer.js`) is one canonical SHA-256 hasher shared by writer and verifier, chaining each entry to the one before it. **Persistence** splits in two: resumable session state lives in `.planning/HANDOFF.json` via `state-manager.js`, while a separate embedded `sql.js` datastore (`celestial.db`) holds traces, remediations, skills, and knowledge. **Streaming** is `MindForgeEventStream` (`sdk/src/events.ts`), a localhost-only SSE server that tails `.planning/AUDIT.jsonl`, in an SDK with zero runtime dependencies; its `WebSocketEventStream` is a client only, as MindForge ships no WebSocket server.
+
+The repo's own capabilities manifest states the limit: the `bin/autonomous/` engine is unit-tested but not yet wired to any live command path. `AutoRunner` has no production caller, `mindforge headless` is a stub that exits 1, and `/mindforge:auto` and `/mindforge:execute-phase` are markdown specs the model follows.
 
 ## How It Works
 
-1. A task enters the engine and `dependency-dag.js` builds a DAG from its declared dependencies, topologically sorting it into waves — a circular dependency throws immediately instead of deadlocking silently.
-2. Within a wave, `wave-executor.js`'s Semaphore bounds how many tasks run concurrently, so parallelism is real but capped.
-3. Each task resolves its model tier through `model-router.js`'s persona map; when a caller passes a `taskContext`, `difficulty-scorer.js` also runs in shadow mode, computing what would route differently but never overriding the persona map's actual choice.
-4. As work completes, `bin/autonomous/audit-writer.js` appends an entry to the local audit log, hashing it against the previous entry's hash via `bin/governance/audit-hash.js` — a tamper-evident chain, though the log itself (`.planning/AUDIT.jsonl`) is gitignored, so it protects a local run rather than git history.
+Steps 1, 2 and 5 belong to the unit-tested engine, which no live command calls yet (the council reuses only its Semaphore); steps 3, 4 and 6 are reachable today.
+
+1. `dependency-dag.js` builds a DAG from a plan's declared dependencies and topologically sorts it into waves — a circular dependency throws immediately instead of deadlocking silently.
+2. Within a wave, `wave-executor.js`'s Semaphore caps how many tasks run concurrently.
+3. A model tier resolves through `model-router.js`'s persona map when `model-client.js` is asked for a model (the council, cross-review and research engines do); `difficulty-scorer.js` would log a shadow route to stderr given a `taskContext`, but nothing in `bin/` passes one yet.
+4. Lifecycle hooks append entries to the local audit log through `audit-writer.js`, hashing each against the previous entry's hash via `audit-hash.js` — a tamper-evident chain, though the log itself (`.planning/AUDIT.jsonl`) is gitignored, so it protects a local run rather than git history.
 5. State — tasks, waves, audit pointers — persists to `.planning/HANDOFF.json` via `state-manager.js`, so a session can resume after a crash.
-6. Progress and results stream out over `WebSocketEventStream` to any connected SDK client; `verify-audit.js` can independently replay the chain and fails closed the moment a hash breaks.
+6. Once started and pointed at a project, `MindForgeEventStream`'s `/events` endpoint streams new audit entries as `audit_entry` events to any local client; `verify-audit.js` can independently replay the chain and fails closed the moment a hash breaks.
 

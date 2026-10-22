@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.15.0
+version: v3.16.0
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows). v3.15.0 (the page-mascot head) changes no file in this scope; only the `app/not-found.tsx` consumer lines cited below moved and are already re-pointed.
+> Describes Anvilry v3.16.0 (`package.json` 3.16.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows). v3.15.0 (the page-mascot head) changes no file in this scope; only the `app/not-found.tsx` consumer lines cited below moved and are already re-pointed. v3.16.0 changes one file in this scope: `chat/chat-card.tsx` takes a project's repo link from `repoLink()` and, for a private project, shows the text "Private repository" in place of the GitHub icon link.
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40
@@ -123,14 +123,14 @@ Three independent layers, all in scope, all fail-closed:
     `["classic","gamified","chat","developer","voice","resume"]` (`view-context.tsx:27-34`, exported at :278).
   - `cmd:highlight` → allowed only if `getProject(slug) || getWork(slug)` (:65-68).
 - `getProject` / `getWork` are `allProjects.find(...)` / `allWork.find(...)` over the Velite output
-  (`src/lib/content.ts:44-45`, sourced from `.velite/projects.json` + `.velite/work.json`) — i.e. the
+  (`src/lib/content.ts:54-55`, sourced from `.velite/projects.json` + `.velite/work.json`) — i.e. the
   allowlist is fixed at build time and cannot be influenced at runtime.
 - An unresolved token is **dropped entirely** — no card, no echoed literal (`parse-cards.ts:13-16` doc,
   `parse-cards.test.ts:41`). `cmd-*` segments produce **no DOM at all**; they are pure side-effect
   triggers dispatched by `ChatMessages` (`chat-messages.tsx:328-337`).
-- Card fields are 100% server-sourced: `ChatCard` reads only `p.url / p.repo / p.name / p.tagline /
+- Card fields are 100% server-sourced: `ChatCard` reads only `p.url / repoLink(p) / p.name / p.tagline /
   p.tech / p.commits / p.group` and `w.url / w.register / w.name / w.summary / w.metrics`
-  (`chat-card.tsx:12-77`) — the model influences only *which* card, never its contents or href.
+  (`chat-card.tsx:13-83`) — the model influences only *which* card, never its contents or href. `repoLink(p)` is `null` for a private project, so its card has no GitHub link and shows the text "Private repository" (`chat-card.tsx:22-34`).
 
 **2. `rehype-sanitize` + `skipHtml` on the markdown renderer — `chat/markdown-message.tsx`**
 - `<Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]} skipHtml components={components}>`
@@ -224,7 +224,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Turn one assistant message into ordered `text` / `project` / `work` / `cmd-view` / `cmd-highlight` segments.
 - **Exports:** `CardSegment` (union type), `parseCards`, `hasCardToken`, `CMD_RE` (re-exported at :87, unused internally).
 - **Reads / depends on:** `getProject`, `getWork`, `Project`, `Work` from `@/lib/content`; `VIEWS`, `View` from `@/components/view-context`.
-- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:12`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:4`.
+- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:12`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:5`.
 - **Behaviour notes:** Uses `content.matchAll(ALL_RE)` after resetting `ALL_RE.lastIndex = 0` (:38). `hasCardToken` resets `CARD_RE.lastIndex` before `.test()` (:82-83).
 - **Gotchas / invariants:** `CARD_RE`, `CMD_RE`, `ALL_RE` are module-level `/g` regexes — the explicit `lastIndex` resets are what keep repeated calls stateless (pinned by `parse-cards.test.ts:77`). This module never produces HTML (:19-20).
 
@@ -497,7 +497,7 @@ See **Store & hook map** above. All three are structurally identical: module `op
 
 ### `chat/chat-suggestions.ts`, `chat/chat-card.tsx`, `chat/read-aloud-button.tsx`, `chat/attachment-preview-strip.tsx`
 - **`chat-suggestions.ts`** — two `string[]` constants. `RECRUITER_CHIPS` (4 prompts) is always shown; `STARTER_CHIPS` (3 prompts) only in the empty state (`chat-view.tsx:171-225`).
-- **`chat-card.tsx`** — project branch renders name/tagline/`tech.slice(0,5)`/commit count (or `group` when `commits == null`) and links to `p.url` + `p.repo`; work branch is a single `Link` to `w.url` with `register`, `name`, `summary`, and every `w.metrics` entry. Every value is Velite-sourced (:6-11 doc).
+- **`chat-card.tsx`** — project branch renders name/tagline/`tech.slice(0,5)`/commit count (or `group` when `commits == null`) and links to `p.url` + `repoLink(p)` (a private project has no repo link and shows the text "Private repository" instead, `:22-34`); work branch is a single `Link` to `w.url` with `register`, `name`, `summary`, and every `w.metrics` entry. Every value is Velite-sourced (:7-12 doc).
 - **`read-aloud-button.tsx`** — stateless; `aria-pressed` + icon swap (speaker↔stop), visible label "Listen"/"Stop", tooltip via `ui/tooltip` (:4, :22-39). The single TTS engine lives in `ChatMessages`, not here (:7-10).
 - **`attachment-preview-strip.tsx`** — returns `null` on an empty list so there is no layout shift (:19). PDFs show a 📄 badge plus an approximate extracted-character count (`Math.round(pdfText.length / 1000)`k, :37); images show a 48×48 `object-cover` thumbnail from `previewUrl`. `role="list"`/`role="listitem"` are set explicitly (:24-30). Removal is delegated to `onRemove(index)`; the **caller** revokes the object URL (`chat-view.tsx:230-239`).
 

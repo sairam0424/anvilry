@@ -122,7 +122,8 @@ export function SoftwareSourceCodeJsonLd({
   name: string;
   description: string;
   url: string;
-  codeRepository: string;
+  /** Omit for a private repository: advertising a URL that 404s helps no crawler. */
+  codeRepository?: string;
   tech: string[];
   /** Real GitHub repo creation date (ISO date) — omit rather than guess for private repos. */
   dateCreated?: string;
@@ -136,7 +137,7 @@ export function SoftwareSourceCodeJsonLd({
     name,
     description,
     url,
-    codeRepository,
+    ...(codeRepository && { codeRepository }),
     author: {
       "@type": "Person",
       name: profile.name,

@@ -1,0 +1,58 @@
+---
+slug: toolwarrant
+name: toolwarrant
+tagline: Approve one exact MCP tool-definition digest; the gateway lists only tools that match it
+group: Platform, Guardrails & Observability
+repo: https://github.com/sairam0424/toolwarrant
+commits: 445
+dateCreated: 2026-10-12
+license: Apache-2.0
+tech: [Go, gRPC, SQLite, MCP, agentgateway, "RFC 8785 JCS", "OpenSSH sshsig", "Sigstore cosign", SLSA]
+pinned: false
+featured: true
+order: 2
+excerpt: "Go control plane against MCP tool poisoning by rug pull. It crawls each upstream MCP server, versions every tool definition by the SHA-256 of its RFC 8785 canonical JSON (`_meta` included), and lets a named person approve one exact digest. It runs as agentgateway v1.6.0's ExtMCP processor, so a tool is listed only while its live digest still equals the approved one, and a call is denied whenever the evidence is missing or disagrees. Every decision lands in a hash-chained SQLite audit log, and since v0.4 human decisions are signed with OpenSSH keys. Single-tenant, CLI-only, pinned to one gateway version, one author."
+decisions:
+  - title: "Hash the whole tool object, `_meta` included, instead of a narrower core profile"
+    body: "I hash the RFC 8785 canonical form of the entire definition (profile `full-v1`) and refused the `core-v1` profile that would have left `_meta` out, because hosts act on `_meta` and an unapproved member riding on an approved tool is exactly the hole being closed. The cost is bluntness: any `_meta` change is drift, an upstream that rewrites a volatile `_meta` member on every listing can never stay approved (known limit L9), and a key agentgateway drops before the hook hides the tool outright (L2). The remedy sits with the upstream, not with a knob on my side."
+    tags: [security, hashing, mcp]
+  - title: "No data plane of my own: harden the seam with agentgateway instead of proxying MCP traffic"
+    body: "The spike and both review rounds found every weak point at the seam with the gateway, not in the catalog, and each raised the same question: should toolwarrant proxy MCP traffic itself? I said no, because a proxy would reimplement the gateway's transport, session and auth work and move that bug class into code nobody has reviewed. The cost is that I inherit gateway behaviours as known limits (re-serialised definitions, per-session chain binding, an id-less `tools/call` forwarded unhooked, an unauthenticated admin API), and I am pinned to agentgateway v1.6.0 behind a 17-item re-qualification."
+    tags: [architecture, gateway, scope]
+  - title: "Deny a call whenever evidence is missing or disagrees, instead of allowing until drift is proven"
+    body: "The `tools/call` hook carries no definition, so the processor judges a call from what the last gateway listing and the last crawl saw; if either disagrees with the approval, or there is no evidence at all, it denies. The cost is a real wrinkle for operators: after a rollback or an upstream revert the tool reappears on the next `tools/list`, but calls stay denied as changed since approval until a crawl records the revert, so operators should crawl right after a rollback. And a client that never re-lists keeps calling a changed tool until a listing or crawl refreshes the evidence (L1)."
+    tags: [fail-closed, enforcement, mcp]
+  - title: "OpenSSH sshsig signatures at threshold 1, with a two-signer threshold deferred"
+    body: "Since v0.4 every approve, reject, rollback, disable, enable, pause, resume and budget reset is signed by a key the catalog's own signed trust list names, over the audit head it extends. I took threshold 1 only, ssh-agent first, and kept verification off the serving path. The costs: one compromised key approves and can evict the other signer, and opening a catalog with 10,000 signed decisions takes about 1.5 s, above my 'under one second' estimate. I recorded that number rather than cheapen the spec."
+    tags: [signing, audit-log, trust]
+---
+
+**toolwarrant** is a Go control plane that defends MCP tool use against rug pulls, where an upstream changes a tool's definition after approval. It is for an operator who fronts MCP servers with agentgateway and wants a named person to approve the exact definition an agent can see. It is a single-author repository (not a fork) created on 2026-10-12, and claims no production deployment or third-party user.
+
+- **Digest per definition** — SHA-256 over the RFC 8785 canonical JSON of the whole tool object, `_meta` included, with invalid UTF-8 refused.
+- **Named approval** — `approve --hash` binds a person to one exact digest, and whoever crawled that digest cannot approve it.
+- **Fail-closed serving** — as agentgateway's ExtMCP processor, it lists a tool only while its live digest equals the approved one, and denies a call whenever its evidence is missing or disagrees.
+- **Drift handling** — a changed tool leaves the next `tools/list`, is flagged DRIFT, and can be re-approved, rejected or rolled back.
+- **Signed audit log** — decisions and observed changes enter a hash-chained SQLite log in the same transaction, and since v0.4 human decisions are OpenSSH-signed.
+- **Hardened crawler** — it refuses loopback, private, link-local and cloud-metadata addresses unless a server was added with `--allow-private`.
+- **Gateway canary** — `verify-gateway` lists through the live gateway and compares the result with the catalog, the emitted file and the gateway's configuration.
+- **Verifiable releases** — from v0.2.0 on, releases carry SPDX SBOMs, cosign-signed checksums and SLSA provenance; GitHub immutable releases are not enabled.
+
+> On `main` at 8101c7f (2026-10-18): 445 commits, 1,304 `func Test` declarations and 19 end-to-end scenarios run against a real agentgateway v1.6.0 binary; one author, 0 stars, and the one timing quoted here (decision 4) is a loopback measurement on one Apple M4 laptop.
+
+## Architecture
+
+toolwarrant is one Go 1.27 module with 21 `internal/` packages and 5 `cmd/` binaries (only `toolwarrant` is released). The data plane is agentgateway v1.6.0 and toolwarrant never proxies MCP traffic: `serve` is an ExtMCP gRPC processor hooked on every `tools/list` and `tools/call`, one process per upstream, wired with `failureMode: failClosed`. The crawler talks to upstreams directly, never through the gateway. SECURITY.md describes the report of two inherited gateway behaviours to the agentgateway project as still pending.
+
+State is one 0600 SQLite file (pure-Go modernc.org/sqlite, WAL) holding servers, tools, immutable versions, approvals, signed records and the audit log. Guard triggers refuse ordinary UPDATE and DELETE on history tables, and the operator trust list lives as signed records inside the audit chain.
+
+CI runs `go test -race`, govulncheck, gitleaks and a docs job that fails when a cited test or link disappears. OpenSSF Scorecard read 7.7 on 2026-10-19, with 0 on Code-Review because pull requests are self-merged. Distribution is [GitHub Releases](https://github.com/sairam0424/toolwarrant/releases/tag/v0.4.0) and the [Go module proxy](https://pkg.go.dev/github.com/sairam0424/toolwarrant) only, and the README's opening still says v0.1.0 although v0.4.0 is the latest.
+
+## How It Works
+
+1. `init` creates the 0600 catalog and `trust init --ssh-key` records the signed trust list, printing a trust root and audit head that the operator keeps outside the database.
+2. `server add` registers an upstream, and `crawl` lists its tools, hashes each canonicalised definition, and turns any unseen digest into an immutable version with a pending proposal.
+3. `diff` and `show` grade drift CRITICAL, WARNING or INFO and refuse invisible characters and look-alikes unless `--accept-suspicious`; `approve SERVER TOOL --hash DIGEST` signs one exact digest over the audit head the approver read.
+4. `emit` writes the agentgateway configuration with an explicit allow rule per route, and `serve --server NAME` starts the processor.
+5. On every `tools/list` the processor keeps only tools whose live digest is approved; on every `tools/call` it denies unless the last listing and the last crawl both equal the approval, and anything it cannot decide is denied.
+6. If an upstream edits a description, the tool vanishes from the next listing until a person re-approves, rejects or rolls back. `verify-gateway` and `audit verify` check the gateway and the chain; `verify-gateway --strict` is on `main` but unreleased.

@@ -6,11 +6,13 @@ import {
   ExternalLink,
   GitCommitHorizontal,
   History,
+  Lock,
 } from "lucide-react";
 import { Github } from "@/components/icons";
-import { allProjects, getProject, getArticle } from "@/lib/content";
+import { allProjects, getProject, getArticle, repoLink } from "@/lib/content";
+import { getProjectBody } from "@/lib/content-bodies";
 import { profile } from "@/lib/profile";
-import { fetchRepo, pushedAgo } from "@/lib/github";
+import { fetchRepo, pushedAgo, repoOwnerAndName } from "@/lib/github";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
 import { RelatedWriting } from "@/components/related-writing";
@@ -71,13 +73,16 @@ export default async function ProjectPage({
 
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) notFound();
+  const body = getProjectBody(slug);
+  if (!project || body === undefined) notFound();
 
   // Repo name is the last path segment of the declared repo URL, e.g.
   // "https://github.com/sairam0424/Tombstone" -> "Tombstone". fetchRepo() itself
   // fails open (null) on a private/renamed repo or if the name isn't allowlisted.
-  const repoName = project.repo.split("/").filter(Boolean).pop() ?? "";
-  const repo = await fetchRepo(profile.githubUser, repoName);
+  // A private repository has no link to show and nothing to fetch.
+  const repoUrl = repoLink(project);
+  const parsedRepo = repoUrl ? repoOwnerAndName(repoUrl) : null;
+  const repo = parsedRepo ? await fetchRepo(parsedRepo.owner, parsedRepo.name) : null;
   const updatedAgo = repo ? pushedAgo(repo.pushedAt) : "";
 
   const relatedArticles = (project.relatedArticles ?? [])
@@ -105,7 +110,7 @@ export default async function ProjectPage({
             {/* Reading-time depth indicator — derived from compiled MDX body length.
                 ~200 words/min; only shown when content is substantive (>100 words). */}
             {(() => {
-              const words = project.body
+              const words = body
                 .replace(/<[^>]+>/g, " ")
                 .replace(/\s+/g, " ")
                 .trim()
@@ -121,15 +126,21 @@ export default async function ProjectPage({
             })()}
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <a
-                href={project.repo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2 text-sm text-fg transition-colors hover:bg-bg-elevated"
-              >
-                <Github size={16} /> View repo{" "}
-                <ExternalLink size={13} className="text-fg-subtle" />
-              </a>
+              {repoUrl ? (
+                <a
+                  href={repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border-strong px-4 py-2 text-sm text-fg transition-colors hover:bg-bg-elevated"
+                >
+                  <Github size={16} /> View repo{" "}
+                  <ExternalLink size={13} className="text-fg-subtle" />
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-fg-muted">
+                  <Lock size={15} aria-hidden="true" /> Private repository
+                </span>
+              )}
               {project.commits != null && (
                 <span className="inline-flex items-center gap-1.5 font-mono text-xs text-fg-subtle">
                   <GitCommitHorizontal size={14} />
@@ -165,7 +176,7 @@ export default async function ProjectPage({
         </Reveal>
 
         <div className="prose-portfolio mt-8">
-          <MDXContent code={project.body} />
+          <MDXContent code={body} />
         </div>
 
         <RelatedWriting articles={relatedArticles} />
@@ -175,7 +186,7 @@ export default async function ProjectPage({
         name={project.name}
         description={project.tagline}
         url={`${BASE}${project.url}`}
-        codeRepository={project.repo}
+        codeRepository={repoUrl ?? undefined}
         tech={project.tech}
         dateCreated={project.dateCreated}
         license={project.license}

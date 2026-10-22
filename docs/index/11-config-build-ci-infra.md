@@ -3,21 +3,21 @@ kind: doc
 title: Config, Build, CI/CD & Infrastructure
 domain: [content]
 status: current
-version: v3.15.0
+version: v3.16.0
 ---
 
 # Config, Build, CI/CD & Infrastructure
 
-> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 
-**Verified against:** Anvilry v3.15.0 (`package.json` version `3.15.0`), i.e. `main` @ `a929932` (`package.json` version `3.6.0`) **plus five post-`a929932` fixes**:
+**Verified against:** Anvilry v3.16.0 (`package.json` version `3.16.0`), i.e. `main` @ `a929932` (`package.json` version `3.6.0`) **plus five post-`a929932` fixes**:
 (1) notes are hidden at the data layer when `NEXT_PUBLIC_NOTES_ENABLED` is off
 (`src/lib/content.ts`); (2) rate limiting has three per-class buckets — `chat`, `voice`, `beacon` — and a valid
 `CRON_SECRET` bearer (shared `src/lib/cron-auth.ts`) bypasses it so the eval cron does not self-throttle; (3) admin
 auth is one compare, `isAdminAuthorized` (`src/lib/admin-auth.ts`), shared by `src/proxy.ts`, `requireAdmin` and the
 telemetry page; (4) the command-palette talk-mode entry is gated by `isVoiceViewActive`; (5) `MIN_ROUTES = 17` in
 `scripts/bundle-budget.mjs` and removal of dead components. Fixes 1-3 and 5 change facts on this page; fix 4 does not
-touch this scope. Everything below was re-read from the `a929932`-plus-fixes tree, not carried over from the previous edition; `package.json`'s own version, bumped at the release cut, is `3.15.0`.
+touch this scope. On top of that, v3.16.0 adds three changes and only one reaches this page: the compiled-MDX split, which took compiled MDX out of every route's first-load JS (`/` measures 976,936 B at the v3.16.0 cut, 359,064 B under `MAX_FIRST_LOAD_BYTES`, against 1,188,350 B at v3.15.0) and gave `scripts/bundle-budget.mjs` its `MDX_MARKER` check (described under that script below); the nine new project cards and the private-repository marker change nothing here. Everything below was re-read from the `a929932`-plus-fixes tree, not carried over from the previous edition; `package.json`'s own version, bumped at the release cut, is `3.16.0`.
 
 **Scope:** `package.json`, `.nvmrc`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
 `postcss.config.mjs`, `pnpm-workspace.yaml`, `patches/`, `vercel.json`, `Makefile`, `next-env.d.ts`, `.gitignore`,
@@ -35,7 +35,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 
 | File | Role | Key exports |
 |---|---|---|
-| `package.json` | name `anvilry`, version `3.15.0`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 18 devDeps. **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.3.5`, `react`/`react-dom 19.3.0`, `@modelcontextprotocol/sdk 1.26.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
+| `package.json` | name `anvilry`, version `3.16.0`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 18 devDeps. **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.3.5`, `react`/`react-dom 19.3.0`, `@modelcontextprotocol/sdk 1.26.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
 | `.nvmrc` | Single line, `22`. Matches `engines.node` and the CI pin (`.github/workflows/ci.yml:26-29`) | n/a |
 | `next.config.ts` | 252-line Next config: enforced CSP + 6 other security headers (7 total, including COOP/CORP), `upgrade-insecure-requests` only when `process.env.VERCEL` is set, per-route `/resume` header override, 4 `.md` rewrites, `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper (**local-only** — inert unless `pnpm analyze` supplies both `ANALYZE=true` *and* `--webpack`) | `default` — `withBundleAnalyzer(nextConfig)` |
 | `tsconfig.json` | `strict`, `noEmit`, `allowJs`, `moduleResolution: "bundler"`, `target: ES2017`, `@/*` → `./src/*`, `next` TS plugin. `include` is `**/*.ts`, `**/*.tsx`, `**/*.mts` plus `.next/types` and `.next/dev/types`; `exclude` is only `node_modules` — so `scripts/`, `e2e/` and tests are all type-checked | n/a (JSON) |
@@ -50,7 +50,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 | `.env.example` | 237-line annotated env template — the only committed env file; documents the core variables with rationale, but several real ones are absent (see the env table) | n/a |
 | `.coderabbit.yaml` | CodeRabbit review config: `quiet` profile, auto-review only for base branch `^develop$`, `dependabot[bot]` ignored, auto-pause after 5 reviewed commits, eslint + gitleaks tools on (`:6-14`, `:24-28`) | n/a (YAML) |
 | `scripts/replay-trace.mjs` | Node CLI: reads 7 telemetry span kinds from Upstash Redis, filters by `traceId`, prints a chronological waterfall. The schema now defines **8** kinds — `chat.cache` is not in its list | n/a (top-level script) |
-| `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (Turbopack-only, no flag) and asserts a per-route first-load JS ceiling (`MAX_FIRST_LOAD_BYTES = 1_336_000`) **plus** that three.js stays off the first-load critical path. Exits 1 when it cannot measure (fewer than `MIN_ROUTES = 17` records) | n/a (top-level script) |
+| `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (Turbopack-only, no flag) and asserts a per-route first-load JS ceiling (`MAX_FIRST_LOAD_BYTES = 1_336_000`) **plus** that three.js and compiled MDX bodies (`MDX_MARKER`) stay off the first-load critical path. Exits 1 when it cannot measure (fewer than `MIN_ROUTES = 17` records) | n/a (top-level script) |
 | `.github/workflows/ci.yml` | 5 jobs: `ci` (lint/tsc/test **+ non-blocking `pnpm audit` + codebase-index citation check + claims-integrity verify**), `claims-integrity-autocommit` (opt-in, `needs: ci`, the only `contents: write` job), `e2e` (Playwright chromium + webkit, build → **bundle budget** → run), `install-pnpm-11` (cold `--frozen-lockfile` install on the *other* pnpm major), `security-alerts` (non-blocking Dependabot report) | n/a |
 | `.github/workflows/codeql.yml` | CodeQL Advanced, `javascript-typescript`, `build-mode: none`, push/PR on `develop` **and `main`**, weekly cron `35 1 * * 1` | n/a |
 | `.github/workflows/dependency-review.yml` | `actions/dependency-review-action` (SHA-pinned, `# v4`), `fail-on-severity: high`, `fail-on-scopes: runtime`, PRs into `develop`/`main` | n/a |
@@ -155,7 +155,7 @@ the other:
 
 The deliberate consequence: running the gate straight after `pnpm analyze` **fails**, because a `--webpack`
 build never writes `route-bundle-stats.json` — and the script's error message names `--webpack` as the likely
-cause (`scripts/bundle-budget.mjs:96-98`). Re-run `pnpm build` before the gate.
+cause (`scripts/bundle-budget.mjs:108-110`). Re-run `pnpm build` before the gate.
 
 Every citation in this paragraph points into `node_modules/`, so all of them are version-bound and **not**
 machine-checked by `scripts/check-index-citations.mjs` (its citable set is first-party source and the listed root
@@ -171,7 +171,7 @@ in the `ci`, `claims-integrity-autocommit` and `e2e` jobs (`.github/workflows/ci
 
 **Node version is pinned three ways, and the pin is load-bearing.** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }`, `.nvmrc:1` is `22` and every `setup-node` step in `ci.yml` uses `node-version: 22`
-(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:661-664` records the
+(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:717-720` records the
 failure that motivated it: a contributor on Node 26 saw **9 failing tests and a red `pnpm build` with no explanation**,
 because Node 26 exposes a native `localStorage` global (unavailable without `--localstorage-file`) that collides with
 vitest's happy-dom global injection. Widening the range re-opens that trap. Limits: `engines` **warns rather than
@@ -267,7 +267,7 @@ All defined in `next.config.ts`. `securityHeaders` (`next.config.ts:89-115`) has
 
 **`worker-src` outlived the package it was written for.** The directive was added for an R3F
 `@react-three/offscreen` worker/`OffscreenCanvas` offload that **never existed in `src/`** — that package was
-declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:680-684`). The
+declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:736-740`). The
 directive itself is still correct and still needed, but for a different reason than the one it was written for:
 `'self'` is what lets pdf.js start its worker. `blob:` is the residue — a repo-wide grep finds **no
 `new Worker(` and no `OffscreenCanvas` anywhere under `src/`**, and the only `URL.createObjectURL` call sites are
@@ -327,7 +327,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `CRON_SECRET` | Yes for crons | `src/lib/cron-auth.ts:16` (`hasValidCronSecret`), applied in all 5 cron routes via `unauthorizedUnlessCron` — `eval:102`, `github-sync:19`, `health-check:152`, `seo-audit:17`, `content-audit:20` (all `src/app/api/cron/*/route.ts`) | Bearer-token auth for all 5 cron routes; **also bypasses the rate limiter** (`src/lib/rate-limit.ts:100`) | **Fail-closed:** unset or empty → `hasValidCronSecret` is false → 401 `{error: "Unauthorized"}` (`cron-auth.ts:25`), so an unset secret means every cron endpoint 401s rather than being public. The compare hashes both sides with SHA-256 before `timingSafeEqual` (constant time, length-blind). The eval cron forwards the same bearer to `/api/chat` (`src/app/api/cron/eval/route.ts:126`) so its 12 sequential chats do not exhaust the 8/min `chat` bucket; it also sends `X-Chat-Skip-Cache: 1` (`src/app/api/cron/eval/route.ts:123`) and so never participates in the FAQ cache (`src/lib/chat-cache.ts:61-67`). `.env.example:134-139` documents the fail-closed contract |
 | `FAQ_CACHE_ENABLED` | No (default on) | `src/lib/chat-cache.ts:160` (`isFaqCacheEnabled()`, `!== "false"`) | Kill switch for the **whole** FAQ response cache (both tiers) on `/api/chat` first-turn questions, independent of Redis config | Only mentioned in a comment (`.env.example:58`), never as a variable line; `make env-check` prints it (`Makefile:308`). Telemetry kind `chat.cache` (`src/lib/telemetry/schema.ts:37-50`) records hits and misses, and a hit also carries the boolean `reasoning_replayed`, never the summary text (`src/app/api/chat/route.ts:337`) |
 | `FAQ_CACHE_SEMANTIC_MATCH` | No (default off) | `src/lib/chat-cache.ts:152` (`isSemanticMatchEnabled()`, `=== "true"`) | Adds a second lookup tier: a Bedrock Titan Embeddings V2 (`amazon.titan-embed-text-v2:0`, 512 dims, 5 s timeout — `src/lib/faq-embeddings.ts:20-28`) similarity scan, threshold 0.92 (`chat-cache.ts:298`) | One extra Bedrock `InvokeModel` per cache miss when on (`.env.example:55-65`). Exact-match tier constants: TTL 24 h (`chat-cache.ts:68`), index cap 500 (`:71`), answers over 4,000 chars are never cached (`:84`); a reasoning summary is stored beside the answer only when it is 1 to 4,000 chars (`:90`) and the normalized question is at most 200 chars (`:96`), and a semantic hit never carries it (the `FaqCacheHit` semantic variant omits the field, `:124`; `faqCacheSemanticGet` deletes it, `:329`) |
-| `GITHUB_TOKEN` | No | `src/lib/github.ts:96`; `src/app/api/github/stats/route.ts:19` | Raises the GitHub API rate limit for the `/projects` + `/stats` feeds | **Not documented in `.env.example` at all.** Server-only — `src/lib/github.ts:9` notes it must never reach the client (no `server-only` package; the single server-component import site is the guarantee) |
+| `GITHUB_TOKEN` | No | `src/lib/github.ts:127`; `src/app/api/github/stats/route.ts:19` | Raises the GitHub API rate limit for the `/projects` + `/stats` feeds | **Not documented in `.env.example` at all.** Server-only — `src/lib/github.ts:9` notes it must never reach the client (no `server-only` package; the single server-component import site is the guarantee) |
 | `FLAG_DRIVER` | No (default `local`) | `src/lib/flags.ts:13` | `"vercel"` → runtime Flags SDK; anything else → build-time env read | Evaluated **once at process start**; changing it without a restart has no effect (`src/lib/flags.ts:12`) |
 | `FLAGS_SECRET` | Required iff `FLAG_DRIVER=vercel` | `src/lib/flags.ts:51` (presence only, logged) | Signs Flags SDK override cookies | Presence-checked, never used directly outside the log line (`.env.example:243-245`) |
 | `FLAGS` | No | `src/instrumentation.ts:50` (presence only) | The **Vercel Flags SDK's own** connection string (not a project concept) | Undocumented in `.env.example`; only surfaced as `flags_sdk_configured` in the `[config]` cold-start log |
@@ -335,7 +335,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_BUILD_YEAR` | Set by build | written `next.config.ts:127`; read `src/components/site-footer.tsx:239` (`?? "2026"`) | Stable footer copyright year | Exists because under `cacheComponents`, `new Date()` during render fails the prerender and cannot be deferred with `instant = false` (`next.config.ts:121-126`) |
 | `NEXT_PUBLIC_DISCOVERY_BADGES` | No (default off) | `src/lib/flags.ts:58,65` | ★ N/4 discovery badge | The only flag routed through the two-driver resolver |
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | No (**default TRUE**) | `src/lib/writing-flags.ts:20` | `/articles` route + nav + sitemap + RSS | Inverted polarity: `!== "false"` |
-| `NEXT_PUBLIC_NOTES_ENABLED` | No (default false) | `src/lib/writing-flags.ts:22`; data-layer gate `src/lib/content.ts:56` (`allNotes = NOTES_ENABLED ? publishedNotes : []`, import at `:15`) | `/notes` section | `=== "true"` opt-in. **Hidden at the data layer, not only in the UI:** with the flag off, `allNotes` is empty for every consumer — llms.txt, the feed, MCP, the chat corpus and the `.md` handlers — so nothing can publish a note the `/notes` pages would 404. Only the `/notes` route files read `publishedNotes` (`content.ts:50`), because `cacheComponents` needs `generateStaticParams` to return at least one entry even while the section is dark |
+| `NEXT_PUBLIC_NOTES_ENABLED` | No (default false) | `src/lib/writing-flags.ts:22`; data-layer gate `src/lib/content.ts:66` (`allNotes = NOTES_ENABLED ? publishedNotes : []`, import at `:15`) | `/notes` section | `=== "true"` opt-in. **Hidden at the data layer, not only in the UI:** with the flag off, `allNotes` is empty for every consumer — llms.txt, the feed, MCP, the chat corpus and the `.md` handlers — so nothing can publish a note the `/notes` pages would 404. Only the `/notes` route files read `publishedNotes` (`content.ts:60`), because `cacheComponents` needs `generateStaticParams` to return at least one entry even while the section is dark |
 | `NEXT_PUBLIC_OPEN_TO_WORK` | No (default false) | `src/lib/writing-flags.ts:24` | "Open to work" banner | — |
 | `NEXT_PUBLIC_STATS_ENABLED` | No | `src/lib/writing-flags.ts:38` | `/stats` in nav | — |
 | `NEXT_PUBLIC_SEARCH_ENABLED` | No | `src/lib/writing-flags.ts:40` | `/search` in nav | Needs the Pagefind index, which `pnpm build` now generates |
@@ -361,9 +361,9 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_AVATAR_POSITION` | No (default `hero-side`) | `src/components/hero-avatar/index.tsx:51` | Avatar placement | Documented in `.env.example:202` |
 | `NEXT_PUBLIC_ABOUT_MASCOT` | No (default off) | `src/lib/mascot-flags.ts:11` | About portrait beside the intro (`src/app/about/page.tsx`); only the exact string `"true"` enables it | Documented in `.env.example:203` |
 | `NEXT_PUBLIC_404_MASCOT` | No (default on) | `src/lib/mascot-flags.ts:16` | Rotating thirteen-character 404 mascot (`src/components/mascot/not-found-mascot.tsx`); only the exact string `"false"` removes it | Documented in `.env.example:204` |
-| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:680-684`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:643-645`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:99`) |
+| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:736-740`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:699-701`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:99`) |
 | `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | No (default off) | `src/components/chat/chat-view.tsx:259` | Image/file attachments in chat | Undocumented in `.env.example` |
-| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:695-697`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
+| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:751-753`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
 | `NEXT_PUBLIC_EXTENDED_THINKING` | No (default on) | `src/components/chat/chat-messages.tsx:165` | Client-side thinking-block rendering (`!== "false"`) | Undocumented in `.env.example` |
 | `VERCEL` | Platform | `next.config.ts:84` | Set only by Vercel's own infrastructure (Preview and Production); gates `upgrade-insecure-requests` in the CSP | Never set by `next dev` or `next start`, even in production mode — this is what keeps local WebKit/Playwright `mobile-safari` runs working (see the CSP table) |
 | `VERCEL_URL` | Platform | `src/app/api/chat/route.ts:39-40`; `cron/{eval:105-106, github-sync:32-33, seo-audit:20-21}`; `src/lib/health-expectations.ts:56` | Self-referential base URL | Set by Vercel; absent locally. **`cron/health-check` never reads it directly** — it resolves its base through `probeBase()` (`src/app/api/cron/health-check/route.ts:155`), where `VERCEL_URL` is only the *fallback* (`src/lib/health-expectations.ts:56`). `VERCEL_URL` is the per-deployment host, which is SSO-protected on this project; `src/lib/health-expectations.test.ts:140-145` asserts the route never reads `process.env.VERCEL_URL` directly |
@@ -511,7 +511,7 @@ Three `ignore` entries on the npm ecosystem, each with a recorded root cause:
   `@babel/eslint-parser` lacks `ScopeManager#addGlobals`. Re-check trigger: `jsx-eslint/eslint-plugin-react#4022`
   (`:95-101`).
 
-**Gotcha:** `CHANGELOG.md:735-736` records that Dependabot reads `dependabot.yml` from the **default branch
+**Gotcha:** `CHANGELOG.md:791-792` records that Dependabot reads `dependabot.yml` from the **default branch
 only**, so these ignores were inert while they lived on `develop`.
 
 **CodeRabbit** (`.coderabbit.yaml`): `quiet` profile, auto-review only when the PR base is `^develop$`
@@ -524,7 +524,7 @@ it — `gitleaks.yml`'s header records it "currently lives only on develop" (`gi
 
 **`package.json` has no `pnpm` field at all.** Every setting group lives in `pnpm-workspace.yaml`, the single source
 of truth: two groups moved there in v3.5.0, one was already there, `allowBuilds` was added in v3.6.0 (see
-`CHANGELOG.md:494-534`). The `patchedDependencies` entry, the exact `fast-uri` pin and the `browserslist` / `qs` overrides landed later and have
+`CHANGELOG.md:550-590`). The `patchedDependencies` entry, the exact `fast-uri` pin and the `browserslist` / `qs` overrides landed later and have
 no CHANGELOG entry (`grep -n "browserslist\|patchedDependencies" CHANGELOG.md` finds nothing):
 
 | Setting | Location | Reads it | Value |
@@ -550,7 +550,7 @@ resolved tree and runs both inside `pnpm build` (via `vitest run`) and in the `i
 `13-dependencies-and-versions.md`.
 
 **Why it moved out of `package.json`, and why this counts as a security fix** (`pnpm-workspace.yaml:1-12`,
-`CHANGELOG.md:667-677` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
+`CHANGELOG.md:723-733` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
 `package.json`**. It prints `The "pnpm" field in package.json is no longer read by pnpm` and skips it — a warning line
 that reads like boilerplate. Nothing was broken yet, because `pnpm-lock.yaml` already encoded the resolved graph and CI
 pins pnpm 10 (`ci.yml:24`) — but **one `pnpm install` on pnpm 11 would have regenerated the lockfile without the
@@ -562,11 +562,11 @@ pnpm 10 → byte-identical again (the proof CI's resolution does not move); then
 exit 0. The ten pins that existed at the time were re-confirmed **applied in the resolved graph, not merely declared**:
 `hono` 4.13.2 · `@hono/node-server` 1.19.17 · `ip-address` 10.5.0 · `fast-uri` 3.1.5 · `js-yaml` 4.3.1 ·
 `postcss` 8.5.23/8.5.26 · `sharp` 0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9
-(`CHANGELOG.md:673-677`).
+(`CHANGELOG.md:729-733`).
 
 This is also what unblocked the v3.5.0 dependency removals: pruning `@react-three/rapier` and
 `@react-three/offscreen` requires regenerating the lockfile, which was unsafe until the overrides lived somewhere
-both pnpm majors read — `CHANGELOG.md:680-681` records the removal as "deferred until the overrides migration
+both pnpm majors read — `CHANGELOG.md:736-737` records the removal as "deferred until the overrides migration
 made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), which also added `.nvmrc` and
 `engines.node`. The third package the lockfile lost was `mitt`, a transitive of the two removed packages.
 
@@ -575,28 +575,28 @@ made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), wh
 one (`pnpm why <pkg>` plus the 3.4.2 CHANGELOG entry). The YAML carries those comments; `package.json` never could.
 Its header at `:5` still says "the ten security `overrides` shipped in v3.4.2" — historically accurate, because it
 is talking about that release. The lockfile mirrors all twelve ranges verbatim at `pnpm-lock.yaml:7-19`. The advisories
-for the first ten are transcribed from `CHANGELOG.md:689-718` (release 3.4.2, "resolves all 23 open Dependabot
-advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:688-689`); the last two are transcribed from the YAML
+for the first ten are transcribed from `CHANGELOG.md:745-774` (release 3.4.2, "resolves all 23 open Dependabot
+advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:744-745`); the last two are transcribed from the YAML
 comments, because no CHANGELOG entry covers them.
 
 | Override | Range pinned | Advisory / reason as stated in the source |
 |---|---|---|
-| `hono` | `^4.12.34` | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:701-703`) |
-| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:711`) |
-| `ip-address` | `^10.3.1` | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:698-700`) |
-| `fast-uri` | **exact** `3.1.6` (was `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:705`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
-| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:704`) |
-| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:712-713`) |
+| `hono` | `^4.12.34` | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:757-759`) |
+| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:767`) |
+| `ip-address` | `^10.3.1` | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:754-756`) |
+| `fast-uri` | **exact** `3.1.6` (was `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:761`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
+| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:760`) |
+| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:768-769`) |
 | `brace-expansion@1` | `^1.1.16` | (high) — the 1.x line, patched **within its line** |
-| `brace-expansion@>=3` | `^5.0.7` | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:706-708`) |
-| `sharp` | `^0.35.0` | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:709-710`) |
-| `body-parser` | `^2.3.0` | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:714`) |
+| `brace-expansion@>=3` | `^5.0.7` | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:762-764`) |
+| `sharp` | `^0.35.0` | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:765-766`) |
+| `body-parser` | `^2.3.0` | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:770`) |
 | `browserslist` | **exact** `4.28.8` | GHSA-covered crash/prototype-write + OOM (Dependabot #54/#55), transitive via `next` → `styled-jsx` and `eslint-config-next` → `@babel/core`. Exact for the same `minimumReleaseAge` reason as `fast-uri`: 4.28.8 (2026-08-08) has aged past the gate (`pnpm-workspace.yaml:34-38`) |
 | `qs` | **exact** `6.16.0` | GHSA-covered DoS + array-limit bypass (Dependabot #53/#56), transitive via `body-parser` → `express` → `@modelcontextprotocol/sdk`. 6.16.0 (2026-08-29) is the only patched version so far — newer than the usual aged-pin margin, but with no older patched release to fall back to; if pnpm 11's release-age gate rejects it, "that's the CI signal to wait and retry, not a reason to skip the fix" (`pnpm-workspace.yaml:39-44`) |
 
 Root cause for needing overrides at all: "Six were transitive and lockfile-pinned, so `pnpm update` could not
 move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which is why Dependabot reported
-`security_update_not_possible`" (`CHANGELOG.md:716-718`). `package.json:29` does indeed pin
+`security_update_not_possible`" (`CHANGELOG.md:772-774`). `package.json:29` does indeed pin
 `"@modelcontextprotocol/sdk": "1.26.0"` with no range operator. `pdfjs-dist` was fixable by a direct bump
 (`^6.2.108`, `package.json:48`) rather than an override. The exact pins (`fast-uri`, `browserslist`, `qs`) trade
 that away: they stop floating, so a later patch release is missed until someone bumps them deliberately.
@@ -763,8 +763,8 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 
 ### `scripts/bundle-budget.mjs`
 - **Role:** The repo's bundle-size gate, and the direct replacement for `.github/workflows/bundle-analysis.yml`.
-  Asserts two things about the build that is *actually shipping*: a per-route first-load JS ceiling, and that
-  three.js stays **off** the first-load critical path.
+  Asserts three things about the build that is *actually shipping*: a per-route first-load JS ceiling, that three.js
+  stays **off** the first-load critical path, and that compiled MDX bodies do too (`MDX_MARKER`, `:96`; check `:168-177`).
 - **Exports:** none — top-level script with side effects (`node scripts/bundle-budget.mjs`, run after
   `next build` / `pnpm build`, `:33`).
 - **Reads / depends on:** only `node:fs` (`:35`) and `.next/diagnostics/route-bundle-stats.json` (`:37`). No
@@ -779,7 +779,7 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
   `firstLoadUncompressedJsBytes` exactly, so the number is a measurement, not a model. **Not re-measured for this
   edition** (no build was run) — the header's "16 routes" and "`/` is 1220794" are authoring-time figures that have
   since moved (see below).
-- **The two assertions:**
+- **The three assertions:**
   - **First-load ceiling** `MAX_FIRST_LOAD_BYTES = 1_336_000` (`:72`) — a ceiling, not a baseline, that has been
     **raised repeatedly**: 1,285,000 (initial) → 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000 (`git log -p -- scripts/bundle-budget.mjs`; the docblock only narrates the later steps). The docblock (`:42-71`) tells the story:
     the global theme toggle, hero name line and `Tooltip` rollout on the nav components; a lazy `Tooltip` was tried and
@@ -798,24 +798,25 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
     bytes barely move — the bytes were always shipped, they just stopped being deferred. Recorded as exactly **one**
     chunk containing the marker, at **897,249 B** (876.2 KiB, matching the `next.config.ts` twin-chunk block), and it
     appears in none of the routes' first-load sets (`:76-77`). The failure message names `next/dynamic(…, { ssr: false })`,
-    a `next.config.ts` line range (127-149) and `src/lib/r3f.ts` (`:146-154`) — **that range is stale**; the block is
+    a `next.config.ts` line range (127-149) and `src/lib/r3f.ts` (`:158-166`) — **that range is stale**; the block is
     now at `next.config.ts:147-169` (the docblock at `:70` and `:75` repeats the stale range).
+  - **Compiled MDX stays off the critical path**, checked by marker `MDX_MARKER = "_createMdxContent"` (`:96`, check `:168-177`) for the same reason: a total can hide it. Every Velite-compiled body contains that runtime function name, so finding it in a first-load chunk means a client module reached `src/lib/content-bodies.ts`, directly or through another module (only the four `[slug]/page.tsx` pages may import it). The failure message names the chunk, its size and that module.
 - **Gotchas / invariants:**
   - **A missing or malformed artifact EXITS 1 — that is the feature, not an oversight.** The predecessor's defining
     flaw was reporting success while measuring nothing, so "I could not measure" must be red. Four
-    separate `fail()` paths enforce it: unreadable/unparseable JSON (`:91-100`), fewer than `MIN_ROUTES = 17`
-    records (`:40`, `:102-107`), missing expected keys (`:108-113`), and first-load chunk paths that do not exist on
-    disk (`:135-144`).
+    separate `fail()` paths enforce it: unreadable/unparseable JSON (`:103-112`), fewer than `MIN_ROUTES = 17`
+    records (`:40`, `:114-119`), missing expected keys (`:120-125`), and first-load chunk paths that do not exist on
+    disk (`:147-156`).
   - **Do not add `continue-on-error` to the CI step**, and do not add `if-no-files-found`-style leniency. The
-    script's own closing message says so (`:159-162`), and the step's comment (`ci.yml:179-189`) records why
+    script's own closing message says so (`:182-185`), and the step's comment (`ci.yml:179-189`) records why
     the predecessor's runs were green while uploading nothing.
   - **`pnpm analyze` breaks it, by design.** A `--webpack` build emits no `route-bundle-stats.json`, so the gate
-    fails after one — with a message naming `--webpack` as the likely cause (`:96-98`). Re-run `pnpm build`.
+    fails after one — with a message naming `--webpack` as the likely cause (`:108-110`). Re-run `pnpm build`.
   - `MIN_ROUTES` is a **format tripwire, not a route-count assertion.** Its comment (`:39`) explains the current
     value, **17**: the 16 `src/app` `page.tsx` routes plus `/_not-found`; it was raised from 16 to match, because the
     stats file lists `/_not-found` too. Fewer records means "Next changed the artifact's shape and this gate is lying",
-    and the failure text says to fix the script rather than lower the constant (`:105`). Adding routes only ever
-    raises the real count; a *drop* means the diagnostics contract moved. Same for the key check at `:108` — an
+    and the failure text says to fix the script rather than lower the constant (`:117`). Adding routes only ever
+    raises the real count; a *drop* means the diagnostics contract moved. Same for the key check at `:120` — an
     upgrade that renames `firstLoadUncompressedJsBytes` turns the gate red rather than vacuously green. One comment
     in the script (the header at `:27`) still says "16 routes" from before that change; the three.js docblock at `:76` was
     updated to "17 routes".
@@ -981,7 +982,7 @@ project" now quotes the full `build` chain, including `vitest run` and `pagefind
   indirectly), which would put production on a different major than the `22` that `.nvmrc`, `engines.node` and every CI
   job use — the live project setting itself was not checked.
 - **Whether `MAX_FIRST_LOAD_BYTES = 1_336_000` (`scripts/bundle-budget.mjs:72`) is still comfortably above the
-  largest route.** The v3.14.0 cut measured `/` at 1,183,605 B and the v3.15.0 cut at 1,188,350 B (147,650 B under the ceiling), but not the other 16 routes; the ~2,479 B headroom is the docblock's own arithmetic against its
+  largest route.** The v3.14.0 cut measured `/` at 1,183,605 B, the v3.15.0 cut at 1,188,350 B (147,650 B under the ceiling) and the v3.16.0 cut at 976,936 B (359,064 B under it; the peak before the compiled-MDX split was 1,298,585 B), but not the other 16 routes; the ~2,479 B headroom is the docblock's own arithmetic against its
   quoted `/` measurement (`:61-67`). Every byte count in that docblock was measured on macOS locally; the gate also
   runs on `ubuntu-latest`, and the script states byte-exact determinism between the two is **not** verified. With
   ~0.19% margin, small global additions can turn CI red.

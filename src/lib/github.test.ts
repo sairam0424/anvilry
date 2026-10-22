@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { REPO_ALLOWLIST, getRepoFeed, fetchRepo, pushedAgo } from "./github";
+import { REPO_ALLOWLIST, getRepoFeed, fetchRepo, isRepoAllowed, repoOwnerAndName, pushedAgo } from "./github";
+import { publicProjects } from "./content";
 
 /**
  * Contract for the first-party GitHub feed: it is ALLOWLIST-gated, FAIL-OPEN, and
@@ -44,6 +45,39 @@ describe("REPO_ALLOWLIST", () => {
   it("includes the two owner-called-out extras", () => {
     expect(REPO_ALLOWLIST).toContain("Thunderboard-Labs");
     expect(REPO_ALLOWLIST).toContain("Shop.this");
+  });
+});
+
+describe("repos outside the owner's account (owner/name entries)", () => {
+  it("fetches an owner/name allowlist entry under its own owner", async () => {
+    const spy = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
+      okRepo("gateway", "2026-10-21T00:00:00Z", { full_name: "kelvran/gateway", html_url: "https://github.com/kelvran/gateway" }),
+    );
+    vi.stubGlobal("fetch", spy);
+    const repo = await fetchRepo("kelvran", "gateway");
+    expect(repo?.fullName).toBe("kelvran/gateway");
+    expect(String(spy.mock.calls[0]?.[0])).toContain("/repos/kelvran/gateway");
+  });
+
+  it("does not let a bare allowlist name authorise the same name under another owner", async () => {
+    const spy = vi.fn(async () => okRepo("Tombstone", "2026-06-21T00:00:00Z"));
+    vi.stubGlobal("fetch", spy);
+    expect(await fetchRepo("someone-else", "Tombstone")).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("parses owner and name from a repo URL", () => {
+    expect(repoOwnerAndName("https://github.com/mcpsmiths/cost-guard-mcp")).toEqual({ owner: "mcpsmiths", name: "cost-guard-mcp" });
+    expect(repoOwnerAndName("https://github.com/sairam0424/trelix/")).toEqual({ owner: "sairam0424", name: "trelix" });
+    expect(repoOwnerAndName("not a url")).toBeNull();
+  });
+
+  it("allowlists the repo of every public project, so its page can show 'updated X ago'", () => {
+    for (const p of publicProjects) {
+      const parsed = repoOwnerAndName(p.repo);
+      expect(parsed, `${p.slug}: unparseable repo URL ${p.repo}`).not.toBeNull();
+      expect(isRepoAllowed(parsed!.owner, parsed!.name), `${p.slug}: ${p.repo} is not on REPO_ALLOWLIST`).toBe(true);
+    }
   });
 });
 

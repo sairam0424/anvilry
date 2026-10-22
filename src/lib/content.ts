@@ -23,12 +23,22 @@ export const allWork: Work[] = [...rawWork].sort(byOrder);
 
 export const featuredProjects = allProjects.filter((p) => p.featured);
 
+/** Projects a visitor can open on GitHub. The open-source repo count on the home page, About and the
+ *  terminal counts these; private repositories are listed but not counted. */
+export const publicProjects = allProjects.filter((p) => p.visibility !== "private");
+
+/** The repo URL to show a visitor, or null for a private repository (a link there would 404). */
+export function repoLink(p: Pick<Project, "repo" | "visibility">): string | null {
+  return p.visibility === "private" ? null : p.repo;
+}
+
 /** Pinned projects in pin-strategy order (rank 1..6). */
 export const pinnedProjects = allProjects
   .filter((p) => p.pinned && p.pinRank != null)
   .sort((a, b) => (a.pinRank ?? 99) - (b.pinRank ?? 99));
 
 export const projectGroups = [
+  "Platform, Guardrails & Observability",
   "Agent Frameworks & Infrastructure",
   "Code Intelligence & Engines",
   "Tooling & Lab",

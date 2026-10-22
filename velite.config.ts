@@ -2,10 +2,36 @@ import { defineConfig, defineCollection, s } from "velite";
 
 /* Theme group for the OSS projects (mirrors the GitHub pin strategy). */
 const themeGroup = s.enum([
+  "Platform, Guardrails & Observability",
   "Agent Frameworks & Infrastructure",
   "Code Intelligence & Engines",
   "Tooling & Lab",
 ]);
+
+/* Glob patterns shared by each metadata collection and its body-only sibling, so the two always
+ * cover the same files. */
+const PATTERNS = {
+  projects: "projects/**/*.mdx",
+  work: "work/**/*.mdx",
+  notes: "notes/**/*.{md,mdx}",
+  articles: "articles/**/*.{md,mdx}",
+} as const;
+
+/* Compiled MDX is NOT a field of the four metadata collections below. A compiled body is a few KB of
+ * JS source, about 300 KB across all four, and `src/lib/content.ts` (imported by a dozen client
+ * modules) bundles whole collection JSON files into the shared first-load chunk because a JSON module
+ * cannot be tree-shaken. With the bodies on the metadata, every new project card cost about 11 KB of
+ * first-load JS on every route. They live in these sibling collections instead, which only
+ * `src/lib/content-bodies.ts` reads and only the four server-rendered detail pages import.
+ *
+ * `slug` is a plain string here: its format and uniqueness are validated by the metadata collection
+ * over the same files, and this collection only needs it as the join key. */
+const bodyOnly = (name: string, pattern: string) =>
+  defineCollection({
+    name,
+    pattern,
+    schema: s.object({ slug: s.string(), body: s.mdx() }),
+  });
 
 /* One architecture-decision narrative, migrated verbatim from a project's
  * former "## Key Decisions" MDX section. See docs/superpowers/specs/
@@ -19,7 +45,7 @@ const decision = s.object({
 /** Open-source / portfolio projects — architecture + tech only, no fabricated adoption. */
 const projects = defineCollection({
   name: "Project",
-  pattern: "projects/**/*.mdx",
+  pattern: PATTERNS.projects,
   schema: s
     .object({
       slug: s.slug("project"),
@@ -27,6 +53,10 @@ const projects = defineCollection({
       tagline: s.string(),
       group: themeGroup,
       repo: s.string().url(),
+      // "private" = the repository exists but a visitor cannot open it (GitHub 404s). The entry stays
+      // (the dossier page is the product); every surface drops the repo link and says so, the repo
+      // does not count as open source, and a private project must not be featured (content.test.ts).
+      visibility: s.enum(["public", "private"]).default("public"),
       commits: s.number().optional(),
       // Real GitHub repo creation date + SPDX license ID, verified against the GitHub API
       // per-repo. Omitted (not fabricated) for repos that are private (404 unauthenticated)
@@ -43,7 +73,6 @@ const projects = defineCollection({
       pinRank: s.number().optional(),
       featured: s.boolean().default(false),
       order: s.number().default(100),
-      body: s.mdx(),
       excerpt: s.string(),
     })
     .transform((data) => ({ ...data, url: `/projects/${data.slug}` })),
@@ -52,7 +81,7 @@ const projects = defineCollection({
 /** Production work case studies — honest "Co-built/architected/Owned" register; real metrics. */
 const work = defineCollection({
   name: "Work",
-  pattern: "work/**/*.mdx",
+  pattern: PATTERNS.work,
   schema: s
     .object({
       slug: s.slug("work"),
@@ -69,7 +98,6 @@ const work = defineCollection({
       tradeoffs: s.string().optional(), // what was deliberately chosen NOT to do, and why
       diagram: s.string().optional(), // path to an owner-authored architecture diagram (e.g. /static/...)
       diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a test
-      body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/work/${data.slug}` })),
 });
@@ -80,7 +108,7 @@ const work = defineCollection({
  *  are all optional so hand-written notes (without these fields) continue to compile. */
 const notes = defineCollection({
   name: "Note",
-  pattern: "notes/**/*.{md,mdx}",
+  pattern: PATTERNS.notes,
   schema: s
     .object({
       slug: s.slug("note"),
@@ -100,7 +128,6 @@ const notes = defineCollection({
       generatedBy: s.string().optional(),
       category: s.string().optional(),
       platforms: s.array(s.string()).default([]),
-      body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/notes/${data.slug}` })),
 });
@@ -113,7 +140,7 @@ const notes = defineCollection({
  *  render their body inline like notes. */
 const articles = defineCollection({
   name: "Article",
-  pattern: "articles/**/*.{md,mdx}",
+  pattern: PATTERNS.articles,
   schema: s
     .object({
       slug: s.slug("article"),
@@ -134,7 +161,6 @@ const articles = defineCollection({
       tags: s.array(s.string()).default([]),
       draft: s.boolean().default(false),
       readingTime: s.number().optional(), // estimated minutes
-      body: s.mdx(),
     })
     .transform((data) => ({ ...data, url: `/articles/${data.slug}` })),
 });
@@ -152,6 +178,15 @@ export default defineConfig({
     // pass --clean explicitly for a pristine production build.
     clean: false,
   },
-  collections: { projects, work, notes, articles },
+  collections: {
+    projects,
+    work,
+    notes,
+    articles,
+    projectBodies: bodyOnly("ProjectBody", PATTERNS.projects),
+    workBodies: bodyOnly("WorkBody", PATTERNS.work),
+    noteBodies: bodyOnly("NoteBody", PATTERNS.notes),
+    articleBodies: bodyOnly("ArticleBody", PATTERNS.articles),
+  },
   mdx: { gfm: true },
 });

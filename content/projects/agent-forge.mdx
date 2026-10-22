@@ -4,51 +4,51 @@ name: Agent-Forge
 tagline: Self-improving AI agent infrastructure.
 group: Agent Frameworks & Infrastructure
 repo: https://github.com/sairam0424/Agent-Forge
-commits: 201
+visibility: private
+commits: 209
 tech: [Python, FastAPI, pgvector, Celery, MCP, Docker]
-pinned: true
-pinRank: 1
-featured: true
-order: 3
+pinned: false
+featured: false
+order: 11
 excerpt: A Karpathy-style propose/eval/score/commit-or-revert loop over a git-versioned agent spec, with an LLM-judge eval harness. Framework-agnostic.
 decisions:
   - title: "Git as the rollback mechanism, not a custom versioned store"
     body: "Commit-or-revert rides on git's own history instead of a bespoke database of spec versions. The cost is a real git operation per iteration, slower than an in-memory diff-and-discard — the payoff is an audit trail already inspectable with tools every engineer has, with no parallel system to keep in sync."
-  - title: "Held-out validation as a periodic overfit check, not a per-iteration eval pass"
-    body: "Scoring every candidate against the same examples that shaped its proposal risks the loop learning to game its own judge. Rather than paying that cost every iteration, a held-out check runs periodically (every 10th iteration by default) against examples the loop never optimized against — cheaper than gating every commit on it, at the cost of only catching overfitting in arrears rather than blocking it in the moment it happens."
+  - title: "Held-out validation as a separate overfit check, not a per-iteration eval pass"
+    body: "Scoring every candidate against the same examples that shaped its proposal risks the loop learning to game its own judge. Rather than paying that cost every iteration, held-out cases sit outside the scored suite and are meant to be checked at intervals (the manager defaults to every 10th iteration) against examples the loop never optimized against — cheaper than gating every commit on it, at the cost of only catching overfitting in arrears rather than blocking it in the moment it happens. On `develop` the loop runner never calls that check, so it runs only by hand."
   - title: "Framework-agnostic adapters over a deep, single-framework integration"
     body: "Thin adapters across LangChain, LangGraph, CrewAI, AutoGen, and raw SDKs mean none gets the tightest integration a framework-native rebuild could reach. In exchange, the same loop runs over whatever stack an agent is already built on, instead of forcing a migration first."
 ---
 
 **Agent-Forge** runs a Karpathy-style **propose → eval → score → commit-or-revert** loop over a mutable, git-versioned `AGENT.md` specification — so agents iteratively improve against a measurable eval suite without human intervention between iterations.
 
-It is **framework-agnostic** (LangChain, LangGraph, CrewAI, AutoGen, or raw SDKs), using an **LLM-judge eval harness** with held-out validation to guard against overfitting, and git as the safety net: every proposed change is committed or reverted on its score. Built on Python 3.12+ with FastAPI, SQLAlchemy 2.0, Pydantic v2, a Celery + Redis pipeline, pgvector/sentence-transformers retrieval, and MCP — containerized with Docker Compose and fronted by a Next.js trust dashboard.
+It is **framework-agnostic** (LangChain, LangGraph, CrewAI, AutoGen, or raw SDKs), using an **LLM-judge eval harness** that reserves held-out cases for an overfitting check (not yet wired into the loop), and git as the safety net: every proposed change is committed or reverted on its scores. Built on Python 3.12+ with FastAPI, SQLAlchemy 2.0, Pydantic v2, a Celery + Redis pipeline, pgvector/sentence-transformers retrieval, and MCP — containerized with Docker Compose, with a FastAPI dashboard API on top (the Next.js front end was removed from `develop` on 2026-04-12).
 
 - **Git-native** improvement loop with full audit trail
-- **LLM-judge evals** + held-out validation
+- **LLM-judge evals** + reserved held-out cases (check not yet automated)
 - Framework-agnostic adapters · pgvector memory · Celery orchestration
 
-> *Forge agents worth trusting.* 201 commits.
+> *Forge agents worth trusting.* 209 commits on `develop` as of 2026-10-21, the last on 2026-04-14. Private repository; latest GitHub release v1.1.1, while `develop` carries an unreleased 2.0.0-alpha.
 
 ## Architecture
 
 The system splits into layers, each owning one part of the loop:
 
 - **`AGENT.md`** — the mutable, git-versioned spec and single source of truth for agent behavior. Every proposal is a diff against this file.
-- **Framework adapters** — thin wrappers around LangChain, LangGraph, CrewAI, AutoGen, or raw SDKs. These run and evaluate the *agent under test* during the eval step; they don't generate the proposal. Proposing always runs on a fixed system adapter (Anthropic Claude, falling back to Azure OpenAI depending on which credentials are configured) — independent of whatever framework the agent being improved happens to use.
-- **Eval harness** — the LLM-judge, scoring the candidate against the main eval suite every iteration, plus a periodic held-out check to catch overfitting before it reaches the spec.
-- **Commit-or-revert gate** — git itself as the persistence and rollback layer: passing scores land as commits, failing ones are reverted, so the spec's own history is the audit trail.
-- **Service layer** — FastAPI, SQLAlchemy 2.0, and Pydantic v2 expose the loop as an API; Celery + Redis run propose/eval as background jobs; pgvector/sentence-transformers back a separate semantic-memory layer for live agent conversations elsewhere in the system — the improvement loop's own iteration history is a plain relational log, recalled in-session rather than via vector search; MCP exposes the same surface as callable tools; Docker Compose containerizes it all; a Next.js dashboard surfaces the audit trail.
+- **Framework adapters** — thin wrappers around LangChain, LangGraph, CrewAI, AutoGen, or raw SDKs. These run and evaluate the *agent under test* during the eval step; they don't generate the proposal. Proposing always runs on a fixed system adapter (Anthropic Claude, falling back to Azure OpenAI depending on which credentials are configured), whatever framework the agent being improved uses.
+- **Eval harness** — the LLM-judge, scoring the candidate against the main eval suite every iteration; held-out cases stay outside that suite to expose overfitting (step 6), and all nine held-out logs committed to the repo are empty.
+- **Commit-or-revert gate** — git itself as the persistence and rollback layer: accepted candidates land as commits, rejected ones are reverted, so the spec's own history is the audit trail.
+- **Service layer** — FastAPI, SQLAlchemy 2.0, and Pydantic v2 expose iterations, score history, a live SSE feed and reports as an API; Celery + Redis run fleet iterations as background jobs; pgvector/sentence-transformers back a separate semantic-memory layer for live agent conversations elsewhere in the system — the improvement loop's own iteration history is a plain relational log, recalled in-session rather than via vector search; an MCP server offers agent runs, memory search and a health check as tools; Docker Compose containerizes it all.
 
 ## How It Works
 
-1. An iteration triggers — scheduled or on demand — into the Celery/Redis queue rather than running inline.
+1. An iteration is triggered on demand: `run` executes it inline, while the fleet orchestrator queues each one on Celery/Redis.
 2. A fixed system adapter (Claude, or Azure OpenAI as fallback, chosen by whichever API credentials are configured) proposes an edit to `AGENT.md`: a new instruction, a changed constraint, a removed rule — independent of whatever framework the agent under test itself runs on.
 3. The main eval suite scores the candidate via the LLM-judge — this is the score that gates the commit-or-revert decision every iteration.
-4. The score is compared against the current committed baseline.
-5. Higher score → git commits the candidate as the new `AGENT.md`, permanently part of the history. Lower or tied → git reverts and the baseline stands.
-6. Every 10th iteration by default, a separate held-out validation pass checks the loop's trajectory against examples it never optimized against — purely to catch overfitting, logged as an alert rather than gating that iteration's own commit/revert call.
+4. The result is compared against the current committed baseline on quality, p95 latency and cost.
+5. By default a multi-objective gate decides: a candidate is reverted if quality falls below the session's starting score or it regresses assertions without gaining quality; otherwise it is committed when no objective gets worse or the weighted score rises, and git makes it the new `AGENT.md`, permanently part of the history. A commit carrying regressions is flagged for human review.
+6. Held-out validation is not wired into this loop: the held-out cases are never in the scored suite, the helper built to run that check every 10th iteration (`check_held_out_if_due`) is never called by the loop, and the `eval-held-out` command does not score them either, because its runner calls the ordinary suite.
 7. The last several iteration records (score, change description) carry forward in-session so the next proposal has recent context on what's already been tried — a plain history log, not a vector search.
-8. The Next.js dashboard and MCP surface expose the audit trail — every commit is a decision an eval made, not a person.
+8. The dashboard API exposes the audit trail — every commit is a decision an eval made, not a person.
 9. The loop repeats with no human between iterations; the only touchpoint left is judging whether the trend is worth continuing.
 

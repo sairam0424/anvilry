@@ -4,46 +4,45 @@ name: Inkforge
 tagline: Notes, topics, or code → published technical articles.
 group: Tooling & Lab
 repo: https://github.com/sairam0424/Inkforge
-commits: 89
+commits: 124
 dateCreated: 2026-06-19
 license: MIT
 relatedArticles: [inkforge-build-devto]
 tech: [TypeScript, Node.js, Next.js, Turborepo, Bedrock, BM25, Commander, Vitest]
-pinned: true
-pinRank: 7
+pinned: false
 featured: false
 order: 13
-excerpt: STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to and Hashnode, plus a markdown render-spec for a manual LinkedIn carousel handoff.
+excerpt: "STORM two-stage pipeline (outline → draft → polish) with BM25 in-memory RAG, streaming web UI, and one-command publishing to Dev.to (API), plus Medium and Hashnode publishers that script your own logged-in Chrome (not live-verified); Substack and LinkedIn stay manual."
 decisions:
   - title: "Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6"
-    body: "Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6 on purpose — Opus needs separate per-account Bedrock enablement, and I chose zero extra AWS config over deeper resilience. Fallback eligibility is narrow too — only connection errors, 429/404/5xx, and IAM-deny 403s trigger it; a bad-credentials 403 doesn't, since a new model won't fix that."
-  - title: "I kept Hashnode's client despite its now-decommissioned API"
-    body: "I kept Hashnode's client despite its now-decommissioned API, and never built a real publisher for LinkedIn at all — different reasons, same effect. Hashnode fails loudly with a documented manual-paste workflow instead of a silent no-op; LinkedIn never had an API to integrate, so the render-spec-plus-human-upload path was the honest choice from day one, not a fallback. The cost: \"publish without leaving the terminal\" holds for Dev.to alone."
-  - title: "Generated articles never get committed; only the tracking record does"
-    body: "Generated articles never get committed; only the tracking record does. That keeps the repo's diff history clean, but the article text isn't recoverable from git if local `content/` is lost — only proof it was published survives."
+    body: "Bedrock's fallback stops at Haiku 4.5 and skips Opus 4.6 on purpose — Opus needs separate per-account Bedrock enablement, and I chose zero extra AWS config over deeper resilience. Fallback eligibility is narrow too — only connection errors, 429/404/5xx, model-unavailable 400s, and IAM-deny 403s trigger it; a bad-credentials 403 doesn't, since a new model won't fix that."
+  - title: "I drive Medium and Hashnode through my own Chrome, and built no LinkedIn or Substack publisher"
+    body: "I drive Medium and Hashnode through my own Chrome, and built no LinkedIn or Substack publisher at all. Hashnode's public API was decommissioned in 2026-06 and Medium offers no publishing path Inkforge uses, so the Medium publisher drives its import page and the Hashnode publisher its editor through `browser-harness` and never enter a password or MFA code; LinkedIn never had an API to integrate, so a human upload was the honest choice from day one, not a fallback. The cost: \"publish without leaving the terminal\" holds for Dev.to alone — the other two need a logged-in Chrome and a `browser-harness` binary this repo does not ship, the README says Medium's import flow and Hashnode's editor selectors were not live-verified, and the 2026-10-21 Medium note says the import-field selector no longer matches."
+  - title: "Generated articles never get committed; only the per-platform published record does"
+    body: "Generated articles never get committed; only the per-platform published record does. That keeps the diff history free of drafts, but the generated text isn't recoverable from git if local `content/` is lost — only the platform-adapted copy in each record survives, and a few records hold just a link and a note."
 ---
 
-**Inkforge** is personal publishing infrastructure — a CLI + web UI that turns scattered notes, topics, or code directories into polished technical articles and publishes them to Dev.to, Hashnode, and LinkedIn without leaving the terminal.
+**Inkforge** is personal publishing infrastructure — a CLI + web UI that turns scattered notes, topics, or code directories into polished technical articles and publishes them to Dev.to through its API, with Medium and Hashnode publishers that drive your logged-in Chrome via `browser-harness` (not live-verified); Substack and LinkedIn stay manual.
 
 The core is a **STORM two-stage pipeline**: first an explicit outline artifact is generated (section tree + word budgets per section), then each section is drafted independently with context chaining, then a single humanization pass adds voice and transitions. For notes-dump inputs, an in-process **BM25 RAG layer** (no external vector DB — k1=1.5, b=0.75, hierarchical Markdown chunker) surfaces the top-5 relevant chunks into the outline prompt.
 
 - **STORM pipeline with explicit outlines** — sections drafted independently, no context explosion; 4096-token budget with JSON truncation repair
-- **BM25 in-memory RAG** — zero external service; scales to thousands of personal notes; 95% of semantic search quality at 10% of the cost
-- **Dual output sinks** — primary `.md` files for portability; optional Anvilry `.mdx` mirror for Velite
-- **Asset spec, not asset rendering** — writes a markdown render-spec (cover dimensions, carousel slide count and copy); a human or agent renders the actual images by hand, nothing in the CLI touches pixels
-- **Platform publishers** — Dev.to REST API v1 (canonical_url), Hashnode GraphQL v2 (originalArticleURL), cross-posting without SEO duplicate penalties
+- **BM25 in-memory RAG** — no embedding service or vector database to run; BM25 over in-process chunks of your own notes
+- **Dual output sinks** — primary `.md` files for portability; optional Anvilry mirror, also `.md` since Velite's notes glob takes both
+- **No asset rendering** — nothing in the CLI touches pixels; cover, carousel and GIF specs are committed markdown under `content/published/`, rendered by a human or agent
+- **Platform publishers** — Dev.to REST API v1 (canonical_url); Medium and Hashnode via browser-harness in your logged-in Chrome, canonical URL checked by hand
 - **Streaming web UI** — SSE event stream from CLI pipeline into browser; section-by-section live preview at `/generate`
 - **Content-as-committed-data** — generated articles gitignored; published tracking committed as source of truth
 
-> 11/11 tests passing. Built the Tombstone launch article (3,531 words) from incident notes in one command. Ships as `@inkforge/cli`.
+> 44 tests in 9 files pass in CI on develop (a08e9e9, 2026-10-21). Built the Tombstone launch article (3,531 words) from incident notes in one command. `@inkforge/cli` is not on npm.
 
 ## Architecture
 
-Inkforge is a **pnpm monorepo**: `packages/core` holds the pipeline, RAG layer, LLM abstraction, and publishers; `packages/cli` is the Commander entry point. Both are versioned at 0.1.1; root sits at 0.1.2, private, with no `publishConfig` — it runs from a git clone, not npm.
+Inkforge is a **pnpm monorepo**: `packages/core` holds the pipeline, RAG layer, LLM abstraction, and publishers; `packages/cli` is the Commander entry point. Both are versioned at 0.1.1; the root is 0.1.6 (v0.1.6, 2026-10-20), private, with no `publishConfig` — it runs from a git clone, not npm.
 
 The **LLM layer** defaults to AWS Bedrock with a two-model fallback chain — Sonnet 4.6, then Haiku 4.5 — plus an `LLM_PROVIDER=anthropic` toggle. Opus 4.6 is deliberately excluded.
 
-The **publisher layer** has two real implementations: a working Dev.to REST client, and a Hashnode GraphQL client that now throws a deprecation error. LinkedIn isn't a third publisher — there's no `linkedin.ts`; `publish` only recognizes `--platform devto|hashnode`. LinkedIn ships via a markdown render-spec instead, followed by hand outside the CLI. Two test files — ingestion, RAG chunker — back the 11/11 badge; not the publishers or LLM layer.
+The **publisher layer** registers three publishers (`publish --platform devto|hashnode|medium`): a Dev.to REST client, and Medium and Hashnode publishers that script the browser through `browser-harness`, replacing the old Hashnode GraphQL client. Substack is a stub that only explains why it cannot publish (`--platform substack` is rejected) and LinkedIn has no publisher, so both ship by hand. All tests live in `@inkforge/core` and the publisher tests mock `browser-harness`; the Dev.to client, the LLM layer, the BM25 index and the outline, draft and polish stages have none.
 
 ## How It Works
 
@@ -52,7 +51,7 @@ The **publisher layer** has two real implementations: a working Dev.to REST clie
 3. **Outline generation** — one LLM call builds the section tree and word budgets via the Bedrock fallback chain.
 4. **Section drafting** — each section drafted independently with context chaining, streamed over SSE into `/generate`.
 5. **Humanization pass** — one pass adds voice and transitions.
-6. **Asset spec, not asset rendering** — Inkforge writes a markdown render-spec (cover dimensions, carousel slide count and copy) rather than rendering anything itself; a human or agent follows that spec by hand to produce the actual images.
-7. **Publish** — Dev.to pushes automatically; Hashnode throws its deprecation error; LinkedIn's PDF is uploaded by hand.
-8. **Tracking** — the article stays local and gitignored; only the `content/published/<platform>/<slug>.md` record is committed. The same pipeline has since generated Trelix and Tombstone launches too.
+6. **Assets, outside the pipeline** — Inkforge renders nothing; cover, carousel and GIF specs are committed markdown, and a human or agent produces the images by hand.
+7. **Publish** — Dev.to pushes through its API; Medium and Hashnode are driven through `browser-harness`; Substack is pasted and LinkedIn's PDF uploaded by hand.
+8. **Tracking** — the generated article stays local and gitignored; the `content/published/<platform>/<slug>.md` record is committed. The same pipeline has since generated Trelix and Tombstone launches too.
 

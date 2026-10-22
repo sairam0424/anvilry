@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   allProjects,
   featuredProjects,
+  pinnedProjects,
   projectGroups,
   projectsByGroup,
   publicProjects,
@@ -82,5 +83,26 @@ describe("ordering", () => {
   it("lists featured projects in ascending order", () => {
     const orders = featuredProjects.map((p) => p.order);
     expect([...orders].sort((a, b) => a - b)).toEqual(orders);
+  });
+});
+
+describe("pins", () => {
+  it("gives every pinned project a rank and every rank to one project only", () => {
+    const pinned = allProjects.filter((p) => p.pinned);
+    for (const p of pinned) expect(p.pinRank, `${p.slug} is pinned without a pinRank`).toBeTypeOf("number");
+    const ranks = pinned.map((p) => p.pinRank);
+    expect(new Set(ranks).size, "two pinned projects share a pinRank").toBe(ranks.length);
+  });
+
+  it("leaves an unpinned project without a rank (a stray rank would silently never show)", () => {
+    for (const p of allProjects.filter((x) => !x.pinned)) {
+      expect(p.pinRank, `${p.slug} carries pinRank ${p.pinRank} but is not pinned`).toBeUndefined();
+    }
+  });
+
+  it("exposes the pinned projects in rank order", () => {
+    const ranks = pinnedProjects.map((p) => p.pinRank ?? 99);
+    expect([...ranks].sort((a, b) => a - b)).toEqual(ranks);
+    expect(pinnedProjects.length).toBe(allProjects.filter((p) => p.pinned).length);
   });
 });

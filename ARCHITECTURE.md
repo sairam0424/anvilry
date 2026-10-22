@@ -81,8 +81,8 @@ sairam-dev/
 ├── content/                        MDX source (work, projects, notes, articles)
 ├── e2e/                            Playwright (chromium + mobile-safari): views.spec.ts — 4 views, ⌘K switching, 3 SEO status-200 checks, API smoke; resume.spec.ts — /resume
 ├── .claude/                        skills/ (/dev-local /pr /e2e-setup /new-loop /setup-codebase-harness) + workflows/ship-change.js (sibling worktree → implement → simplify → review → verify → PR; the worktree is kept, default base develop)
-├── scripts/                        bundle-budget.mjs · check-index-citations.mjs · seal-claims.ts (verifies data/integrity-chain.json) · replay-trace.mjs
-├── .github/workflows/              ci.yml (lint · tsc · test · index-citation + claims-seal checks; e2e job = build + bundle budget + Playwright), codeql, dependency-review, gitleaks, scorecard
+├── scripts/                        bundle-budget.mjs · check-index-citations.mjs · seal-claims.ts (verifies data/integrity-chain.json) · replay-trace.mjs · post-deploy-smoke.mjs (production-gate smoke checks)
+├── .github/workflows/              ci.yml (lint · tsc · test · index-citation + claims-seal checks; e2e job = build + bundle budget + Playwright), codeql, dependency-review, deploy-smoke (production gate on Vercel's deployment.ready dispatch), gitleaks, scorecard
 ├── signals/                        Evidence: feedback, ideas, observations
 ├── docs/                           Durable knowledge: decisions, analyses, learnings; index/ is the citation-gated codebase index
 └── domains/                        Loop charters (content, seo, performance)

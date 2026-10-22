@@ -64,7 +64,6 @@ export const graphNodes: GraphNode[] = [
     pos: [1.9, 1.0, -0.5],
   },
   { id: "ag-bash", label: "ag-bash", kind: "engine", pos: [2.4, 0.1, 0.6] },
-  { id: "grpc", label: "gRPC OPS", kind: "engine", pos: [1.6, -1.2, -0.2] },
   // Tooling & lab
   {
     id: "commandvault",
@@ -72,7 +71,6 @@ export const graphNodes: GraphNode[] = [
     kind: "tool",
     pos: [-0.3, 1.5, 0.5],
   },
-  { id: "nhl", label: "Not-Humans-Lab", kind: "tool", pos: [0.2, -1.6, -0.5] },
   // Production intelligence & publishing tools
   // Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 units
   { id: "tombstone", label: "Tombstone", kind: "tool", pos: [-1.7, -0.7, 0.9] },
@@ -100,7 +98,6 @@ export const graphEdges: GraphEdge[] = [
   ["mindforge", "contextos"],
   // engines
   ["graph-forge", "ag-bash"],
-  ["graph-forge", "grpc"],
   // work systems pull from the agent/engine cluster
   ["pensieve", "mindforge"],
   ["pensieve", "graph-forge"],
@@ -112,12 +109,10 @@ export const graphEdges: GraphEdge[] = [
   ["prompt-to-react", "aava"],
   ["execution-engine", "pensieve"],
   ["execution-engine", "mindforge"],
-  // lab federates tooling
-  ["nhl", "commandvault"],
-  ["nhl", "contextos"],
+  // CommandVault indexes the commands, skills and agents the agent frameworks produce
   ["commandvault", "mindforge"],
   // Tombstone and Inkforge are in the same production-tooling cluster
-  ["tombstone", "nhl"], // Tombstone is part of the Not-Humans-World workspace
+  ["tombstone", "inkforge"], // Inkforge generated Tombstone's launch article (stated on the Inkforge card)
   ["trelix", "graph-forge"], // trelix is a code-intelligence engine (sibling of Graph-Forge)
   ["inkforge", "commandvault"], // Inkforge generates content that CommandVault indexes
   // Platform cluster: the gateway family and the MCP guards around agent traffic
@@ -128,8 +123,7 @@ export const graphEdges: GraphEdge[] = [
   ["cost-guard-mcp", "tracehub-mcp"], // the two mcpsmiths MCP servers
   // Tooling and lab
   ["prompt-lift", "mindforge"], // both extend Claude Code
-  ["daily-dose", "nhl"], // Not-Humans-Lab sub-projects
-  ["nh-deck", "nhl"],
+  ["daily-dose", "nh-deck"], // two small solo tools from the same workspace (formerly Not-Humans-Lab siblings)
   ["anvilry", "inkforge"], // Inkforge mirrors generated articles into Anvilry's content
 ];
 

@@ -100,5 +100,56 @@
         }
       ]
     }
+  },
+  {
+    "seq": 3,
+    "prevHash": "sha256:f55119d68b7453e42bbb03699340098d2732d9c78b61e81954742789cec01f9b",
+    "hash": "sha256:b4b8e8200d9fc4c7a366f7ff48ed5a453191323e6116ed18e9ddc8f1fff8b64a",
+    "parentCommitSha": "1ed8d82352510c4c5be9cc8d9902b63bc9828d75",
+    "sealedAt": "2026-10-22T07:59:49.974Z",
+    "fields": {
+      "impactMetrics": [
+        {
+          "value": "2K+",
+          "label": "daily users",
+          "sub": "Pensieve",
+          "href": "/work/pensieve"
+        },
+        {
+          "value": "3K+",
+          "label": "daily users",
+          "sub": "AAVA Code · 5+ clients",
+          "href": "/work/aava-code"
+        },
+        {
+          "value": "16",
+          "label": "open-source repos",
+          "sub": "AI infrastructure",
+          "href": "/projects"
+        }
+      ],
+      "achievements": [
+        {
+          "title": "Google Code Jam 2023",
+          "detail": "AIR 420 · 3,687 / 85,000+"
+        },
+        {
+          "title": "Meta Hacker Cup 2022",
+          "detail": "4,048 / 70,000+"
+        },
+        {
+          "title": "Flipkart GRiD 2022",
+          "detail": "Top tier · 1,325 / 40,000+"
+        },
+        {
+          "title": "Institute Rank 1",
+          "detail": "GeeksforGeeks & InterviewBit"
+        },
+        {
+          "title": "Mentored 250–300 students",
+          "detail": "Data Structures & Algorithms"
+        }
+      ]
+    }
   }
 ]

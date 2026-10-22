@@ -42,9 +42,15 @@ describe("REPO_ALLOWLIST", () => {
     expect(new Set(REPO_ALLOWLIST).size).toBe(REPO_ALLOWLIST.length);
   });
 
-  it("includes the two owner-called-out extras", () => {
+  it("keeps the one owner-called-out extra that has no project card", () => {
     expect(REPO_ALLOWLIST).toContain("Thunderboard-Labs");
-    expect(REPO_ALLOWLIST).toContain("Shop.this");
+  });
+
+  it("no longer lists the retired low-priority repositories", () => {
+    // Removed from the portfolio on 2026-10-22: the order-processing demo, the lab umbrella and Shop.this.
+    for (const retired of ["Shop.this", "gRPC-micro-services", "not-humans-lab"]) {
+      expect(REPO_ALLOWLIST, retired).not.toContain(retired);
+    }
   });
 });
 

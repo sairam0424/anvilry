@@ -520,7 +520,7 @@ accessible content is elsewhere (`GraphIndex` for the graph, the visible caption
 | Skill tree throws at render | `skills.find(s => s.group === groupName)!` is a non-null assertion against six hardcoded group names (`skill-tree.tsx:61-62,169`); renaming a group in `src/lib/profile.ts:72-122` throws. |
 | Build fails on an avatar re-export | Re-exporting without meshopt/quantization, or with PNG/JPEG textures, or above 1.5 MB — `avatar-glb.test.ts` runs inside `pnpm build` (`:58-96`). |
 | Wrong scene named in the console | `WebGLBoundary` hardcodes a `[build-graph]` prefix (`webgl-boundary.tsx:25`) even when the failing surface is the hero graph, the hero avatar, the voice orb, or the 404 orb. |
-| Nodes clip out of frustum | `graph-data.ts:77` records the budget: camera z=7, fov=45 ⇒ visible half-height ≈ 2.9 / SCALE 1.6 ≈ 1.8 units. |
+| Nodes clip out of frustum | `graph-data.ts:75` records the budget: camera z=7, fov=45 ⇒ visible half-height ≈ 2.9 / SCALE 1.6 ≈ 1.8 units. |
 
 ### Flags / env that alter it
 
@@ -601,7 +601,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:179`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 113 test files (71 node + 42 dom), 1287 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 113 test files (71 node + 42 dom), 1288 tests, all passing at this tree (vitest 5.0.0, ~12 s). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, 4 `.md` rewrites, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
 | 6 | `scripts/bundle-budget.mjs` | The bundle gate that replaced `bundle-analysis.yml`. Reads `.next/diagnostics/route-bundle-stats.json` (`:37`); asserts a per-route first-load ceiling (`:72`), a route-count floor (`:40`), and that three.js stays off the first-load critical path (marker `:84`, checked at `:158-166`) and compiled MDX bodies do too (marker `:96`, checked at `:168-177`). Exits 1 when the artifact is unreadable (`:107-111`) or its shape has changed (`:114-125`). |
@@ -626,7 +626,7 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 
 `pnpm build` is `velite --clean && vitest run && next build && pagefind …` (`package.json:11`). The `&&` chain
 is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 113 test files
-(1287 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+(1288 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -764,7 +764,7 @@ pagefind failure fails the Vercel build.
 | Prerender fails "encountered the unstable value `Date.now()`" | An in-render `new Date()`/`Date.now()` under `cacheComponents`. Two live workarounds: the build-time `NEXT_PUBLIC_BUILD_YEAR` (`next.config.ts:127` → `site-footer.tsx:239`) and `/admin/telemetry`'s `export const instant = false` (`:13`) **plus** `await connection()` (`:478`) — the comment at `:471-474` records that `instant=false` alone does **not** clear it. |
 | Build fails with "26 errors" | Re-adding any `export const runtime`, `revalidate`, or `dynamic` segment config under `cacheComponents: true` (`next.config.ts:175-194,203`). The RSC transform rejects the mere *presence* of `runtime`, so `"nodejs"` and `"edge"` are indistinguishable to it. `maxDuration` and `preferredRegion` are **not** rejected. (A grep of `src/` for `export const (runtime\|revalidate\|dynamic)` finds no actual export — only comments recording their removal.) |
 | Build fails on an empty `generateStaticParams` | `cacheComponents` requires ≥1 result — which is why `src/app/notes/[slug]/page.tsx:17-27` no longer short-circuits on `!NOTES_ENABLED` and instead prerenders every *published* note slug (`publishedNotes`, `lib/content.ts:57-62`) as a 404 via `notFound()` at `:52`. |
-| GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:145`, recorded at `route.ts:3-7` — whose text still says line 101 of `github.ts`). |
+| GitHub polling cadence silently changes | `/api/github/stats` has no segment `revalidate`; the 1-hour cadence lives only in two fetch options (`api/github/stats/route.ts:31` and `src/lib/github.ts:142`, recorded at `route.ts:3-7` — whose text still says line 101 of `github.ts`). |
 | `security-alerts` reports nothing while showing green | The default `GITHUB_TOKEN` cannot read the Dependabot alerts API even with `security-events: read` — the restriction is on token **type**; a fine-grained PAT stored as `SECURITY_ALERTS_TOKEN` is required (`ci.yml:266-273`). |
 | **CI red immediately after the build step**, "cannot read .next/diagnostics/route-bundle-stats.json" | Only Turbopack writes that artifact (`node_modules/next/dist/build/index.js:2843-2844`), so any build that opted into webpack — `pnpm analyze`, or a `--webpack` flag added to `pnpm build` — leaves the gate nothing to read. It exits 1 and names `--webpack` (`scripts/bundle-budget.mjs:107-111`). This is the intended behaviour, not a false positive: unmeasurable must be red. |
 | First-load JS grows past the ceiling, or three.js lands on the critical path | `scripts/bundle-budget.mjs` fails the `e2e` job (`ci.yml:190-191`). Raising `MAX_FIRST_LOAD_BYTES` (`:72`) is allowed but must be its own commit quoting measured before/after bytes (`:69-71`); an eager `import * as THREE` in a shell component is the failure the byte ceiling alone would miss, because the bytes were always shipped — they just stopped being deferred (`:79-82`). |
@@ -806,7 +806,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 | Coupling | Sites that must agree |
 |---|---|
 | Project group names (2 copies) | `velite.config.ts:4-9` · `src/lib/content.ts:40-45` |
-| Graph node ↔ content slug | `src/lib/graph-data.ts:18-94` (`graphNodes`, 25 entries) · `src/lib/game-model.ts:37-70` (`NODE_CONTENT`) · gate `src/lib/game-model.test.ts:22-58` |
+| Graph node ↔ content slug | `src/lib/graph-data.ts:18-92` (`graphNodes`, 23 entries) · `src/lib/game-model.ts:36-67` (`NODE_CONTENT`) · gate `src/lib/game-model.test.ts:22-58` |
 | Base URL `https://anvilry.vercel.app` (**20 non-test files / 25 lines** at this tree, prose and comments included; 24 files / 33 lines with tests) | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:29,144,172,208,221,267` (6 lines, one of them inside FAQ prose at `:267`). One site is **functional, not cosmetic**: `OWN_NOTES_URL_PREFIX` (`src/lib/content.ts:79`) is how `isNoteOnlyArticle` recognises an article whose `externalUrl` is one of its own note URLs — change the domain without it and note-only articles stop being dropped while notes are dark (`content.ts:92`). `src/lib/mcp-tools.test.ts:94,107` asserts against the same host |
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:34` · `src/instrumentation-client.ts:68-69` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:83` (declared source of truth) |
@@ -838,7 +838,7 @@ Places where one subsystem's change breaks another, gathered from all ten maps �
 
 | If you want to change… | Start at | Then also touch / be aware of |
 |---|---|---|
-| Add or edit a case study / OSS project / note / article | `content/<collection>/<slug>.mdx` (or `make new-work SLUG=…`) | Run `pnpm content`. A new work/project **requires** a matching node in `src/lib/graph-data.ts:18` (`graphNodes`) and an entry in `src/lib/game-model.ts:37` or `game-model.test.ts:22-58` fails `pnpm build`. A new public project also moves `impactMetrics` (`profile.ts:65` is `publicProjects.length`; a project with `visibility: private` is listed but not counted, and `repoLink()` hides its repo link), so `npx tsx scripts/seal-claims.ts` fails in CI until `--write` re-seals `data/integrity-chain.json`. |
+| Add or edit a case study / OSS project / note / article | `content/<collection>/<slug>.mdx` (or `make new-work SLUG=…`) | Run `pnpm content`. A new work/project **requires** a matching node in `src/lib/graph-data.ts:18` (`graphNodes`) and an entry in `src/lib/game-model.ts:36` or `game-model.test.ts:22-58` fails `pnpm build`. A new public project also moves `impactMetrics` (`profile.ts:65` is `publicProjects.length`; a project with `visibility: private` is listed but not counted, and `repoLink()` hides its repo link), so `npx tsx scripts/seal-claims.ts` fails in CI until `--write` re-seals `data/integrity-chain.json`. |
 | Add or change a content **field** | `velite.config.ts` (the relevant `defineCollection`) | Make it `.optional()` or every existing file fails validation at once. Then `src/lib/content.ts`, plus any projection that should surface it. |
 | Change how content is sorted / filtered / subsetted | `src/lib/content.ts:19-96` | `pinned` without `pinRank` is dropped (`:36-38`); notes/articles sort by ISO **string** compare (`:62,:93`). Notes are hidden here, at the data layer: `allNotes` is `[]` while `NOTES_ENABLED` is off (`:66`) and note-only articles are dropped (`:92`). |
 | Change what the chatbot knows | `src/lib/corpus.ts:13-96` | Guarded by `src/lib/corpus.test.ts`. `register` flows verbatim from `:17`. Also feeds `/llms-full.txt` and the terminal `grep` (`commands.ts:180`). |
@@ -1093,13 +1093,13 @@ record the outcome rather than the original open question.
   the header at `:114` is enforced); `src/app/search/page.tsx:6` (bundle "generated post-build by
   `make search-index`" — it is the last step of `pnpm build`); `scripts/bundle-budget.mjs:27` (the header's
   "16 routes" measurement, against `MIN_ROUTES = 17`) and `:70,75,152` (cite lines 127–149 of `next.config.ts`, now
-  `:153-169`); `src/app/api/github/stats/route.ts:5-6` (cites line 101 of `github.ts`, now `:145`); `.github/dependabot.yml:80`
+  `:153-169`); `src/app/api/github/stats/route.ts:5-6` (cites line 101 of `github.ts`, now `:142`); `.github/dependabot.yml:80`
   ("Pinned to 3.0.4" — `package.json:34` pins `3.1.1`); `src/app/articles/[slug]/page.tsx:26-29` (cites
   `:59` for the external-article redirect — it is `:77-81` — and line 103 of `velite.config.ts` for the optional
   `externalUrl` — it is `velite.config.ts:158`).
 - **Four stale-comment items listed in earlier editions are FIXED** by the comment sweep on the fix branch,
   and are dropped from the carried-forward list rather than renumbered: `graph-data.ts:3` no longer counts
   systems ("every flagship work system + every OSS repo … see `graphNodes` below for the count");
-  `game-model.ts:28` reads "3 of the graph node ids" (count-free) and names the three affected ids; `scene.tsx:18-19` is
+  `game-model.ts:28` reads "a graph node id that does NOT equal its content slug" (count-free) and names the one affected id; `scene.tsx:18-19` is
   count-agnostic ("Count is taken from `graphNodes.length`"); and `agent-trace.ts:13-16` no longer claims the
   test "BLOCKS shipping" (see [§ Tests as a gate](#tests-as-a-gate--what-that-actually-means)).

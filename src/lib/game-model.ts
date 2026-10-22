@@ -25,10 +25,9 @@ export type ContentKind = "work" | "project";
 /**
  * Maps each hero-graph node id to the real content item it represents.
  *
- * LAUNCH BLOCKER this fixes: 3 of the graph node ids do NOT equal their content
- * slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→
- * `not-humans-lab`. Without this map, "click a node → open its card" would 404 for
- * those three (including the flagship AAVA work item). The node's visual `kind`
+ * LAUNCH BLOCKER this fixes: a graph node id that does NOT equal its content slug,
+ * `aava`→`aava-code` (work), the only one left. Without this map, "click a node → open
+ * its card" would 404 for the flagship AAVA work item. The node's visual `kind`
  * (work|agent|engine|tool, for color) is also collapsed here to the CONTENT kind
  * (work|project) so resolveNode knows which collection to look in.
  *
@@ -48,10 +47,8 @@ export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> =
   // Code intelligence & engines (projects)
   "graph-forge": { kind: "project", slug: "graph-forge" },
   "ag-bash": { kind: "project", slug: "ag-bash" },
-  grpc: { kind: "project", slug: "grpc-microservices" }, // node id != slug
   // Tooling & lab (projects)
   commandvault: { kind: "project", slug: "commandvault" },
-  nhl: { kind: "project", slug: "not-humans-lab" }, // node id != slug
   // Production intelligence & publishing
   tombstone: { kind: "project", slug: "tombstone" },
   trelix: { kind: "project", slug: "trelix" },

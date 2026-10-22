@@ -23,7 +23,7 @@ decisions:
     body: "I let the model chain advance only before any answer byte reaches the client; after that, an error appends an apology and closes the stream, since the client already holds part of an answer. I also took Opus out of the default chain, since the reference AWS account IAM-denies the whole family and the rung could only answer 403. The cost: the last resort is Haiku 4.5, a weaker model, and a mid-stream failure ends the answer early."
     tags: [resilience, llm, bedrock]
   - title: "Documentation and claims gates in CI over inside the production build"
-    body: "I run the citation gate, the claims-ledger seal and the bundle budget in CI and keep only Vitest inside `pnpm build`, so stale documentation fails a pull request and never a production deploy. At v3.15.0 the codebase index is 9,623 lines carrying 2,910 fingerprinted citations. The cost: the gates block a merge only through the two CI jobs that contain them, which the branch ruleset requires and a repository admin can bypass, and the citation snapshot is regenerated in the same commit as the prose, so green shows the cited text still exists, not that the prose is right."
+    body: "I run the citation gate, the claims-ledger seal and the bundle budget in CI and keep only Vitest inside `pnpm build`, so stale documentation fails a pull request and never a production deploy. At v3.16.0 the codebase index is 9,720 lines carrying 2,932 fingerprinted citations. The cost: the gates block a merge only through the two CI jobs that contain them, which the branch ruleset requires and a repository admin can bypass, and the citation snapshot is regenerated in the same commit as the prose, so green shows the cited text still exists, not that the prose is right."
     tags: [quality-gates, ci, documentation]
 ---
 
@@ -37,7 +37,7 @@ decisions:
 - **Agent surface** — a read-only MCP server with 10 tools, plus `llms.txt`, `llms-full.txt`, `resume.json` and RSS.
 - **Consistency gates** — a citation check over the codebase index, a hash-chained ledger of the headline metrics, and a first-load bundle budget, all run in CI.
 
-> At v3.15.0 (2026-10-21): 865 commits on `main` (28 of them Dependabot's) with one human maintainer, 33 GitHub releases and 0 stars; CI was green on `main` that day, but no CI job is a required check, and the claims ledger holds one sealed entry, from 2026-09-07.
+> At v3.16.0 (2026-10-22): 876 commits on `main` (28 of them Dependabot's) with one human maintainer, 34 GitHub releases and 0 stars; CI was green on `main` that day; no CI job was a required check at the cut, but `Lint · Type-check · Test` and `E2E (Playwright)` have been since that evening; the claims ledger held two sealed entries, the latest from 2026-10-21.
 
 ## Architecture
 

@@ -3,39 +3,48 @@ kind: doc
 title: Content Corpus & Velite Schemas
 domain: [content]
 status: current
-version: v3.15.0
+version: v3.16.0
 ---
 
 # Content Corpus & Velite Schemas
 
-> Part of the Anvilry v3.15.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.15.0 (`package.json` 3.15.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope.
+> Describes Anvilry v3.16.0 (`package.json` 3.16.0), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope. The post-a929932 behavioural changes now number twenty-two, and the three added in v3.16.0 are all in this scope, (20), (21) and (22): nine new `content/projects/*.mdx` files (20 projects in four groups, the new fourth group shown first on `/projects`), the Project `visibility` field (`agent-forge` and `graph-forge` are private), and the body split (compiled MDX moved out of the four metadata collections into four body-only sibling collections).
 
-**Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (11), `content/notes/*.{md,mdx}` (7) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
-**Files indexed:** 40 (39 content/config files + `.gitkeep`)
+**Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (20), `content/notes/*.{md,mdx}` (7) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
+**Files indexed:** 49 (48 content/config files + `.gitkeep`)
 
 ## At a glance
 
 | File | Role | Key exports |
 |---|---|---|
-| `velite.config.ts` | Defines the 4 Velite collections (Project, Work, Note, Article) with Zod schemas + `url` transforms and a shared `decision` object; sets output dir `.velite`, asset dir `public/static`, `clean: false`, `mdx.gfm: true` | `default` (Velite config via `defineConfig`); module-local `themeGroup`, `decision`, `projects`, `work`, `notes`, `articles` |
+| `velite.config.ts` | Defines the 4 Velite collections (Project, Work, Note, Article) with Zod schemas + `url` transforms and a shared `decision` object, plus 4 body-only siblings (ProjectBody, WorkBody, NoteBody, ArticleBody) built by `bodyOnly()` that hold the compiled MDX; sets output dir `.velite`, asset dir `public/static`, `clean: false`, `mdx.gfm: true` | `default` (Velite config via `defineConfig`); module-local `themeGroup`, `PATTERNS`, `bodyOnly`, `decision`, `projects`, `work`, `notes`, `articles` |
 | `content/work/pensieve.mdx` | Work case study — AI process-orchestration engine at Ascendion; `order: 1` (first in `allWork`) | frontmatter data (no code exports) |
 | `content/work/aava-code.mdx` | Work case study — multi-agent VS Code coding plugin; `order: 2`; the node-id mismatch target `aava` → `aava-code` | frontmatter data |
 | `content/work/wireframe-generator.mdx` | Work case study — GenAI wireframe generator over SSE; `order: 3` | frontmatter data |
 | `content/work/prompt-to-react.mdx` | Work case study — wireframe → React component/routing codegen; `order: 4` | frontmatter data |
 | `content/work/execution-engine.mdx` | Work case study — prompt-driven RAG + ReAct artifact engine; `order: 5` | frontmatter data |
-| `content/projects/mindforge.mdx` | Project — agentic-intelligence framework for Claude Code; `order: 1`, 1677 commits, `featured: true` | frontmatter data |
-| `content/projects/graph-forge.mdx` | Project — Neo4j + Chroma code-intelligence platform, ~19 microservices; `order: 2`, `featured: true`; no `dateCreated`/`license` | frontmatter data |
-| `content/projects/agent-forge.mdx` | Project — self-improving agent loop over git-versioned `AGENT.md`; `order: 3`, `pinRank: 1`, `featured: true`; no `dateCreated`/`license` | frontmatter data |
-| `content/projects/contextos.mdx` | Project — intelligence/resilience layer, 3 npm packages + 3D dashboard; `order: 4`, `featured: false` | frontmatter data |
-| `content/projects/ag-bash.mdx` | Project — TypeScript AI-native bash interpreter over WASM runtimes; `order: 5`, `featured: false` | frontmatter data |
-| `content/projects/tombstone.mdx` | Project — feature-flag intelligence platform; `order: 5` (ties ag-bash), `featured: true`; `relatedArticles` x2 | frontmatter data |
-| `content/projects/not-humans-lab.mdx` | Project — governance layer over three personal sub-projects; `order: 6`, `pinned: false`, `commits: 2` | frontmatter data |
-| `content/projects/trelix.mdx` | Project — offline code intelligence engine, 7-leg RRF retrieval; `order: 6` (ties not-humans-lab), `featured: true`; `relatedArticles` x1 | frontmatter data |
-| `content/projects/commandvault.mdx` | Project — universal AI command manager; `order: 7`, `pinned: false` | frontmatter data |
-| `content/projects/inkforge.mdx` | Project — STORM + BM25 article generation/publishing pipeline; `order: 7` (ties commandvault), `featured: true`; `relatedArticles` x1 | frontmatter data |
-| `content/projects/grpc-microservices.mdx` | Project — event-driven Go+Python order-processing backend; `order: 8`; the only project with **no** `commits` field | frontmatter data |
+| `content/projects/mindforge.mdx` | Project — agentic-intelligence framework for Claude Code; `order: 8`, 1822 commits, `featured: true`, `pinRank: 4` | frontmatter data |
+| `content/projects/graph-forge.mdx` | Project — Neo4j + Chroma code-intelligence platform, ~19 microservices; `order: 12`, `featured: false`, `visibility: private`; no `dateCreated`/`license` | frontmatter data |
+| `content/projects/agent-forge.mdx` | Project — self-improving agent loop over git-versioned `AGENT.md`; `order: 11`, `featured: false`, `visibility: private`; no `dateCreated`/`license` | frontmatter data |
+| `content/projects/contextos.mdx` | Project — intelligence/resilience layer, 3 npm packages + 3D dashboard; `order: 15`, `featured: false` | frontmatter data |
+| `content/projects/ag-bash.mdx` | Project — TypeScript AI-native bash interpreter over WASM runtimes; `order: 16`, `featured: false`, `pinRank: 5` | frontmatter data |
+| `content/projects/tombstone.mdx` | Project — feature-flag intelligence platform; `order: 7`, `featured: true`, `pinRank: 2`; `relatedArticles` x2 | frontmatter data |
+| `content/projects/not-humans-lab.mdx` | Project — governance layer over three personal sub-projects; `order: 20`, `pinned: false`, `commits: 4` | frontmatter data |
+| `content/projects/trelix.mdx` | Project — offline code intelligence engine, 7-leg RRF retrieval; `order: 6`, `featured: true`, `pinRank: 1`; `relatedArticles` x1 | frontmatter data |
+| `content/projects/commandvault.mdx` | Project — universal AI command manager; `order: 17`, `pinRank: 6` | frontmatter data |
+| `content/projects/inkforge.mdx` | Project — STORM + BM25 article generation/publishing pipeline; `order: 13`, `featured: false`; `relatedArticles` x1 | frontmatter data |
+| `content/projects/grpc-microservices.mdx` | Project — event-driven Go+Python order-processing backend; `order: 14`, 316 commits (the v3.15.0 card had no `commits` field) | frontmatter data |
+| `content/projects/kelvran.mdx` | Project — self-hosted Go LLM gateway with a correctness-gated cache and per-run cost attribution; group `Platform, Guardrails & Observability`, `order: 1`, 863 commits, `featured: true`; repo under the `kelvran` organization | frontmatter data |
+| `content/projects/toolwarrant.mdx` | Project — Go control plane that defends MCP tool use against rug pulls (approve one exact tool-definition digest); platform group, `order: 2`, 445 commits, `featured: true` | frontmatter data |
+| `content/projects/cost-guard-mcp.mdx` | Project — Python MCP server that prices and bounds a warehouse query for an agent before it runs (BigQuery, Snowflake, Databricks); platform group, `order: 3`, 211 commits, `featured: true`; repo under the `mcpsmiths` organization | frontmatter data |
+| `content/projects/prompt-lift.mdx` | Project — Claude Code mod that rewrites a vague draft prompt from `CLAUDE.md` and skills before it is sent; `Tooling & Lab`, `order: 4`, 178 commits, `featured: true`; repo is named `claude-prompt-lift` | frontmatter data |
+| `content/projects/ratecap.mdx` | Project — recreation of Stripe's four-tier rate limiter and load shedder, as a Go sidecar and core; platform group, `order: 5`, 347 commits, `featured: true` | frontmatter data |
+| `content/projects/tracehub-mcp.mdx` | Project — read-only MCP server over OpenTelemetry LLM traces across eight backends (began as a fork of traceloop/opentelemetry-mcp-server); platform group, `order: 9`, 322 commits, `featured: false`; repo under the `mcpsmiths` organization | frontmatter data |
+| `content/projects/anvilry.mdx` | Project — this portfolio: four switchable views and a read-only MCP server over one MDX source; `Tooling & Lab`, `order: 10`, 865 commits, `pinRank: 3`, `featured: false`; no `license` (MIT covers the code only, `content/` is all rights reserved) | frontmatter data |
+| `content/projects/daily-dose.mdx` | Project — nightly AI-curated tech digest (four keyless sources, one batched Bedrock call, per-run cost ledger); `Tooling & Lab`, `order: 18`, 179 commits, `featured: false` | frontmatter data |
+| `content/projects/nh-deck.mdx` | Project — local-first CLI that turns one Markdown file into a slide deck, a sibling under Not-Humans-Lab; `Tooling & Lab`, `order: 19`, 58 commits, `featured: false` | frontmatter data |
 | `content/notes/.gitkeep` | Single-line comment placeholder ("Empty by design — the /notes section ships dark until real posts exist"); keeps the dir tracked | n/a (108-byte comment file) |
 | `content/notes/feature-flags-at-scale-distributed-control-system.md` | Inkforge-generated note (3401 words) on feature flags as a distributed control plane | frontmatter + MDX body |
 | `content/notes/how-dns-works.mdx` | Inkforge-generated note (3784 words) on DNS resolution/caching/failure modes; `.mdx` despite `generatedBy: inkforge`; **no** `category` field | frontmatter + MDX body |
@@ -84,27 +93,34 @@ Velite primitive semantics (verified in `node_modules/velite/dist/index.js`):
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
-| `slug` | `s.slug("project")` | required | unique in `slug:project` | `:25` |
-| `name` | `s.string()` | required | — | `:26` |
-| `tagline` | `s.string()` | required | — | `:27` |
-| `group` | `s.enum([...])` | required | one of `"Agent Frameworks & Infrastructure"`, `"Code Intelligence & Engines"`, `"Tooling & Lab"` | `:28`, enum at `:4-8` |
-| `repo` | `s.string().url()` | required | must be a valid URL | `:29` |
-| `commits` | `s.number()` | **optional** | — | `:30` |
-| `dateCreated` | `s.isodate()` | **optional** | real GitHub repo creation date; omitted (not fabricated) for private repos (404 unauthenticated) — unset on `graph-forge` and `agent-forge` | `:34` |
-| `license` | `s.string()` | **optional** | SPDX ID; omitted where the repo has no license file — unset on `graph-forge`, `agent-forge`, `grpc-microservices` | `:35` |
-| `relatedArticles` | `s.array(s.string())` | **optional** | Article slugs documenting the project; **no referential check** (set on `tombstone`, `trelix`, `inkforge` only) | `:39` |
-| `decisions` | `s.array(decision)` | optional | `.default([])`; `decision` = `{ title, body, tags (default []) }` (`:13-17`), migrated verbatim from the former "## Key Decisions" MDX section; all 11 projects carry 3 (33 total) | `:40` |
-| `tech` | `s.array(s.string())` | required | — | `:41` |
-| `pinned` | `s.boolean()` | optional | `.default(false)` | `:42` |
-| `pinRank` | `s.number()` | **optional** | — | `:43` |
-| `featured` | `s.boolean()` | optional | `.default(false)` | `:44` |
-| `order` | `s.number()` | optional | `.default(100)` | `:45` |
+| `slug` | `s.slug("project")` | required | unique in `slug:project` | `:51` |
+| `name` | `s.string()` | required | — | `:52` |
+| `tagline` | `s.string()` | required | — | `:53` |
+| `group` | `s.enum([...])` | required | one of four values, in display order: `"Platform, Guardrails & Observability"` (5 projects, shown first on `/projects`), `"Agent Frameworks & Infrastructure"` (4), `"Code Intelligence & Engines"` (4), `"Tooling & Lab"` (7) | `:54`, enum at `:4-9` |
+| `repo` | `s.string().url()` | required | must be a valid URL, also for a private repository (the field stays; `repoLink()` hides it) | `:55` |
+| `visibility` | `s.enum(["public", "private"])` | optional | `.default("public")`; `"private"` marks a repository a visitor cannot open (GitHub 404s) and is set on `agent-forge` and `graph-forge` only; every surface drops the repo link for it (see below the table) | `:59`, comment `:56-58` |
+| `commits` | `s.number()` | **optional** | — | `:60` |
+| `dateCreated` | `s.isodate()` | **optional** | real GitHub repo creation date; omitted (not fabricated) for private repos (404 unauthenticated) — unset on `graph-forge` and `agent-forge` | `:64` |
+| `license` | `s.string()` | **optional** | SPDX ID; omitted where the repo has no license file — unset on `graph-forge`, `agent-forge`, `grpc-microservices` and `anvilry` (its MIT license covers the code only, `content/` is all rights reserved) | `:65` |
+| `relatedArticles` | `s.array(s.string())` | **optional** | Article slugs documenting the project; **no referential check** (set on `tombstone`, `trelix`, `inkforge` only) | `:69` |
+| `decisions` | `s.array(decision)` | optional | `.default([])`; `decision` = `{ title, body, tags (default []) }` (`:39-43`), migrated verbatim from the former "## Key Decisions" MDX section; the original 11 projects carry 3 each (33) and the nine added in v3.16.0 carry 4 each (36): 69 in total | `:70` |
+| `tech` | `s.array(s.string())` | required | — | `:71` |
+| `pinned` | `s.boolean()` | optional | `.default(false)`; `true` on exactly six projects, the real GitHub pins | `:72` |
+| `pinRank` | `s.number()` | **optional** | set only where `pinned` is true; unique, 1 to 6: 1 `trelix`, 2 `tombstone`, 3 `anvilry`, 4 `mindforge`, 5 `ag-bash`, 6 `commandvault` (`src/lib/content.test.ts:90`) | `:73` |
+| `featured` | `s.boolean()` | optional | `.default(false)`; `true` on eight projects: `kelvran`, `toolwarrant`, `cost-guard-mcp`, `prompt-lift`, `ratecap`, `trelix`, `tombstone`, `mindforge`; never on a private project (`src/lib/content.test.ts:65`) | `:74` |
+| `order` | `s.number()` | optional | `.default(100)`; every project sets its own, unique 1 to 20 (`src/lib/content.test.ts:78`) | `:75` |
 | `body` | — (moved) | — | not a Project field: compiled MDX is in the `ProjectBody` collection, see "Body collections" below | — |
-| `excerpt` | `s.string()` | required | — | `:47` |
-| `url` | — (derived) | added | `.transform((data) => ({ ...data, url: \`/projects/${data.slug}\` }))` | `:49` |
+| `excerpt` | `s.string()` | required | — | `:76` |
+| `url` | — (derived) | added | `.transform((data) => ({ ...data, url: \`/projects/${data.slug}\` }))` | `:78` |
 
 The `themeGroup` enum (`velite.config.ts:4-9`) is duplicated as a literal tuple in
-`src/lib/content.ts:40-45` (`projectGroups`) — the ordering there drives `/projects` section order.
+`src/lib/content.ts:40-45` (`projectGroups`) — the ordering there drives `/projects` section order, and `questGroups()` in
+`src/lib/game-model.ts` iterates the same list for the 3D index instead of keeping its own copy
+(`src/lib/content.test.ts:19` pins the four groups, the platform group first).
+`visibility: private` keeps the entry (its dossier page is the product) but `repoLink()` (`src/lib/content.ts:31-33`) returns `null` for it,
+so the project cards, `/projects/[slug]`, the chat card, the 3D dossier, the corpus, the MCP project tools, the resume JSON and the
+JSON-LD drop the repo link (the project card, `/projects/[slug]` and the chat card say "Private repository"); `publicProjects` (`src/lib/content.ts:28`, 18 of the 20) drives the hero
+repo metric, About and the terminal count. `src/lib/content.test.ts:69` pins that a private project sets neither `dateCreated` nor `license`.
 `dateCreated`/`license` feed `SoftwareSourceCodeJsonLd`; `relatedArticles` is resolved by
 `src/app/projects/[slug]/page.tsx:88-90` via `getArticle` (unknown slugs are silently dropped) and
 rendered by `src/components/related-writing.tsx`.
@@ -113,20 +129,20 @@ rendered by `src/components/related-writing.tsx`.
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
-| `slug` | `s.slug("work")` | required | unique in `slug:work` | `:58` |
-| `name` | `s.string()` | required | — | `:59` |
-| `role` | `s.string()` | required | — | `:60` |
-| `register` | `s.string()` | **required** | honest contribution note, e.g. `"Co-built · architected the backend"` | `:61` |
-| `summary` | `s.string()` | required | — | `:62` |
-| `metrics` | `s.array(s.object({ value: s.string(), label: s.string() }))` | required | `value` is a **string**, not a number | `:63` |
-| `tech` | `s.array(s.string())` | required | — | `:64` |
-| `order` | `s.number()` | optional | `.default(100)` | `:65` |
-| `constraints` | `s.string()` | **optional** | renders only when present; also a decisions-ledger source | `:68` |
-| `tradeoffs` | `s.string()` | **optional** | renders only when present; also a decisions-ledger source | `:69` |
-| `diagram` | `s.string()` | **optional** | path to an owner-authored diagram (e.g. `/static/...`) | `:70` |
-| `diagramAlt` | `s.string()` | **optional** | comment marks it "REQUIRED alt text when `diagram` is set (a11y) — asserted in a test" | `:71` |
+| `slug` | `s.slug("work")` | required | unique in `slug:work` | `:87` |
+| `name` | `s.string()` | required | — | `:88` |
+| `role` | `s.string()` | required | — | `:89` |
+| `register` | `s.string()` | **required** | honest contribution note, e.g. `"Co-built · architected the backend"` | `:90` |
+| `summary` | `s.string()` | required | — | `:91` |
+| `metrics` | `s.array(s.object({ value: s.string(), label: s.string() }))` | required | `value` is a **string**, not a number | `:92` |
+| `tech` | `s.array(s.string())` | required | — | `:93` |
+| `order` | `s.number()` | optional | `.default(100)` | `:94` |
+| `constraints` | `s.string()` | **optional** | renders only when present; also a decisions-ledger source | `:97` |
+| `tradeoffs` | `s.string()` | **optional** | renders only when present; also a decisions-ledger source | `:98` |
+| `diagram` | `s.string()` | **optional** | path to an owner-authored diagram (e.g. `/static/...`) | `:99` |
+| `diagramAlt` | `s.string()` | **optional** | comment marks it "REQUIRED alt text when `diagram` is set (a11y) — asserted in a test" | `:100` |
 | `body` | — (moved) | — | not a Work field: compiled MDX is in the `WorkBody` collection, see "Body collections" below | — |
-| `url` | — (derived) | added | `.transform(... url: \`/work/${data.slug}\`)` | `:74` |
+| `url` | — (derived) | added | `.transform(... url: \`/work/${data.slug}\`)` | `:102` |
 
 There is **no `featured` field on Work** — the home page's "featured work" list is
 `allWork` in full (`src/components/home/featured-work.tsx:12`).
@@ -140,45 +156,45 @@ project `decisions[]` entry (title >3 chars, body >20 chars).
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
-| `slug` | `s.slug("note")` | required | unique in `slug:note` | `:86` |
-| `title` | `s.string()` | required | — | `:87` |
-| `date` | `s.isodate()` | required | → ISO string | `:88` |
-| `summary` | `s.string()` | required | — | `:89` |
-| `tags` | `s.array(s.string())` | optional | `.default([])` | `:90` |
-| `draft` | `s.boolean()` | optional | `.default(false)` | `:91` |
-| `tone` | `s.enum(["beginner","intermediate","senior"])` | **optional** | Inkforge metadata | `:93` |
-| `format` | `s.enum(["tutorial","narrative","explainer","opinion","showcase"])` | **optional** | Inkforge metadata | `:94-96` |
-| `length` | `s.enum(["thread","short","medium","comprehensive"])` | **optional** | Inkforge metadata | `:97` |
-| `wordCount` | `s.number()` | **optional** | — | `:98` |
-| `readingTime` | `s.number()` | **optional** | minutes | `:99` |
-| `generatedBy` | `s.string()` | **optional** | free-form string, **not** an enum; `"inkforge"` is the only value in use, and 2 of the 7 notes omit it | `:100` |
-| `category` | `s.string()` | **optional** | free-form | `:101` |
-| `platforms` | `s.array(s.string())` | optional | `.default([])` | `:102` |
+| `slug` | `s.slug("note")` | required | unique in `slug:note` | `:114` |
+| `title` | `s.string()` | required | — | `:115` |
+| `date` | `s.isodate()` | required | → ISO string | `:116` |
+| `summary` | `s.string()` | required | — | `:117` |
+| `tags` | `s.array(s.string())` | optional | `.default([])` | `:118` |
+| `draft` | `s.boolean()` | optional | `.default(false)` | `:119` |
+| `tone` | `s.enum(["beginner","intermediate","senior"])` | **optional** | Inkforge metadata | `:121` |
+| `format` | `s.enum(["tutorial","narrative","explainer","opinion","showcase"])` | **optional** | Inkforge metadata | `:122-124` |
+| `length` | `s.enum(["thread","short","medium","comprehensive"])` | **optional** | Inkforge metadata | `:125` |
+| `wordCount` | `s.number()` | **optional** | — | `:126` |
+| `readingTime` | `s.number()` | **optional** | minutes | `:127` |
+| `generatedBy` | `s.string()` | **optional** | free-form string, **not** an enum; `"inkforge"` is the only value in use, and 2 of the 7 notes omit it | `:128` |
+| `category` | `s.string()` | **optional** | free-form | `:129` |
+| `platforms` | `s.array(s.string())` | optional | `.default([])` | `:130` |
 | `body` | — (moved) | — | not a Note field: compiled MDX (both `.md` and `.mdx`) is in the `NoteBody` collection, see "Body collections" below | — |
-| `url` | — (derived) | added | `.transform(... url: \`/notes/${data.slug}\`)` | `:105` |
+| `url` | — (derived) | added | `.transform(... url: \`/notes/${data.slug}\`)` | `:132` |
 
 ### Article (`velite.config.ts:141-166`) — pattern `articles/**/*.{md,mdx}`
 
 | Field | Zod type | Req/Opt | Transform / default | Cite |
 |---|---|---|---|---|
-| `slug` | `s.slug("article")` | required | unique in `slug:article` | `:119` |
-| `title` | `s.string()` | required | — | `:120` |
-| `date` | `s.isodate()` | required | → ISO string | `:121` |
-| `summary` | `s.string()` | required | — | `:122` |
-| `source` | `s.enum(["medium","substack","linkedin","devto","hashnode","native"])` | required | `linkedin` is in the enum but no file uses it | `:123-130` |
-| `externalUrl` | `s.string().url()` | **optional** | comment: "required for non-native; omit for native" — **not enforced by the schema**; an empty string fails `.url()` (logged, non-fatal; see Detail) | `:131` |
-| `canonicalUrl` | `s.string().url()` | **optional** | SEO canonical | `:132` |
-| `linkedNote` | `s.string()` | **optional** | plain string, **no referential check** against Note slugs | `:133` |
-| `tags` | `s.array(s.string())` | optional | `.default([])` | `:134` |
-| `draft` | `s.boolean()` | optional | `.default(false)` | `:135` |
-| `readingTime` | `s.number()` | **optional** | estimated minutes | `:136` |
+| `slug` | `s.slug("article")` | required | unique in `slug:article` | `:146` |
+| `title` | `s.string()` | required | — | `:147` |
+| `date` | `s.isodate()` | required | → ISO string | `:148` |
+| `summary` | `s.string()` | required | — | `:149` |
+| `source` | `s.enum(["medium","substack","linkedin","devto","hashnode","native"])` | required | `linkedin` is in the enum but no file uses it | `:150-157` |
+| `externalUrl` | `s.string().url()` | **optional** | comment: "required for non-native; omit for native" — **not enforced by the schema**; an empty string fails `.url()` (logged, non-fatal; see Detail) | `:158` |
+| `canonicalUrl` | `s.string().url()` | **optional** | SEO canonical | `:159` |
+| `linkedNote` | `s.string()` | **optional** | plain string, **no referential check** against Note slugs | `:160` |
+| `tags` | `s.array(s.string())` | optional | `.default([])` | `:161` |
+| `draft` | `s.boolean()` | optional | `.default(false)` | `:162` |
+| `readingTime` | `s.number()` | **optional** | estimated minutes | `:163` |
 | `body` | — (moved) | — | not an Article field: the `ArticleBody` collection holds it, and every shipped Article body is `""` | — |
-| `url` | — (derived) | added | `.transform(... url: \`/articles/${data.slug}\`)` | `:139` |
+| `url` | — (derived) | added | `.transform(... url: \`/articles/${data.slug}\`)` | `:165` |
 
 Note the unenforced invariants written as comments only: `externalUrl` "required for
 non-native" (`velite.config.ts:158`) and `linkedNote` "slug of an existing /notes entry"
 (`velite.config.ts:160`). Neither is a Zod refinement, and no test enforces either
-(`relatedArticles` at `:39` is likewise unchecked). Today both hold in the data: every non-native
+(`relatedArticles` at `:69` is likewise unchecked). Today both hold in the data: every non-native
 article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a real note — see
 "Cross-references" §5.
 
@@ -186,7 +202,7 @@ article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a
 
 `body: s.mdx()` is **not** a field of Project, Work, Note or Article. Each has a body-only sibling collection over the same glob: `ProjectBody`, `WorkBody`, `NoteBody`, `ArticleBody`, built by `bodyOnly()` from shared `PATTERNS` and registered as `projectBodies` / `workBodies` / `noteBodies` / `articleBodies` (`velite.config.ts:181-190`). Their records are `{ slug, body }`; `slug` is a plain `s.string()` there because the metadata collection over the same files already validates its format and uniqueness. `.velite/` therefore holds eight JSON files, and `src/lib/content-bodies.ts` is the only reader of the four `*Bodies.json`.
 
-Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs`.
+Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (9 tests; importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs` (`MDX_MARKER` at `scripts/bundle-budget.mjs:96`, the failing check at `:168-177`). Measured on the v3.16.0 tree: first-load JS for `/` is 976,936 B, against 1,188,350 B at the v3.15.0 cut (the peak before the split was 1,298,585 B), which leaves 359,064 B under `MAX_FIRST_LOAD_BYTES` (1_336_000, unchanged).
 
 ## Content inventory
 
@@ -211,41 +227,56 @@ Every Work body follows the same H2 shape — `## Problem`, `## Approach`, `## I
 (e.g. `content/work/aava-code.mdx:31`). The `make new-work` scaffold does **not** follow this shape
 (it emits `## What I Built`, no `constraints`/`tradeoffs`).
 
-### Project — 11 files, `content/projects/*.mdx`
+### Project — 20 files, `content/projects/*.mdx`
 
 | slug | name | group | repo | commits | pinned / pinRank | featured | order | dateCreated · license | tagline |
 |---|---|---|---|---|---|---|---|---|---|
-| `mindforge` | MindForge | Agent Frameworks & Infrastructure | `github.com/sairam0424/MindForge` | 1677 | true / 6 | **true** | 1 | 2026-03-19 · MIT | Agentic-intelligence framework for Claude Code. |
-| `graph-forge` | Graph-Forge | Code Intelligence & Engines | `github.com/sairam0424/Graph-Forge` | 612 | true / 2 | **true** | 2 | — | AI-native distributed code-intelligence platform. |
-| `agent-forge` | Agent-Forge | Agent Frameworks & Infrastructure | `github.com/sairam0424/Agent-Forge` | 201 | true / 1 | **true** | 3 | — | Self-improving AI agent infrastructure. |
-| `contextos` | ContextOS | Agent Frameworks & Infrastructure | `github.com/sairam0424/ContextOS` | 190 | true / 5 | false | 4 | 2026-03-30 · MIT | Intelligence layer for autonomous AI agents. |
-| `ag-bash` | ag-bash | Code Intelligence & Engines | `github.com/sairam0424/ag-bash` | 449 | true / 4 | false | 5 | 2026-04-14 · Apache-2.0 | AI-native bash interpreter, in TypeScript. |
-| `tombstone` | Tombstone | Agent Frameworks & Infrastructure | `github.com/sairam0424/Tombstone` | 775 | true / 4 | **true** | 5 | 2026-06-21 · MIT | Production intelligence layer for 5,000+ feature flags. |
-| `not-humans-lab` | Not-Humans-Lab | Tooling & Lab | `github.com/sairam0424/not-humans-lab` | 2 | false / — | false | 6 | 2026-09-02 · Apache-2.0 | Governance layer over three personal sub-projects. |
-| `trelix` | Trelix | Code Intelligence & Engines | `github.com/sairam0424/trelix` | 1192 | true / 5 | **true** | 6 | 2026-06-25 · MIT | Offline code intelligence engine — Tree-sitter indexing, hybrid BM25+vector+graph search. |
-| `commandvault` | CommandVault | Tooling & Lab | `github.com/sairam0424/CommandVault` | 140 | false / — | false | 7 | 2026-05-01 · MIT | Universal AI command manager. |
-| `inkforge` | Inkforge | Tooling & Lab | `github.com/sairam0424/Inkforge` | 89 | true / 7 | **true** | 7 | 2026-06-19 · MIT | Notes, topics, or code → published technical articles. |
-| `grpc-microservices` | Order Processing System | Code Intelligence & Engines | `github.com/sairam0424/gRPC-micro-services` | *(absent)* | true / 3 | **true** | 8 | 2026-02-07 · — | Distributed, event-driven gRPC microservices. |
+| `mindforge` | MindForge | Agent Frameworks & Infrastructure | `github.com/sairam0424/MindForge` | 1822 | true / 4 | **true** | 8 | 2026-03-19 · MIT | Agentic-intelligence framework for Claude Code. |
+| `graph-forge` | Graph-Forge | Code Intelligence & Engines | `github.com/sairam0424/Graph-Forge` (private) | 574 | false / — | false | 12 | — | AI-native distributed code-intelligence platform. |
+| `agent-forge` | Agent-Forge | Agent Frameworks & Infrastructure | `github.com/sairam0424/Agent-Forge` (private) | 209 | false / — | false | 11 | — | Self-improving AI agent infrastructure. |
+| `contextos` | ContextOS | Agent Frameworks & Infrastructure | `github.com/sairam0424/ContextOS` | 233 | false / — | false | 15 | 2026-03-30 · MIT | Intelligence layer for autonomous AI agents. |
+| `ag-bash` | ag-bash | Code Intelligence & Engines | `github.com/sairam0424/ag-bash` | 512 | true / 5 | false | 16 | 2026-04-14 · Apache-2.0 | AI-native bash interpreter, in TypeScript. |
+| `tombstone` | Tombstone | Agent Frameworks & Infrastructure | `github.com/sairam0424/Tombstone` | 1034 | true / 2 | **true** | 7 | 2026-06-21 · MIT | Production intelligence layer for 5,000+ feature flags. |
+| `not-humans-lab` | Not-Humans-Lab | Tooling & Lab | `github.com/sairam0424/not-humans-lab` | 4 | false / — | false | 20 | 2026-09-02 · Apache-2.0 | Governance layer over three personal sub-projects. |
+| `trelix` | Trelix | Code Intelligence & Engines | `github.com/sairam0424/trelix` | 1556 | true / 1 | **true** | 6 | 2026-06-25 · MIT | Offline code intelligence engine — Tree-sitter indexing, hybrid BM25+vector+grep search. |
+| `commandvault` | CommandVault | Tooling & Lab | `github.com/sairam0424/CommandVault` | 194 | true / 6 | false | 17 | 2026-05-01 · MIT | Universal AI command manager. |
+| `inkforge` | Inkforge | Tooling & Lab | `github.com/sairam0424/Inkforge` | 124 | false / — | false | 13 | 2026-06-19 · MIT | Notes, topics, or code → published technical articles. |
+| `grpc-microservices` | Order Processing System | Code Intelligence & Engines | `github.com/sairam0424/gRPC-micro-services` | 316 | false / — | false | 14 | 2026-02-07 · — | Distributed, event-driven gRPC microservices. |
+| `kelvran` | Kelvran | Platform, Guardrails & Observability | `github.com/kelvran/gateway` | 863 | false / — | **true** | 1 | 2026-09-03 · Apache-2.0 | Self-hosted Go LLM gateway with a correctness-gated cache and per-run cost attribution |
+| `toolwarrant` | toolwarrant | Platform, Guardrails & Observability | `github.com/sairam0424/toolwarrant` | 445 | false / — | **true** | 2 | 2026-10-12 · Apache-2.0 | Approve one exact MCP tool-definition digest; the gateway lists only tools that match it |
+| `cost-guard-mcp` | Cost Guard MCP | Platform, Guardrails & Observability | `github.com/mcpsmiths/cost-guard-mcp` | 211 | false / — | **true** | 3 | 2026-09-12 · MIT | Fail-closed query-cost guardrails for AI agents on BigQuery, Snowflake and Databricks |
+| `prompt-lift` | prompt-lift | Tooling & Lab | `github.com/sairam0424/claude-prompt-lift` | 178 | false / — | **true** | 4 | 2026-10-17 · MIT | Claude Code mod: one press rewrites a vague prompt from your CLAUDE.md and skills |
+| `ratecap` | RateCap | Platform, Guardrails & Observability | `github.com/sairam0424/RateCap` | 347 | false / — | **true** | 5 | 2026-07-13 · MIT | Recreation of Stripe's four-tier rate limiter and load shedder, as a Go sidecar and core |
+| `tracehub-mcp` | tracehub-mcp | Platform, Guardrails & Observability | `github.com/mcpsmiths/tracehub-mcp` | 322 | false / — | false | 9 | 2026-09-12 · Apache-2.0 | Read-only MCP server for querying LLM traces across eight OpenTelemetry backends |
+| `anvilry` | Anvilry | Tooling & Lab | `github.com/sairam0424/anvilry` | 865 | true / 3 | false | 10 | 2026-06-12 · — | Portfolio with four switchable views and a read-only MCP server over one MDX source |
+| `daily-dose` | Daily Dose | Tooling & Lab | `github.com/sairam0424/daily-dose` | 179 | false / — | false | 18 | 2026-09-02 · Apache-2.0 | AI-curated daily tech digest: four sources, one batched Bedrock call, per-run cost ledger |
+| `nh-deck` | nh-deck | Tooling & Lab | `github.com/sairam0424/nh-deck` | 58 | false / — | false | 19 | 2026-09-02 · Apache-2.0 | Local-first CLI that turns one Markdown file into a presentable slide deck |
 
-**Duplicate `order` values:** 5 (`ag-bash`, `tombstone`), 6 (`not-humans-lab`, `trelix`),
-7 (`commandvault`, `inkforge`). **Duplicate `pinRank` values:** 4 (`ag-bash`, `tombstone`),
-5 (`contextos`, `trelix`); `inkforge` has `pinRank: 7`, past the "rank 1..6" comment above
-`pinnedProjects` in `src/lib/content.ts`. Since `src/lib/content.ts:19-22` and `:27-29` use plain numeric
-comparators, tied items keep whatever relative order the Velite file walk produced — the
-displayed order among ties is not pinned by the frontmatter.
+The first eleven rows are the original projects in their old file order and the last nine were added in v3.16.0, so the `order`
+column does not ascend down the table. **`order`:** every project sets its own value, unique 1 to 20 (the v3.15.0 card set had
+ties at 5, 6 and 7, which `src/lib/content.test.ts:78` now rules out). **`featured`:** eight projects, which are exactly the
+orders 1 to 8: `kelvran`, `toolwarrant`, `cost-guard-mcp`, `prompt-lift`, `ratecap`, `trelix`, `tombstone`, `mindforge`.
+**`pinned` / `pinRank`:** six projects, unique ranks 1 to 6 that mirror the real GitHub pins (1 `trelix`, 2 `tombstone`,
+3 `anvilry`, 4 `mindforge`, 5 `ag-bash`, 6 `commandvault`); the other 14 are `pinned: false` with no `pinRank`, so the
+"rank 1..6" comment above `pinnedProjects` in `src/lib/content.ts:35` now holds. `allProjects` and `pinnedProjects` sort with plain
+numeric comparators (`src/lib/content.ts:19-22` and `:36-38`), which are deterministic now that nothing ties.
+**Private:** `graph-forge` and `agent-forge` carry `visibility: private` (marked in the repo column); the other 18 are public.
 
-`grpc-microservices` is the only project without `commits`; the corpus builder guards this with
-`p.commits ? \` · ${p.commits} commits\` : ""` (`src/lib/corpus.ts:26-28`).
-`not-humans-lab` has `commits: 2` (it was 289 in an earlier revision of this index); the value
-flows verbatim into the corpus and the project page and has not been reconciled with the live repo.
+Every project now sets `commits` (`grpc-microservices` was the only one without it in v3.15.0; the v3.16.0 refresh set 316); the
+corpus builder still guards the optional field with `p.commits ? \` · ${p.commits} commits\` : ""` (`src/lib/corpus.ts:26-28`).
+`not-humans-lab` has `commits: 4` (it was 2 before the refresh and 289 in an earlier revision of this index); the value
+flows verbatim into the corpus and the project page.
 `slug: grpc-microservices` does **not** match its repo name `gRPC-micro-services`
 (`content/projects/grpc-microservices.mdx:6`), and `name: Order Processing System` does not match
-the slug either — the only project where all three differ.
+the slug either — the only project where all three differ. Slug and repo name also differ for `prompt-lift` (repo
+`claude-prompt-lift`) and `kelvran` (repo `gateway` under the `kelvran` organization); `cost-guard-mcp` and `tracehub-mcp` live
+under the `mcpsmiths` organization, which is why `REPO_ALLOWLIST` accepts `owner/name` entries (Cross-references §4).
 
-`content/projects/trelix.mdx` ships a self-contradicting figure: the `excerpt` (`:16`) cites 1,467
-unit tests, the pull-quote (`:37`) cites 929 unit + 16 integration tests at a 75% coverage gate, and an
-in-body note (`:58`) states that the two disagree and neither matches the repo. Hard-coded counts in
-frontmatter (`commits`, test counts, user counts) are static and are not re-verified against live repos.
+`content/projects/trelix.mdx` used to ship a self-contradicting figure (an excerpt citing 1,467 unit tests, a pull-quote citing
+929 unit + 16 integration tests at a 75% coverage gate, and an in-body note admitting the two disagreed); the v3.16.0 refresh
+replaced all three with one dated static count in the pull-quote (`:37`: as of 2026-10-21, 4,435 unit and 98 integration test
+functions on `main`, counted by `def test_` and not re-run, behind a 79% coverage gate). Hard-coded counts in frontmatter
+(`commits`, test counts, user counts) remain static: accurate as of that refresh, not re-verified against live repos by any build step.
 
 ### Note — 7 content files (+ `.gitkeep`), `content/notes/*.{md,mdx}`
 
@@ -265,7 +296,7 @@ No Note is a draft, so `publishedNotes.length === 7` always; `allNotes.length` i
 The five June notes carry the full Inkforge extended set except `category`, which
 `content/notes/how-dns-works.mdx` omits; the two 2026-07-05 notes carry no `generatedBy` and no
 `wordCount`. Consequently **`inkforgeNotes` / `inkforgeArticles` (`src/lib/content.ts:72`,
-`:67`) match 5 of the 7 notes** (and are empty while `NOTES_ENABLED` is off, because they derive
+`:77`) match 5 of the 7 notes** (and are empty while `NOTES_ENABLED` is off, because they derive
 from `allNotes`); the other 2 are the hand-authored ones. File extension is not a provenance
 signal: both `.mdx` notes among the five carry `generatedBy: inkforge`, while the two hand-authored
 notes are `.mdx` as well.
@@ -275,7 +306,7 @@ notes are `.mdx` as well.
 posts exist.`" That statement is stale relative to the 7 shipped notes; the actual dark/live
 gate is `NOTES_ENABLED` (`src/lib/writing-flags.ts:22`, default **false** unless
 `NEXT_PUBLIC_NOTES_ENABLED === "true"`), applied at the data layer (`allNotes` in
-`src/lib/content.ts`, documented at `:54-55`). The header of `src/lib/notes.test.ts:4-8` and the
+`src/lib/content.ts`, documented at `:64-65`). The header of `src/lib/notes.test.ts:4-8` and the
 comment at `src/lib/corpus.ts:73-74` still describe the older "empty collection = dark" model.
 
 ### Article — 15 files, `content/articles/*.mdx`
@@ -320,12 +351,12 @@ after their notes), and `readingTime` differs for `inkforge` (note 14, article 1
 
 ### 1. Game-model node IDs → content slugs
 
-`src/lib/game-model.ts:37-70` (`NODE_CONTENT`) maps **16** hero-graph node IDs to
-`{ kind, slug }` pairs, covering all 5 Work slugs and all 11 Project slugs — a total bijection
+`src/lib/game-model.ts:37-70` (`NODE_CONTENT`) maps **25** hero-graph node IDs to
+`{ kind, slug }` pairs, covering all 5 Work slugs and all 20 Project slugs — a total bijection
 with `content/work` + `content/projects`. The node list itself is `graphNodes` in
-`src/lib/graph-data.ts:18-94` (16 entries). `resolveNode()` (`src/lib/game-model.ts:82-91`) looks
+`src/lib/graph-data.ts:18-94` (25 entries). `resolveNode()` (`src/lib/game-model.ts:82-91`) looks
 the slug up via `getWork`/`getProject`, returning `null` when absent, and `hrefFor()`
-(`:74-76`) returns the Velite-derived `item.url`.
+(`:94-96`) returns the Velite-derived `item.url`.
 
 **The three intentional node-id / slug mismatches** (comment at `src/lib/game-model.ts:25-36`,
 also recorded in the `CLAUDE.md` "Testing Notes" section):
@@ -343,7 +374,9 @@ bijection is guarded at build time by `src/lib/game-model.test.ts` (build-chaine
 `vitest run` in the `build` script; `ARCHITECTURE.md` "Bijection guard"): forward coverage (`:22`,
 `:27`), slug exists in Velite (`:34`), reverse coverage — every content item has a node (`:42`),
 count equality (`:55`), canonical hrefs (`:60`), quest-group no-loss/no-dup (`:66`), plus an
-anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metrics` values.
+anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metrics` values. v3.16.0 adds
+`src/lib/graph-data.test.ts` for the layout of the 25 nodes: unique ids, every node inside the visible box, a minimum on-screen
+separation so labels do not overprint, and edge sanity (edges join existing nodes, no duplicates, no unconnected node).
 
 `aava-code` is also hard-referenced outside the graph: `src/lib/agent-trace.ts:61` and `:75`
 (`refs: ["aava-code", "mindforge"]`, `refs: ["aava-code"]`), the terminal's sample output comment
@@ -357,8 +390,9 @@ anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metri
 
 - **Work** (`:14-21`): `name`, `role`, `register` (rendered as `Contribution: …`), `summary`,
   `metrics` flattened `value label` joined by `; `, and `tech`. All 5 items, in `order`.
-- **Projects** (`:23-30`): `name`, `tagline`, `group`, optional `commits`, `repo`, `excerpt`,
-  `tech`. All 11 items, in `order`.
+- **Projects** (`:23-30`): `name`, `tagline`, `group`, optional `commits`, `repo` (the URL, or the text
+  `private repository` for a `visibility: private` project, via `repoLink()` at `:28`), `excerpt`,
+  `tech`. All 20 items, in `order`.
 - **Notes** (`:75-77`): `title` + `summary` only, emitted under `## Writing`, and only when
   `allNotes.length` is non-zero. `allNotes` is empty while `NOTES_ENABLED` is off, so **the
   section is absent by default** and present only when the flag is on (then 7 notes;
@@ -369,10 +403,12 @@ anti-fabrication block (`:72`) asserting dossier facts trace to real `work.metri
   never enter the corpus.
 
 `src/lib/corpus.test.ts:26-31` asserts the corpus always contains `profile.name`,
-`## Production Work`, and `## Skills`; `:20-28` asserts `## Personal` appears iff `personal.ts` is
-populated. The `register` string reaching the LLM verbatim is also reinforced in the chat system
+`## Production Work`, and `## Skills`; `:33-41` asserts `## Personal` appears iff `personal.ts` is
+populated; `:14-24` asserts a private project stays in the corpus by name but never with its repo URL
+(`Repo: private repository`), while every public project's `Repo:` line carries its URL. The `register` string reaching the LLM verbatim is also reinforced in the chat system
 prompt at `src/app/api/chat/route.ts:90`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
-stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11,437 with notes on.
+stale: `buildCorpus()` measures 17,332 chars with notes dark (the default) and 19,636 with notes on (re-measured
+for v3.16.0 with an `npx tsx` read of `buildCorpus()`; the nine added projects account for about 8 KB of the growth).
 
 ### 3. Resume → content
 
@@ -381,8 +417,9 @@ stale: `buildCorpus()` measures 9,133 chars with notes dark (the default) and 11
 - `work[]` (`:51-57`): `position: w.role`, `summary: \`${w.register}. ${w.summary}\`` (**the
   register is prefixed into the résumé summary verbatim**, `:54`), `highlights` from
   `w.metrics` as `value label`, and `url: BASE + w.url`. All 5 Work items.
-- `projects[]` (`:58-65`): `name`, `description: p.tagline`, `keywords: p.tech`,
-  `url: p.repo`, `entity: BASE + p.url`. All 11 Project items.
+- `projects[]` (`:58-66`): `name`, `description: p.tagline`, `keywords: p.tech`,
+  `url: repoLink(p) ?? BASE + p.url` (a private repository points at its portfolio page, not at a 404),
+  `entity: BASE + p.url`. All 20 Project items.
 - `education` is deliberately omitted (`src/lib/resume-json.ts:69` — "no data; we don't
   fabricate it"). Notes and Articles are not in the résumé JSON.
 
@@ -400,28 +437,34 @@ directly (verified by grep) — it is tab/PDF-driven; `register` reaches recruit
   execution-engine).
 - **Featured projects** — `src/components/home/featured-projects.tsx:3` imports `allProjects` (the CTA count) and
   `featuredProjects`, defined as `allProjects.filter((p) => p.featured)`
-  (`src/lib/content.ts:24`). That resolves to **7** projects: `mindforge`, `graph-forge`,
-  `agent-forge`, `tombstone`, `trelix`, `inkforge`, `grpc-microservices` (order-sorted).
-  The 4 non-featured projects are `contextos`, `ag-bash`, `not-humans-lab`, `commandvault`.
+  (`src/lib/content.ts:24`). That resolves to **8** projects: `kelvran`, `toolwarrant`,
+  `cost-guard-mcp`, `prompt-lift`, `ratecap`, `trelix`, `tombstone`, `mindforge` (order-sorted,
+  orders 1 to 8). The 12 non-featured projects are `tracehub-mcp`, `anvilry`, `agent-forge`,
+  `graph-forge`, `inkforge`, `grpc-microservices`, `contextos`, `ag-bash`, `commandvault`,
+  `daily-dose`, `nh-deck` and `not-humans-lab`. The "View all N projects" link derives from the
+  collection (`allProjects.length`, 20) instead of a literal.
 - `pinnedProjects` (`src/lib/content.ts:36-38`) is the separate GitHub-pin-mirroring list:
-  9 projects have `pinned: true` with a `pinRank`; `not-humans-lab` and `commandvault` are
-  excluded. `src/lib/github.ts:32-55` (`REPO_ALLOWLIST`, 13 entries) is a third, independent list
-  keyed on **GitHub repo names** (not slugs) — it now covers all 11 content projects and adds
-  `Thunderboard-Labs` and `Shop.this`, which have no content file.
+  6 projects have `pinned: true` with a `pinRank` (1 `trelix`, 2 `tombstone`, 3 `anvilry`,
+  4 `mindforge`, 5 `ag-bash`, 6 `commandvault`); the other 14 are excluded.
+  `src/lib/github.ts:32-55` (`REPO_ALLOWLIST`, 22 entries) is a third, independent list
+  keyed on **GitHub repo names** (not slugs; a repo outside the profile owner is written
+  `owner/name`: `kelvran/gateway`, `mcpsmiths/cost-guard-mcp`, `mcpsmiths/tracehub-mcp`) — it now
+  covers all 20 content projects and adds `Thunderboard-Labs` and `Shop.this`, which have no
+  content file.
 
 ### 5. Notes gating and Article `linkedNote` → Note slug
 
-**Notes are hidden at the data layer.** `src/lib/content.ts` exports `publishedNotes` (`:50-52`;
+**Notes are hidden at the data layer.** `src/lib/content.ts` exports `publishedNotes` (`:60-62`;
 drafts dropped, newest first, regardless of the flag — only the `/notes` route files and
 `notes/[slug]/opengraph-image.tsx` use it, because `cacheComponents` needs a non-empty
-`generateStaticParams`). `allNotes` (`:56`) is `publishedNotes` when `NOTES_ENABLED` is true and
+`generateStaticParams`). `allNotes` (`:66`) is `publishedNotes` when `NOTES_ENABLED` is true and
 `[]` otherwise; `hasNotes`, `getNote`, `inkforgeNotes` and `inkforgeArticles` derive from it. So
 with the default (`NEXT_PUBLIC_NOTES_ENABLED` unset) `llms.txt` (`src/lib/llms-txt.ts:38-46`, `:95-96`),
 `feed.xml` (`src/app/feed.xml/route.ts:24`), the MCP `list_all_content`/`get_content_item` tools
 (`src/lib/mcp-tools.ts`), the chat corpus, sitemap (`src/app/sitemap.ts:40-57`) and both raw-`.md`
-handler sets can no longer publish a note the `/notes` pages 404. `allArticles` (`:80-83`) also drops
+handler sets can no longer publish a note the `/notes` pages 404. `allArticles` (`:90-93`) also drops
 **note-only articles** while notes are dark — those with a `linkedNote` and either no `externalUrl`
-or an `externalUrl` under `https://anvilry.vercel.app/notes/` (`isNoteOnlyArticle`, `:73-74`): today
+or an `externalUrl` under `https://anvilry.vercel.app/notes/` (`isNoteOnlyArticle`, `:83-84`): today
 `how-dns-works` (native) and `tombstone-v1-2-devto` (self-link). Result: notes off → 0 notes, 12
 articles; notes on → 7 notes, 14 articles. `src/lib/notes-dark.test.ts` pins the dark state across
 content, `llms.txt`, feed, MCP, corpus and both `.md` handlers, and the on state for the same
@@ -464,9 +507,9 @@ note-only article while notes are off, or a draft) simply disappears from "Relat
 → `/notes/how-dns-works`) and as `content/articles/how-dns-works.mdx` (group `article`,
 → `/articles/how-dns-works`). The article is `source: native` with a `linkedNote` pointing at
 its own name and no `externalUrl`, which makes it the "notes-only article" case handled at
-`src/app/articles/[slug]/page.tsx:44` (dropped from `generateStaticParams`), `:71-72` (redirect to
-the note when notes are on) and `:84-86` (`notFound()`). While notes are off it is already absent
-from `allArticles`, so `getArticle` misses and the page 404s at `:67`. Because its body is empty,
+`src/app/articles/[slug]/page.tsx:44` (dropped from `generateStaticParams`), `:74-75` (redirect to
+the note when notes are on) and `:87-89` (`notFound()`). While notes are off it is already absent
+from `allArticles`, so `getArticle` misses and the page 404s at `:68`. Because its body is empty,
 the native-inline render path is never reached.
 
 ### 7. Decisions ledger
@@ -475,7 +518,7 @@ the native-inline render path is never reached.
 `allDecisions: LedgerEntry[]` (`:65`) with zero duplication: every project's `decisions[]`
 (`:23-34`, id `project:<slug>:<i>`, `href` = the project URL) plus each Work item's populated
 `constraints` and `tradeoffs` (`:36-63`, id `work:<slug>:constraints|tradeoffs`, titled
-"Constraints"/"Tradeoffs", empty `tags`). Today that is 33 project entries + 10 work entries = 43
+"Constraints"/"Tradeoffs", empty `tags`). Today that is 69 project entries + 10 work entries = 79
 (`DECISION_COUNTS`, `:72-76`); `decisionsByTag(tag)` is at `:67`. Consumers: the `/decisions` page
 (`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:206-227`,
 registered at `src/app/api/mcp/[transport]/route.ts:109`, documented at `src/app/mcp/page.tsx:57`).
@@ -490,57 +533,59 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 ### `velite.config.ts`
 
 - **Role:** Single source of truth for the content schemas and the Velite build output layout.
-- **Exports:** `default` — the object returned by `defineConfig` (`:142-157`). The four
-  `defineCollection` results (`projects`, `work`, `notes`, `articles`), the `themeGroup` enum and the
-  `decision` object are module-local, surfaced only through the `collections` map at `:155`.
+- **Exports:** `default` — the object returned by `defineConfig` (`:168-192`). The four
+  `defineCollection` results (`projects`, `work`, `notes`, `articles`), the four body-only collections
+  built by `bodyOnly()` (`:29-34`) over the shared `PATTERNS` globs (`:13-18`), the `themeGroup` enum and
+  the `decision` object are module-local, surfaced only through the `collections` map at `:181-190`.
 - **Reads / depends on:** `velite` (`defineConfig`, `defineCollection`, `s`). No env vars, no
-  network. Input root `content/` (`:143`); writes `.velite/` (data) and `public/static/` (assets).
+  network. Input root `content/` (`:169`); writes `.velite/` (data) and `public/static/` (assets).
 - **Consumed by:** the `velite` CLI in `package.json` scripts — `predev` (`velite`, no `--clean`,
   `package.json:9`), `build` (`velite --clean && vitest run && next build && pagefind --site
   .next/server/app --output-path public/pagefind`, `package.json:11` — so the content tests gate every
   production build and Pagefind runs inside `pnpm build`), `content` (`velite --clean`,
   `package.json:17`). In `next dev`, `next.config.ts:13-15` additionally starts
   `build({ watch: true, clean: false })` (guarded by `VELITE_STARTED`). Generated output is imported
-  once, via the relative path `../../.velite`, by `src/lib/content.ts:5-14`; every other module goes
-  through `@/lib/content`.
+  by exactly two modules, via the relative path `../../.velite`: the metadata collections by
+  `src/lib/content.ts:5-14` and the four body collections by `src/lib/content-bodies.ts:17`; every other
+  module goes through `@/lib/content` (or `@/lib/content-bodies` for a body).
 - **Behaviour notes:**
-  - `clean: false` (`:153`) is deliberate. The comment at `:149-152` records why: `predev` +
+  - `clean: false` (`:179`) is deliberate. The comment at `:175-178` records why: `predev` +
     the dev watcher regenerate in place, and `--clean` in dev races webpack into
     "Can't resolve './projects.json'". Production purity comes from the explicit `--clean` in the
     `build`/`content` scripts, not from this config.
   - Asset pipeline: `assets: "public/static"`, `base: "/static/"`,
-    `name: "[name]-[hash:6].[ext]"` (`:146-148`). Work `diagram` paths are documented as
-    `/static/...` (`:70`) to match this base — and `case-study-depth.test.ts:24-36` resolves them
+    `name: "[name]-[hash:6].[ext]"` (`:172-174`). Work `diagram` paths are documented as
+    `/static/...` (`:99`) to match this base — and `case-study-depth.test.ts:24-36` resolves them
     under `public/`.
-  - `mdx: { gfm: true }` (`:156`) — GitHub-flavoured markdown for all four collections,
+  - `mdx: { gfm: true }` (`:191`) — GitHub-flavoured markdown for all four collections,
     including the `.md` Inkforge notes.
   - Each collection's `.transform()` is the only place `url` is created; nothing else in the repo
     constructs `/work/<slug>` or `/projects/<slug>` by hand (`src/lib/game-model.ts:95` returns
     `resolved.item.url` and comments as much), apart from the canonical-URL literals in the two
     `generateMetadata` functions (`src/app/projects/[slug]/page.tsx:39`, `src/app/work/[slug]/page.tsx:26`).
 - **Gotchas / invariants:**
-  - Renaming a collection key in `collections` (`:155`) renames the generated `.velite/*.json`
-    file and breaks the destructured import at `src/lib/content.ts:5-14`.
+  - Renaming a collection key in `collections` (`:181-190`) renames the generated `.velite/*.json`
+    file and breaks the destructured imports at `src/lib/content.ts:5-14` and `src/lib/content-bodies.ts:17`.
   - Adding a required field to Work or Project fails validation for *every existing file* at once.
     Velite runs non-strict (no `--strict` in any script): it logs the errors, drops the records and
     exits 0, so the deploy breaks at `vitest run` (e.g. `game-model.test.ts`), not at the Velite step.
-    That is why the hiring-manager depth fields at `:68-71` and the Project additions
-    (`dateCreated`, `license`, `relatedArticles` at `:34-39`; `decisions` defaults to `[]` at `:40`)
-    are optional/defaulted.
-  - `register` (`:61`) is required by Zod and is the only schema-level enforcement of the
+    That is why the hiring-manager depth fields at `:97-100` and the Project additions
+    (`visibility` defaults to `"public"` at `:59`; `dateCreated`, `license`, `relatedArticles` at `:64-69`;
+    `decisions` defaults to `[]` at `:70`) are optional/defaulted.
+  - `register` (`:90`) is required by Zod and is the only schema-level enforcement of the
     "never fabricate ownership" rule (`CLAUDE.md` "Content Authorship Rules", `ARCHITECTURE.md`
     "Never fabricate metrics"). Making it optional would silently drop attribution from the corpus
     (`src/lib/corpus.ts:17`) and the résumé (`src/lib/resume-json.ts:54`).
-  - `diagramAlt` (`:71`) is *not* conditionally required in Zod — the a11y guarantee lives only
+  - `diagramAlt` (`:100`) is *not* conditionally required in Zod — the a11y guarantee lives only
     in `src/lib/case-study-depth.test.ts:12-22`. Deleting that test removes the guard.
-  - `externalUrl` (`:131`) and `linkedNote` (`:133`) carry their invariants in comments only; both
+  - `externalUrl` (`:158`) and `linkedNote` (`:160`) carry their invariants in comments only; both
     currently hold in the data (Cross-references §5). `externalUrl` is `.url().optional()`, so an
     empty string is a schema violation — but Velite is non-strict, so it only logs
     `Invalid url externalUrl`, exits 0 and still emits the record. That is what `make new-article`
     (default `SOURCE=native`, `URL=`) scaffolds (`externalUrl: ""`, `draft: true`) until that line is
     removed or filled.
   - `s.number()` on `commits`/`wordCount`/`readingTime` means these are numbers in YAML, not
-    strings; `metrics[].value` is the reverse — an `s.string()` (`:63`) so `"1.5h → 15m"` and
+    strings; `metrics[].value` is the reverse — an `s.string()` (`:92`) so `"1.5h → 15m"` and
     `"65% → 85%"` are legal. The `make new-note` scaffold writes `wordCount: 0` / `readingTime: 0`
     placeholders, and `new-project` omits `commits`, `dateCreated`, `license`, `relatedArticles`,
     `decisions` and `pinRank`.
@@ -558,7 +603,7 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 - **Gotchas / invariants:** Extension is **not** a reliable proxy for provenance: two `.mdx` notes
   are Inkforge-generated and two `.mdx` notes (`tombstone-v1-2-release`,
   `trelix-code-intelligence-engine`) are hand-authored. Use `generatedBy` (which is what
-  `src/lib/content.ts:72` and `:67` actually filter on): 5 of 7 notes.
+  `src/lib/content.ts:72` and `:77` actually filter on): 5 of 7 notes.
 
 ### `content/articles/*.mdx` (all 15, as a class)
 
@@ -642,12 +687,21 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 - `content/articles/tombstone-v1-2-devto.mdx`
 - `content/articles/trelix-v1-launch-devto.mdx`
 - `content/articles/trelix-v1-launch-substack.mdx`
+- `content/projects/kelvran.mdx`
+- `content/projects/toolwarrant.mdx`
+- `content/projects/cost-guard-mcp.mdx`
+- `content/projects/prompt-lift.mdx`
+- `content/projects/ratecap.mdx`
+- `content/projects/tracehub-mcp.mdx`
+- `content/projects/anvilry.mdx`
+- `content/projects/daily-dose.mdx`
+- `content/projects/nh-deck.mdx`
 
 ## UNVERIFIED
 
-- I did not read the full bodies of the 5 longest notes end-to-end; all frontmatter in scope was
-  read in full, from every file, and the `{/* … */}` comment counts were taken by grep across all 7
-  notes.
+- I did not read the full bodies of the 5 longest notes end-to-end; all frontmatter in scope (the
+  nine project files added in v3.16.0 excepted, see the last bullet) was read in full, from every
+  file, and the `{/* … */}` comment counts were taken by grep across all 7 notes.
 - `wordCount` / `readingTime` values in Note frontmatter are taken as authored; I did not
   recount words to confirm they match the bodies.
 - Behavioural claims about `allNotes`/`allArticles` under each `NOTES_ENABLED` state are read from
@@ -660,3 +714,8 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 - Whether both `.md` handler sets are routed, and whether `content/` is in the deployed function
   trace, needs a deployed check. Whether production sets `NEXT_PUBLIC_NOTES_ENABLED` cannot be
   determined from source (env values are not read).
+- For the nine project files added in v3.16.0 I read the frontmatter fields (group, repo, visibility, commits,
+  `dateCreated`, license, pins, `order`, `featured`), the opening paragraph and the decision count, and cross-checked
+  the totals (20 projects, 18 public, 69 decisions, 8 featured, 6 pinned) against `.velite/projects.json` and the live
+  `content.ts` exports. I did not re-verify the claims inside their excerpts, decisions or bodies against the
+  repositories (the #327 research did), and their `commits` values are static as of that research.

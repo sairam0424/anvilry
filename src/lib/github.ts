@@ -21,8 +21,8 @@ const GITHUB_API = "https://api.github.com";
 
 /**
  * Repos shown in the feed and eligible for the per-project "last updated" fetch.
- * The public Velite projects + two extras the owner called out (Thunderboard-Labs,
- * Shop.this). Private repos that 404 unauthenticated (Agent-Forge, Graph-Forge) simply
+ * The public Velite projects + one extra the owner called out (Thunderboard-Labs, which has
+ * no project card). Private repos that 404 unauthenticated (Agent-Forge, Graph-Forge) simply
  * don't render until a token with access is configured — by design (render only what
  * resolves). Casing matches the canonical GitHub repo name. A bare name belongs to
  * profile.githubUser; a repo under another account or organisation is written
@@ -35,12 +35,9 @@ export const REPO_ALLOWLIST: readonly string[] = [
   "CommandVault",
   "ContextOS",
   "Graph-Forge",
-  "gRPC-micro-services",
   "Inkforge",
   "MindForge",
-  "not-humans-lab",
   "Thunderboard-Labs",
-  "Shop.this",
   "Tombstone",
   "trelix",
   "claude-prompt-lift",

@@ -610,7 +610,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
 23. ~~**`README.md`'s content counts and architecture line lag the code.**~~ — **corrected.** `README.md`
     § Content said `content/projects/*.mdx` holds "**8 open-source repos**" (the directory has 11 files) and
     § Highlights sold a "4-view architecture" switching "Classic / Play / Chat / Developer" while the `View`
-    union has six members. It now says 11 repos and describes six views (the four headline experiences plus
+    union has six members. It said 11 repos then (README.md now says 18 projects, 16 of them open-source) and describes six views (the four headline experiences plus
     Voice and the Recruiter view); its `31 commands` and predev-watch claims were fixed as items 9 and 5.
     The pitch line (`README.md:5`) still says "four switchable experiences", which is the headline count,
     not the store shape.

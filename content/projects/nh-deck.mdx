@@ -10,7 +10,7 @@ license: Apache-2.0
 tech: [TypeScript, Node.js, Commander, marked, puppeteer-core, KaTeX, Mermaid, highlight.js, Vitest, GitHub Actions]
 pinned: false
 featured: false
-order: 19
+order: 18
 excerpt: "One Markdown file in, a slide deck out: served on 127.0.0.1 with live reload, presented in the browser, or exported to PDF, per-slide PNGs or a static index.html, all from a single generateHtml() pipeline. Slides split at marked's hr tokens, KaTeX fonts ship as base64, the Google Fonts @import is stripped from every Mermaid SVG, and PDF export drives a Chrome-family browser the user already has through puppeteer-core, so there is no bundled browser, no CDN and no telemetry. 13 ADRs and 563 Vitest tests back it. The repo is tagged v1.10.0; npm still serves 1.7.0."
 decisions:
   - title: "Detect the user's installed browser over bundling Chromium (puppeteer or Playwright)"
@@ -27,7 +27,7 @@ decisions:
     tags: [theming, cli, yagni]
 ---
 
-**nh-deck** is a TypeScript/Node command-line tool that turns a single Markdown file into a slide deck, for one author who wants to write, present and export slides without an account or a network. It is one of three independent siblings under the Not-Humans-Lab umbrella, and a solo project: 53 of its 58 commits are the owner's, the other five are Dependabot's.
+**nh-deck** is a TypeScript/Node command-line tool that turns a single Markdown file into a slide deck, for one author who wants to write, present and export slides without an account or a network. It is a solo project: 53 of its 58 commits are the owner's, the other five are Dependabot's.
 
 - **Six subcommands** — `init`, `list-themes`, `render`, `pdf`, `png` and `build`, built with Commander (`build` exists in the repo at v1.10.0 but not in the npm 1.7.0 release).
 - **Local-first HTML** — KaTeX fonts are inlined as base64 and Mermaid SVGs lose their Google Fonts import, so the page needs no CDN.

@@ -2097,42 +2097,42 @@
       ],
       "preview": "import { test, expect } from \"@playwright/test\";"
     },
-    "e2e/views.spec.ts:184": {
+    "e2e/views.spec.ts:209": {
       "fp": "e613c6c8961d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "test.skip("
     },
-    "e2e/views.spec.ts:187": {
+    "e2e/views.spec.ts:212": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ");"
     },
-    "e2e/views.spec.ts:264": {
+    "e2e/views.spec.ts:289": {
       "fp": "19f5206389e0",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "test(\"gamified view switches and renders 3D canvas\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:287": {
+    "e2e/views.spec.ts:312": {
       "fp": "29576b54e255",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "});"
     },
-    "e2e/views.spec.ts:291": {
+    "e2e/views.spec.ts:316": {
       "fp": "8e5c494d0c11",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "test(\"llms.txt route is accessible\", async ({ page }) => {"
     },
-    "e2e/views.spec.ts:296": {
+    "e2e/views.spec.ts:321": {
       "fp": "7ba9677d7b80",
       "citedBy": [
         "02-api-routes.md"
@@ -7833,83 +7833,83 @@
       ],
       "preview": "</ViewRouter>"
     },
-    "src/app/projects/[slug]/page.tsx:13": {
-      "fp": "e96fdbe7ba0a",
+    "src/app/projects/[slug]/page.tsx:10": {
+      "fp": "6b6fe3453a1c",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "} from \"lucide-react\";"
+    },
+    "src/app/projects/[slug]/page.tsx:14": {
+      "fp": "e8291b184ccf",
       "citedBy": [
         "03-lib-content-data.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "import { fetchRepo, pushedAgo } from \"@/lib/github\";"
+      "preview": "import { fetchRepo, pushedAgo, repoOwnerAndName } from \"@/lib/github\";"
     },
-    "src/app/projects/[slug]/page.tsx:171": {
+    "src/app/projects/[slug]/page.tsx:180": {
       "fp": "03767d0e169b",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<RelatedWriting articles={relatedArticles} />"
     },
-    "src/app/projects/[slug]/page.tsx:23": {
+    "src/app/projects/[slug]/page.tsx:24": {
       "fp": "f9af003f247a",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/app/projects/[slug]/page.tsx:37": {
+    "src/app/projects/[slug]/page.tsx:38": {
       "fp": "ada4007d29f2",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const url = `/projects/${slug}`;"
     },
-    "src/app/projects/[slug]/page.tsx:65": {
+    "src/app/projects/[slug]/page.tsx:66": {
       "fp": "557f9a654ed0",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "// \"use cache\" must be the function body's first statement: fetchRepo()+pushedAgo()"
     },
-    "src/app/projects/[slug]/page.tsx:68": {
+    "src/app/projects/[slug]/page.tsx:69": {
       "fp": "19627c9df1e0",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "// /projects/page.tsx's GithubFeed."
     },
-    "src/app/projects/[slug]/page.tsx:69": {
+    "src/app/projects/[slug]/page.tsx:70": {
       "fp": "9050977792a2",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"use cache\";"
     },
-    "src/app/projects/[slug]/page.tsx:70": {
+    "src/app/projects/[slug]/page.tsx:71": {
       "fp": "b18f9fef4c09",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "cacheLife(\"hours\");"
     },
-    "src/app/projects/[slug]/page.tsx:83": {
+    "src/app/projects/[slug]/page.tsx:86": {
       "fp": "fb246f471797",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const relatedArticles = (project.relatedArticles ?? [])"
     },
-    "src/app/projects/[slug]/page.tsx:85": {
+    "src/app/projects/[slug]/page.tsx:88": {
       "fp": "4813ca1163b2",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": ".filter((a): a is NonNullable<typeof a> => a != null);"
-    },
-    "src/app/projects/[slug]/page.tsx:9": {
-      "fp": "6b6fe3453a1c",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "} from \"lucide-react\";"
     },
     "src/app/projects/page.tsx:13": {
       "fp": "60aaa8cc585c",
@@ -8661,7 +8661,7 @@
       ],
       "preview": "import type { FileUIPart } from \"@/components/chat/use-chat\";"
     },
-    "src/components/chat/chat-card.tsx:12": {
+    "src/components/chat/chat-card.tsx:13": {
       "fp": "e34369ef7f2b",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -8670,14 +8670,14 @@
       ],
       "preview": "export function ChatCard({ segment }: { segment: Extract<CardSegment, { type: \"project\" | \"work\" }> "
     },
-    "src/components/chat/chat-card.tsx:4": {
+    "src/components/chat/chat-card.tsx:5": {
       "fp": "0edfee5f7dc6",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "import type { CardSegment } from \"@/components/chat/parse-cards\";"
     },
-    "src/components/chat/chat-card.tsx:77": {
+    "src/components/chat/chat-card.tsx:82": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -8685,7 +8685,7 @@
       ],
       "preview": ");"
     },
-    "src/components/chat/chat-card.tsx:78": {
+    "src/components/chat/chat-card.tsx:83": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
@@ -13913,19 +13913,19 @@
       "preview": "}"
     },
     "src/components/home/featured-projects.tsx:24": {
-      "fp": "d1d325835b8d",
+      "fp": "f10cbaa20bda",
       "citedBy": [
         "08-components-site-shell-ui.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "View all 8 projects"
+      "preview": "View all {allProjects.length} projects"
     },
     "src/components/home/featured-projects.tsx:3": {
-      "fp": "c3a915b02ab9",
+      "fp": "ee44c62d1a2a",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
-      "preview": "import { featuredProjects } from \"@/lib/content\";"
+      "preview": "import { allProjects, featuredProjects } from \"@/lib/content\";"
     },
     "src/components/home/featured-work.tsx:12": {
       "fp": "e49aa0da6332",
@@ -16560,7 +16560,7 @@
       ],
       "preview": "export const featuredProjects = allProjects.filter((p) => p.featured);"
     },
-    "src/lib/content.ts:27": {
+    "src/lib/content.ts:36": {
       "fp": "920188cfb732",
       "citedBy": [
         "03-lib-content-data.md",
@@ -16570,7 +16570,7 @@
       ],
       "preview": "export const pinnedProjects = allProjects"
     },
-    "src/lib/content.ts:29": {
+    "src/lib/content.ts:38": {
       "fp": "73c3e56ca09b",
       "citedBy": [
         "03-lib-content-data.md",
@@ -16580,7 +16580,7 @@
       ],
       "preview": ".sort((a, b) => (a.pinRank ?? 99) - (b.pinRank ?? 99));"
     },
-    "src/lib/content.ts:31": {
+    "src/lib/content.ts:40": {
       "fp": "7b8486568765",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -16590,7 +16590,7 @@
       ],
       "preview": "export const projectGroups = ["
     },
-    "src/lib/content.ts:35": {
+    "src/lib/content.ts:45": {
       "fp": "6e2a9b95d72e",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -16599,38 +16599,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "] as const;"
-    },
-    "src/lib/content.ts:44": {
-      "fp": "f544e6237aaa",
-      "citedBy": [
-        "05-components-chat-voice.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export const getProject = (slug: string) => allProjects.find((p) => p.slug === slug);"
-    },
-    "src/lib/content.ts:45": {
-      "fp": "2bd75beaa2bc",
-      "citedBy": [
-        "05-components-chat-voice.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export const getWork = (slug: string) => allWork.find((w) => w.slug === slug);"
-    },
-    "src/lib/content.ts:47": {
-      "fp": "40838a2c039d",
-      "citedBy": [
-        "14-subsystems.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "/** Published notes (drafts excluded), newest first, regardless of NOTES_ENABLED. Only the"
-    },
-    "src/lib/content.ts:49": {
-      "fp": "bd2100064cd1",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "*  least one entry even while the section is dark. Every other consumer reads `allNotes`. */"
     },
     "src/lib/content.ts:5": {
       "fp": "e0cbdab30393",
@@ -16641,14 +16609,46 @@
       ],
       "preview": "import {"
     },
-    "src/lib/content.ts:50": {
+    "src/lib/content.ts:54": {
+      "fp": "f544e6237aaa",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const getProject = (slug: string) => allProjects.find((p) => p.slug === slug);"
+    },
+    "src/lib/content.ts:55": {
+      "fp": "2bd75beaa2bc",
+      "citedBy": [
+        "05-components-chat-voice.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const getWork = (slug: string) => allWork.find((w) => w.slug === slug);"
+    },
+    "src/lib/content.ts:57": {
+      "fp": "40838a2c039d",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/** Published notes (drafts excluded), newest first, regardless of NOTES_ENABLED. Only the"
+    },
+    "src/lib/content.ts:59": {
+      "fp": "bd2100064cd1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "*  least one entry even while the section is dark. Every other consumer reads `allNotes`. */"
+    },
+    "src/lib/content.ts:60": {
       "fp": "49d8a176cb4e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "export const publishedNotes: Note[] = [...rawNotes]"
     },
-    "src/lib/content.ts:52": {
+    "src/lib/content.ts:62": {
       "fp": "b3206b155109",
       "citedBy": [
         "14-subsystems.md",
@@ -16657,14 +16657,14 @@
       ],
       "preview": ".sort((a, b) => (a.date < b.date ? 1 : -1));"
     },
-    "src/lib/content.ts:54": {
+    "src/lib/content.ts:64": {
       "fp": "82ff83a87f3d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "/** Notes visible to consumers: empty while NOTES_ENABLED is off, so llms.txt, the feed, MCP,"
     },
-    "src/lib/content.ts:56": {
+    "src/lib/content.ts:66": {
       "fp": "cf0cc4be008f",
       "citedBy": [
         "03-lib-content-data.md",
@@ -16674,14 +16674,14 @@
       ],
       "preview": "export const allNotes: Note[] = NOTES_ENABLED ? publishedNotes : [];"
     },
-    "src/lib/content.ts:59": {
+    "src/lib/content.ts:69": {
       "fp": "add7124d04c4",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "export const hasNotes = allNotes.length > 0;"
     },
-    "src/lib/content.ts:62": {
+    "src/lib/content.ts:72": {
       "fp": "8d99790b473a",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -16689,7 +16689,7 @@
       ],
       "preview": "export const inkforgeNotes = allNotes.filter((n) => n.generatedBy === \"inkforge\");"
     },
-    "src/lib/content.ts:69": {
+    "src/lib/content.ts:79": {
       "fp": "4673338bfacc",
       "citedBy": [
         "14b-subsystems.md",
@@ -16697,7 +16697,7 @@
       ],
       "preview": "const OWN_NOTES_URL_PREFIX = \"https://anvilry.vercel.app/notes/\";"
     },
-    "src/lib/content.ts:73": {
+    "src/lib/content.ts:83": {
       "fp": "c4c8bd5325fb",
       "citedBy": [
         "14-subsystems.md",
@@ -16705,7 +16705,7 @@
       ],
       "preview": "const isNoteOnlyArticle = (a: Article) =>"
     },
-    "src/lib/content.ts:74": {
+    "src/lib/content.ts:84": {
       "fp": "e2234df11b7f",
       "citedBy": [
         "14-subsystems.md",
@@ -16713,28 +16713,28 @@
       ],
       "preview": "Boolean(a.linkedNote) && (!a.externalUrl || a.externalUrl.startsWith(OWN_NOTES_URL_PREFIX));"
     },
-    "src/lib/content.ts:82": {
+    "src/lib/content.ts:92": {
       "fp": "87344ebefa9f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": ".filter((a) => NOTES_ENABLED || !isNoteOnlyArticle(a))"
     },
-    "src/lib/content.ts:83": {
+    "src/lib/content.ts:93": {
       "fp": "b3206b155109",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ".sort((a, b) => (a.date < b.date ? 1 : -1));"
     },
-    "src/lib/content.ts:86": {
+    "src/lib/content.ts:96": {
       "fp": "2b0ea79f7c72",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export const hasArticles = allArticles.length > 0;"
     },
-    "src/lib/corpus.test.ts:13": {
+    "src/lib/corpus.test.ts:26": {
       "fp": "6e05a802981a",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -16742,7 +16742,7 @@
       ],
       "preview": "it(\"always includes the professional record\", () => {"
     },
-    "src/lib/corpus.test.ts:18": {
+    "src/lib/corpus.test.ts:31": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -16751,11 +16751,11 @@
       "preview": "});"
     },
     "src/lib/corpus.ts:1": {
-      "fp": "501cfa194c12",
+      "fp": "ddc689d94402",
       "citedBy": [
         "03-lib-content-data.md"
       ],
-      "preview": "import { allProjects, allWork, allNotes } from \"@/lib/content\";"
+      "preview": "import { allProjects, allWork, allNotes, repoLink } from \"@/lib/content\";"
     },
     "src/lib/corpus.ts:13": {
       "fp": "b6b911433f0f",
@@ -16786,12 +16786,12 @@
       "preview": "`### ${p.name} — ${p.tagline}\\nGroup: ${p.group}${"
     },
     "src/lib/corpus.ts:28": {
-      "fp": "5baea1cb74f8",
+      "fp": "af3c869a7787",
       "citedBy": [
         "09-content-and-schemas.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "}\\nRepo: ${p.repo}\\n${p.excerpt}\\nTech: ${p.tech.join(\", \")}`,"
+      "preview": "}\\nRepo: ${repoLink(p) ?? \"private repository\"}\\n${p.excerpt}\\nTech: ${p.tech.join(\", \")}`,"
     },
     "src/lib/corpus.ts:4": {
       "fp": "4c4401cb4d32",
@@ -17333,72 +17333,59 @@
       ],
       "preview": "describe(\"game-model anti-fabrication\", () => {"
     },
-    "src/lib/game-model.ts:16": {
+    "src/lib/game-model.ts:197": {
+      "fp": "be9eef8e0dfc",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "const projectGroupNodes = projectGroups.map((group) => ({"
+    },
+    "src/lib/game-model.ts:25": {
       "fp": "8d64a30d9de1",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "/**"
     },
-    "src/lib/game-model.ts:177": {
-      "fp": "f2463a3807a8",
-      "citedBy": [
-        "03-lib-content-data.md",
-        "14-subsystems.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const projectGroupOrder = ["
-    },
-    "src/lib/game-model.ts:181": {
-      "fp": "358ba3f22237",
-      "citedBy": [
-        "03-lib-content-data.md",
-        "14-subsystems.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "];"
-    },
-    "src/lib/game-model.ts:19": {
-      "fp": "6067c0d3ed95",
+    "src/lib/game-model.ts:28": {
+      "fp": "7d66a893e05d",
       "citedBy": [
         "03-lib-content-data.md",
         "09-content-and-schemas.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "* LAUNCH BLOCKER this fixes: 3 of the 16 graph node ids do NOT equal their content"
+      "preview": "* LAUNCH BLOCKER this fixes: 3 of the graph node ids do NOT equal their content"
     },
-    "src/lib/game-model.ts:20": {
+    "src/lib/game-model.ts:29": {
       "fp": "34a737a99d76",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "* slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→"
     },
-    "src/lib/game-model.ts:21": {
+    "src/lib/game-model.ts:30": {
       "fp": "15eeb946414e",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "* `not-humans-lab`. Without this map, \"click a node → open its card\" would 404 for"
     },
-    "src/lib/game-model.ts:22": {
+    "src/lib/game-model.ts:31": {
       "fp": "9f1b775a16a7",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "* those three (including the flagship AAVA work item). The node's visual `kind`"
     },
-    "src/lib/game-model.ts:27": {
+    "src/lib/game-model.ts:36": {
       "fp": "ed9623369ff0",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "*/"
     },
-    "src/lib/game-model.ts:28": {
+    "src/lib/game-model.ts:37": {
       "fp": "25568e0d1df0",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -17409,14 +17396,14 @@
       ],
       "preview": "export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> = {"
     },
-    "src/lib/game-model.ts:30": {
+    "src/lib/game-model.ts:39": {
       "fp": "fd4e4754404c",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "pensieve: { kind: \"work\", slug: \"pensieve\" },"
     },
-    "src/lib/game-model.ts:31": {
+    "src/lib/game-model.ts:40": {
       "fp": "4110549ed870",
       "citedBy": [
         "03-lib-content-data.md",
@@ -17426,7 +17413,7 @@
       ],
       "preview": "aava: { kind: \"work\", slug: \"aava-code\" }, // node id != slug"
     },
-    "src/lib/game-model.ts:42": {
+    "src/lib/game-model.ts:51": {
       "fp": "14656fcc666c",
       "citedBy": [
         "03-lib-content-data.md",
@@ -17434,7 +17421,7 @@
       ],
       "preview": "grpc: { kind: \"project\", slug: \"grpc-microservices\" }, // node id != slug"
     },
-    "src/lib/game-model.ts:45": {
+    "src/lib/game-model.ts:54": {
       "fp": "cbd717db45ab",
       "citedBy": [
         "03-lib-content-data.md",
@@ -17443,7 +17430,7 @@
       ],
       "preview": "nhl: { kind: \"project\", slug: \"not-humans-lab\" }, // node id != slug"
     },
-    "src/lib/game-model.ts:50": {
+    "src/lib/game-model.ts:70": {
       "fp": "df3982fd6101",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17453,7 +17440,7 @@
       ],
       "preview": "};"
     },
-    "src/lib/game-model.ts:62": {
+    "src/lib/game-model.ts:82": {
       "fp": "b16bb8263d70",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17461,7 +17448,7 @@
       ],
       "preview": "export function resolveNode(nodeId: string): ResolvedContent | null {"
     },
-    "src/lib/game-model.ts:71": {
+    "src/lib/game-model.ts:91": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17469,7 +17456,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/game-model.ts:75": {
+    "src/lib/game-model.ts:95": {
       "fp": "0d83c037274d",
       "citedBy": [
         "09-content-and-schemas.md"
@@ -17483,7 +17470,15 @@
       ],
       "preview": "* package is installed; the single server-component import site is the guarantee.)"
     },
-    "src/lib/github.ts:114": {
+    "src/lib/github.ts:127": {
+      "fp": "296214da00e6",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const token = process.env.GITHUB_TOKEN;"
+    },
+    "src/lib/github.ts:145": {
       "fp": "d30f8f8c3e96",
       "citedBy": [
         "02-api-routes.md",
@@ -17492,14 +17487,7 @@
       ],
       "preview": "next: { revalidate: 3600 },"
     },
-    "src/lib/github.ts:129": {
-      "fp": "67de88011c35",
-      "citedBy": [
-        "03-lib-content-data.md"
-      ],
-      "preview": "const owner = profile.githubUser;"
-    },
-    "src/lib/github.ts:141": {
+    "src/lib/github.ts:174": {
       "fp": "dc6ee86a44b9",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -17513,14 +17501,14 @@
       ],
       "preview": "/**"
     },
-    "src/lib/github.ts:30": {
+    "src/lib/github.ts:32": {
       "fp": "ceb0a33a0adc",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "export const REPO_ALLOWLIST: readonly string[] = ["
     },
-    "src/lib/github.ts:44": {
+    "src/lib/github.ts:55": {
       "fp": "6e2a9b95d72e",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17535,20 +17523,19 @@
       ],
       "preview": "* own server-side fetch, cached via ISR (revalidate=3600 on the /projects page)."
     },
+    "src/lib/github.ts:61": {
+      "fp": "4b65a5356436",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "(owner === profile.githubUser && REPO_ALLOWLIST.includes(name))"
+    },
     "src/lib/github.ts:9": {
       "fp": "76ae69e6f79c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "* process.env.GITHUB_TOKEN, which must never reach the client. (No `server-only`"
-    },
-    "src/lib/github.ts:96": {
-      "fp": "296214da00e6",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const token = process.env.GITHUB_TOKEN;"
     },
     "src/lib/graph-data.ts:1": {
       "fp": "8d64a30d9de1",
@@ -17557,21 +17544,21 @@
       ],
       "preview": "/**"
     },
-    "src/lib/graph-data.ts:110": {
+    "src/lib/graph-data.ts:134": {
       "fp": "358ba3f22237",
       "citedBy": [
         "README.md"
       ],
       "preview": "];"
     },
-    "src/lib/graph-data.ts:112": {
+    "src/lib/graph-data.ts:136": {
       "fp": "6c0c2a225a75",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "export const kindColor: Record<GraphNode[\"kind\"], string> = {"
     },
-    "src/lib/graph-data.ts:117": {
+    "src/lib/graph-data.ts:141": {
       "fp": "df3982fd6101",
       "citedBy": [
         "06-components-game-terminal.md"
@@ -17634,7 +17621,7 @@
       ],
       "preview": "// Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 u"
     },
-    "src/lib/graph-data.ts:81": {
+    "src/lib/graph-data.ts:94": {
       "fp": "358ba3f22237",
       "citedBy": [
         "07-components-3d.md",
@@ -17646,7 +17633,7 @@
       ],
       "preview": "];"
     },
-    "src/lib/graph-data.ts:83": {
+    "src/lib/graph-data.ts:96": {
       "fp": "b44a11e556dc",
       "citedBy": [
         "README.md"
@@ -19410,7 +19397,7 @@
       ],
       "preview": "export const DIRECTIONS = ["
     },
-    "src/lib/mcp-tools.test.ts:107": {
+    "src/lib/mcp-tools.test.ts:115": {
       "fp": "1698b4ee672d",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -19425,7 +19412,7 @@
       ],
       "preview": "it(\"get_profile returns identity + skills + achievements and does NOT leak personal.ts\", () => {"
     },
-    "src/lib/mcp-tools.test.ts:82": {
+    "src/lib/mcp-tools.test.ts:90": {
       "fp": "3ccd3850eef8",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19433,7 +19420,7 @@
       ],
       "preview": "it(\"every résumé role maps to a real variant whose PDF exists on disk\", () => {"
     },
-    "src/lib/mcp-tools.test.ts:86": {
+    "src/lib/mcp-tools.test.ts:94": {
       "fp": "7729b5ef9ac4",
       "citedBy": [
         "14b-subsystems.md",
@@ -19449,21 +19436,21 @@
       ],
       "preview": "import { z } from \"zod\";"
     },
-    "src/lib/mcp-tools.ts:11": {
+    "src/lib/mcp-tools.ts:12": {
       "fp": "d3613316c5c7",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "import { allDecisions } from \"@/lib/decisions\";"
     },
-    "src/lib/mcp-tools.ts:13": {
+    "src/lib/mcp-tools.ts:14": {
       "fp": "8d64a30d9de1",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "/**"
     },
-    "src/lib/mcp-tools.ts:19": {
+    "src/lib/mcp-tools.ts:20": {
       "fp": "ff390c0fc175",
       "citedBy": [
         "14-subsystems.md",
@@ -19471,14 +19458,7 @@
       ],
       "preview": "* Deliberately PROFESSIONAL-ONLY: personal.ts (hobbies/now/uses) is NOT exposed — those"
     },
-    "src/lib/mcp-tools.ts:20": {
-      "fp": "8c2e7d28a741",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "* stay reachable on-site via the eggs, not handed to every AI agent as structured data."
-    },
-    "src/lib/mcp-tools.ts:205": {
+    "src/lib/mcp-tools.ts:206": {
       "fp": "c6dd79745a1b",
       "citedBy": [
         "09-content-and-schemas.md"
@@ -19486,14 +19466,13 @@
       "preview": "export const decisionsTagSchema = {"
     },
     "src/lib/mcp-tools.ts:21": {
-      "fp": "ed9623369ff0",
+      "fp": "8c2e7d28a741",
       "citedBy": [
-        "03-lib-content-data.md",
-        "14-subsystems.md"
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "*/"
+      "preview": "* stay reachable on-site via the eggs, not handed to every AI agent as structured data."
     },
-    "src/lib/mcp-tools.ts:214": {
+    "src/lib/mcp-tools.ts:215": {
       "fp": "6ec1d87b29f6",
       "citedBy": [
         "01-routes-pages.md",
@@ -19502,13 +19481,14 @@
       "preview": "export function listDecisionsData(tag?: string) {"
     },
     "src/lib/mcp-tools.ts:22": {
-      "fp": "f9af003f247a",
+      "fp": "ed9623369ff0",
       "citedBy": [
-        "03-lib-content-data.md"
+        "03-lib-content-data.md",
+        "14-subsystems.md"
       ],
-      "preview": "const BASE = \"https://anvilry.vercel.app\";"
+      "preview": "*/"
     },
-    "src/lib/mcp-tools.ts:226": {
+    "src/lib/mcp-tools.ts:227": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -19516,14 +19496,14 @@
       ],
       "preview": "}"
     },
-    "src/lib/mcp-tools.ts:24": {
-      "fp": "0ee66e632657",
+    "src/lib/mcp-tools.ts:23": {
+      "fp": "f9af003f247a",
       "citedBy": [
-        "14b-subsystems.md"
+        "03-lib-content-data.md"
       ],
-      "preview": "export const RESUME_ROLES = [\"master\"] as const;"
+      "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/lib/mcp-tools.ts:241": {
+    "src/lib/mcp-tools.ts:242": {
       "fp": "dd3243a42a5c",
       "citedBy": [
         "02-api-routes.md",
@@ -19535,7 +19515,7 @@
       ],
       "preview": "export function wrapToolResult(data: unknown) {"
     },
-    "src/lib/mcp-tools.ts:242": {
+    "src/lib/mcp-tools.ts:243": {
       "fp": "72aba18a365b",
       "citedBy": [
         "02-api-routes.md",
@@ -19544,21 +19524,28 @@
       ],
       "preview": "const isNotFound = !!data && typeof data === \"object\" && \"notFound\" in data;"
     },
-    "src/lib/mcp-tools.ts:243": {
+    "src/lib/mcp-tools.ts:244": {
       "fp": "bfbe9071c8b4",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const structuredContent = Array.isArray(data)"
     },
-    "src/lib/mcp-tools.ts:245": {
+    "src/lib/mcp-tools.ts:246": {
       "fp": "9db8b33b7a44",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": ": (data as Record<string, unknown>);"
     },
-    "src/lib/mcp-tools.ts:251": {
+    "src/lib/mcp-tools.ts:25": {
+      "fp": "0ee66e632657",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const RESUME_ROLES = [\"master\"] as const;"
+    },
+    "src/lib/mcp-tools.ts:252": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "02-api-routes.md",
@@ -19569,14 +19556,14 @@
       ],
       "preview": "}"
     },
-    "src/lib/mcp-tools.ts:276": {
+    "src/lib/mcp-tools.ts:277": {
       "fp": "810696ff7f8c",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "...allNotes.map((n) => ({"
     },
-    "src/lib/mcp-tools.ts:28": {
+    "src/lib/mcp-tools.ts:29": {
       "fp": "f7b7d17ee1e4",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19585,28 +19572,28 @@
       ],
       "preview": "const ROLE_TO_LABEL: Record<ResumeRole, string> = {"
     },
-    "src/lib/mcp-tools.ts:30": {
+    "src/lib/mcp-tools.ts:31": {
       "fp": "bdb221890d3a",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// Role-targeted variants were retired: only the canonical résumé is published. Re-adding a"
     },
-    "src/lib/mcp-tools.ts:32": {
+    "src/lib/mcp-tools.ts:33": {
       "fp": "1bf65b0bfda5",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// RESUME_ROLES above, its exact resumeVariants[].label here, and the PDF in public/resume/."
     },
-    "src/lib/mcp-tools.ts:330": {
+    "src/lib/mcp-tools.ts:331": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/lib/mcp-tools.ts:34": {
+    "src/lib/mcp-tools.ts:35": {
       "fp": "df3982fd6101",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19615,7 +19602,7 @@
       ],
       "preview": "};"
     },
-    "src/lib/mcp-tools.ts:37": {
+    "src/lib/mcp-tools.ts:38": {
       "fp": "ba5aedc67261",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -19624,7 +19611,7 @@
       ],
       "preview": "export const projectSlugSchema = {"
     },
-    "src/lib/mcp-tools.ts:54": {
+    "src/lib/mcp-tools.ts:55": {
       "fp": "df3982fd6101",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -19633,7 +19620,7 @@
       ],
       "preview": "};"
     },
-    "src/lib/mcp-tools.ts:59": {
+    "src/lib/mcp-tools.ts:60": {
       "fp": "be7570764379",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19641,7 +19628,7 @@
       ],
       "preview": "/** A not-found result carrying the valid options (so the calling agent can self-correct). */"
     },
-    "src/lib/mcp-tools.ts:66": {
+    "src/lib/mcp-tools.ts:67": {
       "fp": "d8781ab77677",
       "citedBy": [
         "14-subsystems.md",
@@ -19649,7 +19636,7 @@
       ],
       "preview": "const notFound = (kind: string, given: string, valid: string[]): NotFound => ({"
     },
-    "src/lib/mcp-tools.ts:71": {
+    "src/lib/mcp-tools.ts:72": {
       "fp": "29576b54e255",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19659,7 +19646,7 @@
       ],
       "preview": "});"
     },
-    "src/lib/mcp-tools.ts:73": {
+    "src/lib/mcp-tools.ts:74": {
       "fp": "8df3da22cd47",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19667,7 +19654,7 @@
       ],
       "preview": "export function getProfileData() {"
     },
-    "src/lib/mcp-tools.ts:97": {
+    "src/lib/mcp-tools.ts:98": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
@@ -19847,20 +19834,20 @@
       "preview": "export const impactMetrics: {"
     },
     "src/lib/profile.ts:6": {
-      "fp": "56838f6db03f",
+      "fp": "be681647784b",
       "citedBy": [
         "03-lib-content-data.md"
       ],
-      "preview": "import { allProjects } from \"@/lib/content\";"
+      "preview": "import { publicProjects } from \"@/lib/content\";"
     },
     "src/lib/profile.ts:65": {
-      "fp": "8cf447590a6c",
+      "fp": "d0371547c636",
       "citedBy": [
         "03-lib-content-data.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "value: `${allProjects.length}`,"
+      "preview": "value: `${publicProjects.length}`,"
     },
     "src/lib/profile.ts:70": {
       "fp": "358ba3f22237",
@@ -20312,11 +20299,11 @@
       "preview": "export function buildResumeJson() {"
     },
     "src/lib/resume-json.ts:2": {
-      "fp": "fc032892f764",
+      "fp": "6fbc533c2128",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
-      "preview": "import { allWork, allProjects } from \"@/lib/content\";"
+      "preview": "import { allWork, allProjects, repoLink } from \"@/lib/content\";"
     },
     "src/lib/resume-json.ts:4": {
       "fp": "f9af003f247a",
@@ -20334,21 +20321,21 @@
       ],
       "preview": "summary: `${w.register}. ${w.summary}`,"
     },
-    "src/lib/resume-json.ts:68": {
+    "src/lib/resume-json.ts:69": {
       "fp": "0669b0fb90ac",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "// education: omitted — no data; we don't fabricate it."
     },
-    "src/lib/resume-json.ts:69": {
+    "src/lib/resume-json.ts:70": {
       "fp": "26f0e1253696",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "meta: { canonical: `${BASE}/api/resume.json`, version: \"v1\" },"
     },
-    "src/lib/resume-json.ts:71": {
+    "src/lib/resume-json.ts:72": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
@@ -21555,21 +21542,21 @@
       ],
       "preview": "import { defineConfig, defineCollection, s } from \"velite\";"
     },
-    "velite.config.ts:100": {
+    "velite.config.ts:105": {
       "fp": "803352934343",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "generatedBy: s.string().optional(),"
     },
-    "velite.config.ts:106": {
+    "velite.config.ts:111": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:108": {
+    "velite.config.ts:113": {
       "fp": "f177213e53c2",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21577,7 +21564,7 @@
       ],
       "preview": "/** External / syndicated articles — Medium, Substack, LinkedIn, or native drafts."
     },
-    "velite.config.ts:113": {
+    "velite.config.ts:118": {
       "fp": "459a38041ccf",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21585,14 +21572,14 @@
       ],
       "preview": "*  render their body inline like notes. */"
     },
-    "velite.config.ts:114": {
+    "velite.config.ts:119": {
       "fp": "0f86abee78ab",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const articles = defineCollection({"
     },
-    "velite.config.ts:123": {
+    "velite.config.ts:128": {
       "fp": "09842cd22955",
       "citedBy": [
         "01-routes-pages.md",
@@ -21602,7 +21589,7 @@
       ],
       "preview": "source: s.enum(["
     },
-    "velite.config.ts:130": {
+    "velite.config.ts:135": {
       "fp": "bfa713ad86e4",
       "citedBy": [
         "01-routes-pages.md",
@@ -21611,7 +21598,7 @@
       ],
       "preview": "]),"
     },
-    "velite.config.ts:131": {
+    "velite.config.ts:136": {
       "fp": "cfe5ba49fa84",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21619,7 +21606,7 @@
       ],
       "preview": "externalUrl: s.string().url().optional(), // required for non-native; omit for native"
     },
-    "velite.config.ts:133": {
+    "velite.config.ts:138": {
       "fp": "f322017e1d11",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21628,56 +21615,56 @@
       ],
       "preview": "linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, "
     },
-    "velite.config.ts:140": {
+    "velite.config.ts:145": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:142": {
+    "velite.config.ts:147": {
       "fp": "a719661ad61e",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "export default defineConfig({"
     },
-    "velite.config.ts:143": {
+    "velite.config.ts:148": {
       "fp": "94b4133caa3a",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "root: \"content\","
     },
-    "velite.config.ts:144": {
+    "velite.config.ts:149": {
       "fp": "258d3242c080",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "output: {"
     },
-    "velite.config.ts:145": {
+    "velite.config.ts:150": {
       "fp": "633e1a15c670",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "data: \".velite\","
     },
-    "velite.config.ts:146": {
+    "velite.config.ts:151": {
       "fp": "2b1bf6856e9c",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "assets: \"public/static\","
     },
-    "velite.config.ts:147": {
+    "velite.config.ts:152": {
       "fp": "2ffb5f1820ac",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "base: \"/static/\","
     },
-    "velite.config.ts:148": {
+    "velite.config.ts:153": {
       "fp": "7041bdf46126",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21685,7 +21672,7 @@
       ],
       "preview": "name: \"[name]-[hash:6].[ext]\","
     },
-    "velite.config.ts:149": {
+    "velite.config.ts:154": {
       "fp": "28f446ba0c50",
       "citedBy": [
         "14-subsystems.md",
@@ -21693,14 +21680,14 @@
       ],
       "preview": "// Default to NOT cleaning: the `predev` hook + dev watcher regenerate in place,"
     },
-    "velite.config.ts:152": {
+    "velite.config.ts:157": {
       "fp": "68360f77a2f4",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// pass --clean explicitly for a pristine production build."
     },
-    "velite.config.ts:153": {
+    "velite.config.ts:158": {
       "fp": "78bfa9935b69",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21710,7 +21697,7 @@
       ],
       "preview": "clean: false,"
     },
-    "velite.config.ts:155": {
+    "velite.config.ts:160": {
       "fp": "3d1da2dc4f34",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21718,7 +21705,7 @@
       ],
       "preview": "collections: { projects, work, notes, articles },"
     },
-    "velite.config.ts:156": {
+    "velite.config.ts:161": {
       "fp": "9635bf8a843a",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21726,14 +21713,14 @@
       ],
       "preview": "mdx: { gfm: true },"
     },
-    "velite.config.ts:157": {
+    "velite.config.ts:162": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:19": {
+    "velite.config.ts:20": {
       "fp": "3823f7d97288",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21741,14 +21728,14 @@
       ],
       "preview": "/** Open-source / portfolio projects — architecture + tech only, no fabricated adoption. */"
     },
-    "velite.config.ts:20": {
+    "velite.config.ts:21": {
       "fp": "ed774117ee00",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const projects = defineCollection({"
     },
-    "velite.config.ts:29": {
+    "velite.config.ts:30": {
       "fp": "c5b004ea7553",
       "citedBy": [
         "01-routes-pages.md"
@@ -21766,21 +21753,21 @@
       ],
       "preview": "const themeGroup = s.enum(["
     },
-    "velite.config.ts:40": {
+    "velite.config.ts:45": {
       "fp": "ceac04814e86",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "decisions: s.array(decision).default([]),"
     },
-    "velite.config.ts:45": {
+    "velite.config.ts:50": {
       "fp": "80b0429fe0ee",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "order: s.number().default(100),"
     },
-    "velite.config.ts:50": {
+    "velite.config.ts:55": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21789,14 +21776,14 @@
       ],
       "preview": "});"
     },
-    "velite.config.ts:53": {
+    "velite.config.ts:58": {
       "fp": "619829fa4d63",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const work = defineCollection({"
     },
-    "velite.config.ts:61": {
+    "velite.config.ts:66": {
       "fp": "6d59a98f0c74",
       "citedBy": [
         "14-subsystems.md",
@@ -21804,14 +21791,14 @@
       ],
       "preview": "register: s.string(), // honest contribution note, e.g. \"Co-built · architected the backend\""
     },
-    "velite.config.ts:63": {
+    "velite.config.ts:68": {
       "fp": "882d61103319",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "metrics: s.array(s.object({ value: s.string(), label: s.string() })),"
     },
-    "velite.config.ts:68": {
+    "velite.config.ts:73": {
       "fp": "cdc25bd7bed6",
       "citedBy": [
         "14-subsystems.md",
@@ -21819,7 +21806,7 @@
       ],
       "preview": "constraints: s.string().optional(), // the real limits the system had to work within"
     },
-    "velite.config.ts:71": {
+    "velite.config.ts:76": {
       "fp": "066394a0cb82",
       "citedBy": [
         "14-subsystems.md",
@@ -21827,14 +21814,21 @@
       ],
       "preview": "diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a"
     },
-    "velite.config.ts:75": {
+    "velite.config.ts:80": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:8": {
+    "velite.config.ts:86": {
+      "fp": "233cc23ab344",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "const notes = defineCollection({"
+    },
+    "velite.config.ts:9": {
       "fp": "0ae47a13980f",
       "citedBy": [
         "03-lib-content-data.md",
@@ -21844,13 +21838,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "]);"
-    },
-    "velite.config.ts:81": {
-      "fp": "233cc23ab344",
-      "citedBy": [
-        "09-content-and-schemas.md"
-      ],
-      "preview": "const notes = defineCollection({"
     },
     "vercel.json:3": {
       "fp": "a4a8d3f065b1",

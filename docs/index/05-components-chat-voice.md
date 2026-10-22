@@ -123,14 +123,14 @@ Three independent layers, all in scope, all fail-closed:
     `["classic","gamified","chat","developer","voice","resume"]` (`view-context.tsx:27-34`, exported at :278).
   - `cmd:highlight` → allowed only if `getProject(slug) || getWork(slug)` (:65-68).
 - `getProject` / `getWork` are `allProjects.find(...)` / `allWork.find(...)` over the Velite output
-  (`src/lib/content.ts:44-45`, sourced from `.velite/projects.json` + `.velite/work.json`) — i.e. the
+  (`src/lib/content.ts:54-55`, sourced from `.velite/projects.json` + `.velite/work.json`) — i.e. the
   allowlist is fixed at build time and cannot be influenced at runtime.
 - An unresolved token is **dropped entirely** — no card, no echoed literal (`parse-cards.ts:13-16` doc,
   `parse-cards.test.ts:41`). `cmd-*` segments produce **no DOM at all**; they are pure side-effect
   triggers dispatched by `ChatMessages` (`chat-messages.tsx:328-337`).
 - Card fields are 100% server-sourced: `ChatCard` reads only `p.url / p.repo / p.name / p.tagline /
   p.tech / p.commits / p.group` and `w.url / w.register / w.name / w.summary / w.metrics`
-  (`chat-card.tsx:12-77`) — the model influences only *which* card, never its contents or href.
+  (`chat-card.tsx:13-82`) — the model influences only *which* card, never its contents or href.
 
 **2. `rehype-sanitize` + `skipHtml` on the markdown renderer — `chat/markdown-message.tsx`**
 - `<Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]} skipHtml components={components}>`
@@ -224,7 +224,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Turn one assistant message into ordered `text` / `project` / `work` / `cmd-view` / `cmd-highlight` segments.
 - **Exports:** `CardSegment` (union type), `parseCards`, `hasCardToken`, `CMD_RE` (re-exported at :87, unused internally).
 - **Reads / depends on:** `getProject`, `getWork`, `Project`, `Work` from `@/lib/content`; `VIEWS`, `View` from `@/components/view-context`.
-- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:12`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:4`.
+- **Consumed by:** `chat-messages.tsx:6`, `ask-portfolio.tsx:12`, `use-voice-session.ts:8`; type-only by `chat-card.tsx:5`.
 - **Behaviour notes:** Uses `content.matchAll(ALL_RE)` after resetting `ALL_RE.lastIndex = 0` (:38). `hasCardToken` resets `CARD_RE.lastIndex` before `.test()` (:82-83).
 - **Gotchas / invariants:** `CARD_RE`, `CMD_RE`, `ALL_RE` are module-level `/g` regexes — the explicit `lastIndex` resets are what keep repeated calls stateless (pinned by `parse-cards.test.ts:77`). This module never produces HTML (:19-20).
 

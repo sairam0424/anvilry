@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildCorpus } from "./corpus";
+import { allProjects } from "./content";
 import { hasPersonalContent, hasNow } from "./personal";
 import { profile } from "./profile";
 
@@ -10,6 +11,18 @@ import { profile } from "./profile";
  * personal answer).
  */
 describe("buildCorpus", () => {
+  it("lists a private project without its repo URL, so the concierge never sends a visitor to a 404", () => {
+    const c = buildCorpus();
+    for (const p of allProjects.filter((x) => x.visibility === "private")) {
+      expect(c, `${p.name} must stay in the corpus`).toContain(`### ${p.name}`);
+      expect(c, `${p.name}'s private repo URL leaked into the corpus`).not.toContain(p.repo);
+      expect(c).toContain("Repo: private repository");
+    }
+    for (const p of allProjects.filter((x) => x.visibility !== "private")) {
+      expect(c).toContain(`Repo: ${p.repo}`);
+    }
+  });
+
   it("always includes the professional record", () => {
     const c = buildCorpus();
     expect(c).toContain(profile.name);

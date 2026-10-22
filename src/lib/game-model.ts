@@ -1,4 +1,13 @@
-import { allProjects, allWork, getProject, getWork, type Project, type Work } from "@/lib/content";
+import {
+  allProjects,
+  allWork,
+  getProject,
+  getWork,
+  projectGroups,
+  repoLink,
+  type Project,
+  type Work,
+} from "@/lib/content";
 import { graphNodes, graphEdges, type GraphNode } from "@/lib/graph-data";
 
 /**
@@ -16,7 +25,7 @@ export type ContentKind = "work" | "project";
 /**
  * Maps each hero-graph node id to the real content item it represents.
  *
- * LAUNCH BLOCKER this fixes: 3 of the 16 graph node ids do NOT equal their content
+ * LAUNCH BLOCKER this fixes: 3 of the graph node ids do NOT equal their content
  * slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→
  * `not-humans-lab`. Without this map, "click a node → open its card" would 404 for
  * those three (including the flagship AAVA work item). The node's visual `kind`
@@ -47,6 +56,17 @@ export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> =
   tombstone: { kind: "project", slug: "tombstone" },
   trelix: { kind: "project", slug: "trelix" },
   inkforge: { kind: "project", slug: "inkforge" },
+  // Platform, guardrails & observability (projects)
+  kelvran: { kind: "project", slug: "kelvran" },
+  toolwarrant: { kind: "project", slug: "toolwarrant" },
+  ratecap: { kind: "project", slug: "ratecap" },
+  "cost-guard-mcp": { kind: "project", slug: "cost-guard-mcp" },
+  "tracehub-mcp": { kind: "project", slug: "tracehub-mcp" },
+  // Tooling, lab and the portfolio itself
+  "prompt-lift": { kind: "project", slug: "prompt-lift" },
+  anvilry: { kind: "project", slug: "anvilry" },
+  "daily-dose": { kind: "project", slug: "daily-dose" },
+  "nh-deck": { kind: "project", slug: "nh-deck" },
 };
 
 export type ResolvedContent =
@@ -167,25 +187,20 @@ export function dossierFor(node: QuestNode): Dossier {
     facts,
     tech: p.tech,
     href: p.url,
-    repo: p.repo,
+    repo: repoLink(p) ?? undefined,
   };
 }
 
 /** All dossiers, grouped for the accessible DOM-first index (work first, then project groups). */
 export function questGroups(): { group: string; nodes: QuestNode[] }[] {
   const work = questNodes.filter((n) => n.resolved.kind === "work");
-  const projectGroupOrder = [
-    "Agent Frameworks & Infrastructure",
-    "Code Intelligence & Engines",
-    "Tooling & Lab",
-  ];
-  const projectGroups = projectGroupOrder.map((group) => ({
+  const projectGroupNodes = projectGroups.map((group) => ({
     group,
     nodes: questNodes.filter(
       (n) => n.resolved.kind === "project" && n.resolved.item.group === group,
     ),
   }));
-  return [{ group: "Production Work", nodes: work }, ...projectGroups].filter(
+  return [{ group: "Production Work", nodes: work }, ...projectGroupNodes].filter(
     (g) => g.nodes.length > 0,
   );
 }

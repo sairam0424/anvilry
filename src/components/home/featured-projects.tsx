@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { featuredProjects } from "@/lib/content";
+import { allProjects, featuredProjects } from "@/lib/content";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { ProjectCard } from "@/components/project-card";
@@ -21,7 +21,7 @@ export function FeaturedProjects() {
           href="/projects"
           className="group inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent-strong"
         >
-          View all 8 projects
+          View all {allProjects.length} projects
           <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>

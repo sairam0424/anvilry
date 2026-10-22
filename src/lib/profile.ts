@@ -3,7 +3,7 @@
  * achievements, and links. Mirrors the locked résumé / LinkedIn / GitHub / Naukri pack.
  * Every value is real and defensible; honest "Co-built" register preserved.
  */
-import { allProjects } from "@/lib/content";
+import { publicProjects } from "@/lib/content";
 
 export const profile = {
   name: "Sairam Ugge",
@@ -40,7 +40,7 @@ export const profile = {
 } as const;
 
 /** Headline metrics for the above-the-fold impact strip (all real, work-context).
- *  The repo count is DERIVED from the content layer (allProjects.length), not hand-typed,
+ *  The repo count is DERIVED from the content layer (publicProjects.length), not hand-typed,
  *  so it can never drift from the actual published projects — structurally pinning the
  *  one banner number the audit flagged as un-sourced. */
 export const impactMetrics: {
@@ -62,7 +62,7 @@ export const impactMetrics: {
     href: "/work/aava-code",
   },
   {
-    value: `${allProjects.length}`,
+    value: `${publicProjects.length}`,
     label: "open-source repos",
     sub: "AI infrastructure",
     href: "/projects",

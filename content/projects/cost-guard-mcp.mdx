@@ -1,0 +1,57 @@
+---
+slug: cost-guard-mcp
+name: Cost Guard MCP
+tagline: "Fail-closed query-cost guardrails for AI agents on BigQuery, Snowflake and Databricks"
+group: Platform, Guardrails & Observability
+repo: https://github.com/mcpsmiths/cost-guard-mcp
+commits: 211
+dateCreated: 2026-09-12
+license: MIT
+tech: [Python, MCP, Pydantic, BigQuery, Snowflake, Databricks, uv, pytest, OpenTelemetry, Docker]
+pinned: false
+featured: true
+order: 3
+excerpt: "A single-process stdio MCP server that prices a SQL statement before an AI agent runs it: BigQuery dry run (PRECISE), Snowflake EXPLAIN (UPPER_BOUND), Databricks EXPLAIN COST (HEURISTIC). It refuses to execute when the estimate exceeds the caller's cap or when no comparable figure exists. Four tools, a schema-enforced accuracy tier on every estimate, read statements only by default, and results capped at 1000 rows and 8 MiB and labelled untrusted data. Ten PyPI releases in 37 days, the last three remediating a security audit, with SLSA provenance and a hash-pinned build. Solo-maintained; one GitHub star."
+decisions:
+  - title: "A required accuracy tier on every estimate instead of one bare cost number"
+    body: "I made `accuracy_tier` a required field on every cost estimate: `PRECISE` only for a BigQuery dry run, `UPPER_BOUND` for Snowflake's `EXPLAIN`, `HEURISTIC` for Databricks' `EXPLAIN COST`. An agent can then never over-trust a figure. The cost is honesty that reads as weakness: Snowflake can never be `PRECISE` because it bills warehouse time, not bytes, and Databricks often has no size statistics at all, so both figures come back `None` and a dollar cap refuses the query outright. I deliberately added no flag that restores a rate floor."
+    tags: [mcp, api-design, data-warehouses, honesty]
+  - title: "Refuse when a cap cannot be checked, instead of letting the query through"
+    body: "If a caller sets `max_estimated_cost_usd` and the estimate has no dollar figure (a capacity-billed BigQuery project, a row-level-security table whose dry run reports 0 bytes, a warehouse type the rate table does not model), the query is refused, not run. My first `and`-chain fell through to allow; an automated security review caught it. The cost is real: cheap queries get refused for the wrong reason, and the only remedy is dropping the dollar cap or using `max_bytes_billed`, which BigQuery enforces server-side."
+    tags: [security, fail-closed, cost-control]
+  - title: "A hand-written fail-closed SQL lexer over a write-keyword denylist or a parser dependency"
+    body: "Both SQL tools accept exactly one statement, and since v0.5.0 only one whose first keyword is `SELECT`, `WITH`, `VALUES`, `SHOW`, `DESCRIBE` or `EXPLAIN`, because warehouse rows re-enter the model's context and can steer its next call. I rejected a denylist, which fails open on `COPY INTO`, `EXECUTE IMMEDIATE` and `CALL`, and I rejected a parser dependency. The cost is false positives in the safe direction (`TABLE t`, BigQuery pipe syntax, `SET`, `USE`, CTEs nested past 16 levels), and the gate says nothing about a `SELECT` that calls a UDF with side effects. The credential's grants remain the real boundary."
+    tags: [security, prompt-injection, sql, defence-in-depth]
+  - title: "Stdio only, one process per user, instead of a hosted HTTP transport"
+    body: "Credentials are per-user and sensitive (GCP service-account keys, Snowflake private keys) and neither client library was designed around per-tenant isolation, so I shipped no remote transport at all. The win is zero infrastructure to run. The costs: no shared or hosted deployment, every user sets env vars in the MCP host's config because the spawned subprocess does not inherit a shell profile, and all three warehouse clients are synchronous, so truly concurrent serving would need `asyncio.to_thread` wrapping that the default cap of 8 in-flight queries only papers over."
+    tags: [mcp, transport, credentials, architecture]
+---
+
+**Cost Guard MCP** is a Python MCP server that gives an AI agent a priced, accuracy-labelled estimate of a warehouse query before it runs, and a bounded execution path that refuses when the estimate exceeds the caller's cap or cannot be compared to it. It covers BigQuery, Snowflake and Databricks through their official clients over local stdio, with no hosted component. The repository sits under the mcpsmiths organisation and has one maintainer.
+
+- **Four tools** — `check_credentials`, `describe_engine_capabilities`, `estimate_query_cost` and `run_query_bounded`.
+- **Accuracy tiers** — every estimate carries a required `PRECISE`, `UPPER_BOUND` or `HEURISTIC` label.
+- **Fail-closed caps** — a cap that cannot be compared to the estimate returns `status: refused` with `executed: false`.
+- **Read-only gate** — since v0.5.0, one statement only, with its first keyword on a read allowlist.
+- **Bounded results** — 1000 rows and 8 MiB by default, with rows labelled `warehouse_data_untrusted` in the tool schema.
+- **Warehouse guards** — Snowflake needs a non-admin role, and a statement that could wake a stopped warehouse is refused unless allowed.
+- **Attested releases** — PEP 740 attestations, SLSA build provenance and a CycloneDX SBOM.
+
+> At v0.6.0 (2026-10-19): 1,810 collected unit tests (812 test functions) at 99.29% line coverage on the latest main run, and 10 PyPI releases in 37 days; but one star, one maintainer, and a Snowflake live gate red since the trial account expired, so the v0.5.0 and v0.6.0 Snowflake changes have not run live.
+
+## Architecture
+
+The server is one Python package in one stdio process, with no database, gateway or background workers. `server.py` registers the four tools as thin wrappers; the logic lives in `tools/*.py` as pure functions that dispatch by `engine` to `engines/bigquery.py`, `engines/snowflake.py` or `engines/databricks.py`, each a thin layer over the official client. A shared Pydantic contract makes `accuracy_tier` a required enum and gives every bounded result a required `executed` boolean, so a refusal and a truncated-but-billed run differ by schema.
+
+Two fail-closed SQL gates sit in front of every statement: `sql_scope.py`, a dialect-aware lexer that refuses a second top-level statement or any literal or comment it cannot resolve, and `sql_scope_keywords.py`, a first-keyword allowlist that walks `WITH` lists to at most 16 levels. Remote text passes through redaction and a 1,000-character bound before any log or response; OpenTelemetry export is opt-in.
+
+Releases build from a `v*` tag that must point at a commit already in `origin/main`'s history, with a hash-pinned `hatchling==1.32.4`, and publish to PyPI through Trusted Publishing. The live integration job covers BigQuery and Snowflake only, so the Databricks engine is tested against recording fake SDKs. OpenSSF Scorecard gave 7.1 on 2026-10-19, with Code-Review at 0 of 10 because the maintainer merges his own pull requests.
+
+## How It Works
+
+1. **Configure** — The operator sets per-engine credentials in the MCP host's server config. `SNOWFLAKE_ROLE` is mandatory, and `ACCOUNTADMIN`, `SECURITYADMIN` and `ORGADMIN` are rejected before any connection opens.
+2. **Check** — `check_credentials(engine)` runs first; on Snowflake and Databricks it also reads warehouse state, and a statement that could start a stopped warehouse is refused unless an allow flag is set.
+3. **Estimate** — `estimate_query_cost` runs the single-statement scanner, then the read gate, then BigQuery's dry run, Snowflake's `EXPLAIN USING JSON` or Databricks' `EXPLAIN COST`, priced at the warehouse the server observes and never below it.
+4. **Compare** — `run_query_bounded` calls the same estimate. If a cap is set and the matching field is `None`, or the estimate exceeds the cap, it returns `status: refused` as a normal structured result, not an error.
+5. **Execute** — Otherwise it runs under a 120 s provider-side deadline, at most 8 calls in flight by default, with a `LIMIT max_rows + 1` wrapper.
+6. **Bound** — Rows are normalised to JSON-safe values and paged until the sentinel row or the 8 MiB estimate trips; an over-cap result returns truncated with `executed: true`, because the warehouse billed that run.

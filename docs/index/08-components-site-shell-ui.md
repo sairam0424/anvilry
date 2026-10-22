@@ -218,7 +218,7 @@ Two named transition groups exist in the tree:
 - **Role:** Note card.
 - **Exports:** `NoteCard` — props `{ note: Note }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `src/app/notes/page.tsx`. `notes/page.tsx` maps `allNotes` directly and `articles/page.tsx` maps `inkforgeArticles` (a filter of `allNotes`, additionally gated by `INKFORGE_ARTICLES_ENABLED`), so with `NOTES_ENABLED` off no note card renders anywhere.
-- **Behaviour notes:** Shows a `Sparkles` "inkforge" badge when `note.generatedBy === "inkforge"` (`:31-36`) — that field is optional in the Velite note schema (`velite.config.ts:100`), so hand-written notes simply omit the badge. `readingTime` likewise renders only when present (`:56`). Tags sliced to 3 (`:50`).
+- **Behaviour notes:** Shows a `Sparkles` "inkforge" badge when `note.generatedBy === "inkforge"` (`:31-36`) — that field is optional in the Velite note schema (`velite.config.ts:105`), so hand-written notes simply omit the badge. `readingTime` likewise renders only when present (`:56`). Tags sliced to 3 (`:50`).
 
 ### `src/components/project-card.tsx`
 - **Role:** OSS project card (server component — no `"use client"`).
@@ -229,7 +229,7 @@ Two named transition groups exist in the tree:
 ### `src/components/related-writing.tsx`
 - **Role:** "Related writing" list on a project detail page (RSC).
 - **Exports:** `RelatedWriting` — props `{ articles: Article[] }`; returns `null` for an empty list (`:21`).
-- **Consumed by:** `src/app/projects/[slug]/page.tsx:171`.
+- **Consumed by:** `src/app/projects/[slug]/page.tsx:180`.
 - **Behaviour notes:** `resolveHref` (`:12-18`): `/notes/<linkedNote>` only when `NOTES_ENABLED`, else `externalUrl` (new tab + `ExternalLink` icon), else `article.url`.
 
 ### `src/components/platform-badge.tsx`
@@ -237,14 +237,14 @@ Two named transition groups exist in the tree:
 - **Exports:** `ArticleSource` (type union: `medium | substack | linkedin | devto | hashnode | native`), `PlatformBadge` — props `{ source: ArticleSource }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `article-group-card.tsx`; the type is also imported by `src/lib/article-grouping.ts:2`.
 - **Behaviour notes:** `SOURCE_CONFIG` hardcodes brand hex per platform with 0.08 bg / 0.2 border alpha (`:13-23`); `native` is labelled **"Essay"** with the accent cyan `#38e1ff`. Unknown sources fall back to `native` via `?? SOURCE_CONFIG.native` (`:26`).
-- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:123`).
+- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:128`).
 
 ### `src/components/github-feed.tsx`
 - **Role:** Server-rendered first-party GitHub repo grid.
 - **Exports:** `GithubFeed` — props `{ repos: GithubRepo[] }`.
 - **Reads / depends on:** `@/lib/github` `pushedAgo` and the `GithubRepo` type.
 - **Consumed by:** `src/app/projects/page.tsx`.
-- **Behaviour notes:** Returns `null` on an empty array (`:14`) — documented as "empty-safe: with no resolved repos (token unset + all private, or rate-limited at build) the whole section renders nothing" (`:9-11`). The relative label comes from `pushedAgo` in `src/lib/github.ts:141` (module-level `Intl.RelativeTimeFormat`; buckets year ≤ −365 d / month ≤ −30 / week ≤ −7 / day; `""` for empty or unparseable input, which hides the label). Star/fork counts carry `sr-only` prefixes (`:35`, `:40`).
+- **Behaviour notes:** Returns `null` on an empty array (`:14`) — documented as "empty-safe: with no resolved repos (token unset + all private, or rate-limited at build) the whole section renders nothing" (`:9-11`). The relative label comes from `pushedAgo` in `src/lib/github.ts:174` (module-level `Intl.RelativeTimeFormat`; buckets year ≤ −365 d / month ≤ −30 / week ≤ −7 / day; `""` for empty or unparseable input, which hides the label). Star/fork counts carry `sr-only` prefixes (`:35`, `:40`).
 - **Gotchas / invariants:** Replaces third-party github-readme-stats `<img>` cards specifically so no external request sits in the visitor's path (`:4-8`).
 
 ### `src/components/github-stats-strip.tsx`
@@ -302,7 +302,7 @@ Two named transition groups exist in the tree:
 - **Exports:** `FeaturedWork`, `FeaturedProjects`, `Stack`, `Achievements`, `WritingPreview`, `Testimonials`, `Contact` — all no-prop.
 - **Behaviour notes:**
   - `FeaturedWork` iterates **all** `allWork` (not a slice), surfacing `w.register` in the `mono-label` eyebrow and `w.metrics` in a `<dl>` (`featured-work.tsx:12-33`). Reveal delay is `i * 0.08`.
-  - `FeaturedProjects` iterates `featuredProjects` from `@/lib/content` but the CTA text is the hardcoded string `"View all 8 projects"` (`featured-projects.tsx:24`) — it does not read `allProjects.length`, which is 11 (the `impactMetrics` repo count in the hero does).
+  - `FeaturedProjects` iterates `featuredProjects` from `@/lib/content` and its CTA counts the whole collection, `View all {allProjects.length} projects` (`featured-projects.tsx:24`); it used to be a hardcoded `"View all 8 projects"` that had drifted from the collection. The hero's `impactMetrics` repo count reads `publicProjects.length` instead (private repositories are listed but not counted).
   - `Achievements` staggers with `delay={(i % 3) * 0.06}` to match its 3-column grid (`achievements.tsx:11`).
   - `WritingPreview` returns `null` when `!ARTICLES_ENABLED || allArticles.length === 0` (`writing-preview.tsx:11`), then calls `groupArticles(allArticles)` and slices to 2 — deduping **before** slicing so you get 2 unique articles, not 2 platform variants of one (`:13-15`).
   - `Testimonials` returns `null` when `!TESTIMONIALS_ENABLED` (default off) (`testimonials.tsx:13`); when enabled with an empty `testimonials` array it renders a "coming soon" card linking to a hardcoded `https://linkedin.com/in/sairam0424` (`:15-38`); populated it renders `<figure>`/`<blockquote>`/`<figcaption>` with a "verify on LinkedIn" link per entry (`:46-67`).

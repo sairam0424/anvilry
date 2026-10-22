@@ -1,0 +1,55 @@
+---
+slug: prompt-lift
+name: prompt-lift
+tagline: "Claude Code mod: one press rewrites a vague prompt from your CLAUDE.md and skills"
+group: Tooling & Lab
+repo: https://github.com/sairam0424/claude-prompt-lift
+commits: 178
+dateCreated: 2026-10-17
+license: MIT
+tech: [TypeScript, Claude Code Mods API, Anthropic Models API, Prompt Caching, AWS Bedrock, Bash, tmux, asciinema]
+pinned: false
+featured: true
+order: 4
+excerpt: "A Claude Code mod, an in-process hooks module rather than a skill, that draws an Enhance / Send / Undo band above the prompt. One press sends the draft, the instruction files the session already loaded and the skill listing to a three-rung model chain with per-rung fallback, highlights the inserted words, and prints the call's cost on the band. Nine post-call guards refuse rewrites that add commands, invent paths or flip intent, and optional session and day spend caps sit on a per-writer ledger. MIT, 178 commits at v0.6.0, installed from GitHub as a plugin marketplace; not on npm."
+decisions:
+  - title: "An Enhance band with a separate Send, over rewriting every prompt on Enter"
+    body: "Some prompt tools rewrite everything you submit; I chose a button. Enhance runs only when pressed and nothing hooks prompt editing, so a draft sent with Enter is never improved. Send is its own press, and it has to refuse drafts with @file mentions or pasted images because a plugin-submitted prompt does not expand them. The mod therefore lives with two send paths and a toast that says press Enter. I took that cost over a model call and a dialog on every message."
+    tags: [ux, scope, claude-code]
+  - title: "Alias rungs stay unpriced on Bedrock and Vertex instead of guessing a price"
+    body: "On Bedrock and Vertex the engine's alias defaults can lag a generation, and the mod cannot see which id an alias called, so when the chain says sonnet I cannot know what answered. Since v0.5.0 that rung prices as $?, counts toward no cap, and status says aliases are unpriced. The cost: the default chain on a Bedrock machine shows $? out of the box, and a spend cap protects nothing until full inference-profile ids are pinned. I preferred a visibly missing number to a confidently wrong one."
+    tags: [cost, bedrock, honesty]
+  - title: "One day-ledger row per writer, because the plugin store has no compare-and-set"
+    body: "A reviewer on the catalogue seed PR (#341) pointed out that two sessions can both read the shared day row and each write its own increment, losing a paid press from the machine-wide day cap. The store offers get, set, delete and keys only, so v0.4.2 gives every loaded module its own spend row per day and sums them on read, pruning after seven days. The cost: rows grow with a day's sessions, totals are a read-time sum, and a v0.4.0 or v0.4.1 session left running after the upgrade can still lose presses, so the README says to restart."
+    tags: [concurrency, storage, review-fix]
+  - title: "No timers anywhere, so the band moves only when state does"
+    body: "I set one CPU rule on day one: nothing runs while idle, there are no per-keystroke hooks, and hooks/ contains no setInterval or setTimeout. The band redraws only when an atom it reads changes, and elapsed time is two clock reads, at press and at answer. The cost is written into the README's Limits section: nothing animates during a single in-flight call, a slow rung shows the same row until it answers or fails, and the idle row's day figure refreshes only at the first press after midnight."
+    tags: [performance, ui, constraint]
+---
+
+**prompt-lift** is a Claude Code mod, an in-process hooks module rather than a skill, that rewrites a vague draft into a specific one before it is sent. It is for people who already keep project instructions in `CLAUDE.md` and rules files and want those applied to every prompt without retyping them. It has a single author (178 of 178 commits) and was renamed from prompt-master at v0.4.0; it is not the prompt-master skill.
+
+- **Enhance / Send / Undo band** — One row above the prompt box shows state, buttons and the call's cost; nothing is sent until Send or Enter, and Undo and Redo swap the original back until you submit or `/clear`.
+- **Context the session already loaded** — The rewrite draws on the instruction files and skill listing from the session's own usage breakdown, plus up to eight keyword-matched skill descriptions.
+- **Per-rung fallback chain** — Three rungs (fable, sonnet, haiku by default) run in order, advancing on a refusal, an empty reply, a rate limit, a server error or a timeout, never on your Cancel.
+- **Nine post-call guards** — A rewrite is refused, and the draft kept, if it grows too long, drops too much of the draft, flips a question into a task, or adds a command, URL or path you did not write.
+- **Cost on the band** — Each press is priced from a built-in Bedrock `us.*` table; session and day spend caps, off by default, refuse a press before any model call once reached.
+
+> At v0.6.0 (2026-10-21): 178 commits by one author and 446 test cases across 46 files (counted by grep, not re-run for this entry), on a repository created 2026-10-17 with 0 stars, 0 forks and a catalogue-listing PR (#341) still open with changes requested.
+
+## Architecture
+
+prompt-lift is a hooks module with no build step and no `package.json`: `hooks/hooks.json` names `register.tsx`, which registers six hooks, and the plugin is read live from its folder. At v0.6.0 `hooks/` holds 27 TypeScript files and 5,536 lines. All I/O goes through the engine's `$` interface; a grep of `hooks/` finds no `http.fetch`, `process.run`, `setTimeout` or `setInterval`.
+
+A press moves through layers: no-model pre-guards, a gather step, prompt assembly, the fallback chain, the post-call guards, then recording of the held Undo pair, usage and spend. The band is one above-prompt row chained above whatever other mods draw.
+
+Gates exist as `claude plugin validate .`, `claude plugin test .`, a strict `tsc --noEmit` against the engine's own type declarations, three headless evals, and `scripts/demo.sh`, which records the README GIF in a tmux and asciinema sandbox and fails the take if an expected band row is missing.
+
+## How It Works
+
+1. **Press** — `ctrl+x b`, `ctrl+x tab` then `e`, or `/prompt-lift <text>`. Pre-call guards end the press with no model call for drafts under 3 words or over 4,000 characters, lines starting `/`, `!` or `#`, or a reached spend cap.
+2. **Gather** — The loaded instruction files are read, each capped at 40,000 characters; skill names come from the same breakdown; a named subproject's `CLAUDE.md` is added when the draft mentions it.
+3. **Build** — A static block (ten rewrite rules, instruction files, skill names) is sent cached; a dynamic block (draft, matched skills, optional conversation tail) is not. Fourteen envelope tag names are escaped so a hostile `CLAUDE.md` cannot close the envelope; this and the guards are mitigation, not immunity, and the guards sometimes refuse a valid rewrite.
+4. **Call the chain** — The first rung gets 30 s and later rungs 15 s; the model answers one JSON verdict, either fine or improve with the rewrite.
+5. **Judge** — The nine guards run on the rewrite; a refusal leaves the draft untouched and puts the reason on the band.
+6. **Fill and send** — The rewrite goes into the box with the inserted words highlighted, the original is held for Undo, and Send or Enter submits it.

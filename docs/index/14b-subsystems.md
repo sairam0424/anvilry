@@ -3,19 +3,19 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.16.0
+version: v3.16.1
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.16.0 (`package.json` 3.16.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
+> Part of the Anvilry v3.16.1 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.16.1 (`package.json` 3.16.1), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus five
 > post-a929932 fixes, each described by behaviour — notes are hidden at the data layer when `NOTES_ENABLED` is
 > off; rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
 > `requireAdmin`, the telemetry page); overlay voice entry points are gated by `isVoiceViewActive`; the
 > bundle-budget gate asserts `MIN_ROUTES = 17` and verified-dead components were removed (`article-card.tsx`,
-> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`).
+> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`). v3.16.1 adds three more, all landing here: (23) the removal of three low-priority open-source items takes the projects collection from 20 to 18 (16 of them public) and the graph from 25 nodes to 23 and from 28 edges to 24 (subsystem 9, 3D / WebGL; the cards and the feed-allowlist entries themselves are subsystem 1, `14-subsystems.md`); (24) the production gate, a Vercel Deployment Check that holds a new production deployment off the production domain until the `Post-deploy smoke` commit status is green, with a GitHub issue opened when a smoke step does not succeed (subsystem 10, build & deploy); and (25) the bundle gate's `MAX_FIRST_LOAD_BYTES` of 988,000 B (was 1,336,000 B) together with a bounded, retried E2E browser install (subsystem 10).
 > Continues [`14-subsystems.md`](./14-subsystems.md), which maps subsystems 1–6 (content pipeline · view
 > system · chat/LLM · voice · MCP · telemetry).
 
@@ -577,7 +577,7 @@ CI  .github/workflows/ci.yml   — 5 jobs; only claims-integrity-autocommit has 
                                      weekly cron, manual)
   + deploy-smoke.yml (vercel.deployment.ready dispatch -> scripts/post-deploy-smoke.mjs; reports the `Post-deploy smoke` commit status;
                      when the smoke step did not succeed (it failed, or it was skipped after an earlier step failed) it also opens one issue per held commit via scripts/deploy-gate-alert.mjs (dedupe is best effort: newest 100 open items), in
-                     best-effort steps before the guard step, never yet run in Actions; DEPLOY.md section 8)
+                     best-effort steps before the guard step, run in Actions only through two controlled dispatches on 2026-10-22; DEPLOY.md section 8)
   every third-party `uses:` in all six workflows is SHA-pinned with a `# vX` comment; Dependabot's github-actions
   ecosystem moves the pins (.github/dependabot.yml:103-116)
         │
@@ -700,7 +700,7 @@ records.
 
 | Assertion | Value | Cite |
 |---|---|---|
-| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 988_000`, raised four times since the gate landed at 1,285,000 (→ 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000), then lowered once to 988,000 after v3.16.0 (in no tagged release yet). The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four raises (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes; the lowering is a standalone commit as well. The in-file comment now says why (`:66-67`): `/` measured 976,936 B at the v3.16.0 cut (#329 had taken it from 1,298,585 B, about a quarter), 972,887 B after the later prune of three low-priority open-source items (#333, `a665991`: two project cards and the Shop.this feed entry) and 972,920 B when the ceiling was set. The 972,887 B was the same on CI (ubuntu-latest, run 39779046431) and on a local macOS build, and the 33 B since is the one-sentence rewrite in `content/projects/anvilry.mdx` line 26. Until the lowering the ceiling had stayed at 1,336,000 B and left 363,113 B of slack. A fresh build of this tree measures `/` at 972,920 B (`node scripts/bundle-budget.mjs` prints it), so 15,080 B (about 1.5%) of headroom remain under 988,000 B. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two cards and their graph nodes, so it covers a handful of cards, while any eager import of about 15 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added. The 972,920 B and 15,080 B figures were measured by running the gate on a fresh build of this tree; the 972,887 B, run and macOS figures are quoted from the in-file comment and the CI log. The comment still narrates the last raise (1,333,521 B, `:57-64`) and opens with an older figure (1,322,132 B, now worded "at the time", `:43`), and the local artifact above shows `/` at 1,184,096 B — all history, none of them is the current baseline | `scripts/bundle-budget.mjs:72` |
+| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 988_000`, raised four times since the gate landed at 1,285,000 (→ 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000), then lowered once to 988,000 after v3.16.0 (shipped in v3.16.1). The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four raises (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes; the lowering is a standalone commit as well. The in-file comment now says why (`:66-67`): `/` measured 976,936 B at the v3.16.0 cut (#329 had taken it from 1,298,585 B, about a quarter), 972,887 B after the later prune of three low-priority open-source items (#333, `a665991`: two project cards and the Shop.this feed entry) and 972,920 B when the ceiling was set. The 972,887 B was the same on CI (ubuntu-latest, run 39779046431) and on a local macOS build, and the 33 B since is the one-sentence rewrite in `content/projects/anvilry.mdx` line 26. Until the lowering the ceiling had stayed at 1,336,000 B and left 363,113 B of slack. A fresh build of this tree measures `/` at 972,920 B (`node scripts/bundle-budget.mjs` prints it), so 15,080 B (about 1.5%) of headroom remain under 988,000 B. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two cards and their graph nodes, so it covers a handful of cards, while any eager import of about 15 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added. The 972,920 B and 15,080 B figures were measured by running the gate on a fresh build of this tree; the 972,887 B, run and macOS figures are quoted from the in-file comment and the CI log. The comment still narrates the last raise (1,333,521 B, `:57-64`) and opens with an older figure (1,322,132 B, now worded "at the time", `:43`), and the local artifact above shows `/` at 1,184,096 B — all history, none of them is the current baseline | `scripts/bundle-budget.mjs:72` |
 | Route-count floor | `MIN_ROUTES = 17`; fewer means the artifact's shape changed and the gate is lying about coverage. (The script's header still quotes an older measurement — "16 routes; … `/` is 1220794", `:27` — while the `MIN_ROUTES` docblock at `:39` says 17; the assertion uses the constant.) | `:40,:114-119` |
 | three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:153-164` — and it appears in **0** of the routes' first-load sets | `:76-77` (comment), `:84` (marker), `:158-166` (check) |
 | Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:149-156` |
@@ -744,7 +744,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:791-792`).
+(`CHANGELOG.md:846-847`).
 
 ### The Pagefind search-index step
 
@@ -782,8 +782,8 @@ pagefind failure fails the Vercel build.
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:762-764`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:772-774`) — the situation the `pnpm-workspace.yaml` overrides work around. |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.16`, `@>=3` → `^5.0.7`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:817-819`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` is exact-pinned to `1.26.0` (`package.json:29`; `mcp-handler`'s literal peer, `pnpm-lock.yaml:3712`), producing `security_update_not_possible` (`CHANGELOG.md:827-829`) — the situation the `pnpm-workspace.yaml` overrides work around. |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4128`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -1001,7 +1001,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:624`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:679`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.) **Update 2026-10-22:** the ruleset now also has a `required_status_checks` rule (`Lint · Type-check · Test` and `E2E (Playwright)`, GitHub Actions app id 15368, non-strict) and one bypass actor, the repository-admin role in `pull_request` mode, so a red E2E run (a bundle regression included) now blocks the merge of a pull request except through that bypass.
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:171-173`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not

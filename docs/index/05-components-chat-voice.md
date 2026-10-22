@@ -3,14 +3,14 @@ kind: doc
 title: Components — Chat & Voice Surface
 domain: [content]
 status: current
-version: v3.16.0
+version: v3.16.1
 ---
 
 # Components — Chat & Voice Surface
 
-> Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.16.1 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.16.0 (`package.json` 3.16.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows). v3.15.0 (the page-mascot head) changes no file in this scope; only the `app/not-found.tsx` consumer lines cited below moved and are already re-pointed. v3.16.0 changes one file in this scope: `chat/chat-card.tsx` takes a project's repo link from `repoLink()` and, for a private project, shows the text "Private repository" in place of the GitHub icon link.
+> Describes Anvilry v3.16.1 (`package.json` 3.16.1), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets `chat`/`voice`/`beacon` with an eval-cron bypass; shared admin auth; the command-palette talk-mode entry gated by `isVoiceViewActive`; `MIN_ROUTES=17` and removal of dead components). Only the voice-view gate touches this scope's source; the rate-limit split changes what the voice hooks spend against (see the `useSpeechSynthesis` and `useTranscribeRecognition` rows). v3.15.0 (the page-mascot head) changes no file in this scope; only the `app/not-found.tsx` consumer lines cited below moved and are already re-pointed. v3.16.0 changes one file in this scope: `chat/chat-card.tsx` takes a project's repo link from `repoLink()` and, for a private project, shows the text "Private repository" in place of the GitHub icon link. v3.16.1 changes no file in this scope (it removes two project cards and three feed-allowlist entries, adds the production deployment gate with its alert, and lowers the bundle ceiling).
 
 **Scope:** `src/components/chat/**` (all non-test files) + `src/components/ask-portfolio.tsx`
 **Files indexed:** 40

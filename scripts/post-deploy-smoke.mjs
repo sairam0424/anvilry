@@ -29,7 +29,7 @@
  * Exit code: 0 all checks passed, 1 at least one failed (or the deployment never became
  * reachable), 2 usage error.
  */
-import { appendFileSync } from "node:fs";
+import { appendFileSync, realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const BYPASS_HEADER = "x-vercel-protection-bypass";
@@ -387,7 +387,7 @@ async function main() {
   process.exit(result.ok ? 0 : 1);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) { // real paths: a raw argv[1] is a silent no-op, exit 0, behind a symlink
   main().catch((error) => {
     console.error(error);
     process.exit(1);

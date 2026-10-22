@@ -1,4 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import {
   BYPASS_HEADER,
   CHECKS,
@@ -444,5 +449,31 @@ describe("discoverProjectPath", () => {
 
   it("returns null when there is none", () => {
     expect(discoverProjectPath("<p>nothing</p>")).toBeNull();
+  });
+});
+
+describe("command line entry", () => {
+  const scriptsDir = fileURLToPath(new URL("../../scripts", import.meta.url));
+  const scratch = mkdtempSync(path.join(tmpdir(), "smoke-link-"));
+  afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+  // The entry guard compares real paths. A raw argv[1] comparison would make the script do nothing at all, and
+  // exit 0, when started behind a symlink, which the gate would read as a passing smoke.
+  it.each([
+    ["its real path", () => path.join(scriptsDir, "post-deploy-smoke.mjs")],
+    [
+      "a symlinked path",
+      () => {
+        symlinkSync(scriptsDir, path.join(scratch, "scripts"));
+        return path.join(scratch, "scripts", "post-deploy-smoke.mjs");
+      },
+    ],
+  ])("runs, and reports a usage error instead of passing, when started by %s", (_label, scriptPath) => {
+    const result = spawnSync(process.execPath, [scriptPath()], {
+      env: { PATH: process.env.PATH ?? "", NODE_ENV: "test" },
+      encoding: "utf8",
+    });
+    expect(result.status).toBe(2);
+    expect(result.stderr).toMatch(/usage/i);
   });
 });

@@ -40,7 +40,7 @@ const STATS = ".next/diagnostics/route-bundle-stats.json";
 const MIN_ROUTES = 17;
 
 /**
- * Ceiling, not a baseline. Largest today is `/` at 1,322,132 B (was 1,220,794 B before the
+ * Ceiling, not a baseline. Largest at the time was `/` at 1,322,132 B (was 1,220,794 B before the
  * theme toggle, hero name line, and the Tooltip rollout on site-nav.tsx/mobile-nav.tsx --
  * all three are global, in the root layout on every route, and all three are immediately
  * interactive UI (a hover tooltip on a keyboard-focusable icon button included).
@@ -63,13 +63,13 @@ const MIN_ROUTES = 17;
  * icons (npm/PyPI/Dev.to/Substack, src/components/icons.tsx) to the homepage hero's social row
  * (home/hero.tsx) measured 1,333,521 B post-change (+1,521 B over the old budget).
  *
- * ~2,479 B headroom above that post-change measurement -- enough to absorb chunk-boundary
- * jitter and cross-OS variance, not meant to invite further slack accumulation.
+ * Lowered to 988,000 after v3.16.0: `/` measured 976,936 B at the cut, 972,887 B after #333 and 972,920 B when this
+ * was set. The 15,080 B left is a growth allowance (#333 shed 4,049 B with two cards), not jitter room.
  *
  * Raising it is allowed and expected. Do it in its OWN commit, quoting measured before/after bytes,
  * the same discipline next.config.ts:127-149 already uses for the three.js chunk.
  */
-const MAX_FIRST_LOAD_BYTES = 1_336_000;
+const MAX_FIRST_LOAD_BYTES = 988_000;
 
 /**
  * three.js must stay OFF the critical path. next.config.ts:127-149 documents that it occupies

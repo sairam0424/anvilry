@@ -28,6 +28,14 @@ name: Deploy smoke
 #  fails), their sum stays under the job timeout, nothing cancels a run (`cancel-in-progress: false`),
 #  and a final `if: always()` step fails the job unless the smoke step succeeded.
 #
+# TELLING A HUMAN
+#  A red smoke leaves the previous deployment serving and sets only a commit status, so nothing else would
+#  announce that a deploy is held. After a failed smoke the job opens ONE issue per held commit
+#  (scripts/deploy-gate-alert.mjs, deduplicated by title). The script is checked out from this run's own
+#  GITHUB_SHA (the default branch), never from the commit under test, so it works for any deployed commit. Both
+#  alert steps are continue-on-error and sit BEFORE the guard step: they can neither hide a failed smoke nor
+#  turn it into a pass.
+#
 # TRUST MODEL
 #  The smoke script comes from the commit under test (so its checks match that code), which means a
 #  commit that weakens the script passes its own gate. This protects against accidental regressions
@@ -69,7 +77,7 @@ jobs:
     name: Smoke the deployment
     if: github.event_name == 'workflow_dispatch' || github.event.client_payload.environment != 'preview'
     runs-on: ubuntu-latest
-    # Backstop only, deliberately ABOVE the sum of the per-step limits (15 minutes if every step ran to
+    # Backstop only, deliberately ABOVE the sum of the per-step limits (18 minutes if every step ran to
     # its limit, which it never does: the whole job takes about a minute). A step that overruns its own
     # limit FAILS, which is what we want; the job-level timeout must never be what ends a run.
     timeout-minutes: 20
@@ -77,6 +85,7 @@ jobs:
       contents: read
       statuses: write # the status action creates the commit status
       actions: read # ... and reads this run's job steps to decide success or failure
+      issues: write # the alert step opens an issue when the gate holds a deployment
     steps:
       - name: Report the status on the deployed commit
         if: github.event_name == 'repository_dispatch'
@@ -129,6 +138,31 @@ jobs:
           DEPLOYMENT_URL: ${{ github.event.client_payload.url || inputs.url }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/post-deploy-smoke.mjs "$DEPLOYMENT_URL"
+
+      # Best effort, whenever the smoke step did not succeed. Dispatch events only: a manual run sets no status and holds nothing.
+      - name: Checkout the alert script (default branch)
+        if: always() && github.event_name == 'repository_dispatch' && steps.smoke.outcome != 'success'
+        timeout-minutes: 2
+        continue-on-error: true
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: scripts/deploy-gate-alert.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+          path: alert
+
+      - name: Open an issue because the gate is holding a deployment
+        if: always() && github.event_name == 'repository_dispatch' && steps.smoke.outcome != 'success'
+        timeout-minutes: 1
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYED_SHA: ${{ github.event.client_payload.git.sha }}
+          DEPLOYMENT_URL: ${{ github.event.client_payload.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+        run: node alert/scripts/deploy-gate-alert.mjs
 
       # Last step, always runs. If the smoke step did not succeed for ANY reason (failed, timed out,
       # was cancelled or skipped because an earlier step failed), make the job visibly fail so the

@@ -479,6 +479,13 @@
       ],
       "preview": "e2e:"
     },
+    ".github/workflows/ci.yml:140": {
+      "fp": "ad78acd6b27c",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "timeout-minutes: 20"
+    },
     ".github/workflows/ci.yml:143": {
       "fp": "0b4dc9913985",
       "citedBy": [
@@ -517,9 +524,17 @@
       ],
       "preview": "# launch with \"Executable doesn't exist at .../webkit-<rev>/pw_run.sh\"."
     },
+    ".github/workflows/ci.yml:172": {
+      "fp": "954a2b3fdf55",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- name: Install Playwright browsers"
+    },
     ".github/workflows/ci.yml:173": {
       "fp": "1a69c8c555b3",
       "citedBy": [
+        "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
@@ -1040,6 +1055,71 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "fail-on-scopes: runtime"
+    },
+    ".github/workflows/deploy-smoke.yml:11": {
+      "fp": "9abb40663b62",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "# one stays unaliased."
+    },
+    ".github/workflows/deploy-smoke.yml:142": {
+      "fp": "6aef61e3ba18",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# Best effort, whenever the smoke step did not succeed. Dispatch events only: a manual run sets no s"
+    },
+    ".github/workflows/deploy-smoke.yml:165": {
+      "fp": "7b6a011e2ef8",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "run: node alert/scripts/deploy-gate-alert.mjs"
+    },
+    ".github/workflows/deploy-smoke.yml:167": {
+      "fp": "6b20f0fa209a",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "# Last step, always runs. If the smoke step did not succeed for ANY reason (failed, timed out,"
+    },
+    ".github/workflows/deploy-smoke.yml:175": {
+      "fp": "1a21be8bb1dc",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "exit 1"
+    },
+    ".github/workflows/deploy-smoke.yml:29": {
+      "fp": "cd36484be0f4",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "#  and a final `if: always()` step fails the job unless the smoke step succeeded."
+    },
+    ".github/workflows/deploy-smoke.yml:3": {
+      "fp": "2d85822790d3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "# Gates the PRODUCTION DOMAIN, not the merge."
+    },
+    ".github/workflows/deploy-smoke.yml:31": {
+      "fp": "fb80c916b7a6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "# TELLING A HUMAN"
+    },
+    ".github/workflows/deploy-smoke.yml:37": {
+      "fp": "94946bdcf03c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "#  turn it into a pass."
     },
     ".github/workflows/gitleaks.yml:14": {
       "fp": "fc8135fd1264",
@@ -4257,7 +4337,7 @@
       "preview": "* the same discipline next.config.ts:127-149 already uses for the three.js chunk."
     },
     "scripts/bundle-budget.mjs:72": {
-      "fp": "7fcef48a87f7",
+      "fp": "3479bdfa07b3",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "12-docs-knowledge-and-harness.md",
@@ -4265,7 +4345,7 @@
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "const MAX_FIRST_LOAD_BYTES = 1_336_000;"
+      "preview": "const MAX_FIRST_LOAD_BYTES = 988_000;"
     },
     "scripts/bundle-budget.mjs:74": {
       "fp": "8d64a30d9de1",
@@ -4350,6 +4430,55 @@
         "11-config-build-ci-infra.md"
       ],
       "preview": "]);"
+    },
+    "scripts/deploy-gate-alert.mjs:148": {
+      "fp": "2dd066ff971f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export async function openIssueOnce({ repo, token, issue, fetchImpl = fetch, sleep = defaultSleep })"
+    },
+    "scripts/deploy-gate-alert.mjs:169": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "scripts/deploy-gate-alert.mjs:194": {
+      "fp": "3196ce4ae001",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "function isEntryPoint() {"
+    },
+    "scripts/deploy-gate-alert.mjs:2": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "/**"
+    },
+    "scripts/deploy-gate-alert.mjs:202": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "scripts/deploy-gate-alert.mjs:27": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "*/"
+    },
+    "scripts/post-deploy-smoke.mjs:390": {
+      "fp": "4ebd9d10bd4c",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) { // r"
     },
     "scripts/replay-trace.mjs:108": {
       "fp": "f43e124ed95c",
@@ -17094,6 +17223,20 @@
         "14-subsystems.md"
       ],
       "preview": "};"
+    },
+    "src/lib/deploy-gate-alert.test.ts:316": {
+      "fp": "b50823f21c0b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"deploy-smoke.yml keeps the gate honest\", () => {"
+    },
+    "src/lib/deploy-gate-alert.test.ts:373": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
     },
     "src/lib/discovery-store.ts:18": {
       "fp": "9dc173021198",

@@ -10,7 +10,7 @@ version: v3.16.0
 
 > Part of the Anvilry v3.16.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> **Pin:** this file describes Anvilry v3.16.0 (package.json `3.16.0`), i.e. `main` at a929932 (package.json `3.6.0`) plus five later behavioural fixes: notes are hidden at the data layer when `NOTES_ENABLED` is off; the rate limiter has per-class buckets (chat, voice, beacon) with an eval-cron bypass via `src/lib/cron-auth.ts`; admin auth goes through one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page); the command palette gates talk mode on `isVoiceViewActive`; and the bundle gate's route floor (`MIN_ROUTES`) is 17 and verified-dead components were removed. In this domain v3.16.0 adds the 29th changelog entry, `[3.16.0] — 2026-10-22` (#327, #328 and #329), and moves the quoted bundle-budget figures to that cut (976,936 B first-load on `/`, 359,064 B of headroom). Numbers below were re-measured against that tree (worktree head 8e9e73e; `package.json`'s own version, bumped at the release cut, is `3.16.0`), not copied from older docs. Statements about what the other root docs say describe those docs as they stand in v3.7.0, after their own drift fixes; the §Doc-vs-code drift ledger marks which rows that closed.
+> **Pin:** this file describes Anvilry v3.16.0 (package.json `3.16.0`), i.e. `main` at a929932 (package.json `3.6.0`) plus five later behavioural fixes: notes are hidden at the data layer when `NOTES_ENABLED` is off; the rate limiter has per-class buckets (chat, voice, beacon) with an eval-cron bypass via `src/lib/cron-auth.ts`; admin auth goes through one shared `isAdminAuthorized` (proxy, `requireAdmin`, telemetry page); the command palette gates talk mode on `isVoiceViewActive`; and the bundle gate's route floor (`MIN_ROUTES`) is 17 and verified-dead components were removed. In this domain v3.16.0 adds the 29th changelog entry, `[3.16.0] — 2026-10-22` (#327, #328 and #329), and moves the quoted bundle-budget figures to that cut (976,936 B first-load on `/`, 359,064 B of headroom under the 1,336,000 B ceiling then in force; the ceiling was lowered to 988,000 B after v3.16.0, see the performance rows below). Numbers below were re-measured against that tree (worktree head 8e9e73e; `package.json`'s own version, bumped at the release cut, is `3.16.0`), not copied from older docs. Statements about what the other root docs say describe those docs as they stand in v3.7.0, after their own drift fixes; the §Doc-vs-code drift ledger marks which rows that closed.
 
 **Scope:** `README.md`, `CLAUDE.md`, `ARCHITECTURE.md`, `AGENTS.md`, `CHANGELOG.md`, `LOG.md`, `VOICE.md`,
 `TELEMETRY.md`, `DEPLOY.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `LICENSE`, `THIRD_PARTY_NOTICES.md`, `docs/README.md`,
@@ -118,7 +118,7 @@ and a fresh worktree resets all of them), so the in-document version marker is t
 | `domains/README.md` | schema readme | The `domain` frontmatter + README template | §Anvilry Domains table names the real collectors (`scripts/bundle-budget.mjs`, the cron audits) |
 | `domains/content/README.md` | loop charter | Content-freshness goal, backlog, metrics | Timeline ends 2026-09-29 (previous entry 2026-06-24) |
 | `domains/seo/README.md` | loop charter | SEO goal + the llms.txt and GEO/AEO rulings | Timeline ends 2026-09-29 (previous entry 2026-08-12) |
-| `domains/performance/README.md` | loop charter | Bundle/CWV baselines, regression guards (one CI-enforced), tooling constraints | Timeline ends 2026-09-29 (previous entry 2026-08-21); quotes the current budget (1,336,000 B, 1,285,000 B at v3.6.0) |
+| `domains/performance/README.md` | loop charter | Bundle/CWV baselines, regression guards (one CI-enforced), tooling constraints | Timeline ends 2026-09-29 (previous entry 2026-08-21); quotes the current budget (988,000 B; 1,285,000 B at v3.6.0, raised four times to 1,336,000 B, then lowered once after v3.16.0), while its 2026-09-29 timeline entry still quotes the 1,336,000 B then in force |
 | `signals/README.md` | schema readme | The `signal` frontmatter + dedup/frequency rule | **zero signal files exist** |
 | `.claude/skills/*/SKILL.md` (5) | agent skills | Their own trigger phrases + procedures | no version marker |
 | `.claude/skills/new-loop/references/*` (4) | skill templates | The generic KB substrate `new-loop` copies in | no version marker |
@@ -264,13 +264,13 @@ Three structural facts a maintainer should know:
 - **`domains/performance/README.md` is a documented perf contract with one executable guard.** Its §Regression
   guards list has five entries and the first is marked **✅ ENFORCED** (the first bullet of that section).
   `ci.yml:190-191` runs `node scripts/bundle-budget.mjs`, which fails the job if (a) any route's
-  `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **1,336,000 B**
-  (`scripts/bundle-budget.mjs:72`), (b) fewer than `MIN_ROUTES` = **17** route records are present
+  `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **988,000 B**
+  (`scripts/bundle-budget.mjs:72`; raised four times from 1,285,000 B to 1,336,000 B, then lowered once to 988,000 B after v3.16.0), (b) fewer than `MIN_ROUTES` = **17** route records are present
   (`scripts/bundle-budget.mjs:40`, the 16 `page.tsx` routes plus `/_not-found`), (c) the `WebGLRenderer`
   marker (`LAZY_MARKER`, `scripts/bundle-budget.mjs:84`) turns up in any route's first-load chunk set, or (d) the `_createMdxContent`
   marker (`MDX_MARKER`, `scripts/bundle-budget.mjs:96`) does. The
-  comment above the ceiling records `/` at 1,333,521 B after the last raise, leaving about 2,479 B of
-  headroom on that dev-box figure (at the v3.16.0 cut `/` measures 976,936 B, 359,064 B under the ceiling). The single three.js chunk is 897,249 B, present in 0 of the 17 route
+  comment above the ceiling records `/` at 1,333,521 B after the last raise (a dev-box figure, kept as history) and, in its closing paragraph, the lowering: `/` measures 972,920 B on a fresh build of this tree (972,887 B at #333), leaving 15,080 B (about 1.5%) of headroom, a growth allowance and not jitter room
+  (`/` measured 976,936 B at the v3.16.0 cut, 359,064 B under the 1,336,000 B ceiling then in force, after #329 took it from 1,298,585 B, and 972,887 B on CI and macOS after the later prune of three low-priority open-source items, #333). The single three.js chunk is 897,249 B, present in 0 of the 17 route
   records' first-load sets (the script's own comment says "17 routes"). The remaining **four** guards still fail *silently*, including "`src/lib/r3f.ts`
   is load-bearing … do not delete it on the theory that '16.3 handles this now'"
   (`domains/performance/README.md:78-80`). The enforced guard explicitly does **not** cover a duplicate
@@ -540,14 +540,14 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     references only for `1.0.0`–`1.6.0`; `1.7.0` and everything after it, through `[3.16.0]`, have no
     link-ref footer entry.
 16. ~~**Bundle-budget numbers are stale in `domains/performance/README.md` and `CLAUDE.md`.**~~ —
-    **corrected.** The live gate is `MAX_FIRST_LOAD_BYTES = 1_336_000` (`scripts/bundle-budget.mjs:72`),
+    **corrected.** The live gate is `MAX_FIRST_LOAD_BYTES = 988_000` (`scripts/bundle-budget.mjs:72`; 1,336,000 until it was lowered after v3.16.0),
     `MIN_ROUTES = 17` (`:40`), marker `LAZY_MARKER = "WebGLRenderer"` (`:84`). `domains/performance/README.md`
     used to quote a **1,285,000 B** ceiling, `/` at 1,220,794 B and ~5% headroom, and `CLAUDE.md` § Branch
     Model & CI the same 1,220,794 B / ~5% figures plus `bundle-budget.mjs` line citations. Both now quote
-    1,336,000 B and `MIN_ROUTES` = 17: the performance README tells the reader to re-measure with
-    `pnpm build && node scripts/bundle-budget.mjs` rather than quote a percentage, and `CLAUDE.md` calls the
-    figure a ceiling, measures `/` at 976,936 B at the v3.16.0 cut (359,064 B of headroom) and notes that the
-    script's own comment still quotes 1,333,521 B / ~2,479 B from the last raise (a dev-box figure, not the current one). `CHANGELOG.md:602` (v3.6.0) records 1,285,000 B, correct for that release and
+    988,000 B and `MIN_ROUTES` = 17: the performance README tells the reader to re-measure with
+    `pnpm build && node scripts/bundle-budget.mjs` before quoting headroom, and `CLAUDE.md` calls the
+    figure a ceiling, measures `/` at 972,920 B on a fresh build of this tree (15,080 B of headroom; 972,887 B on CI and macOS at #333; it was 976,936 B at the v3.16.0 cut, 359,064 B under the then 1,336,000 B ceiling) and notes that the
+    script's own comment still quotes 1,333,521 B from the last raise (a dev-box figure, not the current one). `CHANGELOG.md:602` (v3.6.0) records 1,285,000 B, correct for that release and
     superseded since; `docs/next-upgrade-plan-2026-09.md` (a draft) records another live run, `/` at
     1,330,764 B with 5,236 B (~0.39%) of headroom.
 17. ~~**Other stale facts in `CLAUDE.md`.**~~ — **corrected.** Seven claims were stale and are now right.

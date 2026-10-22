@@ -518,13 +518,13 @@
       "preview": "# launch with \"Executable doesn't exist at .../webkit-<rev>/pw_run.sh\"."
     },
     ".github/workflows/ci.yml:173": {
-      "fp": "e5a366269fda",
+      "fp": "1a69c8c555b3",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "run: pnpm exec playwright install --with-deps chromium webkit"
+      "preview": "run: bash scripts/ci-install-playwright.sh # bounded + retried: the runner apt mirror stalled this s"
     },
     ".github/workflows/ci.yml:175": {
       "fp": "4fa4722aa999",

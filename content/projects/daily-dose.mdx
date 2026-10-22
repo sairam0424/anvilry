@@ -10,7 +10,7 @@ license: Apache-2.0
 tech: [TypeScript, Astro, Node.js, Bedrock, Zod, Vitest, GitHub Actions, Vercel, axe-core]
 pinned: false
 featured: false
-order: 18
+order: 17
 excerpt: "A cron-driven Astro static site that pulls Hacker News, arXiv, GitHub and Dev.to through free keyless APIs, scores all twenty daily items in one forced-tool-use AWS Bedrock call (Sonnet 5 leading a four-model fallback chain), and validates the output against one Zod schema shared by the pipeline and the Astro content collection. GitHub Actions commits the result back to `main` each night. Every run's token usage and dollar cost goes into a committed JSONL ledger (52 runs, $3.10 total at 2026-10-20) with a 5x trailing-average anomaly flag that files a GitHub Issue."
 decisions:
   - title: "One batched forced-tool-use Bedrock call per run, over per-item calls or the structured-outputs beta"

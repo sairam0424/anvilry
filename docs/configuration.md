@@ -109,7 +109,7 @@ Trace replay: `node scripts/replay-trace.mjs <traceId>` (or `make trace TRACE_ID
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `GITHUB_TOKEN` | No | — | GitHub PAT (`public_repo` scope, read-only). Raises rate limit from 60 to 5,000 req/hr. Used by `/api/github/stats` and `src/lib/github.ts` (22-entry `REPO_ALLOWLIST`). Without it everything still works unauthenticated, but allowlisted private repos 404 and are silently dropped, so star / fork / repo totals are lower; the stats strip hides only when followers and public repos both come back 0. |
+| `GITHUB_TOKEN` | No | — | GitHub PAT (`public_repo` scope, read-only). Raises rate limit from 60 to 5,000 req/hr. Used by `/api/github/stats` and `src/lib/github.ts` (19-entry `REPO_ALLOWLIST`). Without it everything still works unauthenticated, but allowlisted private repos 404 and are silently dropped, so star / fork / repo totals are lower; the stats strip hides only when followers and public repos both come back 0. |
 
 ---
 

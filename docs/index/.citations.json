@@ -1907,21 +1907,6 @@
       ],
       "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **24"
     },
-    "content/projects/grpc-microservices.mdx:3": {
-      "fp": "d25a6a52f41a",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "name: Order Processing System"
-    },
-    "content/projects/grpc-microservices.mdx:6": {
-      "fp": "b5ba529091f9",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "repo: https://github.com/sairam0424/gRPC-micro-services"
-    },
     "content/work/aava-code.mdx:31": {
       "fp": "903a8da3f92d",
       "citedBy": [
@@ -17446,14 +17431,14 @@
       ],
       "preview": "describe(\"game-model anti-fabrication\", () => {"
     },
-    "src/lib/game-model.ts:190": {
+    "src/lib/game-model.ts:187": {
       "fp": "cec7e4036a41",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "repo: repoLink(p) ?? undefined,"
     },
-    "src/lib/game-model.ts:197": {
+    "src/lib/game-model.ts:194": {
       "fp": "be9eef8e0dfc",
       "citedBy": [
         "03-lib-content-data.md"
@@ -17468,44 +17453,40 @@
       "preview": "/**"
     },
     "src/lib/game-model.ts:28": {
-      "fp": "7d66a893e05d",
+      "fp": "3e43ab2d284b",
       "citedBy": [
         "03-lib-content-data.md",
         "09-content-and-schemas.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "* LAUNCH BLOCKER this fixes: 3 of the graph node ids do NOT equal their content"
+      "preview": "* LAUNCH BLOCKER this fixes: a graph node id that does NOT equal its content slug,"
     },
     "src/lib/game-model.ts:29": {
-      "fp": "34a737a99d76",
+      "fp": "54bdb314196e",
       "citedBy": [
-        "10-tests-and-quality-gates.md"
+        "03-lib-content-data.md",
+        "09-content-and-schemas.md",
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "* slug — `aava`→`aava-code` (work), `grpc`→`grpc-microservices`, `nhl`→"
+      "preview": "* `aava`→`aava-code` (work), the only one left. Without this map, \"click a node → open"
     },
     "src/lib/game-model.ts:30": {
-      "fp": "15eeb946414e",
+      "fp": "c69b741cbe07",
       "citedBy": [
         "03-lib-content-data.md"
       ],
-      "preview": "* `not-humans-lab`. Without this map, \"click a node → open its card\" would 404 for"
+      "preview": "* its card\" would 404 for the flagship AAVA work item. The node's visual `kind`"
     },
-    "src/lib/game-model.ts:31": {
-      "fp": "9f1b775a16a7",
-      "citedBy": [
-        "03-lib-content-data.md"
-      ],
-      "preview": "* those three (including the flagship AAVA work item). The node's visual `kind`"
-    },
-    "src/lib/game-model.ts:36": {
+    "src/lib/game-model.ts:35": {
       "fp": "ed9623369ff0",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "*/"
     },
-    "src/lib/game-model.ts:37": {
+    "src/lib/game-model.ts:36": {
       "fp": "25568e0d1df0",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -17516,14 +17497,14 @@
       ],
       "preview": "export const NODE_CONTENT: Record<string, { kind: ContentKind; slug: string }> = {"
     },
-    "src/lib/game-model.ts:39": {
+    "src/lib/game-model.ts:38": {
       "fp": "fd4e4754404c",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "pensieve: { kind: \"work\", slug: \"pensieve\" },"
     },
-    "src/lib/game-model.ts:40": {
+    "src/lib/game-model.ts:39": {
       "fp": "4110549ed870",
       "citedBy": [
         "03-lib-content-data.md",
@@ -17533,40 +17514,24 @@
       ],
       "preview": "aava: { kind: \"work\", slug: \"aava-code\" }, // node id != slug"
     },
-    "src/lib/game-model.ts:51": {
-      "fp": "14656fcc666c",
-      "citedBy": [
-        "03-lib-content-data.md",
-        "09-content-and-schemas.md"
-      ],
-      "preview": "grpc: { kind: \"project\", slug: \"grpc-microservices\" }, // node id != slug"
-    },
-    "src/lib/game-model.ts:54": {
-      "fp": "cbd717db45ab",
-      "citedBy": [
-        "03-lib-content-data.md",
-        "06-components-game-terminal.md",
-        "09-content-and-schemas.md"
-      ],
-      "preview": "nhl: { kind: \"project\", slug: \"not-humans-lab\" }, // node id != slug"
-    },
-    "src/lib/game-model.ts:59": {
+    "src/lib/game-model.ts:56": {
       "fp": "28297bcb6b61",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "// Platform, guardrails & observability (projects)"
     },
-    "src/lib/game-model.ts:69": {
+    "src/lib/game-model.ts:66": {
       "fp": "ff33de7f1f14",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "\"nh-deck\": { kind: \"project\", slug: \"nh-deck\" },"
     },
-    "src/lib/game-model.ts:70": {
+    "src/lib/game-model.ts:67": {
       "fp": "df3982fd6101",
       "citedBy": [
+        "06-components-game-terminal.md",
         "09-content-and-schemas.md",
         "14-subsystems.md",
         "14b-subsystems.md",
@@ -17574,7 +17539,7 @@
       ],
       "preview": "};"
     },
-    "src/lib/game-model.ts:82": {
+    "src/lib/game-model.ts:79": {
       "fp": "b16bb8263d70",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17582,7 +17547,7 @@
       ],
       "preview": "export function resolveNode(nodeId: string): ResolvedContent | null {"
     },
-    "src/lib/game-model.ts:91": {
+    "src/lib/game-model.ts:88": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17590,7 +17555,7 @@
       ],
       "preview": "}"
     },
-    "src/lib/game-model.ts:95": {
+    "src/lib/game-model.ts:92": {
       "fp": "0d83c037274d",
       "citedBy": [
         "09-content-and-schemas.md"
@@ -17604,7 +17569,7 @@
       ],
       "preview": "* package is installed; the single server-component import site is the guarantee.)"
     },
-    "src/lib/github.ts:127": {
+    "src/lib/github.ts:124": {
       "fp": "296214da00e6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -17612,7 +17577,7 @@
       ],
       "preview": "const token = process.env.GITHUB_TOKEN;"
     },
-    "src/lib/github.ts:145": {
+    "src/lib/github.ts:142": {
       "fp": "d30f8f8c3e96",
       "citedBy": [
         "02-api-routes.md",
@@ -17621,7 +17586,7 @@
       ],
       "preview": "next: { revalidate: 3600 },"
     },
-    "src/lib/github.ts:174": {
+    "src/lib/github.ts:171": {
       "fp": "dc6ee86a44b9",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -17642,7 +17607,7 @@
       ],
       "preview": "export const REPO_ALLOWLIST: readonly string[] = ["
     },
-    "src/lib/github.ts:55": {
+    "src/lib/github.ts:52": {
       "fp": "6e2a9b95d72e",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -17650,19 +17615,19 @@
       ],
       "preview": "] as const;"
     },
+    "src/lib/github.ts:58": {
+      "fp": "4b65a5356436",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "(owner === profile.githubUser && REPO_ALLOWLIST.includes(name))"
+    },
     "src/lib/github.ts:6": {
       "fp": "5c9db1dc14a7",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* own server-side fetch, cached via ISR (revalidate=3600 on the /projects page)."
-    },
-    "src/lib/github.ts:61": {
-      "fp": "4b65a5356436",
-      "citedBy": [
-        "03-lib-content-data.md"
-      ],
-      "preview": "(owner === profile.githubUser && REPO_ALLOWLIST.includes(name))"
     },
     "src/lib/github.ts:9": {
       "fp": "76ae69e6f79c",
@@ -17678,21 +17643,21 @@
       ],
       "preview": "/**"
     },
-    "src/lib/graph-data.ts:134": {
+    "src/lib/graph-data.ts:128": {
       "fp": "358ba3f22237",
       "citedBy": [
         "README.md"
       ],
       "preview": "];"
     },
-    "src/lib/graph-data.ts:136": {
+    "src/lib/graph-data.ts:130": {
       "fp": "6c0c2a225a75",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "export const kindColor: Record<GraphNode[\"kind\"], string> = {"
     },
-    "src/lib/graph-data.ts:141": {
+    "src/lib/graph-data.ts:135": {
       "fp": "df3982fd6101",
       "citedBy": [
         "06-components-game-terminal.md"
@@ -17746,7 +17711,7 @@
       ],
       "preview": "*/"
     },
-    "src/lib/graph-data.ts:77": {
+    "src/lib/graph-data.ts:75": {
       "fp": "5d67285fa5d5",
       "citedBy": [
         "07-components-3d.md",
@@ -17755,7 +17720,7 @@
       ],
       "preview": "// Positions kept within frustum: camera z=7, fov=45 → visible half-height ≈ 2.9 / SCALE=1.6 ≈ 1.8 u"
     },
-    "src/lib/graph-data.ts:94": {
+    "src/lib/graph-data.ts:92": {
       "fp": "358ba3f22237",
       "citedBy": [
         "07-components-3d.md",
@@ -17767,7 +17732,7 @@
       ],
       "preview": "];"
     },
-    "src/lib/graph-data.ts:96": {
+    "src/lib/graph-data.ts:94": {
       "fp": "b44a11e556dc",
       "citedBy": [
         "README.md"

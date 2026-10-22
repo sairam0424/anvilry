@@ -680,7 +680,7 @@ independent causes, each sufficient on its own:
 | The `compare` step read a Pages-Router manifest | `nextjs-bundle-analysis` (last published 2023) reads `build-manifest.json.pages`, which is `{"/_app": []}` in this App Router app. Even fully wired it emits `{"raw":0,"gzip":0}` — "this PR introduced no changes to the JavaScript bundle", on every PR, forever. It was also never wired: its eleven steps (now readable only in git history, at the revision before the deletion) went from the analyse build (via an artifact upload and a base-artifact download) to `compare`, skipping the `report` step that writes `__bundle_analysis.json`, and `package.json` still has no `nextBundleAnalysis` block — checkable today. |
 | A missing measurement was invisible | `if-no-files-found: warn` on the upload plus `continue-on-error: true` on the compare. |
 
-No status check is required on `develop` or `main` (a live GitHub read: an active repository ruleset requires PRs and blocks deletion and force-push but has no `required_status_checks` rule — see the Resolved ledger), so no required check disappeared with it.
+When it was deleted no status check was required on `develop` or `main` (a live GitHub read: an active repository ruleset required PRs and blocked deletion and force-push but had no `required_status_checks` rule; one was added on 2026-10-22 — see the Resolved ledger), so no required check disappeared with it.
 
 **What the replacement measures.** `next build` writes `.next/diagnostics/route-bundle-stats.json` with no
 flag and no second build — but **only** under Turbopack (`node_modules/next/dist/build/index.js:2843-2844`
@@ -993,7 +993,7 @@ record the outcome rather than the original open question.
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
   `CHANGELOG.md:624`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
-  API now reports `protected: true`.)
+  API now reports `protected: true`.) **Update 2026-10-22:** the ruleset now also has a `required_status_checks` rule (`Lint · Type-check · Test` and `E2E (Playwright)`, GitHub Actions app id 15368, non-strict) and one bypass actor, the repository-admin role in `pull_request` mode, so a red E2E run (a bundle regression included) now blocks the merge of a pull request except through that bypass.
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:171-173`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not
   track empty directories) and empty because no MDX references an asset; the only other references are

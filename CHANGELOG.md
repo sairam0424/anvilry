@@ -4,6 +4,61 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.16.1] — 2026-10-22
+
+**Patch** — Production deploys built from a push to `main` are gated: Vercel holds a new deployment off the
+production domain until a smoke test of that exact build passes, and a smoke step that does not succeed
+opens a GitHub issue; CLI deploys and same-commit redeploys are untested. Three low-priority open-source
+items leave the portfolio and the first-load ceiling drops to match v3.16.0. No route, API or schema shape
+changes; the projects list, chat corpus, MCP tools and résumé JSON lose two entries, and two pages return 404.
+
+### Added
+- **A production gate: the Vercel Deployment Check "Post-deploy smoke"** (#335, #336, #337, #338).
+  `.github/workflows/deploy-smoke.yml` runs on Vercel's `vercel.deployment.ready` dispatch and
+  `scripts/post-deploy-smoke.mjs` runs 20 GET checks against the exact built deployment, after polling `/`
+  until it answers: security headers, the page set, the Pagefind index, `llms.txt`, the sitemap, the résumé
+  JSON, and the admin and cron routes probed without credentials (never chat or voice), all with the
+  Protection Bypass for Automation secret. The `Post-deploy smoke` commit status is what the check waits
+  for before Vercel assigns the production domain. Observed on 2026-10-22: the new deployment was ready
+  but un-aliased for about 25 s and about 39 s, then the alias moved. DEPLOY.md section 8 has the runbook
+  and the escape hatches (Force Promote, or remove the check).
+- **An issue when the gate holds a deployment** (#340): after a smoke step that does not succeed,
+  `scripts/deploy-gate-alert.mjs` opens one GitHub issue per held commit, with best-effort dedupe. It is
+  taken from the default branch, validates every dispatch value before printing it, and runs in two
+  steps that cannot hide a failed smoke or turn it into a pass. Exercised in Actions on 2026-10-22 by two
+  controlled dispatches with an invalid payload (smoke skipped, one issue opened, then deduplicated); a
+  smoke step that ends `failure` was not. Closing the issue is manual; a hold with no status is not announced.
+- The suite goes from 1287 to 1356 tests across 113 to 115 files (`deploy-smoke.test.ts` with 32 tests,
+  `deploy-gate-alert.test.ts` with 36, including checks on the shape of `deploy-smoke.yml`).
+
+### Changed
+- **The first-load ceiling is 988,000 B, was 1,336,000 B** (#340). `/` measures 972,920 B, so 15,080 B
+  of headroom remain instead of 363,113 B. It was 976,936 B at the v3.16.0 cut and 972,887 B after the
+  prune below; v3.16.0 cut it by about a quarter and the ceiling had stayed put.
+- **The E2E browser install is bounded and retried** (#339): `scripts/ci-install-playwright.sh` makes
+  up to three attempts of 240 s, stops the root-owned `apt-get` and repairs dpkg between attempts, and
+  turns off apt pipelining. The Ubuntu runner's apt mirror had stalled and hung the required check on
+  three runs of one pull request (the job timeout is 20 minutes); on two later runs attempt 1 timed out
+  and attempt 2 succeeded.
+- **The branch ruleset requires `Lint · Type-check · Test` and `E2E (Playwright)` on `main` and
+  `develop`**, and gains a repository-admin bypass for pull requests (it had none). This lives in GitHub,
+  not in the repository; DEPLOY.md records it and how to undo it.
+- **The Anvilry project card** states the codebase index and the repository figures at v3.16.0 and no
+  longer says the ruleset requires no status check.
+
+### Removed
+- **Three low-priority open-source items** (#333, #334): the `grpc-microservices` and `not-humans-lab`
+  project cards, whose pages now return 404, and Shop.this, which never had a card; all three leave the
+  GitHub repository feed's allowlist (22 to 19 entries). Eighteen projects remain; the 3D graph goes from
+  25 to 23 nodes and from 28 to 24 edges, and the open-source repository count in the claims ledger is
+  resealed (18 to 16, entry 3).
+
+### Fixed
+- **A false green in the smoke script** (#340): its entry guard compared `import.meta.url`, which Node
+  resolves through symlinks, with the raw `argv[1]`, so started through a symlinked path it ran no
+  checks and exited 0, which the gate reads as a pass. It now compares real paths, and so does the
+  alert script.
+
 ## [3.16.0] — 2026-10-22
 
 **Minor** — The portfolio grows from eleven projects to twenty. Nine new cards (an LLM gateway, an MCP

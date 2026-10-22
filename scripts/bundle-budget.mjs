@@ -83,6 +83,18 @@ const MAX_FIRST_LOAD_BYTES = 1_336_000;
  */
 const LAZY_MARKER = "WebGLRenderer";
 
+/**
+ * Compiled MDX bodies must stay OFF the critical path, and for the same reason as three.js: a total
+ * can hide it. The four Velite collections carried about 300 KB of compiled MDX, and any client
+ * module that imports src/lib/content.ts pulled all of it into the shared first-load chunk (a JSON
+ * module cannot be tree-shaken), so each new project card quietly cost about 11 KB on every route.
+ * The bodies now live in separate collections that only src/lib/content-bodies.ts reads, and only the
+ * four server-rendered detail pages import that. Every compiled body contains the MDX runtime
+ * function name below, so finding it in a first-load chunk means a client module reached the bodies,
+ * directly or through another module, and says so instead of reporting a vague byte overage.
+ */
+const MDX_MARKER = "_createMdxContent";
+
 function fail(...lines) {
   for (const l of lines) console.error(l);
   process.exit(1);
@@ -153,6 +165,17 @@ if (eager.length) {
   );
 }
 
+const mdxLeaks = criticalPath.filter((p) => readFileSync(p, "utf8").includes(MDX_MARKER));
+if (mdxLeaks.length) {
+  const bytes = mdxLeaks.reduce((n, p) => n + statSync(p).size, 0);
+  failures.push(
+    `compiled MDX (${MDX_MARKER}) is on the first-load critical path in ${mdxLeaks.length} chunk(s), ` +
+      `${bytes} B: ${mdxLeaks.join(", ")}. A client module imports src/lib/content-bodies.ts, directly ` +
+      "or through another module. Only the four server-rendered detail pages may; see " +
+      "src/lib/content-bodies.ts and src/lib/content-bodies.test.ts.",
+  );
+}
+
 if (failures.length) {
   console.error("\nBundle budget exceeded:");
   for (const f of failures) console.error(`  ${f}`);
@@ -166,5 +189,5 @@ if (failures.length) {
 console.log(
   `\nOK: largest first-load ${byRoute[0].firstLoadUncompressedJsBytes} B on ${byRoute[0].route} ` +
     `(${MAX_FIRST_LOAD_BYTES - byRoute[0].firstLoadUncompressedJsBytes} B headroom); ` +
-    `three.js stays lazy across ${criticalPath.length} first-load chunks.`,
+    `three.js and compiled MDX stay off ${criticalPath.length} first-load chunks.`,
 );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { ArticleSource } from "@/components/platform-badge";
 import { allArticles, getArticle } from "@/lib/content";
+import { getArticleBody } from "@/lib/content-bodies";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
@@ -65,6 +66,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const article = getArticle(slug);
   if (!article) notFound();
+  // Link-only articles compile to an empty body; a native article carries its prose here.
+  const body = getArticleBody(slug) ?? "";
 
   // linkedNote: redirect to /notes when the notes section is enabled.
   // When NOTES_ENABLED=false the notes routes don't exist — fall through to externalUrl.
@@ -131,7 +134,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </header>
         </Reveal>
         <div className="prose-portfolio mt-8">
-          <MDXContent code={article.body} />
+          <MDXContent code={body} />
         </div>
       </article>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

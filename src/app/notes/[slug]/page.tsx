@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { publishedNotes, getNote } from "@/lib/content";
+import { getNoteBody } from "@/lib/content-bodies";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
 import { BreadcrumbJsonLd } from "@/components/json-ld";
@@ -50,7 +51,8 @@ export default async function NotePage({
   const { slug } = await params;
   if (!NOTES_ENABLED) notFound();
   const note = getNote(slug);
-  if (!note) notFound();
+  const body = getNoteBody(slug);
+  if (!note || body === undefined) notFound();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -101,7 +103,7 @@ export default async function NotePage({
           </header>
         </Reveal>
         <div className="prose-portfolio mt-8">
-          <MDXContent code={note.body} />
+          <MDXContent code={body} />
         </div>
       </article>
       {/* BlogPosting + breadcrumb structured data — article entity + SERP breadcrumb,

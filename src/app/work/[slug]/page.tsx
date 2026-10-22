@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { allWork, getWork } from "@/lib/content";
+import { getWorkBody } from "@/lib/content-bodies";
 import { profile } from "@/lib/profile";
 import { MDXContent } from "@/components/mdx-content";
 import { Reveal } from "@/components/ui/reveal";
@@ -51,7 +52,8 @@ export default async function WorkPage({
 }) {
   const { slug } = await params;
   const work = getWork(slug);
-  if (!work) notFound();
+  const body = getWorkBody(slug);
+  if (!work || body === undefined) notFound();
 
   return (
     <main className="flex-1">
@@ -96,7 +98,7 @@ export default async function WorkPage({
         </Reveal>
 
         <div className="prose-portfolio mt-8">
-          <MDXContent code={work.body} />
+          <MDXContent code={body} />
         </div>
 
         {/* Hiring-manager depth — each block renders ONLY when the owner has authored it

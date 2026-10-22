@@ -218,7 +218,7 @@ Two named transition groups exist in the tree:
 - **Role:** Note card.
 - **Exports:** `NoteCard` — props `{ note: Note }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `src/app/notes/page.tsx`. `notes/page.tsx` maps `allNotes` directly and `articles/page.tsx` maps `inkforgeArticles` (a filter of `allNotes`, additionally gated by `INKFORGE_ARTICLES_ENABLED`), so with `NOTES_ENABLED` off no note card renders anywhere.
-- **Behaviour notes:** Shows a `Sparkles` "inkforge" badge when `note.generatedBy === "inkforge"` (`:31-36`) — that field is optional in the Velite note schema (`velite.config.ts:105`), so hand-written notes simply omit the badge. `readingTime` likewise renders only when present (`:56`). Tags sliced to 3 (`:50`).
+- **Behaviour notes:** Shows a `Sparkles` "inkforge" badge when `note.generatedBy === "inkforge"` (`:31-36`) — that field is optional in the Velite note schema (`velite.config.ts:128`), so hand-written notes simply omit the badge. `readingTime` likewise renders only when present (`:56`). Tags sliced to 3 (`:50`).
 
 ### `src/components/project-card.tsx`
 - **Role:** OSS project card (server component — no `"use client"`).
@@ -229,7 +229,7 @@ Two named transition groups exist in the tree:
 ### `src/components/related-writing.tsx`
 - **Role:** "Related writing" list on a project detail page (RSC).
 - **Exports:** `RelatedWriting` — props `{ articles: Article[] }`; returns `null` for an empty list (`:21`).
-- **Consumed by:** `src/app/projects/[slug]/page.tsx:180`.
+- **Consumed by:** `src/app/projects/[slug]/page.tsx:182`.
 - **Behaviour notes:** `resolveHref` (`:12-18`): `/notes/<linkedNote>` only when `NOTES_ENABLED`, else `externalUrl` (new tab + `ExternalLink` icon), else `article.url`.
 
 ### `src/components/platform-badge.tsx`
@@ -237,7 +237,7 @@ Two named transition groups exist in the tree:
 - **Exports:** `ArticleSource` (type union: `medium | substack | linkedin | devto | hashnode | native`), `PlatformBadge` — props `{ source: ArticleSource }`.
 - **Consumed by:** `src/app/articles/page.tsx`, `article-group-card.tsx`; the type is also imported by `src/lib/article-grouping.ts:2`.
 - **Behaviour notes:** `SOURCE_CONFIG` hardcodes brand hex per platform with 0.08 bg / 0.2 border alpha (`:13-23`); `native` is labelled **"Essay"** with the accent cyan `#38e1ff`. Unknown sources fall back to `native` via `?? SOURCE_CONFIG.native` (`:26`).
-- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:128`).
+- **Gotchas / invariants:** The union must stay in sync with the Velite article `source` enum (`velite.config.ts:150`).
 
 ### `src/components/github-feed.tsx`
 - **Role:** Server-rendered first-party GitHub repo grid.
@@ -266,7 +266,7 @@ Two named transition groups exist in the tree:
 - **Role:** Top-of-viewport scroll progress bar.
 - **Exports:** `ReadingProgress` (no props).
 - **Reads / depends on:** `motion/react` `useScroll` + `useReducedMotion` (Motion's own, not `@/lib/use-reduced-motion`).
-- **Consumed by:** `src/app/notes/[slug]/page.tsx:68` only.
+- **Consumed by:** `src/app/notes/[slug]/page.tsx:70` only.
 - **Behaviour notes:** Returns `null` under reduced motion (`:15`). Drives `scaleX` from `scrollYProgress` on a `fixed … h-[2px] origin-left` bar — compositor-only, zero React re-renders (`:5-9`, `:18-22`). `aria-hidden="true"`. Uses window scroll, not a shell scroll container.
 
 ### `src/components/copy-button.tsx`

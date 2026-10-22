@@ -2021,46 +2021,46 @@
       "preview": "**Goal:** Add `@react-three/rapier` physics to the 3D graph view — nodes spring on hover, idle drift"
     },
     "domains/performance/README.md:78": {
-      "fp": "3064720b894f",
+      "fp": "89268503e1bb",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "- **`src/lib/r3f.ts` is load-bearing.** The barrel gives the bundler one module-graph node for the"
+      "preview": "preserves it: 1160 → 1164 KB, one copy.)"
     },
     "domains/performance/README.md:80": {
-      "fp": "79509bf2b7f3",
+      "fp": "6577fa3fc540",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "theory that \"16.3 handles this now\" — that combination was never tested."
+      "preview": "R3F universe, which is the precondition 16.3.0's chunking exploits. Do not delete it on the"
     },
     "domains/performance/README.md:84": {
-      "fp": "947ff0b10a81",
+      "fp": "1206da2611f5",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "same branch on 16.3.0 collapses to 1 copy."
+    },
+    "domains/performance/README.md:85": {
+      "fp": "947ff0b10a81",
+      "citedBy": [
+        "14b-subsystems.md"
       ],
       "preview": "- **CURRENT BASELINE (integrated, post-#121/#123/#124, measured with production hero defaults):"
     },
-    "domains/performance/README.md:85": {
-      "fp": "3c37122052bd",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "exactly 1 three.js copy, 1248 KB total across R3F chunks, 113/113 static pages.** Use these"
-    },
     "domains/performance/README.md:91": {
-      "fp": "2ec6c20735de",
+      "fp": "252b411b8e35",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "`grep -l \"WebGLRenderer\" | wc -l`, which must be 1."
+      "preview": "a current build and will read as a phantom regression. The copy count is"
     },
     "domains/performance/README.md:94": {
-      "fp": "88d4b42bb983",
+      "fp": "08686a6b4433",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "two are not comparable: the shipped single three.js chunk is **897,249 B** (876.2 KiB, matching"
+      "preview": "runs and therefore what ships. None of them came from the `@next/bundle-analyzer` treemap, and the"
     },
     "domains/seo/README.md:45": {
       "fp": "c5e0703452dc",
@@ -4098,28 +4098,65 @@
       ],
       "preview": "A recruiter-facing engineering portfolio built as a **beast with four switchable experiences over on"
     },
-    "scripts/bundle-budget.mjs:100": {
+    "scripts/bundle-budget.mjs:103": {
+      "fp": "5af9dc832fda",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "let stats;"
+    },
+    "scripts/bundle-budget.mjs:107": {
+      "fp": "3c5aad8f9c19",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "fail("
+    },
+    "scripts/bundle-budget.mjs:108": {
+      "fp": "c808b917dbd7",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "`FAIL: cannot read ${STATS} (${err.code ?? err.message}).`,"
+    },
+    "scripts/bundle-budget.mjs:110": {
+      "fp": "40b4369cc2f2",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "\"This is a hard failure by design: an unmeasured bundle must not report success.\","
+    },
+    "scripts/bundle-budget.mjs:111": {
+      "fp": "9d8b2b5670d1",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ");"
+    },
+    "scripts/bundle-budget.mjs:112": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "}"
     },
-    "scripts/bundle-budget.mjs:108": {
+    "scripts/bundle-budget.mjs:120": {
       "fp": "261a58b1f9ce",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "if (!(\"firstLoadUncompressedJsBytes\" in stats[0]) || !Array.isArray(stats[0].firstLoadChunkPaths)) {"
     },
-    "scripts/bundle-budget.mjs:113": {
+    "scripts/bundle-budget.mjs:125": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "}"
     },
-    "scripts/bundle-budget.mjs:146": {
+    "scripts/bundle-budget.mjs:158": {
       "fp": "4972006691a5",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -4128,19 +4165,33 @@
       ],
       "preview": "const eager = criticalPath.filter((p) => readFileSync(p, \"utf8\").includes(LAZY_MARKER));"
     },
-    "scripts/bundle-budget.mjs:152": {
+    "scripts/bundle-budget.mjs:164": {
       "fp": "b3139d01c6cb",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"see next.config.ts:127-149 and src/lib/r3f.ts.\","
     },
-    "scripts/bundle-budget.mjs:154": {
+    "scripts/bundle-budget.mjs:166": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "scripts/bundle-budget.mjs:168": {
+      "fp": "a1e568febad9",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const mdxLeaks = criticalPath.filter((p) => readFileSync(p, \"utf8\").includes(MDX_MARKER));"
+    },
+    "scripts/bundle-budget.mjs:177": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
       ],
       "preview": "}"
     },
@@ -4276,42 +4327,13 @@
       ],
       "preview": "const LAZY_MARKER = \"WebGLRenderer\";"
     },
-    "scripts/bundle-budget.mjs:91": {
-      "fp": "5af9dc832fda",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "let stats;"
-    },
-    "scripts/bundle-budget.mjs:95": {
-      "fp": "3c5aad8f9c19",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "fail("
-    },
     "scripts/bundle-budget.mjs:96": {
-      "fp": "c808b917dbd7",
+      "fp": "bf7e74fe516e",
       "citedBy": [
-        "11-config-build-ci-infra.md"
+        "12-docs-knowledge-and-harness.md",
+        "README.md"
       ],
-      "preview": "`FAIL: cannot read ${STATS} (${err.code ?? err.message}).`,"
-    },
-    "scripts/bundle-budget.mjs:98": {
-      "fp": "40b4369cc2f2",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "\"This is a hard failure by design: an unmeasured bundle must not report success.\","
-    },
-    "scripts/bundle-budget.mjs:99": {
-      "fp": "9d8b2b5670d1",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": ");"
+      "preview": "const MDX_MARKER = \"_createMdxContent\";"
     },
     "scripts/check-index-citations.mjs:25": {
       "fp": "5405f575279e",
@@ -6673,42 +6695,42 @@
       ],
       "preview": "}"
     },
-    "src/app/articles/[slug]/page.tsx:13": {
+    "src/app/articles/[slug]/page.tsx:14": {
       "fp": "f9af003f247a",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/app/articles/[slug]/page.tsx:16": {
+    "src/app/articles/[slug]/page.tsx:17": {
       "fp": "8c5398c01898",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* The FOURTH copy of the article-source label map, and the last one still untyped. Keyed by"
     },
-    "src/app/articles/[slug]/page.tsx:19": {
+    "src/app/articles/[slug]/page.tsx:20": {
       "fp": "4dff8854fdbd",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* members behind and mislabelled 8 of 14 OG cards."
     },
-    "src/app/articles/[slug]/page.tsx:25": {
+    "src/app/articles/[slug]/page.tsx:26": {
       "fp": "232318d582e7",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "* `devto`/`hashnode` were missing here too. Currently unreachable rather than broken: `:59` redirect"
     },
-    "src/app/articles/[slug]/page.tsx:28": {
+    "src/app/articles/[slug]/page.tsx:29": {
       "fp": "04c8f4352363",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "* is a comment, not a constraint — so one omission would fall through and render a raw `devto`."
     },
-    "src/app/articles/[slug]/page.tsx:30": {
+    "src/app/articles/[slug]/page.tsx:31": {
       "fp": "1bdb85527c3e",
       "citedBy": [
         "01-routes-pages.md",
@@ -6717,20 +6739,13 @@
       ],
       "preview": "const SOURCE_LABELS: Record<ArticleSource, string> = {"
     },
-    "src/app/articles/[slug]/page.tsx:37": {
+    "src/app/articles/[slug]/page.tsx:38": {
       "fp": "df3982fd6101",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "};"
-    },
-    "src/app/articles/[slug]/page.tsx:39": {
-      "fp": "329ab2f477b4",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export function generateStaticParams() {"
     },
     "src/app/articles/[slug]/page.tsx:4": {
       "fp": "287acc5c8325",
@@ -6739,7 +6754,14 @@
       ],
       "preview": "import { ArrowLeft } from \"lucide-react\";"
     },
-    "src/app/articles/[slug]/page.tsx:43": {
+    "src/app/articles/[slug]/page.tsx:40": {
+      "fp": "329ab2f477b4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function generateStaticParams() {"
+    },
+    "src/app/articles/[slug]/page.tsx:44": {
       "fp": "6b7888f40c69",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -6748,14 +6770,14 @@
       ],
       "preview": ".filter((a) => !(a.linkedNote && !a.externalUrl && !NOTES_ENABLED))"
     },
-    "src/app/articles/[slug]/page.tsx:45": {
+    "src/app/articles/[slug]/page.tsx:46": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/articles/[slug]/page.tsx:71": {
+    "src/app/articles/[slug]/page.tsx:74": {
       "fp": "10f5c27b4a77",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -6764,7 +6786,7 @@
       ],
       "preview": "if (article.linkedNote && NOTES_ENABLED) {"
     },
-    "src/app/articles/[slug]/page.tsx:72": {
+    "src/app/articles/[slug]/page.tsx:75": {
       "fp": "8254dd1284f4",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -6772,21 +6794,21 @@
       ],
       "preview": "redirect(`/notes/${article.linkedNote}`);"
     },
-    "src/app/articles/[slug]/page.tsx:75": {
+    "src/app/articles/[slug]/page.tsx:78": {
       "fp": "f4a074fc7280",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// External articles: redirect to the original publication."
     },
-    "src/app/articles/[slug]/page.tsx:77": {
+    "src/app/articles/[slug]/page.tsx:80": {
       "fp": "b117ab7b76b5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "if (article.source !== \"native\" && article.externalUrl) {"
     },
-    "src/app/articles/[slug]/page.tsx:81": {
+    "src/app/articles/[slug]/page.tsx:84": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -7709,21 +7731,21 @@
       ],
       "preview": "}"
     },
-    "src/app/notes/[slug]/page.tsx:13": {
+    "src/app/notes/[slug]/page.tsx:14": {
       "fp": "f9af003f247a",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/app/notes/[slug]/page.tsx:15": {
+    "src/app/notes/[slug]/page.tsx:16": {
       "fp": "329ab2f477b4",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "export function generateStaticParams() {"
     },
-    "src/app/notes/[slug]/page.tsx:16": {
+    "src/app/notes/[slug]/page.tsx:17": {
       "fp": "7b14f6e1541f",
       "citedBy": [
         "01-routes-pages.md",
@@ -7731,14 +7753,14 @@
       ],
       "preview": "// NOTE: the `if (!NOTES_ENABLED) return []` short-circuit was removed for cacheComponents,"
     },
-    "src/app/notes/[slug]/page.tsx:24": {
+    "src/app/notes/[slug]/page.tsx:25": {
       "fp": "6b5ad75380a2",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "// consistent with ./opengraph-image.tsx, which already maps all note slugs with no flag check."
     },
-    "src/app/notes/[slug]/page.tsx:25": {
+    "src/app/notes/[slug]/page.tsx:26": {
       "fp": "d6c7a3d1842a",
       "citedBy": [
         "03-lib-content-data.md",
@@ -7746,7 +7768,7 @@
       ],
       "preview": "return publishedNotes.map((n) => ({ slug: n.slug }));"
     },
-    "src/app/notes/[slug]/page.tsx:26": {
+    "src/app/notes/[slug]/page.tsx:27": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -7754,7 +7776,7 @@
       ],
       "preview": "}"
     },
-    "src/app/notes/[slug]/page.tsx:51": {
+    "src/app/notes/[slug]/page.tsx:52": {
       "fp": "5e41c6e68c54",
       "citedBy": [
         "14b-subsystems.md",
@@ -7762,7 +7784,7 @@
       ],
       "preview": "if (!NOTES_ENABLED) notFound();"
     },
-    "src/app/notes/[slug]/page.tsx:68": {
+    "src/app/notes/[slug]/page.tsx:70": {
       "fp": "f72740c0d118",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -7840,7 +7862,7 @@
       ],
       "preview": "} from \"lucide-react\";"
     },
-    "src/app/projects/[slug]/page.tsx:14": {
+    "src/app/projects/[slug]/page.tsx:15": {
       "fp": "e8291b184ccf",
       "citedBy": [
         "03-lib-content-data.md",
@@ -7848,63 +7870,63 @@
       ],
       "preview": "import { fetchRepo, pushedAgo, repoOwnerAndName } from \"@/lib/github\";"
     },
-    "src/app/projects/[slug]/page.tsx:180": {
+    "src/app/projects/[slug]/page.tsx:182": {
       "fp": "03767d0e169b",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<RelatedWriting articles={relatedArticles} />"
     },
-    "src/app/projects/[slug]/page.tsx:24": {
+    "src/app/projects/[slug]/page.tsx:25": {
       "fp": "f9af003f247a",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/app/projects/[slug]/page.tsx:38": {
+    "src/app/projects/[slug]/page.tsx:39": {
       "fp": "ada4007d29f2",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const url = `/projects/${slug}`;"
     },
-    "src/app/projects/[slug]/page.tsx:66": {
+    "src/app/projects/[slug]/page.tsx:67": {
       "fp": "557f9a654ed0",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "// \"use cache\" must be the function body's first statement: fetchRepo()+pushedAgo()"
     },
-    "src/app/projects/[slug]/page.tsx:69": {
+    "src/app/projects/[slug]/page.tsx:70": {
       "fp": "19627c9df1e0",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "// /projects/page.tsx's GithubFeed."
     },
-    "src/app/projects/[slug]/page.tsx:70": {
+    "src/app/projects/[slug]/page.tsx:71": {
       "fp": "9050977792a2",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"use cache\";"
     },
-    "src/app/projects/[slug]/page.tsx:71": {
+    "src/app/projects/[slug]/page.tsx:72": {
       "fp": "b18f9fef4c09",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "cacheLife(\"hours\");"
     },
-    "src/app/projects/[slug]/page.tsx:86": {
+    "src/app/projects/[slug]/page.tsx:88": {
       "fp": "fb246f471797",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const relatedArticles = (project.relatedArticles ?? [])"
     },
-    "src/app/projects/[slug]/page.tsx:88": {
+    "src/app/projects/[slug]/page.tsx:90": {
       "fp": "4813ca1163b2",
       "citedBy": [
         "09-content-and-schemas.md"
@@ -8293,49 +8315,49 @@
       ],
       "preview": "const register = work?.register ?? profile.role;"
     },
-    "src/app/work/[slug]/page.tsx:11": {
+    "src/app/work/[slug]/page.tsx:12": {
       "fp": "f9af003f247a",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/app/work/[slug]/page.tsx:123": {
+    "src/app/work/[slug]/page.tsx:125": {
       "fp": "71ae39a95dc1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "{work.diagram && ("
     },
-    "src/app/work/[slug]/page.tsx:13": {
-      "fp": "329ab2f477b4",
-      "citedBy": [
-        "01-routes-pages.md"
-      ],
-      "preview": "export function generateStaticParams() {"
-    },
-    "src/app/work/[slug]/page.tsx:137": {
+    "src/app/work/[slug]/page.tsx:139": {
       "fp": "18efa8d578b5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "</Reveal>"
     },
-    "src/app/work/[slug]/page.tsx:17": {
+    "src/app/work/[slug]/page.tsx:14": {
+      "fp": "329ab2f477b4",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export function generateStaticParams() {"
+    },
+    "src/app/work/[slug]/page.tsx:18": {
       "fp": "8bfd72c893af",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "export async function generateMetadata({"
     },
-    "src/app/work/[slug]/page.tsx:25": {
+    "src/app/work/[slug]/page.tsx:26": {
       "fp": "41b912073f45",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const url = `/work/${slug}`;"
     },
-    "src/app/work/[slug]/page.tsx:68": {
+    "src/app/work/[slug]/page.tsx:70": {
       "fp": "a77a7e276421",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21542,21 +21564,43 @@
       ],
       "preview": "import { defineConfig, defineCollection, s } from \"velite\";"
     },
-    "velite.config.ts:105": {
-      "fp": "803352934343",
+    "velite.config.ts:100": {
+      "fp": "066394a0cb82",
       "citedBy": [
-        "08-components-site-shell-ui.md"
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "generatedBy: s.string().optional(),"
+      "preview": "diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a"
     },
-    "velite.config.ts:111": {
+    "velite.config.ts:103": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:113": {
+    "velite.config.ts:109": {
+      "fp": "233cc23ab344",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "const notes = defineCollection({"
+    },
+    "velite.config.ts:128": {
+      "fp": "803352934343",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "generatedBy: s.string().optional(),"
+    },
+    "velite.config.ts:133": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "});"
+    },
+    "velite.config.ts:135": {
       "fp": "f177213e53c2",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21564,7 +21608,7 @@
       ],
       "preview": "/** External / syndicated articles — Medium, Substack, LinkedIn, or native drafts."
     },
-    "velite.config.ts:118": {
+    "velite.config.ts:140": {
       "fp": "459a38041ccf",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21572,14 +21616,14 @@
       ],
       "preview": "*  render their body inline like notes. */"
     },
-    "velite.config.ts:119": {
+    "velite.config.ts:141": {
       "fp": "0f86abee78ab",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const articles = defineCollection({"
     },
-    "velite.config.ts:128": {
+    "velite.config.ts:150": {
       "fp": "09842cd22955",
       "citedBy": [
         "01-routes-pages.md",
@@ -21589,7 +21633,7 @@
       ],
       "preview": "source: s.enum(["
     },
-    "velite.config.ts:135": {
+    "velite.config.ts:157": {
       "fp": "bfa713ad86e4",
       "citedBy": [
         "01-routes-pages.md",
@@ -21598,7 +21642,7 @@
       ],
       "preview": "]),"
     },
-    "velite.config.ts:136": {
+    "velite.config.ts:158": {
       "fp": "cfe5ba49fa84",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21606,7 +21650,7 @@
       ],
       "preview": "externalUrl: s.string().url().optional(), // required for non-native; omit for native"
     },
-    "velite.config.ts:138": {
+    "velite.config.ts:160": {
       "fp": "f322017e1d11",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21615,56 +21659,56 @@
       ],
       "preview": "linkedNote: s.string().optional(), // slug of an existing /notes entry — card links there directly, "
     },
-    "velite.config.ts:145": {
+    "velite.config.ts:166": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:147": {
+    "velite.config.ts:168": {
       "fp": "a719661ad61e",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "export default defineConfig({"
     },
-    "velite.config.ts:148": {
+    "velite.config.ts:169": {
       "fp": "94b4133caa3a",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "root: \"content\","
     },
-    "velite.config.ts:149": {
+    "velite.config.ts:170": {
       "fp": "258d3242c080",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "output: {"
     },
-    "velite.config.ts:150": {
+    "velite.config.ts:171": {
       "fp": "633e1a15c670",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "data: \".velite\","
     },
-    "velite.config.ts:151": {
+    "velite.config.ts:172": {
       "fp": "2b1bf6856e9c",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "assets: \"public/static\","
     },
-    "velite.config.ts:152": {
+    "velite.config.ts:173": {
       "fp": "2ffb5f1820ac",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "base: \"/static/\","
     },
-    "velite.config.ts:153": {
+    "velite.config.ts:174": {
       "fp": "7041bdf46126",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21672,7 +21716,7 @@
       ],
       "preview": "name: \"[name]-[hash:6].[ext]\","
     },
-    "velite.config.ts:154": {
+    "velite.config.ts:175": {
       "fp": "28f446ba0c50",
       "citedBy": [
         "14-subsystems.md",
@@ -21680,14 +21724,14 @@
       ],
       "preview": "// Default to NOT cleaning: the `predev` hook + dev watcher regenerate in place,"
     },
-    "velite.config.ts:157": {
+    "velite.config.ts:178": {
       "fp": "68360f77a2f4",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// pass --clean explicitly for a pristine production build."
     },
-    "velite.config.ts:158": {
+    "velite.config.ts:179": {
       "fp": "78bfa9935b69",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21697,15 +21741,23 @@
       ],
       "preview": "clean: false,"
     },
-    "velite.config.ts:160": {
-      "fp": "3d1da2dc4f34",
+    "velite.config.ts:181": {
+      "fp": "d75dcd76a072",
       "citedBy": [
         "09-content-and-schemas.md",
         "14-subsystems.md"
       ],
-      "preview": "collections: { projects, work, notes, articles },"
+      "preview": "collections: {"
     },
-    "velite.config.ts:161": {
+    "velite.config.ts:190": {
+      "fp": "e52a1813c460",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md"
+      ],
+      "preview": "},"
+    },
+    "velite.config.ts:191": {
       "fp": "9635bf8a843a",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21713,34 +21765,26 @@
       ],
       "preview": "mdx: { gfm: true },"
     },
-    "velite.config.ts:162": {
+    "velite.config.ts:192": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "});"
     },
-    "velite.config.ts:20": {
-      "fp": "3823f7d97288",
+    "velite.config.ts:29": {
+      "fp": "f106398654f4",
       "citedBy": [
-        "09-content-and-schemas.md",
-        "14-subsystems.md"
+        "09-content-and-schemas.md"
       ],
-      "preview": "/** Open-source / portfolio projects — architecture + tech only, no fabricated adoption. */"
+      "preview": "const bodyOnly = (name: string, pattern: string) =>"
     },
-    "velite.config.ts:21": {
-      "fp": "ed774117ee00",
+    "velite.config.ts:34": {
+      "fp": "29576b54e255",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "09-content-and-schemas.md"
       ],
-      "preview": "const projects = defineCollection({"
-    },
-    "velite.config.ts:30": {
-      "fp": "c5b004ea7553",
-      "citedBy": [
-        "01-routes-pages.md"
-      ],
-      "preview": "repo: s.string().url(),"
+      "preview": "});"
     },
     "velite.config.ts:4": {
       "fp": "e220fa595a0d",
@@ -21754,20 +21798,42 @@
       "preview": "const themeGroup = s.enum(["
     },
     "velite.config.ts:45": {
+      "fp": "3823f7d97288",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14-subsystems.md"
+      ],
+      "preview": "/** Open-source / portfolio projects — architecture + tech only, no fabricated adoption. */"
+    },
+    "velite.config.ts:46": {
+      "fp": "ed774117ee00",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const projects = defineCollection({"
+    },
+    "velite.config.ts:55": {
+      "fp": "c5b004ea7553",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "repo: s.string().url(),"
+    },
+    "velite.config.ts:70": {
       "fp": "ceac04814e86",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "decisions: s.array(decision).default([]),"
     },
-    "velite.config.ts:50": {
+    "velite.config.ts:75": {
       "fp": "80b0429fe0ee",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "order: s.number().default(100),"
     },
-    "velite.config.ts:55": {
+    "velite.config.ts:79": {
       "fp": "29576b54e255",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -21776,57 +21842,12 @@
       ],
       "preview": "});"
     },
-    "velite.config.ts:58": {
+    "velite.config.ts:82": {
       "fp": "619829fa4d63",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const work = defineCollection({"
-    },
-    "velite.config.ts:66": {
-      "fp": "6d59a98f0c74",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "register: s.string(), // honest contribution note, e.g. \"Co-built · architected the backend\""
-    },
-    "velite.config.ts:68": {
-      "fp": "882d61103319",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "metrics: s.array(s.object({ value: s.string(), label: s.string() })),"
-    },
-    "velite.config.ts:73": {
-      "fp": "cdc25bd7bed6",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "constraints: s.string().optional(), // the real limits the system had to work within"
-    },
-    "velite.config.ts:76": {
-      "fp": "066394a0cb82",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "diagramAlt: s.string().optional(), // REQUIRED alt text when `diagram` is set (a11y) — asserted in a"
-    },
-    "velite.config.ts:80": {
-      "fp": "29576b54e255",
-      "citedBy": [
-        "09-content-and-schemas.md"
-      ],
-      "preview": "});"
-    },
-    "velite.config.ts:86": {
-      "fp": "233cc23ab344",
-      "citedBy": [
-        "09-content-and-schemas.md"
-      ],
-      "preview": "const notes = defineCollection({"
     },
     "velite.config.ts:9": {
       "fp": "0ae47a13980f",
@@ -21838,6 +21859,29 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "]);"
+    },
+    "velite.config.ts:90": {
+      "fp": "6d59a98f0c74",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "register: s.string(), // honest contribution note, e.g. \"Co-built · architected the backend\""
+    },
+    "velite.config.ts:92": {
+      "fp": "882d61103319",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "metrics: s.array(s.object({ value: s.string(), label: s.string() })),"
+    },
+    "velite.config.ts:97": {
+      "fp": "cdc25bd7bed6",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "constraints: s.string().optional(), // the real limits the system had to work within"
     },
     "vercel.json:3": {
       "fp": "a4a8d3f065b1",

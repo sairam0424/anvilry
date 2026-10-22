@@ -23,7 +23,7 @@ decisions:
     body: "I let the model chain advance only before any answer byte reaches the client; after that, an error appends an apology and closes the stream, since the client already holds part of an answer. I also took Opus out of the default chain, since the reference AWS account IAM-denies the whole family and the rung could only answer 403. The cost: the last resort is Haiku 4.5, a weaker model, and a mid-stream failure ends the answer early."
     tags: [resilience, llm, bedrock]
   - title: "Documentation and claims gates in CI over inside the production build"
-    body: "I run the citation gate, the claims-ledger seal and the bundle budget in CI and keep only Vitest inside `pnpm build`, so stale documentation fails a pull request and never a production deploy. At v3.15.0 the codebase index is 9,623 lines carrying 2,910 fingerprinted citations. The cost: the gates are advisory at merge time, since the branch ruleset requires a pull request but no status check, and the citation snapshot is regenerated in the same commit as the prose, so green shows the cited text still exists, not that the prose is right."
+    body: "I run the citation gate, the claims-ledger seal and the bundle budget in CI and keep only Vitest inside `pnpm build`, so stale documentation fails a pull request and never a production deploy. At v3.15.0 the codebase index is 9,623 lines carrying 2,910 fingerprinted citations. The cost: the gates block a merge only through the two CI jobs that contain them, which the branch ruleset requires and a repository admin can bypass, and the citation snapshot is regenerated in the same commit as the prose, so green shows the cited text still exists, not that the prose is right."
     tags: [quality-gates, ci, documentation]
 ---
 
@@ -45,7 +45,7 @@ Anvilry is one Next.js 16.3.5 App Router app (`cacheComponents: true`, React 19.
 
 Views are a six-member `View` union in a module-level external store; the server and the first client render always return Classic. The chat route applies a per-IP Upstash limit (8 requests a minute per route class), then the FAQ cache, then `src/lib/llm.ts`. Cost guards fail open when Upstash is absent.
 
-Vitest runs inside `pnpm build`. The citation check, claims seal and bundle budget run in CI, so they fail a pull request, never a deploy. The budget caps first-load JavaScript at 1,336,000 B per route and keeps three.js out of the first-load chunks. The claims ledger shows a claim was not edited since sealing, not that it was accurate.
+Vitest runs inside `pnpm build`. The citation check, claims seal and bundle budget run in CI, so they fail a pull request, never a deploy. The budget caps first-load JavaScript at 988,000 B per route and keeps three.js out of the first-load chunks. The claims ledger shows a claim was not edited since sealing, not that it was accurate.
 
 ## How It Works
 

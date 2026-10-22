@@ -518,13 +518,13 @@
       "preview": "# launch with \"Executable doesn't exist at .../webkit-<rev>/pw_run.sh\"."
     },
     ".github/workflows/ci.yml:173": {
-      "fp": "e5a366269fda",
+      "fp": "b22b10c6826f",
       "citedBy": [
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "run: pnpm exec playwright install --with-deps chromium webkit"
+      "preview": "run: 'for i in 1 2 3; do timeout -k 15 240 pnpm exec playwright install --with-deps chromium webkit "
     },
     ".github/workflows/ci.yml:175": {
       "fp": "4fa4722aa999",

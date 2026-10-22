@@ -170,7 +170,7 @@ jobs:
       # silently (chromium-only install) while every mobile-safari spec failed at browser
       # launch with "Executable doesn't exist at .../webkit-<rev>/pw_run.sh".
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium webkit
+        run: 'for i in 1 2 3; do timeout -k 15 240 pnpm exec playwright install --with-deps chromium webkit && exit 0; echo "::warning::Playwright browser install attempt $i failed or timed out"; sleep 10; done; exit 1' # bounded: the runner apt mirror stalled this step into the job timeout on 2026-10-22; downloaded .debs persist between attempts
 
       # webServer runs `pnpm start`, which needs a production build present.
       - name: Build

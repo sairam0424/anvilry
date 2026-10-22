@@ -1872,35 +1872,35 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
-    "CLAUDE.md:244": {
+    "CLAUDE.md:245": {
       "fp": "826a4efde0f6",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
-    "CLAUDE.md:254": {
+    "CLAUDE.md:255": {
       "fp": "69784a891e97",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "| `get_resume_variant` | The canonical résumé PDF URL (`master`) |"
     },
-    "CLAUDE.md:344": {
+    "CLAUDE.md:345": {
       "fp": "15dadb9996db",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |"
     },
-    "CLAUDE.md:396": {
+    "CLAUDE.md:397": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:398": {
+    "CLAUDE.md:399": {
       "fp": "9b72df9920f2",
       "citedBy": [
         "02-api-routes.md"

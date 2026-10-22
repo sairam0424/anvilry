@@ -21,15 +21,15 @@ touch this scope. On top of that, v3.16.0 adds three changes and only one reache
 
 **Scope:** `package.json`, `.nvmrc`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
 `postcss.config.mjs`, `pnpm-workspace.yaml`, `patches/`, `vercel.json`, `Makefile`, `next-env.d.ts`, `.gitignore`,
-`.env.example`, `.coderabbit.yaml`, `scripts/replay-trace.mjs`, `scripts/bundle-budget.mjs`, `.github/**` (**5**
+`.env.example`, `.coderabbit.yaml`, `scripts/replay-trace.mjs`, `scripts/bundle-budget.mjs`, `scripts/post-deploy-smoke.mjs`, `.github/**` (**6**
 workflows, dependabot, PR + issue templates, CONTRIBUTING), `public/**` (asset tree), plus the untracked agent-tooling
 root artifacts `ruvector.db`, `agentdb.rvf`, `agentdb.rvf.lock`, `.swarm/`, `.claude-flow/` (**gitignored**).
-**Files indexed:** 25 config/CI files + 7 tracked public assets, plus the never-tracked `public/static/` directory and
+**Files indexed:** 27 config/CI files + 7 tracked public assets, plus the never-tracked `public/static/` directory and
 the 5 untracked agent-tooling artifacts (neither exists in a clean checkout or a fresh worktree). Versus the previous
 edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.github/workflows/scorecard.yml`,
-`patches/@react-three__fiber@9.7.0.patch` and `.coderabbit.yaml` were added, so the workflow count is now **5**
+`patches/@react-three__fiber@9.7.0.patch` and `.coderabbit.yaml` were added, so the workflow count was then **5**
 (`ls .github/workflows/` → `ci.yml`, `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`), and
-`ci.yml` itself grew from 4 jobs to 5.
+`ci.yml` itself grew from 4 jobs to 5. After the v3.16.0 cut `.github/workflows/deploy-smoke.yml` and `scripts/post-deploy-smoke.mjs` were added (the 25 became 27), so the workflow count is now **6**.
 
 ## At a glance
 
@@ -56,6 +56,8 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 | `.github/workflows/dependency-review.yml` | `actions/dependency-review-action` (SHA-pinned, `# v4`), `fail-on-severity: high`, `fail-on-scopes: runtime`, PRs into `develop`/`main` | n/a |
 | `.github/workflows/gitleaks.yml` | Secret scan (`gitleaks/gitleaks-action` v3.0.0), `fetch-depth: 0`, push + PR on `develop`/`main`, `pull-requests: write` for leak comments | n/a |
 | `.github/workflows/scorecard.yml` | OSSF Scorecard: push to `main`, weekly cron `30 2 * * 1`, `workflow_dispatch`; `publish_results: true`, SARIF uploaded to code scanning | n/a |
+| `.github/workflows/deploy-smoke.yml` | The production gate: `repository_dispatch` `vercel.deployment.ready` (+ `workflow_dispatch` with a `url` input); job `Smoke the deployment` (20 min backstop, every step has its own `timeout-minutes`; job-level `contents: read`, `statuses: write`, `actions: read`) reports the commit status `Post-deploy smoke` on the deployed SHA (`vercel/repository-dispatch/actions/status`, SHA-pinned), validates the payload, sparse-checks-out the script, and runs it with `VERCEL_AUTOMATION_BYPASS_SECRET`. Skips only `preview` dispatches; the concurrency group is keyed by environment and commit and never cancels | n/a |
+| `scripts/post-deploy-smoke.mjs` | Dependency-free Node ESM: 20 GET checks against one deployment URL; exports `runSmoke`, `CHECKS`, `waitUntilReachable`, `assertBypassTargetAllowed`; exit 0 / 1 / 2 | n/a (CLI) |
 | `.github/dependabot.yml` | Weekly updates → `develop` for **two ecosystems**: `npm` (6 groups, 3 `ignore` entries with root-cause comments) and `github-actions` (bumps the SHA pins) | n/a |
 | `.github/PULL_REQUEST_TEMPLATE.md` | Issue link + "Views tested" checklist (Classic, Play, Chat, Developer, Voice) + lint/test/no-content-changes checklist | n/a |
 | `.github/ISSUE_TEMPLATE/bug_report.yml` | GitHub Forms bug report: URL, affected view (multi-select), repro, expected/actual, browser, OS | n/a |
@@ -316,7 +318,7 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `BEDROCK_SECRET_ACCESS_KEY` | Yes for chat | `src/lib/llm.ts:273` | Bedrock creds | Same base64/raw handling |
 | `BEDROCK_SESSION_TOKEN` | No | `src/lib/llm.ts:274-275` | Temporary STS creds only | `.env.example:15` |
 | `BEDROCK_REGION` | No (default `us-east-1`) | `src/lib/llm.ts:280` | Bedrock region | **Use this, never `AWS_REGION`** — see the corruption note below |
-| `AWS_REGION` | No | `src/lib/llm.ts:280` (2nd fallback); `src/instrumentation.ts:43` (region label) | Legacy region fallback | **CORRUPTION:** `AWS_REGION` is a reserved var on Vercel/Lambda and was observed in production as `"s-east-1"` — the leading `u` stripped (`.env.example:16-18`; `CLAUDE.md:396`, "Critical gotcha"). Resolution order is `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"`, so a corrupted `AWS_REGION` is only reached when `BEDROCK_REGION` is unset. **`.env.example:20` nonetheless sets `AWS_REGION=us-east-1` uncommented**, directly under its own warning |
+| `AWS_REGION` | No | `src/lib/llm.ts:280` (2nd fallback); `src/instrumentation.ts:43` (region label) | Legacy region fallback | **CORRUPTION:** `AWS_REGION` is a reserved var on Vercel/Lambda and was observed in production as `"s-east-1"` — the leading `u` stripped (`.env.example:16-18`; `CLAUDE.md:397`, "Critical gotcha"). Resolution order is `BEDROCK_REGION \|\| AWS_REGION \|\| "us-east-1"`, so a corrupted `AWS_REGION` is only reached when `BEDROCK_REGION` is unset. **`.env.example:20` nonetheless sets `AWS_REGION=us-east-1` uncommented**, directly under its own warning |
 | `ANTHROPIC_API_KEY` | Only when `LLM_PROVIDER=anthropic` | `src/lib/llm.ts:290` | Direct Anthropic API key | `.env.example:24` (commented) |
 | `UPSTASH_REDIS_REST_URL` | No | `src/lib/redis.ts:26`; `scripts/replay-trace.mjs:27` | Redis singleton for rate-limit + FAQ cache + telemetry + admin | **Fails open:** unset → limiter is a no-op and chat still works (`.env.example:48-50`). `src/lib/rate-limit.ts:62` logs a warning when unset *and* `NODE_ENV === "production"`. Rate limiting is **three independent sliding-window buckets** — `chat` (`/api/chat`), `voice` (`/api/tts`, `/api/tts-google`, `/api/transcribe`), `beacon` (`/api/error`) — each 8 requests / 60 s per IP with its own prefix `anvilry:chat` / `anvilry:voice` / `anvilry:beacon` (`src/lib/rate-limit.ts:19-29`), so TTS traffic cannot 429 the user's chat. `.env.example:47` (and the production warning at `rate-limit.ts:64-66`) name only `/api/chat`, `/api/tts` and `/api/transcribe`, omitting `/api/tts-google` and `/api/error` |
 | `UPSTASH_REDIS_REST_TOKEN` | No | `src/lib/redis.ts:27`; `scripts/replay-trace.mjs:28` | Redis auth | Both must be set together; `replay-trace.mjs:30-37` hard-exits(1) if either is missing |
@@ -388,8 +390,8 @@ Every third-party action in every workflow is **pinned by full commit SHA with a
 `11d5960a…` `# v4`, `pnpm/action-setup` `ea17c68d…` `# v6.1.0`, `setup-node` `82076278…` `# v7.0.0`, `actions/cache`
 `55cc8345…` `# v6.1.0`, `upload-artifact` `ea165f8d…` `# v4`, `codeql-action` `b96794f0…` `# v4.38.0`,
 `dependency-review-action` `2031cfc0…` `# v4`, `gitleaks-action` `e0c47f4f…` `# v3.0.0`, `scorecard-action`
-`2d114668…` `# v2.4.4`); the only `uses:` line without a SHA is a commented-out example in `codeql.yml:83`. The
-`github-actions` Dependabot ecosystem is what moves those pins (`dependabot.yml:103-116`). No workflow declares a
+`2d114668…` `# v2.4.4`, `vercel/repository-dispatch/actions/status` `30f760c6…` `# v1`); the only `uses:` line without a SHA is a commented-out example in `codeql.yml:83`. The
+`github-actions` Dependabot ecosystem is what moves those pins (`dependabot.yml:103-116`). Only `deploy-smoke.yml` declares a
 `concurrency:` group.
 
 | Workflow | Triggers | Jobs / steps | What it blocks |
@@ -403,10 +405,11 @@ Every third-party action in every workflow is **pinned by full commit SHA with a
 | `dependency-review.yml` — **Dependency Review** | `pull_request` → `develop`, `main` | `dependency-review` (5 min): checkout → `actions/dependency-review-action` with `fail-on-severity: high`, `fail-on-scopes: runtime`, `comment-summary-in-pr: always` (`:26-31`). Workflow-level `permissions: contents: read, pull-requests: write` (`:7-9`) | PRs introducing **high/critical** CVEs in **runtime**-scoped deps. Low/moderate are warnings; dev-only packages (vitest, eslint) are exempt by scope (`:27-29`). It only sees a PR's diff — the non-blocking `pnpm audit` step in `ci` is what covers packages already in the tree |
 | `gitleaks.yml` — **Gitleaks** | `push` and `pull_request` on `develop`, `main` (`gitleaks.yml:14-18`) | `scan` (5 min, `contents: read` + `pull-requests: write`): checkout with `fetch-depth: 0` (`:37`) → `gitleaks/gitleaks-action` v3.0.0 (`:40`). No `GITLEAKS_LICENSE` — free for personal-account repos | Runs unconditionally on every PR regardless of CodeRabbit's free-tier star gate (`:3-13`). Complements GitHub's native secret scanning + push protection and CodeRabbit's own gitleaks tool |
 | `scorecard.yml` — **OSSF Scorecard** | `push` → `main` only, weekly cron `30 2 * * 1`, `workflow_dispatch` (`scorecard.yml:12-17`). **Main only on purpose:** `ossf/scorecard-action` hard-rejects any non-default branch, so listing `develop` just guarantees a red X on every push (`:3-11`) | `analyze` (10 min): workflow-level `permissions: read-all` (`:19`); job-level `security-events: write`, `id-token: write`, `contents: read`, `actions: read` (`:26-32`) → scorecard-action v2.4.4 with `publish_results: true` (`:47`) → SARIF as an artifact (7 days) → `codeql-action/upload-sarif` | Nothing on `develop` — no Scorecard signal there. Supply-chain health signal only |
+| `deploy-smoke.yml` — **Deploy smoke** | `repository_dispatch` type `vercel.deployment.ready` (only the workflow file on the default branch is honoured); `workflow_dispatch` with a `url` input | **`smoke`** (job name `Smoke the deployment`, 20 min backstop): status action sets `Post-deploy smoke` pending, then success or failure from the job's steps → payload validation (40-hex SHA, `*.vercel.app` host) → sparse checkout of the deployed commit → `node scripts/post-deploy-smoke.mjs`. Runs for every dispatch whose `environment` is not `preview` (a `workflow_dispatch` run always runs the job but sets no status). Meant to be required by a Vercel Deployment Check once one is registered (none is yet), never by a GitHub ruleset |
 
 **Job display names** (what a branch-protection rule would name): `Lint · Type-check · Test`, `Claims integrity
 auto-commit (opt-in)`, `E2E (Playwright)`, `Install on pnpm 11`, `Security alerts (report)`, `Analyze
-(javascript-typescript)`, `Dependency review`, `Secret scan`, `Scorecard analysis`. The `codeql.yml` and `scorecard.yml` jobs both use the job
+(javascript-typescript)`, `Dependency review`, `Secret scan`, `Scorecard analysis`, `Smoke the deployment` (its commit status is named `Post-deploy smoke`, not the job). The `codeql.yml` and `scorecard.yml` jobs both use the job
 id `analyze`; they are in different workflows, so it is harmless, but the status-check names differ by workflow. A push to a feature branch gets `ci`, `e2e`, `install-pnpm-11` and `security-alerts`, but no
 CodeQL, gitleaks or dependency-review until a PR targets `develop`/`main`.
 
@@ -861,6 +864,12 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
     `npx tsx scripts/seal-claims.ts --write` locally, then commit the chain file (`:79-82`). The opt-in auto-commit job
     exists only so a maintainer can hand that step to CI.
 
+### `scripts/post-deploy-smoke.mjs` and `.github/workflows/deploy-smoke.yml`
+- **Role:** The only gate that tests the artifact Vercel actually built before the production domain moves. CI proves the code on a runner; this proves the deployment: runtime, production environment variables baked in at build time, the Pagefind index (the last build step), the enforced security headers and the fail-closed auth gates.
+- **Exports:** `BYPASS_HEADER`, `CHECKS` (20), `PAID_OR_PRIVILEGED_PATHS`, `runSmoke`, `waitUntilReachable`, `normalizeDeploymentUrl`, `assertBypassTargetAllowed`, `discoverProjectPath`; the CLI `main()` runs only when the file is executed directly.
+- **Behaviour notes:** GET only, `redirect: "manual"`, a 15 s timeout per request, readiness polling (retries 5xx, 404 and network errors; a 401/403 or a redirect to `vercel.com/sso-api` counts as reachable because waiting cannot lift it). The project detail and `.md` checks use a slug discovered on `/projects`, so no slug is hard-coded. A dependent check whose input is missing fails; it is never skipped. `GITHUB_STEP_SUMMARY` gets a markdown table. A hard 270 s stop makes a hang a failed step, and the workflow's last step fails the job unless the smoke step succeeded.
+- **Gotchas / invariants:** Never request `/api/chat`, the voice routes or an authenticated cron route (pinned by `src/lib/deploy-smoke.test.ts`). The bypass secret is sent only to the deployment origin and refused for any other host. The status action maps only a failed step to `failure`, so a cancelled or skipped step would read as success. Nothing here cancels a run itself: every step has its own `timeout-minutes` (a step that overruns FAILS), the 20-minute job timeout sits above their sum, and a final `if: always()` step fails the job unless the smoke step's outcome is `success`. The workflow must exist on the default branch before it can be triggered. Runbook and escape hatches: `DEPLOY.md` section 8.
+
 ### `vercel.json`
 - **Role:** The entire Vercel project config — nothing but cron schedules.
 - **Behaviour notes:** 5 crons (`:3-7`), all matched by a real route under `src/app/api/cron/`:
@@ -898,7 +907,7 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
   only `resumeVariants[0]` render is gated by `NEXT_PUBLIC_RESUME_VARIANTS` (`src/app/resume/page.tsx:29`,
   `src/components/home/resume-view.tsx:46`, `src/components/command-palette-content.tsx:365`,
   `src/components/game/terminal/commands.ts:297`) — with one entry the flag currently changes nothing. The MCP
-  `get_resume_variant` tool exposes the same set (`CLAUDE.md:254`, § MCP Server).
+  `get_resume_variant` tool exposes the same set (`CLAUDE.md:255`, § MCP Server).
 - **Gotchas / invariants:** Filenames are hardcoded strings in `src/lib/profile.ts` — renaming a PDF produces a
   404 with no type error. `/resume` is the one route with a relaxed `frame-ancestors 'self'` CSP so the PDF can
   be iframed (`next.config.ts:213-239`; the override itself is `next.config.ts:218-230`). `.github/CONTRIBUTING.md:19` declares `public/resume/` closed to
@@ -922,9 +931,11 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 - `.coderabbit.yaml`
 - `scripts/replay-trace.mjs`
 - `scripts/bundle-budget.mjs`
+- `scripts/post-deploy-smoke.mjs`
 - `.github/workflows/ci.yml`
 - `.github/workflows/codeql.yml`
 - `.github/workflows/dependency-review.yml`
+- `.github/workflows/deploy-smoke.yml`
 - `.github/workflows/gitleaks.yml`
 - `.github/workflows/scorecard.yml`
 - `.github/dependabot.yml`

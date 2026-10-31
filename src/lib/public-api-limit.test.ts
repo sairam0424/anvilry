@@ -42,6 +42,20 @@ describe("createWindowLimiter", () => {
     expect(limiter.hit("a")).toMatchObject({ allowed: true, remaining: 0, resetSeconds: 10 });
   });
 
+  it("drops clients whose window ended even if they never return, at the next request after a full window", () => {
+    const c = clock();
+    const limiter = createWindowLimiter({ requests: 5, windowSeconds: 10, now: c.now });
+    limiter.hit("a");
+    limiter.hit("b");
+    c.advance(5_000);
+    limiter.hit("c"); // less than a window since start: nothing is swept yet
+    expect(limiter.size()).toBe(3);
+    c.advance(6_000); // a and b ended 1 s ago; a full window has passed since the start
+    limiter.hit("d");
+    expect(limiter.size()).toBe(2); // c is still inside its own window, d is new
+    expect(limiter.hit("c").remaining).toBe(3); // c kept its count: live clients are never swept
+  });
+
   it("cannot grow without bound: expired clients go first, then the oldest live ones", () => {
     const c = clock();
     const limiter = createWindowLimiter({ requests: 5, windowSeconds: 10, maxKeys: 3, now: c.now });

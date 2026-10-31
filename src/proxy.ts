@@ -12,7 +12,7 @@ import { publicApiClientKey, publicApiLimiter, rateLimitHeaders } from "@/lib/pu
 /**
  * Next 16 Proxy (formerly Middleware) — runs on the Node.js runtime by default
  * (see node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md),
- * before any route handler. Two responsibilities:
+ * before any route handler. Three responsibilities:
  *
  * 1. Gate /admin/* behind HTTP Basic Auth so the request gets a REAL 401 with a
  *    WWW-Authenticate header — something App Router server components cannot return on their

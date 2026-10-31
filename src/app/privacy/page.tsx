@@ -130,8 +130,9 @@ export default function PrivacyPage() {
             discovery files, and the MCP endpoint) allow {F.publicApiRequests} requests per{" "}
             {F.publicApiWindowSeconds} seconds per IP address. That counter is kept only in the
             memory of the server instance that answers, under your IP address (not hashed); it is
-            not written to Upstash or to any log, and it is gone within a minute or when the
-            instance restarts.
+            not written to Upstash or to any log. It is swept out of memory shortly after its
+            one-minute window ends (at the instance&apos;s next request) and always when the instance
+            restarts.
           </ProseP>
 
           <ProseH2>Server logs</ProseH2>

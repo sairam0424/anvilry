@@ -44,11 +44,18 @@ export function createWindowLimiter(options: WindowLimiterOptions) {
     now = Date.now,
   } = options;
   const buckets = new Map<string, Bucket>();
+  const windowMs = windowSeconds * MS_PER_SECOND;
+  let lastSweepAt = now();
 
-  function prune(at: number): void {
+  function sweepExpired(at: number): void {
     for (const [key, bucket] of buckets) {
       if (bucket.resetAt <= at) buckets.delete(key);
     }
+    lastSweepAt = at;
+  }
+
+  function prune(at: number): void {
+    sweepExpired(at);
     // Still full of live clients: drop the oldest insertions until there is room.
     for (const key of buckets.keys()) {
       if (buckets.size < maxKeys) break;
@@ -59,6 +66,9 @@ export function createWindowLimiter(options: WindowLimiterOptions) {
   return {
     hit(key: string): LimitDecision {
       const at = now();
+      // A client that never returns would otherwise stay in memory until the table fills, which
+      // the privacy page does not allow: sweep once per window, at the next request.
+      if (at - lastSweepAt >= windowMs) sweepExpired(at);
       const current = buckets.get(key);
       const live = current && current.resetAt > at ? current : undefined;
 
@@ -66,7 +76,7 @@ export function createWindowLimiter(options: WindowLimiterOptions) {
 
       const bucket: Bucket = live
         ? { count: live.count + 1, resetAt: live.resetAt }
-        : { count: 1, resetAt: at + windowSeconds * MS_PER_SECOND };
+        : { count: 1, resetAt: at + windowMs };
       // Re-insert so Map order tracks recency of the window start, not of every hit.
       if (!live) buckets.delete(key);
       buckets.set(key, bucket);

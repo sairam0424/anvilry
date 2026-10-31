@@ -10,6 +10,7 @@
 
 const EXACT_PATHS = new Set([
   "/api/v1",
+  "/.well-known/api-catalog",
   "/api/resume.json",
   "/api/github/stats",
   "/llms.txt",

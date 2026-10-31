@@ -42,6 +42,7 @@ export const config = {
   matcher: [
     "/admin/:path*",
     "/api/:path*",
+    "/.well-known/api-catalog",
     "/llms.txt",
     "/llms-full.txt",
     "/openapi.json",
@@ -107,7 +108,12 @@ function stamp(res: Response, req: NextRequest, rateLimit: [string, string][]): 
   return res;
 }
 
+const MCP_PREFIX = "/api/mcp/";
+const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const READ_ALLOW = "GET, HEAD, OPTIONS";
+
 function servePublicApi(req: NextRequest): Response {
+  const { pathname } = req.nextUrl;
   const requested = req.headers.get(API_VERSION_HEADER)?.trim();
   if (requested !== undefined && requested !== API_VERSION) {
     return stamp(
@@ -119,8 +125,26 @@ function servePublicApi(req: NextRequest): Response {
     );
   }
 
-  // Preflight requests are not API calls and must never spend a client's budget.
-  if (req.method === "OPTIONS") return stamp(negotiateMarkdown(req), req, []);
+  // Preflight requests are not API calls and must never spend a client's budget. A prerendered
+  // file would answer OPTIONS with a bare 405, contradicting the Allow list of our own 405, so
+  // the proxy answers for every read-only path; the MCP route has its own OPTIONS handling.
+  if (req.method === "OPTIONS") {
+    if (pathname.startsWith(MCP_PREFIX)) return stamp(negotiateMarkdown(req), req, []);
+    return stamp(new Response(null, { status: 204, headers: { Allow: READ_ALLOW } }), req, []);
+  }
+
+  // Everything public is read-only except the MCP endpoint, so say so in the shared error shape
+  // (a prerendered file would otherwise answer a bare, empty 405).
+  if (!pathname.startsWith(MCP_PREFIX) && !READ_METHODS.has(req.method)) {
+    return stamp(
+      apiError(405, "method_not_allowed", "Method not allowed for this route.", {
+        hint: `Use one of: ${READ_ALLOW}.`,
+        headers: { Allow: READ_ALLOW },
+      }),
+      req,
+      [],
+    );
+  }
 
   const decision = publicApiLimiter.hit(publicApiClientKey(req));
   const headers = rateLimitHeaders(decision);

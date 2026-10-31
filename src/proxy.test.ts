@@ -1,4 +1,5 @@
 import { negotiate, PRODUCES } from "@/lib/accept-negotiation";
+import { PAGE_TWINS } from "@/lib/page-twins";
 import { afterEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { config, proxy } from "./proxy";
@@ -90,7 +91,7 @@ describe("proxy — Markdown negotiation", () => {
   });
 
   it("leaves an HTML-only page, an API route and an explicit .md URL alone", async () => {
-    for (const path of ["/about", "/api/resume.json", "/projects/kelvran.md", "/sitemap.xml"]) {
+    for (const path of ["/resume", "/api/resume.json", "/projects/kelvran.md", "/sitemap.xml"]) {
       const res = await proxy(mdReq(path, "text/markdown"));
       expect(res.headers.get(PASS_THROUGH_HEADER), path).toBe("1");
       expect(res.headers.get(REWRITE_HEADER), path).toBeNull();
@@ -117,13 +118,60 @@ describe("proxy — Markdown negotiation", () => {
   });
 
   it("does not 406 a page that is not negotiated", async () => {
-    const res = await proxy(mdReq("/about", "text/markdown;q=0, application/json"));
+    const res = await proxy(mdReq("/resume", "text/markdown;q=0, application/json"));
     expect(res.headers.get(PASS_THROUGH_HEADER)).toBe("1");
   });
 
   it("keeps the admin gate first, even for a client that asks for Markdown", async () => {
     const denied = await proxy(mdReq("/admin/telemetry", "text/markdown"));
     expect(denied.status).toBe(401);
+  });
+});
+
+describe("proxy — Markdown twins of pages", () => {
+  it.each(PAGE_TWINS)("serves the /%s twin to a client that asks for Markdown", async (page) => {
+    const res = await proxy(mdReq(`/${page}`, "text/markdown"));
+    expect(rewrittenTo(res)).toBe(`/api/md/pages/${page}`);
+  });
+
+  it("also serves it when Markdown is preferred over HTML, and for a trailing slash", async () => {
+    expect(rewrittenTo(await proxy(mdReq("/privacy", "text/markdown, text/html;q=0.8")))).toBe("/api/md/pages/privacy");
+    expect(rewrittenTo(await proxy(mdReq("/privacy/", "text/markdown")))).toBe("/api/md/pages/privacy");
+  });
+
+  it("serves the HTML page, saying the URL varies with Accept, when the client prefers HTML", async () => {
+    const res = await proxy(mdReq("/developers", "text/html, text/markdown;q=0.1"));
+    expect(res.headers.get(PASS_THROUGH_HEADER)).toBe("1");
+    expect(res.headers.get(REWRITE_HEADER)).toBeNull();
+    expect(res.headers.get("vary")).toBe("Accept");
+  });
+
+  it("answers 406 when a page with a twin is asked for something neither form satisfies", async () => {
+    const res = await proxy(mdReq("/about", "text/markdown;q=0, application/json"));
+    expect(res.status).toBe(406);
+    expect(res.headers.get("vary")).toBe("Accept");
+  });
+
+  it("keeps the pages without a twin on HTML, with no Vary added", async () => {
+    for (const path of ["/resume", "/search", "/stats"]) {
+      const res = await proxy(mdReq(path, "text/markdown"));
+      expect(res.headers.get(PASS_THROUGH_HEADER), path).toBe("1");
+      expect(res.headers.get(REWRITE_HEADER), path).toBeNull();
+      expect(res.headers.get("vary"), path).toBeNull();
+    }
+  });
+
+  it("leaves an explicit /<page>.md URL to the next.config rewrite", async () => {
+    for (const page of PAGE_TWINS) {
+      const res = await proxy(mdReq(`/${page}.md`, "text/markdown"));
+      expect(res.headers.get(PASS_THROUGH_HEADER), page).toBe("1");
+      expect(res.headers.get(REWRITE_HEADER), page).toBeNull();
+    }
+  });
+
+  it("still answers a path under a page name with the Markdown 404", async () => {
+    const res = await proxy(mdReq("/about/team", "text/markdown"));
+    expect(rewrittenTo(res)).toBe("/api/md/not-found?p=%2Fabout%2Fteam");
   });
 });
 
@@ -242,5 +290,55 @@ describe("proxy — public API contract", () => {
       expect(res.headers.get("API-Version"), path).toBeNull();
       expect(res.headers.get("RateLimit"), path).toBeNull();
     }
+  });
+});
+
+describe("proxy — public API is read-only except MCP", () => {
+  const send = (path: string, method: string) =>
+    proxy(
+      new NextRequest(`https://anvilry.vercel.app${path}`, {
+        method,
+        headers: { "x-vercel-forwarded-for": `198.51.100.${Math.floor(Math.random() * 250) + 1}` },
+      }),
+    );
+
+  it("answers a write to a read-only public path with the shared JSON 405 and an Allow header", async () => {
+    for (const path of ["/llms.txt", "/api/v1/projects", "/openapi.json", "/api/resume.json"]) {
+      const res = await send(path, "POST");
+      expect(res.status, path).toBe(405);
+      expect(res.headers.get("Allow"), path).toBe("GET, HEAD, OPTIONS");
+      expect(await res.json(), path).toMatchObject({ code: "method_not_allowed", status: 405 });
+    }
+  });
+
+  it("lets POST through to the MCP endpoint", async () => {
+    const res = await send("/api/mcp/mcp", "POST");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-middleware-next")).toBe("1");
+  });
+});
+
+describe("proxy — OPTIONS on read-only public paths", () => {
+  const options = (path: string) =>
+    proxy(
+      new NextRequest(`https://anvilry.vercel.app${path}`, {
+        method: "OPTIONS",
+        headers: { "x-vercel-forwarded-for": "192.0.2.50" },
+      }),
+    );
+
+  it("answers 204 with the Allow list its own 405 advertises, instead of Next's bare 405", async () => {
+    for (const path of ["/llms.txt", "/api/resume.json", "/api/v1/profile", "/openapi.json", "/about.md"]) {
+      const res = await options(path);
+      expect(res.status, path).toBe(204);
+      expect(res.headers.get("Allow"), path).toBe("GET, HEAD, OPTIONS");
+      expect(res.headers.get("API-Version"), path).toBe("1");
+      expect(res.headers.get("x-middleware-next"), path).toBeNull();
+    }
+  });
+
+  it("leaves the MCP endpoint's own OPTIONS handling alone", async () => {
+    const res = await options("/api/mcp/mcp");
+    expect(res.headers.get("x-middleware-next")).toBe("1");
   });
 });

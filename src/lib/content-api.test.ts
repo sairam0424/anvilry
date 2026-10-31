@@ -1,15 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES, type ApiErrorBody } from "@/lib/api-error";
-import { allArticles, allNotes } from "@/lib/content";
+import { allArticles } from "@/lib/content";
 import { getContentItemData } from "@/lib/mcp-tools";
 import { SITE_URL } from "@/lib/site-url";
 import {
   getArticleData,
-  getNoteData,
   isValidSlug,
   jsonResponse,
   listArticlesData,
-  listNotesData,
   listResponse,
   MAX_TEXT_PARAM_LENGTH,
   parseTextParam,
@@ -167,20 +165,58 @@ describe("articles and notes", () => {
     expect(listArticlesData().length).toBeGreaterThan(0);
   });
 
-  it("lists exactly what the MCP item lookup returns for each note, and none while notes are off", () => {
-    expect(listNotesData()).toEqual(
-      allNotes.map((n) => getContentItemData("note", n.slug)),
-    );
-  });
-
   it("returns an article by slug and a not-found value for an unknown one", () => {
     const slug = allArticles[0].slug;
     expect(getArticleData(slug)).toEqual(getContentItemData("article", slug));
     expect(getArticleData("no-such-article")).toMatchObject({ notFound: true });
   });
+});
 
-  it("returns a not-found value for every note slug while notes are off", () => {
-    expect(getNoteData("how-dns-works")).toMatchObject({ notFound: true });
+/**
+ * NEXT_PUBLIC_NOTES_ENABLED is inlined when `@/lib/content` loads, so each case resets the module
+ * graph, sets the flag and only then imports the code under test (the pattern of notes-dark.test.ts).
+ * The result must not depend on the environment the suite runs in.
+ */
+async function loadWithNotes(enabled: boolean) {
+  vi.resetModules();
+  vi.stubEnv("NEXT_PUBLIC_NOTES_ENABLED", enabled ? "true" : "false");
+  const [api, content, mcp] = await Promise.all([
+    import("./content-api"),
+    import("@/lib/content"),
+    import("@/lib/mcp-tools"),
+  ]);
+  return { api, content, mcp };
+}
+
+describe("notes", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("are neither listed nor found while notes are switched off", async () => {
+    const { api, content } = await loadWithNotes(false);
+    expect(content.publishedNotes.length).toBeGreaterThan(0);
+    expect(api.listNotesData()).toEqual([]);
+    for (const note of content.publishedNotes) {
+      expect(api.getNoteData(note.slug), note.slug).toMatchObject({
+        notFound: true,
+        valid: [],
+      });
+    }
+  });
+
+  it("are listed and found, as the MCP lookup returns them, while notes are switched on", async () => {
+    const { api, content, mcp } = await loadWithNotes(true);
+    expect(content.allNotes.length).toBeGreaterThan(0);
+    expect(api.listNotesData()).toEqual(
+      content.allNotes.map((n) => mcp.getContentItemData("note", n.slug)),
+    );
+    for (const note of content.allNotes) {
+      const item = api.getNoteData(note.slug);
+      expect(item, note.slug).toEqual(mcp.getContentItemData("note", note.slug));
+      expect(item, note.slug).not.toHaveProperty("notFound");
+    }
   });
 });
 

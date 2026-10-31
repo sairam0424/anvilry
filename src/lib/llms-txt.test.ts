@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { API_V1_BASE, DEPRECATION_NOTICE_DAYS, RATE_LIMIT_POLICY } from "./api-policy";
 import { API_CATALOG_PATH } from "./api-catalog";
 import { buildLlmsTxt } from "./llms-txt";
@@ -172,11 +172,34 @@ describe("buildLlmsTxt — Markdown versions of pages", () => {
     expect(how).toContain(`${BASE}/about.md`);
   });
 
-  it("lists the .md URL of every page that has a twin, and omits /notes while that section is dark", () => {
+  it("lists the .md URL of every page that has a twin, whatever the notes flag", () => {
     for (const page of PAGE_TWINS.filter((p) => p !== "notes")) {
       expect(pages, page).toContain(`- ${BASE}/${page}.md\n`);
     }
-    expect(pages).not.toContain("/notes.md");
     for (const page of ["resume", "search", "stats"]) expect(pages, page).not.toContain(`/${page}.md`);
+  });
+});
+
+/**
+ * NEXT_PUBLIC_NOTES_ENABLED is inlined when the content layer loads and a deployment may set it
+ * (this project's Vercel preview does), so these cases stub the flag, reset the module graph and
+ * import the generator afresh: the answer depends on the case, never on the environment of the run.
+ */
+describe("buildLlmsTxt — the /notes Markdown URL follows the notes flag", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  async function pagesWithNotes(enabled: boolean): Promise<string> {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_NOTES_ENABLED", enabled ? "true" : "false");
+    const { buildLlmsTxt: build } = await import("./llms-txt");
+    return (build().split("### Pages\n")[1] ?? "").split(/\n#{2,3} /)[0];
+  }
+
+  it("omits /notes.md while the section ships dark, because that page and its twin are a 404", async () => {
+    expect(await pagesWithNotes(false)).not.toContain("/notes.md");
+  });
+
+  it("lists /notes.md once the section is switched on", async () => {
+    expect(await pagesWithNotes(true)).toContain("- https://anvilry.vercel.app/notes.md\n");
   });
 });

@@ -322,6 +322,54 @@ describe("elementToMarkdown — tables", () => {
     expect(out).toBe("| k | v |\n| --- | --- |\n| 1 | 2 |\n");
   });
 
+  it("escapes a backslash before the pipe, so a trailing backslash cannot swallow the cell separator", () => {
+    const out = md(
+      <table>
+        <tbody>
+          <tr>
+            <td>k</td>
+            <td>v</td>
+          </tr>
+          <tr>
+            <td>{"ends with \\"}</td>
+            <td>{"C:\\dir\\a|b"}</td>
+          </tr>
+        </tbody>
+      </table>,
+    );
+    // Each source backslash becomes two, then the pipe gets one: an unescaped trailing
+    // backslash would make the closing "|" of the first cell read as an escaped pipe.
+    expect(out).toBe(
+      "| k | v |\n| --- | --- |\n| ends with \\\\ | C:\\\\dir\\\\a\\|b |\n",
+    );
+  });
+
+  it("leaves an already-escaped pipe alone and escapes only a pipe that ends a cell", () => {
+    const out = md(
+      <table>
+        <tbody>
+          <tr>
+            <td>k</td>
+            <td>v</td>
+          </tr>
+          <tr>
+            <td>
+              <code>{"a\\|b"}</code>
+            </td>
+            <td>
+              <code>{"p\\\\|q"}</code>
+            </td>
+          </tr>
+        </tbody>
+      </table>,
+    );
+    // An odd run of backslashes before a pipe means it is already escaped (leave it); an even
+    // run means the pipe would end the cell (add one more backslash).
+    expect(out).toBe(
+      "| k | v |\n| --- | --- |\n| `a\\|b` | `p\\\\\\|q` |\n",
+    );
+  });
+
   it("renders nothing for a table with no rows", () => {
     expect(
       md(

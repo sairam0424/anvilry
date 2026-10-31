@@ -65,11 +65,6 @@ describe("lists", () => {
       }
     }
   });
-
-  it("returns an empty notes list while notes are switched off", async () => {
-    expect(allNotes).toHaveLength(0);
-    expect(await json("/api/v1/notes")).toEqual({ count: 0, items: [] });
-  });
 });
 
 describe("item routes", () => {
@@ -102,14 +97,6 @@ describe("item routes", () => {
       }
     });
   }
-
-  it("every note slug is a 404 while notes are switched off", async () => {
-    await expectApiError(
-      await call("/api/v1/notes/{slug}", { slug: "how-dns-works" }),
-      404,
-      "not_found",
-    );
-  });
 
   it("puts up to 30 valid slugs in the 404 hint", async () => {
     const body = await expectApiError(

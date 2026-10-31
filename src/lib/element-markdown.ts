@@ -319,10 +319,7 @@ function renderTable(table: HostNode, options: ElementMarkdownOptions): string {
             isHost(cell) && (cell.tag === "th" || cell.tag === "td"),
         )
         .map((cell) =>
-          collapse(inlineRaw(cell.children, options), " ").replace(
-            /\|/g,
-            "\\|",
-          ),
+          escapeCellPipes(collapse(inlineRaw(cell.children, options), " ")),
         ),
     )
     .filter((cells) => cells.length > 0);
@@ -406,4 +403,16 @@ export function elementToMarkdown(
 ): string {
   const blocks = renderBlocks(expand(node, options), options);
   return blocks.length === 0 ? "" : `${blocks.join("\n\n")}\n`;
+}
+
+/**
+ * Escapes the pipes that would end a table cell. A pipe that follows an ODD run of backslashes is
+ * already escaped (text is escaped upstream, and a code span may carry its own "\\|"); an even run
+ * (including none) leaves it bare, so it gets one more backslash. Escaping every pipe blindly
+ * would turn an escaped pipe into "\\\\|" and split the cell.
+ */
+function escapeCellPipes(text: string): string {
+  return text.replace(/(\\*)\|/g, (match, slashes: string) =>
+    slashes.length % 2 === 1 ? match : `${slashes}\\|`,
+  );
 }

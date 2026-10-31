@@ -31,15 +31,6 @@ describe("GET /api/md/pages/[page]", () => {
     },
   );
 
-  it("answers /notes with the Markdown 404 while the section ships dark, like its HTML page", async () => {
-    const res = await call("notes");
-    expect(res.status).toBe(404);
-    expect(res.headers.get("Content-Type")).toBe(
-      "text/markdown; charset=utf-8",
-    );
-    expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
-  });
-
   it("answers a name that has no twin with the Markdown 404, never a file read", async () => {
     for (const page of [
       "resume",
@@ -54,6 +45,39 @@ describe("GET /api/md/pages/[page]", () => {
         "text/markdown; charset=utf-8",
       );
     }
+  });
+});
+
+/**
+ * NEXT_PUBLIC_NOTES_ENABLED is inlined when the content layer loads, and a deployment may set it
+ * (this project's Vercel preview does), so these cases stub the flag, reset the module graph and
+ * import the route afresh: the answer then depends on the case, never on the environment of the run.
+ */
+describe("the /notes twin follows the notes flag, like its HTML page", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  async function callNotes(enabled: boolean) {
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_NOTES_ENABLED", enabled ? "true" : "false");
+    const { GET: get } = await import("./route");
+    return get(new Request(`${SITE_URL}/api/md/pages/notes`), {
+      params: Promise.resolve({ page: "notes" }),
+    });
+  }
+
+  it("answers the Markdown 404 while the section ships dark", async () => {
+    const res = await callNotes(false);
+    expect(res.status).toBe(404);
+    expect(res.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
+    expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
+  });
+
+  it("answers the real twin once the section is switched on", async () => {
+    const res = await callNotes(true);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("text/markdown; charset=utf-8");
+    expect(res.headers.get("Link")).toBe(`<${SITE_URL}/notes>; rel="canonical"`);
+    expect((await res.text()).startsWith("# ")).toBe(true);
   });
 });
 

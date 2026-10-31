@@ -26,8 +26,8 @@ pages, with the new footer links, JSON-LD block and response headers described b
   labelled "(text copied from the request)". `src/proxy.ts` gains a second matcher entry that is conditional
   on an Accept header mentioning `text/markdown` in any letter case (the pattern is spelled letter by letter,
   because a matcher value is a flagless regular expression), so browsers and crawlers that do not ask for
-  Markdown never invoke it; the proxy takes the content kinds from `src/lib/content-kinds.ts`, which has no
-  imports, so its bundle carries neither the content layer nor `node:fs`. `src/lib/markdown-routing.ts` decides per path
+  Markdown never invoke it; the proxy's routing module takes the content kinds from `src/lib/content-kinds.ts`, which has no
+  imports, so the proxy's bundle carries neither the content layer nor `node:fs`. `src/lib/markdown-routing.ts` decides per path
   whether to serve a twin, pass the request on or answer the Markdown 404, and its test compares the list of
   HTML-only pages with the real `src/app` tree. `next.config.ts` also sets `Vary: Accept` and a
   `Link: <…>; rel="alternate"; type="text/markdown"` header on `/` and on the four slug page families for
@@ -109,16 +109,16 @@ pages, with the new footer links, JSON-LD block and response headers described b
 - **`next` 16.3.5 to 16.4.3** (with `eslint-config-next` and `@next/bundle-analyzer`). `pnpm audit` flagged two
   critical unauthenticated remote-code-execution advisories (image optimization and `use cache`) and a Server
   Actions denial of service in every release up to 16.4.0; 16.4.1 is the first fixed release and 16.4.3 the
-  newest one older than the repository's 7-day cooldown. Dependabot's suggested 16.3.8 would not have fixed them.
+  latest one (published 2026-10-23, over a week before this release). Dependabot's suggested 16.3.8 would not have fixed them.
 - **`@modelcontextprotocol/sdk` 1.26.0 to 1.32.0.** `mcp-handler` 1.1.0 still declares an exact 1.26.0 peer,
   which pnpm tolerates; the MCP route tests pass on 1.32.0.
-- **Transitive overrides** in `pnpm-workspace.yaml` (now 14 entries, 7 exact): `proxy-addr` 2.0.8 (critical IP
+- **Transitive overrides** in `pnpm-workspace.yaml` (now 14 entries, 7 exact; the others are ranges the lockfile resolves): `proxy-addr` 2.0.8 (critical IP
   spoofing), `body-parser` 2.4.0, `fast-uri` 3.1.9, `sharp` 0.35.5, `source-map-js` 1.2.2, `ip-address` 10.7.4,
-  `hono` 4.13.13, `qs` 6.16.1, `brace-expansion` 1.1.21 and 5.0.12. Each pin is a release at least a week old.
+  `hono` 4.13.13, `qs` 6.16.1, `brace-expansion` 1.1.21 and 5.0.12. Every version listed is a release at least a week old.
 - **Dev tooling:** `vite` is now a declared devDependency (an override cannot move an auto-installed peer),
   `vitest` 5.0.5, `happy-dom` 21.0.4.
-- Result: `pnpm audit` reports 0 critical (was 2) and 1 high. Not fixed: `zod` (high; the fix is the zod 4
-  migration, and this app defines no zod array schema), `@hono/node-server` (moderate; a major bump, and the
+- Result: `pnpm audit` reports 0 critical (was 4) and 1 high (was 19). Not fixed: `zod` (high; the fix is the zod 4
+  migration, and no request-facing schema in this app is a zod array), `@hono/node-server` (moderate; a major bump, and the
   bug is in `serveStatic`, which nothing uses) and `minimatch` (moderate; dev-only, via eslint).
 
 ## [3.16.1] — 2026-10-22

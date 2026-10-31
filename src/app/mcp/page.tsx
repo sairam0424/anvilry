@@ -5,16 +5,16 @@ import { profile } from "@/lib/profile";
 
 const ENDPOINT = "https://anvilry.vercel.app/api/mcp/mcp";
 
-const description = `Connect your AI assistant to ${profile.name}'s portfolio via the Model Context Protocol.`;
+const description = `Anvilry MCP server: connect your AI assistant to ${profile.name}'s portfolio via the Model Context Protocol.`;
 export const metadata: Metadata = {
-  title: "MCP server",
+  title: "Anvilry MCP server",
   description,
   alternates: { canonical: "/mcp" },
   // Page-specific OG so a share of /mcp shows this page, not the homepage identity.
   openGraph: {
     type: "website",
     url: "/mcp",
-    title: `MCP server — ${profile.name}`,
+    title: `Anvilry MCP server — ${profile.name}`,
     description,
   },
 };
@@ -64,7 +64,7 @@ export default function McpPage() {
     <main className="flex-1">
       <Section
         label="// model context protocol"
-        title="Ask your own AI about me"
+        title="Anvilry MCP server: ask your own AI about me"
         titleAs="h1"
       >
         <div className="max-w-2xl space-y-4 text-fg-muted">

@@ -15,6 +15,9 @@ export const PRIVACY_FACTS = {
   /** Limits for the chat, voice and error-report routes: requests per window per IP. */
   rateLimitRequests: 8,
   rateLimitWindowSeconds: 60,
+  /** Limit for the free read-only API routes: requests per window per IP, held in server memory only (src/lib/api-policy.ts). */
+  publicApiRequests: 300,
+  publicApiWindowSeconds: 60,
   /** Error reports are kept at most this many days, best effort (src/lib/telemetry/emit.ts). */
   errorRetentionDays: 7,
   /** Error reports: the recent-errors list keeps this many entries (src/app/api/error/route.ts). */
@@ -24,5 +27,5 @@ export const PRIVACY_FACTS = {
   /** The audio cap for private transcription, in bytes (src/app/api/transcribe/route.ts). */
   transcribeMaxMegabytes: 5,
   /** Last edit of the privacy text. */
-  lastUpdated: "31 October 2026",
+  lastUpdated: "1 November 2026",
 } as const;

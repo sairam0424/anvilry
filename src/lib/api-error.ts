@@ -12,7 +12,7 @@ import { SITE_URL } from "@/lib/site-url";
  *
  * Scope: the failures the public routes raise themselves. Not covered, on purpose: the MCP
  * endpoint's JSON-RPC errors (clients parse those), operator-only routes (cron, admin and the
- * flags endpoint keep their own bodies) and an uncaught exception, which Next answers itself.
+ * flags endpoint keep their own bodies) and an exception in a route outside withJsonErrors.
  * Every code below must be emitted by some route; api-error.test.ts fails on a dead one.
  */
 export const ERROR_DOCS_URL = `${SITE_URL}/developers#errors`;
@@ -48,6 +48,12 @@ export const API_ERROR_CODES = [
     status: 429,
     meaning: "Too many requests from this client in the current window.",
     hint: "Wait for the number of seconds in the Retry-After header, then retry.",
+  },
+  {
+    code: "internal_error",
+    status: 500,
+    meaning: "The server failed while handling a valid request.",
+    hint: "Retry once after a short delay; if it keeps failing, report it via /contact.",
   },
   {
     code: "upstream_error",
@@ -105,6 +111,24 @@ export function apiError(
   headers.set("Content-Type", "application/json; charset=utf-8");
   headers.set("Cache-Control", "no-store");
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+/**
+ * Wraps a route handler so an unexpected exception leaves the server as the shared JSON error
+ * (500, internal_error) instead of Next's empty-bodied 500. The cause is logged server-side by
+ * name only; nothing from the exception reaches the client.
+ */
+export function withJsonErrors<Args extends unknown[]>(
+  handler: (...args: Args) => Response | Promise<Response>,
+): (...args: Args) => Promise<Response> {
+  return async (...args: Args) => {
+    try {
+      return await handler(...args);
+    } catch (err) {
+      console.error(`[api] unhandled error in route handler: ${(err as Error)?.name ?? "error"}`);
+      return apiError(500, "internal_error", "The server could not complete the request.");
+    }
+  };
 }
 
 /**

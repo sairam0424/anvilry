@@ -4,6 +4,137 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+The public API gets a published contract. A JSON API now lives under `/api/v1`, every public response states
+its version and its rate-limit state, a deprecation will be announced in headers, an API catalog lets an agent
+find all of it from one URL, and ten pages gain a Markdown twin. No version number is chosen yet. No
+environment variable is added, and `/api/resume.json` and `/api/github/stats` keep working as aliases of
+version 1.
+
+### Added
+- **A versioned JSON API under `/api/v1`** (`src/app/api/v1/**`, 14 read-only GET routes): the index
+  (`/api/v1`, with the version, status, links, rate limit and deprecations), `profile`, `work`,
+  `work/{slug}`, `projects`, `projects/{slug}`, `articles`, `articles/{slug}`, `notes`, `notes/{slug}`,
+  `decisions` (`?tag=`), `search` (`?q=`), `resume` and `github/stats`. Lists are `{ count, items }`. The data
+  comes from the functions the MCP tools use (`src/lib/mcp-tools.ts`), with shared helpers in
+  `src/lib/content-api.ts`, so the REST view and the MCP tools cannot disagree. A slug is 1 to 120 letters,
+  digits, `_` or `-`; `q` and `tag` are 1 to 100 characters; anything else is a JSON 400. The index and six
+  list or document routes take no request input and export `GET` only; the four `[slug]` routes, `decisions`,
+  `search` and `github/stats` read the request or live data and carry the JSON 405 stubs and an `OPTIONS`.
+  `/api/v1/github/stats` is answered by the unversioned route's own handler.
+- **A version, stated in headers** (`src/lib/api-policy.ts` is the one source): every public response carries
+  `API-Version: 1`; a request may send `API-Version: 1`, and any other value is a JSON 400
+  (`invalid_request`) so a client never receives a contract it did not ask for. Adding a route, an optional
+  parameter or a response field happens within a version; a breaking change would ship as `/api/v2/` next to
+  the old one.
+- **A rate limit that is stated and reported** (`src/proxy.ts`, `src/lib/public-api-limit.ts`): 300 requests
+  per 60 seconds per client IP across the public read-only paths (the `/api/v1` routes, `/api/resume.json`,
+  `/api/github/stats`, the MCP endpoint, the `.md` twins and the discovery files `/llms.txt`,
+  `/llms-full.txt`, `/openapi.json`, `/feed.xml`, `/sitemap.xml`, `/robots.txt` and `/.well-known/api-catalog`).
+  Every counted response carries `RateLimit-Policy` and `RateLimit` (IETF draft-ietf-httpapi-ratelimit-headers) and the
+  earlier-draft names `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`; the 400 for a wrong
+  `API-Version`, the proxy's 405 and the OPTIONS 204 carry `API-Version` but no RateLimit fields. Beyond the budget the
+  answer is a JSON 429 (`rate_limited`) with `Retry-After`. OPTIONS is never counted. The counter is a fixed
+  window held in server memory (at most 10,000 tracked clients; expired entries are swept at most once per window, at the first
+  request after a window has passed since the previous sweep, not on a timer), so it is counted per server instance, and it
+  deliberately never touches Redis, so a crawler cannot spend the Upstash quota the chat cost guard needs. The
+  Upstash limiter for chat, voice and the error beacon (8 requests per 60 seconds) is unchanged. The limiter
+  has its own `clientIp`, the fourth copy, which `client-ip-consistency.test.ts` now lists.
+- **A deprecation mechanism**, unused today (`DEPRECATIONS` is empty): a deprecated surface will answer with
+  `Deprecation: @<unix>` (RFC 9745), `Sunset` (RFC 8594) and `Link: <successor>; rel="successor-version"`
+  (RFC 5829), and `givesEnoughNotice()` checks an entry against the promised notice of 180 days.
+- **An API catalog at `/.well-known/api-catalog`** (RFC 9727, `application/linkset+json`, `src/lib/api-catalog.ts`):
+  it lists `/api/v1` (service-desc `/openapi.json`, service-doc `/developers`, status `/api/v1`) and the MCP
+  endpoint (service-doc `/mcp`). The homepage `Link` header also carries `rel="api-catalog"`.
+- **Markdown twins for ten pages.** `/about`, `/articles`, `/contact`, `/decisions`, `/developers`, `/mcp`,
+  `/notes`, `/privacy`, `/projects` and `/work` answer `Accept: text/markdown` and have a `/<page>.md` URL
+  (`PAGE_TWINS` in `src/lib/page-twins.ts`; `next.config.ts` rewrites `/:page(...).md` to
+  `/api/md/pages/:page`). Each sends `Vary: Accept` and a `Link: </<page>.md>; rel="alternate";
+  type="text/markdown"`. The list pages are built from the data their pages read; contact, developers, mcp
+  and privacy are the page's own React elements converted to Markdown (`src/lib/element-markdown.ts`),
+  because `react-dom/server` is not supported where a route handler runs, and
+  `page-markdown.dom.test.tsx` renders the real pages and fails when any heading, paragraph, list item, table
+  cell, code block or link is missing from the twin. The articles and notes twins are the Markdown 404 while
+  those views have nothing to show (notes are off in a default build; production serves the `/notes` page itself, not its twin until this is released, see `docs/configuration.md`). `/resume`, `/search` and `/stats` stay HTML-only on
+  purpose, so `HTML_ONLY_PAGES` shrinks from 13 pages to 3. Table cells go through `escapeCellPipes` in `element-markdown.ts`, which adds a backslash only to a pipe preceded by an even run of backslashes (an odd run is already escaped; escaping every pipe blindly would split a cell that holds an escaped pipe); the change also clears a CodeQL `js/incomplete-sanitization` alert, and two tests in `element-markdown.test.tsx` pin both cases.
+- **Redirects from predictable addresses** (`next.config.ts`, 308): `/docs`, `/docs/api`, `/api-docs`,
+  `/api-reference` and `/developer` to `/developers`, `/sdk` to `/developers#sdk`, `/cli` to
+  `/developers#cli` and `/mcp-server` to `/mcp`. None is a route of the app and `/api/*` is not touched.
+- **`llms.txt` developer block.** A "Developer resources" section (every line starts "Anvilry ...": the
+  documentation, the OpenAPI specification, the `/api/v1` base URL, the API catalog, the MCP server,
+  authentication, versioning and deprecation, rate limits, errors, SDK and command-line use) and a "Pages"
+  list of the `.md` twins that exist.
+- **`/developers` sections** on authentication (none: no keys, no accounts), versioning, rate limits, SDK and
+  command-line use, with the ids `authentication`, `versioning`, `rate-limits`, `sdk` and `cli`; the page is
+  titled "Anvilry API documentation"; its response-header table, deprecation summary and curl recipes are built in `src/lib/developers-content.ts` from the policy and the OpenAPI document. It says plainly that
+  there is no official SDK and no published CLI package. `/mcp` is titled "Anvilry MCP server".
+- **An eighth error code**, `internal_error` (500), and `withJsonErrors(handler)` (`src/lib/api-error.ts`): an
+  uncaught exception in a wrapped handler (the seven dynamic `/api/v1` routes and `/api/md/pages/[page]`) is
+  answered with the shared JSON body instead of Next's empty 500, and only the error name is logged.
+- Tests: 383 more (1572 to 1955) across 18 more files (131 to 149), counted since v3.17.0, among them `v1-contract.test.ts`, which
+  validates the real response of every v1 route strictly against its OpenAPI schema
+  (`src/lib/json-schema-lite.ts`), and `public-api-paths.test.ts`, which fails when the proxy matcher and
+  `isPublicApiPath` disagree.
+
+### Changed
+- **The OpenAPI document types its errors and headers** and describes 29 operations (the 14 `/api/v1`
+  operations first, then the 15 older ones). Every operation except `/` carries inline the optional
+  `API-Version` header parameter, the version and `RateLimit` headers on each 2xx response, and typed error
+  responses that reference the `Error` schema (405 and 429 on every operation except `/`; 500 on the 14 `/api/v1`
+  operations; 400 on the four `[slug]` routes, `decisions`, `search` and the MCP endpoint; 404 on the `[slug]`
+  routes and the MCP endpoint; the older operations such as `/llms.txt`, `/feed.xml`
+  and `/api/resume.json` list only 405, 429 and `default` although they declare the `API-Version` parameter and
+  the proxy would answer a wrong version with a 400; the four `.md` slug twins document a Markdown 404 instead, not an `Error` body); `default` still references the shared error response, and the MCP
+  endpoint has `McpError`. The four document types have named schemas (`MarkdownDocument`,
+  `PlainTextDocument`, `XmlDocument`, `HtmlDocument`). `src/lib/openapi.ts` is now the types and the assembly
+  only; the operations moved to `openapi-v1.ts` and `openapi-legacy.ts` and the schemas and shared pieces to
+  `openapi-schemas.ts`, `openapi-v1-schemas.ts` and `openapi-parts.ts`.
+- **The proxy answers JSON 405 and OPTIONS for the public read-only paths.** A write method on one of them gets
+  the shared 405 with `Allow: GET, HEAD, OPTIONS`, and OPTIONS gets 204 with the same `Allow`, because a
+  prerendered file would otherwise answer a bare, empty 405. The MCP path keeps its own handlers. The proxy
+  matcher now also lists `/api/:path*`, the discovery files and the `.md` URLs, in addition to `/admin/:path*`
+  and the Markdown `Accept` entry.
+- **`/privacy`** gains a paragraph on the public API budget: the counter is kept in the memory of the server
+  instance that answers, under the IP address (not hashed), and is not written to Upstash or to any log; expired
+  counters are swept out of memory about once a minute, whenever the instance handles a request (never on a
+  timer, so an idle instance keeps them), and every counter disappears when the instance restarts. The
+  figures come from `privacy-facts.ts` (`publicApiRequests` 300, `publicApiWindowSeconds` 60), which
+  `privacy-facts.test.ts` pins to the policy and to the limiter (it also checks the limiter never touches
+  Redis). `lastUpdated` is "1 November 2026".
+- **Route counts:** 47 `route.ts` handlers (37 under `src/app/api`), were 31 (22); `page.tsx` pages are
+  unchanged at 19.
+
+- **The deploy smoke runs 30 checks, was 26** (`api-v1-index`, `api-v1-item-404`, `api-catalog` and `about-markdown` are new): `/api/v1` must report version `"1"` and carry `API-Version`, a well-formed `RateLimit-Policy` and a numeric `RateLimit-Remaining`; an unknown v1 item must answer a JSON `not_found` that carries `API-Version: 1`; `/.well-known/api-catalog` must be `application/linkset+json` with a `service-desc` link; and `/about.md` must be Markdown that names Sairam Ugge. All four are GET-only, so the rule that the smoke never calls a paid or privileged path is unchanged. A `runSmoke pins the public API contract` describe takes `deploy-smoke.test.ts` from 36 to 42 tests.
+
+### Fixed
+- **`SECURITY.md` names the address the site publishes** (#355). It told reporters to write to an inbox the site
+  never mentions; it now names `profile.email`, and `src/lib/security-contact.test.ts` (one of the 18 new test
+  files above) fails if the file names any other address. `/privacy` also stops mixing voices: "The owner
+  reads them" became "I read them", and the note on attached images now names the 600-character cut from
+  `privacy-facts` instead of "the characters cut".
+- **The Vercel build no longer fails on tests that assume notes are dark.** `pnpm run build` runs `vitest run`
+  in the Vercel build environment, which carries `NEXT_PUBLIC_NOTES_ENABLED=true` (observed 2026-11-01; production serves
+  `/notes` and `/articles`; `docs/configuration.md` has the details), while five new tests assumed the default build, where notes are dark; GitHub CI
+  has no such variable, so only the Vercel preview build failed. The tests now pin the flag with
+  `vi.resetModules()`, `vi.stubEnv()` and a dynamic import (the `notes-dark.test.ts` pattern) and pass with the
+  flag unset, `true` or `false`: the new `src/app/api/v1/v1-notes.test.ts` (5 tests, 2 with notes off and 3
+  on), flag-pinned cases in `content-api.test.ts`, `md/pages/[page]/route.test.ts` and `llms-txt.test.ts`, and
+  `v1-behaviour.test.ts` loses its two flag-dependent tests.
+
+### Not done (needs the owner)
+- **A published CLI.** It needs npm credentials and a package name. `/developers` says there is none and shows
+  curl recipes against `/api/v1`.
+- **CORS headers.** None are added.
+- **The defaults.** 300 requests per 60 seconds and 180 days' notice are defaults still awaiting the owner's
+  decision. The 180 days are one line in `src/lib/api-policy.ts`; the 300 / 60 s are also copied into
+  `PRIVACY_FACTS` (`src/lib/privacy-facts.ts`, which `privacy-facts.test.ts` pins to the policy) and
+  hard-coded in `src/proxy.test.ts`.
+- **The old address in `CODE_OF_CONDUCT.md` and `.github/CONTRIBUTING.md`.** Both still name the address
+  that `SECURITY.md` no longer uses; left for the owner to decide.
+- **A global quota.** The budget is counted per server instance, so the numbers describe the instance that
+  answered, and the published policy says so.
+
 ## [3.17.0] — 2026-10-31
 
 The site becomes readable by software as well as by people. A client that sends `Accept: text/markdown`

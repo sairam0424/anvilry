@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { allArticles, allProjects, allWork } from "@/lib/content";
 import { API_ERROR_CODES } from "@/lib/api-error";
+import { API_VERSION, API_VERSION_HEADER, RATE_LIMIT_POLICY } from "@/lib/api-policy";
 import { buildResumeJson } from "@/lib/resume-json";
 import { SITE_URL } from "@/lib/site-url";
 import { buildOpenApiDocument, listOperations, type OpenApiResponse } from "./openapi";
@@ -38,6 +39,8 @@ function routeFileFor(path: string): string[] {
   if (path === "/index.md") return [app("api/md/home")];
   const md = path.match(/^\/(projects|work|articles|notes)\/\{slug\}\.md$/);
   if (md) return [app(`${md[1]}/[slug].md`)];
+  // Versioned JSON routes: /api/v1/work/{slug} lives in src/app/api/v1/work/[slug].
+  if (path.startsWith("/api/v1")) return [app(path.slice(1).replace("{slug}", "[slug]"))];
   if (path === "/api/mcp/mcp") return [app("api/mcp/[transport]")];
   if (path === "/sitemap.xml") return [join(process.cwd(), "src/app/sitemap.ts")];
   if (path === "/robots.txt") return [join(process.cwd(), "src/app/robots.ts")];
@@ -172,5 +175,81 @@ describe("GithubStats schema", () => {
     const body = (await (await GET()).json()) as Json;
     const schema = doc.components.schemas.GithubStats as Json;
     expect(Object.keys(schema.properties as Json).sort()).toEqual(Object.keys(body).sort());
+  });
+});
+
+describe("the public API contract on every operation", () => {
+  const proxied = operations.filter((o) => o.path !== "/"); // the homepage is a page, not stamped by the proxy
+
+  const refsError = (node: unknown): boolean => JSON.stringify(node).includes('"#/components/schemas/Error"');
+
+  it("describes the versioning policy and the enforced rate limit in info.description", () => {
+    const text = doc.info.description;
+    expect(text).toContain(`version ${API_VERSION}`);
+    expect(text).toContain(API_VERSION_HEADER);
+    expect(text).toMatch(/Deprecation/);
+    expect(text).toMatch(/Sunset/);
+    expect(text).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+    expect(text).toContain("Retry-After");
+  });
+
+  it("declares the optional API-Version header, restricted to the one version, on every operation", () => {
+    for (const { path, method, operation } of proxied) {
+      const header = (operation.parameters ?? []).find((p) => p.in === "header" && p.name === API_VERSION_HEADER);
+      const where = `${method.toUpperCase()} ${path}`;
+      expect(header, where).toBeDefined();
+      expect(header?.required, where).toBe(false);
+      expect(header?.schema.enum, where).toEqual([API_VERSION]);
+    }
+  });
+
+  it("reports the version and the rate-limit state on every success response", () => {
+    for (const { path, method, operation } of proxied) {
+      for (const [status, response] of Object.entries(operation.responses).filter(([s]) => /^2/.test(s))) {
+        const names = Object.keys((response as OpenApiResponse).headers ?? {});
+        for (const name of [API_VERSION_HEADER, "RateLimit", "RateLimit-Policy", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"]) {
+          expect(names, `${method.toUpperCase()} ${path} ${status}`).toContain(name);
+        }
+      }
+    }
+  });
+
+  it("lists 429 with Retry-After and 405 on every operation, each typed with the Error schema", () => {
+    for (const { path, method, operation } of proxied) {
+      const where = `${method.toUpperCase()} ${path}`;
+      for (const status of ["405", "429"]) {
+        const response = operation.responses[status] as OpenApiResponse | undefined;
+        expect(response, `${where} ${status}`).toBeDefined();
+        expect(refsError(response), `${where} ${status}`).toBe(true);
+      }
+      const limited = operation.responses["429"] as OpenApiResponse;
+      expect(Object.keys(limited.headers ?? {}), where).toContain("Retry-After");
+    }
+  });
+
+  it("types every other 4xx and 5xx response too: the shared Error schema, or a named document schema", () => {
+    for (const { path, method, operation } of proxied) {
+      for (const [status, response] of Object.entries(operation.responses)) {
+        if (!/^[45]/.test(status)) continue;
+        const where = `${method.toUpperCase()} ${path} ${status}`;
+        const inline = response as OpenApiResponse;
+        expect(Object.keys(inline.content ?? {}).length, where).toBeGreaterThan(0);
+        const typed = refsError(inline) || JSON.stringify(inline).includes("#/components/schemas/MarkdownDocument");
+        expect(typed, where).toBe(true);
+      }
+    }
+  });
+
+  it("types every non-JSON body with a named document schema, not an anonymous string", () => {
+    for (const { path, method, operation } of operations) {
+      for (const [status, response] of Object.entries(operation.responses)) {
+        if (status === "default") continue;
+        for (const [media, body] of Object.entries((response as OpenApiResponse).content ?? {})) {
+          if (media === "application/json") continue;
+          const where = `${method.toUpperCase()} ${path} ${status} ${media}`;
+          expect(JSON.stringify(body.schema), where).not.toBe('{"type":"string"}');
+        }
+      }
+    }
   });
 });

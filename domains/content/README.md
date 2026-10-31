@@ -30,7 +30,7 @@ The remaining hiring-manager-depth gap is `diagram` / `diagramAlt`, which no Wor
 - Content item counts: `work`, `projects`, `notes`, `articles` (via `pnpm content`)
 - Bijection test: `game-model.test.ts` pass/fail
 - Fields completeness: Work items with `diagram` + `diagramAlt` filled (0 of 5 today); `constraints` / `tradeoffs` are complete
-- `/api/cron/content-audit` (weekly): articles and notes older than 18 months, surfaced on the dashboard's Stale content tile. Notes ship dark (`NEXT_PUBLIC_NOTES_ENABLED`), so while they are hidden the audit cannot flag a stale note (`allNotes` is empty)
+- `/api/cron/content-audit` (weekly): articles and notes older than 18 months, surfaced on the dashboard's Stale content tile. Notes ship dark in a default build (`NEXT_PUBLIC_NOTES_ENABLED`; production serves notes, see `docs/configuration.md`), so in a build where they are hidden the audit cannot flag a stale note (`allNotes` is empty)
 
 ## Timeline
 2026-06-24 | bootstrap — domain charter created, backlog seeded from known gaps

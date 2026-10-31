@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { RATE_LIMIT_POLICY } from "./api-policy";
 import { PRIVACY_FACTS } from "./privacy-facts";
 
 /**
@@ -39,6 +40,15 @@ describe("PRIVACY_FACTS match the enforcing code", () => {
     expect(source("src/lib/rate-limit.ts")).toContain(
       `WINDOW = "${PRIVACY_FACTS.rateLimitWindowSeconds} s"`,
     );
+  });
+
+  it("the public API limit printed on the page is the one the proxy enforces, held in memory only", () => {
+    expect(PRIVACY_FACTS.publicApiRequests).toBe(RATE_LIMIT_POLICY.requests);
+    expect(PRIVACY_FACTS.publicApiWindowSeconds).toBe(RATE_LIMIT_POLICY.windowSeconds);
+    // The page promises the counter never leaves server memory: the limiter must not touch Redis.
+    const code = source("src/lib/public-api-limit.ts").replace(/\/\*[\s\S]*?\*\/|(^|[^:])\/\/.*$/gm, "$1");
+    expect(code).toContain("new Map<string, Bucket>()");
+    expect(code).not.toMatch(/upstash|redis/i);
   });
 
   it("error reports are trimmed to 7 days and the recent list to 50 entries", () => {

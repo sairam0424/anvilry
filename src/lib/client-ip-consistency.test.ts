@@ -27,6 +27,7 @@ const COPIES = [
   "src/lib/rate-limit.ts",
   "src/lib/telemetry/with-trace.ts",
   "src/app/api/visit/route.ts",
+  "src/lib/public-api-limit.ts",
 ];
 
 /** Every file under src/ that defines its own `clientIp`, discovered rather than assumed. */

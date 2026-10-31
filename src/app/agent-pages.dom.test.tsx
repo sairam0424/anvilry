@@ -15,14 +15,14 @@ const MIN_TRUST_PAGE_CHARS = 500;
 function render(node: React.ReactElement): { html: string; text: string } {
   // The real layout mounts TooltipProvider (providers.tsx); CopyButton needs it.
   const html = renderToStaticMarkup(<TooltipProvider>{node}</TooltipProvider>);
-  const text = html
-    .replace(/<script[\s\S]*?<\/script>/g, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&#x27;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+  // Parse the markup instead of stripping it with regular expressions: a parser decodes entities
+  // once and drops script and style bodies, which hand-written replaces get subtly wrong.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style").forEach((el) => el.remove());
+  const pieces: string[] = [];
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) pieces.push(n.textContent ?? "");
+  const text = pieces.join(" ").replace(/\s+/g, " ").trim();
   return { html, text };
 }
 

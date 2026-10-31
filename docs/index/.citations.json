@@ -1301,6 +1301,13 @@
       ],
       "preview": "22"
     },
+    "ARCHITECTURE.md:103": {
+      "fp": "ed771fd6ccde",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "- **Feature flags.** `NEXT_PUBLIC_*` env vars gate experimental features (GRAPH_PHYSICS, MULTIMODAL_"
+    },
     "ARCHITECTURE.md:17": {
       "fp": "976a44baa69c",
       "citedBy": [
@@ -1372,34 +1379,41 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "978c7d766c87",
+      "fp": "bd6aaf34bd04",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.16.1 (`package.js"
     },
-    "ARCHITECTURE.md:99": {
-      "fp": "ed771fd6ccde",
+    "CHANGELOG.md:1011": {
+      "fp": "df5cd9b282c9",
       "citedBy": [
-        "11-config-build-ci-infra.md"
+        "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "- **Feature flags.** `NEXT_PUBLIC_*` env vars gate experimental features (GRAPH_PHYSICS, MULTIMODAL_"
+      "preview": "- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,"
     },
-    "CHANGELOG.md:1028": {
+    "CHANGELOG.md:1013": {
+      "fp": "132dd7e8a2d4",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "uniformly: `/projects` uses `\"use cache\"` + `cacheLife(\"hours\")` because it awaits a live"
+    },
+    "CHANGELOG.md:1120": {
       "fp": "f2d3f71a827e",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **`/llms-full.txt`** — full chatbot corpus (~6KB) as `text/plain` with"
     },
-    "CHANGELOG.md:1049": {
+    "CHANGELOG.md:1141": {
       "fp": "6c9694a6dced",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **2 new MCP tools** — `list_all_content` (all work/project/article/note items) and"
     },
-    "CHANGELOG.md:1050": {
+    "CHANGELOG.md:1142": {
       "fp": "2dee0866a4a4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1407,21 +1421,28 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
-    "CHANGELOG.md:1171": {
+    "CHANGELOG.md:1263": {
       "fp": "5bd4b1b4d54d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- `streamWithFallback` docblock claimed \"Opus 4.6 primary\" while the `BEDROCK_CHAIN` array"
     },
-    "CHANGELOG.md:1173": {
+    "CHANGELOG.md:1265": {
       "fp": "b1d0b68e19dc",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "ambiguous about the expected primary model."
     },
-    "CHANGELOG.md:1453": {
+    "CHANGELOG.md:152": {
+      "fp": "923d26213ba5",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "alert script."
+    },
+    "CHANGELOG.md:1545": {
       "fp": "5ca93d9cf04d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1429,7 +1450,7 @@
       ],
       "preview": "[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0"
     },
-    "CHANGELOG.md:1461": {
+    "CHANGELOG.md:1553": {
       "fp": "07652699e8f2",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1437,14 +1458,7 @@
       ],
       "preview": "[1.0.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.0.0"
     },
-    "CHANGELOG.md:60": {
-      "fp": "923d26213ba5",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "alert script."
-    },
-    "CHANGELOG.md:601": {
+    "CHANGELOG.md:693": {
       "fp": "87a4c32b93f0",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1452,7 +1466,7 @@
       ],
       "preview": "## [3.6.0] — 2026-08-21"
     },
-    "CHANGELOG.md:605": {
+    "CHANGELOG.md:697": {
       "fp": "afe76b8d59a6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1460,49 +1474,56 @@
       ],
       "preview": "### Fixed"
     },
-    "CHANGELOG.md:622": {
+    "CHANGELOG.md:7": {
+      "fp": "1da42e1a6a94",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "## [Unreleased]"
+    },
+    "CHANGELOG.md:714": {
       "fp": "a2656816da7a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "**Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it instal"
     },
-    "CHANGELOG.md:645": {
+    "CHANGELOG.md:737": {
       "fp": "f7f3216c3072",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "not a constraint), so one omission would fall through `:59` and render a raw `devto`."
     },
-    "CHANGELOG.md:647": {
+    "CHANGELOG.md:739": {
       "fp": "2e16922cfc13",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "### Added"
     },
-    "CHANGELOG.md:657": {
+    "CHANGELOG.md:749": {
       "fp": "78c2d4537bb4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
     },
-    "CHANGELOG.md:665": {
+    "CHANGELOG.md:757": {
       "fp": "1c8fa42a05e3",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "correctly fails on one and names `--webpack` as the cause."
     },
-    "CHANGELOG.md:679": {
+    "CHANGELOG.md:771": {
       "fp": "5095a19adb55",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
     },
-    "CHANGELOG.md:691": {
+    "CHANGELOG.md:783": {
       "fp": "0c595a592a06",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1510,35 +1531,28 @@
       ],
       "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
     },
-    "CHANGELOG.md:693": {
+    "CHANGELOG.md:785": {
       "fp": "f8dc5506feac",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.5.0] — 2026-08-21"
     },
-    "CHANGELOG.md:7": {
-      "fp": "d6fb24fde00e",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "## [3.16.1] — 2026-10-22"
-    },
-    "CHANGELOG.md:707": {
+    "CHANGELOG.md:799": {
       "fp": "b10847c33a09",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the"
     },
-    "CHANGELOG.md:710": {
+    "CHANGELOG.md:802": {
       "fp": "a876bd2d0d1b",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "pointing them at nothing. **Public artifact change.**"
     },
-    "CHANGELOG.md:714": {
+    "CHANGELOG.md:806": {
       "fp": "907db8726a39",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1546,7 +1560,7 @@
       ],
       "preview": "- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`"
     },
-    "CHANGELOG.md:716": {
+    "CHANGELOG.md:808": {
       "fp": "c967c6044c37",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1554,35 +1568,35 @@
       ],
       "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
     },
-    "CHANGELOG.md:739": {
+    "CHANGELOG.md:831": {
       "fp": "b87d6402a897",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the"
     },
-    "CHANGELOG.md:744": {
+    "CHANGELOG.md:836": {
       "fp": "6904a0e277ed",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "is a latent fallback inconsistency, not a live bypass."
     },
-    "CHANGELOG.md:754": {
+    "CHANGELOG.md:846": {
       "fp": "e87c24791291",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- Corrected in-code comments that misdescribed their own code, including a banner claiming a test"
     },
-    "CHANGELOG.md:756": {
+    "CHANGELOG.md:848": {
       "fp": "c414e36c7415",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`@react-three/rapier` described as loaded when it is imported nowhere."
     },
-    "CHANGELOG.md:772": {
+    "CHANGELOG.md:864": {
       "fp": "0926a918ce91",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1592,7 +1606,7 @@
       ],
       "preview": "- **Node version pin:** `.nvmrc` (22) and `engines.node` (`>=22 <23`), matching the CI pin. Without"
     },
-    "CHANGELOG.md:775": {
+    "CHANGELOG.md:867": {
       "fp": "d5609bbaa648",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1601,7 +1615,7 @@
       ],
       "preview": "collides with vitest's happy-dom global injection."
     },
-    "CHANGELOG.md:778": {
+    "CHANGELOG.md:870": {
       "fp": "9b69baeb014e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1611,14 +1625,14 @@
       ],
       "preview": "- **pnpm settings moved to `pnpm-workspace.yaml`.** pnpm v11 no longer reads the `pnpm` field of"
     },
-    "CHANGELOG.md:782": {
+    "CHANGELOG.md:874": {
       "fp": "9199ac98b998",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "release, signalled only by a warning line that reads like boilerplate."
     },
-    "CHANGELOG.md:784": {
+    "CHANGELOG.md:876": {
       "fp": "f8f7365f53b0",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1626,7 +1640,7 @@
       ],
       "preview": "Both pnpm 10 and 11 read the new location. Verified by regenerating the lockfile with each"
     },
-    "CHANGELOG.md:788": {
+    "CHANGELOG.md:880": {
       "fp": "ce9c976af644",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1634,7 +1648,7 @@
       ],
       "preview": "0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9."
     },
-    "CHANGELOG.md:790": {
+    "CHANGELOG.md:882": {
       "fp": "742e82b0518b",
       "citedBy": [
         "07-components-3d.md",
@@ -1642,7 +1656,7 @@
       ],
       "preview": "### Removed"
     },
-    "CHANGELOG.md:791": {
+    "CHANGELOG.md:883": {
       "fp": "b8c3c33d4077",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1651,7 +1665,7 @@
       ],
       "preview": "- `@react-three/rapier` and `@react-three/offscreen` — declared dependencies with **zero imports**"
     },
-    "CHANGELOG.md:792": {
+    "CHANGELOG.md:884": {
       "fp": "8e6657d9183e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1659,7 +1673,7 @@
       ],
       "preview": "anywhere in `src/`. Deferred until the overrides migration made lockfile regeneration safe."
     },
-    "CHANGELOG.md:793": {
+    "CHANGELOG.md:885": {
       "fp": "3a0b2a614fe4",
       "citedBy": [
         "07-components-3d.md",
@@ -1667,7 +1681,7 @@
       ],
       "preview": "Measured impact: 3 packages removed, 0 added, 1 version change"
     },
-    "CHANGELOG.md:795": {
+    "CHANGELOG.md:887": {
       "fp": "d9ea6ad36d1f",
       "citedBy": [
         "07-components-3d.md",
@@ -1678,105 +1692,105 @@
       ],
       "preview": "was the only remaining consumer)."
     },
-    "CHANGELOG.md:797": {
+    "CHANGELOG.md:889": {
       "fp": "8b7a5c9e23e9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.4.2] — 2026-08-15"
     },
-    "CHANGELOG.md:799": {
+    "CHANGELOG.md:891": {
       "fp": "559cc1eadd9a",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them"
     },
-    "CHANGELOG.md:800": {
+    "CHANGELOG.md:892": {
       "fp": "0aa70116c274",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "high severity. Also wires E2E into CI and makes the Playwright suite self-managing."
     },
-    "CHANGELOG.md:802": {
+    "CHANGELOG.md:894": {
       "fp": "533a2492391b",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "Until this release, production served the vulnerable versions — the fixes had been merged to"
     },
-    "CHANGELOG.md:803": {
+    "CHANGELOG.md:895": {
       "fp": "2dd0f67dda39",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "`develop` (Preview only) but not promoted."
     },
-    "CHANGELOG.md:805": {
+    "CHANGELOG.md:897": {
       "fp": "a4ff72c5e89e",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "### Security"
     },
-    "CHANGELOG.md:806": {
+    "CHANGELOG.md:898": {
       "fp": "e71e1c282194",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`pdfjs-dist` 6.0.227 -> 6.2.108** (high) — arbitrary JavaScript execution upon opening a"
     },
-    "CHANGELOG.md:808": {
+    "CHANGELOG.md:900": {
       "fp": "1ebceb043643",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "user-selected PDFs client-side."
     },
-    "CHANGELOG.md:809": {
+    "CHANGELOG.md:901": {
       "fp": "84f8bcd6d3bc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`ip-address` 10.2.0 -> 10.5.0** (high) — `Address4` decodes leading-zero octets as decimal"
     },
-    "CHANGELOG.md:811": {
+    "CHANGELOG.md:903": {
       "fp": "9957c7303189",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`mcp-handler` -> `@modelcontextprotocol/sdk` -> `express-rate-limit`; server-side only."
     },
-    "CHANGELOG.md:812": {
+    "CHANGELOG.md:904": {
       "fp": "6cef5f81b648",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`hono` 4.12.25 -> 4.13.2** (medium x3, low x1) — `memo()` retained SSR output across requests"
     },
-    "CHANGELOG.md:814": {
+    "CHANGELOG.md:906": {
       "fp": "9e87e4da5492",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "middleware, Proxy Helper header leak."
     },
-    "CHANGELOG.md:815": {
+    "CHANGELOG.md:907": {
       "fp": "4863beb796a6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`js-yaml` 4.2.0 -> 4.3.1** (high) — quadratic CPU consumption in `!!omap` resolution."
     },
-    "CHANGELOG.md:816": {
+    "CHANGELOG.md:908": {
       "fp": "1b691181626d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`fast-uri` 3.1.2 -> 3.1.5** (high) — host confusion via backslash authority introducer."
     },
-    "CHANGELOG.md:817": {
+    "CHANGELOG.md:909": {
       "fp": "2495da8e6183",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1785,7 +1799,7 @@
       ],
       "preview": "- **`brace-expansion` -> 1.1.18 and 5.0.9** (high) — two separate major lines, each patched within"
     },
-    "CHANGELOG.md:819": {
+    "CHANGELOG.md:911": {
       "fp": "5e8fcd724c24",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1794,49 +1808,49 @@
       ],
       "preview": "onto 5.x and broken the eslint chain."
     },
-    "CHANGELOG.md:820": {
+    "CHANGELOG.md:912": {
       "fp": "d3c528f5bdfa",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`sharp` 0.34.5 -> 0.35.3** (high) — only velite's build-time instance was affected; Next 16.3.0"
     },
-    "CHANGELOG.md:821": {
+    "CHANGELOG.md:913": {
       "fp": "6ab0f5a0e9c7",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "already carried the patched 0.35.3."
     },
-    "CHANGELOG.md:822": {
+    "CHANGELOG.md:914": {
       "fp": "4582bda8000e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`@hono/node-server` -> 1.19.17** (medium) — `serve-static` path traversal via `%5C` on Windows."
     },
-    "CHANGELOG.md:823": {
+    "CHANGELOG.md:915": {
       "fp": "96a9fda4290b",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`postcss` -> 8.5.23+** (medium/high) — attacker-controlled `sourceMappingURL` read arbitrary"
     },
-    "CHANGELOG.md:824": {
+    "CHANGELOG.md:916": {
       "fp": "85aef74adb7e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`.map` files when `from` is unset."
     },
-    "CHANGELOG.md:825": {
+    "CHANGELOG.md:917": {
       "fp": "9b6a6fd9c8da",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`body-parser` 2.2.2 -> 2.3.0** (low)."
     },
-    "CHANGELOG.md:827": {
+    "CHANGELOG.md:919": {
       "fp": "8e7bfd4cc727",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1845,7 +1859,7 @@
       ],
       "preview": "Six were transitive and lockfile-pinned, so `pnpm update` could not move them —"
     },
-    "CHANGELOG.md:829": {
+    "CHANGELOG.md:921": {
       "fp": "96a5b77bacc5",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1854,28 +1868,28 @@
       ],
       "preview": "`security_update_not_possible`. Fixed via `pnpm.overrides`."
     },
-    "CHANGELOG.md:832": {
+    "CHANGELOG.md:924": {
       "fp": "6fadeed9bf1b",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **E2E is now a CI gate.** `pnpm e2e` was referenced by no workflow, so the suite had rotted"
     },
-    "CHANGELOG.md:836": {
+    "CHANGELOG.md:928": {
       "fp": "12f193f55671",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "because the default `GITHUB_TOKEN` cannot read the Dependabot alerts API."
     },
-    "CHANGELOG.md:837": {
+    "CHANGELOG.md:929": {
       "fp": "8f99540d284a",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Playwright `webServer`** — the suite now starts and health-checks its own server. Previously a"
     },
-    "CHANGELOG.md:846": {
+    "CHANGELOG.md:938": {
       "fp": "b3318f770342",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1885,7 +1899,7 @@
       ],
       "preview": "- Dependabot ignores now live on `main`. Dependabot reads `dependabot.yml` from the DEFAULT BRANCH"
     },
-    "CHANGELOG.md:847": {
+    "CHANGELOG.md:939": {
       "fp": "382750558133",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1896,110 +1910,110 @@
       ],
       "preview": "only, so the `typescript`/`eslint` semver-major ignores added on `develop` had been inert."
     },
-    "CHANGELOG.md:857": {
+    "CHANGELOG.md:949": {
       "fp": "920375370fab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `react` / `react-dom` 19.2.7 -> **19.2.8** (patch)"
     },
-    "CHANGELOG.md:867": {
+    "CHANGELOG.md:959": {
       "fp": "783808ceb2d5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `@types/three` ^0.184.1 -> **^0.185.4**, finally tracking runtime `three@0.185.1`. Caret"
     },
-    "CHANGELOG.md:869": {
+    "CHANGELOG.md:961": {
       "fp": "abc4b971d2ca",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "follow the runtime bump on its own."
     },
-    "CHANGELOG.md:870": {
+    "CHANGELOG.md:962": {
       "fp": "f8379cf83c34",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- Dev tooling: `velite` ^0.3.1 -> ^0.4.0, `@types/node` ^20 -> ^26, `vitest` -> ^4.1.10,"
     },
-    "CHANGELOG.md:885": {
+    "CHANGELOG.md:97": {
+      "fp": "109bc8745ff3",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "`---` on a line of its own (`stripFrontmatter` in `src/lib/markdown-content.ts`)."
+    },
+    "CHANGELOG.md:977": {
       "fp": "8e54b98b74ac",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`typescript` major (7.x)** — `@typescript-eslint/typescript-estree` 8.61.0 crashes on load"
     },
-    "CHANGELOG.md:889": {
+    "CHANGELOG.md:981": {
       "fp": "e7b06f5096ab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "toolchain fails."
     },
-    "CHANGELOG.md:890": {
+    "CHANGELOG.md:982": {
       "fp": "e4e610a95c54",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`eslint` major (10.x)** — separately blocked upstream (`eslint-plugin-react` calls APIs"
     },
-    "CHANGELOG.md:893": {
+    "CHANGELOG.md:985": {
       "fp": "1bc184f28e2a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "patches still flow."
     },
-    "CHANGELOG.md:919": {
-      "fp": "df5cd9b282c9",
+    "CHANGELOG.md:99": {
+      "fp": "d6fb24fde00e",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,"
+      "preview": "## [3.16.1] — 2026-10-22"
     },
-    "CHANGELOG.md:921": {
-      "fp": "132dd7e8a2d4",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "uniformly: `/projects` uses `\"use cache\"` + `cacheLife(\"hours\")` because it awaits a live"
-    },
-    "CLAUDE.md:245": {
+    "CLAUDE.md:254": {
       "fp": "826a4efde0f6",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
-    "CLAUDE.md:255": {
+    "CLAUDE.md:264": {
       "fp": "69784a891e97",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "| `get_resume_variant` | The canonical résumé PDF URL (`master`) |"
     },
-    "CLAUDE.md:345": {
-      "fp": "15dadb9996db",
+    "CLAUDE.md:373": {
+      "fp": "80b708b421cf",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools) |"
+      "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools); every transport response"
     },
-    "CLAUDE.md:397": {
+    "CLAUDE.md:425": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:399": {
-      "fp": "9b72df9920f2",
+    "CLAUDE.md:427": {
+      "fp": "ccd2f0e06f64",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **24"
+      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **33"
     },
     "content/work/aava-code.mdx:31": {
       "fp": "903a8da3f92d",
@@ -2023,7 +2037,7 @@
       "preview": "table ever disagrees with it."
     },
     "DEPLOY.md:5": {
-      "fp": "d40e737c2ad8",
+      "fp": "14090a1eba05",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -2051,7 +2065,7 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "e5cae7d40283",
+      "fp": "e455c88077f3",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -2148,12 +2162,12 @@
       ],
       "preview": "**Also note:** the per-route `.md` endpoints are *not* covered by Google's \"ignores them\" assurance "
     },
-    "domains/seo/README.md:47": {
-      "fp": "a760cb8cd7f8",
+    "domains/seo/README.md:50": {
+      "fp": "9df9fc09ac5a",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "`/work/[slug].md` vs `/work/[slug]` is **unresolved**, not answered. Worth a canonical check."
+      "preview": "and a successful twin sends no `X-Robots-Tag` (only the Markdown 404 sends `noindex`)."
     },
     "e2e/resume.spec.ts:1": {
       "fp": "0e25836e4062",
@@ -2562,14 +2576,28 @@
       ],
       "preview": "// For `build`, content is generated by the `velite` step in the build script"
     },
-    "next.config.ts:103": {
+    "next.config.ts:100": {
+      "fp": "3dfa5976acf7",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "{ key: \"Cross-Origin-Resource-Policy\", value: \"same-origin\" },"
+    },
+    "next.config.ts:101": {
+      "fp": "408a295d06ce",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "// Voice requests the mic — scope it to same-origin and deny camera/geo/etc."
+    },
+    "next.config.ts:105": {
       "fp": "e52a1813c460",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "},"
     },
-    "next.config.ts:104": {
+    "next.config.ts:106": {
       "fp": "dc5ece7579d7",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -2577,14 +2605,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// ENFORCED. Shipped Report-Only in v1.4.0; a live Playwright sweep across all four"
-    },
-    "next.config.ts:108": {
-      "fp": "6cad3344b5f8",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// confirmed every browser-loadable resource is covered. The policy string is"
     },
     "next.config.ts:11": {
       "fp": "fbff7e3b4edf",
@@ -2595,14 +2615,22 @@
       ],
       "preview": "// (running it here races webpack and can wipe .velite mid-compile)."
     },
-    "next.config.ts:111": {
+    "next.config.ts:110": {
+      "fp": "6cad3344b5f8",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// confirmed every browser-loadable resource is covered. The policy string is"
+    },
+    "next.config.ts:113": {
       "fp": "cc8902b13065",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "// is retained (it becomes meaningful once enforced). `'unsafe-inline'` on script/"
     },
-    "next.config.ts:113": {
+    "next.config.ts:115": {
       "fp": "2e6773175cad",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -2610,7 +2638,7 @@
       ],
       "preview": "// runtime style attributes, which nonces can't cover) — accepted on an auth-less site."
     },
-    "next.config.ts:114": {
+    "next.config.ts:116": {
       "fp": "19718af0759f",
       "citedBy": [
         "08-components-site-shell-ui.md",
@@ -2621,7 +2649,7 @@
       ],
       "preview": "{ key: \"Content-Security-Policy\", value: csp },"
     },
-    "next.config.ts:115": {
+    "next.config.ts:117": {
       "fp": "358ba3f22237",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -2629,15 +2657,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "];"
-    },
-    "next.config.ts:119": {
-      "fp": "94475dacda52",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "turbopack: { root: __dirname },"
     },
     "next.config.ts:12": {
       "fp": "70b1c14e8735",
@@ -2652,6 +2671,15 @@
       "preview": "const isDev = process.argv.includes(\"dev\");"
     },
     "next.config.ts:121": {
+      "fp": "94475dacda52",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "turbopack: { root: __dirname },"
+    },
+    "next.config.ts:123": {
       "fp": "fae6f684091b",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -2659,14 +2687,14 @@
       ],
       "preview": "// NEXT_PUBLIC_BUILD_YEAR exists because the footer copyright year must be a STABLE value:"
     },
-    "next.config.ts:126": {
+    "next.config.ts:128": {
       "fp": "033426afb84a",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "// still refreshes on every deploy, so it never goes stale in practice."
     },
-    "next.config.ts:127": {
+    "next.config.ts:129": {
       "fp": "f9445b65d6f9",
       "citedBy": [
         "08-components-site-shell-ui.md",
@@ -2688,7 +2716,7 @@
       ],
       "preview": "if (isDev && !process.env.VELITE_STARTED) {"
     },
-    "next.config.ts:134": {
+    "next.config.ts:136": {
       "fp": "000a153a2bae",
       "citedBy": [
         "13-dependencies-and-versions.md"
@@ -2704,21 +2732,21 @@
       ],
       "preview": "process.env.VELITE_STARTED = \"1\";"
     },
-    "next.config.ts:145": {
+    "next.config.ts:147": {
       "fp": "e47e7ca4b88d",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "// codebase is an unrelated local skeleton component (ui/skeleton.tsx:102 SkeletonViewTransition)."
     },
-    "next.config.ts:146": {
+    "next.config.ts:148": {
       "fp": "baa6669e186a",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// Tree-shake icon/animation imports at module level — reduces first-load JS."
     },
-    "next.config.ts:147": {
+    "next.config.ts:149": {
       "fp": "96ff89f1f54a",
       "citedBy": [
         "07-components-3d.md",
@@ -2727,13 +2755,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// NOTE: three, @react-three/fiber, @react-three/drei are intentionally excluded."
-    },
-    "next.config.ts:149": {
-      "fp": "7db6b0882b3a",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "// the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit"
     },
     "next.config.ts:15": {
       "fp": "df10d0a277e9",
@@ -2744,13 +2765,20 @@
       "preview": "import(\"velite\").then(({ build }) => build({ watch: true, clean: false }));"
     },
     "next.config.ts:151": {
+      "fp": "7db6b0882b3a",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "// the R3F twin-chunk in Turbopack; the Option B barrel (src/lib/r3f.ts, commit"
+    },
+    "next.config.ts:153": {
       "fp": "fd682698fd24",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// would re-introduce the disproven optimization against the live barrel."
     },
-    "next.config.ts:153": {
+    "next.config.ts:155": {
       "fp": "5bb64e6ed6c9",
       "citedBy": [
         "07-components-3d.md",
@@ -2773,21 +2801,21 @@
       ],
       "preview": "}"
     },
-    "next.config.ts:160": {
+    "next.config.ts:162": {
       "fp": "1778e12340fa",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Confirmed by symbol count, not just chunk count: the three.js core symbol"
     },
-    "next.config.ts:162": {
+    "next.config.ts:164": {
       "fp": "754de2565bb4",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// 876 KB chunk). Two chunks still *reference* react-three, but only one carries the core."
     },
-    "next.config.ts:164": {
+    "next.config.ts:166": {
       "fp": "8224c40a98aa",
       "citedBy": [
         "07-components-3d.md",
@@ -2798,7 +2826,7 @@
       ],
       "preview": "// 16.3.0 build."
     },
-    "next.config.ts:166": {
+    "next.config.ts:168": {
       "fp": "1d4518d8df25",
       "citedBy": [
         "07-components-3d.md",
@@ -2806,14 +2834,14 @@
       ],
       "preview": "// CONSEQUENCE: do NOT adopt `experimental.turbopackChunking` / `turbopackSharedRuntime`"
     },
-    "next.config.ts:168": {
+    "next.config.ts:170": {
       "fp": "c072515b2a0d",
       "citedBy": [
         "07-components-3d.md"
       ],
       "preview": "// for production\" and `turbopackSharedRuntime` shipped with a hydration-breaking race."
     },
-    "next.config.ts:169": {
+    "next.config.ts:171": {
       "fp": "a1bf1391f1bf",
       "citedBy": [
         "07-components-3d.md",
@@ -2824,7 +2852,7 @@
       ],
       "preview": "// The src/lib/r3f.ts barrel stays — it is load-bearing for the single-copy outcome."
     },
-    "next.config.ts:170": {
+    "next.config.ts:172": {
       "fp": "03920f036012",
       "citedBy": [
         "07-components-3d.md",
@@ -2834,14 +2862,14 @@
       ],
       "preview": "optimizePackageImports: [\"lucide-react\", \"motion\"],"
     },
-    "next.config.ts:171": {
+    "next.config.ts:173": {
       "fp": "feb360b8d256",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Cache Components (Next 16's `cacheComponents: true`) — ENABLED. This one key SUPERSEDES the"
     },
-    "next.config.ts:175": {
+    "next.config.ts:177": {
       "fp": "80f5dde1b034",
       "citedBy": [
         "14b-subsystems.md"
@@ -2858,7 +2886,7 @@
       ],
       "preview": "* Content-Security-Policy — shipped as Report-Only first (observe, don't break), to be"
     },
-    "next.config.ts:194": {
+    "next.config.ts:196": {
       "fp": "948a8609520c",
       "citedBy": [
         "14b-subsystems.md"
@@ -2875,7 +2903,7 @@
       ],
       "preview": "* promoted to enforced (`Content-Security-Policy`) once a live check shows zero"
     },
-    "next.config.ts:203": {
+    "next.config.ts:205": {
       "fp": "17fbbdc374ad",
       "citedBy": [
         "01-routes-pages.md",
@@ -2887,26 +2915,19 @@
       ],
       "preview": "cacheComponents: true,"
     },
-    "next.config.ts:213": {
+    "next.config.ts:215": {
       "fp": "749494d05803",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "async headers() {"
     },
-    "next.config.ts:215": {
+    "next.config.ts:217": {
       "fp": "8dbd15dc13b1",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// so the browser allows anvilry.vercel.app to embed its own PDF inside the page."
-    },
-    "next.config.ts:218": {
-      "fp": "85c8016a3419",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "const resumeHeaders = securityHeaders.map((h) => {"
     },
     "next.config.ts:22": {
       "fp": "6c84092346a2",
@@ -2915,14 +2936,21 @@
       ],
       "preview": "*  - connect-src: 'self' covers every /api/* route (chat, tts, transcribe — Bedrock/"
     },
-    "next.config.ts:224": {
+    "next.config.ts:220": {
+      "fp": "85c8016a3419",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "const resumeHeaders = securityHeaders.map((h) => {"
+    },
+    "next.config.ts:226": {
       "fp": "8869acda3b45",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "value: h.value.replace("
     },
-    "next.config.ts:227": {
+    "next.config.ts:229": {
       "fp": "bb01c44bd646",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -2936,21 +2964,21 @@
       ],
       "preview": "*    Polly/Transcribe are called SERVER-side, so the browser never connects to AWS)."
     },
-    "next.config.ts:230": {
+    "next.config.ts:232": {
       "fp": "ca1de84c7b17",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "return h;"
     },
-    "next.config.ts:234": {
+    "next.config.ts:254": {
       "fp": "5335c0405c56",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "{ source: \"/:path*\", headers: securityHeaders },"
     },
-    "next.config.ts:236": {
+    "next.config.ts:256": {
       "fp": "9a102306c382",
       "citedBy": [
         "01-routes-pages.md",
@@ -2958,7 +2986,7 @@
       ],
       "preview": "{ source: \"/resume\", headers: resumeHeaders },"
     },
-    "next.config.ts:237": {
+    "next.config.ts:257": {
       "fp": "8bae3d4d07fb",
       "citedBy": [
         "01-routes-pages.md",
@@ -2966,14 +2994,28 @@
       ],
       "preview": "{ source: \"/resume/:path*\", headers: resumeHeaders },"
     },
-    "next.config.ts:239": {
+    "next.config.ts:258": {
+      "fp": "595ed567296d",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "{ source: \"/\", headers: negotiated(\"/index.md\", apiLinks) },"
+    },
+    "next.config.ts:262": {
+      "fp": "9e6415245119",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "})),"
+    },
+    "next.config.ts:264": {
       "fp": "e52a1813c460",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "},"
     },
-    "next.config.ts:240": {
+    "next.config.ts:265": {
       "fp": "88e0bad8439b",
       "citedBy": [
         "01-routes-pages.md",
@@ -2984,24 +3026,24 @@
       ],
       "preview": "async rewrites() {"
     },
-    "next.config.ts:244": {
+    "next.config.ts:271": {
       "fp": "a6ff593bda8c",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "{ source: \"/work/:slug.md\", destination: \"/api/md/work/:slug\" },"
     },
-    "next.config.ts:247": {
+    "next.config.ts:274": {
       "fp": "870420fd21e7",
       "citedBy": [
-        "01-routes-pages.md",
         "09-content-and-schemas.md"
       ],
       "preview": "{ source: \"/notes/:slug.md\", destination: \"/api/md/notes/:slug\" },"
     },
-    "next.config.ts:248": {
+    "next.config.ts:275": {
       "fp": "358ba3f22237",
       "citedBy": [
+        "01-routes-pages.md",
         "02-api-routes.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md",
@@ -3009,7 +3051,7 @@
       ],
       "preview": "];"
     },
-    "next.config.ts:252": {
+    "next.config.ts:279": {
       "fp": "33cd9329d171",
       "citedBy": [
         "13-dependencies-and-versions.md"
@@ -3177,7 +3219,7 @@
       ],
       "preview": "].join(\"; \");"
     },
-    "next.config.ts:87": {
+    "next.config.ts:89": {
       "fp": "d5ba443266ae",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -3185,23 +3227,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Static security headers applied to every route. HSTS is already set by Vercel's"
-    },
-    "next.config.ts:88": {
-      "fp": "8a722c4966ec",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// platform default, so it is intentionally omitted here (avoids a weaker duplicate)."
-    },
-    "next.config.ts:89": {
-      "fp": "350f0808f036",
-      "citedBy": [
-        "11-config-build-ci-infra.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const securityHeaders = ["
     },
     "next.config.ts:9": {
       "fp": "8158f527e87c",
@@ -3211,46 +3236,49 @@
       "preview": "// In dev, run Velite in watch mode so content edits hot-reload."
     },
     "next.config.ts:90": {
+      "fp": "8a722c4966ec",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// platform default, so it is intentionally omitted here (avoids a weaker duplicate)."
+    },
+    "next.config.ts:91": {
+      "fp": "350f0808f036",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const securityHeaders = ["
+    },
+    "next.config.ts:92": {
       "fp": "f034a0960d4a",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "{ key: \"X-Frame-Options\", value: \"DENY\" },"
     },
-    "next.config.ts:91": {
+    "next.config.ts:93": {
       "fp": "bd3b82c43b03",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "{ key: \"X-Content-Type-Options\", value: \"nosniff\" },"
     },
-    "next.config.ts:92": {
+    "next.config.ts:94": {
       "fp": "3ac7592a441d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "{ key: \"Referrer-Policy\", value: \"strict-origin-when-cross-origin\" },"
     },
-    "next.config.ts:97": {
+    "next.config.ts:99": {
       "fp": "d94d23f8ed2c",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "{ key: \"Cross-Origin-Opener-Policy\", value: \"same-origin\" },"
-    },
-    "next.config.ts:98": {
-      "fp": "3dfa5976acf7",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "{ key: \"Cross-Origin-Resource-Policy\", value: \"same-origin\" },"
-    },
-    "next.config.ts:99": {
-      "fp": "408a295d06ce",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "// Voice requests the mic — scope it to same-origin and deny camera/geo/etc."
     },
     "package.json:10": {
       "fp": "7eca11448d1d",
@@ -4487,7 +4515,7 @@
       ],
       "preview": "*/"
     },
-    "scripts/post-deploy-smoke.mjs:390": {
+    "scripts/post-deploy-smoke.mjs:437": {
       "fp": "4ebd9d10bd4c",
       "citedBy": [
         "14b-subsystems.md"
@@ -4905,6 +4933,34 @@
       ],
       "preview": ": \"run /api/cron/health-check to populate\""
     },
+    "src/app/api/[...path]/route.test.ts:22": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/app/api/[...path]/route.test.ts:4": {
+      "fp": "2e07f397da02",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"unknown API paths\", () => {"
+    },
+    "src/app/api/[...path]/route.ts:16": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/api/[...path]/route.ts:8": {
+      "fp": "4ef2e26ac5eb",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "* The response never echoes the requested path: JSON is not rendered, but the habit of"
+    },
     "src/app/api/admin/faq-cache/purge/route.test.ts:52": {
       "fp": "890dd5a0bc7e",
       "citedBy": [
@@ -4912,21 +4968,21 @@
       ],
       "preview": "describe(\"POST /api/admin/faq-cache/purge — auth\", () => {"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:16": {
+    "src/app/api/admin/faq-cache/purge/route.ts:17": {
       "fp": "b0add7575be9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* requireAdmin() — src/lib/admin-auth.ts). Deliberately NOT rate-limited like"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:18": {
+    "src/app/api/admin/faq-cache/purge/route.ts:19": {
       "fp": "251291a01b2f",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* endpoint."
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:31": {
+    "src/app/api/admin/faq-cache/purge/route.ts:32": {
       "fp": "d0477edb5fcc",
       "citedBy": [
         "14-subsystems.md",
@@ -4935,7 +4991,7 @@
       ],
       "preview": "export async function POST(req: Request) {"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:32": {
+    "src/app/api/admin/faq-cache/purge/route.ts:33": {
       "fp": "78510e9cca99",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -4945,28 +5001,28 @@
       ],
       "preview": "const auth = requireAdmin(req);"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:33": {
+    "src/app/api/admin/faq-cache/purge/route.ts:34": {
       "fp": "f166448ebd02",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "if (auth instanceof Response) return auth;"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:70": {
+    "src/app/api/admin/faq-cache/purge/route.ts:68": {
       "fp": "ce79f76fc912",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (result.status === \"error\") {"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:72": {
+    "src/app/api/admin/faq-cache/purge/route.ts:70": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/app/api/admin/faq-cache/purge/route.ts:74": {
+    "src/app/api/admin/faq-cache/purge/route.ts:72": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md",
@@ -5019,20 +5075,27 @@
       "preview": "import type Anthropic from \"@anthropic-ai/sdk\";"
     },
     "src/app/api/chat/route.ts:10": {
+      "fp": "e627f704b032",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+    },
+    "src/app/api/chat/route.ts:11": {
       "fp": "e8c4209fbe6d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { redact } from \"@/lib/telemetry/schema\";"
     },
-    "src/app/api/chat/route.ts:109": {
+    "src/app/api/chat/route.ts:110": {
       "fp": "e6ed41ba4141",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- When you naturally reference a specific view and it would genuinely help the visitor, you MAY appe"
     },
-    "src/app/api/chat/route.ts:147": {
+    "src/app/api/chat/route.ts:145": {
       "fp": "c6c620945484",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -5042,21 +5105,21 @@
       ],
       "preview": "const rl = await checkRateLimit(req, \"chat\");"
     },
-    "src/app/api/chat/route.ts:160": {
+    "src/app/api/chat/route.ts:163": {
       "fp": "4d975919a29a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const declaredLen = Number(req.headers.get(\"content-length\") ?? 0);"
     },
-    "src/app/api/chat/route.ts:163": {
+    "src/app/api/chat/route.ts:166": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/api/chat/route.ts:22": {
+    "src/app/api/chat/route.ts:23": {
       "fp": "d9b68daf357a",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -5064,28 +5127,28 @@
       ],
       "preview": "} from \"@/lib/llm-trace\";"
     },
-    "src/app/api/chat/route.ts:26": {
+    "src/app/api/chat/route.ts:27": {
       "fp": "105c20d18ff6",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "const MAX_MESSAGES = 12;"
     },
-    "src/app/api/chat/route.ts:269": {
+    "src/app/api/chat/route.ts:273": {
       "fp": "09fd2a47ad32",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// FAQ cache — first-turn questions only. Scoping to the first turn sidesteps"
     },
-    "src/app/api/chat/route.ts:27": {
+    "src/app/api/chat/route.ts:28": {
       "fp": "ea6d05d2f1bb",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "const MAX_CHARS = 600;"
     },
-    "src/app/api/chat/route.ts:283": {
+    "src/app/api/chat/route.ts:287": {
       "fp": "8ea76524cdbc",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -5095,7 +5158,7 @@
       ],
       "preview": "const extendedThinking = process.env.EXTENDED_THINKING !== \"false\";"
     },
-    "src/app/api/chat/route.ts:284": {
+    "src/app/api/chat/route.ts:288": {
       "fp": "4b76a0c555dc",
       "citedBy": [
         "14b-subsystems.md",
@@ -5104,7 +5167,7 @@
       ],
       "preview": "const skipCache = req.headers.get(\"x-chat-skip-cache\") != null;"
     },
-    "src/app/api/chat/route.ts:290": {
+    "src/app/api/chat/route.ts:294": {
       "fp": "59c9caf2af38",
       "citedBy": [
         "15-invariants-and-gotchas.md",
@@ -5112,38 +5175,30 @@
       ],
       "preview": "firstContent.trim().length > 0;"
     },
-    "src/app/api/chat/route.ts:294": {
+    "src/app/api/chat/route.ts:298": {
       "fp": "4656419e5eeb",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "const question = cacheEligible ? (firstContent as string) : null;"
     },
-    "src/app/api/chat/route.ts:299": {
+    "src/app/api/chat/route.ts:303": {
       "fp": "bebfefc375dd",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "(isSemanticMatchEnabled() ? await faqCacheSemanticGet(question) : null);"
     },
-    "src/app/api/chat/route.ts:309": {
+    "src/app/api/chat/route.ts:313": {
       "fp": "4a983d4358d5",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "14b-subsystems.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "const replayedReasoning ="
     },
-    "src/app/api/chat/route.ts:31": {
-      "fp": "eb7163fe2078",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
-    },
-    "src/app/api/chat/route.ts:311": {
+    "src/app/api/chat/route.ts:315": {
       "fp": "ba8c1dcee8ed",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -5151,14 +5206,14 @@
       ],
       "preview": "extendedThinking &&"
     },
-    "src/app/api/chat/route.ts:312": {
+    "src/app/api/chat/route.ts:316": {
       "fp": "555256516a36",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "typeof hit.entry.reasoning === \"string\""
     },
-    "src/app/api/chat/route.ts:313": {
+    "src/app/api/chat/route.ts:317": {
       "fp": "92c414a1c34e",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -5167,7 +5222,7 @@
       ],
       "preview": "? stripControlBytes(hit.entry.reasoning).trim()"
     },
-    "src/app/api/chat/route.ts:314": {
+    "src/app/api/chat/route.ts:318": {
       "fp": "b7a0e76f28fa",
       "citedBy": [
         "14b-subsystems.md",
@@ -5175,28 +5230,35 @@
       ],
       "preview": ": \"\";"
     },
-    "src/app/api/chat/route.ts:317": {
+    "src/app/api/chat/route.ts:32": {
+      "fp": "eb7163fe2078",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const PROJECT_SLUGS = allProjects.map((p) => p.slug).join(\", \");"
+    },
+    "src/app/api/chat/route.ts:321": {
       "fp": "807d36fd6b30",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "emit({"
     },
-    "src/app/api/chat/route.ts:32": {
+    "src/app/api/chat/route.ts:33": {
       "fp": "28813e88a278",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const WORK_SLUGS = allWork.map((w) => w.slug).join(\", \");"
     },
-    "src/app/api/chat/route.ts:336": {
+    "src/app/api/chat/route.ts:340": {
       "fp": "2bcd6325311d",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// A boolean only: the summary text itself never goes to telemetry."
     },
-    "src/app/api/chat/route.ts:337": {
+    "src/app/api/chat/route.ts:341": {
       "fp": "74efaaec9095",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -5205,21 +5267,21 @@
       ],
       "preview": "reasoning_replayed: replayedReasoning.length > 0,"
     },
-    "src/app/api/chat/route.ts:345": {
+    "src/app/api/chat/route.ts:349": {
       "fp": "f5b40af4e8c5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const frame = {"
     },
-    "src/app/api/chat/route.ts:351": {
+    "src/app/api/chat/route.ts:355": {
       "fp": "a7663471be1b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const responseBody = `${hit.entry.answer}${TRACE_DELIMITER}${JSON.stringify(frame)}`;"
     },
-    "src/app/api/chat/route.ts:352": {
+    "src/app/api/chat/route.ts:356": {
       "fp": "ce2cea4db093",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -5230,14 +5292,14 @@
       ],
       "preview": "const body = replayedReasoning"
     },
-    "src/app/api/chat/route.ts:353": {
+    "src/app/api/chat/route.ts:357": {
       "fp": "dd5c54f7285f",
       "citedBy": [
         "README.md"
       ],
       "preview": "? `${THINKING_SENTINEL}${replayedReasoning}${THINKING_END}${responseBody}`"
     },
-    "src/app/api/chat/route.ts:354": {
+    "src/app/api/chat/route.ts:358": {
       "fp": "fdd12c1e9cce",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -5247,7 +5309,7 @@
       ],
       "preview": ": responseBody;"
     },
-    "src/app/api/chat/route.ts:363": {
+    "src/app/api/chat/route.ts:367": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md",
@@ -5255,7 +5317,7 @@
       ],
       "preview": "}"
     },
-    "src/app/api/chat/route.ts:39": {
+    "src/app/api/chat/route.ts:40": {
       "fp": "11ee9afb1588",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -5263,7 +5325,7 @@
       ],
       "preview": "const base = process.env.VERCEL_URL"
     },
-    "src/app/api/chat/route.ts:40": {
+    "src/app/api/chat/route.ts:41": {
       "fp": "1b32486d8bfa",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -5272,84 +5334,77 @@
       ],
       "preview": "? `https://${process.env.VERCEL_URL}`"
     },
-    "src/app/api/chat/route.ts:409": {
+    "src/app/api/chat/route.ts:413": {
       "fp": "fd9fc9486e09",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// null = no verified price for this model id (see llm-pricing.ts): the"
     },
-    "src/app/api/chat/route.ts:413": {
+    "src/app/api/chat/route.ts:417": {
       "fp": "4728b6206643",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": ": null;"
     },
-    "src/app/api/chat/route.ts:419": {
+    "src/app/api/chat/route.ts:423": {
       "fp": "807d36fd6b30",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "emit({"
     },
-    "src/app/api/chat/route.ts:42": {
+    "src/app/api/chat/route.ts:43": {
       "fp": "a155cea2fe6f",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "const res = await fetch(`${base}/api/github/stats`, {"
     },
-    "src/app/api/chat/route.ts:428": {
+    "src/app/api/chat/route.ts:432": {
       "fp": "5ce89913ccc9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "? { message: redact(attempt.error.message ?? attempt.error.name) }"
     },
-    "src/app/api/chat/route.ts:450": {
+    "src/app/api/chat/route.ts:454": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "});"
     },
-    "src/app/api/chat/route.ts:452": {
+    "src/app/api/chat/route.ts:456": {
       "fp": "88dce7449801",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Write-through: attempt.answerText is present iff this was a clean,"
     },
-    "src/app/api/chat/route.ts:474": {
+    "src/app/api/chat/route.ts:478": {
       "fp": "540955851fa9",
       "citedBy": [
         "README.md"
       ],
       "preview": "attempt.reasoningText,"
     },
-    "src/app/api/chat/route.ts:476": {
+    "src/app/api/chat/route.ts:480": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/api/chat/route.ts:6": {
+    "src/app/api/chat/route.ts:7": {
       "fp": "7087a3001e65",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { CACHE_WRITE_TTL, costUsd } from \"@/lib/llm-pricing\";"
     },
-    "src/app/api/chat/route.ts:7": {
-      "fp": "7abcd6b47471",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
-    },
-    "src/app/api/chat/route.ts:77": {
+    "src/app/api/chat/route.ts:78": {
       "fp": "270a867f76e9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -5357,13 +5412,13 @@
       "preview": "* Deliberately takes ONLY `corpus` — no githubStats param. This template is the"
     },
     "src/app/api/chat/route.ts:8": {
-      "fp": "3a7ea27ec96e",
+      "fp": "7abcd6b47471",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
     },
-    "src/app/api/chat/route.ts:83": {
+    "src/app/api/chat/route.ts:84": {
       "fp": "3a572e944b53",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -5371,13 +5426,13 @@
       "preview": "const staticSystemPrompt = ("
     },
     "src/app/api/chat/route.ts:9": {
-      "fp": "e627f704b032",
+      "fp": "3a7ea27ec96e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
     },
-    "src/app/api/chat/route.ts:90": {
+    "src/app/api/chat/route.ts:91": {
       "fp": "b6dad2aa8338",
       "citedBy": [
         "09-content-and-schemas.md"
@@ -5993,14 +6048,7 @@
       ],
       "preview": "});"
     },
-    "src/app/api/error/route.ts:1": {
-      "fp": "24a7c06b2ab0",
-      "citedBy": [
-        "13-dependencies-and-versions.md"
-      ],
-      "preview": "import { z } from \"zod\";"
-    },
-    "src/app/api/error/route.ts:101": {
+    "src/app/api/error/route.ts:102": {
       "fp": "239bbaaa6eb1",
       "citedBy": [
         "14-subsystems.md",
@@ -6009,21 +6057,21 @@
       ],
       "preview": "const rl = await checkRateLimit(req, \"beacon\");"
     },
-    "src/app/api/error/route.ts:127": {
+    "src/app/api/error/route.ts:128": {
       "fp": "8a972bb11ccf",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Content-Length bypass backstop: sendBeacon and the fetch fallback in"
     },
-    "src/app/api/error/route.ts:131": {
+    "src/app/api/error/route.ts:132": {
       "fp": "a33f22e0bb4d",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (JSON.stringify(raw).length > MAX_BODY_BYTES) {"
     },
-    "src/app/api/error/route.ts:133": {
+    "src/app/api/error/route.ts:134": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md",
@@ -6031,21 +6079,21 @@
       ],
       "preview": "}"
     },
-    "src/app/api/error/route.ts:143": {
+    "src/app/api/error/route.ts:144": {
       "fp": "f81e33c89871",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const { message, stack, url, userAgent, level, source, componentStack } = parsed.data;"
     },
-    "src/app/api/error/route.ts:147": {
+    "src/app/api/error/route.ts:148": {
       "fp": "643adbf174fb",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// componentStack is React-internal (file paths + component names); not visitor"
     },
-    "src/app/api/error/route.ts:150": {
+    "src/app/api/error/route.ts:151": {
       "fp": "807d36fd6b30",
       "citedBy": [
         "14b-subsystems.md",
@@ -6053,7 +6101,7 @@
       ],
       "preview": "emit({"
     },
-    "src/app/api/error/route.ts:165": {
+    "src/app/api/error/route.ts:166": {
       "fp": "e52a1813c460",
       "citedBy": [
         "14-subsystems.md",
@@ -6061,70 +6109,77 @@
       ],
       "preview": "},"
     },
-    "src/app/api/error/route.ts:166": {
+    "src/app/api/error/route.ts:167": {
       "fp": "29576b54e255",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "});"
     },
-    "src/app/api/error/route.ts:173": {
+    "src/app/api/error/route.ts:174": {
       "fp": "d282fec74710",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Append to recent-errors list in Redis for the telemetry dashboard (fire-and-forget)."
     },
-    "src/app/api/error/route.ts:174": {
+    "src/app/api/error/route.ts:175": {
       "fp": "a6a3dbcf91aa",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "if (redis) {"
     },
-    "src/app/api/error/route.ts:180": {
+    "src/app/api/error/route.ts:181": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/api/error/route.ts:3": {
+    "src/app/api/error/route.ts:2": {
+      "fp": "24a7c06b2ab0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { z } from \"zod\";"
+    },
+    "src/app/api/error/route.ts:4": {
       "fp": "7abcd6b47471",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
     },
-    "src/app/api/error/route.ts:4": {
+    "src/app/api/error/route.ts:5": {
       "fp": "3a7ea27ec96e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
     },
-    "src/app/api/error/route.ts:5": {
+    "src/app/api/error/route.ts:6": {
       "fp": "e627f704b032",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
-    "src/app/api/error/route.ts:6": {
+    "src/app/api/error/route.ts:7": {
       "fp": "e8c4209fbe6d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { redact } from \"@/lib/telemetry/schema\";"
     },
-    "src/app/api/error/route.ts:7": {
+    "src/app/api/error/route.ts:8": {
       "fp": "30d93a0ed4ee",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { redis } from \"@/lib/redis\";"
     },
-    "src/app/api/error/route.ts:83": {
+    "src/app/api/error/route.ts:84": {
       "fp": "eaad5cf962f9",
       "citedBy": [
         "14-subsystems.md",
@@ -6133,14 +6188,14 @@
       ],
       "preview": "source: z.enum([\"boundary\", \"global-boundary\", \"window\", \"unhandledrejection\", \"react19\"]),"
     },
-    "src/app/api/error/route.ts:89": {
+    "src/app/api/error/route.ts:90": {
       "fp": "3851ca6893f1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "// Stage 2 — opt-out env. The \"false\" string check is deliberate: any other"
     },
-    "src/app/api/error/route.ts:92": {
+    "src/app/api/error/route.ts:93": {
       "fp": "c4c187643227",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -6149,14 +6204,14 @@
       ],
       "preview": "if (process.env.TELEMETRY_ENABLED === \"false\") {"
     },
-    "src/app/api/error/route.ts:95": {
+    "src/app/api/error/route.ts:96": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
     },
-    "src/app/api/github/stats/route.ts:1": {
+    "src/app/api/github/stats/route.ts:2": {
       "fp": "be96766c55d6",
       "citedBy": [
         "03-lib-content-data.md",
@@ -6164,21 +6219,14 @@
       ],
       "preview": "import { getRepoFeed } from \"@/lib/github\";"
     },
-    "src/app/api/github/stats/route.ts:19": {
+    "src/app/api/github/stats/route.ts:20": {
       "fp": "296214da00e6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "const token = process.env.GITHUB_TOKEN;"
     },
-    "src/app/api/github/stats/route.ts:3": {
-      "fp": "b59ffee26674",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
-    },
-    "src/app/api/github/stats/route.ts:31": {
+    "src/app/api/github/stats/route.ts:32": {
       "fp": "d30f8f8c3e96",
       "citedBy": [
         "14b-subsystems.md",
@@ -6186,21 +6234,28 @@
       ],
       "preview": "next: { revalidate: 3600 },"
     },
-    "src/app/api/github/stats/route.ts:5": {
+    "src/app/api/github/stats/route.ts:4": {
+      "fp": "b59ffee26674",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
+    },
+    "src/app/api/github/stats/route.ts:6": {
       "fp": "abf8c3f9af99",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// the inner users/ fetch below carries `next: { revalidate: 3600 }`, and getRepoFeed() does the"
     },
-    "src/app/api/github/stats/route.ts:6": {
+    "src/app/api/github/stats/route.ts:7": {
       "fp": "e82cdbae9be9",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "// same on each repo call (src/lib/github.ts:101). The segment export was belt-and-braces on top"
     },
-    "src/app/api/github/stats/route.ts:7": {
+    "src/app/api/github/stats/route.ts:8": {
       "fp": "75b5ca324d7b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -6215,7 +6270,15 @@
       ],
       "preview": "import { createMcpHandler } from \"mcp-handler\";"
     },
-    "src/app/api/mcp/[transport]/route.ts:109": {
+    "src/app/api/mcp/[transport]/route.ts:10": {
+      "fp": "4799a6f6e27b",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const maxDuration = 30;"
+    },
+    "src/app/api/mcp/[transport]/route.ts:110": {
       "fp": "abd9c5281100",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -6223,7 +6286,7 @@
       ],
       "preview": "server.registerTool("
     },
-    "src/app/api/mcp/[transport]/route.ts:118": {
+    "src/app/api/mcp/[transport]/route.ts:119": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "14b-subsystems.md",
@@ -6231,7 +6294,14 @@
       ],
       "preview": ");"
     },
-    "src/app/api/mcp/[transport]/route.ts:12": {
+    "src/app/api/mcp/[transport]/route.ts:128": {
+      "fp": "5dc910c00777",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{ basePath: \"/api/mcp\", disableSse: true },"
+    },
+    "src/app/api/mcp/[transport]/route.ts:13": {
       "fp": "f880bab68267",
       "citedBy": [
         "14-subsystems.md",
@@ -6240,21 +6310,14 @@
       ],
       "preview": "* Portfolio MCP server — exposes the real content layer as 10 read-only tools so a"
     },
-    "src/app/api/mcp/[transport]/route.ts:127": {
-      "fp": "5dc910c00777",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "{ basePath: \"/api/mcp\", disableSse: true },"
-    },
-    "src/app/api/mcp/[transport]/route.ts:20": {
+    "src/app/api/mcp/[transport]/route.ts:21": {
       "fp": "abd9c5281100",
       "citedBy": [
         "README.md"
       ],
       "preview": "server.registerTool("
     },
-    "src/app/api/mcp/[transport]/route.ts:6": {
+    "src/app/api/mcp/[transport]/route.ts:7": {
       "fp": "79214e4ca231",
       "citedBy": [
         "02-api-routes.md",
@@ -6263,7 +6326,14 @@
       ],
       "preview": "// NOTE: `export const runtime = \"nodejs\"` was removed for cacheComponents (which rejects the"
     },
-    "src/app/api/mcp/[transport]/route.ts:8": {
+    "src/app/api/mcp/[transport]/route.ts:89": {
+      "fp": "abd9c5281100",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "server.registerTool("
+    },
+    "src/app/api/mcp/[transport]/route.ts:9": {
       "fp": "bce1209cd3b0",
       "citedBy": [
         "02-api-routes.md",
@@ -6272,94 +6342,49 @@
       ],
       "preview": "// Components requires it; only `runtime = \"edge\"` is unsupported. Behaviour is unchanged."
     },
-    "src/app/api/mcp/[transport]/route.ts:88": {
-      "fp": "abd9c5281100",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "server.registerTool("
-    },
-    "src/app/api/mcp/[transport]/route.ts:89": {
+    "src/app/api/mcp/[transport]/route.ts:90": {
       "fp": "f6320ef5ea5b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "\"list_all_content\","
     },
-    "src/app/api/mcp/[transport]/route.ts:9": {
-      "fp": "4799a6f6e27b",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export const maxDuration = 30;"
-    },
-    "src/app/api/md/notes/[slug]/route.ts:28": {
-      "fp": "dfe7035b3754",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const item = allNotes.find((n) => n.slug === slug);"
-    },
-    "src/app/api/md/work/[slug]/route.ts:11": {
-      "fp": "c0bdb2811a68",
+    "src/app/api/md/work/[slug]/route.ts:10": {
+      "fp": "d56a298f0d85",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "function readRawContent(slug: string): string | null {"
+      "preview": "return markdownForContent(\"work\", slug);"
     },
-    "src/app/api/md/work/[slug]/route.ts:15": {
-      "fp": "afb052ddbdda",
+    "src/app/api/md/work/[slug]/route.ts:5": {
+      "fp": "8b134a3d7a03",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "return readFileSync(join(base, `${slug}.${ext}`), \"utf-8\");"
+      "preview": "export async function GET("
     },
-    "src/app/api/md/work/[slug]/route.ts:28": {
-      "fp": "f43e3255680e",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "const item = allWork.find((w) => w.slug === slug);"
-    },
-    "src/app/api/md/work/[slug]/route.ts:32": {
-      "fp": "cefd7a17e6bd",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "if (!raw) return new Response(\"Not found\", { status: 404 });"
-    },
-    "src/app/api/md/work/[slug]/route.ts:7": {
-      "fp": "3b5218923a86",
+    "src/app/api/method-not-allowed.test.ts:51": {
+      "fp": "84bc4a032918",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "function stripFrontmatter(raw: string): string {"
+      "preview": "describe(\"static GET routes\", () => {"
     },
-    "src/app/api/md/work/[slug]/route.ts:9": {
-      "fp": "d10b36aa74a5",
+    "src/app/api/method-not-allowed.test.ts:61": {
+      "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "}"
-    },
-    "src/app/api/transcribe/route.ts:1": {
-      "fp": "e0cbdab30393",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "import {"
+      "preview": "});"
     },
     "src/app/api/transcribe/route.ts:10": {
-      "fp": "e8c4209fbe6d",
+      "fp": "e627f704b032",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { redact } from \"@/lib/telemetry/schema\";"
+      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
-    "src/app/api/transcribe/route.ts:105": {
+    "src/app/api/transcribe/route.ts:106": {
       "fp": "b4ed4d384dae",
       "citedBy": [
         "14-subsystems.md",
@@ -6367,14 +6392,21 @@
       ],
       "preview": "// Surface aggregate stats only — never the transcript text itself (PII)."
     },
-    "src/app/api/transcribe/route.ts:107": {
+    "src/app/api/transcribe/route.ts:108": {
       "fp": "a6194b8df8eb",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "ctx.attrs({"
     },
-    "src/app/api/transcribe/route.ts:112": {
+    "src/app/api/transcribe/route.ts:11": {
+      "fp": "e8c4209fbe6d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redact } from \"@/lib/telemetry/schema\";"
+    },
+    "src/app/api/transcribe/route.ts:113": {
       "fp": "29576b54e255",
       "citedBy": [
         "14-subsystems.md",
@@ -6382,7 +6414,7 @@
       ],
       "preview": "});"
     },
-    "src/app/api/transcribe/route.ts:121": {
+    "src/app/api/transcribe/route.ts:122": {
       "fp": "20f337ba5866",
       "citedBy": [
         "14b-subsystems.md",
@@ -6390,21 +6422,29 @@
       ],
       "preview": "kind: \"server.error\","
     },
-    "src/app/api/transcribe/route.ts:27": {
+    "src/app/api/transcribe/route.ts:2": {
+      "fp": "e0cbdab30393",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import {"
+    },
+    "src/app/api/transcribe/route.ts:28": {
       "fp": "37d4e56c1d31",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "* Fails CLOSED: unconfigured/over-limit/error -> non-2xx -> client uses browser STT."
     },
-    "src/app/api/transcribe/route.ts:31": {
+    "src/app/api/transcribe/route.ts:32": {
       "fp": "65fab39c3cf6",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const MAX_BYTES = 5 * 1024 * 1024; // ~2.6 min of 16k mono PCM — a generous question cap"
     },
-    "src/app/api/transcribe/route.ts:5": {
+    "src/app/api/transcribe/route.ts:6": {
       "fp": "8defc540f254",
       "citedBy": [
         "13-dependencies-and-versions.md",
@@ -6412,15 +6452,7 @@
       ],
       "preview": "} from \"@aws-sdk/client-transcribe-streaming\";"
     },
-    "src/app/api/transcribe/route.ts:6": {
-      "fp": "1469f71df728",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md",
-        "14-subsystems.md"
-      ],
-      "preview": "import { bedrockCreds } from \"@/lib/llm\";"
-    },
-    "src/app/api/transcribe/route.ts:63": {
+    "src/app/api/transcribe/route.ts:64": {
       "fp": "a1ed3a84977e",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -6431,13 +6463,14 @@
       "preview": "const rl = await checkRateLimit(req, \"voice\");"
     },
     "src/app/api/transcribe/route.ts:7": {
-      "fp": "7abcd6b47471",
+      "fp": "1469f71df728",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "14-subsystems.md"
       ],
-      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+      "preview": "import { bedrockCreds } from \"@/lib/llm\";"
     },
-    "src/app/api/transcribe/route.ts:78": {
+    "src/app/api/transcribe/route.ts:79": {
       "fp": "7a7d014eece0",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -6445,13 +6478,13 @@
       "preview": "const ab = await req.arrayBuffer();"
     },
     "src/app/api/transcribe/route.ts:8": {
-      "fp": "3a7ea27ec96e",
+      "fp": "7abcd6b47471",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
     },
-    "src/app/api/transcribe/route.ts:82": {
+    "src/app/api/transcribe/route.ts:83": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -6459,48 +6492,41 @@
       "preview": "}"
     },
     "src/app/api/transcribe/route.ts:9": {
-      "fp": "e627f704b032",
+      "fp": "3a7ea27ec96e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
     },
-    "src/app/api/tts-google/route.ts:1": {
-      "fp": "7abcd6b47471",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
-    },
-    "src/app/api/tts-google/route.ts:101": {
+    "src/app/api/tts-google/route.ts:102": {
       "fp": "b6878297b0eb",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "if (!validateVoiceForEngine(requestedVoiceId, \"google\")) {"
     },
-    "src/app/api/tts-google/route.ts:106": {
+    "src/app/api/tts-google/route.ts:104": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/app/api/tts-google/route.ts:117": {
+    "src/app/api/tts-google/route.ts:115": {
       "fp": "a6194b8df8eb",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "ctx.attrs({"
     },
-    "src/app/api/tts-google/route.ts:144": {
+    "src/app/api/tts-google/route.ts:142": {
       "fp": "31c36d4a7b91",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "const timer = setTimeout(() => controller.abort(), 10_000);"
     },
-    "src/app/api/tts-google/route.ts:171": {
+    "src/app/api/tts-google/route.ts:169": {
       "fp": "20f337ba5866",
       "citedBy": [
         "14b-subsystems.md",
@@ -6508,7 +6534,14 @@
       ],
       "preview": "kind: \"server.error\","
     },
-    "src/app/api/tts-google/route.ts:39": {
+    "src/app/api/tts-google/route.ts:2": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/tts-google/route.ts:40": {
       "fp": "5c677e73254d",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -6517,21 +6550,14 @@
       ],
       "preview": "const k = process.env.GOOGLE_TTS_API_KEY;"
     },
-    "src/app/api/tts-google/route.ts:5": {
+    "src/app/api/tts-google/route.ts:6": {
       "fp": "be8a1a5eca98",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "} from \"@/lib/voice-catalog\";"
     },
-    "src/app/api/tts-google/route.ts:6": {
-      "fp": "3a7ea27ec96e",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
-    },
-    "src/app/api/tts-google/route.ts:67": {
+    "src/app/api/tts-google/route.ts:68": {
       "fp": "a1ed3a84977e",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -6542,13 +6568,20 @@
       "preview": "const rl = await checkRateLimit(req, \"voice\");"
     },
     "src/app/api/tts-google/route.ts:7": {
+      "fp": "3a7ea27ec96e",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
+    },
+    "src/app/api/tts-google/route.ts:8": {
       "fp": "e627f704b032",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
-    "src/app/api/tts-google/route.ts:8": {
+    "src/app/api/tts-google/route.ts:9": {
       "fp": "e8c4209fbe6d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
@@ -6576,29 +6609,21 @@
       ],
       "preview": "const cache = new Map<string, Buffer>();"
     },
-    "src/app/api/tts/route.ts:1": {
-      "fp": "a385f563ce17",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from \"@aws-sdk/client-polly\";"
-    },
     "src/app/api/tts/route.ts:10": {
-      "fp": "e627f704b032",
+      "fp": "3a7ea27ec96e",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
+      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
     },
-    "src/app/api/tts/route.ts:103": {
+    "src/app/api/tts/route.ts:104": {
       "fp": "251cba912184",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "if (!validateVoiceForEngine(requestedVoiceId, \"polly\")) {"
     },
-    "src/app/api/tts/route.ts:108": {
+    "src/app/api/tts/route.ts:106": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md"
@@ -6606,27 +6631,34 @@
       "preview": "}"
     },
     "src/app/api/tts/route.ts:11": {
-      "fp": "e8c4209fbe6d",
+      "fp": "e627f704b032",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { redact } from \"@/lib/telemetry/schema\";"
+      "preview": "import { emit } from \"@/lib/telemetry/emit\";"
     },
-    "src/app/api/tts/route.ts:119": {
+    "src/app/api/tts/route.ts:117": {
       "fp": "a6194b8df8eb",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "ctx.attrs({"
     },
-    "src/app/api/tts/route.ts:163": {
+    "src/app/api/tts/route.ts:12": {
+      "fp": "e8c4209fbe6d",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { redact } from \"@/lib/telemetry/schema\";"
+    },
+    "src/app/api/tts/route.ts:161": {
       "fp": "88c598ad60a9",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "setTimeout(() => reject(new Error(\"polly-timeout\")), 10_000),"
     },
-    "src/app/api/tts/route.ts:191": {
+    "src/app/api/tts/route.ts:189": {
       "fp": "20f337ba5866",
       "citedBy": [
         "14b-subsystems.md",
@@ -6635,6 +6667,14 @@
       "preview": "kind: \"server.error\","
     },
     "src/app/api/tts/route.ts:2": {
+      "fp": "a385f563ce17",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from \"@aws-sdk/client-polly\";"
+    },
+    "src/app/api/tts/route.ts:3": {
       "fp": "1469f71df728",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -6642,28 +6682,28 @@
       ],
       "preview": "import { bedrockCreds } from \"@/lib/llm\";"
     },
-    "src/app/api/tts/route.ts:29": {
+    "src/app/api/tts/route.ts:30": {
       "fp": "cdd0473519bf",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "* Fails CLOSED to the free path: any misconfiguration/error returns a non-2xx and the"
     },
-    "src/app/api/tts/route.ts:3": {
-      "fp": "7abcd6b47471",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
-    },
-    "src/app/api/tts/route.ts:30": {
+    "src/app/api/tts/route.ts:31": {
       "fp": "bf6edd9a36f4",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "* client falls back to browser speechSynthesis — voice never breaks, it just degrades."
     },
-    "src/app/api/tts/route.ts:69": {
+    "src/app/api/tts/route.ts:4": {
+      "fp": "7abcd6b47471",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "import { checkRateLimit } from \"@/lib/rate-limit\";"
+    },
+    "src/app/api/tts/route.ts:70": {
       "fp": "a1ed3a84977e",
       "citedBy": [
         "05-components-chat-voice.md",
@@ -6673,56 +6713,42 @@
       ],
       "preview": "const rl = await checkRateLimit(req, \"voice\");"
     },
-    "src/app/api/tts/route.ts:8": {
+    "src/app/api/tts/route.ts:9": {
       "fp": "be8a1a5eca98",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "} from \"@/lib/voice-catalog\";"
     },
-    "src/app/api/tts/route.ts:9": {
-      "fp": "3a7ea27ec96e",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { withTrace } from \"@/lib/telemetry/with-trace\";"
-    },
-    "src/app/api/tts/route.ts:92": {
+    "src/app/api/tts/route.ts:93": {
       "fp": "7f55ab45df4e",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// The body's voiceId is a catalog id (e.g. \"polly-neural-joanna\"). The catalog is"
     },
-    "src/app/api/tts/route.ts:97": {
+    "src/app/api/tts/route.ts:98": {
       "fp": "5e570664783c",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "// surfaces immediately rather than masquerading as Joanna."
     },
-    "src/app/api/visit/route.ts:14": {
+    "src/app/api/visit/route.ts:15": {
       "fp": "b259e48f1f68",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "* Gate: only active when NEXT_PUBLIC_VISITOR_COUNTER=true. The API itself is always"
     },
-    "src/app/api/visit/route.ts:16": {
+    "src/app/api/visit/route.ts:17": {
       "fp": "272c01ee89ca",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "* flag is toggled at the edge."
     },
-    "src/app/api/visit/route.ts:2": {
-      "fp": "30d93a0ed4ee",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "import { redis } from \"@/lib/redis\";"
-    },
-    "src/app/api/visit/route.ts:25": {
+    "src/app/api/visit/route.ts:26": {
       "fp": "a3e15e396e9c",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -6731,20 +6757,20 @@
       "preview": "function clientIp(req: Request): string {"
     },
     "src/app/api/visit/route.ts:3": {
-      "fp": "ee19a3b132a4",
+      "fp": "30d93a0ed4ee",
       "citedBy": [
-        "13-dependencies-and-versions.md"
+        "04-lib-ai-voice-infra.md"
       ],
-      "preview": "import { Ratelimit } from \"@upstash/ratelimit\";"
+      "preview": "import { redis } from \"@/lib/redis\";"
     },
-    "src/app/api/visit/route.ts:34": {
+    "src/app/api/visit/route.ts:35": {
       "fp": "9491d12b819d",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "if (xff) return xff.split(\",\").pop()!.trim();"
     },
-    "src/app/api/visit/route.ts:38": {
+    "src/app/api/visit/route.ts:39": {
       "fp": "d2269dd5d199",
       "citedBy": [
         "14b-subsystems.md",
@@ -6752,21 +6778,28 @@
       ],
       "preview": "const limiter = redis"
     },
-    "src/app/api/visit/route.ts:41": {
+    "src/app/api/visit/route.ts:4": {
+      "fp": "ee19a3b132a4",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { Ratelimit } from \"@upstash/ratelimit\";"
+    },
+    "src/app/api/visit/route.ts:42": {
       "fp": "62feffe5800c",
       "citedBy": [
         "README.md"
       ],
       "preview": "limiter: Ratelimit.slidingWindow(1, \"30 m\"),"
     },
-    "src/app/api/visit/route.ts:42": {
+    "src/app/api/visit/route.ts:43": {
       "fp": "8a36392bbbb1",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "prefix: \"anvilry:visit\","
     },
-    "src/app/api/visit/route.ts:45": {
+    "src/app/api/visit/route.ts:46": {
       "fp": "4728b6206643",
       "citedBy": [
         "14b-subsystems.md",
@@ -6774,14 +6807,14 @@
       ],
       "preview": ": null;"
     },
-    "src/app/api/visit/route.ts:54": {
+    "src/app/api/visit/route.ts:55": {
       "fp": "86398be1ff4a",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "if (!success) {"
     },
-    "src/app/api/visit/route.ts:59": {
+    "src/app/api/visit/route.ts:60": {
       "fp": "a9712de8d6a9",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -7024,6 +7057,13 @@
       ],
       "preview": "import { motion, AnimatePresence } from \"motion/react\";"
     },
+    "src/app/contact/page.tsx:9": {
+      "fp": "60aaa8cc585c",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export const metadata: Metadata = {"
+    },
     "src/app/decisions/page.tsx:1": {
       "fp": "c5e39c2214a9",
       "citedBy": [
@@ -7038,6 +7078,21 @@
         "14b-subsystems.md"
       ],
       "preview": "import { allDecisions, type LedgerEntry } from \"@/lib/decisions\";"
+    },
+    "src/app/developers/page.tsx:13": {
+      "fp": "60aaa8cc585c",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export const metadata: Metadata = {"
+    },
+    "src/app/developers/page.tsx:159": {
+      "fp": "63345c91825b",
+      "citedBy": [
+        "02-api-routes.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<ProseH2 id=\"errors\">Errors</ProseH2>"
     },
     "src/app/error.tsx:35": {
       "fp": "21e688761736",
@@ -7407,19 +7462,12 @@
       ],
       "preview": "import { AnvilInlinePanel } from \"@/components/chat/anvil-inline-panel\";"
     },
-    "src/app/layout.tsx:104": {
+    "src/app/layout.tsx:109": {
       "fp": "ca2d89ce1d5b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "suppressHydrationWarning"
-    },
-    "src/app/layout.tsx:107": {
-      "fp": "0cc498ace2cd",
-      "citedBy": [
-        "08-components-site-shell-ui.md"
-      ],
-      "preview": "{/* No-flash theme script — first child, before any JSX-controlled content."
     },
     "src/app/layout.tsx:11": {
       "fp": "027259e25a42",
@@ -7428,12 +7476,12 @@
       ],
       "preview": "import { AnvilCoreSurface } from \"@/components/chat/anvil-core-surface\";"
     },
-    "src/app/layout.tsx:119": {
-      "fp": "cc80a2b0dd23",
+    "src/app/layout.tsx:112": {
+      "fp": "0cc498ace2cd",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
-      "preview": "/>"
+      "preview": "{/* No-flash theme script — first child, before any JSX-controlled content."
     },
     "src/app/layout.tsx:12": {
       "fp": "314347558e8b",
@@ -7442,41 +7490,40 @@
       ],
       "preview": "import { WakeWordController } from \"@/components/chat/wake-word-controller\";"
     },
-    "src/app/layout.tsx:120": {
+    "src/app/layout.tsx:124": {
+      "fp": "cc80a2b0dd23",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "/>"
+    },
+    "src/app/layout.tsx:125": {
       "fp": "ef46929c5406",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<PersonJsonLd />"
     },
-    "src/app/layout.tsx:122": {
+    "src/app/layout.tsx:128": {
       "fp": "93ea46d79207",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<FaqJsonLd />"
     },
-    "src/app/layout.tsx:132": {
+    "src/app/layout.tsx:138": {
       "fp": "70319a5df06f",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>"
     },
-    "src/app/layout.tsx:133": {
+    "src/app/layout.tsx:139": {
       "fp": "538431ae1de2",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />"
-    },
-    "src/app/layout.tsx:134": {
-      "fp": "6c0a3ea199fc",
-      "citedBy": [
-        "08-components-site-shell-ui.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "{OPEN_TO_WORK && <OpenToWorkBanner />}"
     },
     "src/app/layout.tsx:14": {
       "fp": "8a5049afc12d",
@@ -7485,56 +7532,64 @@
       ],
       "preview": "import { EasterEggs } from \"@/components/game/easter-eggs\";"
     },
-    "src/app/layout.tsx:142": {
+    "src/app/layout.tsx:140": {
+      "fp": "6c0a3ea199fc",
+      "citedBy": [
+        "08-components-site-shell-ui.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{OPEN_TO_WORK && <OpenToWorkBanner />}"
+    },
+    "src/app/layout.tsx:148": {
       "fp": "6335ce5900dc",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<SiteFooter />"
     },
-    "src/app/layout.tsx:143": {
+    "src/app/layout.tsx:149": {
       "fp": "23d6aa6056b7",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<CommandPalette discoveryBadgesEnabled={discoveryBadgesEnabled} />"
     },
-    "src/app/layout.tsx:147": {
+    "src/app/layout.tsx:153": {
       "fp": "9026a0a38ac2",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "<TalkModeMount />"
     },
-    "src/app/layout.tsx:158": {
+    "src/app/layout.tsx:164": {
       "fp": "922be55a2e14",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<ViewHint />"
     },
-    "src/app/layout.tsx:16": {
+    "src/app/layout.tsx:21": {
       "fp": "3a3301d7bfed",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "import { Analytics } from \"@vercel/analytics/next\";"
     },
-    "src/app/layout.tsx:17": {
+    "src/app/layout.tsx:22": {
       "fp": "b1c211a4550a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "import { SpeedInsights } from \"@vercel/speed-insights/next\";"
     },
-    "src/app/layout.tsx:20": {
+    "src/app/layout.tsx:25": {
       "fp": "458e6f57db40",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "import { getDiscoveryBadgesEnabled } from \"@/lib/flags\";"
     },
-    "src/app/layout.tsx:35": {
+    "src/app/layout.tsx:40": {
       "fp": "32188ba408ee",
       "citedBy": [
         "14b-subsystems.md"
@@ -7548,21 +7603,21 @@
       ],
       "preview": "import { AskPortfolio } from \"@/components/ask-portfolio\";"
     },
-    "src/app/layout.tsx:82": {
+    "src/app/layout.tsx:87": {
       "fp": "85d2376cda32",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export default async function RootLayout({"
     },
-    "src/app/layout.tsx:85": {
+    "src/app/layout.tsx:90": {
       "fp": "4d62de6580f9",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "const discoveryBadgesEnabled = await getDiscoveryBadgesEnabled();"
     },
-    "src/app/layout.tsx:86": {
+    "src/app/layout.tsx:91": {
       "fp": "4cbb97b85a18",
       "citedBy": [
         "14b-subsystems.md"
@@ -7833,13 +7888,6 @@
       ],
       "preview": "</div>"
     },
-    "src/app/notes/[slug].md/route.ts:33": {
-      "fp": "dfe7035b3754",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const item = allNotes.find((n) => n.slug === slug);"
-    },
     "src/app/notes/[slug]/opengraph-image.tsx:12": {
       "fp": "329ab2f477b4",
       "citedBy": [
@@ -7985,6 +8033,13 @@
         "README.md"
       ],
       "preview": "</ViewRouter>"
+    },
+    "src/app/privacy/page.tsx:10": {
+      "fp": "60aaa8cc585c",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export const metadata: Metadata = {"
     },
     "src/app/projects/[slug]/page.tsx:10": {
       "fp": "6b6fe3453a1c",
@@ -8327,7 +8382,14 @@
       ],
       "preview": "const base = \"https://anvilry.vercel.app\";"
     },
-    "src/app/sitemap.ts:105": {
+    "src/app/sitemap.ts:100": {
+      "fp": "042738774fde",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const searchRoute = SEARCH_ENABLED"
+    },
+    "src/app/sitemap.ts:108": {
       "fp": "e2265bb65b74",
       "citedBy": [
         "01-routes-pages.md",
@@ -8335,14 +8397,28 @@
       ],
       "preview": ": [];"
     },
-    "src/app/sitemap.ts:40": {
+    "src/app/sitemap.ts:13": {
+      "fp": "d3e2a9cad667",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const staticRoutes = ["
+    },
+    "src/app/sitemap.ts:23": {
+      "fp": "831a060db0c3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "].map((path) => ({"
+    },
+    "src/app/sitemap.ts:43": {
       "fp": "0bed936a704a",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const noteRoutes ="
     },
-    "src/app/sitemap.ts:41": {
+    "src/app/sitemap.ts:44": {
       "fp": "b2e84eec701c",
       "citedBy": [
         "14b-subsystems.md",
@@ -8350,21 +8426,21 @@
       ],
       "preview": "NOTES_ENABLED && allNotes.length"
     },
-    "src/app/sitemap.ts:48": {
+    "src/app/sitemap.ts:51": {
       "fp": "d31d9d791d1b",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "lastModified: new Date(allNotes[0].date),"
     },
-    "src/app/sitemap.ts:57": {
+    "src/app/sitemap.ts:60": {
       "fp": "e2265bb65b74",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": ": [];"
     },
-    "src/app/sitemap.ts:64": {
+    "src/app/sitemap.ts:67": {
       "fp": "7792a8051b99",
       "citedBy": [
         "14b-subsystems.md",
@@ -8372,7 +8448,7 @@
       ],
       "preview": "const indexableArticles = allArticles.filter("
     },
-    "src/app/sitemap.ts:66": {
+    "src/app/sitemap.ts:69": {
       "fp": "9d8b2b5670d1",
       "citedBy": [
         "14b-subsystems.md",
@@ -8380,14 +8456,14 @@
       ],
       "preview": ");"
     },
-    "src/app/sitemap.ts:68": {
+    "src/app/sitemap.ts:71": {
       "fp": "905b7b924e22",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "ARTICLES_ENABLED && indexableArticles.length"
     },
-    "src/app/sitemap.ts:87": {
+    "src/app/sitemap.ts:90": {
       "fp": "07da74a494fa",
       "citedBy": [
         "01-routes-pages.md",
@@ -8395,13 +8471,6 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const statsRoute = STATS_ENABLED"
-    },
-    "src/app/sitemap.ts:97": {
-      "fp": "042738774fde",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "const searchRoute = SEARCH_ENABLED"
     },
     "src/app/stats/layout.tsx:4": {
       "fp": "60aaa8cc585c",
@@ -8424,19 +8493,19 @@
       ],
       "preview": "{ value: \"3K+\", label: \"Daily users\", sub: \"AAVA Code at peak\" },"
     },
-    "src/app/work/[slug].md/route.ts:6": {
-      "fp": "8771870880fd",
+    "src/app/work/[slug].md/route.ts:10": {
+      "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "// Slug is extracted from the URL because Next.js does not populate params for directory"
+      "preview": "}"
     },
-    "src/app/work/[slug].md/route.ts:9": {
-      "fp": "557575431186",
+    "src/app/work/[slug].md/route.ts:4": {
+      "fp": "5a71c307479c",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "// redundant — it is also rejected under nextConfig.cacheComponents, so it was removed."
+      "preview": "// Next.js does not populate params for directory segments of the form `[param].ext`, so the slug"
     },
     "src/app/work/[slug]/opengraph-image.tsx:26": {
       "fp": "75064c133f32",
@@ -14294,21 +14363,21 @@
       ],
       "preview": "if (!ARTICLES_ENABLED || allArticles.length === 0) return null;"
     },
-    "src/components/json-ld.tsx:10": {
+    "src/components/json-ld.tsx:11": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/components/json-ld.tsx:29": {
+    "src/components/json-ld.tsx:31": {
       "fp": "405a6d04d62f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "url: \"https://anvilry.vercel.app\","
     },
-    "src/components/json-ld.tsx:4": {
+    "src/components/json-ld.tsx:5": {
       "fp": "0ef7dac074d3",
       "citedBy": [
         "14b-subsystems.md"
@@ -14581,7 +14650,7 @@
       ],
       "preview": "{ href: \"/llms.txt\", label: \"llms.txt\" },"
     },
-    "src/components/site-footer.tsx:118": {
+    "src/components/site-footer.tsx:119": {
       "fp": "38f1bd0357e8",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -14589,21 +14658,21 @@
       ],
       "preview": "const showVisitorCounter = process.env.NEXT_PUBLIC_VISITOR_COUNTER === \"true\";"
     },
-    "src/components/site-footer.tsx:134": {
+    "src/components/site-footer.tsx:135": {
       "fp": "d532d27d9371",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "href=\"/decisions\""
     },
-    "src/components/site-footer.tsx:233": {
+    "src/components/site-footer.tsx:234": {
       "fp": "c2431368efe2",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "{/* Build-time year, not a render-time `new Date()`. Under cacheComponents an in-render"
     },
-    "src/components/site-footer.tsx:239": {
+    "src/components/site-footer.tsx:240": {
       "fp": "8961a62769e9",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -14612,7 +14681,7 @@
       ],
       "preview": "© {process.env.NEXT_PUBLIC_BUILD_YEAR ?? \"2026\"} Sairam Ugge"
     },
-    "src/components/site-footer.tsx:243": {
+    "src/components/site-footer.tsx:250": {
       "fp": "88f218773711",
       "citedBy": [
         "02-api-routes.md"
@@ -15696,6 +15765,48 @@
       ],
       "preview": "await redis.set(\"anvilry:corpus:built_at\", Date.now().toString(), {"
     },
+    "src/lib/accept-negotiation.test.ts:111": {
+      "fp": "f60f02d8efff",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"mentionsMarkdown\", () => {"
+    },
+    "src/lib/accept-negotiation.test.ts:118": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/accept-negotiation.ts:62": {
+      "fp": "75d827e3f0dd",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function negotiate("
+    },
+    "src/lib/accept-negotiation.ts:90": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/accept-negotiation.ts:93": {
+      "fp": "e78f18e1135d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function mentionsMarkdown(header: string | null | undefined): boolean {"
+    },
+    "src/lib/accept-negotiation.ts:95": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/admin-auth.test.ts:123": {
       "fp": "54545a777f82",
       "citedBy": [
@@ -15989,6 +16100,41 @@
         "09-content-and-schemas.md"
       ],
       "preview": "refs: [\"aava-code\", \"mindforge\"],"
+    },
+    "src/lib/api-error.test.ts:53": {
+      "fp": "1273d9f7e2a2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"documents every code it can emit, each bound to exactly one HTTP status\", () => {"
+    },
+    "src/lib/api-error.test.ts:67": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/api-error.ts:18": {
+      "fp": "50fbf18fad50",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const ERROR_DOCS_URL = `${SITE_URL}/developers#errors`;"
+    },
+    "src/lib/api-error.ts:20": {
+      "fp": "6ea62c93a4d2",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const API_ERROR_CODES = ["
+    },
+    "src/lib/api-error.ts:66": {
+      "fp": "6e2a9b95d72e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "] as const;"
     },
     "src/lib/article-grouping.ts:1": {
       "fp": "73b117d45b50",
@@ -16674,6 +16820,20 @@
         "09-content-and-schemas.md"
       ],
       "preview": "import { articleBodies, noteBodies, projectBodies, workBodies } from \"../../.velite\";"
+    },
+    "src/lib/content-kinds.ts:6": {
+      "fp": "5ac7b3572e99",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const CONTENT_KINDS = [\"projects\", \"work\", \"articles\", \"notes\"] as const;"
+    },
+    "src/lib/content-kinds.ts:7": {
+      "fp": "e99dd5ba868e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export type ContentKind = (typeof CONTENT_KINDS)[number];"
     },
     "src/lib/content.test.ts:19": {
       "fp": "3b3ceb3d6191",
@@ -18145,6 +18305,20 @@
       ],
       "preview": "* anvil-inline-store.ts so project-card.tsx can subscribe with useSyncExternalStore."
     },
+    "src/lib/home-markdown.ts:20": {
+      "fp": "b23abb2e421d",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "export function buildHomeMarkdown(): string {"
+    },
+    "src/lib/home-markdown.ts:95": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/llm-pricing.ts:107": {
       "fp": "9532be189de7",
       "citedBy": [
@@ -19510,7 +19684,15 @@
       ],
       "preview": "});"
     },
-    "src/lib/llms-txt.ts:103": {
+    "src/lib/llms-txt.ts:110": {
+      "fp": "6556e462b582",
+      "citedBy": [
+        "02-api-routes.md",
+        "09-content-and-schemas.md"
+      ],
+      "preview": "## Markdown Versions"
+    },
+    "src/lib/llms-txt.ts:125": {
       "fp": "f9be879c57de",
       "citedBy": [
         "02-api-routes.md",
@@ -19518,7 +19700,7 @@
       ],
       "preview": "`;"
     },
-    "src/lib/llms-txt.ts:104": {
+    "src/lib/llms-txt.ts:126": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
@@ -19578,7 +19760,7 @@
       ],
       "preview": ": \"\";"
     },
-    "src/lib/llms-txt.ts:75": {
+    "src/lib/llms-txt.ts:93": {
       "fp": "20d0bc3fe923",
       "citedBy": [
         "03-lib-content-data.md",
@@ -19587,13 +19769,176 @@
       ],
       "preview": "- MCP server (for AI agents): ${BASE}/api/mcp/mcp"
     },
-    "src/lib/llms-txt.ts:88": {
-      "fp": "6556e462b582",
+    "src/lib/markdown-content.test.ts:18": {
+      "fp": "047ef847da92",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"markdownForContent\", () => {"
+    },
+    "src/lib/markdown-content.test.ts:84": {
+      "fp": "e0aeb39e7019",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"never reads outside the content folder for a traversal slug\", async () => {"
+    },
+    "src/lib/markdown-content.test.ts:91": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/markdown-content.ts:23": {
+      "fp": "3b5218923a86",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function stripFrontmatter(raw: string): string {"
+    },
+    "src/lib/markdown-content.ts:25": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/markdown-content.ts:27": {
+      "fp": "c12120f26d3a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "function readRawContent(kind: ContentKind, slug: string): string | null {"
+    },
+    "src/lib/markdown-content.ts:37": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/markdown-content.ts:43": {
+      "fp": "6e3fd77d3cf2",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "function describeArticle(article: ArticleMeta): string {"
+    },
+    "src/lib/markdown-content.ts:57": {
+      "fp": "868a78bc0f41",
       "citedBy": [
         "02-api-routes.md",
         "09-content-and-schemas.md"
       ],
-      "preview": "## Markdown Versions"
+      "preview": "export function markdownForContent(kind: ContentKind, slug: string): Response {"
+    },
+    "src/lib/markdown-content.ts:59": {
+      "fp": "fe8f2ee92c1f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (!collections[kind].some((item) => item.slug === slug)) return notFound();"
+    },
+    "src/lib/markdown-content.ts:66": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/markdown-content.ts:9": {
+      "fp": "5de72bcfeb4e",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "export { CONTENT_KINDS, type ContentKind };"
+    },
+    "src/lib/markdown-response.test.ts:43": {
+      "fp": "7b9fbd9172ef",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"sanitizeRequestedPath\", () => {"
+    },
+    "src/lib/markdown-response.test.ts:97": {
+      "fp": "f848dfe1d943",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const body = markdownNotFoundBody(`/${\"a\".repeat(500)}`);"
+    },
+    "src/lib/markdown-response.ts:9": {
+      "fp": "6ac7b0d78835",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const MAX_ECHOED_PATH = 80;"
+    },
+    "src/lib/markdown-routing.test.ts:108": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/markdown-routing.test.ts:121": {
+      "fp": "e6d40b7dc28f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"the proxy bundle\", () => {"
+    },
+    "src/lib/markdown-routing.test.ts:146": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/markdown-routing.test.ts:88": {
+      "fp": "f23435bf4198",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"classifyPath against the real app tree\", () => {"
+    },
+    "src/lib/markdown-routing.ts:21": {
+      "fp": "1f4ffa03fb46",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const HTML_ONLY_PAGES = ["
+    },
+    "src/lib/markdown-routing.ts:35": {
+      "fp": "6e2a9b95d72e",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "] as const;"
+    },
+    "src/lib/markdown-routing.ts:41": {
+      "fp": "f374b74e8c82",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const CONTENT_TWIN = new RegExp(`^/(${CONTENT_KINDS.join(\"|\")})/([A-Za-z0-9_-]+)$`);"
+    },
+    "src/lib/markdown-routing.ts:43": {
+      "fp": "646a69037574",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function classifyPath(rawPathname: string): MarkdownRoute {"
+    },
+    "src/lib/markdown-routing.ts:58": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
     },
     "src/lib/mascot-flags.ts:1": {
       "fp": "8d64a30d9de1",
@@ -20023,6 +20368,34 @@
       ],
       "preview": "describe(\"notes collection\", () => {"
     },
+    "src/lib/openapi.test.ts:118": {
+      "fp": "cbb3b99e4588",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"documents exactly the catalogued error codes (api-error.test.ts checks each is emitted)\", () => "
+    },
+    "src/lib/openapi.test.ts:125": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/openapi.test.ts:175": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/openapi.test.ts:47": {
+      "fp": "433131f38bda",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"OpenAPI document\", () => {"
+    },
     "src/lib/personal.ts:83": {
       "fp": "88843f20da9f",
       "citedBy": [
@@ -20051,7 +20424,35 @@
       ],
       "preview": "});"
     },
-    "src/lib/profile.ts:122": {
+    "src/lib/privacy-facts.test.ts:20": {
+      "fp": "22a4c6a6135b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"PRIVACY_FACTS match the enforcing code\", () => {"
+    },
+    "src/lib/privacy-facts.test.ts:72": {
+      "fp": "a3724cba3d0e",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(hits).toEqual([]);"
+    },
+    "src/lib/privacy-facts.ts:28": {
+      "fp": "ba9801d22e0a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "} as const;"
+    },
+    "src/lib/privacy-facts.ts:6": {
+      "fp": "95000421ee27",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const PRIVACY_FACTS = {"
+    },
+    "src/lib/profile.ts:125": {
       "fp": "358ba3f22237",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -20060,7 +20461,7 @@
       ],
       "preview": "];"
     },
-    "src/lib/profile.ts:136": {
+    "src/lib/profile.ts:139": {
       "fp": "3fdfb777f881",
       "citedBy": [
         "01-routes-pages.md",
@@ -20071,14 +20472,14 @@
       ],
       "preview": "export const resumeVariants = ["
     },
-    "src/lib/profile.ts:138": {
+    "src/lib/profile.ts:141": {
       "fp": "9644d16fe935",
       "citedBy": [
         "06-components-game-terminal.md"
       ],
       "preview": "label: \"Sairam Resume\","
     },
-    "src/lib/profile.ts:142": {
+    "src/lib/profile.ts:145": {
       "fp": "358ba3f22237",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -20088,7 +20489,7 @@
       ],
       "preview": "];"
     },
-    "src/lib/profile.ts:46": {
+    "src/lib/profile.ts:49": {
       "fp": "31ecc437687f",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -20103,7 +20504,7 @@
       ],
       "preview": "import { publicProjects } from \"@/lib/content\";"
     },
-    "src/lib/profile.ts:65": {
+    "src/lib/profile.ts:68": {
       "fp": "d0371547c636",
       "citedBy": [
         "03-lib-content-data.md",
@@ -20112,7 +20513,7 @@
       ],
       "preview": "value: `${publicProjects.length}`,"
     },
-    "src/lib/profile.ts:70": {
+    "src/lib/profile.ts:73": {
       "fp": "358ba3f22237",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -20120,7 +20521,7 @@
       ],
       "preview": "];"
     },
-    "src/lib/profile.ts:72": {
+    "src/lib/profile.ts:75": {
       "fp": "769e77ab0d11",
       "citedBy": [
         "06-components-game-terminal.md",
@@ -21675,19 +22076,47 @@
       ],
       "preview": "process.env.NEXT_PUBLIC_CHROME_TTS_BANNER === \"true\";"
     },
-    "src/proxy.test.ts:24": {
+    "src/next-config.test.ts:22": {
+      "fp": "d8f5b6420135",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"next.config — Markdown negotiation headers\", () => {"
+    },
+    "src/next-config.test.ts:77": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/proxy.test.ts:162": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/proxy.test.ts:25": {
       "fp": "9ff041bc48cb",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"proxy — /admin/* gate\", () => {"
     },
-    "src/proxy.test.ts:56": {
+    "src/proxy.test.ts:57": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
+    },
+    "src/proxy.test.ts:76": {
+      "fp": "04a799aad674",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"proxy — Markdown negotiation\", () => {"
     },
     "src/proxy.ts:1": {
       "fp": "09e43d1f4645",
@@ -21696,12 +22125,13 @@
       ],
       "preview": "import type { NextRequest } from \"next/server\";"
     },
-    "src/proxy.ts:19": {
-      "fp": "ed9623369ff0",
+    "src/proxy.ts:10": {
+      "fp": "fe4c30b84f66",
       "citedBy": [
-        "14b-subsystems.md"
+        "02-api-routes.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "*/"
+      "preview": "* (see node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md),"
     },
     "src/proxy.ts:2": {
       "fp": "8c367ae1f95c",
@@ -21710,18 +22140,24 @@
       ],
       "preview": "import { NextResponse } from \"next/server\";"
     },
-    "src/proxy.ts:21": {
+    "src/proxy.ts:24": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "*/"
+    },
+    "src/proxy.ts:29": {
       "fp": "089c767ed959",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
-        "14-subsystems.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
       "preview": "export const config = {"
     },
-    "src/proxy.ts:23": {
+    "src/proxy.ts:37": {
       "fp": "df3982fd6101",
       "citedBy": [
         "14b-subsystems.md",
@@ -21730,36 +22166,6 @@
       ],
       "preview": "};"
     },
-    "src/proxy.ts:25": {
-      "fp": "9e1a68d7d92f",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export async function proxy(req: NextRequest) {"
-    },
-    "src/proxy.ts:26": {
-      "fp": "b6d366f3efcc",
-      "citedBy": [
-        "11-config-build-ci-infra.md"
-      ],
-      "preview": "if (!isAdminAuthorized(req.headers.get(\"Authorization\"))) {"
-    },
-    "src/proxy.ts:31": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
-    "src/proxy.ts:35": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
-    },
     "src/proxy.ts:4": {
       "fp": "698ad33b4de0",
       "citedBy": [
@@ -21767,14 +22173,39 @@
       ],
       "preview": "import { isAdminAuthorized } from \"@/lib/admin-auth\";"
     },
-    "src/proxy.ts:6": {
+    "src/proxy.ts:78": {
+      "fp": "95c871781ae8",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (pathname === \"/admin\" || pathname.startsWith(\"/admin/\")) {"
+    },
+    "src/proxy.ts:79": {
+      "fp": "b6d366f3efcc",
+      "citedBy": [
+        "11-config-build-ci-infra.md"
+      ],
+      "preview": "if (!isAdminAuthorized(req.headers.get(\"Authorization\"))) {"
+    },
+    "src/proxy.ts:8": {
       "fp": "8d64a30d9de1",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "/**"
     },
-    "src/proxy.ts:7": {
+    "src/proxy.ts:87": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/proxy.ts:9": {
       "fp": "43b2044cffb5",
       "citedBy": [
         "02-api-routes.md",
@@ -21782,16 +22213,8 @@
       ],
       "preview": "* Next 16 Proxy (formerly Middleware) — runs on the Node.js runtime by default"
     },
-    "src/proxy.ts:9": {
-      "fp": "e9ea51df5e75",
-      "citedBy": [
-        "02-api-routes.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "* before any route handler."
-    },
     "TELEMETRY.md:7": {
-      "fp": "d6850b6fab87",
+      "fp": "3d44e436c331",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],

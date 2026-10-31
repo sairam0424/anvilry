@@ -12,7 +12,7 @@ import { SITE_URL } from "@/lib/site-url";
  *
  * Scope: the failures the public routes raise themselves. Not covered, on purpose: the MCP
  * endpoint's JSON-RPC errors (clients parse those), operator-only routes (cron, admin and the
- * flags endpoint keep their own bodies) and an uncaught exception, which Next answers itself.
+ * flags endpoint keep their own bodies) and an exception in a route outside withJsonErrors.
  * Every code below must be emitted by some route; api-error.test.ts fails on a dead one.
  */
 export const ERROR_DOCS_URL = `${SITE_URL}/developers#errors`;

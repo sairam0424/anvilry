@@ -63,7 +63,7 @@ build: ## Full production build: velite --clean + vitest + next build
 
 .PHONY: search-index
 search-index: ## Regenerate the Pagefind search index without a full rebuild (pnpm build already runs this)
-	pnpm pagefind --site .next/server/app --output-path public/pagefind
+	node scripts/build-search-index.mjs
 
 .PHONY: start
 start: ## Serve the production build locally (run `make build` first)

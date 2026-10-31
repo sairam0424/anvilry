@@ -94,7 +94,7 @@ export const VERSIONING_POLICY = [
 /** Same idea for the rate limit, so the page and the spec quote the enforced numbers. */
 export const RATE_LIMIT_POLICY_TEXT = [
   `Each client address may send ${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds across the public API (the ${API_V1_BASE} routes, /api/resume.json, /api/github/stats, the MCP endpoint, the Markdown twins and the discovery files such as /llms.txt and /openapi.json).`,
-  "Every response that counts against the budget reports it (a refused request, a malformed API-Version and a preflight do not): RateLimit-Policy and RateLimit follow the current IETF draft (draft-ietf-httpapi-ratelimit-headers), and RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset carry the same numbers under the names earlier drafts used.",
+  "Every response that counts against the budget reports it (a malformed API-Version, a disallowed method and a preflight do not; a 429 does): RateLimit-Policy and RateLimit follow the current IETF draft (draft-ietf-httpapi-ratelimit-headers), and RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset carry the same numbers under the names earlier drafts used.",
   "Beyond the budget the answer is 429 with the rate_limited error code and a Retry-After header in seconds.",
   "The budget is counted per server instance, so the numbers describe the instance that answered; keep to them and you will not be limited.",
 ] as const;

@@ -48,7 +48,7 @@ Node 22 (`.nvmrc`; `engines` is `>=22 <23`) and pnpm.
 ```bash
 pnpm install
 pnpm dev          # http://localhost:3000  (predev runs Velite once; next.config.ts then keeps it in watch mode)
-pnpm build        # velite --clean && vitest run && next build && pagefind  (a failing test blocks the build)
+pnpm build        # velite --clean && vitest run && next build && node scripts/build-search-index.mjs  (a failing test blocks the build)
 pnpm lint
 pnpm test         # vitest run
 pnpm e2e          # Playwright (chromium + mobile-safari) against `pnpm start` — run `pnpm build` first

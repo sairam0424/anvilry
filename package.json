@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "velite",
     "dev": "next dev",
-    "build": "velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path public/pagefind",
+    "build": "velite --clean && vitest run && next build && node scripts/build-search-index.mjs",
     "analyze": "velite --clean && ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint",
@@ -26,7 +26,7 @@
     "@aws-sdk/client-bedrock-runtime": "^3.1133.0",
     "@aws-sdk/client-polly": "^3.1131.0",
     "@aws-sdk/client-transcribe-streaming": "^3.1131.0",
-    "@modelcontextprotocol/sdk": "1.26.0",
+    "@modelcontextprotocol/sdk": "1.32.0",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@react-three/drei": "^10.7.8",
@@ -44,7 +44,7 @@
     "lucide-react": "^1.46.0",
     "mcp-handler": "^1.1.0",
     "motion": "^12.40.0",
-    "next": "16.3.5",
+    "next": "16.4.3",
     "pdfjs-dist": "^6.2.108",
     "postprocessing": "^6.39.5",
     "react": "19.3.0",
@@ -58,7 +58,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.3.5",
+    "@next/bundle-analyzer": "^16.4.3",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
@@ -67,14 +67,15 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.4",
-    "happy-dom": "^20.14.5",
+    "eslint-config-next": "16.4.3",
+    "happy-dom": "^21.0.4",
     "pagefind": "^1.5.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5",
     "velite": "^0.4.0",
-    "vitest": "^5.0.0",
+    "vite": "^8.1.6",
+    "vitest": "^5.0.3",
     "web-vitals": "^6.1.1"
   }
 }

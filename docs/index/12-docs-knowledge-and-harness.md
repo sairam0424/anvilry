@@ -270,7 +270,7 @@ Three structural facts a maintainer should know:
   (`scripts/bundle-budget.mjs:40`, a floor set when the tree had 16 `page.tsx` routes plus `/_not-found`; the script's comment now says "a floor, not a count", and the tree has 19 `page.tsx` files), (c) the `WebGLRenderer`
   marker (`LAZY_MARKER`, `scripts/bundle-budget.mjs:84`) turns up in any route's first-load chunk set, or (d) the `_createMdxContent`
   marker (`MDX_MARKER`, `scripts/bundle-budget.mjs:96`) does. The
-  comment above the ceiling records `/` at 1,333,521 B after the last raise (a dev-box figure, kept as history) and, in its closing paragraph, the lowering: `/` measures 973,291 B on a fresh build of this tree (972,887 B at #333; 972,920 B before the agent-readiness change), leaving 14,709 B (about 1.5%) of headroom, a growth allowance and not jitter room
+  comment above the ceiling records `/` at 1,333,521 B after the last raise (a dev-box figure, kept as history) and, in its closing paragraph, the lowering to 988,000 B with 15,080 B left against the 972,920 B it was set at, a growth allowance and not jitter room; on a clean build of this tree (a figure from this edition, not from the script's comment) `/` measures 966,794 B (973,291 B before the dependency security batch; 972,887 B at #333; 972,920 B before the agent-readiness change), leaving 21,206 B (about 2.1%) of headroom
   (`/` measured 976,936 B at the v3.16.0 cut, 359,064 B under the 1,336,000 B ceiling then in force, after #329 took it from 1,298,585 B, and 972,887 B on CI and macOS after the later prune of three low-priority open-source items, #333). The single three.js chunk is 897,249 B, present in 0 of the 17 route
   records' first-load sets (the script's own comment says "17 routes"). The remaining **four** guards still fail *silently*, including "`src/lib/r3f.ts`
   is load-bearing … do not delete it on the theory that '16.3 handles this now'"
@@ -298,7 +298,7 @@ Three structural facts a maintainer should know:
 | Security alerts | job `security-alerts`, from `ci.yml:255` | Non-blocking Dependabot-alert report; needs `SECURITY_ALERTS_TOKEN` |
 
 `pnpm build` also chains `vitest run`, so a failing test blocks a production build; the build script then
-runs `pagefind` (`package.json:11`), which is why `make search-index` is only a manual re-run.
+runs `node scripts/build-search-index.mjs` (`package.json:11`; it wraps `pagefind` and indexes both Next output layouts), which is why `make search-index` is only a manual re-run.
 
 **How the citation gate decides.** `docs/index/.citations.json` maps each `path:line` key to a 12-hex SHA-256
 fingerprint of the trimmed line, the list of index files that cite it, and a 100-char preview. The script
@@ -438,11 +438,11 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    exports deleted for Cache Components).
 4. ~~**`pnpm search-index` does not exist.**~~ — **corrected.** `CLAUDE.md` used to list
    `pnpm search-index` under "After build". The `scripts` block of `package.json` has no `search-index`
-   entry; the target is `make search-index` (`Makefile:65-66`, which runs
-   `pnpm pagefind --site .next/server/app --output-path public/pagefind`). Current state: `CLAUDE.md`
+   entry; the target is `make search-index` (`Makefile:65-66`, which ran
+   `pnpm pagefind --site .next/server/app --output-path public/pagefind` and now runs `node scripts/build-search-index.mjs`). Current state: `CLAUDE.md`
    § Commands carries the explicit warning "**NOTE:** this is a Makefile target only — there is NO
    `pnpm search-index` script" immediately above the `make search-index` line. `docs/configuration.md`
-   always said `make search-index`. Since then `pnpm build` itself chains `pagefind` (`package.json:11`), so
+   always said `make search-index`. Since then `pnpm build` itself chains the Pagefind step (`package.json:11`, now `node scripts/build-search-index.mjs`), so
    the make target is only for regenerating the index without a full rebuild (its own help text says so).
 5. **Velite watch in `pnpm dev`: the claim is right in effect; one skill still gets the mechanism wrong.**
    *(Still live for one file, and the earlier version of this item was itself wrong.)* This item used to say
@@ -513,8 +513,8 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     `install-pnpm-11` shipped in `[3.6.0]` (`CHANGELOG.md:739-757`).
 12. ~~**`DEPLOY.md`'s build command drops the test and search steps.**~~ — **corrected.** `DEPLOY.md` §1
     used to say "Build command: `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
-    `"build": "velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path
-    public/pagefind"`. `DEPLOY.md` §1 now spells out all four steps and says a failing test aborts the
+    `"build": "velite --clean && vitest run && next build && node scripts/build-search-index.mjs"` (it ended in
+    `pagefind --site .next/server/app --output-path public/pagefind` until the build-search-index commit). `DEPLOY.md` §1 now spells out all four steps and says a failing test aborts the
     deploy; `README.md` § Develop (`pnpm build  # velite --clean && vitest run && next build && pagefind`)
     and `CLAUDE.md` § Commands (the `pnpm build` comment) match. A failing test also blocks the search
     index, and `pagefind` runs on every build even though the search flag defaults off.
@@ -547,7 +547,7 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     Model & CI the same 1,220,794 B / ~5% figures plus `bundle-budget.mjs` line citations. Both now quote
     988,000 B and `MIN_ROUTES` = 17: the performance README tells the reader to re-measure with
     `pnpm build && node scripts/bundle-budget.mjs` before quoting headroom, and `CLAUDE.md` calls the
-    figure a ceiling, measures `/` at 973,291 B on a fresh build of this tree (14,709 B of headroom; 972,887 B on CI and macOS at #333, 972,920 B before the agent-readiness change; it was 976,936 B at the v3.16.0 cut, 359,064 B under the then 1,336,000 B ceiling) and notes that the
+    figure a ceiling, measures `/` at 966,794 B on a clean build of this tree (21,206 B of headroom; 973,291 B before the dependency security batch, 972,887 B on CI and macOS at #333, 972,920 B before the agent-readiness change; it was 976,936 B at the v3.16.0 cut, 359,064 B under the then 1,336,000 B ceiling) and notes that the
     script's own comment still quotes 1,333,521 B from the last raise (a dev-box figure, not the current one). `CHANGELOG.md:749` (v3.6.0) records 1,285,000 B, correct for that release and
     superseded since; `docs/next-upgrade-plan-2026-09.md` (a draft) records another live run, `/` at
     1,330,764 B with 5,236 B (~0.39%) of headroom.

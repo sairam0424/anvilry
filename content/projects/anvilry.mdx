@@ -41,7 +41,7 @@ decisions:
 
 ## Architecture
 
-Anvilry is one Next.js 16.3.5 App Router app (`cacheComponents: true`, React 19.3.0, Tailwind v4) on Vercel. Velite validates the MDX in `content/` into typed collections read through `src/lib/content.ts`, and derivation modules turn it into the Play graph, the chat corpus, the decisions ledger, the MCP results and `llms.txt`.
+Anvilry is one Next.js 16.4.3 App Router app (`cacheComponents: true`, React 19.3.0, Tailwind v4) on Vercel. Velite validates the MDX in `content/` into typed collections read through `src/lib/content.ts`, and derivation modules turn it into the Play graph, the chat corpus, the decisions ledger, the MCP results and `llms.txt`.
 
 Views are a six-member `View` union in a module-level external store; the server and the first client render always return Classic. The chat route applies a per-IP Upstash limit (8 requests a minute per route class), then the FAQ cache, then `src/lib/llm.ts`. Cost guards fail open when Upstash is absent.
 

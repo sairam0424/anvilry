@@ -17,8 +17,8 @@ pnpm dev                   # starts Velite watch + Next.js dev @ localhost:3000
 
 # Build (Velite + tests + Next.js + Pagefind, in that order)
 pnpm build
-# == velite --clean && vitest run && next build && pagefind ...  (package.json "build")
-# a failing Vitest test therefore blocks the deploy; Pagefind is the LAST step
+# == velite --clean && vitest run && next build && node scripts/build-search-index.mjs  (package.json "build")
+# a failing Vitest test therefore blocks the deploy; the search index (Pagefind) is the LAST step, a script and not the old `pagefind --site .next/server/app` one-liner because a Vercel build on Next >= 16.4 runs with a deployment adapter and writes the prerendered pages to .next/server/route-cache/APP_PAGE/<hash>/$/ instead, where the one-liner found 0 files and failed the build
 
 # Bundle attribution — LOCAL tool only, never in CI. `--webpack` is REQUIRED: a bare `next build`
 # is Turbopack, which @next/bundle-analyzer cannot hook. Writes .next/analyze/{client,edge,nodejs}.html.
@@ -40,7 +40,7 @@ pnpm content               # velite --clean
 
 # Pagefind search index — already the last step of `pnpm build`; re-run it alone with:
 # NOTE: this is a Makefile target only — there is NO `pnpm search-index` script.
-make search-index          # == pnpm pagefind --site .next/server/app --output-path public/pagefind
+make search-index          # == node scripts/build-search-index.mjs (indexes whichever layout exists, fails when it finds no HTML)
 
 # Cache wipe (all build artifacts)
 pnpm clean
@@ -450,7 +450,7 @@ Work frontmatter supports optional `constraints`, `tradeoffs`, and `diagram`/`di
 - `llm.test.ts` pins the snake_case usage field names from the Anthropic SDK (`input_tokens`, not `inputTokens`). A future SDK update that returns camelCase would silently zero out token telemetry; this test is the regression guard.
 - `agent-trace.test.ts` does **not** block shipping — it is a *consistency* check. The assertion is `expect(traceApproved).toBe(!hasSentinel)` (`src/lib/agent-trace.test.ts:56`), which passes in both states: sentinel present ⇔ not approved. `src/lib/agent-trace.ts:118` says so outright ("NOT a hard build failure"), and the file's header banner now says the same — it previously claimed the test "BLOCKS shipping", which is what sent this doc wrong in the first place.
   What actually happens: `PLACEHOLDER_SENTINEL` (`"[DRAFT — owner to approve]"`) is currently present, so `traceApproved === false` and `src/components/game/glass-box-demo.tsx:40` returns `null` — the demo ships **dark**, nothing is blocked. Replacing the draft prose lights it up; the test keeps the flag honest either way.
-- **Vitest runs two projects:** `node` (default, `src/**/*.test.{ts,tsx}` except `*.dom.test.*`) and `dom` (happy-dom environment, all `*.dom.test.*`). At this tree: 130 test files under `src/` (87 `node`, 43 `dom`; none elsewhere), 1566 tests, all passing (Vitest 5.0.5); they were 115 files (73 / 42) and 1356 tests at v3.16.1. `e2e/` holds 2 Playwright specs that Vitest does not run. `NODE_ENV` is forced to `"test"` to prevent React's missing `act()` warning in the production-default Node environment.
+- **Vitest runs two projects:** `node` (default, `src/**/*.test.{ts,tsx}` except `*.dom.test.*`) and `dom` (happy-dom environment, all `*.dom.test.*`). At this tree: 131 test files under `src/` (88 `node`, 43 `dom`; none elsewhere), 1572 tests, all passing (Vitest 5.0.5); they were 115 files (73 / 42) and 1356 tests at v3.16.1. `e2e/` holds 2 Playwright specs that Vitest does not run. `NODE_ENV` is forced to `"test"` to prevent React's missing `act()` warning in the production-default Node environment.
 - Tests run as part of `pnpm build` — a failing test blocks deployment.
 - The `vitest run` step sits between `velite --clean` and `next build` in the `build` script, so a red test also skips the Next build and the Pagefind index.
 - Regression guards for the recent hardening, all in the Vitest suite: `src/lib/notes-dark.test.ts` (no surface lists notes while `NOTES_ENABLED` is off), `src/lib/rate-limit.test.ts` (per-class buckets, `CRON_SECRET` bypass, fail-open), `src/lib/cron-auth.test.ts` and `src/lib/admin-auth.test.ts` (fail-closed / constant-time compares), `src/lib/llm-pricing.test.ts` (every Bedrock model id the chain can produce under any flag combination has a verified price row), `src/lib/deploy-gate-alert.test.ts` (36 tests: the alert script against a mocked GitHub API, its entry by real path and through a symlink, and eight text-level tests over `deploy-smoke.yml`: every step is named, the guard step stays last, every step has a `timeout-minutes` and the limits sum below the job limit, nothing cancels a run, runs are serialised per environment and commit, the alert steps are best effort and sit before the guard, the alert script comes from the default branch, and the permissions stay least-privilege) and `src/lib/deploy-smoke.test.ts` (36 tests, two of which start the smoke script by its real path and through a symlink and expect usage-error exit 2; four of the 36 fail the smoke when the Markdown homepage is HTML or lacks `Vary: Accept`, when `/openapi.json` is thin, and when an unknown API path answers HTML).

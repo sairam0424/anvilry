@@ -532,9 +532,9 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 - **Reads / depends on:** `velite` (`defineConfig`, `defineCollection`, `s`). No env vars, no
   network. Input root `content/` (`:169`); writes `.velite/` (data) and `public/static/` (assets).
 - **Consumed by:** the `velite` CLI in `package.json` scripts — `predev` (`velite`, no `--clean`,
-  `package.json:9`), `build` (`velite --clean && vitest run && next build && pagefind --site
-  .next/server/app --output-path public/pagefind`, `package.json:11` — so the content tests gate every
-  production build and Pagefind runs inside `pnpm build`), `content` (`velite --clean`,
+  `package.json:9`), `build` (`velite --clean && vitest run && next build &&
+  node scripts/build-search-index.mjs`, `package.json:11` — so the content tests gate every
+  production build and the Pagefind index is built inside `pnpm build`), `content` (`velite --clean`,
   `package.json:17`). In `next dev`, `next.config.ts:13-15` additionally starts
   `build({ watch: true, clean: false })` (guarded by `VELITE_STARTED`). Generated output is imported
   by exactly two modules, via the relative path `../../.velite`: the metadata collections by

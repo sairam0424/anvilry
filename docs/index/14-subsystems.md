@@ -136,7 +136,7 @@ article and note pages; the ten MCP tool responses; the gamified view's `questNo
 
 1. **`velite` must run before anything that compiles.** `.velite/` is gitignored (`.gitignore:45`) but
    `src/lib/content.ts:14` imports it by relative path, so **both** `vitest` and `next build` fail at
-   module resolution without it. The chain is `velite --clean && vitest run && next build && pagefind …`
+   module resolution without it. The chain is `velite --clean && vitest run && next build && node scripts/build-search-index.mjs`
    (`package.json:11`).
 2. **`vitest run` sits in the middle so a failing test aborts the deploy** — the `&&` is the gate.
 3. **CI mirrors this order:** `pnpm content` runs before `pnpm lint`, `npx tsc --noEmit`, and `pnpm test`

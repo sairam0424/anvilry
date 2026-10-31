@@ -17,7 +17,7 @@ Claude on **AWS Bedrock**. Describes Anvilry v3.16.1 (`package.json` 3.16.1), i.
 ## 1. Import the project
 1. [vercel.com/new](https://vercel.com/new) → import the GitHub repo.
 2. Framework preset auto-detects **Next.js**. Leave build/output defaults:
-   - Build command: `pnpm build` (runs `velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path public/pagefind`; a failing test aborts the deploy)
+   - Build command: `pnpm build` (runs `velite --clean && vitest run && next build && node scripts/build-search-index.mjs`; a failing test aborts the deploy; the last step is a script and not a `pagefind --site .next/server/app` one-liner because a Vercel build on Next >= 16.4 runs with a deployment adapter and writes the prerendered pages to `.next/server/route-cache/APP_PAGE/<hash>/$/` instead, where the one-liner found 0 files and failed the build; the script indexes whichever layout exists and exits non-zero when it finds no HTML)
    - Install command: `pnpm install`
 3. Don't deploy yet — add env vars first (§2).
 

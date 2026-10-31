@@ -21,15 +21,15 @@ touch this scope. On top of that, v3.16.0 adds three changes and only one reache
 
 **Scope:** `package.json`, `.nvmrc`, `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
 `postcss.config.mjs`, `pnpm-workspace.yaml`, `patches/`, `vercel.json`, `Makefile`, `next-env.d.ts`, `.gitignore`,
-`.env.example`, `.coderabbit.yaml`, `scripts/replay-trace.mjs`, `scripts/bundle-budget.mjs`, `scripts/post-deploy-smoke.mjs`, `scripts/deploy-gate-alert.mjs`, `scripts/ci-install-playwright.sh`, `.github/**` (**6**
+`.env.example`, `.coderabbit.yaml`, `scripts/replay-trace.mjs`, `scripts/bundle-budget.mjs`, `scripts/build-search-index.mjs`, `scripts/post-deploy-smoke.mjs`, `scripts/deploy-gate-alert.mjs`, `scripts/ci-install-playwright.sh`, `.github/**` (**6**
 workflows, dependabot, PR + issue templates, CONTRIBUTING), `public/**` (asset tree), plus the untracked agent-tooling
 root artifacts `ruvector.db`, `agentdb.rvf`, `agentdb.rvf.lock`, `.swarm/`, `.claude-flow/` (**gitignored**).
-**Files indexed:** 29 config/CI files + 7 tracked public assets, plus the never-tracked `public/static/` directory and
+**Files indexed:** 30 config/CI files + 7 tracked public assets, plus the never-tracked `public/static/` directory and
 the 5 untracked agent-tooling artifacts (neither exists in a clean checkout or a fresh worktree). Versus the previous
 edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.github/workflows/scorecard.yml`,
 `patches/@react-three__fiber@9.7.0.patch` and `.coderabbit.yaml` were added, so the workflow count was then **5**
 (`ls .github/workflows/` → `ci.yml`, `codeql.yml`, `dependency-review.yml`, `gitleaks.yml`, `scorecard.yml`), and
-`ci.yml` itself grew from 4 jobs to 5. After the v3.16.0 cut `.github/workflows/deploy-smoke.yml` and `scripts/post-deploy-smoke.mjs` were added (the 25 became 27), `scripts/deploy-gate-alert.mjs` after them (27 became 28), and `scripts/ci-install-playwright.sh`, which the `e2e` job already ran but this page described only inside the `e2e` row, now has its own entry (28 became 29), so the workflow count is now **6**.
+`ci.yml` itself grew from 4 jobs to 5. After the v3.16.0 cut `.github/workflows/deploy-smoke.yml` and `scripts/post-deploy-smoke.mjs` were added (the 25 became 27), `scripts/deploy-gate-alert.mjs` after them (27 became 28), and `scripts/ci-install-playwright.sh`, which the `e2e` job already ran but this page described only inside the `e2e` row, now has its own entry (28 became 29), so the workflow count is now **6**. `scripts/build-search-index.mjs`, which replaced the Pagefind one-liner in `package.json` and the Makefile, makes it 30.
 
 ## At a glance
 
@@ -59,6 +59,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 | `.github/workflows/deploy-smoke.yml` | The production gate: `repository_dispatch` `vercel.deployment.ready` (+ `workflow_dispatch` with a `url` input); job `Smoke the deployment` (20 min backstop above the 18 min sum of its eight per-step `timeout-minutes`; job-level `contents: read`, `statuses: write`, `actions: read`, `issues: write`) reports the commit status `Post-deploy smoke` on the deployed SHA (`vercel/repository-dispatch/actions/status`, SHA-pinned), validates the payload, sparse-checks-out the script, and runs it with `VERCEL_AUTOMATION_BYPASS_SECRET`. On a dispatch run whose smoke step did not succeed (it failed, or it was skipped because an earlier step such as payload validation failed), two best-effort steps (`continue-on-error: true`, both before the guard step, which is still last) check out `scripts/deploy-gate-alert.mjs` from the run's own `github.sha` (the default branch, not the commit under test) and open one GitHub issue per held commit (dedupe is best effort, and a deployment held because no status ever arrives is not announced; see `scripts/deploy-gate-alert.mjs`). Skips only `preview` dispatches; the concurrency group is keyed by environment and commit and never cancels | n/a |
 | `scripts/post-deploy-smoke.mjs` | Dependency-free Node ESM: 26 GET checks against one deployment URL (a check may set the `Accept` it sends; `home-markdown` asks `/` for `text/markdown`); exports `runSmoke`, `CHECKS`, `waitUntilReachable`, `assertBypassTargetAllowed`; exit 0 / 1 / 2; the entry guard compares real paths, so a symlinked path still runs the checks (a raw `argv[1]` comparison made it exit 0 without running one) | n/a (CLI) |
 | `scripts/deploy-gate-alert.mjs` | Dependency-free Node ESM (214 lines) that tells a human when the gate holds a deployment: it runs whenever the smoke step did not succeed (it failed, or it was skipped because an earlier step such as payload validation failed; the issue then says failure, cancelled or skipped) and opens one GitHub issue per held commit, titled `Production deployment held: smoke failed for <7-char sha>` (`an unknown commit` when the dispatch had no valid sha). Dedupe is best effort: it lists the newest 100 open items (the issues API also returns pull requests, which count toward the 100 and are then ignored) and skips creating when an open ISSUE with that title opened by `github-actions[bot]` exists; a same-title issue opened by anyone else does not count, so nobody can silence the alert, and a closed issue never dedupes; a match outside that window, or a create that was retried after its first attempt had already succeeded, can leave a duplicate. One retry after a network error, a 5xx or a 429. Every payload value (40-hex sha, `*.vercel.app` host, github.com Actions run URL, known outcome) is validated and an invalid one is dropped, never echoed; the token goes only to `api.github.com` and never into an error message; exits 1 on any API error. A deployment held because no status ever arrives is NOT announced (a watchdog was considered and not built). Exports `ISSUE_TITLE_PREFIX`, `ALERT_AUTHOR`, `isCommitSha`, `isDeploymentHost`, `isRunUrl`, `buildIssue`, `openIssueOnce`, `runAlert`; the entry point compares real paths (symlink-safe) | n/a (CLI) |
+| `scripts/build-search-index.mjs` | Node ESM (95 lines) that builds the Pagefind index after `next build`: indexes `.next/server/app` when the classic layout holds HTML, otherwise stages the Vercel adapter layout (`.next/server/route-cache/APP_PAGE/<hash>/$/<path>.html`) under URL paths in `.next/search-site`, then runs `pagefind --site <dir> --output-path public/pagefind`; throws when it finds no HTML at all; exports `SERVER_DIR`, `STAGE_DIR`, `OUTPUT_PATH`, `listHtml`, `resolveSearchSource`; the entry guard compares real paths | n/a (CLI) |
 | `scripts/ci-install-playwright.sh` | Bash (40 lines, `set -euo pipefail`) run by the `e2e` job (`ci.yml:172-173`): writes an apt config (pipelining off, 15 s idle timeout, 3 retries per file), then runs `pnpm exec playwright install --with-deps chromium webkit` under `timeout -k 15 240`, up to 3 attempts; between attempts it kills the root-owned `apt-get` and `dpkg` and repairs dpkg; exits 0 on the first success and 1 with `::error::` after the third failure (worst case about 13 min, inside the job's 20 min) | n/a (shell script) |
 | `.github/dependabot.yml` | Weekly updates → `develop` for **two ecosystems**: `npm` (6 groups, 3 `ignore` entries with root-cause comments) and `github-actions` (bumps the SHA pins) | n/a |
 | `.github/PULL_REQUEST_TEMPLATE.md` | Issue link + "Views tested" checklist (Classic, Play, Chat, Developer, Voice) + lint/test/no-content-changes checklist | n/a |
@@ -106,7 +107,7 @@ rather than citing them.
 |---|---|---|---|
 | `predev` | `velite` | Auto-runs before `dev` | pnpm lifecycle hook. Runs **without** `--clean` on purpose — see gotchas |
 | `dev` | `next dev` | Local development @ :3000 | Velite *also* starts in watch mode from inside `next.config.ts:12-16` when `process.argv` contains `"dev"` |
-| `build` | `velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path public/pagefind` | Production build (Vercel runs this). The bare `next build` is a **Turbopack** build, which is what writes `.next/diagnostics/route-bundle-stats.json` | **Order is load-bearing — see below** |
+| `build` | `velite --clean && vitest run && next build && node scripts/build-search-index.mjs` | Production build (Vercel runs this). The bare `next build` is a **Turbopack** build, which is what writes `.next/diagnostics/route-bundle-stats.json` | **Order is load-bearing — see below** |
 | `analyze` | `velite --clean && ANALYZE=true next build --webpack` | **Local bundle attribution only** — writes the treemap HTML to `.next/analyze/`. Never runs in CI | `--webpack` is mandatory, not stylistic: without it the build is Turbopack and `@next/bundle-analyzer` produces nothing. Conversely a `--webpack` build emits **no** `route-bundle-stats.json`, so `pnpm build` must be re-run before the bundle-budget gate — see below |
 | `start` | `next start` | Serve a built app; also what Playwright's `webServer` runs (`playwright.config.ts:38`) | Requires a prior `pnpm build` |
 | `lint` | `eslint` | Lint (no `--fix`, no path arg — flat config resolves the target set) | Not part of `build`; CI-only gate (`ci.yml:57-58`) |
@@ -132,10 +133,15 @@ rather than citing them.
    (`src/lib/pnpm-build-allowlist-consistency.test.ts`), and the 1.5 MB avatar budget + compression/rig assertions
    (`src/lib/avatar-glb.test.ts:21,58-95,101-131`).
 3. **`next build` last-but-one**, consuming both the fresh `.velite/` output and a green test suite.
-4. **`pagefind` closes the chain.** It indexes the just-built `.next/server/app` into `public/pagefind/`, which is
-   gitignored (`.gitignore:50`) and never committed. So `/search` needs **no** separate manual step after a build any
-   more; `make search-index` is now only a way to regenerate the index without a full rebuild (`Makefile:64-66`). A
-   failing `pagefind` fails `pnpm build` — the deploy.
+4. **`node scripts/build-search-index.mjs` closes the chain.** It indexes the just-built prerendered HTML into
+   `public/pagefind/`, which is gitignored (`.gitignore:50`) and never committed, in whichever layout Next wrote it:
+   `.next/server/app` (local and CI builds) or, on Vercel builds with Next >= 16.4 and a deployment adapter,
+   `.next/server/route-cache/APP_PAGE/<hash>/$/` (see the script's section below). So `/search` needs **no** separate
+   manual step after a build; `make search-index` runs the same script and is only a way to regenerate the index
+   without a full rebuild (`Makefile:64-66`). A failing script, or one that finds no HTML, fails `pnpm build` — the
+   deploy. Until the commit that introduced the script, this step was the one-liner
+   `pagefind --site .next/server/app --output-path public/pagefind`, which found 0 files on the Vercel build and
+   failed it while local and CI builds passed.
 
 `vitest.config.ts:26` pins `env: { NODE_ENV: "test" }` specifically because this chain runs inside `pnpm build`,
 where Vercel's build shell exports `NODE_ENV=production` — which would load React's production bundle, strip
@@ -166,8 +172,8 @@ machine-checked by `scripts/check-index-citations.mjs` (its citable set is first
 files; see the CI section). Re-verify them after any Next or analyzer upgrade.
 
 **Not in `package.json`:** there is **no `search-index` script**. `CLAUDE.md` (§ Commands) documents that there
-is none and that `make search-index` is the Makefile target; the Pagefind command itself is inlined in the `build`
-script (`package.json:11`) and in the Makefile (`Makefile:66`). Likewise `lint` and `tsc --noEmit` are **not** part
+is none and that `make search-index` is the Makefile target; both the `build` script (`package.json:11`) and the
+Makefile target (`Makefile:66`) run `node scripts/build-search-index.mjs`. Likewise `lint` and `tsc --noEmit` are **not** part
 of `pnpm build` — they run only in CI, as does the bundle-budget gate. There is also no `packageManager` field, so a
 contributor's local pnpm version is unpinned; the pnpm major is pinned only by CI — `pnpm/action-setup` `version: 10`
 in the `ci`, `claims-integrity-autocommit` and `e2e` jobs (`.github/workflows/ci.yml:24`, `:108`, `:155`) and
@@ -198,7 +204,7 @@ renders via awk (`Makefile:28-34`). Section banners (`## Development`, etc.) are
 | `test-watch` | `pnpm test:watch` | Vitest watch mode |
 | `lint` | `pnpm lint` | ESLint across the project |
 | `build` | `pnpm build` | Full production build (velite + vitest + next + pagefind) |
-| `search-index` | `pnpm pagefind --site .next/server/app --output-path public/pagefind` | Regenerate the Pagefind static index consumed by `/search` (`src/app/search/page.tsx:24,35` load `/pagefind/pagefind-ui.css` + `.js`). `pnpm build` already runs this; the target is only for re-indexing without a rebuild, and still needs a prior build for `.next/server/app` (`Makefile:64-66`) |
+| `search-index` | `node scripts/build-search-index.mjs` | Regenerate the Pagefind static index consumed by `/search` (`src/app/search/page.tsx:24,35` load `/pagefind/pagefind-ui.css` + `.js`). `pnpm build` already runs this; the target is only for re-indexing without a rebuild, and still needs a prior build for the prerendered HTML under `.next/server` (`Makefile:64-66`) |
 | `start` | `pnpm start` | Serve the production build locally |
 | `clean` | `pnpm clean` | Wipe `.next .velite .turbo node_modules/.cache` |
 | `install` | `pnpm install` | Install/sync deps |
@@ -753,7 +759,7 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 - **Gotchas / invariants:**
   - `search-index` (`:64-66`) writes to `public/pagefind`, which is gitignored (`.gitignore:50`) and absent from a
     clean checkout; `pnpm build` now generates it, so `/search` 404s on its Pagefind assets only if you run the app
-    without a full build. The target's `--site .next/server/app` input only exists post-`pnpm build`.
+    without a full build. The script's input (the prerendered HTML under `.next/server`) only exists post-`pnpm build`; with none present it exits non-zero.
   - `new-project` hardcodes the GitHub org/user `sairam0424` into the scaffolded `repo:` field (`:131`).
   - `env-check`/`flags-show` read the **process** environment, not `.env.local`, so they under-report locally.
   - `resume-list` (`Makefile:362-369`) parses `ls -lh` columns 9 and 5 (`Makefile:366`) — filenames containing spaces would misalign.
@@ -894,6 +900,12 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 - **Behaviour notes:** Plain Node, no dependencies, `fetch` with a 15 s timeout. The issue title is `Production deployment held: smoke failed for` plus the 7-character short sha, or `an unknown commit` when the sha is not 40 lower-case hex. Dedupe is best effort: it lists the newest 100 open items (`state=open&per_page=100`, newest first; the issues API also returns pull requests, which count toward the 100 and are then ignored) and skips creating when an open ISSUE with that title that was opened by `github-actions[bot]` is among them. A same-title issue opened by anyone else does not count, so nobody can silence the alert; a closed issue never dedupes; a match outside the newest 100 items, or a create that was retried after its first attempt had already succeeded, can leave a duplicate. One retry after a network error, a 5xx or a 429 (2 s pause); errors carry the route and GitHub's own message, never the token. Every value written into the issue comes from the dispatch payload, so each is validated first (40-hex sha, `*.vercel.app` host, a github.com Actions run URL, one of `failure` / `cancelled` / `skipped` / `success`) and an invalid value is dropped, never echoed. The token goes only to `api.github.com`. Exits 1 on any API error so the step log says why.
 - **Gotchas / invariants:** The workflow checks this file out from the run's own `GITHUB_SHA` (the default branch), never from the commit under test, so it works for any deployed commit, including one that predates it; the checkout is a sparse one into `alert/` (`node alert/scripts/deploy-gate-alert.mjs`). Both alert steps are `continue-on-error: true` and sit before the guard step, and the concurrency group (environment plus commit, never cancelling) serialises two dispatches for one commit, so they cannot race the alert. All of it is pinned by `src/lib/deploy-gate-alert.test.ts` (36 tests, 373 lines: 28 script tests and 8 workflow-shape invariants, see [10](./10-tests-and-quality-gates.md)). **The alert steps have run in Actions only through two controlled dispatches** on 2026-10-22 with an invalid payload (runs 39821938807 and 39822149872: the token's `issues: write`, the open-issue listing, the create call and the dedupe all worked against the real API, and the issue, #342, was closed by hand); the tests use a mocked GitHub API plus text checks on the workflow, and a smoke step that ends `failure` and a real held deployment were not exercised.
 
+### `scripts/build-search-index.mjs`
+- **Role:** Builds the Pagefind search index (`public/pagefind/`, gitignored) from the prerendered HTML of a finished `next build`, as the last step of `pnpm build` (`package.json:11`) and of `make search-index` (`Makefile:66`). It replaced the one-liner `pagefind --site .next/server/app --output-path public/pagefind`, which found 0 files on Vercel builds.
+- **Exports:** `SERVER_DIR` (`.next/server`), `STAGE_DIR` (`.next/search-site`), `OUTPUT_PATH` (`public/pagefind`), `listHtml(dir)` (all `.html` files under a directory as POSIX relative paths; a missing directory is empty) and `resolveSearchSource(serverDir, stageDir)` (returns `{ layout: "app" | "route-cache", dir, files, duplicates }`). The CLI `main()` runs only when the file is executed directly; the entry guard compares real paths, so a symlink does not silently skip it.
+- **Behaviour notes:** Next writes prerendered pages in two layouts: classic `.next/server/app/<path>.html`, and, when a deployment adapter is active, `.next/server/route-cache/APP_PAGE/<hash>/$/<path>.html` (the script's header comment, `scripts/build-search-index.mjs:7-8`, says Vercel builds with Next >= 16.4 run with a deployment adapter, which produces this second layout). `resolveSearchSource` indexes `app/` directly when it holds any HTML (so CI and local builds behave exactly as before); otherwise it empties `STAGE_DIR`, copies every `$/` tree under `route-cache/APP_PAGE/*` into it under the URL path each page is served at (so search results link to real pages), keeps the first copy of a path two sources claim, and throws when it staged nothing. `main()` logs `[search-index] N pages from the "<layout>" layout`, warns on duplicates, then runs `node_modules/.bin/pagefind` (or `pagefind` from the PATH) with `--site <dir> --output-path public/pagefind` and exits with its status.
+- **Gotchas / invariants:** A build that prerendered no HTML must fail, not publish an empty index: the script throws "no prerendered HTML found under …". `src/lib/build-search-index.test.ts` (6 tests) pins both layouts, the classic-wins rule, duplicate handling and the empty case. The `.next/search-site` staging directory lives under `.next`, so it is not committed.
+
 ### `scripts/ci-install-playwright.sh`
 - **Role:** Installs the Playwright browsers (chromium and webkit) and their system packages on the GitHub-hosted runner for the `e2e` job, bounded in time and retried. `E2E (Playwright)` is a required check, and a stall in this step used to run the whole job into its 20 min timeout.
 - **Exports:** none: a Bash script (40 lines, `set -euo pipefail`) run as `bash scripts/ci-install-playwright.sh` by the step "Install Playwright browsers" (`.github/workflows/ci.yml:172-173`). Constants: `ATTEMPTS=3`, `ATTEMPT_SECONDS=240`, `KILL_GRACE_SECONDS=15`, `PAUSE_SECONDS=5`.
@@ -961,6 +973,7 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 - `.coderabbit.yaml`
 - `scripts/replay-trace.mjs`
 - `scripts/bundle-budget.mjs`
+- `scripts/build-search-index.mjs`
 - `scripts/post-deploy-smoke.mjs`
 - `scripts/deploy-gate-alert.mjs`
 - `scripts/ci-install-playwright.sh`
@@ -1043,3 +1056,4 @@ project" now quotes the full `build` chain, including `vitest run` and `pagefind
   (`.next/**`, `out/**`, `build/**`, `next-env.d.ts`) alongside six project-specific ones — implying a replace,
   but I did not verify the flat-config merge semantics against the installed package.
 - Whether the six smoke checks added with the agent-readiness change pass against a real deployment, and whether a built server really sends the `Vary: Accept` / `Link` headers and serves `/index.md`. The smoke script only does that against a deployed URL and `pnpm e2e` against `pnpm start`; this edition ran neither. `src/lib/deploy-smoke.test.ts` covers the checks against a fake site and `src/next-config.test.ts` reads the `headers()` and `rewrites()` the config returns, in isolation. The first-load figure for `/` (966,794 B) is the coordinator's clean build of the dependency-batch tree, not one taken while this page was written; `pnpm audit` was reported by the coordinator as 0 critical and 1 high (`zod`, no patched 3.x), plus moderates in `@hono/node-server` and `minimatch`, and was not run for this page.
+- Whether `scripts/build-search-index.mjs` indexes the same pages on a real Vercel build as on a local one. This edition ran neither `pnpm build` nor the script itself; it read the script and `src/lib/build-search-index.test.ts`, whose tests build both layouts by hand in a temp directory. That Next >= 16.4 on Vercel writes the `route-cache/APP_PAGE/<hash>/$/` layout comes from the script's header comment (`scripts/build-search-index.mjs:7-8`), not from a build observed here. The coordinator of this edition reports that both layouts give the same index (38 pages, 3953 words); that figure was not re-measured by the indexing pass.

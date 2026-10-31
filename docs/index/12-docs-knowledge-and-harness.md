@@ -298,7 +298,7 @@ Three structural facts a maintainer should know:
 | Security alerts | job `security-alerts`, from `ci.yml:255` | Non-blocking Dependabot-alert report; needs `SECURITY_ALERTS_TOKEN` |
 
 `pnpm build` also chains `vitest run`, so a failing test blocks a production build; the build script then
-runs `pagefind` (`package.json:11`), which is why `make search-index` is only a manual re-run.
+runs `node scripts/build-search-index.mjs` (`package.json:11`; it wraps `pagefind` and indexes both Next output layouts), which is why `make search-index` is only a manual re-run.
 
 **How the citation gate decides.** `docs/index/.citations.json` maps each `path:line` key to a 12-hex SHA-256
 fingerprint of the trimmed line, the list of index files that cite it, and a 100-char preview. The script
@@ -438,11 +438,11 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
    exports deleted for Cache Components).
 4. ~~**`pnpm search-index` does not exist.**~~ — **corrected.** `CLAUDE.md` used to list
    `pnpm search-index` under "After build". The `scripts` block of `package.json` has no `search-index`
-   entry; the target is `make search-index` (`Makefile:65-66`, which runs
-   `pnpm pagefind --site .next/server/app --output-path public/pagefind`). Current state: `CLAUDE.md`
+   entry; the target is `make search-index` (`Makefile:65-66`, which ran
+   `pnpm pagefind --site .next/server/app --output-path public/pagefind` and now runs `node scripts/build-search-index.mjs`). Current state: `CLAUDE.md`
    § Commands carries the explicit warning "**NOTE:** this is a Makefile target only — there is NO
    `pnpm search-index` script" immediately above the `make search-index` line. `docs/configuration.md`
-   always said `make search-index`. Since then `pnpm build` itself chains `pagefind` (`package.json:11`), so
+   always said `make search-index`. Since then `pnpm build` itself chains the Pagefind step (`package.json:11`, now `node scripts/build-search-index.mjs`), so
    the make target is only for regenerating the index without a full rebuild (its own help text says so).
 5. **Velite watch in `pnpm dev`: the claim is right in effect; one skill still gets the mechanism wrong.**
    *(Still live for one file, and the earlier version of this item was itself wrong.)* This item used to say
@@ -513,8 +513,8 @@ every edit, and a stale line number is worse than none. Re-derive a reference fr
     `install-pnpm-11` shipped in `[3.6.0]` (`CHANGELOG.md:739-757`).
 12. ~~**`DEPLOY.md`'s build command drops the test and search steps.**~~ — **corrected.** `DEPLOY.md` §1
     used to say "Build command: `pnpm build` (runs `velite --clean && next build`)". `package.json:11` is
-    `"build": "velite --clean && vitest run && next build && pagefind --site .next/server/app --output-path
-    public/pagefind"`. `DEPLOY.md` §1 now spells out all four steps and says a failing test aborts the
+    `"build": "velite --clean && vitest run && next build && node scripts/build-search-index.mjs"` (it ended in
+    `pagefind --site .next/server/app --output-path public/pagefind` until the build-search-index commit). `DEPLOY.md` §1 now spells out all four steps and says a failing test aborts the
     deploy; `README.md` § Develop (`pnpm build  # velite --clean && vitest run && next build && pagefind`)
     and `CLAUDE.md` § Commands (the `pnpm build` comment) match. A failing test also blocks the search
     index, and `pagefind` runs on every build even though the search flag defaults off.

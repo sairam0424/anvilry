@@ -84,6 +84,8 @@ const csp = [
   ...(process.env.VERCEL ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
+type Header = { key: string; value: string };
+
 // Static security headers applied to every route. HSTS is already set by Vercel's
 // platform default, so it is intentionally omitted here (avoids a weaker duplicate).
 const securityHeaders = [
@@ -230,17 +232,42 @@ const nextConfig: NextConfig = {
       return h;
     });
 
+    // Pages that have a Markdown twin vary with Accept (https://acceptmarkdown.com): say so, and
+    // advertise the twin for crawlers that never send Accept. The slug pattern excludes dots so an
+    // explicit /projects/x.md URL does not match and advertise "x.md.md" as its own alternate.
+    const negotiated = (alternate: string, extraLinks: string[] = []): Header[] => [
+      { key: "Vary", value: "Accept" },
+      {
+        key: "Link",
+        // One header value: Next would not reliably merge two rules that both set Link.
+        value: [`<${alternate}>; rel="alternate"; type="text/markdown"`, ...extraLinks].join(", "),
+      },
+    ];
+
+    // RFC 8631: the homepage points machines at the API description and the human guide.
+    const apiLinks = [
+      '</openapi.json>; rel="service-desc"; type="application/json"',
+      '</developers>; rel="service-doc"; type="text/html"',
+    ];
+
     return [
       { source: "/:path*", headers: securityHeaders },
       // Override frame-ancestors for the resume route so the PDF iframe works.
       { source: "/resume", headers: resumeHeaders },
       { source: "/resume/:path*", headers: resumeHeaders },
+      { source: "/", headers: negotiated("/index.md", apiLinks) },
+      ...(["projects", "work", "articles", "notes"] as const).map((kind) => ({
+        source: `/${kind}/:slug([A-Za-z0-9_-]+)`,
+        headers: negotiated(`/${kind}/:slug.md`),
+      })),
     ];
   },
   async rewrites() {
     // Rewrite /:collection/:slug.md → /api/md/:collection/:slug so that AI crawlers
     // can fetch raw markdown via canonical pretty-URLs (e.g. /work/pensieve.md).
     return [
+      // The homepage has no slug: /index.md is its explicit Markdown URL.
+      { source: "/index.md", destination: "/api/md/home" },
       { source: "/work/:slug.md", destination: "/api/md/work/:slug" },
       { source: "/projects/:slug.md", destination: "/api/md/projects/:slug" },
       { source: "/articles/:slug.md", destination: "/api/md/articles/:slug" },

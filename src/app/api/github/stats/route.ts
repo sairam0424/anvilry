@@ -1,3 +1,4 @@
+import { methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { getRepoFeed } from "@/lib/github";
 
 // `export const revalidate = 3600` removed for cacheComponents (which rejects it).
@@ -66,3 +67,11 @@ export async function GET() {
       repos.length,
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["GET", "HEAD"]);
+export const POST = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["GET", "HEAD"]);

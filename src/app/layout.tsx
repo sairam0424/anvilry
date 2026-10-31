@@ -12,7 +12,12 @@ import { AnvilCoreSurface } from "@/components/chat/anvil-core-surface";
 import { WakeWordController } from "@/components/chat/wake-word-controller";
 import { ViewHint } from "@/components/view-hint";
 import { EasterEggs } from "@/components/game/easter-eggs";
-import { PersonJsonLd, WebSiteJsonLd, FaqJsonLd } from "@/components/json-ld";
+import {
+  PersonJsonLd,
+  OrganizationJsonLd,
+  WebSiteJsonLd,
+  FaqJsonLd,
+} from "@/components/json-ld";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { profile } from "@/lib/profile";
@@ -118,6 +123,7 @@ export default async function RootLayout({
           }}
         />
         <PersonJsonLd />
+        <OrganizationJsonLd />
         <WebSiteJsonLd />
         <FaqJsonLd />
       </head>

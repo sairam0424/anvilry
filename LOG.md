@@ -28,6 +28,12 @@ awk '/^## 20/{p=/^## 2026-06/} p' LOG.md
 
 ---
 
+## 2026-10-31 · Agent readiness: Markdown negotiation, JSON API errors, OpenAPI, developer pages · #feature #seo #docs
+What: `Accept: text/markdown` on `/` and the four content page families returns Markdown (`Vary: Accept`; `/index.md` is the homepage twin), API errors share one JSON shape, and `/openapi.json`, `/developers`, `/contact` and `/privacy` are new; the deploy smoke runs 26 checks (was 20) and the suite is 1566 tests in 130 files. Unreleased on top of v3.16.1, no version chosen.
+Refs: commits 3e8082e, 8553d86 and 41020d6 on `feat/agent-readiness`; [CHANGELOG](CHANGELOG.md) `[Unreleased]` (new), [CLAUDE.md](CLAUDE.md), [DEPLOY.md](DEPLOY.md), [ARCHITECTURE.md](ARCHITECTURE.md) (updated).
+
+---
+
 ## 2026-08-15 · v3.4.0 released to production · #release #performance
 What: Promoted 64 commits to main as v3.4.0 (Next 16.3.0, cacheComponents, hero avatar, chat streaming coalescing, GLB -59%). The direct develop→main promotion was UNMERGEABLE — a binary add/add on public/avatar/sairam.glb, because the merge-base contains no GLB (main got the 2.55 MB original via #115, develop the 1.055 MB compressed one via #124); resolved on release/v3.4.0 in develop's favour. Production verified: all routes 200, correct content types, HIT/PRERENDER on statics, /notes still 404 (flag off), hero renders HeroGraph (production default), GLB etag matches the compressed asset.
 Refs: PR #126 (release/v3.4.0 → main, 67 commits), commit 02d1ba7. Version 3.3.0 → 3.4.0; CHANGELOG entry added after a 13-release gap. A pre-release audit (5 dimensions, adversarially verified) refuted 12 of 14 findings and confirmed 2 — the unmergeable promotion, and that c6fd3e2's doc closure never landed before #119 merged.

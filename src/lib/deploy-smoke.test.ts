@@ -72,7 +72,28 @@ function healthySite(
     "/decisions": page(),
     "/resume": page(),
     "/mcp": page(),
+    "/developers": page(),
+    "/contact": page('<a href="mailto:a@b.c">mail</a>'),
+    "/privacy": page(),
     "/search": page(),
+    "/openapi.json": {
+      status: 200,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        openapi: "3.1.0",
+        paths: Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`/p${i}`, {}])),
+      }),
+    },
+    "md:/": {
+      status: 200,
+      headers: { "content-type": "text/markdown; charset=utf-8", vary: "Accept" },
+      body: "# Sairam Ugge\n\n> Engineer",
+    },
+    "/api/no-such-route": {
+      status: 404,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: "not_found" }),
+    },
     "/pagefind/pagefind.js": {
       status: 200,
       headers: { "content-type": "text/javascript" },
@@ -124,7 +145,9 @@ function fakeFetch(site: Record<string, Reply>) {
       const url = String(input);
       calls.push({ url, init });
       const path = new URL(url).pathname;
-      const reply = site[path] ?? {
+      // A request that asks for Markdown can be answered differently from the same path asked for */*.
+      const accept = new Headers(init.headers).get("accept") ?? "";
+      const reply = (accept.includes("text/markdown") ? site[`md:${path}`] : undefined) ?? site[path] ?? {
         status: 404,
         headers: HTML,
         body: "not found",
@@ -147,7 +170,7 @@ describe("runSmoke against a healthy deployment", () => {
     expect(result.failures).toEqual([]);
     expect(result.ok).toBe(true);
     expect(result.results).toHaveLength(CHECKS.length);
-    expect(CHECKS).toHaveLength(20);
+    expect(CHECKS).toHaveLength(26);
   });
 
   it("sends the bypass header on every request when a secret is given, and only to the deployment origin", async () => {
@@ -287,6 +310,46 @@ describe("runSmoke against a broken deployment", () => {
     );
     const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
     expect(result.failures.map((f) => f.id)).toContain("pagefind");
+  });
+
+  it("fails when a Markdown request to the homepage still gets HTML", async () => {
+    const { impl } = fakeFetch(
+      healthySite({ "md:/": { status: 200, headers: HTML, body: "<html><h1>Sairam Ugge</h1></html>" } }),
+    );
+    const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
+    expect(result.failures.map((f) => f.id)).toContain("home-markdown");
+  });
+
+  it("fails when the Markdown homepage forgets Vary: Accept", async () => {
+    const { impl } = fakeFetch(
+      healthySite({
+        "md:/": { status: 200, headers: { "content-type": "text/markdown" }, body: "# Sairam Ugge" },
+      }),
+    );
+    const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
+    expect(result.failures.map((f) => f.id)).toContain("home-markdown");
+  });
+
+  it("fails when the OpenAPI document is missing or too thin", async () => {
+    const { impl } = fakeFetch(
+      healthySite({
+        "/openapi.json": {
+          status: 200,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ openapi: "3.1.0", paths: { "/a": {} } }),
+        },
+      }),
+    );
+    const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
+    expect(result.failures.map((f) => f.id)).toContain("openapi-json");
+  });
+
+  it("fails when an unknown API path answers HTML instead of a JSON 404", async () => {
+    const { impl } = fakeFetch(
+      healthySite({ "/api/no-such-route": { status: 404, headers: HTML, body: "<h1>404</h1>" } }),
+    );
+    const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
+    expect(result.failures.map((f) => f.id)).toContain("api-json-404");
   });
 
   it("fails when an unknown project does not 404", async () => {

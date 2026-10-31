@@ -62,3 +62,45 @@ describe("buildLlmsTxt — AI Usage Policy", () => {
     expect(section.toLowerCase()).toContain("license");
   });
 });
+
+describe("buildLlmsTxt — instructions for agents", () => {
+  const txt = buildLlmsTxt();
+  const section = (name: string) => {
+    const after = txt.split(`## ${name}\n`)[1] ?? "";
+    return after.split(/\n## /)[0];
+  };
+
+  it("has a 'When to use this site' section ahead of the content lists", () => {
+    expect(txt).toContain("## When to use this site\n");
+    expect(txt.indexOf("## When to use this site")).toBeLessThan(txt.indexOf("## Production Work"));
+  });
+
+  it("says what the site is good for and what to use something else for", () => {
+    const body = section("When to use this site");
+    expect(body).toMatch(/use this site when/i);
+    expect(body).toMatch(/do not use/i);
+    expect(body.length).toBeGreaterThan(300);
+  });
+
+  it("tells an agent how to fetch each representation", () => {
+    const body = section("How to read this site");
+    expect(body).toContain("Accept: text/markdown");
+    expect(body).toContain(".md");
+    expect(body).toContain("/api/resume.json");
+    expect(body).toContain("/openapi.json");
+    expect(body).toContain("/developers");
+    expect(body).toContain("/api/mcp/mcp");
+  });
+
+  it("links the developer guide, OpenAPI document, contact and privacy pages", () => {
+    const links = section("Links");
+    for (const path of ["/developers", "/openapi.json", "/contact", "/privacy"]) {
+      expect(links).toContain(`https://anvilry.vercel.app${path}`);
+    }
+  });
+
+  it("does not add a second MCP line that starts like the advertised one", () => {
+    const starts = txt.split("\n").filter((l) => l.startsWith("- MCP server (for AI agents):"));
+    expect(starts).toHaveLength(1);
+  });
+});

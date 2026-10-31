@@ -104,6 +104,7 @@ const MACHINE_LINKS = [
   { href: "/mcp", label: "MCP server" },
   { href: "/llms.txt", label: "llms.txt" },
   { href: "/api/resume.json", label: "resume.json" },
+  { href: "/developers", label: "API docs" },
 ];
 
 // Views whose <main> fills the full viewport below the nav (h-[calc(100dvh-3.5rem)]) —
@@ -148,7 +149,7 @@ export function SiteFooter() {
           {/* For AI agents — the machine-readable links. */}
           <nav
             aria-label="Machine-readable"
-            className="flex items-center gap-4 text-xs text-fg-subtle"
+            className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-subtle"
           >
             <span className="font-mono">{"// for AI:"}</span>
             {MACHINE_LINKS.map((l) => (
@@ -239,6 +240,12 @@ export function SiteFooter() {
           © {process.env.NEXT_PUBLIC_BUILD_YEAR ?? "2026"} Sairam Ugge
         </span>
         <div className="flex items-center gap-4">
+          <Link href="/contact" className="transition-colors hover:text-accent">
+            Contact
+          </Link>
+          <Link href="/privacy" className="transition-colors hover:text-accent">
+            Privacy
+          </Link>
           <a
             href="/feed.xml"
             className="inline-flex items-center gap-1 transition-colors hover:text-accent"

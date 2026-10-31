@@ -1,3 +1,4 @@
+import { apiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/admin-auth";
 import { faqCachePurge } from "@/lib/chat-cache";
 
@@ -34,14 +35,14 @@ export async function POST(req: Request) {
 
   const declaredLen = Number(req.headers.get("content-length") ?? 0);
   if (declaredLen > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request too large." }, { status: 413 });
+    return apiError(413, "payload_too_large", "Request too large.");
   }
 
   let body: { question?: unknown };
   try {
     body = await req.json();
   } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
+    return apiError(400, "invalid_request", "Invalid request.");
   }
 
   // Content-Length bypass backstop: a missing/false header skips the
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
   // would otherwise buffer an unbounded body before this point. Mirrors the
   // same post-read guard used in /api/transcribe/route.ts and /api/error/route.ts.
   if (JSON.stringify(body).length > MAX_BODY_BYTES) {
-    return Response.json({ error: "Request too large." }, { status: 413 });
+    return apiError(413, "payload_too_large", "Request too large.");
   }
 
   // 2000 chars is generous for a question to purge (the live chat path caps
@@ -60,10 +61,7 @@ export async function POST(req: Request) {
     body.question.trim().length === 0 ||
     body.question.length > 2000
   ) {
-    return Response.json(
-      { error: "question (non-empty string, max 2000 chars) is required." },
-      { status: 400 },
-    );
+    return apiError(400, "invalid_request", "question (non-empty string, max 2000 chars) is required.");
   }
 
   const result = await faqCachePurge(body.question);

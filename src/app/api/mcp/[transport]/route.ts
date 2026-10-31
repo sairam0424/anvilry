@@ -1,4 +1,5 @@
 import { createMcpHandler } from "mcp-handler";
+import { ensureJsonError, methodNotAllowed } from "@/lib/api-error";
 import * as T from "@/lib/mcp-tools";
 
 // The SDK transitively needs Node (express/hono) — never edge. Inherently dynamic
@@ -127,4 +128,19 @@ const handler = createMcpHandler(
   { basePath: "/api/mcp", disableSse: true },
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+// The transport library answers a wrong path or method with a bare text 404/405. Route
+// every response through ensureJsonError so errors are JSON like the rest of the API
+// (a JSON-RPC body is only labelled, never rewritten, so MCP clients see what they expect).
+async function jsonErrors(req: Request): Promise<Response> {
+  return ensureJsonError(await handler(req));
+}
+
+const notAllowed = methodNotAllowed(["GET", "POST", "DELETE"]);
+
+export {
+  jsonErrors as GET,
+  jsonErrors as POST,
+  jsonErrors as DELETE,
+  notAllowed as PUT,
+  notAllowed as PATCH,
+};

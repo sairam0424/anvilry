@@ -1,3 +1,4 @@
+import { apiError, methodNotAllowed } from "@/lib/api-error";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -100,8 +101,8 @@ export async function POST(req: Request) {
     // bloats the Redis sink (Phase 1.2's ZADD into anvilry:trace:client.error).
     const rl = await checkRateLimit(req, "beacon");
     if (!rl.ok) {
-      return new Response(null, {
-        status: 429,
+      return apiError(429, "rate_limited", "Too many error reports.", {
+        hint: `Wait ${rl.retryAfter} seconds before reporting again.`,
         headers: { "Retry-After": String(rl.retryAfter) },
       });
     }
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
     // under 1KB; 8KB is a hard wall. Reject by header before reading the body so
     // we don't burn memory on a hostile 10MB blob the client claims is JSON.
     if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
-      return new Response(null, { status: 413 });
+      return apiError(413, "payload_too_large", "Error report too large.");
     }
 
     // Stage 5a — parse. The client wraps the body in a Blob with
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
     try {
       raw = await req.json();
     } catch {
-      return new Response(null, { status: 400 });
+      return apiError(400, "invalid_request", "Malformed error report.");
     }
 
     // Content-Length bypass backstop: sendBeacon and the fetch fallback in
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
     // check at Stage 4 can be silently bypassed. A post-read size guard mirrors
     // the defence-in-depth pattern used in /api/transcribe/route.ts.
     if (JSON.stringify(raw).length > MAX_BODY_BYTES) {
-      return new Response(null, { status: 413 });
+      return apiError(413, "payload_too_large", "Error report too large.");
     }
 
     // Stage 5b — Zod validate. Unknown source / oversized field / wrong type all
@@ -138,7 +139,7 @@ export async function POST(req: Request) {
     // the Zod throw form).
     const parsed = ErrorBeaconSchema.safeParse(raw);
     if (!parsed.success) {
-      return new Response(null, { status: 400 });
+      return apiError(400, "invalid_request", "Malformed error report.");
     }
     const { message, stack, url, userAgent, level, source, componentStack } = parsed.data;
 
@@ -183,3 +184,10 @@ export async function POST(req: Request) {
     return new Response(null, { status: 204 });
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

@@ -1,3 +1,4 @@
+import { apiError, methodNotAllowed } from "@/lib/api-error";
 import {
   TranscribeStreamingClient,
   StartStreamTranscriptionCommand,
@@ -57,28 +58,28 @@ async function* pcmChunks(pcm: Buffer): AsyncGenerator<AudioStream> {
 export async function POST(req: Request) {
   return withTrace(req, "transcribe", async (ctx) => {
     if (!isConfigured()) {
-      return Response.json({ error: "Transcribe not configured." }, { status: 503 });
+      return apiError(503, "not_configured", "Transcribe not configured.");
     }
 
     const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
-      return Response.json(
-        { error: "Too many requests." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-      );
+      return apiError(429, "rate_limited", "Too many requests.", {
+        hint: `Wait ${rl.retryAfter} seconds, then retry.`,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      });
     }
 
     // Reject by declared length BEFORE buffering the whole audio into memory — a cheap
     // guard against a client streaming more than the cap. (The post-read byteLength check
     // below still backstops a missing/lying Content-Length.)
     if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES) {
-      return Response.json({ error: "Audio too long." }, { status: 413 });
+      return apiError(413, "payload_too_large", "Audio too long.");
     }
 
     const ab = await req.arrayBuffer();
-    if (!ab.byteLength) return Response.json({ error: "Expected audio." }, { status: 400 });
+    if (!ab.byteLength) return apiError(400, "invalid_request", "Expected audio.");
     if (ab.byteLength > MAX_BYTES) {
-      return Response.json({ error: "Audio too long." }, { status: 413 });
+      return apiError(413, "payload_too_large", "Audio too long.");
     }
     const pcm = Buffer.from(ab);
 
@@ -129,7 +130,14 @@ export async function POST(req: Request) {
           audio_bytes: pcm.length,
         },
       });
-      return Response.json({ error: "Transcribe failed." }, { status: 502 });
+      return apiError(502, "upstream_error", "Transcribe failed.");
     }
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

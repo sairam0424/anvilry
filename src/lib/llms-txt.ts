@@ -52,8 +52,27 @@ export function buildLlmsTxt(): string {
 ${profile.subhead}
 
 ## Availability
-Open to Backend, GenAI & Full-Stack engineering roles. Remote or Hyderabad, India.
+${profile.availability}
 Schedule a call: ${profile.calendlyUrl}
+
+## When to use this site
+Use this site when a question is about ${profile.name}'s professional work: fit for a
+backend, GenAI or full-stack engineering role, what was built and how (production multi-agent
+LLM systems, event-driven backends, open-source AI infrastructure), how to verify the claim
+behind a metric, or how to make contact. Every figure on the site links to the case study or
+repository that backs it, so cite the page, not this summary.
+Do not use it for general programming questions, for questions about other people, or for
+personal-life details, which the site does not publish. If something is not on the site, say
+it is not published rather than guessing.
+
+## How to read this site
+- Any content page as Markdown: send "Accept: text/markdown" to its normal URL, or append .md (for example ${BASE}/work/pensieve.md)
+- The homepage as Markdown: ${BASE}/index.md, or "Accept: text/markdown" on ${BASE}/
+- Structured résumé (JSON Resume): ${BASE}/api/resume.json
+- Tool access over the Model Context Protocol: ${BASE}/api/mcp/mcp (read-only, no key)
+- Machine-readable API description (OpenAPI 3.1): ${BASE}/openapi.json
+- Developer guide with examples and the error format: ${BASE}/developers
+- The whole corpus in one plain-text file: ${BASE}/llms-full.txt
 
 ## Production Work
 ${work}
@@ -74,6 +93,10 @@ ${articles ? `\n## Articles & Writing\n${articles}` : ""}${notes ? `\n\n## Engin
 - Structured résumé (JSON): ${BASE}/api/resume.json
 - MCP server (for AI agents): ${BASE}/api/mcp/mcp
 - RSS feed: ${BASE}/feed.xml
+- Developer guide: ${BASE}/developers
+- OpenAPI description: ${BASE}/openapi.json
+- Contact: ${BASE}/contact
+- Privacy: ${BASE}/privacy
 
 ## AI Usage Policy
 This site publishes a Content-Signal preference in robots.txt (search=yes,

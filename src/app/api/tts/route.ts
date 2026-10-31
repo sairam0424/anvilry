@@ -1,3 +1,4 @@
+import { apiError, methodNotAllowed } from "@/lib/api-error";
 import { PollyClient, SynthesizeSpeechCommand, type VoiceId } from "@aws-sdk/client-polly";
 import { bedrockCreds } from "@/lib/llm";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -62,32 +63,32 @@ export async function POST(req: Request) {
   return withTrace(req, "tts", async (ctx) => {
     if (!isConfigured()) {
       // Not wired up -> client falls back to browser TTS.
-      return Response.json({ error: "TTS not configured." }, { status: 503 });
+      return apiError(503, "not_configured", "TTS not configured.");
     }
 
     // Per-IP guard (shared "voice" bucket, separate from chat) — Polly is real spend, so bound it.
     const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
-      return Response.json(
-        { error: "Too many requests." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-      );
+      return apiError(429, "rate_limited", "Too many requests.", {
+        hint: `Wait ${rl.retryAfter} seconds, then retry.`,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      });
     }
 
     // A single sentence is tiny; reject an oversized body by declared length up front.
     if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
-      return Response.json({ error: "Request too large." }, { status: 413 });
+      return apiError(413, "payload_too_large", "Request too large.");
     }
 
     let body: { text?: unknown; voiceId?: unknown };
     try {
       body = await req.json();
     } catch {
-      return Response.json({ error: "Invalid request." }, { status: 400 });
+      return apiError(400, "invalid_request", "Invalid request.");
     }
 
     const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
-    if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
+    if (!text) return apiError(400, "invalid_request", "Expected text.");
 
     // The body's voiceId is a catalog id (e.g. "polly-neural-joanna"). The catalog is
     // the source of truth for which Polly voices we expose AND which tier each voice
@@ -101,16 +102,13 @@ export async function POST(req: Request) {
         : DEFAULT_CATALOG_ID;
 
     if (!validateVoiceForEngine(requestedVoiceId, "polly")) {
-      return Response.json(
-        { error: "Unknown voice for this engine." },
-        { status: 400 },
-      );
+      return apiError(400, "invalid_request", "Unknown voice for this engine.");
     }
 
     const polly = resolvePollyParams(requestedVoiceId);
     // validateVoiceForEngine already guarantees this — narrow for TS.
     if (!polly) {
-      return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+      return apiError(400, "invalid_request", "Voice resolution failed.");
     }
 
     const key = cacheKey(text, polly.pollyVoiceId, polly.tier);
@@ -151,7 +149,7 @@ export async function POST(req: Request) {
           aws_request_id: out.$metadata?.requestId,
           error_kind: "no-audio-stream",
         });
-        return Response.json({ error: "No audio." }, { status: 502 });
+        return apiError(502, "upstream_error", "No audio.");
       }
       // The SDK stream -> bytes. transformToByteArray() can hang mid-stream on a stalled
       // connection (no built-in timeout), which would burn the whole maxDuration window.
@@ -202,7 +200,14 @@ export async function POST(req: Request) {
           char_count: text.length,
         },
       });
-      return Response.json({ error: "TTS failed." }, { status: 502 });
+      return apiError(502, "upstream_error", "TTS failed.");
     }
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

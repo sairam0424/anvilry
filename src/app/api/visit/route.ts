@@ -1,3 +1,4 @@
+import { methodNotAllowed } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -86,3 +87,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ total: 0, today: 0 });
   }
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

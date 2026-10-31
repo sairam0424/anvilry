@@ -1,4 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { apiError, methodNotAllowed } from "@/lib/api-error";
 import { buildCorpus } from "@/lib/corpus";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
@@ -136,19 +137,21 @@ type ChatMessage = {
 export async function POST(req: Request) {
   return withTrace(req, "chat", async (ctx) => {
     if (!isConfigured()) {
-      return Response.json(
-        { error: "Chat is not configured." },
-        { status: 503 },
-      );
+      return apiError(503, "not_configured", "Chat is not configured.");
     }
 
     // Per-IP rate limit BEFORE any Bedrock call, so a bot can't run up cost. Fails
     // open when Upstash isn't configured (local dev) — see src/lib/rate-limit.ts.
     const rl = await checkRateLimit(req, "chat");
     if (!rl.ok) {
-      return Response.json(
-        { error: "Too many requests — please slow down a moment." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
+      return apiError(
+        429,
+        "rate_limited",
+        "Too many requests — please slow down a moment.",
+        {
+          hint: `Wait ${rl.retryAfter} seconds, then retry.`,
+          headers: { "Retry-After": String(rl.retryAfter) },
+        },
       );
     }
 
@@ -159,14 +162,16 @@ export async function POST(req: Request) {
     // is raised to 2MB: 12 msgs × 600 chars ≈ 7KB text + one 1MB image ≈ 1.33MB base64.
     const declaredLen = Number(req.headers.get("content-length") ?? 0);
     if (declaredLen > 2 * 1024 * 1024) {
-      return Response.json({ error: "Request too large." }, { status: 413 });
+      return apiError(413, "payload_too_large", "Request too large.");
     }
 
     let body: { messages?: ChatMessage[] };
     try {
       body = await req.json();
     } catch {
-      return Response.json({ error: "Invalid request." }, { status: 400 });
+      return apiError(400, "invalid_request", "Invalid request.", {
+        hint: "Send a JSON body: {\"messages\":[{\"role\":\"user\",\"content\":\"...\"}]}.",
+      });
     }
 
     const incoming = Array.isArray(body.messages) ? body.messages : [];
@@ -250,10 +255,9 @@ export async function POST(req: Request) {
       messages.length === 0 ||
       messages[messages.length - 1].role !== "user"
     ) {
-      return Response.json(
-        { error: "Expected a user message." },
-        { status: 400 },
-      );
+      return apiError(400, "invalid_request", "Expected a user message.", {
+        hint: "End the messages array with an entry whose role is \"user\".",
+      });
     }
 
     // Surface message-count + last-user-msg-length to the auto http.request span
@@ -487,3 +491,10 @@ export async function POST(req: Request) {
     });
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

@@ -1,42 +1,17 @@
-import { allProjects } from "@/lib/content";
-import { readFileSync } from "fs";
-import { join } from "path";
-import type { NextRequest } from "next/server";
+import { methodNotAllowed } from "@/lib/api-error";
+import { markdownForContent } from "@/lib/markdown-content";
 
-// Slug is extracted from the URL because Next.js does not populate params for directory
-// segments of the form `[param].ext` (ParamMap resolves to {}). Reading the request is what
-// makes this handler dynamic, so the explicit `export const dynamic = "force-dynamic"` was
-// redundant — it is also rejected under nextConfig.cacheComponents, so it was removed.
-
-function stripFrontmatter(raw: string): string {
-  // Remove YAML frontmatter delimited by --- at the start of the file
-  return raw.replace(/^---[\s\S]*?---\s*\n?/, "").trimStart();
+// Next.js does not populate params for directory segments of the form `[param].ext`, so the slug
+// is read from the URL. The same factory answers the /api/md/projects/<slug> rewrite target, so
+// both paths behave identically (Markdown, Vary: Accept, Markdown 404).
+export function GET(req: Request) {
+  const slug = new URL(req.url).pathname.split("/").pop()?.replace(/\.md$/, "") ?? "";
+  return markdownForContent("projects", slug);
 }
 
-function readRawContent(slug: string): string | null {
-  const base = join(process.cwd(), "content", "projects");
-  for (const ext of ["mdx", "md"]) {
-    try {
-      return readFileSync(join(base, `${slug}.${ext}`), "utf-8");
-    } catch {
-      // try next extension
-    }
-  }
-  return null;
-}
-
-export function GET(req: NextRequest) {
-  // Extract slug from URL: /projects/agent-forge.md -> "agent-forge"
-  const pathname = new URL(req.url).pathname;
-  const slug = pathname.split("/").pop()?.replace(/\.md$/, "") ?? "";
-
-  const item = allProjects.find((p) => p.slug === slug);
-  if (!item) return new Response("Not found", { status: 404 });
-
-  const raw = readRawContent(slug);
-  if (!raw) return new Response("Not found", { status: 404 });
-
-  return new Response(stripFrontmatter(raw), {
-    headers: { "Content-Type": "text/markdown; charset=utf-8" },
-  });
-}
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["GET", "HEAD"]);
+export const POST = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;

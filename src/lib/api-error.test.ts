@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+import {
+  API_ERROR_CODES,
+  ERROR_DOCS_URL,
+  apiError,
+  ensureJsonError,
+  methodNotAllowed,
+} from "./api-error";
+
+async function body(res: Response) {
+  return (await res.json()) as Record<string, unknown>;
+}
+
+describe("apiError", () => {
+  it("returns JSON with the status, a stable code, a message and a docs link", async () => {
+    const res = apiError(404, "not_found", "No such API route.");
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toMatch(/^application\/json/);
+    const json = await body(res);
+    expect(json.code).toBe("not_found");
+    expect(json.status).toBe(404);
+    expect(json.docs).toBe(ERROR_DOCS_URL);
+  });
+
+  it("keeps the legacy `error` string so existing clients keep working", async () => {
+    const json = await body(
+      apiError(400, "invalid_request", "Invalid request."),
+    );
+    expect(json.error).toBe("Invalid request.");
+  });
+
+  it("falls back to the catalogue hint and lets a caller override it", async () => {
+    const dflt = await body(apiError(429, "rate_limited", "Slow down."));
+    expect(typeof dflt.hint).toBe("string");
+    expect((dflt.hint as string).length).toBeGreaterThan(10);
+    const custom = await body(
+      apiError(429, "rate_limited", "Slow down.", { hint: "Wait 12 seconds." }),
+    );
+    expect(custom.hint).toBe("Wait 12 seconds.");
+  });
+
+  it("never caches an error and passes extra headers through", () => {
+    const res = apiError(429, "rate_limited", "Slow down.", {
+      headers: { "Retry-After": "12" },
+    });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(res.headers.get("retry-after")).toBe("12");
+  });
+
+  it("documents every code it can emit, each bound to exactly one HTTP status", () => {
+    const codes = API_ERROR_CODES.map((c) => c.code);
+    expect(new Set(codes).size).toBe(codes.length);
+    for (const entry of API_ERROR_CODES) {
+      expect(entry.status).toBeGreaterThanOrEqual(400);
+      expect(entry.status).toBeLessThan(600);
+      expect(entry.meaning.length).toBeGreaterThan(10);
+      expect(entry.hint.length).toBeGreaterThan(10);
+    }
+  });
+
+  it("rejects a status that disagrees with the catalogue (a typo guard)", () => {
+    expect(() => apiError(500, "not_found", "x")).toThrow(/not_found/);
+  });
+});
+
+describe("methodNotAllowed", () => {
+  it("answers 405 as JSON and lists the allowed methods", async () => {
+    const res = methodNotAllowed(["GET", "HEAD"])();
+    expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("GET, HEAD, OPTIONS");
+    const json = await body(res);
+    expect(json.code).toBe("method_not_allowed");
+    expect(json.hint).toContain("GET, HEAD, OPTIONS");
+  });
+});
+
+describe("ensureJsonError", () => {
+  it("leaves successful and already-JSON responses untouched", async () => {
+    const ok = new Response("fine", { status: 200 });
+    expect(await ensureJsonError(ok)).toBe(ok);
+    const rpc = Response.json({ jsonrpc: "2.0", error: { code: -32000 } }, { status: 400 });
+    expect(await ensureJsonError(rpc)).toBe(rpc);
+  });
+
+  it("turns a plain-text error into the shared JSON shape, keeping status and Allow", async () => {
+    const res = await ensureJsonError(
+      new Response("Not found", { status: 404, headers: { "Content-Type": "text/plain" } }),
+    );
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toMatch(/^application\/json/);
+    const json = await body(res);
+    expect(json.code).toBe("not_found");
+    expect(json.error).toBe("Not found");
+
+    const withAllow = await ensureJsonError(
+      new Response("", { status: 405, headers: { Allow: "GET, POST" } }),
+    );
+    expect(withAllow.headers.get("allow")).toBe("GET, POST");
+    expect((await body(withAllow)).code).toBe("method_not_allowed");
+  });
+
+  it("only labels a JSON-RPC body that arrived without a content type, never rewrites it", async () => {
+    const raw = '{"jsonrpc":"2.0","error":{"code":-32000,"message":"Bad"},"id":null}';
+    const res = await ensureJsonError(new Response(raw, { status: 400 }));
+    expect(res.headers.get("content-type")).toMatch(/^application\/json/);
+    expect(await res.text()).toBe(raw);
+  });
+
+  it("passes through a status the catalogue does not describe", async () => {
+    const res = await ensureJsonError(new Response("teapot", { status: 418 }));
+    expect(res.status).toBe(418);
+    expect(await res.text()).toBe("teapot");
+  });
+
+  it("bounds the echoed message", async () => {
+    const res = await ensureJsonError(new Response("x".repeat(5000), { status: 400 }));
+    expect(((await body(res)).error as string).length).toBeLessThanOrEqual(200);
+  });
+});

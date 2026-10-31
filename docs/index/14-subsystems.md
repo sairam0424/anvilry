@@ -147,7 +147,7 @@ article and note pages; the ten MCP tool responses; the gamified view's `questNo
    `--clean` in dev deletes `.velite/*.json` mid-session and the bundler then fails "Can't resolve
    './projects.json'" (`velite.config.ts:175-178`). The comment's "webpack" is historical wording: in
    Next 16 `next dev` resolves its bundler through the same default as `next build`
-   (`node_modules/next/dist/cli/next-dev.js:173` → `node_modules/next/dist/lib/bundler.js:142-144`), so
+   (`node_modules/next/dist/cli/next-dev.js:214-216` → `node_modules/next/dist/lib/bundler.js:142-144`), so
    the bundler being raced today is Turbopack. The race mechanism — a file vanishing mid-compile — is
    bundler-agnostic. Production purity comes from the explicit `--clean` in the `build`/`content`
    scripts.
@@ -745,11 +745,12 @@ pinned by `mcp-tools.test.ts:115`); `content[0].text` keeps the raw array.
 **None of its own.** No flag gates this route, no rate limit applies, no auth, and it is not wrapped in
 `withTrace` — MCP traffic emits no `http.request` span and never appears on `/admin/telemetry`. Two indirect
 couplings: `NOTES_ENABLED` decides, through `allNotes`, whether `list_all_content` / `get_content_item` expose
-any note (`notes-dark.test.ts:55`); and the `@modelcontextprotocol/sdk` exact pin `1.26.0` (`package.json:29`)
-is `mcp-handler@1.1.0`'s literal peer requirement (`pnpm-lock.yaml:3711-3712`) and the direct cause of the
-`security_update_not_possible` Dependabot state that forced the `overrides` block — twelve pins now, which as
-of v3.5.0 live in `pnpm-workspace.yaml:18-43` (the last pin, `qs`, is `:44`), **not** in package.json's `pnpm`
-field (pnpm 11 stopped reading it).
+any note (`notes-dark.test.ts:55`); and the `@modelcontextprotocol/sdk` exact pin `1.32.0` (`package.json:29`), which no longer equals
+`mcp-handler@1.1.0`'s literal peer requirement `1.26.0` (`pnpm-lock.yaml:3715-3716`): a tolerated peer mismatch. Until the
+security batch the pin equalled the peer, and that was the direct cause of the `security_update_not_possible` Dependabot
+state that forced the `overrides` block — fourteen pins now (twelve before that batch added `proxy-addr` and
+`source-map-js`), which as of v3.5.0 live in `pnpm-workspace.yaml:18-47` (the last pin, `qs`, is `:47`), **not** in
+package.json's `pnpm` field (pnpm 11 stopped reading it).
 
 ---
 

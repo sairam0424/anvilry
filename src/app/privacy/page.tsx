@@ -125,6 +125,14 @@ export default function PrivacyPage() {
             after about an hour. Vercel keeps its own request logs for the platform (IP address,
             browser, URL), which this site does not control.
           </ProseP>
+          <ProseP>
+            The free read-only API routes (the JSON API, the Markdown files, llms.txt and the other
+            discovery files, and the MCP endpoint) allow {F.publicApiRequests} requests per{" "}
+            {F.publicApiWindowSeconds} seconds per IP address. That counter is kept only in the
+            memory of the server instance that answers, under your IP address (not hashed); it is
+            not written to Upstash or to any log, and it is gone within a minute or when the
+            instance restarts.
+          </ProseP>
 
           <ProseH2>Server logs</ProseH2>
           <ProseP>

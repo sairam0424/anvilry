@@ -1,13 +1,23 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { API_CATALOG_PATH } from "@/lib/api-catalog";
 import { API_ERROR_CODES } from "@/lib/api-error";
+import {
+  API_V1_BASE,
+  DEPRECATION_NOTICE_DAYS,
+  RATE_LIMIT_POLICY,
+  RATE_LIMIT_POLICY_TEXT,
+  VERSIONING_POLICY,
+} from "@/lib/api-policy";
+import { RESPONSE_HEADERS } from "@/lib/developers-content";
 import { buildOpenApiDocument, listOperations } from "@/lib/openapi";
 import { PRIVACY_FACTS } from "@/lib/privacy-facts";
 import { profile } from "@/lib/profile";
 import { SITE_URL } from "@/lib/site-url";
 import ContactPage, { metadata as contactMeta } from "./contact/page";
 import DevelopersPage, { metadata as developersMeta } from "./developers/page";
+import McpPage, { metadata as mcpMeta } from "./mcp/page";
 import PrivacyPage, { metadata as privacyMeta } from "./privacy/page";
 
 const MIN_TRUST_PAGE_CHARS = 500;
@@ -35,6 +45,7 @@ const KNOWN_TARGETS = new Set([
   "/llms.txt",
   "/llms-full.txt",
   "/openapi.json",
+  API_CATALOG_PATH,
   "/api/resume.json",
   "/feed.xml",
   "/sitemap.xml",
@@ -52,6 +63,71 @@ describe("/developers", () => {
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(text).toContain("Build on Anvilry");
     expect(String(developersMeta.title)).toContain("Anvilry");
+  });
+
+  it("says Anvilry and API documentation in its title and in the h1, so a search by name finds it", () => {
+    expect(String(developersMeta.title)).toBe("Anvilry API documentation");
+    const h1 = new DOMParser().parseFromString(html, "text/html").querySelector("h1")?.textContent ?? "";
+    expect(h1).toContain("Anvilry");
+    expect(h1).toContain("API documentation");
+  });
+
+  it("has a stable anchor for authentication, versioning, rate limits, the SDK and the command line", () => {
+    for (const id of ["authentication", "versioning", "rate-limits", "sdk", "cli", "endpoints", "errors", "mcp"]) {
+      expect(html, id).toContain(`id="${id}"`);
+    }
+    for (const title of ["Authentication", "Versioning", "Rate limits", "Anvilry SDK and client libraries", "Anvilry command-line use"]) {
+      expect(text, title).toContain(title);
+    }
+  });
+
+  it("states that there are no API keys and nothing to authenticate with", () => {
+    expect(text).toMatch(/Anvilry has no authentication/);
+    expect(text).toMatch(/no API\s+keys, tokens, OAuth flows or accounts/);
+  });
+
+  it("prints the published versioning and rate-limit policy, sentence for sentence", () => {
+    for (const sentence of [...VERSIONING_POLICY, ...RATE_LIMIT_POLICY_TEXT]) expect(text).toContain(sentence);
+    expect(text).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+    expect(text).toContain(`at least ${DEPRECATION_NOTICE_DAYS} days`);
+  });
+
+  it("documents every response header of the contract, each with when it is sent", () => {
+    expect(RESPONSE_HEADERS).toHaveLength(9);
+    for (const { name, sent, meaning } of RESPONSE_HEADERS) {
+      expect(text, name).toContain(name);
+      expect(text, `${name}: ${sent}`).toContain(sent);
+      expect(text, `${name}: meaning`).toContain(meaning);
+    }
+  });
+
+  it("says plainly that there is no official SDK and no published CLI, and invents no package name", () => {
+    expect(text).toMatch(/There is no official SDK for Anvilry/);
+    expect(text).toMatch(/There is no published CLI package for Anvilry/);
+    expect(text).toContain("/openapi.json");
+    expect(text).not.toMatch(/npm (install|i) |pip install |go get |brew install |npx @?anvilry/i);
+  });
+
+  it("shows curl recipes against the versioned API and for the response headers", () => {
+    expect(text).toContain(`${SITE_URL}${API_V1_BASE}`);
+    expect(text).toContain(`curl -sS ${SITE_URL}${API_V1_BASE}`);
+    expect(text).toContain(`curl -sS -D - -o /dev/null ${SITE_URL}/openapi.json`);
+  });
+
+  it("points at the API catalog in its machine-readable files, in one sentence", () => {
+    expect(html).toContain(`href="${API_CATALOG_PATH}"`);
+    expect(text).toMatch(/API catalog \(RFC 9727\)/);
+  });
+
+  it("no longer says the documented routes have no quota, now that they have one", () => {
+    expect(text).not.toMatch(/apply no quota of their own/i);
+  });
+
+  it("lists the pages that have a Markdown version and the ones that do not", () => {
+    for (const page of ["/about", "/articles", "/contact", "/decisions", "/developers", "/mcp", "/notes", "/privacy", "/projects", "/work"]) {
+      expect(text, page).toContain(page);
+    }
+    expect(text).toMatch(/\/resume.*\/search.*\/stats/);
   });
 
   it("documents every operation in the OpenAPI document, with its path and operationId", () => {
@@ -157,6 +233,14 @@ describe("/privacy", () => {
     expect(text).toContain(`${PRIVACY_FACTS.chatCharsPerMessage}-character cut does not apply to the image`);
   });
 
+  it("describes the public API limit, and says its counter stays in server memory", () => {
+    expect(text).toContain(
+      `${PRIVACY_FACTS.publicApiRequests} requests per ${PRIVACY_FACTS.publicApiWindowSeconds} seconds per IP address`,
+    );
+    expect(text).toMatch(/kept only in the memory of the server instance/);
+    expect(text).toMatch(/not written to Upstash or to any log/);
+  });
+
   it("names every outside company that receives data", () => {
     for (const company of ["Vercel", "Amazon Web Services", "Google", "Upstash", "GitHub"]) {
       expect(text, company).toContain(company);
@@ -169,5 +253,23 @@ describe("/privacy", () => {
 
   it("links only to pages that exist", () => {
     for (const href of internalLinks(html)) expect(KNOWN_TARGETS.has(href), href).toBe(true);
+  });
+});
+
+describe("/mcp", () => {
+  const { html, text } = render(<McpPage />);
+
+  it("names the product in its title, description and its one h1", () => {
+    expect(String(mcpMeta.title)).toBe("Anvilry MCP server");
+    expect(String(mcpMeta.description)).toContain("Anvilry MCP server");
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    const h1 = new DOMParser().parseFromString(html, "text/html").querySelector("h1")?.textContent ?? "";
+    expect(h1).toContain("Anvilry MCP server");
+  });
+
+  it("still shows the endpoint, the client configuration and the tool table", () => {
+    expect(text).toContain("https://anvilry.vercel.app/api/mcp/mcp");
+    expect(text).toContain("mcpServers");
+    expect(text).toContain("list_decisions");
   });
 });

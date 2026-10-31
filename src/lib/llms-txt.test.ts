@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { API_V1_BASE, DEPRECATION_NOTICE_DAYS, RATE_LIMIT_POLICY } from "./api-policy";
+import { API_CATALOG_PATH } from "./api-catalog";
 import { buildLlmsTxt } from "./llms-txt";
+import { PAGE_TWINS } from "./page-twins";
 
 /**
  * llms.txt is the discovery surface AI agents read to find the MCP server, so the endpoint
@@ -102,5 +105,78 @@ describe("buildLlmsTxt — instructions for agents", () => {
   it("does not add a second MCP line that starts like the advertised one", () => {
     const starts = txt.split("\n").filter((l) => l.startsWith("- MCP server (for AI agents):"));
     expect(starts).toHaveLength(1);
+  });
+});
+
+describe("buildLlmsTxt — developer resources", () => {
+  const BASE = "https://anvilry.vercel.app";
+  const txt = buildLlmsTxt();
+  const block = (txt.split("## Developer resources\n")[1] ?? "").split(/\n## /)[0];
+  const lines = block.split("\n").filter((l) => l.startsWith("- "));
+
+  it("has a 'Developer resources' section ahead of the content lists", () => {
+    expect(txt).toContain("## Developer resources\n");
+    expect(txt.indexOf("## Developer resources")).toBeLessThan(txt.indexOf("## Production Work"));
+    expect(txt.indexOf("## How to read this site")).toBeLessThan(txt.indexOf("## Developer resources"));
+  });
+
+  it("names every resource with the product name, so a search by name finds it", () => {
+    expect(lines.length).toBeGreaterThanOrEqual(8);
+    for (const line of lines) expect(line, line).toMatch(/^- Anvilry /);
+  });
+
+  it("lists API documentation, the OpenAPI specification, the versioned API, MCP and authentication", () => {
+    expect(block).toContain(`- Anvilry API documentation: ${BASE}/developers\n`);
+    expect(block).toContain(`- Anvilry OpenAPI specification (OpenAPI 3.1, JSON): ${BASE}/openapi.json\n`);
+    expect(block).toContain(`base URL: ${BASE}${API_V1_BASE}\n`);
+    expect(block).toContain(`- Anvilry MCP server: ${BASE}/mcp (Streamable HTTP endpoint ${BASE}/api/mcp/mcp)`);
+    expect(block).toMatch(/- Anvilry authentication: none, no API keys/);
+    expect(block).toContain(`- Anvilry API catalog (RFC 9727): ${BASE}${API_CATALOG_PATH}\n`);
+  });
+
+  it("lists SDK and command-line use at their anchors and says plainly that neither is published", () => {
+    const sdk = lines.find((l) => l.startsWith("- Anvilry SDK and client libraries:")) ?? "";
+    const cli = lines.find((l) => l.startsWith("- Anvilry command-line use:")) ?? "";
+    expect(sdk).toContain(`${BASE}/developers#sdk`);
+    expect(sdk).toMatch(/no official SDK/i);
+    expect(cli).toContain(`${BASE}/developers#cli`);
+    expect(cli).toMatch(/no published CLI/i);
+    expect(`${sdk}${cli}`).not.toMatch(/npm (install|i) |pip install |go get |brew install /i);
+  });
+
+  it("prints the published numbers, not copies of them", () => {
+    expect(block).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+    expect(block).toContain(`at least ${DEPRECATION_NOTICE_DAYS} days`);
+  });
+
+  it("points only at anchors the developer guide really has", () => {
+    const guide = readFileSync("src/app/developers/page.tsx", "utf8");
+    const anchors = [...block.matchAll(/\/developers#([a-z-]+)/g)].map((m) => m[1]);
+    expect(anchors.length).toBeGreaterThanOrEqual(6);
+    for (const anchor of anchors) expect(guide, `#${anchor}`).toContain(`id="${anchor}"`);
+  });
+
+  it("keeps the command-line mention the rest of the file already carried", () => {
+    const rest = txt.replace(block, "");
+    expect(rest).toMatch(/\bCLI\b/);
+  });
+});
+
+describe("buildLlmsTxt — Markdown versions of pages", () => {
+  const BASE = "https://anvilry.vercel.app";
+  const txt = buildLlmsTxt();
+  const pages = (txt.split("### Pages\n")[1] ?? "").split(/\n#{2,3} /)[0];
+
+  it("tells an agent that the pages themselves have a .md URL", () => {
+    const how = (txt.split("## How to read this site\n")[1] ?? "").split(/\n## /)[0];
+    expect(how).toContain(`${BASE}/about.md`);
+  });
+
+  it("lists the .md URL of every page that has a twin, and omits /notes while that section is dark", () => {
+    for (const page of PAGE_TWINS.filter((p) => p !== "notes")) {
+      expect(pages, page).toContain(`- ${BASE}/${page}.md\n`);
+    }
+    expect(pages).not.toContain("/notes.md");
+    for (const page of ["resume", "search", "stats"]) expect(pages, page).not.toContain(`/${page}.md`);
   });
 });

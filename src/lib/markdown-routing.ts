@@ -1,8 +1,10 @@
 import { CONTENT_KINDS } from "@/lib/content-kinds";
+import { isPageTwin } from "@/lib/page-twins";
 
 /**
  * What src/proxy.ts does with a request whose Accept header asks for Markdown:
- *  - rewrite: the path has a Markdown twin, serve it;
+ *  - rewrite: the path has a Markdown twin (the homepage, a content item or one of the PAGE_TWINS
+ *    pages), serve it;
  *  - pass: leave the request alone (the page is HTML-only, or the path is an API, an asset, a
  *    metadata image or an explicit file URL, where negotiation does not apply);
  *  - not-found: no such page, so answer with a real 404 whose body is Markdown.
@@ -17,22 +19,12 @@ export type MarkdownRoute =
   | { action: "pass" }
   | { action: "not-found" };
 
-/** Extension-less pages that exist only as HTML. A new page must be added here. */
-export const HTML_ONLY_PAGES = [
-  "/about",
-  "/articles",
-  "/contact",
-  "/decisions",
-  "/developers",
-  "/mcp",
-  "/notes",
-  "/privacy",
-  "/projects",
-  "/resume",
-  "/search",
-  "/stats",
-  "/work",
-] as const;
+/**
+ * Extension-less pages that exist only as HTML, on purpose (see page-twins.ts): a PDF viewer, an
+ * interactive search and live numbers have no text of their own to hand to a Markdown client.
+ * Every other page has a twin (PAGE_TWINS). A new page must be added to one list or the other.
+ */
+export const HTML_ONLY_PAGES = ["/resume", "/search", "/stats"] as const;
 
 const PASS_PREFIXES = ["/api/", "/_next/", "/_vercel/", "/.well-known/", "/admin/"] as const;
 const METADATA_IMAGES = new Set(["opengraph-image", "twitter-image", "icon", "apple-icon"]);
@@ -52,6 +44,9 @@ export function classifyPath(rawPathname: string): MarkdownRoute {
 
   const twin = CONTENT_TWIN.exec(pathname);
   if (twin) return { action: "rewrite", destination: `/api/md/${twin[1]}/${twin[2]}` };
+
+  const page = pathname.slice(1);
+  if (isPageTwin(page)) return { action: "rewrite", destination: `/api/md/pages/${page}` };
 
   if ((HTML_ONLY_PAGES as readonly string[]).includes(pathname)) return { action: "pass" };
   return { action: "not-found" };

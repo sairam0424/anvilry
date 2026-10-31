@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HTML_ONLY_PAGES, classifyPath } from "./markdown-routing";
+import { PAGE_TWINS } from "./page-twins";
 
 /**
  * When a client asks for Markdown, src/proxy.ts decides per path: serve the Markdown twin, leave
@@ -25,9 +26,24 @@ describe("classifyPath", () => {
     expect(classifyPath("/projects/kelvran/")).toEqual({ action: "rewrite", destination: "/api/md/projects/kelvran" });
   });
 
-  it("leaves the index and static pages to HTML", () => {
-    for (const path of ["/projects", "/work", "/about", "/resume", "/mcp", "/decisions"]) {
+  it.each(PAGE_TWINS)("serves the page twin for /%s", (page) => {
+    expect(classifyPath(`/${page}`)).toEqual({ action: "rewrite", destination: `/api/md/pages/${page}` });
+    expect(classifyPath(`/${page}/`)).toEqual({ action: "rewrite", destination: `/api/md/pages/${page}` });
+  });
+
+  it("leaves the pages that have no Markdown twin to HTML", () => {
+    for (const path of ["/resume", "/search", "/stats"]) {
       expect(classifyPath(path), path).toEqual({ action: "pass" });
+    }
+    expect([...HTML_ONLY_PAGES]).toEqual(["/resume", "/search", "/stats"]);
+  });
+
+  it("does not treat a page name as a twin once it is a file or has a sub-path", () => {
+    for (const path of ["/about.md", "/privacy.md", "/developers.md"]) {
+      expect(classifyPath(path), path).toEqual({ action: "pass" });
+    }
+    for (const path of ["/about/team", "/privacy/x", "/About", "/api/md/pages/about.x"]) {
+      expect(classifyPath(path).action, path).not.toBe("rewrite");
     }
   });
 

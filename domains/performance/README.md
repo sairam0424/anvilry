@@ -48,7 +48,7 @@ win is already banked without them, both are doc-labeled "not recommended for pr
       EXT_texture_webp at UNCHANGED resolution. Draco would not have helped.
 - [ ] Add web-vitals collection to Vercel Analytics dashboard (already has `@vercel/speed-insights`)
 - [ ] Check LCP on `/?view=gamified` — 3D canvas should not be in critical path. The *bundle* half of
-      this is now proven every CI run (`WebGLRenderer` in 0 of 17 route records' first-load sets); what is
+      this is now proven every CI run (`WebGLRenderer` in 0 of 20 route records' first-load sets); what is
       left is the runtime measurement after the view switch.
 - [x] ~~A/B the R3F twin-chunk lever on 16.3.0~~ — cancelled; resolved by the upgrade alone (#120)
 - [x] ~~Coalesce per-chunk writes in `src/components/chat/use-chat.ts`~~ — done in **#122**
@@ -61,11 +61,11 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
   runs `node scripts/bundle-budget.mjs` immediately after the "Build" step, so it rides the build that already happens — no second build.
   It reads `.next/diagnostics/route-bundle-stats.json`, which `next build` writes with no flag but **only under Turbopack**, and fails the job if any of:
   (a) the artifact has fewer than `MIN_ROUTES` = **17** records (the 16 `src/app` page routes plus `/_not-found`);
-  (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **988,000 B** (1,285,000 B at v3.6.0, raised four times to 1,336,000 B, then lowered once to 988,000 B after v3.16.0 (in v3.16.1, #340). `/` was 1,298,585 B before #329, 976,936 B at the v3.16.0 cut (#329 took it down by about a quarter) and 972,887 B on CI and on macOS at #333 (commit a665991), the later prune of three low-priority open-source items; the ceiling had stayed at 1,336,000 B, leaving 363,113 B of slack. On a fresh build of this tree `/` is 972,920 B (972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx`), so 15,080 B (about 1.5%) of headroom remain. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two project cards, their graph nodes and the Shop.this feed entry, so it covers a handful of cards, while any eager import of about 15 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added; each raise is recorded with measured
+  (b) any route's `firstLoadUncompressedJsBytes` exceeds `MAX_FIRST_LOAD_BYTES` = **988,000 B** (1,285,000 B at v3.6.0, raised four times to 1,336,000 B, then lowered once to 988,000 B after v3.16.0 (in v3.16.1, #340). `/` was 1,298,585 B before #329, 976,936 B at the v3.16.0 cut (#329 took it down by about a quarter) and 972,887 B on CI and on macOS at #333 (commit a665991), the later prune of three low-priority open-source items; the ceiling had stayed at 1,336,000 B, leaving 363,113 B of slack. On a fresh build of this tree `/` is 966,794 B (972,920 B at the v3.16.1 cut, plus 371 B from the agent-readable surface, minus 6,497 B from the Next.js bump), so 21,206 B (about 2.1%) of headroom remain. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two project cards, their graph nodes and the Shop.this feed entry, so it covers a handful of cards, while any eager import of about 21 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added; each raise is recorded with measured
   before/after bytes in the script's docblock, which still quotes `/` at 1,333,521 B from the last raise (history, not the current baseline), so re-measure
   with `pnpm build && node scripts/bundle-budget.mjs` before quoting headroom);
   (c) the `WebGLRenderer` marker (`LAZY_MARKER`) turns up in any route's first-load chunk set — today it sits in exactly one chunk, **909,796 B** in the current `.next` (897,249 B is the older figure in the `bundle-budget.mjs` comment),
-  present in **0 of 17** route records' first-load sets; or
+  present in **0 of 20** route records' first-load sets; or
   (d) the `_createMdxContent` marker (`MDX_MARKER`) turns up there, meaning a client module reached the compiled MDX bodies that only the four detail pages may read (`src/lib/content-bodies.ts`). A missing or malformed artifact **exits 1 by design**: "I could not measure" must be RED,
   which is exactly what the deleted `bundle-analysis.yml` got wrong for its entire 222-run life (211 green, 11 red). There is deliberately no
   `continue-on-error` and no `if-no-files-found` — do not add them. The step also fails if a listed first-load chunk is missing on disk.
@@ -101,7 +101,7 @@ type-checks or test-fails when they regress, the bundle just quietly doubles.
 ## Metrics
 - **Bundle size — what actually ships (authoritative):** `.next/diagnostics/route-bundle-stats.json`,
   written by a bare `pnpm build` with no flag and no analyzer. Per-route records keyed
-  `route` / `firstLoadUncompressedJsBytes` / `firstLoadChunkPaths`; 17 records today (16 page routes + `/_not-found`). Read by
+  `route` / `firstLoadUncompressedJsBytes` / `firstLoadChunkPaths`; 20 records today (19 page routes + `/_not-found`). Read by
   `scripts/bundle-budget.mjs`, which prints every route sorted descending, so `pnpm build && node
   scripts/bundle-budget.mjs` *is* the metric. Emitted **only under Turbopack** — a `--webpack` build
   produces no such file.

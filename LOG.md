@@ -29,8 +29,8 @@ awk '/^## 20/{p=/^## 2026-06/} p' LOG.md
 ---
 
 ## 2026-10-31 · Agent readiness: Markdown negotiation, JSON API errors, OpenAPI, developer pages · #feature #seo #docs
-What: `Accept: text/markdown` on `/` and the four content page families returns Markdown (`Vary: Accept`; `/index.md` is the homepage twin), API errors share one JSON shape, and `/openapi.json`, `/developers`, `/contact` and `/privacy` are new; the deploy smoke runs 26 checks (was 20) and the suite is 1566 tests in 130 files. Unreleased on top of v3.16.1, no version chosen.
-Refs: commits 3e8082e, 8553d86 and 41020d6 on `feat/agent-readiness`; [CHANGELOG](CHANGELOG.md) `[Unreleased]` (new), [CLAUDE.md](CLAUDE.md), [DEPLOY.md](DEPLOY.md), [ARCHITECTURE.md](ARCHITECTURE.md) (updated).
+What: `Accept: text/markdown` on `/` and the four content page families returns Markdown (`Vary: Accept`; `/index.md` is the homepage twin), API errors share one JSON shape, and `/openapi.json`, `/developers`, `/contact` and `/privacy` are new; the deploy smoke runs 26 checks (was 20) and the suite is 1572 tests in 131 files. Shipped in v3.17.0.
+Refs: commits 3e8082e, 8553d86 and 41020d6 on `feat/agent-readiness`; [CHANGELOG](CHANGELOG.md) `[3.17.0]` (new), [CLAUDE.md](CLAUDE.md), [DEPLOY.md](DEPLOY.md), [ARCHITECTURE.md](ARCHITECTURE.md) (updated).
 
 ---
 

@@ -4,12 +4,12 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.17.0] — 2026-10-31
 
 The site becomes readable by software as well as by people. A client that sends `Accept: text/markdown`
 gets Markdown from the homepage and from every project, work, article and note page (note pages only while
 `NEXT_PUBLIC_NOTES_ENABLED` is on); API errors share one JSON shape; the public read-only API has an OpenAPI
-description; and a developer guide, a contact page and a privacy page join the site. No version number is chosen yet. No environment variable, content field or
+description; and a developer guide, a contact page and a privacy page join the site. It is also a dependency security release (see Security). No environment variable, content field or
 MCP tool is added, and a browser or crawler that does not ask for Markdown still receives the same HTML
 pages, with the new footer links, JSON-LD block and response headers described below.
 
@@ -26,8 +26,8 @@ pages, with the new footer links, JSON-LD block and response headers described b
   labelled "(text copied from the request)". `src/proxy.ts` gains a second matcher entry that is conditional
   on an Accept header mentioning `text/markdown` in any letter case (the pattern is spelled letter by letter,
   because a matcher value is a flagless regular expression), so browsers and crawlers that do not ask for
-  Markdown never invoke it; the proxy takes the content kinds from `src/lib/content-kinds.ts`, which has no
-  imports, so its bundle carries neither the content layer nor `node:fs`. `src/lib/markdown-routing.ts` decides per path
+  Markdown never invoke it; the proxy's routing module takes the content kinds from `src/lib/content-kinds.ts`, which has no
+  imports, so the proxy's bundle carries neither the content layer nor `node:fs`. `src/lib/markdown-routing.ts` decides per path
   whether to serve a twin, pass the request on or answer the Markdown 404, and its test compares the list of
   HTML-only pages with the real `src/app` tree. `next.config.ts` also sets `Vary: Accept` and a
   `Link: <…>; rel="alternate"; type="text/markdown"` header on `/` and on the four slug page families for
@@ -65,7 +65,7 @@ pages, with the new footer links, JSON-LD block and response headers described b
   machine-readable nav and Contact and Privacy in its bottom strip.
 - **A canonical origin constant**, `SITE_URL` in `src/lib/site-url.ts`, for the machine-readable output
   above, so a preview deployment never advertises itself as the canonical home.
-- Tests: 210 more (1356 to 1566) across 15 more files (115 to 130), and six E2E tests (`views.spec.ts` goes
+- Tests: 216 more (1356 to 1572) across 16 more files (115 to 131), and six E2E tests (`views.spec.ts` goes
   from 26 to 32): the three pages, the footer links, `/openapi.json`, Markdown negotiation on `/`, the
   Markdown 404 and the JSON API 404.
 
@@ -86,8 +86,9 @@ pages, with the new footer links, JSON-LD block and response headers described b
   tests.
 - **Route and page counts:** 31 `route.ts` handlers (22 under `src/app/api`) and 19 `page.tsx` pages, were
   27 (19) and 16.
-- **First-load JS for `/` is 973,291 B on a fresh build, was 972,920 B**, which leaves 14,709 B under the
-  988,000 B ceiling instead of 15,080 B. The ceiling and the gate are unchanged; a build now lists 20 route
+- **First-load JS for `/` is 966,794 B on a fresh build, was 972,920 B** (the agent-readiness change added
+  371 B and the Next.js bump took 6,497 B off), which leaves 21,206 B under the 988,000 B ceiling instead of
+  15,080 B. The ceiling and the gate are unchanged; a build now lists 20 route
   records against the gate's floor of 17.
 
 ### Fixed
@@ -95,6 +96,30 @@ pages, with the new footer links, JSON-LD block and response headers described b
   at the first `---` anywhere, so a value that contains `---` (a decision title in `content/projects/nh-deck.mdx`
   does) closed the block early and the rest of the YAML appeared in the page. The block now ends only at a
   `---` on a line of its own (`stripFrontmatter` in `src/lib/markdown-content.ts`).
+- **The Vercel build no longer fails at the search-index step on Next 16.4.** A Vercel build with Next 16.4
+  or later runs with a deployment adapter, which writes the prerendered pages to
+  `.next/server/route-cache/APP_PAGE/<hash>/$/<path>.html` instead of `.next/server/app`, so the old
+  `pagefind --site .next/server/app` step found no file and exited 1, while every local and CI build, which use
+  the classic layout, passed. `scripts/build-search-index.mjs` indexes whichever layout exists, copies the
+  adapter layout into `.next/search-site` under the URL path each page is served at, and exits non-zero when
+  it finds no page; both layouts give the same index (38 pages, 3953 words). `pnpm build` and
+  `make search-index` call it, and `src/lib/build-search-index.test.ts` builds both layouts by hand.
+
+### Security
+- **`next` 16.3.5 to 16.4.3** (with `eslint-config-next` and `@next/bundle-analyzer`). `pnpm audit` flagged two
+  critical unauthenticated remote-code-execution advisories (image optimization and `use cache`) and a Server
+  Actions denial of service in every release up to 16.4.0; 16.4.1 is the first fixed release and 16.4.3 the
+  latest one (published 2026-10-23, over a week before this release). Dependabot's suggested 16.3.8 would not have fixed them.
+- **`@modelcontextprotocol/sdk` 1.26.0 to 1.32.0.** `mcp-handler` 1.1.0 still declares an exact 1.26.0 peer,
+  which pnpm tolerates; the MCP route tests pass on 1.32.0.
+- **Transitive overrides** in `pnpm-workspace.yaml` (now 14 entries, 7 exact; the others are ranges the lockfile resolves): `proxy-addr` 2.0.8 (critical IP
+  spoofing), `body-parser` 2.4.0, `fast-uri` 3.1.9, `sharp` 0.35.5, `source-map-js` 1.2.2, `ip-address` 10.7.4,
+  `hono` 4.13.13, `qs` 6.16.1, `brace-expansion` 1.1.21 and 5.0.12. Every version listed is a release at least a week old.
+- **Dev tooling:** `vite` is now a declared devDependency (an override cannot move an auto-installed peer),
+  `vitest` 5.0.5, `happy-dom` 21.0.4.
+- Result: `pnpm audit` reports 0 critical (was 4) and 1 high (was 19). Not fixed: `zod` (high; the fix is the zod 4
+  migration, and no request-facing schema in this app is a zod array), `@hono/node-server` (moderate; a major bump, and the
+  bug is in `serveStatic`, which nothing uses) and `minimatch` (moderate; dev-only, via eslint).
 
 ## [3.16.1] — 2026-10-22
 

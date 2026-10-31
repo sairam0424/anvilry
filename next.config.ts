@@ -86,6 +86,36 @@ const csp = [
 
 type Header = { key: string; value: string };
 
+// Pages with a Markdown twin at /<page>.md (see src/lib/page-twins.ts, which next-config.test.ts
+// compares this list with). resume, search and stats stay HTML-only on purpose.
+const PAGE_TWINS = [
+  "about",
+  "articles",
+  "contact",
+  "decisions",
+  "developers",
+  "mcp",
+  "notes",
+  "privacy",
+  "projects",
+  "work",
+] as const;
+
+// Predictable addresses a developer, or an agent that guesses, tries for the API documentation, the
+// SDK, the command line and the MCP server. Each lands on the page that really covers it. 308 keeps
+// the method and tells crawlers to move the link. None of these is a route of this app, so nothing
+// is shadowed, and /api/* is not touched (next-config.test.ts checks both).
+const DEVELOPER_REDIRECTS: { source: string; destination: string }[] = [
+  { source: "/docs", destination: "/developers" },
+  { source: "/docs/api", destination: "/developers" },
+  { source: "/api-docs", destination: "/developers" },
+  { source: "/api-reference", destination: "/developers" },
+  { source: "/developer", destination: "/developers" },
+  { source: "/sdk", destination: "/developers#sdk" },
+  { source: "/cli", destination: "/developers#cli" },
+  { source: "/mcp-server", destination: "/mcp" },
+];
+
 // Static security headers applied to every route. HSTS is already set by Vercel's
 // platform default, so it is intentionally omitted here (avoids a weaker duplicate).
 const securityHeaders = [
@@ -244,10 +274,13 @@ const nextConfig: NextConfig = {
       },
     ];
 
-    // RFC 8631: the homepage points machines at the API description and the human guide.
+    // RFC 8631: the homepage points machines at the API description and the human guide, and
+    // RFC 9727 at the API catalog (API_CATALOG_PATH in src/lib/api-catalog.ts; this file imports
+    // nothing from src/, so the path is spelled out and next-config.test.ts ties it to the constant).
     const apiLinks = [
       '</openapi.json>; rel="service-desc"; type="application/json"',
       '</developers>; rel="service-doc"; type="text/html"',
+      '</.well-known/api-catalog>; rel="api-catalog"',
     ];
 
     return [
@@ -256,11 +289,18 @@ const nextConfig: NextConfig = {
       { source: "/resume", headers: resumeHeaders },
       { source: "/resume/:path*", headers: resumeHeaders },
       { source: "/", headers: negotiated("/index.md", apiLinks) },
+      ...PAGE_TWINS.map((page) => ({
+        source: `/${page}`,
+        headers: negotiated(`/${page}.md`),
+      })),
       ...(["projects", "work", "articles", "notes"] as const).map((kind) => ({
         source: `/${kind}/:slug([A-Za-z0-9_-]+)`,
         headers: negotiated(`/${kind}/:slug.md`),
       })),
     ];
+  },
+  async redirects() {
+    return DEVELOPER_REDIRECTS.map((redirect) => ({ ...redirect, permanent: true }));
   },
   async rewrites() {
     // Rewrite /:collection/:slug.md → /api/md/:collection/:slug so that AI crawlers
@@ -268,6 +308,9 @@ const nextConfig: NextConfig = {
     return [
       // The homepage has no slug: /index.md is its explicit Markdown URL.
       { source: "/index.md", destination: "/api/md/home" },
+      // The pages: /about.md → /api/md/pages/about. The group lists the names so an unknown
+      // /<name>.md keeps answering the normal 404.
+      { source: `/:page(${PAGE_TWINS.join("|")}).md`, destination: "/api/md/pages/:page" },
       { source: "/work/:slug.md", destination: "/api/md/work/:slug" },
       { source: "/projects/:slug.md", destination: "/api/md/projects/:slug" },
       { source: "/articles/:slug.md", destination: "/api/md/articles/:slug" },

@@ -33,6 +33,13 @@ type Reply = {
 };
 
 const HTML = { "content-type": "text/html; charset=utf-8" };
+/** What src/proxy.ts stamps on every public API response. */
+const PUBLIC_API_HEADERS = {
+  "content-type": "application/json",
+  "api-version": "1",
+  "ratelimit-policy": '"default";q=300;w=60',
+  "ratelimit-remaining": "299",
+};
 const SECURITY_HEADERS = {
   ...HTML,
   "content-security-policy": "default-src 'self'; frame-ancestors 'none'",
@@ -123,6 +130,26 @@ function healthySite(
         })),
       }),
     },
+    "/api/v1": {
+      status: 200,
+      headers: PUBLIC_API_HEADERS,
+      body: JSON.stringify({ version: "1", status: "stable" }),
+    },
+    "/api/v1/projects/does-not-exist-smoke-check": {
+      status: 404,
+      headers: PUBLIC_API_HEADERS,
+      body: JSON.stringify({ code: "not_found", status: 404 }),
+    },
+    "/.well-known/api-catalog": {
+      status: 200,
+      headers: { "content-type": 'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"' },
+      body: JSON.stringify({ linkset: [{ anchor: "https://x/api/v1", "service-desc": [{ href: "https://x/openapi.json" }] }] }),
+    },
+    "/about.md": {
+      status: 200,
+      headers: { "content-type": "text/markdown; charset=utf-8" },
+      body: "# About Sairam Ugge",
+    },
     "/api/cron/health-check": {
       status: 401,
       headers: { "content-type": "text/plain" },
@@ -170,7 +197,7 @@ describe("runSmoke against a healthy deployment", () => {
     expect(result.failures).toEqual([]);
     expect(result.ok).toBe(true);
     expect(result.results).toHaveLength(CHECKS.length);
-    expect(CHECKS).toHaveLength(26);
+    expect(CHECKS).toHaveLength(30);
   });
 
   it("sends the bypass header on every request when a secret is given, and only to the deployment origin", async () => {
@@ -538,5 +565,64 @@ describe("command line entry", () => {
     });
     expect(result.status).toBe(2);
     expect(result.stderr).toMatch(/usage/i);
+  });
+});
+
+describe("runSmoke pins the public API contract", () => {
+  const failed = async (overrides: Record<string, Reply>) => {
+    const { impl } = fakeFetch(healthySite(overrides));
+    const result = await runSmoke(BASE, { fetchImpl: impl, sleep: noSleep });
+    return result.failures.map((f) => f.id);
+  };
+
+  it("fails when /api/v1 loses the API-Version header", async () => {
+    const { "api-version": _drop, ...withoutVersion } = PUBLIC_API_HEADERS;
+    void _drop;
+    expect(
+      await failed({ "/api/v1": { status: 200, headers: withoutVersion, body: JSON.stringify({ version: "1" }) } }),
+    ).toContain("api-v1-index");
+  });
+
+  it("fails when /api/v1 stops sending the rate-limit state", async () => {
+    const { "ratelimit-policy": _a, "ratelimit-remaining": _b, ...bare } = PUBLIC_API_HEADERS;
+    void _a;
+    void _b;
+    expect(
+      await failed({ "/api/v1": { status: 200, headers: bare, body: JSON.stringify({ version: "1" }) } }),
+    ).toContain("api-v1-index");
+  });
+
+  it("fails when /api/v1 reports a different version in its body", async () => {
+    expect(
+      await failed({ "/api/v1": { status: 200, headers: PUBLIC_API_HEADERS, body: JSON.stringify({ version: "2" }) } }),
+    ).toContain("api-v1-index");
+  });
+
+  it("fails when an unknown v1 item is not a typed JSON 404", async () => {
+    expect(
+      await failed({
+        "/api/v1/projects/does-not-exist-smoke-check": { status: 404, headers: HTML, body: "not found" },
+      }),
+    ).toContain("api-v1-item-404");
+  });
+
+  it("fails when the API catalog is missing or is not a linkset", async () => {
+    expect(await failed({ "/.well-known/api-catalog": { status: 404, headers: HTML, body: "" } })).toContain("api-catalog");
+    expect(
+      await failed({
+        "/.well-known/api-catalog": {
+          status: 200,
+          headers: { "content-type": "application/linkset+json" },
+          body: JSON.stringify({ apis: [] }),
+        },
+      }),
+    ).toContain("api-catalog");
+  });
+
+  it("fails when /about.md is HTML or has no top-level heading", async () => {
+    expect(await failed({ "/about.md": { status: 200, headers: HTML, body: "<h1>About</h1>" } })).toContain("about-markdown");
+    expect(
+      await failed({ "/about.md": { status: 200, headers: { "content-type": "text/markdown" }, body: "no heading" } }),
+    ).toContain("about-markdown");
   });
 });

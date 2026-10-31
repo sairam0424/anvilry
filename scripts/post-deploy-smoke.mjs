@@ -125,6 +125,17 @@ function expectedStatuses(expected) {
 }
 
 /** @type {Check[]} */
+/**
+ * What src/proxy.ts stamps on every public API response: the version and the rate-limit state.
+ * Returns a message when one is missing, null when all are present.
+ */
+function publicApiHeaderProblem(reply) {
+  if (reply.headers.get("api-version") !== "1") return "the response does not carry API-Version: 1";
+  if (!/^"[^"]+";q=\d+;w=\d+$/.test(reply.headers.get("ratelimit-policy") ?? "")) return "RateLimit-Policy is missing or malformed";
+  if (!/^\d+$/.test(reply.headers.get("ratelimit-remaining") ?? "")) return "RateLimit-Remaining is missing or not a number";
+  return null;
+}
+
 export const CHECKS = [
   {
     id: "home",
@@ -257,6 +268,64 @@ export const CHECKS = [
       } catch {
         return "the 404 body is not valid JSON";
       }
+    },
+  },
+  {
+    // The versioned API and the headers src/proxy.ts stamps on it: this is the contract the
+    // OpenAPI document and /developers promise, so the artifact Vercel built must still keep it.
+    id: "api-v1-index",
+    path: "/api/v1",
+    contentType: /json/,
+    verify: (r) => {
+      let doc;
+      try {
+        doc = JSON.parse(r.body);
+      } catch {
+        return "the response is not valid JSON";
+      }
+      if (doc?.version !== "1") return `the API index reports version "${doc?.version}", expected "1"`;
+      return publicApiHeaderProblem(r);
+    },
+  },
+  {
+    // An unknown item must be the shared JSON error, still stamped with the version.
+    id: "api-v1-item-404",
+    path: "/api/v1/projects/does-not-exist-smoke-check",
+    expectStatus: 404,
+    contentType: /json/,
+    verify: (r) => {
+      try {
+        if (JSON.parse(r.body).code !== "not_found") return 'the JSON error body has no code "not_found"';
+      } catch {
+        return "the 404 body is not valid JSON";
+      }
+      return r.headers.get("api-version") === "1" ? null : "the 404 does not carry API-Version: 1";
+    },
+  },
+  {
+    // RFC 9727: one request that finds the APIs, their descriptions and their documentation.
+    id: "api-catalog",
+    path: "/.well-known/api-catalog",
+    contentType: /application\/linkset\+json/,
+    verify: (r) => {
+      let doc;
+      try {
+        doc = JSON.parse(r.body);
+      } catch {
+        return "the response is not valid JSON";
+      }
+      const described = Array.isArray(doc?.linkset) && doc.linkset.some((entry) => Array.isArray(entry?.["service-desc"]));
+      return described ? null : "the linkset has no entry with a service-desc link";
+    },
+  },
+  {
+    // The content-page Markdown twin the agent-readiness scan samples (/index.md is "home-markdown").
+    id: "about-markdown",
+    path: "/about.md",
+    contentType: /text\/markdown/,
+    verify: (r) => {
+      if (!r.body.trimStart().startsWith("# ")) return "the Markdown twin does not start with a # heading";
+      return r.body.includes("Sairam Ugge") ? null : 'the Markdown twin does not contain "Sairam Ugge"';
     },
   },
   // Fail-closed gates. Both are UNAUTHENTICATED probes that must be refused; neither runs any work.

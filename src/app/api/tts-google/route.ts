@@ -1,3 +1,4 @@
+import { apiError, methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   resolveGoogleVoiceName,
@@ -59,32 +60,32 @@ export async function POST(req: Request) {
   return withTrace(req, "tts-google", async (ctx) => {
     if (!isConfigured()) {
       // No API key wired -> fail closed to the next engine in the client's fallback chain.
-      return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
+      return apiError(503, "not_configured", "TTS-Google not configured.");
     }
 
     // Same per-IP guard as /api/tts and /api/chat — Google free tier IS bounded
     // (1M chars/mo) so a bot can still exhaust it without rate limiting.
     const rl = await checkRateLimit(req, "voice");
     if (!rl.ok) {
-      return Response.json(
-        { error: "Too many requests." },
-        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } },
-      );
+      return apiError(429, "rate_limited", "Too many requests.", {
+        hint: `Wait ${rl.retryAfter} seconds, then retry.`,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      });
     }
 
     if (Number(req.headers.get("content-length") ?? 0) > 8 * 1024) {
-      return Response.json({ error: "Request too large." }, { status: 413 });
+      return apiError(413, "payload_too_large", "Request too large.");
     }
 
     let body: { text?: unknown; voiceId?: unknown };
     try {
       body = await req.json();
     } catch {
-      return Response.json({ error: "Invalid request." }, { status: 400 });
+      return apiError(400, "invalid_request", "Invalid request.");
     }
 
     const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_CHARS) : "";
-    if (!text) return Response.json({ error: "Expected text." }, { status: 400 });
+    if (!text) return apiError(400, "invalid_request", "Expected text.");
 
     // voiceId is REQUIRED for the Google route — there's no historical hardcoded
     // default to fall back on (this engine is new in v1.7), and the catalog requires
@@ -95,20 +96,17 @@ export async function POST(req: Request) {
         : undefined;
 
     if (!requestedVoiceId) {
-      return Response.json({ error: "voiceId is required." }, { status: 400 });
+      return apiError(400, "invalid_request", "voiceId is required.");
     }
 
     if (!validateVoiceForEngine(requestedVoiceId, "google")) {
-      return Response.json(
-        { error: "Unknown voice for this engine." },
-        { status: 400 },
-      );
+      return apiError(400, "invalid_request", "Unknown voice for this engine.");
     }
 
     const googleVoiceName = resolveGoogleVoiceName(requestedVoiceId);
     // validateVoiceForEngine already guarantees this — narrow for TS.
     if (!googleVoiceName) {
-      return Response.json({ error: "Voice resolution failed." }, { status: 400 });
+      return apiError(400, "invalid_request", "Voice resolution failed.");
     }
 
     const key = cacheKey(text, googleVoiceName);
@@ -132,7 +130,7 @@ export async function POST(req: Request) {
     const apiKey = getApiKey();
     // The isConfigured() check above already proved this; narrow for TS.
     if (!apiKey) {
-      return Response.json({ error: "TTS-Google not configured." }, { status: 503 });
+      return apiError(503, "not_configured", "TTS-Google not configured.");
     }
 
     // Google REST POST. Body shape per v1 spec:
@@ -181,7 +179,7 @@ export async function POST(req: Request) {
             char_count: text.length,
           },
         });
-        return Response.json({ error: "TTS failed." }, { status: 502 });
+        return apiError(502, "upstream_error", "TTS failed.");
       }
 
       const json = (await res.json()) as { audioContent?: unknown };
@@ -193,7 +191,7 @@ export async function POST(req: Request) {
           cache_hit: false,
           error_kind: "no-audio-content",
         });
-        return Response.json({ error: "No audio." }, { status: 502 });
+        return apiError(502, "upstream_error", "No audio.");
       }
 
       const buf = Buffer.from(json.audioContent, "base64");
@@ -231,9 +229,17 @@ export async function POST(req: Request) {
           char_count: text.length,
         },
       });
-      return Response.json({ error: "TTS failed." }, { status: 502 });
+      return apiError(502, "upstream_error", "TTS failed.");
     } finally {
       clearTimeout(timer);
     }
   });
 }
+
+// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
+const notAllowed = methodNotAllowed(["POST"]);
+export const GET = notAllowed;
+export const PUT = notAllowed;
+export const PATCH = notAllowed;
+export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["POST"]);

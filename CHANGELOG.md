@@ -4,6 +4,98 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+The site becomes readable by software as well as by people. A client that sends `Accept: text/markdown`
+gets Markdown from the homepage and from every project, work, article and note page (note pages only while
+`NEXT_PUBLIC_NOTES_ENABLED` is on); API errors share one JSON shape; the public read-only API has an OpenAPI
+description; and a developer guide, a contact page and a privacy page join the site. No version number is chosen yet. No environment variable, content field or
+MCP tool is added, and a browser or crawler that does not ask for Markdown still receives the same HTML
+pages, with the new footer links, JSON-LD block and response headers described below.
+
+### Added
+- **Markdown content negotiation.** `Accept: text/markdown` on `/` and on `/projects|work|articles|notes/<slug>` (note pages only while
+  `NEXT_PUBLIC_NOTES_ENABLED` is on) returns the page as Markdown (`text/markdown; charset=utf-8`, `Vary: Accept`, `Cache-Control: public,
+  max-age=0, must-revalidate` and a `Link: <…>; rel="canonical"` header that points at the HTML page). The
+  Accept rules are RFC 9110's (q-values, the most specific range wins, `q=0` excludes; a missing header, `*/*`
+  or a header that only excludes Markdown gets HTML) and live in `src/lib/accept-negotiation.ts`; a negotiated
+  page whose Accept header rules out both HTML and Markdown answers `406`. `/index.md` is the homepage's
+  explicit Markdown URL, built by `src/lib/home-markdown.ts` from the data the Classic page renders. An
+  unknown path asked for as Markdown gets a real 404 with a Markdown body and `X-Robots-Tag: noindex`, and
+  the requested path is echoed only after it is reduced to a safe character set, cut to 80 characters and
+  labelled "(text copied from the request)". `src/proxy.ts` gains a second matcher entry that is conditional
+  on an Accept header mentioning `text/markdown` in any letter case (the pattern is spelled letter by letter,
+  because a matcher value is a flagless regular expression), so browsers and crawlers that do not ask for
+  Markdown never invoke it; the proxy takes the content kinds from `src/lib/content-kinds.ts`, which has no
+  imports, so its bundle carries neither the content layer nor `node:fs`. `src/lib/markdown-routing.ts` decides per path
+  whether to serve a twin, pass the request on or answer the Markdown 404, and its test compares the list of
+  HTML-only pages with the real `src/app` tree. `next.config.ts` also sets `Vary: Accept` and a
+  `Link: <…>; rel="alternate"; type="text/markdown"` header on `/` and on the four slug page families for
+  crawlers that never send Accept; the homepage `Link` also carries `rel="service-desc"` (`/openapi.json`)
+  and `rel="service-doc"` (`/developers`).
+- **One JSON shape for API errors** (`src/lib/api-error.ts`): `{ error, code, status, hint, docs }` with
+  `Cache-Control: no-store`, seven stable codes (`invalid_request`, `not_found`, `method_not_allowed`,
+  `payload_too_large`, `rate_limited`, `upstream_error`, `not_configured`) and a `docs` link to
+  `/developers#errors`; a test fails on a catalogue code that no source file emits. `error` keeps its old
+  name, so a client that reads `body.error` is unaffected. The shape covers the failures the public routes
+  raise themselves. It deliberately does not cover the MCP endpoint's JSON-RPC errors, the operator-only
+  routes (the cron and admin 401s and the flags endpoint keep their own bodies) or an uncaught exception,
+  which Next answers itself. The chat, voice, error-beacon and FAQ-purge routes use it; any `/api/*` path no
+  route owns answers a JSON 404 (`src/app/api/[...path]/route.ts`); the 16 public routes that are not prerendered
+  (chat, tts, tts-google, transcribe, error, visit, github/stats, MCP, the four `/api/md/<kind>/<slug>` and
+  the four `/<kind>/<slug>.md`) answer an unsupported method with a JSON 405 and an `Allow` header, and
+  export an `OPTIONS` (204, same `Allow`) so the header does not list the stubs as if they worked. The six
+  prerendered routes (`llms.txt`, `llms-full.txt`, `feed.xml`, `api/resume.json`, `api/md/home`,
+  `openapi.json`) export `GET` only, so they stay static; a test pins that. The MCP route's transport
+  responses pass through `ensureJsonError`, which wraps the library's bare-text 404 and 405 and only labels
+  a JSON-RPC body, never rewrites it; the route also answers HEAD with a JSON 405 and a POST whose body is
+  not JSON with the JSON-RPC parse error (`-32700`, HTTP 400), because the library never settles such a
+  request.
+- **`/openapi.json`** (`src/lib/openapi.ts`): an OpenAPI 3.1 description of what an outside agent can call
+  for free and without credentials. The chat, voice, error-beacon, visit, admin and cron routes are left out
+  on purpose, and the tests pin every documented path to a real route file.
+- **`/developers`, `/contact` and `/privacy`**: three HTML-only pages in the sitemap, on a small prose
+  component (`src/components/ui/prose.tsx`). `/developers` renders its endpoint and error tables from the
+  OpenAPI document and the error catalogue, so it cannot drift from them. Every figure `/privacy` prints as a number
+  lives in `src/lib/privacy-facts.ts`, and a test checks each against the source that enforces it.
+- **Discovery.** `llms.txt` gains "When to use this site" and "How to read this site" sections and links the
+  developer guide, the OpenAPI document, contact and privacy. The JSON-LD gains an `Organization` block
+  (`@id` `https://anvilry.vercel.app/#organization`, with a `ContactPoint` and a `PostalAddress`) that
+  `WebSite` names as its `publisher`, and `Person` gains a `description`. The footer links "API docs" in its
+  machine-readable nav and Contact and Privacy in its bottom strip.
+- **A canonical origin constant**, `SITE_URL` in `src/lib/site-url.ts`, for the machine-readable output
+  above, so a preview deployment never advertises itself as the canonical home.
+- Tests: 210 more (1356 to 1566) across 15 more files (115 to 130), and six E2E tests (`views.spec.ts` goes
+  from 26 to 32): the three pages, the footer links, `/openapi.json`, Markdown negotiation on `/`, the
+  Markdown 404 and the JSON API 404.
+
+### Changed
+- **The `.md` URLs share one implementation.** The four `/<kind>/<slug>.md` route files and the four
+  `/api/md/<kind>/<slug>` handlers now call `markdownForContent` (`src/lib/markdown-content.ts`), which
+  checks the slug against the content layer before it reads a file. They send the headers listed above, an
+  unknown slug now gets the Markdown 404 (it was the plain text `Not found`), and an article whose file has
+  no body gets a short description with where to read it instead of an empty page.
+- **Error bodies on existing routes.** `/api/error` answered 400, 413 and 429 with an empty body and now
+  sends the JSON shape; the chat, voice and purge routes send the same shape with `error` unchanged. An
+  unsupported method on one of the 16 public routes that are not prerendered is a JSON 405 with `Allow` where Next
+  sent an empty one (the six prerendered routes keep Next's empty 405), and an unknown `/api/*` path is a
+  JSON 404 where it was the HTML not-found page.
+- **The deploy smoke runs 26 checks, was 20** (`developers`, `contact`, `privacy`, `openapi-json`,
+  `home-markdown` and `api-json-404` are new); a check can now carry its own `Accept` header, and
+  `home-markdown` is the only one that sends anything but `*/*`. `deploy-smoke.test.ts` goes from 32 to 36
+  tests.
+- **Route and page counts:** 31 `route.ts` handlers (22 under `src/app/api`) and 19 `page.tsx` pages, were
+  27 (19) and 16.
+- **First-load JS for `/` is 973,291 B on a fresh build, was 972,920 B**, which leaves 14,709 B under the
+  988,000 B ceiling instead of 15,080 B. The ceiling and the gate are unchanged; a build now lists 20 route
+  records against the gate's floor of 17.
+
+### Fixed
+- **A `.md` page no longer leaks front matter into its text.** The old pattern ended the front-matter block
+  at the first `---` anywhere, so a value that contains `---` (a decision title in `content/projects/nh-deck.mdx`
+  does) closed the block early and the rest of the YAML appeared in the page. The block now ends only at a
+  `---` on a line of its own (`stripFrontmatter` in `src/lib/markdown-content.ts`).
+
 ## [3.16.1] — 2026-10-22
 
 **Patch** — Production deploys built from a push to `main` are gated: Vercel holds a new deployment off the

@@ -1,5 +1,6 @@
 import { profile, skills } from "@/lib/profile";
 import { now } from "@/lib/personal";
+import { SITE_URL } from "@/lib/site-url";
 
 // Safe serialisation for <script type="application/ld+json"> blocks.
 // JSON.stringify alone does NOT escape `</script>` — a content field containing
@@ -25,6 +26,7 @@ export function PersonJsonLd() {
     "@type": "Person",
     name: profile.name,
     jobTitle: profile.role,
+    description: `${profile.headline} ${profile.subhead}`,
     email: `mailto:${profile.email}`,
     url: "https://anvilry.vercel.app",
     worksFor: { "@type": "Organization", name: profile.company },
@@ -156,6 +158,48 @@ export function SoftwareSourceCodeJsonLd({
   );
 }
 
+/** Stable identifier other blocks (WebSite.publisher) use to point at the Organization below. */
+export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+
+/**
+ * Organization JSON-LD for the site itself ("Anvilry" is the portfolio brand, run by one person),
+ * so a crawler or agent finds a contact point and a postal address without reading prose. It
+ * models the site, not the employer: worksFor on the Person stays a bare name because this site
+ * has no business publishing Ascendion's contact details. Only data already public in profile.ts
+ * appears here (email, city and country); the phone number that sits in the résumé PDF does not.
+ */
+export function OrganizationJsonLd() {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": ORGANIZATION_ID,
+    name: "Anvilry",
+    url: SITE_URL,
+    description: `The portfolio of ${profile.name}, ${profile.role}: production case studies, open-source projects and a read-only API for people and AI agents.`,
+    founder: { "@type": "Person", name: profile.name },
+    email: profile.email,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: profile.locationCity,
+      addressCountry: profile.locationCountry,
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "professional inquiries",
+      email: profile.email,
+      url: `${SITE_URL}/contact`,
+      availableLanguage: "English",
+    },
+    sameAs: [profile.links.github, profile.links.linkedin],
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+    />
+  );
+}
+
 /**
  * WebSite schema. No potentialAction/SearchAction: SEARCH_ENABLED defaults off, so /search
  * is not a live, advertised page (`pnpm build` does now generate the Pagefind index, but
@@ -171,6 +215,7 @@ export function WebSiteJsonLd() {
     name: `${profile.name} — Portfolio`,
     url: "https://anvilry.vercel.app",
     author: { "@type": "Person", name: profile.name },
+    publisher: { "@id": ORGANIZATION_ID },
   };
   return (
     <script

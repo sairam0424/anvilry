@@ -111,3 +111,19 @@ describe("VisitorBadge localStorage cache", () => {
     });
   });
 });
+
+describe("footer links for people and agents", () => {
+  it("links the developer guide, contact and privacy pages from every page's HTML", () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, json: async () => ({}) })));
+    render(<SiteFooter />);
+    const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual(expect.arrayContaining(["/developers", "/contact", "/privacy"]));
+  });
+
+  it("keeps the existing machine-readable links", () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, json: async () => ({}) })));
+    render(<SiteFooter />);
+    const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual(expect.arrayContaining(["/mcp", "/llms.txt", "/api/resume.json"]));
+  });
+});

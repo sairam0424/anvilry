@@ -18,6 +18,9 @@ export const profile = {
     "I build production multi-agent LLM systems and the event-driven backends behind them.",
   subhead:
     "I co-built Pensieve and architected the AAVA Code backend at Ascendion, and build open-source AI infrastructure in the open.",
+  // One sentence, shared by llms.txt and the Markdown twin of the homepage.
+  availability:
+    "Open to Backend, GenAI & Full-Stack engineering roles. Remote or Hyderabad, India.",
   email: "uggesairam0000@gmail.com",
   calendlyUrl: "https://calendly.com/sairamugge/30min",
   links: {

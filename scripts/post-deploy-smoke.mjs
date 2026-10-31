@@ -54,6 +54,7 @@ const PROJECT_LINK = /href="(\/projects\/[a-z0-9][a-z0-9-]*)"/g;
  *   id: string,
  *   path: string,
  *   dynamic?: "project" | "project-md",
+ *   accept?: string,
  *   expectStatus?: number | number[],
  *   contentType?: RegExp,
  *   verify?: (reply: Reply, ctx: SmokeContext) => string | null,
@@ -172,6 +173,9 @@ export const CHECKS = [
   { id: "decisions", path: "/decisions", contentType: /text\/html/ },
   { id: "resume", path: "/resume", contentType: /text\/html/ },
   { id: "mcp", path: "/mcp", contentType: /text\/html/ },
+  { id: "developers", path: "/developers", contentType: /text\/html/, verify: (r) => (/<h1[\s>]/.test(r.body) ? null : "the developer guide has no <h1>") },
+  { id: "contact", path: "/contact", contentType: /text\/html/, verify: (r) => (r.body.includes("mailto:") ? null : "the contact page has no mailto link") },
+  { id: "privacy", path: "/privacy", contentType: /text\/html/, verify: (r) => (/<h1[\s>]/.test(r.body) ? null : "the privacy page has no <h1>") },
   { id: "search", path: "/search", contentType: /text\/html/ },
   {
     id: "pagefind",
@@ -212,6 +216,49 @@ export const CHECKS = [
       return n >= MIN_PROJECT_LINKS ? null : `resume.json lists ${n} project(s), expected at least ${MIN_PROJECT_LINKS}`;
     },
   },
+  {
+    id: "openapi-json",
+    path: "/openapi.json",
+    contentType: /json/,
+    verify: (r) => {
+      let doc;
+      try {
+        doc = JSON.parse(r.body);
+      } catch {
+        return "the response is not valid JSON";
+      }
+      if (typeof doc?.openapi !== "string" || !doc.openapi.startsWith("3.1")) return `openapi is "${doc?.openapi}", expected 3.1.x`;
+      const n = Object.keys(doc.paths ?? {}).length;
+      return n >= 10 ? null : `the document describes ${n} path(s), expected at least 10`;
+    },
+  },
+  {
+    // The same URL as "home", asked for Markdown: content negotiation must answer with a real
+    // Markdown body and say that the response varies with Accept.
+    id: "home-markdown",
+    path: "/",
+    accept: "text/markdown",
+    contentType: /text\/markdown/,
+    verify: (r) => {
+      if (!r.body.trimStart().startsWith("# ")) return "the Markdown homepage does not start with a # heading";
+      if (!r.body.includes("Sairam Ugge")) return 'the Markdown homepage does not contain "Sairam Ugge"';
+      return /accept/i.test(r.headers.get("vary") ?? "") ? null : "the Markdown homepage does not send Vary: Accept";
+    },
+  },
+  {
+    // An unknown API path must be a JSON 404 an agent can parse, not an HTML page.
+    id: "api-json-404",
+    path: "/api/no-such-route",
+    expectStatus: 404,
+    contentType: /json/,
+    verify: (r) => {
+      try {
+        return JSON.parse(r.body).code === "not_found" ? null : 'the JSON error body has no code "not_found"';
+      } catch {
+        return "the 404 body is not valid JSON";
+      }
+    },
+  },
   // Fail-closed gates. Both are UNAUTHENTICATED probes that must be refused; neither runs any work.
   { id: "admin-gated", path: "/admin/telemetry", expectStatus: [401, 404] },
   { id: "cron-fail-closed", path: "/api/cron/health-check", expectStatus: 401 },
@@ -223,9 +270,9 @@ export const CHECKS = [
  * @param {SmokeOptions & { path: string }} opts
  * @returns {Promise<Reply>}
  */
-async function request(baseUrl, { path, fetchImpl = fetch, bypassSecret }) {
+async function request(baseUrl, { path, fetchImpl = fetch, bypassSecret, accept = "*/*" }) {
   /** @type {Record<string, string>} */
-  const headers = { accept: "*/*", "user-agent": "anvilry-post-deploy-smoke" };
+  const headers = { accept, "user-agent": "anvilry-post-deploy-smoke" };
   if (bypassSecret) headers[BYPASS_HEADER] = bypassSecret;
   const res = await fetchImpl(`${baseUrl}${path}`, {
     method: "GET",
@@ -302,7 +349,7 @@ export async function runSmoke(baseUrl, opts = {}) {
       continue;
     }
     try {
-      const reply = await request(base, { path, fetchImpl, bypassSecret });
+      const reply = await request(base, { path, fetchImpl, bypassSecret, accept: check.accept });
       replies.push(reply);
       const allowed = expectedStatuses(check.expectStatus);
       if (!allowed.includes(reply.status)) {

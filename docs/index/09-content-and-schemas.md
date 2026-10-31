@@ -10,7 +10,7 @@ version: v3.16.1
 
 > Part of the Anvilry v3.16.1 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.16.1 (`package.json` 3.16.1), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope. The post-a929932 behavioural changes now number twenty-five, and the three added in v3.16.0 are all in this scope, (20), (21) and (22): nine new `content/projects/*.mdx` files (20 projects in four groups, the new fourth group shown first on `/projects`), the Project `visibility` field (`agent-forge` and `graph-forge` are private), and the body split (compiled MDX moved out of the four metadata collections into four body-only sibling collections). (23), added in v3.16.1, is in this scope too: the prune of three low-priority open-source items (#333) removes the `grpc-microservices` and `not-humans-lab` project cards (their pages now return 404; 18 projects remain, 16 of them public, still in four groups) and Shop.this (three entries leave the GitHub feed allowlist, 22 to 19).
+> Describes Anvilry v3.16.1 (`package.json` 3.16.1), i.e. `main` at a929932 plus five post-a929932 fixes. The one that matters here: notes are hidden at the data layer when `NOTES_ENABLED` is off (`allNotes` is empty and note-only articles are dropped from `allArticles`; see Cross-references §5). The others (per-class rate-limit buckets, shared admin auth, voice-gated command palette, `MIN_ROUTES` and dead-component removal) do not touch this file's scope. The post-a929932 behavioural changes now number twenty-five, and the three added in v3.16.0 are all in this scope, (20), (21) and (22): nine new `content/projects/*.mdx` files (20 projects in four groups, the new fourth group shown first on `/projects`), the Project `visibility` field (`agent-forge` and `graph-forge` are private), and the body split (compiled MDX moved out of the four metadata collections into four body-only sibling collections). (23), added in v3.16.1, is in this scope too: the prune of three low-priority open-source items (#333) removes the `grpc-microservices` and `not-humans-lab` project cards (their pages now return 404; 18 projects remain, 16 of them public, still in four groups) and Shop.this (three entries leave the GitHub feed allowlist, 22 to 19). The unreleased agent-readiness change (branch `feat/agent-readiness`) adds no content file and changes no schema; it reaches this page only through the raw-Markdown handlers, which now share `markdownForContent` (see "Raw markdown endpoints and `llms.txt`"), and through the sitemap and `llms.txt` line numbers cited below.
 
 **Scope:** `velite.config.ts`, `content/work/*.mdx` (5), `content/projects/*.mdx` (18), `content/notes/*.{md,mdx}` (7) + `content/notes/.gitkeep`, `content/articles/*.mdx` (15)
 **Files indexed:** 47 (46 content/config files + `.gitkeep`)
@@ -200,7 +200,7 @@ article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a
 
 `body: s.mdx()` is **not** a field of Project, Work, Note or Article. Each has a body-only sibling collection over the same glob: `ProjectBody`, `WorkBody`, `NoteBody`, `ArticleBody`, built by `bodyOnly()` from shared `PATTERNS` and registered as `projectBodies` / `workBodies` / `noteBodies` / `articleBodies` (`velite.config.ts:181-190`). Their records are `{ slug, body }`; `slug` is a plain `s.string()` there because the metadata collection over the same files already validates its format and uniqueness. `.velite/` therefore holds eight JSON files, and `src/lib/content-bodies.ts` is the only reader of the four `*Bodies.json`.
 
-Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (9 tests; importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs` (`MDX_MARKER` at `scripts/bundle-budget.mjs:96`, the failing check at `:168-177`). Measured on the v3.16.0 tree: first-load JS for `/` was 976,936 B, against 1,188,350 B at the v3.15.0 cut (the peak before the split was 1,298,585 B), which left 359,064 B under the then-current `MAX_FIRST_LOAD_BYTES` (1_336_000). After v3.16.0 (shipped in v3.16.1) the prune of three low-priority open-source items (#333: two project cards and the Shop.this feed entry) took `/` to 972,887 B, the same on CI and on a local macOS build, and the ceiling was lowered to 988_000. A fresh build of this tree measures `/` at 972,920 B (972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx` line 26), so 15,080 B (about 1.5%) of headroom remain: a growth allowance, not jitter room, since #333 shed 4,049 B with two cards and their graph nodes.
+Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (9 tests; importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs` (`MDX_MARKER` at `scripts/bundle-budget.mjs:96`, the failing check at `:168-177`). Measured on the v3.16.0 tree: first-load JS for `/` was 976,936 B, against 1,188,350 B at the v3.15.0 cut (the peak before the split was 1,298,585 B), which left 359,064 B under the then-current `MAX_FIRST_LOAD_BYTES` (1_336_000). After v3.16.0 (shipped in v3.16.1) the prune of three low-priority open-source items (#333: two project cards and the Shop.this feed entry) took `/` to 972,887 B, the same on CI and on a local macOS build, and the ceiling was lowered to 988_000. A fresh build of this tree measures `/` at 973,291 B (972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx` line 26 and 371 B more after the agent-readiness change), so 14,709 B (about 1.5%) of headroom remain: a growth allowance, not jitter room, since #333 shed 4,049 B with two cards and their graph nodes.
 
 ## Content inventory
 
@@ -398,7 +398,7 @@ separation so labels do not overprint, and edge sanity (edges join existing node
 `## Production Work`, and `## Skills`; `:33-41` asserts `## Personal` appears iff `personal.ts` is
 populated; `:14-24` asserts a private project stays in the corpus by name but never with its repo URL
 (`Repo: private repository`), while every public project's `Repo:` line carries its URL. The `register` string reaching the LLM verbatim is also reinforced in the chat system
-prompt at `src/app/api/chat/route.ts:90`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
+prompt at `src/app/api/chat/route.ts:91`. The header comment at `src/lib/corpus.ts:9` ("~4KB") is
 stale: `buildCorpus()` measures 16,476 chars with notes dark (the default) and 18,780 with notes on (re-measured
 after the low-priority cards were removed, with an `npx tsx` read of `buildCorpus()`; the nine projects added in v3.16.0 account for about 8 KB of it).
 
@@ -451,9 +451,9 @@ drafts dropped, newest first, regardless of the flag — only the `/notes` route
 `notes/[slug]/opengraph-image.tsx` use it, because `cacheComponents` needs a non-empty
 `generateStaticParams`). `allNotes` (`:66`) is `publishedNotes` when `NOTES_ENABLED` is true and
 `[]` otherwise; `hasNotes`, `getNote`, `inkforgeNotes` and `inkforgeArticles` derive from it. So
-with the default (`NEXT_PUBLIC_NOTES_ENABLED` unset) `llms.txt` (`src/lib/llms-txt.ts:38-46`, `:95-96`),
+with the default (`NEXT_PUBLIC_NOTES_ENABLED` unset) `llms.txt` (`src/lib/llms-txt.ts:38-46`, `:117-118`),
 `feed.xml` (`src/app/feed.xml/route.ts:24`), the MCP `list_all_content`/`get_content_item` tools
-(`src/lib/mcp-tools.ts`), the chat corpus, sitemap (`src/app/sitemap.ts:40-57`) and both raw-`.md`
+(`src/lib/mcp-tools.ts`), the chat corpus, sitemap (`src/app/sitemap.ts:43-60`) and both raw-`.md`
 handler sets can no longer publish a note the `/notes` pages 404. `allArticles` (`:90-93`) also drops
 **note-only articles** while notes are dark — those with a `linkedNote` and either no `externalUrl`
 or an `externalUrl` under `https://anvilry.vercel.app/notes/` (`isNoteOnlyArticle`, `:83-84`): today
@@ -513,7 +513,7 @@ the native-inline render path is never reached.
 "Constraints"/"Tradeoffs", empty `tags`). Today that is 63 project entries + 10 work entries = 73
 (`DECISION_COUNTS`, `:72-76`); `decisionsByTag(tag)` is at `:67`. Consumers: the `/decisions` page
 (`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:206-227`,
-registered at `src/app/api/mcp/[transport]/route.ts:109`, documented at `src/app/mcp/page.tsx:57`).
+registered at `src/app/api/mcp/[transport]/route.ts:110`, documented at `src/app/mcp/page.tsx:57`).
 `src/lib/decisions.test.ts` (build-chained) enforces bidirectional coverage — an entry per populated
 project decision (`:16`) and per populated work field (`:31`), verbatim title/body tracing to real
 content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching counts (`:88`) and
@@ -620,22 +620,33 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
 
 ### Raw markdown endpoints and `llms.txt`
 
-- **Two parallel handler sets exist:** `src/app/api/md/{work,projects,notes,articles}/[slug]/route.ts`
-  (targets of the `/:collection/:slug.md` rewrites at `next.config.ts:244-247`) and
+- **Two parallel handler sets still exist, but since the agent-readiness change they share one
+  implementation:** `src/app/api/md/{work,projects,notes,articles}/[slug]/route.ts` (targets of the
+  `/:collection/:slug.md` rewrites at `next.config.ts:271-274`; they read `slug` from `params`) and
   `src/app/{work,projects,notes,articles}/[slug].md/route.ts` (which parse the slug from `req.url`).
-  Both check the slug against the published `allX` collection (notes: `allNotes`, hence a 404 while
-  notes are dark — `src/app/api/md/notes/[slug]/route.ts:28`), `readFileSync` the source from
-  `content/<collection>/<slug>.{mdx,md}` at request time (`:11-21`) and strip frontmatter with
-  `^---[\s\S]*?---` (`:8`), which would truncate at a `---` inside a frontmatter value. Which set
-  wins routing is not established here; `notes-dark.test.ts:71-80` exercises both.
-- `src/lib/llms-txt.ts:88-103` advertises `<BASE>/<collection>/<slug>.md` for work, projects, notes
-  (`:95-96`, "(none yet)" while dark) and "Articles (native only)" (`:98-102`), which filters on
-  `!a.externalUrl` (`:100`) rather than `source === "native"` — the same set today (only
-  `how-dns-works`, and that is empty while notes are dark). Articles are body-less, so their `.md`
-  is empty text.
+  Both call `markdownForContent(kind, slug)` (`src/lib/markdown-content.ts:57`) and nothing else. It
+  checks the slug against the published `allX` collection (`collections`, `:11-16`; notes: `allNotes`,
+  hence a 404 while notes are dark) before any file is read, `readFileSync`s the source from
+  `content/<kind>/<slug>.{mdx,md}` at request time (`readRawContent`, `:27-37`) and strips frontmatter
+  (`stripFrontmatter`, `:23-25`). The old handlers did that with `^---[\s\S]*?---`, which closed the block at
+  a `---` inside a frontmatter value; the review-fix commit changed it so the closing fence must be a line of
+  its own (a decision title in `content/projects/nh-deck.mdx` ends with `---` and used to leak the rest of the
+  YAML into its twin), and `markdown-content.test.ts` checks it against every content item.
+  A miss is now a Markdown 404 that links `llms.txt`, `llms-full.txt` and the sitemap
+  (`markdownNotFound`), not the plain-text "Not found" the handlers used to return. Which set wins routing
+  is not established here; `notes-dark.test.ts:71-80` exercises both. A request that asks for
+  `Accept: text/markdown` at the HTML URL reaches the same function through `src/proxy.ts` (see
+  [02](./02-api-routes.md)); every response carries `Content-Type: text/markdown`, `Vary: Accept`, a
+  revalidating `Cache-Control` and `Link: <…>; rel="canonical"` (`markdownResponse`).
+- `src/lib/llms-txt.ts:110-125` advertises `<BASE>/<collection>/<slug>.md` for work, projects, notes
+  (`:117-118`, "(none yet)" while dark) and "Articles (native only)" (`:120-124`), which filters on
+  `!a.externalUrl` (`:122`) rather than `source === "native"` — the same set today (only
+  `how-dns-works`, and that is empty while notes are dark). Cross-posted articles are body-less, but
+  their `.md` is no longer empty text: when the file has no body, `describeArticle` (`markdown-content.ts:43`)
+  returns the title, summary, source and date, the external and canonical URLs and the tags.
 - `NOTES_ENABLED`-independent hazard: `content/` must be present in the serverless function bundle
-  for the `readFileSync` reads; no `outputFileTracingIncludes` was found in `next.config.ts`
-  (unverified against a deployed build).
+  for the `readFileSync` reads (now all in `markdown-content.ts`); no `outputFileTracingIncludes` was
+  found in `next.config.ts` (unverified against a deployed build).
 
 ## Coverage
 

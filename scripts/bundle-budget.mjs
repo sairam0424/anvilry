@@ -36,7 +36,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 
 const STATS = ".next/diagnostics/route-bundle-stats.json";
 
-/** 17 routes today: the 16 src/app page.tsx routes plus /_not-found. Fewer means Next changed the artifact's shape and this gate is lying. */
+/** A floor, not a count: the 16 page.tsx routes of the time plus /_not-found made 17, and a build now lists more records. Fewer than this means Next changed the artifact's shape and this gate is lying. */
 const MIN_ROUTES = 17;
 
 /**

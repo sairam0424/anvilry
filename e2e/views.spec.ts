@@ -341,3 +341,58 @@ test("MCP page renders", async ({ page }) => {
   await page.goto("/mcp");
   await expect(page.locator("main")).toBeVisible();
 });
+
+// ── Agent readiness ───────────────────────────────────────────────────────────
+
+test("developer guide, contact and privacy pages render with one h1 each", async ({ page }) => {
+  for (const [path, heading] of [
+    ["/developers", /Build on Anvilry/],
+    ["/contact", /Contact Sairam Ugge/],
+    ["/privacy", /Privacy at Anvilry/],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+  }
+});
+
+test("the footer links the developer guide, contact and privacy from the homepage", async ({ page }) => {
+  await page.goto("/");
+  for (const href of ["/developers", "/contact", "/privacy"]) {
+    await expect(page.locator(`footer a[href="${href}"]`)).toHaveCount(1);
+  }
+});
+
+test("openapi.json is a 3.1 document that names its own path", async ({ request }) => {
+  const res = await request.get("/openapi.json");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("application/json");
+  const doc = await res.json();
+  expect(doc.openapi).toMatch(/^3\.1/);
+  expect(doc.paths["/openapi.json"]).toBeDefined();
+});
+
+test("the homepage negotiates Markdown without changing what browsers get", async ({ request }) => {
+  const md = await request.get("/", { headers: { Accept: "text/markdown" } });
+  expect(md.status()).toBe(200);
+  expect(md.headers()["content-type"]).toContain("text/markdown");
+  expect(md.headers()["vary"]).toMatch(/accept/i);
+  expect((await md.text()).trimStart().startsWith("# ")).toBe(true);
+
+  const html = await request.get("/", { headers: { Accept: "text/html" } });
+  expect(html.headers()["content-type"]).toContain("text/html");
+  expect(await html.text()).toContain("<html");
+});
+
+test("a missing page answers a real 404 in the format asked for", async ({ request }) => {
+  const md = await request.get("/some-path-that-does-not-exist", { headers: { Accept: "text/markdown" } });
+  expect(md.status()).toBe(404);
+  expect(md.headers()["content-type"]).toContain("text/markdown");
+  expect((await md.text()).length).toBeGreaterThan(20);
+});
+
+test("an unknown API path answers a JSON error an agent can act on", async ({ request }) => {
+  const res = await request.get("/api/no-such-route");
+  expect(res.status()).toBe(404);
+  expect(res.headers()["content-type"]).toContain("application/json");
+  expect(await res.json()).toMatchObject({ code: "not_found" });
+});

@@ -12,25 +12,36 @@ import { SITE_URL } from "@/lib/site-url";
  * cannot disagree, and the tests pin every documented path to a real route file.
  */
 
-type Json = Record<string, unknown>;
+export type Json = Record<string, unknown>;
+
+export interface OpenApiParameterSchema {
+  type: "string" | "integer";
+  pattern?: string;
+  minLength?: number;
+  maxLength?: number;
+  enum?: readonly string[];
+  default?: string | number;
+  minimum?: number;
+  maximum?: number;
+}
 
 export interface OpenApiParameter {
   name: string;
-  in: "path" | "query";
+  in: "path" | "query" | "header";
   required: boolean;
   description: string;
-  schema: {
-    type: "string";
-    pattern: string;
-    minLength: number;
-    maxLength: number;
-  };
-  example: string;
+  schema: OpenApiParameterSchema;
+  example?: string;
+}
+
+export interface OpenApiHeader {
+  description: string;
+  schema: { type: "string" | "integer"; format?: string };
 }
 
 export interface OpenApiResponse {
   description: string;
-  headers?: Record<string, { description: string; schema: { type: "string" } }>;
+  headers?: Record<string, OpenApiHeader>;
   content?: Record<string, { schema: Json; example?: unknown }>;
 }
 

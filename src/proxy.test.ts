@@ -160,3 +160,87 @@ describe("proxy — matcher", () => {
     expect(re.test("text/html, TeXt/mArKdOwN")).toBe(true);
   });
 });
+
+describe("proxy — public API contract", () => {
+  let nextIp = 0;
+  const freshIp = () => `203.0.113.${++nextIp}`;
+  const call = (path: string, init: { method?: string; headers?: Record<string, string> } = {}) =>
+    proxy(
+      new NextRequest(`https://anvilry.vercel.app${path}`, {
+        method: init.method ?? "GET",
+        headers: { "x-vercel-forwarded-for": freshIp(), ...init.headers },
+      }),
+    );
+
+  it("stamps the version and the rate-limit fields on a public API response", async () => {
+    const res = await call("/api/v1/projects");
+    expect(res.headers.get("x-middleware-next")).toBe("1"); // still passes through to the route
+    expect(res.headers.get("API-Version")).toBe("1");
+    expect(res.headers.get("RateLimit-Policy")).toBe('"default";q=300;w=60');
+    expect(res.headers.get("RateLimit")).toMatch(/^"default";r=299;t=\d+$/);
+    expect(res.headers.get("RateLimit-Limit")).toBe("300");
+    expect(res.headers.get("RateLimit-Remaining")).toBe("299");
+    expect(res.headers.get("RateLimit-Reset")).toMatch(/^\d+$/);
+    expect(res.headers.get("Retry-After")).toBeNull();
+  });
+
+  it("does the same for the discovery files, the twins and the MCP endpoint", async () => {
+    for (const path of ["/llms.txt", "/openapi.json", "/about.md", "/projects/trelix.md", "/api/mcp/mcp", "/api/resume.json"]) {
+      const res = await call(path);
+      expect(res.headers.get("API-Version"), path).toBe("1");
+      expect(res.headers.get("RateLimit-Remaining"), path).toBe("299");
+    }
+  });
+
+  it("counts down per client and keeps clients apart", async () => {
+    const ip = freshIp();
+    const headers = { "x-vercel-forwarded-for": ip };
+    const first = await call("/api/v1/work", { headers });
+    const second = await call("/api/v1/work", { headers });
+    expect(first.headers.get("RateLimit-Remaining")).toBe("299");
+    expect(second.headers.get("RateLimit-Remaining")).toBe("298");
+    expect((await call("/api/v1/work")).headers.get("RateLimit-Remaining")).toBe("299");
+  });
+
+  it("answers 429 with the shared error body and Retry-After once the budget is spent", async () => {
+    const headers = { "x-vercel-forwarded-for": freshIp() };
+    for (let i = 0; i < 300; i++) await call("/api/v1/profile", { headers });
+    const res = await call("/api/v1/profile", { headers });
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Content-Type")).toContain("application/json");
+    expect(res.headers.get("Retry-After")).toMatch(/^[1-9]\d*$/);
+    expect(res.headers.get("RateLimit-Remaining")).toBe("0");
+    expect(res.headers.get("API-Version")).toBe("1");
+    expect(await res.json()).toMatchObject({ code: "rate_limited", status: 429 });
+  });
+
+  it("accepts the current API-Version and rejects any other with a JSON 400", async () => {
+    expect((await call("/api/v1/projects", { headers: { "API-Version": "1" } })).status).toBe(200);
+    const bad = await call("/api/v1/projects", { headers: { "API-Version": "2" } });
+    expect(bad.status).toBe(400);
+    expect(bad.headers.get("API-Version")).toBe("1");
+    const body = await bad.json();
+    expect(body).toMatchObject({ code: "invalid_request", status: 400 });
+    expect(body.hint).toContain("The only version is 1");
+  });
+
+  it("does not echo an oversized version value back in full", async () => {
+    const res = await call("/api/v1/projects", { headers: { "API-Version": "x".repeat(500) } });
+    expect(JSON.stringify(await res.json()).length).toBeLessThan(600);
+  });
+
+  it("does not spend a client's budget on a preflight", async () => {
+    const headers = { "x-vercel-forwarded-for": freshIp() };
+    await call("/api/v1/projects", { method: "OPTIONS", headers });
+    const res = await call("/api/v1/projects", { headers });
+    expect(res.headers.get("RateLimit-Remaining")).toBe("299");
+  });
+
+  it("leaves routes outside the public API alone", async () => {
+    for (const path of ["/api/chat", "/api/tts", "/api/cron/eval", "/about"]) {
+      const res = await call(path);
+      expect(res.headers.get("API-Version"), path).toBeNull();
+      expect(res.headers.get("RateLimit"), path).toBeNull();
+    }
+  });
+});

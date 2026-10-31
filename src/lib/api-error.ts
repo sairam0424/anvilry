@@ -50,6 +50,12 @@ export const API_ERROR_CODES = [
     hint: "Wait for the number of seconds in the Retry-After header, then retry.",
   },
   {
+    code: "internal_error",
+    status: 500,
+    meaning: "The server failed while handling a valid request.",
+    hint: "Retry once after a short delay; if it keeps failing, report it via /contact.",
+  },
+  {
     code: "upstream_error",
     status: 502,
     meaning:
@@ -105,6 +111,24 @@ export function apiError(
   headers.set("Content-Type", "application/json; charset=utf-8");
   headers.set("Cache-Control", "no-store");
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+/**
+ * Wraps a route handler so an unexpected exception leaves the server as the shared JSON error
+ * (500, internal_error) instead of Next's empty-bodied 500. The cause is logged server-side by
+ * name only; nothing from the exception reaches the client.
+ */
+export function withJsonErrors<Args extends unknown[]>(
+  handler: (...args: Args) => Response | Promise<Response>,
+): (...args: Args) => Promise<Response> {
+  return async (...args: Args) => {
+    try {
+      return await handler(...args);
+    } catch (err) {
+      console.error(`[api] unhandled error in route handler: ${(err as Error)?.name ?? "error"}`);
+      return apiError(500, "internal_error", "The server could not complete the request.");
+    }
+  };
 }
 
 /**

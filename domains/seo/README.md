@@ -47,7 +47,7 @@ Google treats them as ordinary crawlable documents, so the duplicate-content que
 `/work/[slug].md` vs `/work/[slug]` is **unresolved**, not answered. Worth a canonical check. Since the
 agent-readiness change (v3.17.0) every successful `.md` response carries `Link: <https://anvilry.vercel.app/<kind>/<slug>>;
 rel="canonical"` and `Vary: Accept`; whether Google honours that header for these documents has not been checked,
-and a successful twin sends no `X-Robots-Tag` (only the Markdown 404 sends `noindex`).
+and a successful twin sends no `X-Robots-Tag` (only the Markdown 404 sends `noindex`). The ten page twins (`/about.md`, `/projects.md` and so on, unreleased on v3.17.0) send the same headers, with `rel="canonical"` pointing at `/<page>`, so the question covers them too.
 
 ## No separate GEO/AEO discipline
 
@@ -90,3 +90,4 @@ ChatGPT/Claude/Perplexity.
             deflationary case against it was refuted.
 2026-09-29 | docs drift pass — checked against main @ a929932 + five fixes: `DefinedTerm` is gone (it shipped in v2.5.0 as `Person.skills` and was removed 2026-09-02, commit 1116d78), the schema list corrected (adds CreativeWork and inline BlogPosting; the unused ArticleJsonLd was deleted), `.md` endpoint duplication and missing headers recorded, `/decisions` metadata gap noted
 2026-10-31 | agent-readiness change (commits 3e8082e, 8553d86 and 41020d6, shipped in v3.17.0) — `llms.txt` gains "When to use this site" and "How to read this site" sections and links to the developer guide, the OpenAPI document, contact and privacy; `.md` responses gain `Link: …; rel="canonical"` and `Vary: Accept`; the JSON-LD gains an `Organization` block, a `Person.description` and `WebSite.publisher`; `/developers`, `/contact` and `/privacy` join the sitemap. The two llms.txt sections were added deliberately, as agent-facing guidance; the rationale above, including that no search benefit is claimed for the file, stands.
+2026-11-01 | API-policy change (commits f6a63bd, 528e6b9, a5953d7 and def85f4, unreleased on v3.17.0) — `llms.txt` gains a "Developer resources" block (every line starts "Anvilry ...") and a "Pages" list of the `.md` twins; ten pages (about, articles, contact, decisions, developers, mcp, notes, privacy, projects, work) gain a `/<page>.md` twin with `Vary: Accept` and a canonical `Link`; `/developers` is titled "Anvilry API documentation" and gains sections on authentication, versioning, rate limits, SDK and CLI, `/mcp` is titled "Anvilry MCP server", and `/docs`, `/api-docs`, `/sdk`, `/cli` and similar addresses redirect (308) to them. These `llms.txt` additions are deliberate agent-facing guidance too; the rationale above still stands.

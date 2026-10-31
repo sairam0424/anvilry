@@ -28,6 +28,12 @@ awk '/^## 20/{p=/^## 2026-06/} p' LOG.md
 
 ---
 
+## 2026-11-01 · Public API contract: /api/v1, versioned headers, per-IP budget, API catalog, page twins · #feature #seo #docs
+What: a JSON API under `/api/v1` (14 read-only routes), `API-Version` and `RateLimit` headers with a 300-per-60-seconds per-IP budget counted in server memory by `src/proxy.ts` (JSON 429 with `Retry-After`), a deprecation mechanism (none scheduled, 180 days' notice), an RFC 9727 API catalog, typed OpenAPI errors for 29 operations, Markdown twins for ten pages, developer redirects, an eighth error code and a `/privacy` paragraph; the deploy smoke runs 30 checks (was 26); the suite is 1947 tests in 148 files. Unreleased on top of v3.17.0, no version chosen; a published CLI, CORS and the owner's approval of the 300 / 60 s and 180-day defaults are open.
+Refs: commits f6a63bd, 528e6b9, a5953d7, def85f4, 8a341bc, 79f5367 and 55f8dcd on `feat/api-policy-ratelimit-md-twins`; [CHANGELOG](CHANGELOG.md) `[Unreleased]` (new), [CLAUDE.md](CLAUDE.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DEPLOY.md](DEPLOY.md), [docs/configuration.md](docs/configuration.md) (updated).
+
+---
+
 ## 2026-10-31 · Agent readiness: Markdown negotiation, JSON API errors, OpenAPI, developer pages · #feature #seo #docs
 What: `Accept: text/markdown` on `/` and the four content page families returns Markdown (`Vary: Accept`; `/index.md` is the homepage twin), API errors share one JSON shape, and `/openapi.json`, `/developers`, `/contact` and `/privacy` are new; the deploy smoke runs 26 checks (was 20) and the suite is 1572 tests in 131 files. Shipped in v3.17.0.
 Refs: commits 3e8082e, 8553d86 and 41020d6 on `feat/agent-readiness`; [CHANGELOG](CHANGELOG.md) `[3.17.0]` (new), [CLAUDE.md](CLAUDE.md), [DEPLOY.md](DEPLOY.md), [ARCHITECTURE.md](ARCHITECTURE.md) (updated).

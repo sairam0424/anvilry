@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   API_ERROR_CODES,
   ERROR_DOCS_URL,
@@ -8,6 +8,7 @@ import {
   ensureJsonError,
   methodNotAllowed,
   optionsFor,
+  withJsonErrors,
 } from "./api-error";
 
 async function body(res: Response) {
@@ -118,6 +119,43 @@ describe("ensureJsonError", () => {
   it("bounds the echoed message", async () => {
     const res = await ensureJsonError(new Response("x".repeat(5000), { status: 400 }));
     expect(((await body(res)).error as string).length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe("withJsonErrors", () => {
+  it("passes a normal response through untouched", async () => {
+    const wrapped = withJsonErrors(() => new Response("ok", { status: 200 }));
+    const res = await wrapped();
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("ok");
+  });
+
+  it("turns a thrown error into the shared 500 body and never leaks the cause", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const wrapped = withJsonErrors(() => {
+      throw new Error("secret connection string");
+    });
+    const res = await wrapped();
+    expect(res.status).toBe(500);
+    const b = await body(res);
+    expect(b).toMatchObject({ code: "internal_error", status: 500 });
+    expect(JSON.stringify(b)).not.toContain("secret");
+    expect(spy.mock.calls.flat().join(" ")).not.toContain("secret");
+    spy.mockRestore();
+  });
+
+  it("also catches a rejected promise from an async handler", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const wrapped = withJsonErrors(async () => {
+      throw new TypeError("boom");
+    });
+    expect((await wrapped()).status).toBe(500);
+    spy.mockRestore();
+  });
+
+  it("forwards the handler's arguments", async () => {
+    const wrapped = withJsonErrors((a: number, b: number) => new Response(String(a + b)));
+    expect(await (await wrapped(2, 3)).text()).toBe("5");
   });
 });
 

@@ -598,9 +598,9 @@ limiter: Ratelimit.slidingWindow(8, "60 s")  // 8 requests / 60s / IP, one indep
 
 | Scenario | `/api/tts` Response | Client Behavior |
 |---|---|---|
-| Creds not configured | `503 { "error": "TTS not configured." }` | Falls back to free `speechSynthesis` |
-| Over rate limit | `429 { "error": "Too many requests." }` + `Retry-After` | Waits, then retries |
-| Polly error | `502 { "error": "TTS failed." }` | Falls back to free `speechSynthesis` |
+| Creds not configured | `503`, shared JSON error body (`error`: "TTS not configured.", `code`: `not_configured`) | Falls back to free `speechSynthesis` |
+| Over rate limit | `429`, shared JSON error body (`error`: "Too many requests.", `code`: `rate_limited`) + `Retry-After` | Waits, then retries |
+| Polly error | `502`, shared JSON error body (`error`: "TTS failed.", `code`: `upstream_error`) | Falls back to free `speechSynthesis` |
 | Success | `200 + audio/mpeg` (+ `X-TTS-Cache: hit/miss`) | Plays audio via `AudioContext` |
 
 `/api/transcribe` follows the same pattern: `503` → browser STT, `502`/errors → browser STT, `429` → retry, `413` → audio too large.

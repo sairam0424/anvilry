@@ -42,7 +42,7 @@ overrides:
   # GHSA-covered DoS + array-limit bypass (Dependabot #53/#56), transitive via
   # body-parser -> express -> @modelcontextprotocol/sdk. 6.16.1 (2026-10-14) is the oldest
   # release outside the advisory range (<=6.16.0); 6.16.2 and 6.17.x were younger than the
-  # 7-day Dependabot cooldown when this was pinned. If pnpm 11's release-age gate
+  # usual one-week soak when this was pinned. If pnpm 11's release-age gate
   # rejects it, that's the CI signal to wait and retry, not a reason to skip the fix.
   qs: 6.16.1
 

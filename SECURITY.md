@@ -23,7 +23,7 @@ Out of scope:
 
 **Do not open a public GitHub Issue for security vulnerabilities.**
 
-Email: **sairamugge4@gmail.com**  
+Email: **uggesairam0000@gmail.com**  
 Subject line: `[SECURITY] Anvilry — <brief description>`
 
 Include:

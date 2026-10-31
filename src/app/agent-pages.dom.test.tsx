@@ -151,6 +151,12 @@ describe("/privacy", () => {
     expect(text).not.toMatch(/never leave your device/i);
   });
 
+  it("speaks in the owner's own voice throughout and names the real character cut", () => {
+    expect(text).not.toMatch(/The owner reads/);
+    expect(text).toMatch(/I read them on a private dashboard/);
+    expect(text).toContain(`${PRIVACY_FACTS.chatCharsPerMessage}-character cut does not apply to the image`);
+  });
+
   it("names every outside company that receives data", () => {
     for (const company of ["Vercel", "Amazon Web Services", "Google", "Upstash", "GitHub"]) {
       expect(text, company).toContain(company);

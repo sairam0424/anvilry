@@ -94,8 +94,8 @@ export default function PrivacyPage() {
             {F.chatCharsPerMessage} characters, but it does not look for personal details in what you
             type. Please do not enter passwords, secrets or other people&apos;s data. File
             attachments are an optional feature that the default build leaves off; where they are
-            switched on, an image or the text of a PDF you attach is sent to the model too, and the
-            characters cut does not apply to the image.
+            switched on, an image or the text of a PDF you attach is sent to the model too, and the{" "}
+            {F.chatCharsPerMessage}-character cut does not apply to the image.
           </ProseP>
           <ProseList
             items={[
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
             the word &quot;anonymous&quot;. Events go to Vercel&apos;s runtime logs, which this site
             does not expire, and to Upstash, where they are trimmed after about{" "}
             {F.errorRetentionDays} days on a best-effort schedule (a cleanup that runs occasionally,
-            so some last longer). The owner reads them on a private dashboard.
+            so some last longer). I read them on a private dashboard.
           </ProseP>
 
           <ProseH2>Error reports</ProseH2>

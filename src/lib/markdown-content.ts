@@ -1,13 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { allArticles, allNotes, allProjects, allWork } from "@/lib/content";
+import { CONTENT_KINDS, type ContentKind } from "@/lib/content-kinds";
 import { markdownNotFound, markdownResponse } from "@/lib/markdown-response";
 
 type ArticleMeta = (typeof allArticles)[number];
 
-/** The content kinds whose HTML page at /<kind>/<slug> has a Markdown twin. */
-export const CONTENT_KINDS = ["projects", "work", "articles", "notes"] as const;
-export type ContentKind = (typeof CONTENT_KINDS)[number];
+export { CONTENT_KINDS, type ContentKind };
 
 const collections: Record<ContentKind, readonly { slug: string }[]> = {
   projects: allProjects,
@@ -16,8 +15,13 @@ const collections: Record<ContentKind, readonly { slug: string }[]> = {
   notes: allNotes,
 };
 
+/**
+ * Removes the leading front matter block. The closing fence must be a line of its own: a value
+ * that merely contains "---" (a decision title in nh-deck.mdx ends with it) must not close the
+ * block early and leak the rest of the YAML into the page.
+ */
 function stripFrontmatter(raw: string): string {
-  return raw.replace(/^---[\s\S]*?---\s*\n?/, "").trimStart();
+  return raw.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, "").trimStart();
 }
 
 function readRawContent(kind: ContentKind, slug: string): string | null {

@@ -1,5 +1,5 @@
 /**
- * Numbers the privacy page states. They live here, not in the page, so privacy.test.ts can check
+ * Numbers the privacy page states. They live here, not in the page, so privacy-facts.test.ts can check
  * each one against the source that enforces it. If a limit in the code changes, that test fails
  * until this file (and so the published text) is updated.
  */

@@ -23,12 +23,15 @@ import { classifyPath } from "@/lib/markdown-routing";
  *    specificity, q=0) then decide per path, see src/lib/markdown-routing.ts.
  */
 
+// The regex is spelled out letter by letter because a matcher value is a plain JS regular
+// expression with no flags, and media type names are case-insensitive (RFC 9110), exactly as
+// negotiate() treats them.
 export const config = {
   matcher: [
     "/admin/:path*",
     {
       source: "/:path*",
-      has: [{ type: "header", key: "accept", value: "(.*)[Tt]ext/[Mm]arkdown(.*)" }],
+      has: [{ type: "header", key: "accept", value: "(.*)[Tt][Ee][Xx][Tt]/[Mm][Aa][Rr][Kk][Dd][Oo][Ww][Nn](.*)" }],
     },
   ],
 };

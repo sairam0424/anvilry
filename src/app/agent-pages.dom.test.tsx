@@ -82,6 +82,13 @@ describe("/developers", () => {
     for (const href of internalLinks(html)) expect(KNOWN_TARGETS.has(href), href).toBe(true);
   });
 
+  it("does not claim more than the code does", () => {
+    expect(text).not.toMatch(/Markdown versions of every page/i);
+    expect(text).not.toMatch(/every failure in one shape/i);
+    expect(text).not.toMatch(/every public page/i);
+    expect(text).toMatch(/JSON-RPC/);
+  });
+
   it("is long enough to count as documentation", () => {
     expect(text.length).toBeGreaterThan(MIN_TRUST_PAGE_CHARS);
   });
@@ -131,6 +138,17 @@ describe("/privacy", () => {
     );
     expect(text).toContain(`${PRIVACY_FACTS.errorRetentionDays} days`);
     expect(text).toContain(PRIVACY_FACTS.lastUpdated);
+  });
+
+  it("states the data flows a reviewer found missing or wrong", () => {
+    expect(text).toContain("Developer mode");
+    expect(text).not.toMatch(/opening the command palette/i);
+    expect(text).toMatch(/Wake word/);
+    expect(text).toMatch(/Server logs/);
+    expect(text).toMatch(/Vercel.s runtime logs/);
+    expect(text).toMatch(/attachments/i);
+    expect(text).toMatch(/embedding/i);
+    expect(text).not.toMatch(/never leave your device/i);
   });
 
   it("names every outside company that receives data", () => {

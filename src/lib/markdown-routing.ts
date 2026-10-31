@@ -1,4 +1,4 @@
-import { CONTENT_KINDS } from "@/lib/markdown-content";
+import { CONTENT_KINDS } from "@/lib/content-kinds";
 
 /**
  * What src/proxy.ts does with a request whose Accept header asks for Markdown:
@@ -36,7 +36,8 @@ export const HTML_ONLY_PAGES = [
 
 const PASS_PREFIXES = ["/api/", "/_next/", "/_vercel/", "/.well-known/", "/admin/"] as const;
 const METADATA_IMAGES = new Set(["opengraph-image", "twitter-image", "icon", "apple-icon"]);
-const FILE_EXTENSION = /\.[A-Za-z0-9]{1,8}$/;
+// Underscores matter: Pagefind ships .pf_fragment, .pf_index and .pf_meta files.
+const FILE_EXTENSION = /\.[A-Za-z0-9_]{1,16}$/;
 const CONTENT_TWIN = new RegExp(`^/(${CONTENT_KINDS.join("|")})/([A-Za-z0-9_-]+)$`);
 
 export function classifyPath(rawPathname: string): MarkdownRoute {

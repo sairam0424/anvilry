@@ -1,5 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { apiError, methodNotAllowed } from "@/lib/api-error";
+import { apiError, methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { buildCorpus } from "@/lib/corpus";
 import { profile } from "@/lib/profile";
 import { allProjects, allWork } from "@/lib/content";
@@ -498,3 +498,4 @@ export const GET = notAllowed;
 export const PUT = notAllowed;
 export const PATCH = notAllowed;
 export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["POST"]);

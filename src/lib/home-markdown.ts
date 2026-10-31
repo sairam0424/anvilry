@@ -1,5 +1,5 @@
 import { groupArticles } from "@/lib/article-grouping";
-import { allArticles, allProjects, allWork, featuredProjects } from "@/lib/content";
+import { allArticles, allProjects, allWork, featuredProjects, publicProjects } from "@/lib/content";
 import { achievements, impactMetrics, profile, skills } from "@/lib/profile";
 import { SITE_URL } from "@/lib/site-url";
 import { ARTICLES_ENABLED } from "@/lib/writing-flags";
@@ -52,7 +52,7 @@ export function buildHomeMarkdown(): string {
 
   const agents = [
     `- [llms.txt](${abs("/llms.txt")}): curated index of this site`,
-    `- [llms-full.txt](${abs("/llms-full.txt")}): every project, work item and article in one file`,
+    `- [llms-full.txt](${abs("/llms-full.txt")}): the full grounding corpus (profile, work, projects, skills and more) in one file`,
     `- [MCP server](${abs("/api/mcp/mcp")}): read-only tools over Streamable HTTP, see [${abs("/mcp")}](${abs("/mcp")})`,
     `- [Résumé JSON](${abs("/api/resume.json")}): the profile as JSON Resume`,
     `- [OpenAPI description](${abs("/openapi.json")}): the public HTTP API`,
@@ -79,7 +79,10 @@ This is the Markdown version of [${SITE_URL}/](${SITE_URL}/). Browsers get the H
     header,
     section("Impact", impact),
     section("Production work", work),
-    section(`Featured open-source projects (${featuredProjects.length} of ${allProjects.length})`, projects),
+    section(
+      `Featured open-source projects (${featuredProjects.length} of ${allProjects.length} projects; ${publicProjects.length} have public repositories)`,
+      projects,
+    ),
     section("Stack", stack),
     section("Achievements", wins),
     section("Writing", writing),

@@ -59,11 +59,10 @@ Schedule a call: ${profile.calendlyUrl}
 Use this site when a question is about ${profile.name}'s professional work: fit for a
 backend, GenAI or full-stack engineering role, what was built and how (production multi-agent
 LLM systems, event-driven backends, open-source AI infrastructure), how to verify the claim
-behind a metric, or how to make contact. Every figure on the site links to the case study or
-repository that backs it, so cite the page, not this summary.
-Do not use it for general programming questions, for questions about other people, or for
-personal-life details, which the site does not publish. If something is not on the site, say
-it is not published rather than guessing.
+behind a metric, or how to make contact. Where a figure has a case study or repository behind
+it, the site links to it, so cite that page rather than this summary.
+Do not use it for general programming questions or for questions about other people. If
+something is not on the site, say it is not published rather than guessing.
 
 ## How to read this site
 - Any content page as Markdown: send "Accept: text/markdown" to its normal URL, or append .md (for example ${BASE}/work/pensieve.md)

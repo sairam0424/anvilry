@@ -66,7 +66,7 @@ const DISCOVERY = [
   ["/api/resume.json", "JSON Resume export"],
   ["/mcp", "how to connect the MCP server to Claude Desktop or Cursor"],
   ["/feed.xml", "RSS feed"],
-  ["/sitemap.xml", "every public page"],
+  ["/sitemap.xml", "the pages submitted to search engines"],
   ["/robots.txt", "crawler rules and the AI content signal"],
 ] as const;
 
@@ -79,7 +79,7 @@ export default function DevelopersPage() {
         <div className="max-w-2xl">
           <ProseP>
             Everything {profile.name} publishes on this site is also available to programs and AI
-            agents: a free, read-only API, Markdown versions of every page, a plain-text index for
+            agents: a free, read-only API, Markdown versions of the homepage and every content page, a plain-text index for
             language models and a Model Context Protocol server. There are no API keys, no sign-up and
             no cost. The documented routes apply no quota of their own, so please keep request
             volume reasonable. The machine-readable description is{" "}
@@ -146,7 +146,8 @@ export default function DevelopersPage() {
             project, work, article and note pages work this way, and each also has a fixed URL ending in{" "}
             <InlineCode>.md</InlineCode> (<InlineCode>/index.md</InlineCode> for the homepage) for clients
             that cannot set headers. Pages with no Markdown version ignore the header and return HTML, a
-            request that accepts neither format for a page that has both gets{" "}
+            request whose <InlineCode>Accept</InlineCode> header names Markdown but rules out both Markdown and
+            HTML (for example <InlineCode>text/markdown;q=0, text/html;q=0</InlineCode>) gets{" "}
             <InlineCode>406 Not Acceptable</InlineCode>, and a path that does not exist answers{" "}
             <InlineCode>404</InlineCode> with a short Markdown body that links to{" "}
             <Link className={link} href="/llms.txt">
@@ -157,8 +158,12 @@ export default function DevelopersPage() {
 
           <ProseH2 id="errors">Errors</ProseH2>
           <ProseP>
-            JSON routes report every failure in one shape. Branch on <InlineCode>code</InlineCode>, show{" "}
-            <InlineCode>error</InlineCode> to a person, and follow <InlineCode>hint</InlineCode>.
+            The failures this API raises itself (an unknown path, a method a route does not accept, a
+            request that is malformed, too large or too frequent, a feature that is switched off, a
+            failing upstream service) use one JSON shape. Branch on <InlineCode>code</InlineCode>, show{" "}
+            <InlineCode>error</InlineCode> to a person, and follow <InlineCode>hint</InlineCode>. The MCP
+            endpoint reports protocol errors as JSON-RPC, as MCP clients expect, and operator-only routes
+            keep their own answers.
           </ProseP>
           <CodeBlock>{ERROR_EXAMPLE}</CodeBlock>
         </div>

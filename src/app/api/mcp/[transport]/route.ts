@@ -1,5 +1,5 @@
 import { createMcpHandler } from "mcp-handler";
-import { ensureJsonError, methodNotAllowed } from "@/lib/api-error";
+import { ensureJsonError, methodNotAllowed, optionsFor } from "@/lib/api-error";
 import * as T from "@/lib/mcp-tools";
 
 // The SDK transitively needs Node (express/hono) — never edge. Inherently dynamic
@@ -131,11 +131,30 @@ const handler = createMcpHandler(
 // The transport library answers a wrong path or method with a bare text 404/405. Route
 // every response through ensureJsonError so errors are JSON like the rest of the API
 // (a JSON-RPC body is only labelled, never rewritten, so MCP clients see what they expect).
+//
+// The library never settles a POST whose body is not JSON (it raises inside a stream and the
+// request stays open until maxDuration), so a malformed body is answered here, cheaply, with the
+// JSON-RPC parse error the protocol defines.
 async function jsonErrors(req: Request): Promise<Response> {
+  if (req.method === "POST") {
+    try {
+      JSON.parse(await req.clone().text());
+    } catch {
+      return Response.json(
+        {
+          jsonrpc: "2.0",
+          error: { code: -32700, message: "Parse error: the request body is not valid JSON." },
+          id: null,
+        },
+        { status: 400 },
+      );
+    }
+  }
   return ensureJsonError(await handler(req));
 }
 
 const notAllowed = methodNotAllowed(["GET", "POST", "DELETE"]);
+const options = optionsFor(["GET", "POST", "DELETE"]);
 
 export {
   jsonErrors as GET,
@@ -143,4 +162,6 @@ export {
   jsonErrors as DELETE,
   notAllowed as PUT,
   notAllowed as PATCH,
+  notAllowed as HEAD,
+  options as OPTIONS,
 };

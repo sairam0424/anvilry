@@ -1,4 +1,4 @@
-import { methodNotAllowed } from "@/lib/api-error";
+import { methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import { Ratelimit } from "@upstash/ratelimit";
@@ -94,3 +94,4 @@ export const GET = notAllowed;
 export const PUT = notAllowed;
 export const PATCH = notAllowed;
 export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["POST"]);

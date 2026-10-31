@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DELETE, GET, PATCH, POST, PUT } from "./route";
+import { DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT } from "./route";
 
 const URL_BASE = "https://anvilry.vercel.app/api/mcp";
 
@@ -65,6 +65,41 @@ describe("MCP route error shapes", () => {
     const text = await res.text();
     expect(text).toContain("get_profile");
     expect(text).toContain("list_decisions");
+  });
+
+  it("answers a POST with a body that is not JSON by a JSON-RPC parse error, instead of hanging", async () => {
+    const res = await POST(
+      new Request(`${URL_BASE}/mcp`, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+        body: "{not json",
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(res.headers.get("content-type")).toMatch(/^application\/json/);
+    const json = await res.json();
+    expect(json).toEqual({
+      jsonrpc: "2.0",
+      error: { code: -32700, message: "Parse error: the request body is not valid JSON." },
+      id: null,
+    });
+  });
+
+  it("answers an empty POST body the same way", async () => {
+    const res = await POST(
+      new Request(`${URL_BASE}/mcp`, { method: "POST", headers: { "content-type": "application/json" } }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects HEAD as a 405 instead of leaving the connection open", () => {
+    const res = HEAD();
+    expect(res.status).toBe(405);
+    expect(res.headers.get("allow")).toBe("GET, POST, DELETE, OPTIONS");
+  });
+
+  it("answers OPTIONS with the methods that really work", () => {
+    expect(OPTIONS().headers.get("allow")).toBe("GET, POST, DELETE, OPTIONS");
   });
 
   it("exports DELETE so a client can end a session", () => {

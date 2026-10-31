@@ -1,4 +1,4 @@
-import { methodNotAllowed } from "@/lib/api-error";
+import { methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { getRepoFeed } from "@/lib/github";
 
 // `export const revalidate = 3600` removed for cacheComponents (which rejects it).
@@ -74,3 +74,4 @@ export const POST = notAllowed;
 export const PUT = notAllowed;
 export const PATCH = notAllowed;
 export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["GET", "HEAD"]);

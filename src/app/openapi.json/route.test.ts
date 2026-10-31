@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DELETE, GET, PATCH, POST, PUT } from "./route";
+import { GET } from "./route";
 
 describe("GET /openapi.json", () => {
   it("serves the OpenAPI 3.1 document as JSON", async () => {
@@ -13,13 +13,5 @@ describe("GET /openapi.json", () => {
 
   it("is cacheable by shared caches", () => {
     expect(GET().headers.get("cache-control")).toContain("s-maxage");
-  });
-
-  it("rejects writes with a JSON 405", async () => {
-    for (const handler of [POST, PUT, PATCH, DELETE]) {
-      const res = handler();
-      expect(res.status).toBe(405);
-      expect(res.headers.get("allow")).toBe("GET, HEAD, OPTIONS");
-    }
   });
 });

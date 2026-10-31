@@ -1,4 +1,3 @@
-import { methodNotAllowed } from "@/lib/api-error";
 import { buildOpenApiDocument } from "@/lib/openapi";
 
 /**
@@ -13,9 +12,3 @@ export function GET() {
     },
   });
 }
-
-const notAllowed = methodNotAllowed(["GET", "HEAD"]);
-export const POST = notAllowed;
-export const PUT = notAllowed;
-export const PATCH = notAllowed;
-export const DELETE = notAllowed;

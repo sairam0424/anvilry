@@ -1,7 +1,7 @@
 import { SITE_URL } from "@/lib/site-url";
 
 /**
- * One JSON error shape for every API route.
+ * The JSON error shape of this site's public API.
  *
  *   { error, code, status, hint, docs }
  *
@@ -9,6 +9,11 @@ import { SITE_URL } from "@/lib/site-url";
  * reads `body.error` keeps working; `code` is the stable machine-readable key an agent
  * should branch on; `hint` says what to do next; `docs` points at the catalogue below,
  * which /developers renders from this same array (one source, so the page cannot drift).
+ *
+ * Scope: the failures the public routes raise themselves. Not covered, on purpose: the MCP
+ * endpoint's JSON-RPC errors (clients parse those), operator-only routes (cron, admin and the
+ * flags endpoint keep their own bodies) and an uncaught exception, which Next answers itself.
+ * Every code below must be emitted by some route; api-error.test.ts fails on a dead one.
  */
 export const ERROR_DOCS_URL = `${SITE_URL}/developers#errors`;
 
@@ -19,12 +24,6 @@ export const API_ERROR_CODES = [
     meaning:
       "The request body or a parameter is missing, malformed or not allowed.",
     hint: "Check the request against the schema in /openapi.json and send it again.",
-  },
-  {
-    code: "unauthorized",
-    status: 401,
-    meaning: "The route needs credentials and none valid were sent.",
-    hint: "This route is operator-only. The public API needs no credentials.",
   },
   {
     code: "not_found",
@@ -49,12 +48,6 @@ export const API_ERROR_CODES = [
     status: 429,
     meaning: "Too many requests from this client in the current window.",
     hint: "Wait for the number of seconds in the Retry-After header, then retry.",
-  },
-  {
-    code: "internal_error",
-    status: 500,
-    meaning: "The server failed while handling an otherwise valid request.",
-    hint: "Retry once after a short delay. If it persists, report it via /contact.",
   },
   {
     code: "upstream_error",
@@ -162,4 +155,13 @@ export async function ensureJsonError(res: Response): Promise<Response> {
   return apiError(res.status, entry.code, message, {
     headers: allow ? { Allow: allow } : undefined,
   });
+}
+
+/**
+ * Answer to OPTIONS on a route that stubs other methods. Next would build Allow from the exported
+ * handlers, which lists the stubs as if they worked; this keeps it equal to the 405 answer's.
+ */
+export function optionsFor(allowed: readonly string[]): () => Response {
+  const allow = [...new Set([...allowed, "OPTIONS"])].join(", ");
+  return () => new Response(null, { status: 204, headers: { Allow: allow } });
 }

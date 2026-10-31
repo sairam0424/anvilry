@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   API_ERROR_CODES,
@@ -5,6 +7,7 @@ import {
   apiError,
   ensureJsonError,
   methodNotAllowed,
+  optionsFor,
 } from "./api-error";
 
 async function body(res: Response) {
@@ -115,5 +118,33 @@ describe("ensureJsonError", () => {
   it("bounds the echoed message", async () => {
     const res = await ensureJsonError(new Response("x".repeat(5000), { status: 400 }));
     expect(((await body(res)).error as string).length).toBeLessThanOrEqual(200);
+  });
+});
+
+describe("optionsFor", () => {
+  it("answers 204 with an Allow header equal to the 405 answer's", () => {
+    const res = optionsFor(["GET", "HEAD"])();
+    expect(res.status).toBe(204);
+    expect(res.headers.get("allow")).toBe(methodNotAllowed(["GET", "HEAD"])().headers.get("allow"));
+  });
+});
+
+describe("the error catalogue", () => {
+  it("has no dead code: every documented code is emitted by some source file", () => {
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) walk(full);
+        else if (/\.(ts|tsx)$/.test(name) && !/\.test\./.test(name)) files.push(full);
+      }
+    };
+    walk(join(process.cwd(), "src"));
+    const sources = files.map((f) => readFileSync(f, "utf-8"));
+    for (const { code } of API_ERROR_CODES) {
+      // One occurrence is the catalogue entry itself; a second is an emitter.
+      const uses = sources.reduce((n, src) => n + (src.split(`"${code}"`).length - 1), 0);
+      expect(uses, `"${code}" is documented but nothing emits it`).toBeGreaterThanOrEqual(2);
+    }
   });
 });

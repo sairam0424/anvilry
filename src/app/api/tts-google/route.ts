@@ -1,4 +1,4 @@
-import { apiError, methodNotAllowed } from "@/lib/api-error";
+import { apiError, methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   resolveGoogleVoiceName,
@@ -242,3 +242,4 @@ export const GET = notAllowed;
 export const PUT = notAllowed;
 export const PATCH = notAllowed;
 export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["POST"]);

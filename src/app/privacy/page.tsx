@@ -55,13 +55,14 @@ export default function PrivacyPage() {
           <ProseH2>What stays in your browser</ProseH2>
           <ProseP>
             The site saves a few settings in your browser&apos;s local storage so they survive a
-            reload. They never leave your device, except that the visitor total below is a site-wide
-            number the server hands back.
+            reload. They stay on your device, with two exceptions: the visitor total below is a
+            site-wide number the server hands back, and the voice you pick is sent along with each
+            spoken-reply request if you use the AWS Polly or Google voices (see Voice).
           </ProseP>
           <ProseList
             items={[
               "Your theme choice (dark or light).",
-              "Your voice settings: whether the microphone and spoken replies are on, which engines and voice you picked.",
+              "Your voice settings: whether the microphone and spoken replies are on, which engines and voice you picked, and whether the one-time voice introduction has been shown.",
               `The last ${F.recentCommandsKept} items you ran from the command palette (only their ids, never what you typed).`,
               "Whether you dismissed the hint about the other views, and which of four small discoveries you have triggered.",
               "The name of the last mascot shown on a 404 page (kept in session storage until the tab closes).",
@@ -79,8 +80,8 @@ export default function PrivacyPage() {
             and measure how fast pages load. Exactly what their scripts collect, and for how long
             Vercel keeps it, is described in Vercel&apos;s documentation and privacy policy, not in
             this site&apos;s code. There is no Google Analytics, advertising pixel or session-replay
-            tool. The site also records four usage events with Vercel Analytics: opening the command
-            palette, maximising the terminal, using a terminal suggestion chip, and running a
+            tool. The site also records four usage events with Vercel Analytics: choosing
+            Developer mode in the command palette, maximising the terminal, using a terminal suggestion chip, and running a
             terminal command by name (only the command name, never anything typed after it).
           </ProseP>
 
@@ -89,15 +90,19 @@ export default function PrivacyPage() {
             When you ask the assistant a question, your messages go to this site&apos;s server and
             from there to a Claude language model run through Amazon Web Services (AWS Bedrock),
             together with the content of this portfolio. The server sends on only the last{" "}
-            {F.chatMessagesKept} messages of a conversation and cuts each to {F.chatCharsPerMessage}{" "}
-            characters, but it does not look for personal details in what you type. Please do not
-            enter passwords, secrets or other people&apos;s data.
+            {F.chatMessagesKept} messages of a conversation and cuts each typed message to{" "}
+            {F.chatCharsPerMessage} characters, but it does not look for personal details in what you
+            type. Please do not enter passwords, secrets or other people&apos;s data. File
+            attachments are an optional feature that the default build leaves off; where they are
+            switched on, an image or the text of a PDF you attach is sent to the model too, and the
+            characters cut does not apply to the image.
           </ProseP>
           <ProseList
             items={[
               "The site's logs record counts and sizes (how many messages, how long), the model used, tokens, cost and timing. They do not record the text of your messages.",
               `A first question is answered from a cache when an identical one was answered in the last ${F.faqCacheHours} hours. The cache entry is keyed by a one-way hash of the question and holds the answer; for a short question it can also hold a reasoning summary that may quote or paraphrase it.`,
-              "AWS processes the request in the United States by default. How long AWS keeps requests is set by AWS and the account's settings, which this site cannot show you.",
+              "An optional matching mode, off by default, also stores a numeric fingerprint of the question (an embedding made by an AWS model) in the cache entry.",
+              "AWS processes the request in the United States by default; one optional model setting may process it outside the US. How long AWS keeps requests is set by AWS and the account's settings, which this site cannot show you.",
             ]}
           />
 
@@ -106,7 +111,8 @@ export default function PrivacyPage() {
             items={[
               "Browser speech recognition: your browser may send the audio to its maker (Google, Apple or Microsoft) to turn it into text. Nothing is recorded or stored by this site.",
               `Private transcription (an option in the command palette): your audio goes from the browser to this site's server and on to AWS Transcribe, is held in memory only for that request (at most ${F.transcribeMaxMegabytes} MB) and is not stored by this site.`,
-              `Spoken replies: by default your browser reads them aloud on your device. If you pick the AWS Polly or Google voices, one sentence of the reply at a time (up to ${F.ttsCharsPerRequest} characters) is sent to AWS or Google to be turned into audio. The settings screen does not show a separate consent prompt for this; this page is the disclosure.`,
+              `Spoken replies: by default your browser reads them aloud on your device. If you pick the AWS Polly or Google voices, one sentence of the reply at a time (up to ${F.ttsCharsPerRequest} characters) and the voice you chose are sent to AWS or Google to be turned into audio. The server keeps the audio of the most recent sentences in memory, and your browser may reuse an audio reply for up to an hour. The settings screen does not show a separate consent prompt for this; this page is the disclosure.`,
+              "Wake word (optional, off by default): when you switch it on, your browser listens continuously on the Chat and Voice views and, in Chrome and Edge, streams that audio to the browser maker for recognition.",
             ]}
           />
 
@@ -116,11 +122,20 @@ export default function PrivacyPage() {
             {F.rateLimitRequests} requests per {F.rateLimitWindowSeconds} seconds per IP address.
             The counter is stored in Upstash Redis under your IP address (not hashed) and expires
             after about two minutes; the optional visitor counter uses a similar counter that expires
-            after about an hour. Where the site&apos;s own logs record a visitor for those routes, they
-            store a short one-way hash of the IP address and browser string, and only when a hashing
-            salt is configured; otherwise they store the word &quot;anonymous&quot;. Vercel keeps its
-            own request logs for the platform (IP address, browser, URL), which this site does not
-            control.
+            after about an hour. Vercel keeps its own request logs for the platform (IP address,
+            browser, URL), which this site does not control.
+          </ProseP>
+
+          <ProseH2>Server logs</ProseH2>
+          <ProseP>
+            For the assistant, voice and error-report routes the server writes one log event per
+            request: the route, status and timing, counts or sizes (never the text of a message), a
+            shortened one-way hash of your IP address and browser string and a daily session hash.
+            The hashes are only made when a hashing salt is configured; otherwise those fields hold
+            the word &quot;anonymous&quot;. Events go to Vercel&apos;s runtime logs, which this site
+            does not expire, and to Upstash, where they are trimmed after about{" "}
+            {F.errorRetentionDays} days on a best-effort schedule (a cleanup that runs occasionally,
+            so some last longer). The owner reads them on a private dashboard.
           </ProseP>
 
           <ProseH2>Error reports</ProseH2>
@@ -128,9 +143,9 @@ export default function PrivacyPage() {
             If a script on a page crashes, your browser sends a short report to the site: the error
             message and stack, the page address and your browser string. Email addresses and long
             token-like strings in the message and stack are replaced before storing; the address and
-            browser string are kept as sent. Reports are removed after about {F.errorRetentionDays}{" "}
-            days on a best-effort schedule (a cleanup that runs occasionally, so some can last
-            longer), and a list of the last {F.recentErrorsKept} reports has no expiry.
+            browser string are kept as sent. A report is a server log event like the ones above, with
+            the same retention, and a separate list of the last {F.recentErrorsKept} reports has no
+            expiry.
           </ProseP>
 
           <ProseH2>Other companies involved</ProseH2>

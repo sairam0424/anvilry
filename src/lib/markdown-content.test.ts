@@ -33,6 +33,35 @@ describe("markdownForContent", () => {
     expect(body.startsWith("---")).toBe(false);
   });
 
+  it("removes exactly the front matter block from every item, even when a value contains ---", async () => {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    let checked = 0;
+    for (const kind of CONTENT_KINDS) {
+      for (const item of collections[kind]) {
+        const file = ["mdx", "md"]
+          .map((ext) => join(process.cwd(), "content", kind, `${item.slug}.${ext}`))
+          .find((f) => existsSync(f));
+        if (!file) continue;
+        const raw = readFileSync(file, "utf-8");
+        const fence = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/.exec(raw);
+        if (!fence) continue;
+        const expected = raw.slice(fence[0].length).trim();
+        if (expected === "") continue; // metadata-only article: described instead
+        const body = (await markdownForContent(kind, item.slug).text()).trim();
+        expect(body, `${kind}/${item.slug}`).toBe(expected);
+        checked += 1;
+      }
+    }
+    expect(checked).toBeGreaterThan(10);
+  });
+
+  it("does not leak YAML into the nh-deck twin, whose decision title ends in ---", async () => {
+    const body = await markdownForContent("projects", "nh-deck").text();
+    expect(body).not.toMatch(/^\s*[`"]/);
+    expect(body).not.toMatch(/\n(decisions|tradeoffs|constraints|tech|tagline):/);
+  });
+
   it("describes a cross-posted article, whose file is metadata only, instead of returning an empty page", async () => {
     const article = allArticles[0];
     if (!article) return;

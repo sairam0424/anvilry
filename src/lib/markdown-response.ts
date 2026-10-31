@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/site-url";
  * policy so a shared cache can never pin an outdated twin.
  */
 
-const MAX_ECHOED_PATH = 120;
+const MAX_ECHOED_PATH = 80;
 
 type MarkdownOptions = {
   status?: number;
@@ -30,7 +30,10 @@ export function markdownResponse(body: string, options: MarkdownOptions = {}): R
 
 /**
  * The requested path is attacker-controlled text that an AI agent will read as context, so the
- * 404 body echoes only a strict allow-list of characters and replaces everything else.
+ * 404 body echoes only a strict allow-list of characters, cuts it short, and says in the body
+ * that it is copied from the request. This limits what can be echoed (no whitespace, quotes,
+ * backticks, newlines or markup, so it cannot break out of its code span or start a heading); it
+ * does not make arbitrary hyphenated words safe, which is why the body labels them as input.
  */
 export function sanitizeRequestedPath(raw: string): string {
   const withSlash = raw.startsWith("/") ? raw : `/${raw}`;
@@ -42,7 +45,7 @@ export function markdownNotFoundBody(requestedPath: string): string {
   const path = sanitizeRequestedPath(requestedPath);
   return `# 404: page not found
 
-There is no page at \`${path}\` on anvilry.vercel.app, so this request returned HTTP 404. The path may be mistyped, or the page may have been removed.
+There is no page at \`${path}\` (text copied from the request) on anvilry.vercel.app, so this request returned HTTP 404. The path may be mistyped, or the page may have been removed.
 
 Start from one of these instead:
 

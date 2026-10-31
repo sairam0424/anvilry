@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allWork, featuredProjects } from "@/lib/content";
+import { allProjects, allWork, featuredProjects, publicProjects } from "@/lib/content";
 import { buildHomeMarkdown } from "./home-markdown";
 import { buildLlmsTxt } from "./llms-txt";
 import { profile } from "./profile";
@@ -36,6 +36,17 @@ describe("buildHomeMarkdown", () => {
     for (const p of featuredProjects) {
       expect(md).toContain(`[${p.name}](https://anvilry.vercel.app${p.url})`);
     }
+  });
+
+  it("counts private repositories honestly in the featured-projects heading", () => {
+    expect(publicProjects.length).toBeLessThan(allProjects.length);
+    expect(md).toContain(
+      `(${featuredProjects.length} of ${allProjects.length} projects; ${publicProjects.length} have public repositories)`,
+    );
+  });
+
+  it("describes llms-full.txt as the grounding corpus, not as a list of every article", () => {
+    expect(md).not.toMatch(/llms-full\.txt[^\n]*article/);
   });
 
   it("gives the same contact channels the Contact section shows", () => {

@@ -1,4 +1,3 @@
-import { methodNotAllowed } from "@/lib/api-error";
 import { allNotes, allArticles } from "@/lib/content";
 import { profile } from "@/lib/profile";
 
@@ -67,10 +66,3 @@ ${items}
 
   return new Response(feed, { headers: { "Content-Type": "application/xml; charset=utf-8" } });
 }
-
-// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one.
-const notAllowed = methodNotAllowed(["GET", "HEAD"]);
-export const POST = notAllowed;
-export const PUT = notAllowed;
-export const PATCH = notAllowed;
-export const DELETE = notAllowed;

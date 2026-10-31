@@ -1,3 +1,4 @@
+import { negotiate, PRODUCES } from "@/lib/accept-negotiation";
 import { afterEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { config, proxy } from "./proxy";
@@ -147,5 +148,15 @@ describe("proxy — matcher", () => {
     expect(re.test("text/html, Text/Markdown;q=0.1")).toBe(true);
     expect(re.test("text/html,application/xhtml+xml,*/*;q=0.8")).toBe(false);
     expect(re.test("*/*")).toBe(false);
+  });
+
+  it("matches media types in any letter case, as negotiate() does (RFC 9110: type names are case-insensitive)", () => {
+    const re = new RegExp(`^${conditional?.has[0].value}$`);
+    for (const accept of ["TEXT/MARKDOWN", "text/MARKDOWN", "TEXT/markdown", "Text/Markdown;q=0.9"]) {
+      expect(re.test(accept), accept).toBe(true);
+      expect(negotiate(accept, PRODUCES), accept).toBe("text/markdown");
+    }
+    // Same quality, HTML listed first: the page wins, but the proxy must still have been woken.
+    expect(re.test("text/html, TeXt/mArKdOwN")).toBe(true);
   });
 });

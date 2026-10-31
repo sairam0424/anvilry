@@ -424,7 +424,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
             },
             "406": {
               description:
-                "The Accept header names no type this page can produce.",
+                "The Accept header asks for Markdown but rules out both Markdown and HTML (for example `text/markdown;q=0, text/html;q=0`).",
               content: { "text/plain": { schema: { type: "string" } } },
             },
             default: ERROR_REF,
@@ -474,7 +474,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
           noun: "engineering note",
           example: "how-dns-works",
           extra:
-            "Notes are unpublished unless the site enables them, in which case every slug answers 404.",
+            "Notes are switched off on a default build, and while they are off every slug answers 404; check /llms.txt for the notes that are published.",
         }),
       },
       "/api/resume.json": {
@@ -502,7 +502,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
           operationId: "getGithubStats",
           summary: "Get aggregate GitHub statistics",
           description:
-            "Stars, forks, languages, follower and repository counts across the owner's listed repositories, cached for an hour. Never errors on an upstream failure: the numbers fall back to zero.",
+            "Stars, forks, languages, follower and repository counts across the owner's listed repositories, cached for an hour. Never errors on an upstream failure: counts fall back to zero (repository count to the listed repositories) and the latest push to null.",
           tags: ["Data"],
           responses: {
             "200": {
@@ -552,7 +552,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
           operationId: "getSitemap",
           summary: "Get the XML sitemap",
           description:
-            "Every public page on the site with change frequency and priority, in the sitemaps.org format.",
+            "The pages the site submits to search engines, with change frequency and priority, in the sitemaps.org format.",
           contentType: "application/xml",
           tag: "Discovery",
         }),
@@ -616,7 +616,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
                 "text/event-stream": { schema: { type: "string" } },
               },
             },
-            default: ERROR_REF,
+            default: { $ref: "#/components/responses/McpError" },
           },
         },
       },
@@ -632,7 +632,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       responses: {
         Error: {
           description:
-            "Any error. JSON routes answer with the shared error object.",
+            "Any error from a JSON route that is not the MCP endpoint. The body is the shared error object.",
           headers: {
             Allow: {
               description: "On a 405, the methods the route accepts.",
@@ -646,6 +646,20 @@ export function buildOpenApiDocument(): OpenApiDocument {
           content: {
             "application/json": {
               schema: { $ref: "#/components/schemas/Error" },
+            },
+          },
+        },
+        McpError: {
+          description:
+            "A failed MCP call. A request the MCP protocol itself rejects answers with a JSON-RPC error object; an unknown path or an unsupported method answers with the shared error object.",
+          content: {
+            "application/json": {
+              schema: {
+                oneOf: [
+                  { $ref: "#/components/schemas/McpResponse" },
+                  { $ref: "#/components/schemas/Error" },
+                ],
+              },
             },
           },
         },

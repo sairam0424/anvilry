@@ -115,7 +115,7 @@ describe("OpenAPI document", () => {
     for (const ref of refs) expect(resolveRef(ref), ref).toBeTruthy();
   });
 
-  it("documents the error codes the server really emits, and only those", () => {
+  it("documents exactly the catalogued error codes (api-error.test.ts checks each is emitted)", () => {
     const schema = doc.components.schemas.Error as Json;
     const props = schema.properties as Record<string, Json>;
     expect([...(props.code.enum as string[])].sort()).toEqual(

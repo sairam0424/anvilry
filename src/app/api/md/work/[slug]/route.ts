@@ -1,4 +1,4 @@
-import { methodNotAllowed } from "@/lib/api-error";
+import { methodNotAllowed, optionsFor } from "@/lib/api-error";
 import { markdownForContent } from "@/lib/markdown-content";
 
 /** Markdown twin of /work/<slug>, reached through the .md rewrite and Accept negotiation. */
@@ -16,3 +16,4 @@ export const POST = notAllowed;
 export const PUT = notAllowed;
 export const PATCH = notAllowed;
 export const DELETE = notAllowed;
+export const OPTIONS = optionsFor(["GET", "HEAD"]);

@@ -106,3 +106,41 @@ describe("classifyPath against the real app tree", () => {
     expect(pages.sort()).toEqual([...HTML_ONLY_PAGES].sort());
   });
 });
+
+describe("classifyPath — files with underscores in their extension", () => {
+  it.each([
+    "/pagefind/fragment/en_x.pf_fragment",
+    "/pagefind/index/en_y.pf_index",
+    "/pagefind/pagefind-entry.json",
+    "/pagefind/pagefind.en_abc123.pf_meta",
+  ])("passes %s through instead of answering a Markdown 404", (path) => {
+    expect(classifyPath(path)).toEqual({ action: "pass" });
+  });
+});
+
+describe("the proxy bundle", () => {
+  it("does not pull the content layer or the filesystem into every proxied request", async () => {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const seen = new Set<string>();
+    const queue = ["src/proxy.ts"];
+    while (queue.length > 0) {
+      const file = queue.pop() as string;
+      if (seen.has(file)) continue;
+      seen.add(file);
+      const source = readFileSync(join(process.cwd(), file), "utf-8");
+      for (const m of source.matchAll(/from\s+["']@\/([^"']+)["']/g)) {
+        for (const ext of [".ts", ".tsx"]) {
+          const next = `src/${m[1]}${ext}`;
+          if (existsSync(join(process.cwd(), next))) queue.push(next);
+        }
+      }
+    }
+    const reached = [...seen];
+    expect(reached.some((f) => f.endsWith("lib/content.ts"))).toBe(false);
+    expect(reached.some((f) => f.endsWith("lib/markdown-content.ts"))).toBe(false);
+    for (const file of reached) {
+      expect(readFileSync(join(process.cwd(), file), "utf-8"), file).not.toMatch(/from\s+["']node:fs["']/);
+    }
+  });
+});

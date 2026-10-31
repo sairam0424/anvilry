@@ -56,8 +56,8 @@ version 1.
   because `react-dom/server` is not supported where a route handler runs, and
   `page-markdown.dom.test.tsx` renders the real pages and fails when any heading, paragraph, list item, table
   cell, code block or link is missing from the twin. The articles and notes twins are the Markdown 404 while
-  those views have nothing to show (notes ship dark). `/resume`, `/search` and `/stats` stay HTML-only on
-  purpose, so `HTML_ONLY_PAGES` shrinks from 13 pages to 3.
+  those views have nothing to show (notes are off in a default build; production serves the `/notes` page itself, not its twin until this is released, see `docs/configuration.md`). `/resume`, `/search` and `/stats` stay HTML-only on
+  purpose, so `HTML_ONLY_PAGES` shrinks from 13 pages to 3. Table cells go through `escapeCellPipes` in `element-markdown.ts`, which adds a backslash only to a pipe preceded by an even run of backslashes (an odd run is already escaped; escaping every pipe blindly would split a cell that holds an escaped pipe); the change also clears a CodeQL `js/incomplete-sanitization` alert, and two tests in `element-markdown.test.tsx` pin both cases.
 - **Redirects from predictable addresses** (`next.config.ts`, 308): `/docs`, `/docs/api`, `/api-docs`,
   `/api-reference` and `/developer` to `/developers`, `/sdk` to `/developers#sdk`, `/cli` to
   `/developers#cli` and `/mcp-server` to `/mcp`. None is a route of the app and `/api/*` is not touched.
@@ -72,7 +72,7 @@ version 1.
 - **An eighth error code**, `internal_error` (500), and `withJsonErrors(handler)` (`src/lib/api-error.ts`): an
   uncaught exception in a wrapped handler (the seven dynamic `/api/v1` routes and `/api/md/pages/[page]`) is
   answered with the shared JSON body instead of Next's empty 500, and only the error name is logged.
-- Tests: 375 more (1572 to 1947) across 17 more files (131 to 148), counted since v3.17.0, among them `v1-contract.test.ts`, which
+- Tests: 383 more (1572 to 1955) across 18 more files (131 to 149), counted since v3.17.0, among them `v1-contract.test.ts`, which
   validates the real response of every v1 route strictly against its OpenAPI schema
   (`src/lib/json-schema-lite.ts`), and `public-api-paths.test.ts`, which fails when the proxy matcher and
   `isPublicApiPath` disagree.
@@ -109,10 +109,18 @@ version 1.
 
 ### Fixed
 - **`SECURITY.md` names the address the site publishes** (#355). It told reporters to write to an inbox the site
-  never mentions; it now names `profile.email`, and `src/lib/security-contact.test.ts` (one of the 17 new test
+  never mentions; it now names `profile.email`, and `src/lib/security-contact.test.ts` (one of the 18 new test
   files above) fails if the file names any other address. `/privacy` also stops mixing voices: "The owner
   reads them" became "I read them", and the note on attached images now names the 600-character cut from
   `privacy-facts` instead of "the characters cut".
+- **The Vercel build no longer fails on tests that assume notes are dark.** `pnpm run build` runs `vitest run`
+  in the Vercel build environment, which carries `NEXT_PUBLIC_NOTES_ENABLED=true` (observed 2026-11-01; production serves
+  `/notes` and `/articles`; `docs/configuration.md` has the details), while five new tests assumed the default build, where notes are dark; GitHub CI
+  has no such variable, so only the Vercel preview build failed. The tests now pin the flag with
+  `vi.resetModules()`, `vi.stubEnv()` and a dynamic import (the `notes-dark.test.ts` pattern) and pass with the
+  flag unset, `true` or `false`: the new `src/app/api/v1/v1-notes.test.ts` (5 tests, 2 with notes off and 3
+  on), flag-pinned cases in `content-api.test.ts`, `md/pages/[page]/route.test.ts` and `llms-txt.test.ts`, and
+  `v1-behaviour.test.ts` loses its two flag-dependent tests.
 
 ### Not done (needs the owner)
 - **A published CLI.** It needs npm credentials and a package name. `/developers` says there is none and shows

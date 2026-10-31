@@ -11,7 +11,7 @@ version: v3.17.0
 > Part of the Anvilry v3.17.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 > **Baseline:** describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus twenty-eight
 > post-a929932 changes in all (twenty-seven released, the twenty-eighth not yet in any version), those that touch these subsystems described by behaviour, starting with five fixes — notes are hidden at the data layer when `NOTES_ENABLED` is
-> off; rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
+> off (the default of a default build and of GitHub CI; the Vercel build environment has it on (observed, not in the repository; see 10 UNVERIFIED)); rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
 > `requireAdmin`, the telemetry page); overlay voice entry points are gated by `isVoiceViewActive`; the
 > bundle-budget gate asserts `MIN_ROUTES = 17` and verified-dead components were removed (`article-card.tsx`,
@@ -39,7 +39,7 @@ subsystem; "exit point" is the last thing the subsystem produces before somethin
 | 9 | 3D / WebGL | Mounting `<Hero>` on `/` (both hero slots), entering the gamified view (`BuildGraph`), opening any voice surface (`VoiceOrb`), or the 404 page with `NEXT_PUBLIC_404_ORB=true` | Pixels in a `<canvas>`; the hero, avatar, voice-orb and 404-orb wrappers are `aria-hidden` and decorative, the Build Graph canvas is a pointer-driven enhancement, and the accessible content is elsewhere |
 | 10 | Build & deploy | `git push` (CI runs on `branches: ["**"]`), a PR into `develop` or `main`, or a manual `make deploy-preview` / `make deploy-prod` | A Vercel Preview URL (from `develop`) or the production deployment (from `main`) whose build also emits the Pagefind index, five live cron schedules, and one `[config]` cold-start line per server process |
 | 11 | Public API contract (versioned JSON API, limiter, catalog) | Any request for a path `isPublicApiPath` accepts — the `/api/v1` routes, the unversioned `/api/resume.json` and `/api/github/stats`, the MCP endpoint, the discovery files and the Markdown twins — which `src/proxy.ts` stamps and counts before the route answers; a client reads the contract at `/api/v1`, `/openapi.json`, `/developers` and `/.well-known/api-catalog` | The route's own answer carrying `API-Version: 1` and the `RateLimit` fields, or a JSON 400 / 405 / 429 in the shared error shape, with `Retry-After` on the 429 |
-| 12 | Markdown twins of pages | `GET /<page>.md` (rewritten to `/api/md/pages/<page>`) or `Accept: text/markdown` on `/<page>`, for one of ten pages: about, articles, contact, decisions, developers, mcp, notes, privacy, projects, work | A Markdown document with one `#` heading, absolute links and a footer naming the HTML page; or the Markdown 404 (`/notes` while notes are dark, `/articles` with nothing published); or the shared JSON 500 if a prose page cannot be converted |
+| 12 | Markdown twins of pages | `GET /<page>.md` (rewritten to `/api/md/pages/<page>`) or `Accept: text/markdown` on `/<page>`, for one of ten pages: about, articles, contact, decisions, developers, mcp, notes, privacy, projects, work | A Markdown document with one `#` heading, absolute links and a footer naming the HTML page; or the Markdown 404 (`/notes` while the notes flag is off, `/articles` with nothing published); or the shared JSON 500 if a prose page cannot be converted |
 
 ## Coverage
 
@@ -645,7 +645,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:179`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 148 test files (104 node + 44 dom), 1947 tests, all passing at this tree (vitest 5.0.5; 131 files and 1572 tests at v3.17.0; 115 files and 1356 tests before the agent-readiness change, 130 files and 1566 tests before the search-index script's own test file). |
+| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 149 test files (105 node + 44 dom), 1955 tests, all passing at this tree (vitest 5.0.5; 131 files and 1572 tests at v3.17.0; 115 files and 1356 tests before the agent-readiness change, 130 files and 1566 tests before the search-index script's own test file). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, the `.md` rewrites (the four content kinds and the ten page twins), the developer-URL `redirects()`, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `scripts/build-search-index.mjs` + `src/lib/build-search-index.test.ts` | Build step 4, the Pagefind index (`package.json:11`; alone via `make search-index`, `Makefile:65-66`). `resolveSearchSource` (`scripts/build-search-index.mjs:47-77`) picks the classic `.next/server/app` tree when it holds any `.html`, otherwise stages the adapter layout `.next/server/route-cache/APP_PAGE/<hash>/$/` into `.next/search-site` under URL paths, and throws when neither has a page; `main` (`:79-91`) then runs `pagefind --site <that dir> --output-path public/pagefind` and exits with its status. Exports `SERVER_DIR`, `STAGE_DIR`, `OUTPUT_PATH`, `listHtml` and `resolveSearchSource` (`:22-24,27,47`). Six tests (`src/lib/build-search-index.test.ts:26-85`: five on `resolveSearchSource`, one on `listHtml`) build both layouts by hand and run inside `pnpm build`'s `vitest run`. |
 | 6 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
@@ -671,8 +671,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && node scripts/build-search-index.mjs` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 148 test files
-(1947 tests) is a deploy blocker on the Vercel build path. Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 149 test files
+(1955 tests) is a deploy blocker on the Vercel build path. That build runs Vitest with the flag on (its environment has `NEXT_PUBLIC_NOTES_ENABLED=true`: observed, not in the repository; see 10 UNVERIFIED), whereas GitHub CI leaves it unset, so a test that assumes the default flags passes in CI and can fail the Vercel build; five tests in four suites did, and four suites now pin the flag themselves (10 § `src/lib/notes-dark.test.ts`). Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -787,7 +787,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:1086-1087`).
+(`CHANGELOG.md:1094-1095`).
 
 ### The Pagefind search-index step
 
@@ -844,8 +844,8 @@ and the build prefers it over `app/…` when an adapter is set and `output` is n
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.21`, `@>=3` → `^5.0.12`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:1057-1059`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` was exact-pinned to `1.26.0`, equal to `mcp-handler`'s literal peer (`pnpm-lock.yaml:3716`), which produced `security_update_not_possible` (`CHANGELOG.md:1067-1069`) — the situation the `pnpm-workspace.yaml` overrides work around. The pin is now `1.32.0` (`package.json:29`) while the peer still says `1.26.0`: a tolerated mismatch, resolved as `mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0…)` (`pnpm-lock.yaml:8535`). |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.21`, `@>=3` → `^5.0.12`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:1065-1067`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` was exact-pinned to `1.26.0`, equal to `mcp-handler`'s literal peer (`pnpm-lock.yaml:3716`), which produced `security_update_not_possible` (`CHANGELOG.md:1075-1077`) — the situation the `pnpm-workspace.yaml` overrides work around. The pin is now `1.32.0` (`package.json:29`) while the peer still says `1.26.0`: a tolerated mismatch, resolved as `mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0…)` (`pnpm-lock.yaml:8535`). |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4132`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -949,7 +949,7 @@ shared error shape (`error`, `code`, `status`, `hint`, `docs`) with `Retry-After
 
 None: no environment variable was added. The numbers live in `src/lib/api-policy.ts`. The platform header
 `x-vercel-forwarded-for` decides the client key on Vercel. `NEXT_PUBLIC_NOTES_ENABLED` empties
-`/api/v1/notes` and makes `/api/v1/notes/{slug}` a 404 while notes are dark.
+`/api/v1/notes` and makes `/api/v1/notes/{slug}` a 404 while the notes flag is off (the default build; a Vercel preview of this branch listed 7 notes there, so that build environment has the flag on: observed, not in the repository).
 
 ---
 
@@ -977,7 +977,7 @@ GET /privacy.md                     (or GET /privacy with Accept: text/markdown)
                                  written from the same data modules the pages read
         contact, developers, mcp, privacy           → renderProseMarkdown(page)                  page-markdown-prose.ts:44-
                                  calls the page's own function and converts the elements it returns
-                                 with elementToMarkdown(Page(), { callable, sections })           element-markdown.ts:403
+                                 with elementToMarkdown(Page(), { callable, sections })           element-markdown.ts:400
    → markdownResponse(body, { canonicalPath })      text/markdown, Vary: Accept, Link rel="canonical"
 ```
 
@@ -992,7 +992,7 @@ GET /privacy.md                     (or GET /privacy with Accept: text/markdown)
 | 5 | `src/lib/page-markdown.ts:23-50` | `buildPageMarkdown` (the switch) and `markdownForPage` (the response, or the Markdown 404 for a name with no twin and for a page that would itself be a 404). |
 | 6 | `src/lib/page-markdown-lists.ts:47,98,110,133,172,197` | `buildAboutMarkdown`, `buildProjectsMarkdown`, `buildWorkMarkdown`, `buildDecisionsMarkdown`, `buildArticlesMarkdown`, `buildNotesMarkdown`. The last two return `null` when there is nothing to show (no published article; notes dark). |
 | 7 | `src/lib/page-markdown-prose.ts:24-53` | `PROSE_PAGES` (loaded on first use, so a fault in one page cannot take the others down) and `renderProseMarkdown`: the page is the source, so the privacy numbers, the API tables and the policy text cannot differ from what a browser shows. |
-| 8 | `src/lib/element-markdown.ts:403` | `elementToMarkdown`: walks the React elements a server component returns. It exists because `react-dom/server` is not usable where a route handler runs. Host elements are converted, components on an allow-list are called, section components become headings, a component given an `href` is a link, any other component contributes its children only, and an async component or an unreadable node throws (the route then answers the shared JSON 500 rather than a half page). |
+| 8 | `src/lib/element-markdown.ts:400` | `elementToMarkdown`: walks the React elements a server component returns (table cells escape a pipe through `escapeCellPipes`, `:408-418`, by the parity of the backslash run before it: after an odd run the pipe is already escaped and stays, otherwise it gets one more backslash; a CodeQL `js/incomplete-sanitization` fix pinned by two tests). It exists because `react-dom/server` is not usable where a route handler runs. Host elements are converted, components on an allow-list are called, section components become headings, a component given an `href` is a link, any other component contributes its children only, and an async component or an unreadable node throws (the route then answers the shared JSON 500 rather than a half page). |
 | 9 | `src/lib/page-markdown-shared.ts` | `abs`, `linkText`, `pageAndTwinLinks` (`[name](url)` for an HTML page followed by the link to its Markdown twin, `:13`), `section`, `joinParts` and `twinFooter` (the closing line that names the HTML page). |
 | 10 | `src/lib/llms-txt.ts:23-29,87,157-158` | `llms.txt` lists the `.md` URL of every page that has a twin and exists (`articles` only when an article is published, `notes` only when notes are on) under "Pages", and tells an agent that every page has a `.md` URL. |
 
@@ -1003,7 +1003,7 @@ GET /privacy.md                     (or GET /privacy with Accept: text/markdown)
 ### Exit point
 
 A Markdown document with one `#` heading, absolute links and a footer that names the HTML page; or the
-Markdown 404 (`/notes` while notes ship dark, `/articles` with no published article); or the shared JSON 500
+Markdown 404 (`/notes` while the notes flag is off, `/articles` with no published article); or the shared JSON 500
 if a prose page cannot be converted.
 
 ### Failure modes
@@ -1018,7 +1018,7 @@ if a prose page cannot be converted.
 
 ### Flags / env that alter it
 
-`NEXT_PUBLIC_NOTES_ENABLED` (the `notes` twin is the Markdown 404 while notes are dark). Whether any article is
+`NEXT_PUBLIC_NOTES_ENABLED` (the `notes` twin is the Markdown 404 while the notes flag is off). Whether any article is
 published decides the `articles` twin. No environment variable was added.
 
 ---
@@ -1054,7 +1054,7 @@ Places where one subsystem's change breaks another, gathered from all twelve map
 | Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:145`, `tts/route.ts:70`, `tts-google/route.ts:68`, `transcribe/route.ts:64`, `error/route.ts:102`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:266-272` — but a new route is pinned by nothing |
 | Extension-less pages ↔ the Markdown proxy | `PAGE_TWINS` (`src/lib/page-twins.ts:16-27`, ten pages) and `HTML_ONLY_PAGES` (`src/lib/markdown-routing.ts:27`, three) ↔ the `page.tsx` files under `src/app` (19 at this tree): a page missing from both lists is answered with a Markdown 404 when the client asks for Markdown. Gate: `src/lib/markdown-routing.test.ts` walks `src/app`; `page-twins.test.ts` ties the twin list to pages that exist. The ten names are also spelled in the `next.config.ts` copy (`:91-102`) and in the page rewrite (`:313`), which `src/next-config.test.ts` ties to `page-twins.ts`. The same slug pattern is spelled in `CONTENT_TWIN` (`markdown-routing.ts:33`), in the `next.config.ts` `headers()` source (`:296-299`) and in the rewrites (`:314-317`); `src/next-config.test.ts` pins the config side. |
 | Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:123-140`, the orb gate by no test). A fourth surface must be added to all of them |
-| Dark notes | `src/lib/content.ts:57-66` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:26`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers); the `/api/v1/notes` list is empty and its items are 404s while notes are dark (`v1-behaviour.test.ts`), and the `notes` page twin is the Markdown 404 (`page-markdown.test.ts`) |
+| Dark notes | `src/lib/content.ts:57-66` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:26`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers); the `/api/v1/notes` list is empty and its items are 404s while the notes flag is off (`v1-notes.test.ts`, which also pins the flag-on answers), and the `notes` page twin is the Markdown 404 (`page-markdown.test.ts`) |
 | Decisions ledger | Velite fields (`decisions` on Project, `constraints` / `tradeoffs` on Work — `velite.config.ts:70,97-98`) → `src/lib/decisions.ts:23-65` (`allDecisions`, one flat typed ledger) → the `/decisions` client page (`src/app/decisions/page.tsx:7,33-34`) and MCP `list_decisions` (`mcp-tools.ts:215-227`, registered at `api/mcp/[transport]/route.ts:110-119`); gate `src/lib/decisions.test.ts:15-93` — every populated source field has an entry, every entry matches its source verbatim, hrefs match `/^\/(work\|projects)\/[a-z0-9-]+$/`, ids are unique — and it is build-blocking |
 | Public API paths | `src/proxy.ts:44-53` (the matcher entries) ↔ `src/lib/public-api-paths.ts:11-39` (`isPublicApiPath`) ↔ the operations documented in `openapi-v1.ts` and `openapi-legacy.ts`: a path in the predicate but not in the matcher never reaches the proxy, so its responses lose `API-Version` and the `RateLimit` fields. Gate: `src/lib/public-api-paths.test.ts` (Next's `unstable_doesMiddlewareMatch` against every documented path). |
 | Public API numbers (version `1`, 300 per 60 s, 180 days) | `src/lib/api-policy.ts:12-28` ← the OpenAPI `info.description`, `/developers`, `llms.txt` "Developer resources", `GET /api/v1` (`src/app/api/v1/route.ts:10-31`), `privacy-facts.ts:18-20` (pinned by `privacy-facts.test.ts`, which also checks the limiter never touches Redis) and the `api-v1-index` smoke check. Changing a number is a one-line edit in `api-policy.ts`; the tests fail where a copy was typed instead of read. |
@@ -1230,7 +1230,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:919`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:927`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.) **Update 2026-10-22:** the ruleset now also has a `required_status_checks` rule (`Lint · Type-check · Test` and `E2E (Playwright)`, GitHub Actions app id 15368, non-strict) and one bypass actor, the repository-admin role in `pull_request` mode, so a red E2E run (a bundle regression included) now blocks the merge of a pull request except through that bypass.
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:171-173`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not

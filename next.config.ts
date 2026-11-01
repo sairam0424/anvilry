@@ -262,9 +262,9 @@ const nextConfig: NextConfig = {
       return h;
     });
 
-    // Pages that have a Markdown twin vary with Accept (https://acceptmarkdown.com): say so, and
-    // advertise the twin for crawlers that never send Accept. The slug pattern excludes dots so an
-    // explicit /projects/x.md URL does not match and advertise "x.md.md" as its own alternate.
+    // Pages with a Markdown twin vary with Accept (https://acceptmarkdown.com): ask for Vary and
+    // advertise the twin (Next replaces Vary on HTML responses, Markdown ones keep it, so Link lasts).
+    // The slug pattern excludes dots so /projects/x.md does not advertise "x.md.md" as its alternate.
     const negotiated = (alternate: string, extraLinks: string[] = []): Header[] => [
       { key: "Vary", value: "Accept" },
       {

@@ -8,6 +8,11 @@ import { Testimonials } from "@/components/home/testimonials";
 import { Contact } from "@/components/home/contact";
 import { ViewRouter } from "@/components/view-router";
 import { WritingPreview } from "@/components/home/writing-preview";
+import {
+  FeaturedProjectsJsonLd,
+  FeaturedWorkJsonLd,
+  LatestArticlesJsonLd,
+} from "@/components/json-ld-lists";
 
 // Explicit query-stripped canonical (resolved absolute via layout's metadataBase).
 // `/` is the only route that carries ?view=, and a literal self-canonical would
@@ -22,17 +27,24 @@ export default function Home() {
   // to ViewRouter as the always-present baseline. ViewRouter swaps in the Chat /
   // Gamified client views only when the visitor toggles, without a navigation.
   return (
-    <ViewRouter>
-      <main className="flex-1">
-        <Hero />
-        <FeaturedWork />
-        <FeaturedProjects />
-        <Stack />
-        <Achievements />
-        <WritingPreview />
-        <Testimonials />
-        <Contact />
-      </main>
-    </ViewRouter>
+    <>
+      <ViewRouter>
+        <main className="flex-1">
+          <Hero />
+          <FeaturedWork />
+          <FeaturedProjects />
+          <Stack />
+          <Achievements />
+          <WritingPreview />
+          <Testimonials />
+          <Contact />
+        </main>
+      </ViewRouter>
+      {/* Invisible structured data for the lists above, built from the same data. Outside <main>
+          so it is not part of the page text. */}
+      <FeaturedWorkJsonLd />
+      <FeaturedProjectsJsonLd />
+      <LatestArticlesJsonLd />
+    </>
   );
 }

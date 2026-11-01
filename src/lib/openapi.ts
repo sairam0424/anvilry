@@ -63,6 +63,12 @@ export interface OpenApiOperation {
   summary: string;
   description: string;
   tags: string[];
+  /**
+   * Set (to true) by hand on a POST operation that never changes anything. The introduction of the
+   * document claims "read-only" only for operations that carry it, and openapi.test.ts fails for any
+   * POST that does not, so a POST that writes cannot be added without a decision about that claim.
+   */
+  "x-read-only"?: true;
   parameters?: OpenApiParameter[];
   requestBody?: {
     required: boolean;
@@ -94,17 +100,56 @@ export interface OpenApiDocument {
   };
 }
 
-const INFO_DESCRIPTION =
-  "Everything here is a GET (plus one MCP POST) over content that is also published as web pages. " +
-  "There are no API keys and no accounts. " +
-  `${VERSIONING_POLICY.join(" ")} ${RATE_LIMIT_POLICY_TEXT.join(" ")} ` +
-  "Pages negotiate their format: send `Accept: text/markdown` " +
-  "to any page that has a Markdown twin and you get Markdown, send `Accept: text/html` and you get the page. " +
-  "Errors on JSON routes use one shape (see the Error schema). " +
-  "Content-Signal preference: search=yes, ai-input=yes, ai-train=no (robots.txt). " +
-  "info.version is the revision of this description, not the API version and not the site version.";
+const COUNT_WORDS = ["no", "one", "two", "three", "four", "five"];
+
+const countRoutes = (n: number) => `${COUNT_WORDS[n] ?? n} POST ${n === 1 ? "route" : "routes"}`;
+const listPaths = (paths: readonly string[]) =>
+  new Intl.ListFormat("en", { type: "conjunction" }).format(paths);
+
+/**
+ * The opening claim of the description, derived from the paths it describes so it cannot go stale.
+ * "Only read" is said only of a POST operation that carries the explicit `x-read-only` marker; an
+ * unmarked POST gets a neutral clause instead, so adding a route that writes cannot produce a
+ * false public sentence.
+ */
+export function postRoutesSentence(paths: Record<string, Record<string, OpenApiOperation>>): string {
+  const posts = Object.entries(paths)
+    .filter(([, operations]) => operations.post)
+    .map(([path, operations]) => ({ path, readOnly: operations.post["x-read-only"] === true }));
+  const marked = posts.filter((post) => post.readOnly).map((post) => post.path);
+  const unmarked = posts.filter((post) => !post.readOnly).map((post) => post.path);
+  if (posts.length === 0) return "Everything here is a GET over content that is also published as web pages. ";
+
+  const clauses = [
+    ...(marked.length > 0
+      ? [`${countRoutes(marked.length)} that only read${marked.length === 1 ? "s" : ""} (${listPaths(marked)})`]
+      : []),
+    ...(unmarked.length > 0
+      ? [
+          `${countRoutes(unmarked.length)} not marked read-only (${listPaths(unmarked)}), so read ${unmarked.length === 1 ? "its operation" : "their operations"} before calling`,
+        ]
+      : []),
+  ];
+  const lead = unmarked.length === 0 ? "Everything here is read-only: GET routes, plus " : "This API has GET routes, plus ";
+  return `${lead}${clauses.join(", and ")}, over content that is also published as web pages. `;
+}
+
+function infoDescription(paths: Record<string, Record<string, OpenApiOperation>>): string {
+  return (
+    postRoutesSentence(paths) +
+    "There are no API keys and no accounts. " +
+    `${VERSIONING_POLICY.join(" ")} ${RATE_LIMIT_POLICY_TEXT.join(" ")} ` +
+    "Pages negotiate their format: send `Accept: text/markdown` " +
+    "to any page that has a Markdown twin and you get Markdown, send `Accept: text/html` and you get the page. " +
+    "Errors on JSON routes use one shape (see the Error schema). " +
+    "Content-Signal preference: search=yes, ai-input=yes, ai-train=no (robots.txt). " +
+    "info.version is the revision of this description, not the API version and not the site version."
+  );
+}
 
 export function buildOpenApiDocument(): OpenApiDocument {
+  // The versioned JSON API first: it is the surface a client should build against.
+  const paths = { ...buildV1Paths(), ...legacyPaths() };
   return {
     openapi: "3.1.0",
     info: {
@@ -112,7 +157,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       version: "1.0.0",
       summary:
         "Read-only access to Sairam Ugge's portfolio content for people, scripts and AI agents.",
-      description: INFO_DESCRIPTION,
+      description: infoDescription(paths),
       contact: {
         name: "Sairam Ugge",
         url: `${SITE_URL}/contact`,
@@ -142,8 +187,7 @@ export function buildOpenApiDocument(): OpenApiDocument {
       },
       { name: "MCP", description: "Model Context Protocol server." },
     ],
-    // The versioned JSON API first: it is the surface a client should build against.
-    paths: { ...buildV1Paths(), ...legacyPaths() },
+    paths,
     components: {
       schemas: {
         ...V1_SCHEMAS,

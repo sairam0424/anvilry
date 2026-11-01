@@ -1,8 +1,8 @@
-import { groupArticles } from "@/lib/article-grouping";
-import { allArticles, allProjects, allWork, featuredProjects, publicProjects } from "@/lib/content";
+import { resolveCanonicalHref } from "@/lib/article-href";
+import { allProjects, allWork, featuredProjects, publicProjects } from "@/lib/content";
+import { homeArticleGroups } from "@/lib/home-articles";
 import { achievements, impactMetrics, profile, skills } from "@/lib/profile";
 import { SITE_URL } from "@/lib/site-url";
-import { ARTICLES_ENABLED } from "@/lib/writing-flags";
 
 /**
  * The Markdown twin of the homepage, served when a client sends `Accept: text/markdown` to "/"
@@ -32,10 +32,11 @@ export function buildHomeMarkdown(): string {
 
   const wins = achievements.map((a) => `- **${a.title}:** ${a.detail}`);
 
-  const preview = ARTICLES_ENABLED ? groupArticles(allArticles).slice(0, 2) : [];
-  const writing = preview.map((g) => {
-    const href = g.canonical.externalUrl ?? abs(g.canonical.url);
-    return `- [${g.canonical.title}](${href}): ${g.canonical.summary}`;
+  // The articles and the link of each are the ones the "Latest articles" cards show: the same
+  // selection (home-articles.ts) and the same rule for where a card sends a visitor (article-href.ts).
+  const writing = homeArticleGroups().map((g) => {
+    const { href, external } = resolveCanonicalHref(g);
+    return `- [${g.canonical.title}](${external ? href : abs(href)}): ${g.canonical.summary}`;
   });
   if (writing.length > 0) writing.push(`- [All articles](${abs("/articles")})`);
 

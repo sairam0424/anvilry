@@ -2,9 +2,12 @@ import { profile } from "@/lib/profile";
 import {
   API_V1_BASE,
   API_VERSION,
+  BATCH_MAX_REQUESTS,
+  BATCH_PATH,
   DEPRECATION_NOTICE_DAYS,
   RATE_LIMIT_POLICY,
 } from "@/lib/api-policy";
+import { CLI, CLI_COMMANDS, cliLlmsLine } from "@/lib/developer-tools";
 import { allWork, allProjects, allNotes, allArticles } from "@/lib/content";
 import { groupArticles } from "@/lib/article-grouping";
 import { API_CATALOG_PATH } from "@/lib/api-catalog";
@@ -95,6 +98,7 @@ something is not on the site, say it is not published rather than guessing.
 - Anvilry API documentation: ${BASE}/developers
 - Anvilry OpenAPI specification (OpenAPI 3.1, JSON): ${BASE}/openapi.json
 - Anvilry JSON API, version ${API_VERSION}, base URL: ${BASE}${API_V1_BASE}
+- Anvilry batch endpoint: POST ${BASE}${BATCH_PATH}, up to ${BATCH_MAX_REQUESTS} read operations per request
 - Anvilry API catalog (RFC 9727): ${BASE}${API_CATALOG_PATH}
 - Anvilry MCP server: ${BASE}/mcp (Streamable HTTP endpoint ${BASE}/api/mcp/mcp)
 - Anvilry authentication: none, no API keys and no accounts; every documented route is public and read-only (${BASE}/developers#authentication)
@@ -102,7 +106,7 @@ something is not on the site, say it is not published rather than guessing.
 - Anvilry rate limits: ${BASE}/developers#rate-limits (${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds per client)
 - Anvilry API errors: ${BASE}/developers#errors (one JSON shape: error, code, status, hint, docs)
 - Anvilry SDK and client libraries: ${BASE}/developers#sdk (there is no official SDK; generate a typed client from the OpenAPI specification, or use the MCP server)
-- Anvilry command-line use: ${BASE}/developers#cli (there is no published CLI package; the page shows curl recipes against ${BASE}${API_V1_BASE})
+${cliLlmsLine(CLI, CLI_COMMANDS, BASE)}
 
 ## Production Work
 ${work}

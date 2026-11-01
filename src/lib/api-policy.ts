@@ -17,6 +17,23 @@ export const API_VERSION_HEADER = "API-Version";
 /** Base path of the versioned JSON API. Unversioned /api/* paths are aliases of version 1. */
 export const API_V1_BASE = "/api/v1";
 
+/** The one write-shaped route: a read-only batch of /api/v1 GET operations. */
+export const BATCH_PATH = `${API_V1_BASE}/batch`;
+
+/**
+ * Most operations one batch may carry, the largest request body it accepts and the largest answer
+ * it will send, both in bytes.
+ *
+ * What bounds the traffic one batch can pull is that every operation in it is different: a batch
+ * that asks for the same operation twice is rejected, so it is at most BATCH_MAX_REQUESTS distinct
+ * GETs, and batch-run.test.ts measures the largest such batch at well under half the answer cap.
+ * The answer cap is a backstop in case a route's answer grows, not the bound itself; a batch over
+ * it is refused whole (413), never truncated.
+ */
+export const BATCH_MAX_REQUESTS = 25;
+export const BATCH_MAX_BODY_BYTES = 16_384;
+export const BATCH_MAX_RESPONSE_BYTES = 1_048_576;
+
 /** Minimum days between announcing a deprecation and removing the deprecated surface. */
 export const DEPRECATION_NOTICE_DAYS = 180;
 
@@ -96,5 +113,6 @@ export const RATE_LIMIT_POLICY_TEXT = [
   `Each client address may send ${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds across the public API (the ${API_V1_BASE} routes, /api/resume.json, /api/github/stats, the MCP endpoint, the Markdown twins and the discovery files such as /llms.txt and /openapi.json).`,
   "Every response that counts against the budget reports it (a malformed API-Version, a disallowed method and a preflight do not; a 429 does): RateLimit-Policy and RateLimit follow the current IETF draft (draft-ietf-httpapi-ratelimit-headers), and RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset carry the same numbers under the names earlier drafts used.",
   "Beyond the budget the answer is 429 with the rate_limited error code and a Retry-After header in seconds.",
+  `A call to ${BATCH_PATH} counts as one request however many operations it carries (up to ${BATCH_MAX_REQUESTS} operations per call).`,
   "The budget is counted per server instance, so the numbers describe the instance that answered; keep to them and you will not be limited.",
 ] as const;

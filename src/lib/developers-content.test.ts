@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { API_V1_BASE, API_VERSION, RATE_LIMIT_POLICY } from "@/lib/api-policy";
+import {
+  API_V1_BASE,
+  API_VERSION,
+  BATCH_MAX_BODY_BYTES,
+  BATCH_MAX_REQUESTS,
+  BATCH_MAX_RESPONSE_BYTES,
+  BATCH_PATH,
+  RATE_LIMIT_POLICY,
+} from "@/lib/api-policy";
 import type {
   OpenApiDocument,
   OpenApiOperation,
   OpenApiParameter,
 } from "@/lib/openapi";
+import { parseBatchBody } from "@/lib/batch";
+import { buildOpenApiDocument } from "@/lib/openapi";
 import { SITE_URL } from "@/lib/site-url";
 import {
+  batchSemantics,
+  batchSentence,
+  buildBatchRecipe,
   buildCurlRecipes,
   deprecationSummary,
   RESPONSE_HEADERS,
@@ -155,5 +168,125 @@ describe("buildCurlRecipes", () => {
     expect(
       buildCurlRecipes(doc({ "/openapi.json": { get: operation() } })),
     ).toEqual([]);
+  });
+});
+
+/**
+ * The batch endpoint is part of the OpenAPI document, so the page prints its curl call from the
+ * example that document carries for the request body (a Media Type Object `example`): the body is
+ * written once, by the owner of the route. A document without that example is a bug and fails loudly.
+ */
+describe("the batch endpoint", () => {
+  const example = { requests: [{ id: "a", path: `${API_V1_BASE}/profile` }, { id: "b", path: `${API_V1_BASE}/work` }] };
+
+  function batchDoc(media: Record<string, unknown>): OpenApiDocument {
+    const op: OpenApiOperation = {
+      ...operation(),
+      operationId: "runBatch",
+      requestBody: { required: true, description: "d", content: { "application/json": { schema: {}, ...media } } },
+    };
+    return doc({ [BATCH_PATH]: { post: op } });
+  }
+
+  it("prints a curl call whose body is the example from the document, compact and shell-quoted", () => {
+    expect(buildBatchRecipe(batchDoc({ example }))).toBe(
+      [
+        `curl -sS -X POST ${SITE_URL}${BATCH_PATH} \\`,
+        "  -H 'Content-Type: application/json' \\",
+        `  -d '${JSON.stringify(example)}'`,
+      ].join("\n"),
+    );
+  });
+
+  it("escapes a single quote inside the body so the command stays valid", () => {
+    expect(buildBatchRecipe(batchDoc({ example: { q: "it's" } }))).toContain(`-d '{"q":"it'\\''s"}'`);
+  });
+
+  it("fails loudly, and never invents a body, when the document has no batch or no example for it", () => {
+    expect(() => buildBatchRecipe(batchDoc({}))).toThrow(/example body for POST \/api\/v1\/batch/);
+    expect(() => buildBatchRecipe(doc({ [`${API_V1_BASE}/work`]: { get: operation() } }))).toThrow(/POST/);
+    expect(() => buildBatchRecipe(doc({ [BATCH_PATH]: { get: operation() } }))).toThrow(/POST/);
+  });
+
+  it("states the limits from api-policy.ts, as read-only operations", () => {
+    const sentence = batchSentence();
+    expect(sentence).toContain(`POST ${BATCH_PATH}`);
+    expect(sentence).toContain(`${BATCH_MAX_REQUESTS} `);
+    expect(sentence).toContain(BATCH_MAX_BODY_BYTES.toLocaleString("en-US"));
+    expect(sentence).toMatch(/read-only/);
+  });
+
+  describe("semantics", () => {
+    const text = batchSemantics();
+    const cap = BATCH_MAX_RESPONSE_BYTES.toLocaleString("en-US");
+
+    it("says the batch is validated whole before anything runs, in sentences of their own", () => {
+      expect(text).toMatch(/^It is checked as a whole before anything runs\./);
+      for (const reason of ["a malformed item", "a duplicate id", "a repeated operation", "a path outside /api/v1/", "a batch inside a batch"]) {
+        expect(text.toLowerCase(), reason).toContain(reason);
+      }
+      expect(text).toContain("rejects it with 400 (413 for size) and nothing runs");
+      expect(text).toMatch(/when an item is at fault, the hint names it\./);
+    });
+
+    it("says each operation may appear once, and that a repeat is rejected, as the route owner's description does", () => {
+      expect(text).toContain("Each operation may appear once");
+      expect(text).toContain(
+        "two items that name the same route with the same values for the query parameters that route reads are the same operation, and the repeat is rejected",
+      );
+      expect(text).not.toMatch(/run once|runs once/i);
+      const description = buildOpenApiDocument().paths[BATCH_PATH].post.description;
+      expect(description).toContain("Each operation may appear once");
+      expect(description).toContain("a repeated operation");
+      expect(description).toMatch(/a batch that repeats one is rejected/);
+    });
+
+    it("says a batch that passed validation answers 200 with a result per item, and never says 'always'", () => {
+      expect(text).toContain("A batch that passed validation answers 200 with one result per item, in request order");
+      expect(text).toMatch(/each with its own id, status and body/);
+      expect(text).not.toMatch(/\balways\b/i);
+    });
+
+    it("gives each item the status its own route would answer, whatever that is", () => {
+      expect(text).toMatch(/the status its route would have answered on its own/);
+      for (const status of ["404", "400", "500"]) expect(text, status).toContain(status);
+      expect(text).toMatch(/no item affects another/);
+    });
+
+    it("states the cap right after the 200 sentence, as an exception with the number from api-policy.ts", () => {
+      const ok = text.indexOf("A batch that passed validation answers 200");
+      const capSentence = `if the assembled answer would exceed ${cap} bytes it is refused whole with 413 and nothing is truncated`;
+      expect(text).toContain(capSentence);
+      expect(text.indexOf(capSentence) - ok).toBeLessThan(400);
+      expect(text.indexOf(capSentence)).toBeGreaterThan(ok);
+    });
+
+    it("says how it counts against the rate limit, and that it can be answered 429 like any call", () => {
+      expect(text).toMatch(/counts as one request against the rate limit however many operations it carries/);
+      expect(text).toMatch(/answered 429 like any call once the limit is spent/);
+    });
+
+    it("agrees with the route owner's description in the OpenAPI document on every number and status it states", () => {
+      const description = buildOpenApiDocument().paths[BATCH_PATH].post.description;
+      for (const fact of [String(BATCH_MAX_REQUESTS), String(BATCH_MAX_BODY_BYTES), String(BATCH_MAX_RESPONSE_BYTES), "413", "400", "404", "request order"]) {
+        expect(description, fact).toContain(fact);
+      }
+    });
+  });
+
+  it("gives, for the real document, the example the route's owner documents, and the real parser accepts it", () => {
+    const recipe = buildBatchRecipe(buildOpenApiDocument());
+    const body = /-d '(.*)'$/.exec(recipe)?.[1] ?? "";
+    const media = buildOpenApiDocument().paths[BATCH_PATH].post.requestBody?.content["application/json"] as {
+      example?: unknown;
+    };
+    expect(media.example, "the batch operation must document an example body").toBeDefined();
+    expect(JSON.parse(body)).toEqual(media.example);
+    const parsed = parseBatchBody(body);
+    expect(parsed.ok, JSON.stringify(parsed)).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.items.length).toBeGreaterThan(0);
+      expect(parsed.items.length).toBeLessThanOrEqual(BATCH_MAX_REQUESTS);
+    }
   });
 });

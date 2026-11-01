@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { API_VERSION_HEADER } from "@/lib/api-policy";
+import { API_VERSION_HEADER, BATCH_PATH } from "@/lib/api-policy";
 import { SLUG_PATTERN, V1_RESOURCES } from "@/lib/content-api";
 import { allArticles, allProjects, allWork } from "@/lib/content";
 import {
@@ -27,7 +27,12 @@ type Json = Record<string, unknown>;
 const ITEM_PATHS = operations
   .map((o) => o.path)
   .filter((p) => p.endsWith("/{slug}"));
-const INPUT_PATHS = [...ITEM_PATHS, "/api/v1/decisions", "/api/v1/search"];
+const INPUT_PATHS = [
+  ...ITEM_PATHS,
+  "/api/v1/decisions",
+  "/api/v1/search",
+  BATCH_PATH,
+];
 
 function routeFile(path: string): string {
   const dir = path.replace("{slug}", "[slug]");
@@ -59,12 +64,15 @@ describe("buildV1Paths", () => {
       "/api/v1/projects/{slug}",
       "/api/v1/articles/{slug}",
       "/api/v1/notes/{slug}",
+      BATCH_PATH,
     ];
     expect(Object.keys(paths).sort()).toEqual(expected.sort());
   });
 
-  it("documents only GET", () => {
-    for (const { path, method } of operations) expect(method, path).toBe("get");
+  it("documents GET everywhere except the batch endpoint, the one POST", () => {
+    for (const { path, method } of operations) {
+      expect(method, path).toBe(path === BATCH_PATH ? "post" : "get");
+    }
   });
 
   it("points every path at a route file that exists", () => {
@@ -206,6 +214,7 @@ describe("buildV1Paths", () => {
       const expected = ["405", "429", "500"];
       if (INPUT_PATHS.includes(path)) expected.push("400");
       if (ITEM_PATHS.includes(path)) expected.push("404");
+      if (path === BATCH_PATH) expected.push("413");
       expect(statuses(operation).sort(), path).toEqual(expected.sort());
     }
   });

@@ -39,4 +39,4 @@ Please **do not** open a public Issue for security vulnerabilities. See [SECURIT
 
 ## Questions
 
-Open a GitHub Discussion or email me at **sairamugge4@gmail.com**.
+Open a GitHub Discussion or email me at **uggesairam0000@gmail.com**.

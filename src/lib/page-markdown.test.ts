@@ -15,6 +15,7 @@ import {
   publicProjects,
   repoLink,
 } from "@/lib/content";
+import { CLI, cliHeading, cliStatus } from "@/lib/developer-tools";
 import { allDecisions } from "@/lib/decisions";
 import { buildOpenApiDocument, listOperations } from "@/lib/openapi";
 import { PAGE_TWINS, type PageTwin } from "@/lib/page-twins";
@@ -32,7 +33,8 @@ import { buildPageMarkdown, markdownForPage } from "./page-markdown";
 const PAGES_WITH_TWIN = PAGE_TWINS.filter((page) => page !== "notes");
 
 const FENCE = /^(`{3,}).*\n[\s\S]*?\n\1$/gm;
-const outsideCode = (md: string) => md.replace(FENCE, "");
+/** Text outside fenced blocks and inline code spans, where `<query>` in a usage line is not a tag. */
+const outsideCode = (md: string) => md.replace(FENCE, "").replace(/`[^`\n]+`/g, "");
 /** Markdown escapes (a backslash before a symbol) are the converter's, not part of the facts. */
 const plain = (md: string) => md.replace(/\\([\\*[\]`<>#|.+)-])/g, "$1");
 
@@ -189,7 +191,7 @@ describe("the developers twin", () => {
       /Versioning/,
       /Rate limits/,
       /Anvilry SDK and client libraries/,
-      /Anvilry command-line use/,
+      new RegExp(cliHeading(CLI)),
     ]) {
       expect(
         headings.some((h) => wanted.test(h)),
@@ -223,13 +225,20 @@ describe("the developers twin", () => {
     }
   });
 
-  it("says plainly that there is no official SDK and no published CLI, and does not invent package names", () => {
+  it("says plainly that there is no official SDK, says about the CLI what CLI.published says, and invents no package name", () => {
     expect(md()).toMatch(/no official SDK/i);
-    expect(md()).toMatch(/no published CLI/i);
-    expect(md()).not.toMatch(
-      /npm (install|i) |pip install |go get |brew install /i,
-    );
+    expect(md()).toContain(cliStatus(CLI));
+    // npm install is allowed only as the CLI's own documented install command, once it is published.
+    expect(md().replace(CLI.installCommand, "")).not.toMatch(/npm (install|i) /i);
+    expect(md()).not.toMatch(/pip install |go get |brew install /i);
+    if (!CLI.published) expect(md()).not.toMatch(/npx anvilry/);
     expect(md()).toContain(`${SITE_URL}${API_V1_BASE}`);
+  });
+
+  it("claims about Vary only what is provable: Markdown responses carry it, and the HTML page links its twin", () => {
+    expect(md()).toContain("Markdown responses carry `Vary: Accept`.");
+    expect(md()).toContain('The HTML page of each also points to its Markdown version with a `Link` header (`rel="alternate"`).');
+    expect(md()).not.toMatch(/caches keep the two apart/i);
   });
 
   it("keeps the runnable curl examples of the page", () => {

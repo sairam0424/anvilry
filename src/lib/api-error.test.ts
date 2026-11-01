@@ -168,6 +168,16 @@ describe("optionsFor", () => {
 });
 
 describe("the error catalogue", () => {
+  it("describes payload_too_large as a body or an answer that is too big, because both raise it", () => {
+    // The batch endpoint answers 413 when the request body is too big and also when the answer it
+    // would send is, so the catalogue /developers prints must not claim it is only about the request.
+    const entry = API_ERROR_CODES.find((c) => c.code === "payload_too_large");
+    expect(entry?.status).toBe(413);
+    expect(entry?.meaning).toMatch(/request body/i);
+    expect(entry?.meaning).toMatch(/answer|response/i);
+    expect(entry?.hint).toMatch(/ask for less/i);
+  });
+
   it("has no dead code: every documented code is emitted by some source file", () => {
     const files: string[] = [];
     const walk = (dir: string) => {

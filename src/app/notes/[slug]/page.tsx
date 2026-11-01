@@ -6,7 +6,7 @@ import { publishedNotes, getNote } from "@/lib/content";
 import { getNoteBody } from "@/lib/content-bodies";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
-import { BreadcrumbJsonLd } from "@/components/json-ld";
+import { BreadcrumbJsonLd, JsonLdScript } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
 import { ReadingProgress } from "@/components/reading-progress";
 import { profile } from "@/lib/profile";
@@ -54,8 +54,8 @@ export default async function NotePage({
   const body = getNoteBody(slug);
   if (!note || body === undefined) notFound();
 
+  // JsonLdScript adds the schema.org @context and serialises through the hardened escaper.
   const jsonLd = {
-    "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: note.title,
     description: note.summary,
@@ -108,10 +108,7 @@ export default async function NotePage({
       </article>
       {/* BlogPosting + breadcrumb structured data — article entity + SERP breadcrumb,
           mirroring the /work and /projects detail pages. */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLdScript data={jsonLd} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: BASE },

@@ -56,7 +56,7 @@ representing the project in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the project maintainer at **sairamugge4@gmail.com**.
+reported to the project maintainer at **uggesairam0000@gmail.com**.
 
 All complaints will be reviewed and investigated promptly and fairly. The
 project maintainer is obligated to respect the privacy and security of the

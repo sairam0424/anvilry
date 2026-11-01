@@ -1,0 +1,42 @@
+{
+  "name": "anvilry",
+  "version": "0.1.1",
+  "description": "Command line client for the Anvilry public JSON API: profile, work, projects, articles, notes, decisions, search and batch reads.",
+  "type": "module",
+  "bin": {
+    "anvilry": "bin/anvilry.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.3.0"
+  },
+  "license": "MIT",
+  "author": "Sairam Ugge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sairam0424/anvilry.git",
+    "directory": "cli"
+  },
+  "homepage": "https://anvilry.vercel.app/developers",
+  "bugs": {
+    "url": "https://github.com/sairam0424/anvilry/issues"
+  },
+  "keywords": [
+    "anvilry",
+    "cli",
+    "api-client",
+    "openapi",
+    "mcp",
+    "ai-agents",
+    "portfolio",
+    "json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

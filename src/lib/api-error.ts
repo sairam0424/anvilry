@@ -40,8 +40,9 @@ export const API_ERROR_CODES = [
   {
     code: "payload_too_large",
     status: 413,
-    meaning: "The request body is bigger than the route accepts.",
-    hint: "Send a smaller body; limits are listed per route in /openapi.json.",
+    meaning:
+      "The request body, or the answer the route would have to send, is bigger than the route accepts.",
+    hint: "Send a smaller body, or ask for less; limits are listed per route in /openapi.json.",
   },
   {
     code: "rate_limited",

@@ -2,6 +2,10 @@ import {
   API_V1_BASE,
   API_VERSION,
   API_VERSION_HEADER,
+  BATCH_MAX_BODY_BYTES,
+  BATCH_MAX_REQUESTS,
+  BATCH_MAX_RESPONSE_BYTES,
+  BATCH_PATH,
   DEPRECATION_NOTICE_DAYS,
   DEPRECATIONS,
   RATE_LIMIT_POLICY,
@@ -150,4 +154,46 @@ export function buildCurlRecipes(doc: OpenApiDocument): string[] {
         `curl -sS ${shellQuote(`${SITE_URL}${filled}${query === "" ? "" : `?${query}`}`)}`,
       ];
     });
+}
+
+/**
+ * A curl call of the batch endpoint. Its body is the example the OpenAPI document carries for the
+ * request (a Media Type Object `example` on POST /api/v1/batch), so the body is written once, by the
+ * owner of the route. The batch is part of the document, so a document without that example is a bug:
+ * this throws rather than print a call with an invented body.
+ */
+export function buildBatchRecipe(doc: OpenApiDocument): string {
+  const media = doc.paths[BATCH_PATH]?.post?.requestBody?.content["application/json"] as
+    | { example?: unknown }
+    | undefined;
+  if (media?.example === undefined) {
+    throw new Error(`The OpenAPI document must carry an example body for POST ${BATCH_PATH}`);
+  }
+  const body = JSON.stringify(media.example).replace(/'/g, "'\\''");
+  return [
+    `curl -sS -X POST ${SITE_URL}${BATCH_PATH} \\`,
+    "  -H 'Content-Type: application/json' \\",
+    `  -d '${body}'`,
+  ].join("\n");
+}
+
+/** One sentence on what a batch may carry, with the limits api-policy.ts enforces. */
+export function batchSentence(): string {
+  return `Several reads can share one request: POST ${BATCH_PATH} carries up to ${BATCH_MAX_REQUESTS} of the read-only operations of this API in a request body of at most ${BATCH_MAX_BODY_BYTES.toLocaleString("en-US")} bytes.`;
+}
+
+/**
+ * What a batch does, in the order a caller meets it: validation of the whole batch first, then one
+ * result per item, how it is counted, and the cap on the answer. The facts are the route's (its
+ * description in the OpenAPI document states the same ones) and every number is read from
+ * api-policy.ts.
+ */
+export function batchSemantics(): string {
+  const cap = BATCH_MAX_RESPONSE_BYTES.toLocaleString("en-US");
+  return [
+    "It is checked as a whole before anything runs: a malformed item, a duplicate id, a path outside /api/v1/, a batch inside a batch, too many operations or too large a body rejects it with 400 (413 for size), when an item is at fault, the hint names it, and nothing runs.",
+    "A valid batch always answers 200 with one result per item, in request order, each with its own id, status and body: an item for a path no route matches is a 404 inside the 200 and does not affect the others.",
+    "A batch counts as one request against the rate limit however many operations it carries.",
+    `The answer is capped at ${cap} bytes: a batch whose results would add up to more is refused whole with 413 and nothing is truncated.`,
+  ].join(" ");
 }

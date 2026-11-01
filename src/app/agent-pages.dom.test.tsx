@@ -5,12 +5,14 @@ import { API_CATALOG_PATH } from "@/lib/api-catalog";
 import { API_ERROR_CODES } from "@/lib/api-error";
 import {
   API_V1_BASE,
+  BATCH_PATH,
   DEPRECATION_NOTICE_DAYS,
   RATE_LIMIT_POLICY,
   RATE_LIMIT_POLICY_TEXT,
   VERSIONING_POLICY,
 } from "@/lib/api-policy";
-import { RESPONSE_HEADERS } from "@/lib/developers-content";
+import { CLI, CLI_COMMANDS, cliHeading, cliSourceNote, cliStatus } from "@/lib/developer-tools";
+import { batchSemantics, batchSentence, buildBatchRecipe, RESPONSE_HEADERS } from "@/lib/developers-content";
 import { buildOpenApiDocument, listOperations } from "@/lib/openapi";
 import { PRIVACY_FACTS } from "@/lib/privacy-facts";
 import { profile } from "@/lib/profile";
@@ -76,7 +78,7 @@ describe("/developers", () => {
     for (const id of ["authentication", "versioning", "rate-limits", "sdk", "cli", "endpoints", "errors", "mcp"]) {
       expect(html, id).toContain(`id="${id}"`);
     }
-    for (const title of ["Authentication", "Versioning", "Rate limits", "Anvilry SDK and client libraries", "Anvilry command-line use"]) {
+    for (const title of ["Authentication", "Versioning", "Rate limits", "Anvilry SDK and client libraries", cliHeading(CLI)]) {
       expect(text, title).toContain(title);
     }
   });
@@ -101,11 +103,36 @@ describe("/developers", () => {
     }
   });
 
-  it("says plainly that there is no official SDK and no published CLI, and invents no package name", () => {
+  it("says plainly that there is no official SDK, and invents no package name", () => {
     expect(text).toMatch(/There is no official SDK for Anvilry/);
-    expect(text).toMatch(/There is no published CLI package for Anvilry/);
     expect(text).toContain("/openapi.json");
-    expect(text).not.toMatch(/npm (install|i) |pip install |go get |brew install |npx @?anvilry/i);
+    expect(text).not.toMatch(/pip install |go get |brew install /i);
+  });
+
+  // The CLI wording follows CLI.published (src/lib/developer-tools.ts); developers-states.dom.test.tsx
+  // forces both states, this checks that the page agrees with the real flag whichever way it is set.
+  it("describes the CLI the way CLI.published says, and advertises npx only once it is published", () => {
+    expect(text).toContain(cliHeading(CLI));
+    expect(text).toContain(cliStatus(CLI));
+    const note = cliSourceNote(CLI);
+    if (note !== null) expect(text).toContain(note);
+    if (CLI.published) {
+      expect(text).toContain(CLI.runCommand);
+      expect(text).toContain(CLI.installCommand);
+      for (const command of CLI_COMMANDS) expect(text, command.name).toContain(command.usage);
+    } else {
+      expect(text).toMatch(/There is no published CLI package for Anvilry/);
+      expect(text).not.toMatch(/npm (install|i) |npx @?anvilry/i);
+      expect(text).not.toContain(CLI.packageUrl.replace("https://", ""));
+    }
+  });
+
+  it("documents the batch endpoint: its sentence, its curl call from the document's example and its table row", () => {
+    expect(text).toContain(batchSentence());
+    expect(text).toContain(batchSemantics());
+    expect(text).toContain(buildBatchRecipe(buildOpenApiDocument()).replace(/\s+/g, " "));
+    expect(text).toContain(`-X POST ${SITE_URL}${BATCH_PATH}`);
+    expect(text).toContain("runBatch");
   });
 
   it("shows curl recipes against the versioned API and for the response headers", () => {

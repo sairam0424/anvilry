@@ -1,8 +1,9 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import nextConfig from "../next.config";
 import { API_CATALOG_PATH } from "./lib/api-catalog";
+import { developerGuideSource } from "./lib/developer-states-support";
 import { PAGE_TWINS } from "./lib/page-twins";
 
 /**
@@ -184,7 +185,7 @@ describe("next.config — predictable developer URLs", () => {
 
   it("points only at pages that exist and at anchors the developer guide really has", async () => {
     const roots = appRoots();
-    const guide = readFileSync(join(process.cwd(), "src", "app", "developers", "page.tsx"), "utf-8");
+    const guide = developerGuideSource();
     for (const { destination } of await redirects()) {
       const [path, fragment] = destination.split("#");
       expect(roots.has(path.slice(1)), destination).toBe(true);

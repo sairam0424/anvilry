@@ -110,18 +110,23 @@ function stamp(res: Response, req: NextRequest, rateLimit: [string, string][]): 
 
 const MCP_PREFIX = "/api/mcp/";
 
+/** The 400 for an API-Version other than the current one; null when none is named or it is the current one. */
+function versionRejection(req: NextRequest): Response | null {
+  const requested = req.headers.get(API_VERSION_HEADER)?.trim();
+  if (requested === undefined || requested === API_VERSION) return null;
+  return stamp(
+    apiError(400, "invalid_request", `Unsupported ${API_VERSION_HEADER} "${requested.slice(0, MAX_ECHOED_VERSION)}".`, {
+      hint: `The only version is ${API_VERSION}. Omit the header or send ${API_VERSION_HEADER}: ${API_VERSION}.`,
+    }),
+    req,
+    [],
+  );
+}
+
 function servePublicApi(req: NextRequest): Response {
   const { pathname } = req.nextUrl;
-  const requested = req.headers.get(API_VERSION_HEADER)?.trim();
-  if (requested !== undefined && requested !== API_VERSION) {
-    return stamp(
-      apiError(400, "invalid_request", `Unsupported ${API_VERSION_HEADER} "${requested.slice(0, MAX_ECHOED_VERSION)}".`, {
-        hint: `The only version is ${API_VERSION}. Omit the header or send ${API_VERSION_HEADER}: ${API_VERSION}.`,
-      }),
-      req,
-      [],
-    );
-  }
+  const badVersion = versionRejection(req);
+  if (badVersion) return badVersion;
 
   // Which methods this path takes: reading, plus the one POST the table in public-api-paths.ts names.
   const allowed = allowedMethods(pathname);

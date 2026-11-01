@@ -5,11 +5,14 @@ import {
   BATCH_MAX_RESPONSE_BYTES,
   BATCH_PATH,
 } from "@/lib/api-policy";
+import { allArticles, allNotes, allProjects, allWork } from "@/lib/content";
+import { allDecisions } from "@/lib/decisions";
 import { buildV1Paths } from "@/lib/openapi-v1";
 import { SITE_URL } from "@/lib/site-url";
 import {
   answerBatch,
   BATCH_ROUTES,
+  parseBatchBody,
   readBodyWithin,
   responseBytes,
   runBatch,
@@ -222,48 +225,6 @@ describe("runBatch", () => {
     expect(spy.mock.calls.flat().join(" ")).not.toContain("internal detail");
   });
 
-  it("runs an operation once however many items ask for it, and answers each with the same result", async () => {
-    const GET = vi.fn(() => Response.json({ n: 1 }));
-    const results = await runBatch(
-      [
-        item("a", "/api/v1/once"),
-        item("b", "/api/v1/once"),
-        item("c", "/api/v1/once?ignored=1"),
-      ],
-      [stub("/api/v1/once", GET)],
-    );
-    expect(GET).toHaveBeenCalledTimes(1);
-    expect(results.map((r) => [r.id, r.status, r.body])).toEqual([
-      ["a", 200, { n: 1 }],
-      ["b", 200, { n: 1 }],
-      ["c", 200, { n: 1 }],
-    ]);
-  });
-
-  it("treats query parameters a route does not read as no difference, and the ones it reads as a difference", async () => {
-    const GET = vi.fn((req: Request) =>
-      Response.json({ q: new URL(req.url).searchParams.get("q") }),
-    );
-    const results = await runBatch(
-      [
-        item("a", "/api/v1/find?q=x"),
-        item("b", "/api/v1/find?q=x&junk=1"),
-        item("c", "/api/v1/find?junk=2&q=x"),
-        item("d", "/api/v1/find?q=y"),
-        item("e", "/api/v1/find"),
-      ],
-      [stub("/api/v1/find", GET, ["q"])],
-    );
-    expect(GET).toHaveBeenCalledTimes(3);
-    expect(results.map((r) => (r.body as { q: string | null }).q)).toEqual([
-      "x",
-      "x",
-      "x",
-      "y",
-      null,
-    ]);
-  });
-
   it("calls the handler with a bare GET request for this site: no headers from the client, the path and query as sent", async () => {
     const seen: Request[] = [];
     const GET: BatchHandler = (req) => {
@@ -422,17 +383,6 @@ describe("runBatch on the real routes: which query parameters make two operation
       expect(b.body, noisy).toEqual((await direct(template, queryOf(noisy))).body);
     }
   });
-
-  it("keys the stub routes on the whole query too: only the read parameter, in full, makes a difference", async () => {
-    const GET = vi.fn((req: Request) => Response.json({ q: new URL(req.url).searchParams.get("q") }));
-    const route: BatchRoute = { template: "/api/v1/find", queryParams: ["q"], load: async () => ({ GET }) };
-    const results = await runBatch(
-      [item("a", "/api/v1/find?q=a?b"), item("b", "/api/v1/find?q=a?c"), item("c", "/api/v1/find?q=a?b&x=1"), item("d", "/api/v1/find?x=1&q=a?b")],
-      [route],
-    );
-    expect(GET).toHaveBeenCalledTimes(2);
-    expect(results.map((r) => (r.body as { q: string }).q)).toEqual(["a?b", "a?c", "a?b", "a?b"]);
-  });
 });
 
 describe("the answer cap", () => {
@@ -487,25 +437,75 @@ describe("the answer cap", () => {
     expect(answerBatch([result("a", { text: "x".repeat(1000) })]).status).toBe(200);
   });
 
-  it("sits well above the largest batch an honest client sends: every distinct v1 route in one batch, with at least 2x room", async () => {
+  it("refuses as a whole a batch whose stubbed route answers more than the cap, and runs nothing else", async () => {
+    const big: BatchRoute = {
+      template: "/api/v1/big",
+      load: async () => ({ GET: () => Response.json({ text: "x".repeat(BATCH_MAX_RESPONSE_BYTES) }) }),
+    };
+    const small: BatchRoute = {
+      template: "/api/v1/small",
+      load: async () => ({ GET: () => Response.json({ ok: true }) }),
+    };
+    const results = await runBatch([item("a", "/api/v1/small"), item("b", "/api/v1/big")], [big, small]);
+    expect(results.map((r) => r.status)).toEqual([200, 200]);
+    const res = answerBatch(results);
+    expect(res.status).toBe(413);
+    expect(await res.json()).toMatchObject({ code: "payload_too_large" });
+  });
+});
+
+describe("the largest honest batch", () => {
+  beforeEach(() => {
     vi.stubGlobal("fetch", async () => {
       throw new Error("offline");
     });
-    try {
-      const documented = buildV1Paths();
-      const everything = BATCH_ROUTES.map((route, index) => {
-        const example = documented[route.template].get.parameters?.find((p) => p.in === "path")?.example;
-        return item(`r${index}`, example ? route.template.replace("{slug}", example) : route.template);
-      });
-      expect(everything.length).toBeLessThanOrEqual(BATCH_MAX_REQUESTS);
-      const results = await runBatch(everything);
-      const size = responseBytes(results);
-      expect(size).toBeGreaterThan(0);
-      expect(BATCH_MAX_RESPONSE_BYTES).toBeGreaterThanOrEqual(2 * size);
-      expect(answerBatch(results).status).toBe(200);
-    } finally {
-      vi.unstubAllGlobals();
-    }
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** Every distinct operation worth trying: each route, each real slug, many searches, each decisions tag. */
+  function candidates(): string[] {
+    const searches = [..."abcdefghijklmnopqrstuvwxyz0123456789"].map((q) => `/api/v1/search?q=${q}`);
+    const words = ["agent", "llm", "python", "go", "mcp", "kafka", "aws", "api", "data", "ai"];
+    const tags = [...new Set(allDecisions.flatMap((entry) => entry.tags))];
+    return [
+      ...BATCH_ROUTES.filter((route) => !route.template.includes("{slug}")).map((route) => route.template),
+      ...allWork.map((w) => `/api/v1/work/${w.slug}`),
+      ...allProjects.map((p) => `/api/v1/projects/${p.slug}`),
+      ...allArticles.map((a) => `/api/v1/articles/${a.slug}`),
+      ...allNotes.map((n) => `/api/v1/notes/${n.slug}`),
+      ...searches,
+      ...words.map((q) => `/api/v1/search?q=${q}`),
+      ...tags.map((tag) => `/api/v1/decisions?tag=${tag}`),
+    ];
+  }
+
+  it("is at most 25 different operations, so what a batch can pull is bounded by what 25 routes hold: well under half the cap", async () => {
+    const paths = candidates();
+    expect(paths.length).toBeGreaterThan(BATCH_MAX_REQUESTS);
+    const sized = await runBatch(paths.map((path, index) => item(`c${index}`, path)));
+    const biggest = sized
+      .map((result, index) => ({ path: paths[index], bytes: Buffer.byteLength(JSON.stringify(result)) }))
+      .sort((a, b) => b.bytes - a.bytes)
+      .slice(0, BATCH_MAX_REQUESTS);
+
+    // It is a legitimate batch: it passes validation, every operation different.
+    const requests = biggest.map(({ path }, index) => item(`w${index}`, path));
+    expect(parseBatchBody(JSON.stringify({ requests })).ok).toBe(true);
+
+    const worst = responseBytes(await runBatch(requests));
+    expect(worst).toBeGreaterThan(0);
+    expect(worst).toBeLessThan(BATCH_MAX_RESPONSE_BYTES / 2);
+  });
+
+  it("is also what the cap leaves room for when every distinct route is asked once", async () => {
+    const documented = buildV1Paths();
+    const everything = BATCH_ROUTES.map((route, index) => {
+      const example = documented[route.template].get.parameters?.find((p) => p.in === "path")?.example;
+      return item(`r${index}`, example ? route.template.replace("{slug}", example) : route.template);
+    });
+    const results = await runBatch(everything);
+    expect(answerBatch(results).status).toBe(200);
+    expect(BATCH_MAX_RESPONSE_BYTES).toBeGreaterThanOrEqual(2 * responseBytes(results));
   });
 });
 

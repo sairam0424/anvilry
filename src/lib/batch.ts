@@ -167,7 +167,10 @@ function itemProblem(entry: unknown, index: number): string | null {
  * Validates the whole body before anything runs. The first problem found is the answer, and it
  * names the index of the item; a batch is accepted only if every item is.
  */
-export function parseBatchBody(text: string): ParsedBatch {
+export function parseBatchBody(
+  text: string,
+  routes: readonly BatchRoute[] = BATCH_ROUTES,
+): ParsedBatch {
   const reject = (reason: string): ParsedBatch => ({ ok: false, reason });
   let value: unknown;
   try {
@@ -190,6 +193,7 @@ export function parseBatchBody(text: string): ParsedBatch {
 
   const items: BatchItem[] = [];
   const firstIndexOfId = new Map<string, number>();
+  const firstIndexOfOperation = new Map<string, number>();
   for (const [index, entry] of requests.entries()) {
     const problem = itemProblem(entry, index);
     if (problem) return reject(problem);
@@ -201,6 +205,14 @@ export function parseBatchBody(text: string): ParsedBatch {
       );
     }
     firstIndexOfId.set(id, index);
+    const key = operationKey(path, routes);
+    const sameOperation = firstIndexOfOperation.get(key);
+    if (sameOperation !== undefined) {
+      return reject(
+        `requests[${index}] repeats requests[${sameOperation}]; send each operation once.`,
+      );
+    }
+    firstIndexOfOperation.set(key, index);
     items.push({ id, path });
   }
   return { ok: true, items };
@@ -306,15 +318,22 @@ function resolveRoute(
   return null;
 }
 
-/** Two items with the same key ask for the same answer, so the handler runs once for both. */
-function operationKey({ route, slug }: Target, path: string): string {
-  // Parsed exactly as the handler parses its request (the whole text after the first "?"), so two
-  // paths share a key only if the route would read the same values from both.
+/**
+ * Which operation an item asks for: the route it resolves to, the slug, and the values of the query
+ * parameters that route reads. The query is parsed exactly as the handler parses its request (the
+ * whole text after the first "?"), so two items share a key only if the route would read the same
+ * values from both; a parameter it ignores makes no difference. A path no route matches is an
+ * operation of its own, by path. Validation uses it to refuse a batch that asks for one operation
+ * twice.
+ */
+function operationKey(path: string, routes: readonly BatchRoute[]): string {
+  const target = resolveRoute(path, routes);
+  if (!target) return `unrouted|${path.split("?")[0]}`;
   const params = new URL(`${SITE_URL}${path}`).searchParams;
-  const read = (route.queryParams ?? []).map((name) =>
+  const read = (target.route.queryParams ?? []).map((name) =>
     JSON.stringify(params.get(name)),
   );
-  return [route.template, slug ?? "", ...read].join("|");
+  return [target.route.template, target.slug ?? "", ...read].join("|");
 }
 
 async function execute(
@@ -355,25 +374,20 @@ function notBatchable(routes: readonly BatchRoute[]): Response {
 
 /**
  * Runs the validated items and returns one result per item, in request order. An item never fails
- * another: an unknown path is a 404 result, a handler that throws is a 500 result. Identical
- * operations run once, which also keeps a batch from multiplying the one route that calls GitHub.
+ * another: an unknown path is a 404 result, a handler that throws is a 500 result. Validation has
+ * already refused a batch that asks for one operation twice, so every item here is a different
+ * operation and each handler runs once.
  */
 export async function runBatch(
   items: readonly BatchItem[],
   routes: readonly BatchRoute[] = BATCH_ROUTES,
 ): Promise<BatchResult[]> {
-  const started = new Map<string, Promise<Outcome>>();
-  const outcomes = items.map(({ path }) => {
-    const target = resolveRoute(path, routes);
-    if (!target) return toOutcome(notBatchable(routes));
-    const key = operationKey(target, path);
-    const existing = started.get(key);
-    if (existing) return existing;
-    const outcome = execute(target, path);
-    started.set(key, outcome);
-    return outcome;
-  });
-  const settled = await Promise.all(outcomes);
+  const settled = await Promise.all(
+    items.map(({ path }) => {
+      const target = resolveRoute(path, routes);
+      return target ? execute(target, path) : toOutcome(notBatchable(routes));
+    }),
+  );
   return items.map(({ id }, index) => ({ id, ...settled[index] }));
 }
 

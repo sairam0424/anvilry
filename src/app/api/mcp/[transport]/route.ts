@@ -155,7 +155,9 @@ const handler = createMcpHandler(
 //    open until maxDuration), so that is answered up front with -32700, the protocol's parse error.
 //  - A body that IS JSON but not a JSON-RPC message gets the library's 400, labelled -32700 with a
 //    null id; the protocol calls that -32600 (invalid request) and wants the request's id echoed when
-//    it has one. An empty array gets a bare, empty 202 from the library; that is -32600 too.
+//    it has one. An empty array gets a bare, empty 202 from the library; that is -32600 too. Both are
+//    decided after the library has answered, so its own checks (404 for another transport, 406, 415)
+//    come first for them as for every body. Only the not-JSON case above cannot wait for the library.
 //  - A well-formed request whose params do not fit its method (tools/call without a name, initialize
 //    without a protocolVersion) gets -32603 from the library with the validator's raw issue list as the
 //    message; that is -32602 (invalid params) with one short sentence. It is checked against the
@@ -222,6 +224,10 @@ async function isRejectedMessage(res: Response): Promise<boolean> {
   return answer?.error?.code === JSON_RPC_PARSE_ERROR;
 }
 
+/** The library's bare 202 for `[]`, which it takes for a batch of notifications. */
+const isAcceptedEmptyBatch = (body: unknown, res: Response) =>
+  res.status === 202 && Array.isArray(body) && body.length === 0;
+
 /** One short sentence about the first thing wrong with a request's params, or null when they fit. */
 function paramsProblem(message: unknown): string | null {
   const id = echoableId(message);
@@ -283,9 +289,10 @@ async function jsonErrors(req: Request): Promise<Response> {
       null,
     );
   }
-  if (Array.isArray(body) && body.length === 0) return invalidRequest(body);
   const res = await handler(req);
-  if (await isRejectedMessage(res)) return invalidRequest(body);
+  if ((await isRejectedMessage(res)) || isAcceptedEmptyBatch(body, res)) {
+    return invalidRequest(body);
+  }
   const rejected = res.ok ? invalidParams(body) : null;
   if (rejected) {
     await res.arrayBuffer(); // drain it: cancelling the stream makes the library throw when it closes it

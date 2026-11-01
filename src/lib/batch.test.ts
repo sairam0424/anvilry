@@ -12,6 +12,7 @@ import {
   isJsonContentType,
   parseBatchBody,
   rejectBatch,
+  type BatchRoute,
 } from "./batch";
 
 const bodyOf = (requests: unknown) => JSON.stringify({ requests });
@@ -149,9 +150,9 @@ describe("parseBatchBody: what it accepts", () => {
     }
   });
 
-  it(`accepts ${BATCH_MAX_REQUESTS} operations`, () => {
+  it(`accepts ${BATCH_MAX_REQUESTS} different operations`, () => {
     const requests = Array.from({ length: BATCH_MAX_REQUESTS }, (_, i) =>
-      item(`r${i}`, "/api/v1/profile"),
+      item(`r${i}`, `/api/v1/search?q=${"a".repeat(i + 1)}`),
     );
     const parsed = parseBatchBody(bodyOf(requests));
     expect(parsed.ok && parsed.items).toHaveLength(BATCH_MAX_REQUESTS);
@@ -359,6 +360,89 @@ describe("parseBatchBody: what it rejects, all or nothing", () => {
     for (const text of bodies) {
       expect(reasonOf(text), text).not.toContain(marker);
     }
+  });
+});
+
+describe("parseBatchBody: each operation may appear once", () => {
+  const messageFor = (...paths: string[]) =>
+    reasonOf(bodyOf(paths.map((path, i) => item(`r${i}`, path))));
+  const acceptsAll = (...paths: string[]) =>
+    parseBatchBody(bodyOf(paths.map((path, i) => item(`r${i}`, path)))).ok;
+
+  it("rejects a repeat with the index of both items and what to do", () => {
+    const reason = messageFor("/api/v1/profile", "/api/v1/work", "/api/v1/profile");
+    expect(reason).toContain("requests[2] repeats requests[0]; send each operation once");
+    expect(reason).not.toContain("requests[1]");
+  });
+
+  it("calls two items the same operation when the route would read the same values from both", () => {
+    const sameOperation: [string, string][] = [
+      ["/api/v1/profile", "/api/v1/profile"],
+      ["/api/v1/profile", "/api/v1/profile?junk=1"],
+      ["/api/v1/work/pensieve", "/api/v1/work/pensieve?x=1&y=2"],
+      ["/api/v1/github/stats", "/api/v1/github/stats?x=1"],
+      ["/api/v1/search?q=kafka", "/api/v1/search?q=kafka&junk=1"],
+      ["/api/v1/search?q=kafka&a=1", "/api/v1/search?z=2&q=kafka"],
+      ["/api/v1/search?q=a%20b", "/api/v1/search?q=a+b"],
+      ["/api/v1/search", "/api/v1/search?x=1"],
+      ["/api/v1/decisions", "/api/v1/decisions?junk=1"],
+      ["/api/v1/decisions?tag=mcp", "/api/v1/decisions?junk=2&tag=mcp"],
+      ["/api/v1/nowhere", "/api/v1/nowhere?x=1"],
+    ];
+    for (const [first, second] of sameOperation) {
+      expect(messageFor(first, second), `${first} / ${second}`).toContain("requests[1] repeats requests[0]");
+    }
+  });
+
+  it("treats a method left out and an explicit GET as one method", () => {
+    const text = bodyOf([
+      { id: "a", path: "/api/v1/profile" },
+      { id: "b", method: "GET", path: "/api/v1/profile" },
+    ]);
+    expect(reasonOf(text)).toContain("requests[1] repeats requests[0]");
+  });
+
+  it("accepts items that differ in a value the route reads", () => {
+    const different: string[][] = [
+      ["/api/v1/work/pensieve", "/api/v1/work/aava-code"],
+      ["/api/v1/work", "/api/v1/projects"],
+      ["/api/v1/search?q=kafka", "/api/v1/search?q=mcp", "/api/v1/search"],
+      ["/api/v1/decisions?tag=mcp", "/api/v1/decisions?tag=security", "/api/v1/decisions"],
+      ["/api/v1/search?q=a", "/api/v1/search?q=A"],
+      ["/api/v1/nowhere", "/api/v1/elsewhere"],
+    ];
+    for (const paths of different) expect(acceptsAll(...paths), paths.join(" ")).toBe(true);
+  });
+
+  it("reads the whole query, so a second ? cannot make two different operations look the same", () => {
+    expect(acceptsAll("/api/v1/search?q=trelix", "/api/v1/search?q=trelix?zzzznotthere")).toBe(true);
+    expect(acceptsAll("/api/v1/decisions?tag=security", "/api/v1/decisions?tag=security?nonexistenttagzzz")).toBe(true);
+    expect(messageFor("/api/v1/search?q=a?b", "/api/v1/search?q=a?b&x=1")).toContain("requests[1] repeats requests[0]");
+  });
+
+  it("uses the registry it is given: only the parameters a route declares count", () => {
+    const route = (queryParams?: readonly string[]): BatchRoute => ({
+      template: "/api/v1/find",
+      queryParams,
+      load: async () => ({ GET: () => Response.json({}) }),
+    });
+    const text = bodyOf([item("a", "/api/v1/find?q=1&r=1"), item("b", "/api/v1/find?q=1&r=2")]);
+    expect(parseBatchBody(text, [route(["q"])]).ok).toBe(false);
+    expect(parseBatchBody(text, [route(["q", "r"])]).ok).toBe(true);
+    expect(parseBatchBody(text, [route()]).ok).toBe(false);
+  });
+
+  it("reports a repeated id before a repeated operation, and never repeats what the client sent", () => {
+    const marker = "attacker-controlled-marker";
+    const sameId = reasonOf(bodyOf([item("a", "/api/v1/profile"), item("a", "/api/v1/profile")]));
+    expect(sameId).toContain("the id repeats");
+    const reason = reasonOf(bodyOf([item("a", `/api/v1/search?q=${marker}`), item("b", `/api/v1/search?q=${marker}&x=1`)]));
+    expect(reason).not.toContain(marker);
+  });
+
+  it("still accepts the largest set of different operations", () => {
+    const paths = Array.from({ length: BATCH_MAX_REQUESTS }, (_, i) => `/api/v1/search?q=${"a".repeat(i + 1)}`);
+    expect(acceptsAll(...paths)).toBe(true);
   });
 });
 

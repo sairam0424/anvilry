@@ -174,7 +174,7 @@ export function legacyPaths(): OpenApiDocument["paths"] {
         summary: "Get the homepage as HTML or Markdown",
         description:
           "Content-negotiated: `Accept: text/markdown` returns a Markdown summary of the portfolio (profile, impact, production work, projects, stack, contact and a list of agent resources); `Accept: text/html` returns the web page. " +
-          "The response carries `Vary: Accept`, and the Markdown form is also available at /index.md.",
+          "The Markdown response carries `Vary: Accept`, and the Markdown form is also available at /index.md.",
         tags: ["Content"],
         responses: {
           "200": {
@@ -335,6 +335,8 @@ export function legacyPaths(): OpenApiDocument["paths"] {
       post: withContract(
         {
           operationId: "callMcpServer",
+          // Every tool the server offers only reads.
+          "x-read-only": true,
           summary: "Call the portfolio MCP server",
           description:
             "A read-only Model Context Protocol server over Streamable HTTP (JSON-RPC 2.0). Its tools return profile, projects, case studies, decisions, search and the résumé link; the tool table is at " +
@@ -362,6 +364,9 @@ export function legacyPaths(): OpenApiDocument["paths"] {
                   schema: EVENT_STREAM_SCHEMA,
                 },
               },
+            },
+            "202": {
+              description: "A JSON-RPC notification was accepted; no body.",
             },
             "400": {
               description:

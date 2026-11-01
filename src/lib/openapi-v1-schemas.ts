@@ -297,11 +297,11 @@ export const V1_SCHEMAS: Record<string, Json> = {
     additionalProperties: false,
   },
   BatchRequest: {
-    ...object("A batch of read-only operations, run together.", {
+    ...object("A batch of read-only operations, run together. Each operation may appear once.", {
       requests: {
         ...list(
           schemaRef("BatchRequestItem"),
-          `The operations to run, ${BATCH_MAX_REQUESTS} at most.`,
+          `The operations to run, ${BATCH_MAX_REQUESTS} at most, each different from the others.`,
         ),
         minItems: 1,
         maxItems: BATCH_MAX_REQUESTS,

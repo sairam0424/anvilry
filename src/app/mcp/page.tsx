@@ -191,6 +191,9 @@ export default function McpPage() {
                     </td>
                     <td className="py-2 text-fg-muted">
                       {desc}
+                      {/* Not shown, but read: in the Markdown twin a cell is one line, and this full stop
+                          is what tells the description from the first parameter. */}
+                      <span className="sr-only">. </span>
                       {describeParams(name).map((param) => (
                         <Fragment key={param.name}>
                           {" "}

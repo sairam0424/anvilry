@@ -10,6 +10,7 @@ import {
   send,
   toolCall,
   toolErrorText,
+  MCP_URL,
   type RpcMessage,
 } from "./mcp-test-support";
 
@@ -96,6 +97,16 @@ describe("MCP error answers", () => {
     expect(text).toContain(field);
     expect(text.length).toBeLessThanOrEqual(MAX_INVALID_PARAMS_MESSAGE);
     expect(text).not.toMatch(/[\n[\]{}]|invalid_type/);
+    expect(text, "validator jargon is translated").not.toMatch(/Invalid input:|\brecord\b/);
+  });
+
+  it("says 'expected object' where the validator says 'record', and counts the further problems", async () => {
+    const wrongArguments = only(await send({ POST }, toolCall("get_profile", "str")));
+    expect(wrongArguments.error?.message).toContain("params.arguments: expected object, received string");
+    const emptyInitialize = only(await send({ POST }, request("initialize", {})));
+    expect(emptyInitialize.error?.message).toMatch(
+      /^Invalid params for initialize: params\.protocolVersion: expected string, received undefined \(and \d+ more problems\)$/,
+    );
   });
 
   it("echoes a string id on an invalid-params answer", async () => {
@@ -191,5 +202,110 @@ describe("MCP error answers", () => {
     const wrongType = await send({ POST }, list, { "content-type": "text/plain", accept: MCP_HEADERS.accept });
     expect(wrongType.status).toBe(415);
     expectRpcError(only(wrongType), null);
+  });
+});
+
+/**
+ * Behind the params check: each guard in it protects a real request, so each has its own case.
+ * (Removing the guard must break a test; route.ts documents what each one does.)
+ */
+describe("MCP params check guards", () => {
+  const validInitialize = {
+    protocolVersion: "2025-03-26",
+    capabilities: {},
+    clientInfo: { name: "vitest", version: "0" },
+  };
+  const MAX_PARAMS_MESSAGE = 200;
+
+  // Plain objects carry these keys, so a lookup by method name must not find them.
+  it.each(["toString", "__proto__", "constructor", "valueOf", "hasOwnProperty"])(
+    "answers the inherited-looking method %s as an unknown method, without throwing",
+    async (method) => {
+      const message = only(await send({ POST }, request(method, undefined, 12)));
+      expectRpcError(message, 12);
+      expect(message.error?.code).toBe(-32601);
+    },
+  );
+
+  // A notification has no id and gets no response, whatever its params look like.
+  it.each(["tools/call", "tools/list", "initialize"])(
+    "answers a %s notification with malformed params by 202 and no body",
+    async (method) => {
+      const outcome = await send(
+        { POST },
+        rpcBody({ jsonrpc: "2.0", method, params: { cursor: 5, name: 5, protocolVersion: 1 } }),
+      );
+      expect(outcome.status).toBe(202);
+      expect(outcome.raw).toBe("");
+    },
+  );
+
+  it("cuts an invalid-params message at 200 characters, however long the offending key is", async () => {
+    const longKey = "k".repeat(500);
+    const outcome = await send(
+      { POST },
+      request("initialize", {
+        ...validInitialize,
+        capabilities: { experimental: { [longKey]: "not an object" } },
+      }),
+    );
+    const message = only(outcome);
+    expectRpcError(message, DEFAULT_REQUEST_ID);
+    expect(message.error?.code).toBe(-32602);
+    expect(message.error?.message).toMatch(/^Invalid params for initialize: params\.capabilities\.experimental\.k+/);
+    expect((message.error?.message as string).length).toBe(MAX_PARAMS_MESSAGE);
+  });
+
+  // The library's own 400s are already -32600 with a reason; they must reach the client as they are.
+  it("keeps the library's own reason when it refuses a batch of 101 messages", async () => {
+    const batch = Array.from({ length: 101 }, (_, i) => ({ jsonrpc: "2.0", id: i + 1, method: "tools/list" }));
+    const outcome = await send({ POST }, rpcBody(batch));
+    expect(outcome.status).toBe(400);
+    const message = only(outcome);
+    expectRpcError(message, null);
+    expect(message.error?.code).toBe(-32600);
+    expect(message.error?.message).toContain("Batch must not exceed 100 messages");
+  });
+
+  it("keeps the library's own reason when a batch holds two initialize requests", async () => {
+    const outcome = await send(
+      { POST },
+      rpcBody([
+        { jsonrpc: "2.0", id: 1, method: "initialize", params: validInitialize },
+        { jsonrpc: "2.0", id: 2, method: "initialize", params: validInitialize },
+      ]),
+    );
+    expect(outcome.status).toBe(400);
+    expect(only(outcome).error?.message).toContain("Only one initialization request is allowed");
+  });
+});
+
+// An empty array is an invalid request, but the library's header and path checks come first for it
+// as for every other body (only a body that is not JSON at all is answered before them).
+describe("MCP empty array behind the transport's own checks", () => {
+  const empty = "[]";
+
+  it("answers it -32600 once the headers and the path are right", async () => {
+    const outcome = await send({ POST }, empty);
+    expect(outcome.status).toBe(400);
+    expect(only(outcome).error?.code).toBe(-32600);
+  });
+
+  it("answers it 415 when the Content-Type is wrong, like any other body", async () => {
+    const outcome = await send({ POST }, empty, { "content-type": "text/plain", accept: MCP_HEADERS.accept });
+    expect(outcome.status).toBe(415);
+    expect(only(outcome).error?.code).toBe(-32000);
+  });
+
+  it("answers it 406 when the client cannot take an event stream, like any other body", async () => {
+    const outcome = await send({ POST }, empty, { "content-type": "application/json", accept: "application/json" });
+    expect(outcome.status).toBe(406);
+    expect(only(outcome).error?.code).toBe(-32000);
+  });
+
+  it("answers it with the 404 of a path that is not the transport", async () => {
+    const res = await POST(new Request(MCP_URL.replace(/mcp$/, "nope"), { method: "POST", headers: MCP_HEADERS, body: empty }));
+    expect(res.status).toBe(404);
+    expect((await res.json()).code).toBe("not_found");
   });
 });

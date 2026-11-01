@@ -6,7 +6,13 @@ import { API_ERROR_CODES } from "@/lib/api-error";
 import { API_VERSION, API_VERSION_HEADER, RATE_LIMIT_POLICY } from "@/lib/api-policy";
 import { buildResumeJson } from "@/lib/resume-json";
 import { SITE_URL } from "@/lib/site-url";
-import { buildOpenApiDocument, listOperations, type OpenApiResponse } from "./openapi";
+import {
+  buildOpenApiDocument,
+  listOperations,
+  postRoutesSentence,
+  type OpenApiOperation,
+  type OpenApiResponse,
+} from "./openapi";
 
 const doc = buildOpenApiDocument();
 const operations = listOperations(doc);
@@ -57,20 +63,29 @@ describe("OpenAPI document", () => {
     expect(doc.externalDocs.url).toBe(`${SITE_URL}/developers`);
   });
 
-  it("describes the write-shaped routes truthfully: the introduction names every POST operation the document has, and no other", () => {
-    const posts = operations.filter((o) => o.method === "post").map((o) => o.path);
+  it("marks every POST operation read-only on purpose, so a POST that writes cannot be added without a conscious change", () => {
+    const posts = operations.filter((o) => o.method === "post");
     expect(posts.length).toBeGreaterThanOrEqual(2); // the MCP endpoint and the batch endpoint
-    const opening = doc.info.description.split(". ")[0];
-    expect(opening).not.toMatch(/everything here is a get/i);
-    expect(opening).toMatch(/read-only/i);
-    const words = ["no", "one", "two", "three", "four", "five"];
-    expect(opening).toContain(`plus ${words[posts.length]} POST route`);
-    for (const path of posts) expect(opening).toContain(path);
-    // Every path the sentence names is a real POST operation.
-    for (const named of opening.match(/\/api\/[A-Za-z0-9/_-]+/g) ?? []) expect(posts).toContain(named);
-    // And "read-only" is not a claim the document breaks: nothing in it writes.
+    for (const { path, operation } of posts) {
+      expect(operation["x-read-only"], path).toBe(true);
+    }
+    // And nothing but GET and POST exists, so "read-only" is not a claim the document breaks.
     const methods = new Set(operations.map((o) => o.method));
     expect([...methods].filter((m) => !["get", "post"].includes(m))).toEqual([]);
+  });
+
+  it("describes the write-shaped routes truthfully: the introduction names exactly the POST operations marked read-only", () => {
+    const marked = operations
+      .filter((o) => o.method === "post" && o.operation["x-read-only"] === true)
+      .map((o) => o.path);
+    const opening = doc.info.description.split(". ")[0];
+    expect(opening).not.toMatch(/everything here is a get/i);
+    expect(opening).toMatch(/^Everything here is read-only/);
+    const words = ["no", "one", "two", "three", "four", "five"];
+    expect(opening).toContain(`plus ${words[marked.length]} POST routes that only read`);
+    for (const path of marked) expect(opening).toContain(path);
+    // Every path the sentence names is one of them.
+    for (const named of opening.match(/\/api\/[A-Za-z0-9/_-]+/g) ?? []) expect(marked).toContain(named);
   });
 
   it("declares that no credentials are needed", () => {
@@ -120,7 +135,15 @@ describe("OpenAPI document", () => {
         expect("$ref" in response, `${where} ${status}`).toBe(false);
         const inline = response as OpenApiResponse;
         expect(inline.description.length, `${where} ${status}`).toBeGreaterThan(5);
+        // 202 and 204 are the statuses whose point is that there is no body (the MCP endpoint answers a
+        // JSON-RPC notification 202): they must say so in words and must NOT carry content; every other
+        // success response must type its body.
         const media = Object.values(inline.content ?? {});
+        if (status === "202" || status === "204") {
+          expect(inline.content, `${where} ${status} has no body`).toBeUndefined();
+          expect(inline.description, `${where} ${status}`).toMatch(/no body/i);
+          continue;
+        }
         expect(media.length, `${where} ${status}`).toBeGreaterThan(0);
         for (const m of media) expect(m.schema, `${where} ${status}`).toBeTruthy();
       }
@@ -325,5 +348,65 @@ describe("the MCP operation text matches what the route answers", () => {
     const notification = await answer(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
     expect(notification).toMatchObject({ status: 202, raw: "" });
     expect(mcp.description).toMatch(/notification[^.]*202[^.]*no body/i);
+    // And the response itself is listed, so a client does not meet the success status under `default`.
+    const accepted = mcp.responses["202"] as { description: string; content?: unknown; headers?: Json };
+    expect(accepted.description).toBe("A JSON-RPC notification was accepted; no body.");
+    expect(accepted.content).toBeUndefined();
+    expect(accepted.headers).toHaveProperty(API_VERSION_HEADER);
+  });
+});
+
+describe("postRoutesSentence", () => {
+  const operation = (readOnly?: true): OpenApiOperation => ({
+    operationId: "synthetic",
+    summary: "A synthetic operation",
+    description: "A synthetic operation, for the sentence tests.",
+    tags: ["Test"],
+    responses: { default: { $ref: "#/components/responses/Error" } },
+    ...(readOnly && { "x-read-only": readOnly }),
+  });
+  const document = (posts: Record<string, OpenApiOperation>) => ({
+    "/api/v1/profile": { get: operation() },
+    ...Object.fromEntries(Object.entries(posts).map(([path, op]) => [path, { post: op }])),
+  });
+
+  it("claims read-only for the routes marked read-only, and names them", () => {
+    const sentence = postRoutesSentence(document({ "/api/a": operation(true), "/api/b": operation(true) }));
+    expect(sentence).toMatch(/^Everything here is read-only: GET routes, plus two POST routes that only read \(\/api\/a and \/api\/b\)/);
+  });
+
+  it("agrees in number for a single route", () => {
+    expect(postRoutesSentence(document({ "/api/a": operation(true) }))).toContain("plus one POST route that only reads (/api/a)");
+  });
+
+  it("makes no read-only claim for a POST that is not marked, and says so in neutral words", () => {
+    const sentence = postRoutesSentence(document({ "/api/write": operation() }));
+    expect(sentence).not.toMatch(/read-only: /);
+    expect(sentence).not.toMatch(/only read/);
+    expect(sentence).not.toMatch(/Everything here/);
+    expect(sentence).toContain("/api/write");
+    expect(sentence).toContain("not marked read-only");
+  });
+
+  it("keeps the claim for the marked routes and goes neutral only for the unmarked one in a mixed document", () => {
+    const sentence = postRoutesSentence(document({ "/api/a": operation(true), "/api/write": operation() }));
+    expect(sentence).toContain("one POST route that only reads (/api/a)");
+    expect(sentence).toContain("one POST route not marked read-only (/api/write)");
+    expect(sentence).not.toMatch(/Everything here is read-only/);
+  });
+
+  it("names the routes the real document marks", () => {
+    const sentence = postRoutesSentence(doc.paths);
+    expect(sentence).toContain("/api/v1/batch");
+    expect(sentence).toContain("/api/mcp/mcp");
+    expect(doc.info.description.startsWith(sentence)).toBe(true);
+  });
+});
+
+describe("the content-negotiation claim on the homepage operation", () => {
+  it("says Vary: Accept belongs to the Markdown response, because Next replaces Vary on HTML responses", () => {
+    const description = doc.paths["/"].get.description;
+    expect(description).toContain("The Markdown response carries `Vary: Accept`");
+    expect(description).not.toMatch(/The response carries `Vary: Accept`/);
   });
 });

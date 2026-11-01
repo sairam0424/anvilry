@@ -23,7 +23,7 @@ import { allDecisions } from "@/lib/decisions";
 const BASE = "https://anvilry.vercel.app";
 
 export const RESUME_ROLES = ["master"] as const;
-export type ResumeRole = (typeof RESUME_ROLES)[number];
+type ResumeRole = (typeof RESUME_ROLES)[number];
 
 // Map the public role keyword -> the real resumeVariants label (single source).
 const ROLE_TO_LABEL: Record<ResumeRole, string> = {
@@ -105,7 +105,7 @@ const projectListSchema = {
     .max(MAX_GROUP_LENGTH)
     .optional()
     .describe(
-      "Return only the projects in this group. The rule is an exact match on the whole group name, case-insensitive and ignoring surrounding spaces, e.g. 'Tooling & Lab'. An unknown or blank name returns an error that lists the valid groups. Omit for every group.",
+      "Return only the projects in this group. The rule is an exact match on the whole group name, case-insensitive and ignoring surrounding spaces, e.g. 'Tooling & Lab'. An unknown name (text of only spaces included) returns an error that lists the valid groups; the empty string is rejected. Omit for every group.",
     ),
   limit: limitSchema(MAX_PROJECT_LIMIT, "projects"),
 };
@@ -116,7 +116,7 @@ const workListSchema = {
     .max(MAX_TECH_LENGTH)
     .optional()
     .describe(
-      "Return only the case studies whose tech list has an entry containing this text. The rule is a case-insensitive substring match against each entry, e.g. 'python' or 'sse'. Blank text applies no filter. Omit for all of them.",
+      "Return only the case studies whose tech list has an entry containing this text. The rule is a case-insensitive substring match against each entry, e.g. 'python' or 'sse'. Text of only spaces applies no filter; the empty string is rejected. Omit for all of them.",
     ),
   limit: limitSchema(MAX_WORK_LIMIT, "case studies"),
 };
@@ -130,8 +130,8 @@ const contentListSchema = {
   limit: limitSchema(MAX_CONTENT_LIMIT, "items", "Applied after the type filter. "),
 };
 
-export const projectSlugs = () => allProjects.map((p) => p.slug);
-export const workSlugs = () => allWork.map((w) => w.slug);
+const projectSlugs = () => allProjects.map((p) => p.slug);
+const workSlugs = () => allWork.map((w) => w.slug);
 
 /** A not-found result carrying the valid options (so the calling agent can self-correct). */
 export type NotFound = {
@@ -356,7 +356,7 @@ const decisionsTagSchema = {
     .string()
     .optional()
     .describe(
-      "Return only the decisions carrying this tag. The rule is an exact, case-sensitive match against each tag ('Performance' is not 'performance'); a tag nothing carries returns an empty list, not an error. Omit for all of them.",
+      "Return only the decisions carrying this tag. The rule is an exact, case-sensitive match against each tag ('Performance' is not 'performance'); a tag nothing carries returns an empty list, not an error, and the empty string applies no filter. Omit for all of them.",
     ),
 };
 

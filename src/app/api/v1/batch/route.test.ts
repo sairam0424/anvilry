@@ -364,12 +364,17 @@ describe("POST /api/v1/batch: what a batch cannot be made to do", () => {
     for (const url of urls) expect(url.startsWith("https://api.github.com/"), url).toBe(true);
   });
 
-  it("does not multiply the GitHub calls: 25 ways of asking for the statistics cost what one does", async () => {
-    const single = await callsFor(() => call("/api/v1/github/stats"));
-    const requests = Array.from({ length: BATCH_MAX_REQUESTS }, (_, i) => item(`g${i}`, i % 2 ? `/api/v1/github/stats?x=${i}` : "/api/v1/github/stats"));
-    const batched = await callsFor(() => send(requests));
-    expect(single.length).toBeGreaterThan(0);
-    expect(batched.length).toBe(single.length);
+  it("refuses to ask for the same operation 25 ways, so the one route that calls GitHub is called at most once per batch", async () => {
+    const requests = Array.from({ length: BATCH_MAX_REQUESTS }, (_, i) =>
+      item(`g${i}`, i % 2 ? `/api/v1/github/stats?x=${i}` : "/api/v1/github/stats"),
+    );
+    let outbound = 0;
+    const urls = await callsFor(async () => {
+      const body = await expectApiError(await send(requests), 400, "invalid_request");
+      expect(body.hint).toContain("requests[1] repeats requests[0]; send each operation once");
+    });
+    outbound = urls.length;
+    expect(outbound).toBe(0);
   });
 
   it("cannot name a batch inside a batch, so a batch cannot recurse or fan out", async () => {
@@ -387,34 +392,58 @@ describe("POST /api/v1/batch: what a batch cannot be made to do", () => {
   });
 });
 
-describe("POST /api/v1/batch: the answer cap", () => {
-  /** n copies of the largest route, each under its own id: a tiny request for a big answer. */
-  const copies = (n: number) => Array.from({ length: n }, (_, i) => item(`d${i}`, "/api/v1/decisions"));
+describe("POST /api/v1/batch: each operation may appear once", () => {
+  it("rejects 25 copies of the largest route with a 400 that names the repeat, and runs nothing", async () => {
+    const requests = Array.from({ length: BATCH_MAX_REQUESTS }, (_, i) => item(`d${i}`, "/api/v1/decisions"));
+    expect(Buffer.byteLength(payload(requests))).toBeLessThan(BATCH_MAX_BODY_BYTES);
+    const fetchSpy = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    vi.stubGlobal("fetch", fetchSpy);
 
-  it("refuses with 413 an answer that would exceed the cap, instead of sending 25 copies of the largest route", async () => {
-    const unit = Buffer.byteLength(JSON.stringify(await (await call("/api/v1/decisions")).json()));
-    // The premise of this case: the largest route times the item limit is over the cap. If content
-    // shrinks until it is not, the cap is unreachable and this test should be revisited, not skipped.
-    expect(unit * BATCH_MAX_REQUESTS).toBeGreaterThan(BATCH_MAX_RESPONSE_BYTES);
-    const request = payload(copies(BATCH_MAX_REQUESTS));
-    expect(Buffer.byteLength(request)).toBeLessThan(BATCH_MAX_BODY_BYTES);
-
-    const res = await route.POST(post(request));
-    const body = await expectApiError(res, 413, "payload_too_large");
-    expect(body.error).toContain(String(BATCH_MAX_RESPONSE_BYTES));
-    expect(body.hint).toContain("fewer or smaller operations");
+    const res = await send(requests);
+    const body = await expectApiError(res, 400, "invalid_request");
+    expect(body.hint).toContain("requests[1] repeats requests[0]; send each operation once");
     expect(body).not.toHaveProperty("responses");
-    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("sends an answer under the cap whole, however many items share it", async () => {
-    const unit = Buffer.byteLength(JSON.stringify(await (await call("/api/v1/decisions")).json()));
-    const fits = Math.max(1, Math.floor((BATCH_MAX_RESPONSE_BYTES * 0.9) / (unit + 60)));
-    const res = await send(copies(Math.min(fits, BATCH_MAX_REQUESTS)));
+  it("rejects a repeat hidden behind a parameter the route ignores, in either order", async () => {
+    for (const [first, second] of [
+      ["/api/v1/decisions", "/api/v1/decisions?cachebust=1"],
+      ["/api/v1/decisions?tag=mcp&a=1", "/api/v1/decisions?b=2&tag=mcp"],
+      ["/api/v1/resume?x=1", "/api/v1/resume"],
+    ]) {
+      await expectApiError(await send([item("a", first), item("b", second)]), 400, "invalid_request");
+    }
+  });
+
+  it("accepts the same route asked different questions", async () => {
+    const res = await send([
+      item("a", "/api/v1/decisions?tag=mcp"),
+      item("b", "/api/v1/decisions?tag=security"),
+      item("c", "/api/v1/decisions"),
+    ]);
+    expect(res.status).toBe(200);
+  });
+});
+
+describe("POST /api/v1/batch: the answer cap", () => {
+  it("sends the largest honest batch whole: the biggest operations of this API, all different, are far under the cap", async () => {
+    const requests = [
+      item("decisions", "/api/v1/decisions"),
+      item("resume", "/api/v1/resume"),
+      item("projects", "/api/v1/projects"),
+      item("articles", "/api/v1/articles"),
+      item("work", "/api/v1/work"),
+      ...Array.from({ length: BATCH_MAX_REQUESTS - 5 }, (_, i) => item(`s${i}`, `/api/v1/search?q=${String.fromCharCode(97 + i)}`)),
+    ];
+    expect(requests).toHaveLength(BATCH_MAX_REQUESTS);
+    const res = await send(requests);
     expect(res.status).toBe(200);
     const text = await res.text();
-    expect(Buffer.byteLength(text)).toBeLessThanOrEqual(BATCH_MAX_RESPONSE_BYTES);
-    expect(JSON.parse(text).responses).toHaveLength(Math.min(fits, BATCH_MAX_REQUESTS));
+    expect(Buffer.byteLength(text)).toBeLessThan(BATCH_MAX_RESPONSE_BYTES / 2);
+    expect(JSON.parse(text).responses).toHaveLength(BATCH_MAX_REQUESTS);
   });
 
   it("is not triggered by a batch of every distinct route", async () => {

@@ -22,9 +22,13 @@ export const BATCH_PATH = `${API_V1_BASE}/batch`;
 
 /**
  * Most operations one batch may carry, the largest request body it accepts and the largest answer
- * it will send, both in bytes. The answer is capped because a batch counts as one request against
- * the budget: without a ceiling, 25 copies of the largest route would be 25 requests' worth of
- * traffic for one. A batch over the ceiling is refused whole (413), never truncated.
+ * it will send, both in bytes.
+ *
+ * What bounds the traffic one batch can pull is that every operation in it is different: a batch
+ * that asks for the same operation twice is rejected, so it is at most BATCH_MAX_REQUESTS distinct
+ * GETs, and batch-run.test.ts measures the largest such batch at well under half the answer cap.
+ * The answer cap is a backstop in case a route's answer grows, not the bound itself; a batch over
+ * it is refused whole (413), never truncated.
  */
 export const BATCH_MAX_REQUESTS = 25;
 export const BATCH_MAX_BODY_BYTES = 16_384;

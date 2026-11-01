@@ -332,3 +332,60 @@ describe.each([
     expect(notes.length > 0).toBe(notesEnabled);
   });
 });
+
+/**
+ * What the descriptions of the three text filters say about empty text must be what the server does.
+ * The schemas reject the empty string for group and tech (minLength 1); text of only spaces gets
+ * past them and is handled; list_decisions.tag has no minimum, so an empty tag matches everything.
+ */
+describe("MCP text filters and empty text", () => {
+  const call = (name: string, args: unknown) => send({ POST }, toolCall(name, args)).then(only);
+  let described: Record<string, Record<string, { description?: string; minLength?: number }>> = {};
+
+  beforeAll(async () => {
+    const message = only(await send({ POST }, request("tools/list")));
+    const tools = (message.result as { tools: { name: string; inputSchema: { properties: typeof described[string] } }[] }).tools;
+    described = Object.fromEntries(tools.map((tool) => [tool.name, tool.inputSchema.properties]));
+  });
+
+  it("says the empty string is rejected for group and tech, and claims nothing about 'blank' text", () => {
+    for (const [tool, param] of [["list_projects", "group"], ["list_work", "tech"]]) {
+      const { description, minLength } = described[tool][param];
+      expect(minLength, `${tool}.${param}`).toBe(1);
+      expect(description, `${tool}.${param}`).toMatch(/the empty string is rejected/);
+      expect(description, `${tool}.${param}`).not.toMatch(/\bblank\b/i);
+    }
+  });
+
+  it("says an empty tag applies no filter, because list_decisions.tag has no minimum", () => {
+    expect(described.list_decisions.tag.description).toMatch(/empty string applies no filter/);
+    expect(described.list_decisions.tag.minLength).toBeUndefined();
+  });
+
+  it.each([
+    ["list_projects", { group: "" }, "group"],
+    ["list_work", { tech: "" }, "tech"],
+  ])("rejects %s with the empty string as a -32602 validation error that names the field", async (tool, args, field) => {
+    const text = toolErrorText(await call(tool, args));
+    expect(text).toContain("-32602");
+    expect(text).toContain(field);
+    expect(text).not.toContain("notFound");
+  });
+
+  it("answers group of only spaces like any unknown group: an error that lists the valid groups", async () => {
+    const message = await call("list_projects", { group: "   " });
+    expect(toolErrorText(message)).toContain(projectGroups()[0]);
+    expect(structured(message)).toMatchObject({ items: [], notFound: true, valid: projectGroups() });
+  });
+
+  it("answers tech of only spaces with every case study, as it says", async () => {
+    const items = ok(await call("list_work", { tech: "   " })).items;
+    expect(items).toEqual(JSON.parse(JSON.stringify(listWorkData())));
+  });
+
+  it("answers an empty tag with every decision, as it says", async () => {
+    const all = ok(await call("list_decisions", {})).items as unknown[];
+    expect(all.length).toBeGreaterThan(0);
+    expect(ok(await call("list_decisions", { tag: "" })).items).toEqual(all);
+  });
+});

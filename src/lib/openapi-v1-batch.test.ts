@@ -55,6 +55,31 @@ describe("the batch operation", () => {
     expect(JSON.stringify(V1_SCHEMAS.BatchRequest)).toContain(`${BATCH_MAX_REQUESTS} at most`);
   });
 
+  it("says each operation may appear once, in the description, the request body, the 400 and the request schema", () => {
+    expect(operation.description).toMatch(/each operation may appear once/i);
+    expect(operation.description).toMatch(/repeated operation/i);
+    expect(operation.requestBody?.description).toMatch(/each operation may appear once/i);
+    const rejected = (operation.responses["400"] as OpenApiResponse).description;
+    expect(rejected).toMatch(/repeated operation/i);
+    expect(rejected).toMatch(/each operation may appear once/i);
+    expect(JSON.stringify(V1_SCHEMAS.BatchRequest)).toMatch(/each operation may appear once/i);
+  });
+
+  it("does not promise an unconditional 200: a batch that passed validation answers 200 unless the answer is over the cap", () => {
+    const text = operation.description;
+    expect(text).not.toMatch(/always answers 200/i);
+    expect(text).toContain("A batch that passed validation answers 200 with one result per item");
+    expect(text).toMatch(/unless the assembled answer would exceed 1048576 bytes, in which case it is refused whole with 413/);
+  });
+
+  it("says an item carries the status its route would have answered, not only 404 and 500", () => {
+    const text = operation.description;
+    for (const part of ["400 for a bad query", "404 for an unknown slug or a path no route matches", "500 if the server failed on it"]) {
+      expect(text, part).toContain(part);
+    }
+    expect(text).not.toMatch(/same operation listed twice is run once/i);
+  });
+
   it("states the answer cap, and that an over-cap batch is refused whole and never truncated", () => {
     const text = operation.description;
     expect(text).toContain(String(BATCH_MAX_RESPONSE_BYTES));

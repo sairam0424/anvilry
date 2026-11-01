@@ -107,10 +107,10 @@ describe("DevelopersJsonLd", () => {
   it("uses absolute https URLs everywhere", () => {
     const urls = urlsIn(blocks);
     expect(urls.length).toBeGreaterThan(0);
+    // Origins, not string prefixes: "https://schema.org.example" starts with "https://schema.org".
+    const origins = [new URL(SITE).origin, "https://schema.org"];
     for (const url of urls)
-      expect(
-        url.startsWith(`${SITE}`) || url.startsWith("https://schema.org"),
-      ).toBe(true);
+      expect(origins).toContain(new URL(url).origin);
   });
 
   describe("on the rendered /developers page", () => {

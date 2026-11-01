@@ -7,7 +7,7 @@ import { API_V1_BASE, BATCH_MAX_REQUESTS } from "@/lib/api-policy";
  * credentials, so the site has to tell the truth at every moment: it must not say that
  * `npx anvilry` works before it does. Every sentence about the CLI on /developers, in llms.txt and
  * in the Markdown twin of /developers is built from the descriptor below, and the single switch is
- * `CLI.published`. Publish, then set it to true (nothing else needs editing).
+ * `CLI.published`. True since the package went on npm (2026-11-01); the release gate test pins it.
  *
  * `CLI_COMMANDS` is a copy of the command table the package exports from cli/lib/commands.mjs;
  * developer-tools.test.ts fails when the two differ, so a command cannot be added to the package
@@ -35,7 +35,7 @@ export interface CliCommand {
 export const CLI: CliInfo = {
   name: "anvilry",
   registry: "npm",
-  published: false,
+  published: true,
   runCommand: "npx anvilry",
   installCommand: "npm install --global anvilry",
   packageUrl: "https://www.npmjs.com/package/anvilry",

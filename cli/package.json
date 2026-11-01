@@ -1,6 +1,6 @@
 {
   "name": "anvilry",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command line client for the Anvilry public JSON API: profile, work, projects, articles, notes, decisions, search and batch reads.",
   "type": "module",
   "bin": {

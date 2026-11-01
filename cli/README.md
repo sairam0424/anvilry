@@ -1,9 +1,5 @@
 # anvilry
 
-<!-- status:unpublished:start -->
-> **Not published to npm yet.** Until it is, run it from a clone of the repository: `node cli/bin/anvilry.mjs <command>` (for example `node cli/bin/anvilry.mjs status`). In the examples below, read `anvilry` as `node cli/bin/anvilry.mjs`. The `npx` and `npm install` lines apply once the package is published.
-<!-- status:unpublished:end -->
-
 A command line client for the public, read-only JSON API of [Anvilry](https://anvilry.vercel.app): the profile, case studies, projects, articles, notes and architecture decisions of Sairam Ugge, as JSON on stdout. It is a thin wrapper around `https://anvilry.vercel.app/api/v1`, written for scripts and AI agents as much as for people.
 
 - Zero dependencies; it uses the `fetch` that ships with Node.js.
@@ -14,8 +10,6 @@ A command line client for the public, read-only JSON API of [Anvilry](https://an
 The full API reference is at <https://anvilry.vercel.app/developers>; the machine-readable description is at <https://anvilry.vercel.app/openapi.json>.
 
 ## Install
-
-Once published:
 
 ```sh
 npx anvilry profile          # run without installing
@@ -155,8 +149,7 @@ The package source lives in `cli/` of the Anvilry repository. Nothing here publi
 4. Publish, either by hand or from CI:
    - By hand: `npm login`, then `cd cli && npm publish`. An account with two-factor authentication is asked for a one-time password (or pass `--otp=<code>`). The manifest does not ask for provenance because npm can only generate it on a supported CI provider; a plain `npm publish --provenance` from a laptop fails with `EUSAGE`.
    - From GitHub Actions: use a GitHub-hosted runner and give the job `permissions: { contents: read, id-token: write }`, then run `cd cli && npm publish --provenance` with an npm token in `NODE_AUTH_TOKEN`. Or use npm trusted publishing instead of a token: it needs npm CLI 11.5.1 or newer and Node.js 22.14 or newer, is configured in the package settings on npmjs.com, must complete its first publish within 2 days of being created, and then adds provenance by itself. The repository has no publishing workflow yet.
-5. After the first publish, in one change: (a) delete the status block at the top of this file, that is the two comment lines that contain `status:unpublished` and everything between them; (b) in the Install section, delete the one-line lead-in before the install commands (or replace it with a sentence that suits a published package); (c) set `CLI.published` to `true` in `src/lib/developer-tools.ts`. A test fails until all three are done, and it passes once they are.
-6. Verify from a clean directory: `npx anvilry@latest version` and `npx anvilry@latest status`.
+5. Verify from a clean directory: `npx anvilry@latest version` and `npx anvilry@latest status`.
 
 ## License
 

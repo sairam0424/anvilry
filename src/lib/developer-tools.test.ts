@@ -37,14 +37,14 @@ const commands: readonly CliCommand[] = [
 ];
 
 /**
- * RELEASE GATE. CLI.published is the one switch that makes the site say `npx anvilry` works. It must
- * not be flipped by accident, so this pins it: flip this test together with publishing the package,
- * in the same commit as the owner's `npm publish`. The wording tests below pass the flag as a
- * parameter, so they keep covering both states either way.
+ * RELEASE GATE. CLI.published is the one switch that makes the site say `npx anvilry` works. It is
+ * true because anvilry@0.1.0 is on npm (published 2026-11-01), and this pins it so that it is not
+ * lowered by accident: lower it, and this test, only if the package is withdrawn. The wording tests
+ * below pass the flag as a parameter, so they keep covering both states either way.
  */
 describe("the release gate", () => {
-  it("has CLI.published false until the package is on npm (flip this together with publishing the package)", () => {
-    expect(CLI.published).toBe(false);
+  it("has CLI.published true now that the package is on npm (lower it only if the package is withdrawn)", () => {
+    expect(CLI.published).toBe(true);
   });
 });
 

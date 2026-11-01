@@ -338,7 +338,7 @@ export function legacyPaths(): OpenApiDocument["paths"] {
           summary: "Call the portfolio MCP server",
           description:
             "A read-only Model Context Protocol server over Streamable HTTP (JSON-RPC 2.0). Its tools return profile, projects, case studies, decisions, search and the résumé link; the tool table is at " +
-            `${SITE_URL}/mcp. Point an MCP client at this URL rather than calling it by hand. The legacy SSE transport is disabled and answers 404.`,
+            `${SITE_URL}/mcp. Point an MCP client at this URL rather than calling it by hand. A notification (a request with no id) is answered 202 with no body. The legacy SSE transport is disabled and answers 404.`,
           tags: ["MCP"],
           requestBody: {
             required: true,
@@ -353,7 +353,7 @@ export function legacyPaths(): OpenApiDocument["paths"] {
           responses: {
             "200": {
               description:
-                "A JSON-RPC response, as JSON or as a server-sent event stream.",
+                "A JSON-RPC response, as JSON or as a server-sent event stream. Errors inside a call are part of it: an unknown method answers -32601 (method not found), a request whose params do not fit its method (for example tools/call without a name) answers -32602 (invalid params) with a one-line message, and a failed tool call (unknown tool, bad arguments, unknown slug) is a result with isError true.",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/McpResponse" },
@@ -365,7 +365,7 @@ export function legacyPaths(): OpenApiDocument["paths"] {
             },
             "400": {
               description:
-                "A body that is not valid JSON-RPC answers with a JSON-RPC error object (-32700 parse error); an unsupported API-Version answers with the shared error object.",
+                "A body that is not valid JSON answers with a JSON-RPC error object (-32700 parse error). JSON that is not a valid JSON-RPC message answers -32600 (invalid request), echoing the request id when it has a usable one. That includes an empty array and any array with an invalid member: the whole array is rejected with one error object, never answered member by member. An array with a member whose params do not fit its method is rejected whole the same way, with -32602 (invalid params). An unsupported API-Version answers with the shared error object.",
               content: {
                 "application/json": {
                   schema: {

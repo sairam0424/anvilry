@@ -1,3 +1,8 @@
+import {
+  CallToolRequestSchema,
+  InitializeRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { createMcpHandler } from "mcp-handler";
 import { ensureJsonError, methodNotAllowed, optionsFor } from "@/lib/api-error";
 import * as T from "@/lib/mcp-tools";
@@ -24,9 +29,10 @@ const handler = createMcpHandler(
         title: "Get profile",
         description:
           "Sairam Ugge's identity, headline, links, skills, and achievements.",
-        inputSchema: {},
+        inputSchema: T.TOOL_INPUT_SHAPES.get_profile,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
-      async () => T.wrapToolResult(T.getProfileData()),
+      async ({ sections }) => T.wrapToolResult(T.getProfileData(sections)),
     );
     server.registerTool(
       "list_projects",
@@ -34,16 +40,19 @@ const handler = createMcpHandler(
         title: "List open-source projects",
         description:
           "All open-source projects (name, tagline, group, repo, tech).",
-        inputSchema: {},
+        inputSchema: T.TOOL_INPUT_SHAPES.list_projects,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
-      async () => T.wrapToolResult(T.listProjectsData()),
+      async ({ group, limit }) =>
+        T.wrapToolResult(T.listProjectsData({ group, limit })),
     );
     server.registerTool(
       "get_project",
       {
         title: "Get project by slug",
         description: "One open-source project's detail by slug.",
-        inputSchema: T.projectSlugSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.get_project,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ slug }) => T.wrapToolResult(T.getProjectData(slug)),
     );
@@ -53,16 +62,19 @@ const handler = createMcpHandler(
         title: "List production work",
         description:
           "Production work case studies (role, register, metrics, tech).",
-        inputSchema: {},
+        inputSchema: T.TOOL_INPUT_SHAPES.list_work,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
-      async () => T.wrapToolResult(T.listWorkData()),
+      async ({ tech, limit }) =>
+        T.wrapToolResult(T.listWorkData({ tech, limit })),
     );
     server.registerTool(
       "get_work",
       {
         title: "Get work by slug",
         description: "One production work case study's detail by slug.",
-        inputSchema: T.workSlugSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.get_work,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ slug }) => T.wrapToolResult(T.getWorkData(slug)),
     );
@@ -72,7 +84,8 @@ const handler = createMcpHandler(
         title: "Search experience",
         description:
           "Keyword search across work, projects, and skills (e.g. 'kafka', 'multi-agent').",
-        inputSchema: T.searchSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.search_experience,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ query }) => T.wrapToolResult(T.searchExperienceData(query)),
     );
@@ -82,7 +95,8 @@ const handler = createMcpHandler(
         title: "Get résumé variant",
         description:
           "The canonical résumé PDF URL — the only role is 'master'.",
-        inputSchema: T.resumeRoleSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.get_resume_variant,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ role }) => T.wrapToolResult(T.getResumeVariantData(role)),
     );
@@ -92,9 +106,11 @@ const handler = createMcpHandler(
         title: "List all content",
         description:
           "Flat list of every work case study, project, article, and note — with slug, name, summary, and URL.",
-        inputSchema: {},
+        inputSchema: T.TOOL_INPUT_SHAPES.list_all_content,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
-      async () => T.wrapToolResult(T.listAllContentData()),
+      async ({ type, limit }) =>
+        T.wrapToolResult(T.listAllContentData({ type, limit })),
     );
     server.registerTool(
       "get_content_item",
@@ -102,7 +118,8 @@ const handler = createMcpHandler(
         title: "Get content item",
         description:
           "Fetch a specific content item by type (work, project, article, note) and slug.",
-        inputSchema: T.contentTypeSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.get_content_item,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ type, slug }) =>
         T.wrapToolResult(T.getContentItemData(type, slug)),
@@ -113,7 +130,8 @@ const handler = createMcpHandler(
         title: "List architecture decisions",
         description:
           "Real engineering tradeoffs across all projects and work case studies — the choice made, the alternative considered, and the cost paid. Optional tag filter.",
-        inputSchema: T.decisionsTagSchema,
+        inputSchema: T.TOOL_INPUT_SHAPES.list_decisions,
+        annotations: T.READ_ONLY_TOOL_ANNOTATIONS,
       },
       async ({ tag }) => T.wrapToolResult(T.listDecisionsData(tag)),
     );
@@ -132,29 +150,152 @@ const handler = createMcpHandler(
 // every response through ensureJsonError so errors are JSON like the rest of the API
 // (a JSON-RPC body is only labelled, never rewritten, so MCP clients see what they expect).
 //
-// The library never settles a POST whose body is not JSON (it raises inside a stream and the
-// request stays open until maxDuration), so a malformed body is answered here, cheaply, with the
-// JSON-RPC parse error the protocol defines.
-async function jsonErrors(req: Request): Promise<Response> {
-  if (req.method === "POST") {
-    try {
-      JSON.parse(await req.clone().text());
-    } catch {
-      return Response.json(
-        {
-          jsonrpc: "2.0",
-          error: { code: -32700, message: "Parse error: the request body is not valid JSON." },
-          id: null,
-        },
-        { status: 400 },
-      );
-    }
-  }
-  return ensureJsonError(await handler(req));
+// Three answers the library gets wrong or leaves out are made here, around it:
+//  - It never settles a POST whose body is not JSON (it raises inside a stream and the request stays
+//    open until maxDuration), so that is answered up front with -32700, the protocol's parse error.
+//  - A body that IS JSON but not a JSON-RPC message gets the library's 400, labelled -32700 with a
+//    null id; the protocol calls that -32600 (invalid request) and wants the request's id echoed when
+//    it has one. An empty array gets a bare, empty 202 from the library; that is -32600 too.
+//  - A well-formed request whose params do not fit its method (tools/call without a name, initialize
+//    without a protocolVersion) gets -32603 from the library with the validator's raw issue list as the
+//    message; that is -32602 (invalid params) with one short sentence. It is checked against the
+//    library's own request schemas, after the library has answered, so its header checks (406, 415)
+//    still come first.
+//
+// Batches are NOT handled as JSON-RPC 2.0 section 6 describes (execute the valid members, answer each
+// bad one inside a returned array). A batch is accepted only when every member is a well-formed
+// message; one invalid member rejects the whole array with a single error object, HTTP 400 and a null
+// id. For -32600 the library refuses it before running anything; for -32602 the library may already
+// have run the other members (every tool is read-only) and their results are discarded. The MCP spec
+// dropped batching in 2025-06-18, so no client of the current protocol sends one.
+const JSON_RPC_PARSE_ERROR = -32700;
+const JSON_RPC_INVALID_REQUEST = -32600;
+const JSON_RPC_INVALID_PARAMS = -32602;
+const MAX_PARAMS_MESSAGE = 200;
+
+// POST is the only method that does anything: the server is stateless, with no session to end and no
+// event stream to open (GET and DELETE are exported only so the library answers them with a JSON-RPC
+// 405; Next would answer an unexported method with an empty one). Every 405 and OPTIONS says so.
+const ALLOWED_METHODS = ["POST"] as const;
+const ALLOW = [...ALLOWED_METHODS, "OPTIONS"].join(", ");
+
+type ParamsSchema = {
+  safeParse(input: unknown):
+    | { success: true }
+    | {
+        success: false;
+        error: {
+          issues: readonly { path: readonly PropertyKey[]; message: string }[];
+        };
+      };
+};
+// The methods this server answers whose request the library validates before running a handler.
+const PARAMS_SCHEMAS: Record<string, ParamsSchema> = {
+  initialize: InitializeRequestSchema,
+  "tools/list": ListToolsRequestSchema,
+  "tools/call": CallToolRequestSchema,
+};
+
+function jsonRpcError(
+  code: number,
+  message: string,
+  id: string | number | null,
+  status = 400,
+): Response {
+  return Response.json(
+    { jsonrpc: "2.0", error: { code, message }, id },
+    { status },
+  );
 }
 
-const notAllowed = methodNotAllowed(["GET", "POST", "DELETE"]);
-const options = optionsFor(["GET", "POST", "DELETE"]);
+/** The id a JSON-RPC error echoes: the request's own, when it is a single request with a usable one. */
+function echoableId(body: unknown): string | number | null {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+  const { id } = body as { id?: unknown };
+  return typeof id === "string" || typeof id === "number" ? id : null;
+}
+
+/** True when the library refused a body that had already parsed as JSON, i.e. an invalid message. */
+async function isRejectedMessage(res: Response): Promise<boolean> {
+  if (res.status !== 400) return false;
+  const answer = await res.clone().json().catch(() => null);
+  return answer?.error?.code === JSON_RPC_PARSE_ERROR;
+}
+
+/** One short sentence about the first thing wrong with a request's params, or null when they fit. */
+function paramsProblem(message: unknown): string | null {
+  const id = echoableId(message);
+  const { method } = (message ?? {}) as { method?: unknown };
+  if (id === null || typeof method !== "string" || !Object.hasOwn(PARAMS_SCHEMAS, method)) {
+    return null; // a notification, or a method the library does not validate this way
+  }
+  const result = PARAMS_SCHEMAS[method].safeParse(message);
+  if (result.success) return null;
+  const [first, ...rest] = result.error.issues;
+  const field = first.path.join(".");
+  const more = rest.length > 0 ? ` (and ${rest.length} more problems)` : "";
+  const reason = first.message
+    .replace(/^Invalid input: /, "")
+    .replace("expected record", "expected object");
+  return `Invalid params for ${method}: ${field ? `${field}: ` : ""}${reason}${more}`.slice(
+    0,
+    MAX_PARAMS_MESSAGE,
+  );
+}
+
+const invalidRequest = (body: unknown) =>
+  jsonRpcError(
+    JSON_RPC_INVALID_REQUEST,
+    "Invalid Request: the body is JSON but not a valid JSON-RPC 2.0 message.",
+    echoableId(body),
+  );
+
+/** The -32602 answer, or null when every request in the body has params that fit its method. */
+function invalidParams(body: unknown): Response | null {
+  if (Array.isArray(body)) {
+    const problem = body.map(paramsProblem).find((text) => text !== null);
+    return problem ? jsonRpcError(JSON_RPC_INVALID_PARAMS, problem, null) : null;
+  }
+  const problem = paramsProblem(body);
+  return problem
+    ? jsonRpcError(JSON_RPC_INVALID_PARAMS, problem, echoableId(body), 200)
+    : null;
+}
+
+async function withAllow405(res: Response): Promise<Response> {
+  if (res.status !== 405) return res;
+  const headers = new Headers(res.headers);
+  headers.set("Allow", ALLOW);
+  return new Response(res.body, { status: 405, headers });
+}
+
+async function jsonErrors(req: Request): Promise<Response> {
+  if (req.method !== "POST") {
+    return withAllow405(await ensureJsonError(await handler(req)));
+  }
+  let body: unknown;
+  try {
+    body = JSON.parse(await req.clone().text());
+  } catch {
+    return jsonRpcError(
+      JSON_RPC_PARSE_ERROR,
+      "Parse error: the request body is not valid JSON.",
+      null,
+    );
+  }
+  if (Array.isArray(body) && body.length === 0) return invalidRequest(body);
+  const res = await handler(req);
+  if (await isRejectedMessage(res)) return invalidRequest(body);
+  const rejected = res.ok ? invalidParams(body) : null;
+  if (rejected) {
+    await res.arrayBuffer(); // drain it: cancelling the stream makes the library throw when it closes it
+    return rejected;
+  }
+  return ensureJsonError(res);
+}
+
+const notAllowed = methodNotAllowed(ALLOWED_METHODS);
+const options = optionsFor(ALLOWED_METHODS);
 
 export {
   jsonErrors as GET,

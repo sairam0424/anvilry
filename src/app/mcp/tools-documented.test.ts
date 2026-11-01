@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { TOOL_INPUT_SHAPES } from "@/lib/mcp-tools";
 
 /**
  * /mcp is the public documentation page for the MCP server, and its TOOLS table is
@@ -90,5 +91,26 @@ describe("/mcp page documents every registered MCP tool", () => {
   it("lists exactly the same set, so the counts can be quoted safely", () => {
     expect(documented.length).toBe(registered.length);
     expect([...documented].sort()).toEqual([...registered].sort());
+  });
+});
+
+/**
+ * The /mcp page derives each tool's parameters from TOOL_INPUT_SHAPES, and the route must register
+ * every tool from its own entry there, so the page, the route and tools/list read one object.
+ */
+describe("every tool is registered from its own TOOL_INPUT_SHAPES entry", () => {
+  const registrations = [
+    ...readFileSync(ROUTE, "utf8").matchAll(
+      /server\.registerTool\(\s*"([A-Za-z0-9_]+)",\s*\{[^}]*?inputSchema:\s*T\.TOOL_INPUT_SHAPES\.([A-Za-z0-9_]+)/g,
+    ),
+  ].map((m) => ({ tool: m[1], shape: m[2] }));
+
+  it("has a TOOL_INPUT_SHAPES entry for exactly the registered tools", () => {
+    expect(Object.keys(TOOL_INPUT_SHAPES).sort()).toEqual([...registeredTools()].sort());
+  });
+
+  it("registers none of them with an inline or foreign schema", () => {
+    expect(registrations.length).toBe(registeredCallCount());
+    for (const { tool, shape } of registrations) expect(shape, tool).toBe(tool);
   });
 });

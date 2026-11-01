@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import { toJsonSchemaCompat } from "@modelcontextprotocol/sdk/server/zod-json-schema-compat.js";
+import { Fragment } from "react";
+import { z } from "zod";
 import { Section } from "@/components/ui/section";
 import { CopyButton } from "@/components/copy-button";
+import { McpServerJsonLd } from "@/components/json-ld-api";
+import { TOOL_INPUT_SHAPES } from "@/lib/mcp-tools";
 import { profile } from "@/lib/profile";
 
 const ENDPOINT = "https://anvilry.vercel.app/api/mcp/mcp";
@@ -58,6 +63,53 @@ const TOOLS = [
     "Real architecture tradeoffs across projects and work, optionally filtered by tag",
   ],
 ];
+
+type JsonProperty = {
+  type?: string;
+  enum?: string[];
+  items?: JsonProperty;
+  minimum?: number;
+  maximum?: number;
+  maxLength?: number;
+  description?: string;
+};
+
+function typeLabel(property: JsonProperty): string {
+  if (property.enum) return `one of ${property.enum.join(", ")}`;
+  if (property.type === "array")
+    return `list, each ${typeLabel(property.items ?? {})}`;
+  if (property.minimum !== undefined && property.maximum !== undefined) {
+    return `${property.type}, ${property.minimum} to ${property.maximum}`;
+  }
+  if (property.maxLength !== undefined)
+    return `${property.type}, up to ${property.maxLength} characters`;
+  return property.type ?? "any";
+}
+
+/**
+ * A tool's parameters, read from the JSON Schema the server advertises for it (the same converter and
+ * options as tools/list), so what this page says is what a client is told.
+ */
+function describeParams(tool: string) {
+  const shape = (TOOL_INPUT_SHAPES as Record<string, z.ZodRawShape>)[tool];
+  if (!shape)
+    throw new Error(
+      `/mcp documents ${tool}, which has no entry in TOOL_INPUT_SHAPES`,
+    );
+  const { properties = {}, required = [] } = toJsonSchemaCompat(
+    z.object(shape),
+    {
+      strictUnions: true,
+      pipeStrategy: "input",
+    },
+  ) as { properties?: Record<string, JsonProperty>; required?: string[] };
+  return Object.entries(properties).map(([name, property]) => ({
+    name,
+    type: typeLabel(property),
+    status: required.includes(name) ? "required" : "optional",
+    description: property.description ?? "",
+  }));
+}
 
 export default function McpPage() {
   return (
@@ -137,7 +189,20 @@ export default function McpPage() {
                     <td className="py-2 pr-4 align-top font-mono text-xs text-accent">
                       {name}
                     </td>
-                    <td className="py-2 text-fg-muted">{desc}</td>
+                    <td className="py-2 text-fg-muted">
+                      {desc}
+                      {describeParams(name).map((param) => (
+                        <Fragment key={param.name}>
+                          {" "}
+                          <span className="mt-1 block text-xs text-fg-subtle">
+                            <code className="font-mono text-fg-muted">
+                              {param.name}
+                            </code>{" "}
+                            ({param.type}, {param.status}): {param.description}
+                          </span>
+                        </Fragment>
+                      ))}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -145,6 +210,7 @@ export default function McpPage() {
           </div>
         </div>
       </Section>
+      <McpServerJsonLd />
     </main>
   );
 }

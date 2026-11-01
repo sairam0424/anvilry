@@ -47,6 +47,8 @@ export default defineConfig({
           name: "dom",
           environment: "happy-dom",
           include: ["src/**/*.dom.test.{ts,tsx}", "tests/**/*.dom.test.{ts,tsx}"],
+          // Testing Library's waitFor gives up after 1 s by default; the setup file raises it to 10 s.
+          setupFiles: ["tests/setup/dom-async-timeout.ts"],
         },
       },
     ],

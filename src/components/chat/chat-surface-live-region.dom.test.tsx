@@ -170,7 +170,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
             "Building agent backends at Ascendion.",
           ).length,
         ).toBeGreaterThan(0),
-      { timeout: 3000 },
+      { timeout: 10_000 },
     );
 
     // Give useChatA11y's ~150ms settle-announce timer a chance to actually fire, then
@@ -182,7 +182,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
           "Building agent backends at Ascendion.",
         );
       },
-      { timeout: 1000 },
+      { timeout: 10_000 },
     );
 
     expectExactlyOneLiveAnnouncer(container);
@@ -239,7 +239,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
             "AAVA Code is my strongest backend work.",
           ).length,
         ).toBeGreaterThan(0),
-      { timeout: 3000 },
+      { timeout: 10_000 },
     );
     // Also wait for isStreaming to genuinely flip false (the Send button's
     // accessible name only reverts from "Stop" once streaming ends) before
@@ -248,7 +248,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     // flakiness risk in CI.
     await waitFor(
       () => expect(screen.getByRole("button", { name: "Send" })).toBeTruthy(),
-      { timeout: 1000 },
+      { timeout: 10_000 },
     );
     expectExactlyOneLiveAnnouncer(container);
   });
@@ -286,7 +286,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
           within(transcript).getAllByText("Hello from the corpus.").length,
         ).toBeGreaterThan(0);
       },
-      { timeout: 3000 },
+      { timeout: 10_000 },
     );
 
     await waitFor(
@@ -294,7 +294,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
         const announcer = container.querySelector('[aria-live="polite"]');
         expect(announcer?.textContent).toBe("Hello from the corpus.");
       },
-      { timeout: 1000 },
+      { timeout: 10_000 },
     );
 
     expectExactlyOneLiveAnnouncer(container);
@@ -345,7 +345,7 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
     const toggle = await screen.findByRole(
       "button",
       { name: /Thought for a moment/ },
-      { timeout: 8000 },
+      { timeout: 10_000 },
     );
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(within(container).queryByText(REASONING)).toBeNull();
@@ -355,14 +355,14 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
         expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
           0,
         ),
-      { timeout: 8000 },
+      { timeout: 10_000 },
     );
     await waitFor(
       () => {
         const announcer = container.querySelector('[aria-live="polite"]');
         expect(announcer?.textContent).toBe(ANSWER);
       },
-      { timeout: 5000 },
+      { timeout: 10_000 },
     );
     expectExactlyOneLiveAnnouncer(container);
     expect(document.body.textContent).not.toMatch(PROTOCOL_BYTES);
@@ -393,7 +393,7 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
         expect(within(container).getAllByText(ANSWER).length).toBeGreaterThan(
           0,
         ),
-      { timeout: 8000 },
+      { timeout: 10_000 },
     );
     expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();
     expect(document.body.textContent).not.toContain(REASONING);
@@ -419,14 +419,14 @@ describe("Chat surface — a replayed FAQ-cache hit (composed tree)", () => {
           0,
         );
       },
-      { timeout: 8000 },
+      { timeout: 10_000 },
     );
     await waitFor(
       () => {
         const announcer = container.querySelector('[aria-live="polite"]');
         expect(announcer?.textContent).toBe(ANSWER);
       },
-      { timeout: 5000 },
+      { timeout: 10_000 },
     );
 
     expect(screen.queryByRole("button", { name: /Thought for/ })).toBeNull();

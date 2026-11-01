@@ -235,6 +235,12 @@ describe("the developers twin", () => {
     expect(md()).toContain(`${SITE_URL}${API_V1_BASE}`);
   });
 
+  it("claims about Vary only what is provable: Markdown responses carry it, and the HTML page links its twin", () => {
+    expect(md()).toContain("Markdown responses carry `Vary: Accept`.");
+    expect(md()).toContain('The HTML page of each also points to its Markdown version with a `Link` header (`rel="alternate"`).');
+    expect(md()).not.toMatch(/caches keep the two apart/i);
+  });
+
   it("keeps the runnable curl examples of the page", () => {
     expect(twin("developers")).toContain(`curl -sS ${SITE_URL}/openapi.json`);
     expect(twin("developers")).toContain(

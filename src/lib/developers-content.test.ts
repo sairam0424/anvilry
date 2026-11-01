@@ -218,29 +218,52 @@ describe("the batch endpoint", () => {
 
   describe("semantics", () => {
     const text = batchSemantics();
+    const cap = BATCH_MAX_RESPONSE_BYTES.toLocaleString("en-US");
 
-    it("says the batch is validated whole before anything runs, with the statuses and the item named", () => {
-      expect(text).toMatch(/checked as a whole before anything runs/);
-      for (const reason of ["a malformed item", "a duplicate id", "a path outside /api/v1/", "a batch inside a batch"]) {
-        expect(text, reason).toContain(reason);
+    it("says the batch is validated whole before anything runs, in sentences of their own", () => {
+      expect(text).toMatch(/^It is checked as a whole before anything runs\./);
+      for (const reason of ["a malformed item", "a duplicate id", "a repeated operation", "a path outside /api/v1/", "a batch inside a batch"]) {
+        expect(text.toLowerCase(), reason).toContain(reason);
       }
-      expect(text).toContain("400 (413 for size)");
-      expect(text).toMatch(/when an item is at fault, the hint names it/);
-      expect(text).toMatch(/nothing runs/);
+      expect(text).toContain("rejects it with 400 (413 for size) and nothing runs");
+      expect(text).toMatch(/when an item is at fault, the hint names it\./);
     });
 
-    it("says a valid batch answers 200 with a result per item, in request order, each with its own status", () => {
-      expect(text).toContain("always answers 200");
-      expect(text).toMatch(/one result per item, in request order/);
-      expect(text).toMatch(/id, status and body/);
-      expect(text).toMatch(/404 inside the 200/);
+    it("says each operation may appear once, and that a repeat is rejected, as the route owner's description does", () => {
+      expect(text).toContain("Each operation may appear once");
+      expect(text).toContain(
+        "two items that name the same route with the same values for the query parameters that route reads are the same operation, and the repeat is rejected",
+      );
+      expect(text).not.toMatch(/run once|runs once/i);
+      const description = buildOpenApiDocument().paths[BATCH_PATH].post.description;
+      expect(description).toContain("Each operation may appear once");
+      expect(description).toContain("a repeated operation");
+      expect(description).toMatch(/a batch that repeats one is rejected/);
     });
 
-    it("says how it counts against the rate limit and what the response cap does, with the number from api-policy.ts", () => {
+    it("says a batch that passed validation answers 200 with a result per item, and never says 'always'", () => {
+      expect(text).toContain("A batch that passed validation answers 200 with one result per item, in request order");
+      expect(text).toMatch(/each with its own id, status and body/);
+      expect(text).not.toMatch(/\balways\b/i);
+    });
+
+    it("gives each item the status its own route would answer, whatever that is", () => {
+      expect(text).toMatch(/the status its route would have answered on its own/);
+      for (const status of ["404", "400", "500"]) expect(text, status).toContain(status);
+      expect(text).toMatch(/no item affects another/);
+    });
+
+    it("states the cap right after the 200 sentence, as an exception with the number from api-policy.ts", () => {
+      const ok = text.indexOf("A batch that passed validation answers 200");
+      const capSentence = `if the assembled answer would exceed ${cap} bytes it is refused whole with 413 and nothing is truncated`;
+      expect(text).toContain(capSentence);
+      expect(text.indexOf(capSentence) - ok).toBeLessThan(400);
+      expect(text.indexOf(capSentence)).toBeGreaterThan(ok);
+    });
+
+    it("says how it counts against the rate limit, and that it can be answered 429 like any call", () => {
       expect(text).toMatch(/counts as one request against the rate limit however many operations it carries/);
-      expect(text).toContain(`${BATCH_MAX_RESPONSE_BYTES.toLocaleString("en-US")} bytes`);
-      expect(text).toMatch(/refused whole with 413/);
-      expect(text).toMatch(/nothing is truncated/);
+      expect(text).toMatch(/answered 429 like any call once the limit is spent/);
     });
 
     it("agrees with the route owner's description in the OpenAPI document on every number and status it states", () => {

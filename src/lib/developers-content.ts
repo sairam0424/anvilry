@@ -191,9 +191,9 @@ export function batchSentence(): string {
 export function batchSemantics(): string {
   const cap = BATCH_MAX_RESPONSE_BYTES.toLocaleString("en-US");
   return [
-    "It is checked as a whole before anything runs: a malformed item, a duplicate id, a path outside /api/v1/, a batch inside a batch, too many operations or too large a body rejects it with 400 (413 for size), when an item is at fault, the hint names it, and nothing runs.",
-    "A valid batch always answers 200 with one result per item, in request order, each with its own id, status and body: an item for a path no route matches is a 404 inside the 200 and does not affect the others.",
-    "A batch counts as one request against the rate limit however many operations it carries.",
-    `The answer is capped at ${cap} bytes: a batch whose results would add up to more is refused whole with 413 and nothing is truncated.`,
+    "It is checked as a whole before anything runs. A malformed item, a duplicate id, a repeated operation, a path outside /api/v1/, a batch inside a batch, too many operations or too large a body rejects it with 400 (413 for size) and nothing runs; when an item is at fault, the hint names it.",
+    "Each operation may appear once: two items that name the same route with the same values for the query parameters that route reads are the same operation, and the repeat is rejected.",
+    `A batch that passed validation answers 200 with one result per item, in request order, each with its own id, status and body: an item carries the status its route would have answered on its own (404 for a path no route matches or a slug that does not exist, 400 for a malformed slug or query, 500 if the server failed on it), and no item affects another; if the assembled answer would exceed ${cap} bytes it is refused whole with 413 and nothing is truncated.`,
+    "A batch counts as one request against the rate limit however many operations it carries, and is answered 429 like any call once the limit is spent.",
   ].join(" ");
 }

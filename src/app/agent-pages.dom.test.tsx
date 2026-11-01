@@ -13,6 +13,7 @@ import {
 } from "@/lib/api-policy";
 import { CLI, CLI_COMMANDS, cliHeading, cliSourceNote, cliStatus } from "@/lib/developer-tools";
 import { batchSemantics, batchSentence, buildBatchRecipe, RESPONSE_HEADERS } from "@/lib/developers-content";
+import { markdownResponse } from "@/lib/markdown-response";
 import { buildOpenApiDocument, listOperations } from "@/lib/openapi";
 import { PRIVACY_FACTS } from "@/lib/privacy-facts";
 import { profile } from "@/lib/profile";
@@ -139,6 +140,17 @@ describe("/developers", () => {
     expect(text).toContain(`${SITE_URL}${API_V1_BASE}`);
     expect(text).toContain(`curl -sS ${SITE_URL}${API_V1_BASE}`);
     expect(text).toContain(`curl -sS -D - -o /dev/null ${SITE_URL}/openapi.json`);
+  });
+
+  // Next replaces the Vary header of an HTML response, so the page claims only what is provable:
+  // the Markdown responses carry it (markdownResponse, pinned in page-markdown.test.ts) and each page
+  // with a twin advertises it through a Link header (the rule in next.config.ts, pinned in next-config.test.ts).
+  it("claims about Vary only that Markdown responses carry it, and about Link that the HTML page advertises its twin", () => {
+    expect(text).toContain("Markdown responses carry Vary: Accept");
+    expect(text).toMatch(/The HTML page of each also points to its Markdown version with a Link header \(\s*rel="alternate"\s*\)/);
+    expect(text).not.toMatch(/caches keep the two apart/i);
+    expect(text).not.toMatch(/Responses carry Vary/);
+    expect(markdownResponse("x").headers.get("Vary")).toBe("Accept");
   });
 
   it("points at the API catalog in its machine-readable files, in one sentence", () => {

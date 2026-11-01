@@ -54,9 +54,9 @@ export function MarkdownSection() {
         <InlineCode>Accept</InlineCode> header. Ask the page URL for{" "}
         <InlineCode>text/markdown</InlineCode> and you get Markdown; ask for{" "}
         <InlineCode>text/html</InlineCode> (a browser does) and you get the
-        page. Responses carry <InlineCode>Vary: Accept</InlineCode> so caches
-        keep the two apart. The homepage, every project, work, article and note
-        page, and these pages work this way:{" "}
+        page. Markdown responses carry <InlineCode>Vary: Accept</InlineCode>.
+        The homepage, every project, work, article and note page, and these
+        pages work this way:{" "}
         {PAGE_TWINS.map((page, i) => (
           <span key={page}>
             {i > 0 && ", "}
@@ -67,7 +67,10 @@ export function MarkdownSection() {
         on). Each also has a fixed URL ending in <InlineCode>.md</InlineCode> (
         <InlineCode>/index.md</InlineCode> for the homepage,{" "}
         <InlineCode>/about.md</InlineCode> for the About page) for clients that
-        cannot set headers. Pages with no Markdown version (
+        cannot set headers. The HTML page of each also points to its Markdown
+        version with a <InlineCode>Link</InlineCode> header (
+        <InlineCode>rel=&quot;alternate&quot;</InlineCode>). Pages with no
+        Markdown version (
         <InlineCode>/resume</InlineCode>, <InlineCode>/search</InlineCode> and{" "}
         <InlineCode>/stats</InlineCode>) ignore the header and return HTML, a
         request whose <InlineCode>Accept</InlineCode> header names Markdown but

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { escapeForTerminal, escapeJsonOutput } from "../../cli/lib/escape.mjs";
-import { MAX_BODY_BYTES } from "../../cli/lib/constants.mjs";
+import { MAX_BODY_BYTES, MAX_PRETTY_CHARS } from "../../cli/lib/constants.mjs";
 import { json, runInProcess } from "./support/in-process";
 
 /**
@@ -9,6 +9,7 @@ import { json, runInProcess } from "./support/in-process";
  * bytes untouched, and refuses a body that is too large. Run in-process with a scripted fetch.
  */
 
+const MIB = 1024 * 1024;
 const ESC = "\u001b";
 const NASTY = `ok ${ESC}[31mred ${"\u009b"}31m ${"\u202e"}rtl ${"\u200b"}zw ${"\u2066"}iso ${"\u007f"}del ${"\u{e0041}"}tag é ✓ 日本`;
 
@@ -118,7 +119,6 @@ describe("a body that is not plain UTF-8", () => {
 });
 
 describe("a body that is too large", () => {
-  const MIB = 1024 * 1024;
   const message = (status: number) =>
     `anvilry: response_too_large (HTTP ${status}): The response body is larger than ${MAX_BODY_BYTES / MIB} MiB (${MAX_BODY_BYTES} bytes), so nothing was printed.\n`;
 
@@ -153,9 +153,19 @@ describe("a body that is too large", () => {
   });
 
   it("stops reading an endless body instead of waiting for its end", async () => {
+    // The stream is "endless" only up to twice the limit and then fails. If the size cap ever
+    // regressed, the reader would run into that failure and this test would fail at once (a
+    // truly endless stream would keep the event loop busy and never let the test time out).
+    const pullsAllowed = (2 * MAX_BODY_BYTES) / MIB;
+    let pulls = 0;
     let cancelled = false;
     const endless = new ReadableStream<Uint8Array>({
       pull(controller) {
+        pulls += 1;
+        if (pulls > pullsAllowed) {
+          controller.error(new Error("the CLI kept reading far past the size limit"));
+          return;
+        }
         controller.enqueue(new Uint8Array(MIB));
       },
       cancel() {
@@ -166,6 +176,75 @@ describe("a body that is too large", () => {
     expect(result.code).toBe(2);
     expect(result.stderr).toBe(message(200));
     expect(cancelled).toBe(true);
+    // It read the limit and a little more (the chunk that crossed it), not the whole stream.
+    expect(pulls).toBeLessThanOrEqual(MAX_BODY_BYTES / MIB + 2);
+  });
+});
+
+describe("a body that is JSON but cannot be printed", () => {
+  const CANNOT_PRINT =
+    /^anvilry: bad_response \(HTTP 200\): Could not print the response \((nested more than 1000 levels deep|it is nested too deeply to read)\)\. Use --raw to print the body unchanged\.\n$/;
+  const deep = (levels: number) => "[".repeat(levels) + "]".repeat(levels);
+
+  it.each([10_000, 100_000])(
+    "reports a body nested %i levels deep with exit 2 and no stack trace",
+    async (levels) => {
+      const result = await runInProcess(
+        ["profile"],
+        () => new Response(deep(levels)),
+      );
+      expect(result.code).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toMatch(CANNOT_PRINT);
+      expect(result.stderr).not.toMatch(/RangeError|\n\s+at /);
+    },
+  );
+
+  it("still hands the same body over byte for byte with --raw", async () => {
+    const body = deep(100_000);
+    const result = await runInProcess(["profile", "--raw"], () => new Response(body));
+    expect(result.code).toBe(0);
+    expect(result.stdout).toBe(body);
+  });
+
+  it("reports the 8 MB body from the review (3,000 levels around four million values) the same way", async () => {
+    const body = `${"[".repeat(3000)}${"1,".repeat(4_000_000)}1${"]".repeat(3000)}`;
+    const result = await runInProcess(["profile"], () => new Response(body));
+    expect(result.code).toBe(2);
+    expect(result.stderr).toMatch(CANNOT_PRINT);
+  });
+
+  it("refuses a small body whose indented form would be gigantic, saying how big the limit is", async () => {
+    // Under the nesting limit, about 200 KB as JSON, but each of 100,000 values would be indented 1,800 spaces.
+    const body = `${"[".repeat(900)}${"1,".repeat(100_000)}1${"]".repeat(900)}`;
+    const result = await runInProcess(["profile"], () => new Response(body));
+    expect(result.code).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe(
+      `anvilry: bad_response (HTTP 200): Could not print the response (its indented form would be larger than ${MAX_PRETTY_CHARS / MIB} MiB). Use --raw to print the body unchanged.\n`,
+    );
+  });
+
+  it("reports a parser that gave up on the nesting (older Node versions do) the same way", async () => {
+    const parse = vi.spyOn(JSON, "parse").mockImplementationOnce(() => {
+      throw new RangeError("Maximum call stack size exceeded");
+    });
+    try {
+      const result = await runInProcess(["profile"], () => new Response("[[[]]]"));
+      expect(result.code).toBe(2);
+      expect(result.stderr).toBe(
+        "anvilry: bad_response (HTTP 200): Could not print the response (it is nested too deeply to read). Use --raw to print the body unchanged.\n",
+      );
+    } finally {
+      parse.mockRestore();
+    }
+  });
+
+  it("still prints a body that is nested and large but within the limits", async () => {
+    const body = JSON.stringify({ rows: Array.from({ length: 5000 }, (_, index) => ({ index, tags: [["a"]] })) });
+    const result = await runInProcess(["profile"], () => new Response(body));
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual(JSON.parse(body));
   });
 });
 

@@ -21,6 +21,15 @@ export const MAX_TIMEOUT_MS = 600_000;
 /** The largest response body the CLI reads (10 MiB); a longer one is refused with exit code 2. */
 export const MAX_BODY_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Limits on pretty-printing a response that is within the size limit above. JSON.stringify
+ * recurses, so a body nested a few thousand levels deep overflows the stack, and indentation
+ * multiplies the size of a deep one (a few MB of nested arrays can ask for gigabytes). A body past
+ * either limit is refused with exit code 2; --raw still prints it.
+ */
+export const MAX_PRETTY_NESTING = 1000;
+export const MAX_PRETTY_CHARS = 64 * 1024 * 1024;
+
 /** A slug is 1 to 120 letters, digits, underscores or hyphens. Checked before any request. */
 export const SLUG_PATTERN = "^[A-Za-z0-9_-]{1,120}$";
 

@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp, readdir, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readdir, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -31,11 +31,13 @@ interface PackResult {
 }
 
 /**
- * What `npm pack --dry-run` would put in the tarball. No network, no tarball, no log file; npm's
- * cache is a throwaway directory, so the user's ~/.npm is neither needed nor touched.
+ * What `npm pack --dry-run` would put in the tarball. No network, no tarball, no log file. npm is
+ * given a throwaway home directory and cache: it never reads or writes the user's ~/.npm, and it
+ * can never fall back to a relative `~` (what npm does when HOME is empty or unset, and what once
+ * left a literal `~` directory inside the repository).
  */
 async function runDryRunPack(): Promise<PackResult> {
-  const cache = await mkdtemp(join(tmpdir(), "anvilry-npm-cache-"));
+  const home = await mkdtemp(join(tmpdir(), "anvilry-npm-home-"));
   try {
     const { stdout } = await run(
       "npm",
@@ -44,8 +46,12 @@ async function runDryRunPack(): Promise<PackResult> {
         cwd: CLI_ROOT,
         timeout: NPM_KILL_AFTER_MS,
         env: childEnv({
-          HOME: process.env.HOME ?? "",
-          npm_config_cache: cache,
+          HOME: home,
+          USERPROFILE: home,
+          npm_config_cache: join(home, "cache"),
+          npm_config_logs_dir: join(home, "logs"),
+          npm_config_userconfig: join(home, "npmrc"),
+          npm_config_globalconfig: join(home, "npmrc-global"),
           NO_UPDATE_NOTIFIER: "1",
           npm_config_update_notifier: "false",
           npm_config_audit: "false",
@@ -55,7 +61,7 @@ async function runDryRunPack(): Promise<PackResult> {
     );
     return (JSON.parse(stdout) as PackResult[])[0];
   } finally {
-    await rm(cache, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
   }
 }
 
@@ -162,6 +168,19 @@ describe("deciding when the pack tests are skipped instead of failed", () => {
   it("does not hide a real failure of the package", () => {
     expect(npmUnavailableReason({ stderr: "npm error code EJSONPARSE" })).toBeNull();
     expect(npmUnavailableReason(new Error("boom"))).toBeNull();
+  });
+});
+
+describe("the package directory", () => {
+  it("holds only the package files: nothing a test or a command left behind", async () => {
+    const entries = (await readdir(CLI_ROOT)).sort();
+    expect(entries).toEqual(["LICENSE", "README.md", "bin", "lib", "package.json"]);
+  });
+
+  it("has no literal ~ directory next to it or at the root of the repository", async () => {
+    for (const directory of [CLI_ROOT, join(CLI_ROOT, "..")]) {
+      await expect(access(join(directory, "~"))).rejects.toThrow();
+    }
   });
 });
 

@@ -1,5 +1,6 @@
 import { EXIT_CODES, MAX_BODY_BYTES } from "./constants.mjs";
-import { escapeForTerminal, escapeJsonOutput } from "./escape.mjs";
+import { escapeForTerminal } from "./escape.mjs";
+import { prettyJson } from "./pretty.mjs";
 
 const RATE_LIMIT_HEADERS = [
   "ratelimit-policy",
@@ -52,19 +53,34 @@ export function interpretResponse(response, { command, raw, showHeaders }) {
     return failure([...echoed, ...errorLines(response.status, parsed)]);
   }
   if (!raw && !parsed.ok) {
-    return failure([...echoed, ...notJsonLines(response)]);
+    return failure([...echoed, ...notJsonLines(response, parsed.tooDeep)]);
   }
-  // Not JSON and not --raw was refused above, so the body is printed as bytes only for --raw.
-  const stdout =
-    parsed.ok && !raw
-      ? `${escapeJsonOutput(JSON.stringify(parsed.value, null, 2))}\n`
-      : response.body;
+  const rendered = render(parsed, raw, response.body);
+  if ("reason" in rendered) {
+    return failure([...echoed, unprintableLine(response.status, rendered.reason)]);
+  }
+  const { stdout } = rendered;
   const failed = parsed.ok && command.name === "batch" ? failedOperations(parsed.value) : null;
   if (failed !== null && failed.count > 0) {
     const summary = `anvilry: ${failed.count} of ${failed.total} batch operations failed. Their status and body are in the output.`;
     return { stdout, stderr: lines([...echoed, summary]), exitCode: EXIT_CODES.API };
   }
   return { stdout, stderr: lines(echoed), exitCode: EXIT_CODES.OK };
+}
+
+/**
+ * What goes to stdout: the bytes themselves for --raw (also the only way to get here with a body
+ * that is not JSON), otherwise the pretty-printed JSON, or the reason it cannot be printed.
+ *
+ * @param {{ ok: true, value: unknown } | { ok: false, tooDeep: boolean }} parsed
+ * @param {boolean} raw
+ * @param {Uint8Array} body
+ * @returns {{ stdout: string | Uint8Array } | { reason: string }}
+ */
+function render(parsed, raw, body) {
+  if (raw || !parsed.ok) return { stdout: body };
+  const printed = prettyJson(parsed.value);
+  return printed.ok ? { stdout: `${printed.text}\n` } : { reason: printed.reason };
 }
 
 /** @param {readonly string[]} stderrLines @returns {Report} */
@@ -79,13 +95,14 @@ function lines(items) {
 
 /**
  * @param {string} text
- * @returns {{ ok: true, value: unknown } | { ok: false }}
+ * @returns {{ ok: true, value: unknown } | { ok: false, tooDeep: boolean }}
+ *   tooDeep: the parser gave up on the nesting (older Node versions do; it is not bad syntax).
  */
 function parseJson(text) {
   try {
     return { ok: true, value: JSON.parse(text) };
-  } catch {
-    return { ok: false };
+  } catch (error) {
+    return { ok: false, tooDeep: error instanceof RangeError };
   }
 }
 
@@ -103,7 +120,7 @@ function headerLines(headers, names) {
 /**
  * The shared error body is { error, code, status, hint, docs }; only string fields are used.
  *
- * @param {{ ok: true, value: unknown } | { ok: false }} parsed
+ * @param {{ ok: true, value: unknown } | { ok: false, tooDeep: boolean }} parsed
  * @returns {{ code: string, message: string, hint: string | null } | null}
  */
 function readErrorBody(parsed) {
@@ -119,7 +136,7 @@ function readErrorBody(parsed) {
 
 /**
  * @param {number} status
- * @param {{ ok: true, value: unknown } | { ok: false }} parsed
+ * @param {{ ok: true, value: unknown } | { ok: false, tooDeep: boolean }} parsed
  */
 function errorLines(status, parsed) {
   const body = readErrorBody(parsed);
@@ -134,7 +151,7 @@ function errorLines(status, parsed) {
  * A 429 prints the Retry-After seconds and every rate-limit field the server sent.
  *
  * @param {import("./http.mjs").HttpResult} response
- * @param {{ ok: true, value: unknown } | { ok: false }} parsed
+ * @param {{ ok: true, value: unknown } | { ok: false, tooDeep: boolean }} parsed
  */
 function rateLimitedLines(response, parsed) {
   const body = readErrorBody(parsed);
@@ -174,8 +191,22 @@ function tooLargeLine(status) {
   return `anvilry: ${TOO_LARGE_CODE} (HTTP ${status}): The response body is larger than ${MAX_BODY_BYTES / BYTES_PER_MIB} MiB (${MAX_BODY_BYTES} bytes), so nothing was printed.`;
 }
 
-/** @param {import("./http.mjs").HttpResult} response */
-function notJsonLines(response) {
+/**
+ * @param {number} status
+ * @param {string} reason
+ */
+function unprintableLine(status, reason) {
+  return `anvilry: ${BAD_RESPONSE_CODE} (HTTP ${status}): Could not print the response (${reason}). Use --raw to print the body unchanged.`;
+}
+
+/**
+ * @param {import("./http.mjs").HttpResult} response
+ * @param {boolean} tooDeep
+ */
+function notJsonLines(response, tooDeep) {
+  if (tooDeep) {
+    return [unprintableLine(response.status, "it is nested too deeply to read")];
+  }
   const type = escapeForTerminal(response.headers.get("content-type") ?? "no content type");
   return [
     `anvilry: ${BAD_RESPONSE_CODE} (HTTP ${response.status}): Expected a JSON body but received ${type}. Use --raw to print the body unchanged.`,

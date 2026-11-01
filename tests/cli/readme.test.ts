@@ -8,68 +8,132 @@ import {
   BATCH_MAX_OPERATIONS,
   DEFAULT_TIMEOUT_MS,
   MAX_BODY_BYTES,
+  MAX_PRETTY_CHARS,
+  MAX_PRETTY_NESTING,
   MAX_TIMEOUT_MS,
 } from "../../cli/lib/constants.mjs";
 import {
-  NOT_PUBLISHED_MARKER,
-  ONCE_PUBLISHED_MARKER,
+  BLOCK_END,
+  BLOCK_START,
+  INSTALL_LEAD_IN,
+  NOT_PUBLISHED_TEXT,
   RUN_FROM_CLONE,
+  followReleaseSteps,
   readmeStatusProblems,
 } from "./support/readme-status";
 import { CLI_ROOT } from "./support/run-cli";
 
 const readReadme = () => readFile(join(CLI_ROOT, "README.md"), "utf8");
 
+/** A small README shaped like the real one: block under the title, lead-in in Install, steps at the end. */
 const UNPUBLISHED_README = [
   "# anvilry",
   "",
-  `> **${NOT_PUBLISHED_MARKER}.** Run it with \`${RUN_FROM_CLONE}\`.`,
+  BLOCK_START,
+  `> **${NOT_PUBLISHED_TEXT}.** Run it with \`${RUN_FROM_CLONE}\`.`,
+  BLOCK_END,
+  "",
+  "A command line client.",
   "",
   "## Install",
   "",
-  `${ONCE_PUBLISHED_MARKER} npx anvilry`,
-].join("\n");
-
-const PUBLISHED_README = [
-  "# anvilry",
+  INSTALL_LEAD_IN,
   "",
-  "## Install",
+  "```sh",
+  "npx anvilry profile",
+  "```",
   "",
-  "npx anvilry",
+  "## Maintainers: releasing",
+  "",
+  `5. Delete the status block and the lead-in. (This step mentions "${INSTALL_LEAD_IN}" and ${BLOCK_START} inside a sentence.)`,
 ].join("\n");
 
 describe("the README status check", () => {
-  it("accepts the status block while the package is unpublished", () => {
+  it("accepts the block and the lead-in while the package is unpublished", () => {
     expect(readmeStatusProblems(UNPUBLISHED_README, false)).toEqual([]);
   });
 
-  it("accepts a README without the block once the package is published", () => {
-    expect(readmeStatusProblems(PUBLISHED_README, true)).toEqual([]);
+  it("accepts a README without either once the package is published", () => {
+    expect(
+      readmeStatusProblems(followReleaseSteps(UNPUBLISHED_README), true),
+    ).toEqual([]);
   });
 
-  it("flags a README that forgot the block while unpublished", () => {
-    const problems = readmeStatusProblems(PUBLISHED_README, false);
-    expect(problems).toHaveLength(3);
-    expect(problems.join("\n")).toContain(NOT_PUBLISHED_MARKER);
-    expect(problems.join("\n")).toContain(RUN_FROM_CLONE);
-    expect(problems.join("\n")).toContain(ONCE_PUBLISHED_MARKER);
+  it("is satisfied again after the release steps, and fails if any one is left undone", () => {
+    const afterSteps = followReleaseSteps(UNPUBLISHED_README);
+    expect(afterSteps.split("\n").map((line) => line.trim())).not.toContain(BLOCK_START);
+    expect(afterSteps).not.toContain(NOT_PUBLISHED_TEXT);
+    expect(readmeStatusProblems(afterSteps, true)).toEqual([]);
+
+    // The block left in place after publishing.
+    expect(readmeStatusProblems(UNPUBLISHED_README, true)).toHaveLength(2);
+    // Only the block deleted: the Install lead-in is still there.
+    const blockOnly = UNPUBLISHED_README.split("\n")
+      .filter((line) => !line.startsWith("<!--") && !line.startsWith("> **"))
+      .join("\n");
+    expect(readmeStatusProblems(blockOnly, true)).toEqual([
+      `the package is published, so the Install section must no longer say "${INSTALL_LEAD_IN}"`,
+    ]);
+    // Only the lead-in deleted: the block is still there.
+    const leadInOnly = UNPUBLISHED_README.split("\n")
+      .filter((line) => line !== INSTALL_LEAD_IN)
+      .join("\n");
+    expect(readmeStatusProblems(leadInOnly, true)).toHaveLength(1);
   });
 
-  it("flags a README that still carries the block after publishing", () => {
-    const problems = readmeStatusProblems(UNPUBLISHED_README, true);
-    expect(problems).toHaveLength(3);
-    expect(problems.join("\n")).toContain("must no longer say");
+  it("fails an unpublished README when the lead-in is missing, so that half of the check can fail", () => {
+    const noLeadIn = UNPUBLISHED_README.split("\n")
+      .filter((line) => line !== INSTALL_LEAD_IN)
+      .join("\n");
+    expect(readmeStatusProblems(noLeadIn, false)).toEqual([
+      `the Install section must have the line "${INSTALL_LEAD_IN}"`,
+    ]);
   });
 
-  it("wants the block under the title, before any section", () => {
+  it("only counts the lead-in inside the Install section", () => {
+    const elsewhere = UNPUBLISHED_README.split("\n")
+      .filter((line) => line !== INSTALL_LEAD_IN)
+      .concat([INSTALL_LEAD_IN])
+      .join("\n");
+    expect(readmeStatusProblems(elsewhere, false)).toEqual([
+      `the Install section must have the line "${INSTALL_LEAD_IN}"`,
+    ]);
+  });
+
+  it("flags a missing, reversed or empty block while unpublished", () => {
+    const noBlock = UNPUBLISHED_README.split("\n")
+      .filter((line) => line !== BLOCK_START && line !== BLOCK_END)
+      .join("\n");
+    expect(readmeStatusProblems(noBlock, false)).toEqual([
+      `the README must have the line "${BLOCK_START}"`,
+      `the README must have the line "${BLOCK_END}"`,
+    ]);
+
+    const reversed = UNPUBLISHED_README.replace(BLOCK_START, "@@")
+      .replace(BLOCK_END, BLOCK_START)
+      .replace("@@", BLOCK_END);
+    expect(readmeStatusProblems(reversed, false)).toContain(
+      "the status block must end after it starts",
+    );
+
+    const emptyBlock = UNPUBLISHED_README.replace(/^> \*\*.*$/m, "");
+    expect(readmeStatusProblems(emptyBlock, false)).toEqual([
+      `the status block must say "${NOT_PUBLISHED_TEXT}"`,
+      `the status block must say "${RUN_FROM_CLONE}"`,
+    ]);
+  });
+
+  it("wants the block before the first section", () => {
     const buried = [
       "# anvilry",
       "",
       "## Install",
       "",
-      `${ONCE_PUBLISHED_MARKER} npx anvilry`,
+      INSTALL_LEAD_IN,
       "",
-      `> ${NOT_PUBLISHED_MARKER}. Run \`${RUN_FROM_CLONE}\`.`,
+      BLOCK_START,
+      `> ${NOT_PUBLISHED_TEXT}. Run \`${RUN_FROM_CLONE}\`.`,
+      BLOCK_END,
     ].join("\n");
     expect(readmeStatusProblems(buried, false)).toEqual([
       "the status block must come before the first section",
@@ -80,6 +144,21 @@ describe("the README status check", () => {
 describe("the README of the package", () => {
   it("matches the publication state the site is built from (CLI.published)", async () => {
     expect(readmeStatusProblems(await readReadme(), CLI.published)).toEqual([]);
+  });
+
+  // The two rehearsals below describe the README as it is BEFORE the first release. After the
+  // maintainer has followed step 5 they have nothing left to rehearse, so they stand down with the flag.
+  it.skipIf(CLI.published)("is satisfied by the release steps it describes: following them leaves the check green for a published package", async () => {
+    // This is the rehearsal of the flip. It runs the edit the steps ask for on the real README
+    // and expects the check, with the flag true, to pass; step 5 itself must not get in the way.
+    const readme = await readReadme();
+    const afterSteps = followReleaseSteps(readme);
+    expect(afterSteps).not.toBe(readme);
+    expect(readmeStatusProblems(afterSteps, true)).toEqual([]);
+  });
+
+  it.skipIf(CLI.published)("fails for a published package until the release steps have been followed", async () => {
+    expect(readmeStatusProblems(await readReadme(), true)).not.toEqual([]);
   });
 
   it("lists every command by its usage line and every flag", async () => {
@@ -100,6 +179,10 @@ describe("the README of the package", () => {
       `1 to ${MAX_TIMEOUT_MS}, default ${DEFAULT_TIMEOUT_MS}`,
     );
     expect(readme).toContain(`${MAX_BODY_BYTES / (1024 * 1024)} MiB`);
+    expect(readme).toContain(`${MAX_PRETTY_NESTING} levels`);
+    expect(readme).toContain(
+      `${MAX_PRETTY_CHARS / (1024 * 1024)} MiB when indented`,
+    );
     expect(readme).toContain(
       `${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`,
     );

@@ -82,3 +82,39 @@ describe("a body over the size limit", () => {
     expect(result.stderr).toContain("response_too_large");
   });
 });
+
+describe("a body that is JSON but cannot be printed", () => {
+  const deep = (levels: number) => "[".repeat(levels) + "]".repeat(levels);
+
+  it("exits 2 with one line on standard error and no stack trace, not 1 with a crash", async () => {
+    const body = Buffer.from(deep(100_000));
+    const api = await mockApi(bytesResponder(body));
+    const result = await runCli(["profile", "--base-url", api.baseUrl]);
+
+    expect(result.code).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/^anvilry: bad_response \(HTTP 200\): Could not print the response \(/);
+    expect(result.stderr.trimEnd().split("\n")).toHaveLength(1);
+    expect(result.stderr).not.toMatch(/RangeError|\n\s+at /);
+  });
+
+  it("prints the same body byte for byte with --raw", async () => {
+    const body = Buffer.from(deep(100_000));
+    const api = await mockApi(bytesResponder(body));
+    const result = await runCli(["profile", "--raw", "--base-url", api.baseUrl]);
+
+    expect(result.code).toBe(0);
+    expect(Buffer.compare(result.stdoutBytes, body)).toBe(0);
+  });
+
+  it("refuses the small-but-huge-when-indented body quickly instead of building gigabytes", async () => {
+    const body = Buffer.from(
+      `${"[".repeat(900)}${"1,".repeat(100_000)}1${"]".repeat(900)}`,
+    );
+    const api = await mockApi(bytesResponder(body));
+    const result = await runCli(["profile", "--base-url", api.baseUrl]);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("indented form would be larger than 64 MiB");
+  });
+});

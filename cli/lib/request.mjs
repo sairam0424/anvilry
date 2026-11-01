@@ -27,7 +27,7 @@ export function expandPath(template, values) {
  *
  * @param {readonly string[]} paths
  */
-export function batchBody(paths) {
+function batchBody(paths) {
   return {
     requests: paths.map((path, index) => ({
       id: String(index + 1),

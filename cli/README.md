@@ -1,6 +1,8 @@
 # anvilry
 
+<!-- status:unpublished:start -->
 > **Not published to npm yet.** Until it is, run it from a clone of the repository: `node cli/bin/anvilry.mjs <command>` (for example `node cli/bin/anvilry.mjs status`). In the examples below, read `anvilry` as `node cli/bin/anvilry.mjs`. The `npx` and `npm install` lines apply once the package is published.
+<!-- status:unpublished:end -->
 
 A command line client for the public, read-only JSON API of [Anvilry](https://anvilry.vercel.app): the profile, case studies, projects, articles, notes and architecture decisions of Sairam Ugge, as JSON on stdout. It is a thin wrapper around `https://anvilry.vercel.app/api/v1`, written for scripts and AI agents as much as for people.
 
@@ -91,6 +93,8 @@ A server you point `--base-url` at can send anything, so the default output is m
 
 The CLI reads at most 10 MiB of a response. A larger body is refused with exit code 2 and nothing is printed.
 
+The default output also has limits, because indentation multiplies the size of a deeply nested body: a response nested more than 1000 levels deep, or whose output would be more than 64 MiB when indented, is not pretty-printed. The CLI reports `Could not print the response` with exit code 2 instead, and `--raw` still prints it.
+
 The CLI does not follow redirects. A `3xx` answer is reported with its `Location` and exit code 2, and a batch body is never sent anywhere but the address you gave. To use a redirected address, pass its origin as `--base-url`. For example, `--base-url http://anvilry.vercel.app` is answered with a redirect to `https`; use the `https` address.
 
 ## Exit codes
@@ -151,7 +155,7 @@ The package source lives in `cli/` of the Anvilry repository. Nothing here publi
 4. Publish, either by hand or from CI:
    - By hand: `npm login`, then `cd cli && npm publish`. An account with two-factor authentication is asked for a one-time password (or pass `--otp=<code>`). The manifest does not ask for provenance because npm can only generate it on a supported CI provider; a plain `npm publish --provenance` from a laptop fails with `EUSAGE`.
    - From GitHub Actions: use a GitHub-hosted runner and give the job `permissions: { contents: read, id-token: write }`, then run `cd cli && npm publish --provenance` with an npm token in `NODE_AUTH_TOKEN`. Or use npm trusted publishing instead of a token: it needs npm CLI 11.5.1 or newer and Node.js 22.14 or newer, is configured in the package settings on npmjs.com, must complete its first publish within 2 days of being created, and then adds provenance by itself. The repository has no publishing workflow yet.
-5. After the first publish, in the same change: delete the status block under the title and the "Once published:" line from this README, and set `CLI.published` to `true` in `src/lib/developer-tools.ts`. A test fails until both are done.
+5. After the first publish, in one change: (a) delete the status block at the top of this file, that is the two comment lines that contain `status:unpublished` and everything between them; (b) in the Install section, delete the one-line lead-in before the install commands (or replace it with a sentence that suits a published package); (c) set `CLI.published` to `true` in `src/lib/developer-tools.ts`. A test fails until all three are done, and it passes once they are.
 6. Verify from a clean directory: `npx anvilry@latest version` and `npx anvilry@latest status`.
 
 ## License

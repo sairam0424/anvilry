@@ -67,3 +67,8 @@ agentdb.rvf.*
 .claude-flow/
 .claude/proven-config.json
 .claude/.proven-config-version
+
+# A literal "~" directory appears when a tool is handed an unexpanded "~/.npm" cache path.
+~/
+**/~/
+.npm/

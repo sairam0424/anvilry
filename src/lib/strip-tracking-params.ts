@@ -1,9 +1,19 @@
+/** Any parameter whose name starts with this is tracking: utm_source, utm_medium, utm_anything_new. */
+export const TRACKING_PARAM_PREFIX = "utm_";
+
 /**
  * Tracking and referral parameters: they say where a visitor came from or which share button they
  * used, never which page they get. Names are compared lower-case and whole, so `referral`,
- * `source_id` and `sdk` are other parameters and stay.
+ * `source_id` and `sdk` are other parameters and stay. The names, besides the `utm_` prefix:
+ *   r, ref, referrer, ref_src, source, triedRedirect, sd  (referral and share links)
+ *   fbclid, gclid, dclid, msclkid, twclid, yclid, igshid  (ad and social click ids)
+ *   mc_cid, mc_eid, mkt_tok, _hsenc, _hsmi                (email and marketing campaigns)
+ *   showWelcomeOnShare                                    (Substack's share dialog: the page behind
+ *                                                          it is the same with or without it)
+ * That is 20 names. strip-tracking-params.test.ts pins this exact list, so adding or dropping one
+ * means changing the test and this comment together. Stored lower-case.
  */
-const TRACKING_PARAMS: ReadonlySet<string> = new Set([
+export const TRACKING_PARAMS: ReadonlySet<string> = new Set([
   "r",
   "ref",
   "referrer",
@@ -23,11 +33,8 @@ const TRACKING_PARAMS: ReadonlySet<string> = new Set([
   "mkt_tok",
   "_hsenc",
   "_hsmi",
-  // Substack's share dialog: the page behind it is the same with or without it.
   "showwelcomeonshare",
 ]);
-
-const TRACKING_PREFIX = "utm_";
 
 function decodedName(segment: string): string {
   const name = segment.split("=", 1)[0];
@@ -40,7 +47,7 @@ function decodedName(segment: string): string {
 
 const isTracking = (segment: string): boolean => {
   const name = decodedName(segment);
-  return name.startsWith(TRACKING_PREFIX) || TRACKING_PARAMS.has(name);
+  return name.startsWith(TRACKING_PARAM_PREFIX) || TRACKING_PARAMS.has(name);
 };
 
 /**

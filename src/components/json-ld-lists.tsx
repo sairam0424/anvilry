@@ -34,6 +34,9 @@ import { stripTrackingParams } from "@/lib/strip-tracking-params";
  *    `author`. They differ on purpose. Every case study's register reads "Co-built", so
  *    `contributor` is the accurate relation, and the list is the only place it is stated. The page
  *    is not changed here because that would change its output; changing it is a one-word edit.
+ * json-ld-parity.dom.test.tsx renders the real /projects/[slug] and /work/[slug] pages and compares
+ * them with these entities: equal for every project, equal on type, name, description and address
+ * for every case study, and the author/contributor difference pinned as a deliberate one.
  *  - Articles: BlogPosting is emitted for the homepage list only (an external article's own
  *    /articles page redirects away before it could render one). Its URL is the card's link
  *    without tracking parameters, see `articleUrl`.

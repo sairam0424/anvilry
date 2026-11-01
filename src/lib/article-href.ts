@@ -2,9 +2,11 @@ import type { ArticleGroup } from "@/lib/article-grouping";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 
 /**
- * Where the card for an article group sends a visitor. The article card (a client component) and
- * the homepage JSON-LD (a server component, which cannot call functions exported by a client
- * module) both call this, so the rule exists once. Pure: no JSX, no "use client".
+ * Where the card for an article group sends a visitor. The article card (a client component), the
+ * homepage JSON-LD and the homepage Markdown twin (server code, which cannot call functions exported
+ * by a client module) all call this, so the homepage "Latest articles" has one rule. It is not the
+ * only copy in the codebase: the /articles.md twin (page-markdown-lists.ts) and the related-writing
+ * list on a project page keep their own. Pure: no JSX, no "use client".
  *
  * `notesEnabled` defaults to the build flag; a test passes it to pin either setting.
  */

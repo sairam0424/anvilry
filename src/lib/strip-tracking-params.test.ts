@@ -1,5 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { stripTrackingParams } from "./strip-tracking-params";
+import { stripTrackingParams, TRACKING_PARAMS, TRACKING_PARAM_PREFIX } from "./strip-tracking-params";
+
+/** The names the docblock of strip-tracking-params.ts lists, spelled as it spells them. */
+const DOCUMENTED_NAMES = [
+  "r",
+  "ref",
+  "referrer",
+  "ref_src",
+  "source",
+  "triedRedirect",
+  "sd",
+  "fbclid",
+  "gclid",
+  "dclid",
+  "msclkid",
+  "twclid",
+  "yclid",
+  "igshid",
+  "mc_cid",
+  "mc_eid",
+  "mkt_tok",
+  "_hsenc",
+  "_hsmi",
+  "showWelcomeOnShare",
+];
 
 describe("stripTrackingParams", () => {
   it("cleans the Substack share link the homepage article list used to carry", () => {
@@ -10,30 +34,29 @@ describe("stripTrackingParams", () => {
     ).toBe("https://open.substack.com/pub/sairam0000/p/i-built-trelix-because-i-was-tired");
   });
 
-  it.each([
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_term",
-    "utm_content",
-    "utm_anything_new",
-    "UTM_Source",
-    "r",
-    "ref",
-    "referrer",
-    "source",
-    "triedRedirect",
-    "sd",
-    "fbclid",
-    "gclid",
-    "mc_cid",
-    "mc_eid",
-    "showWelcomeOnShare",
-    "msclkid",
-    "igshid",
-  ])("removes the tracking parameter %s", (name) => {
+  it("lists exactly the parameters its docblock names: adding or dropping one must change this test", () => {
+    expect(DOCUMENTED_NAMES).toHaveLength(20);
+    expect([...TRACKING_PARAMS].sort()).toEqual(DOCUMENTED_NAMES.map((n) => n.toLowerCase()).sort());
+    expect(TRACKING_PARAM_PREFIX).toBe("utm_");
+  });
+
+  it.each([...TRACKING_PARAMS])("removes %s, whatever the letter case or percent-encoding of its name", (name) => {
+    const spellings = [name, name.toUpperCase(), `${name[0].toUpperCase()}${name.slice(1)}`, encodeURIComponent(name).replace(/_/g, "%5F")];
+    for (const spelling of spellings) {
+      expect(stripTrackingParams(`https://example.com/post?keep=1&${spelling}=abc`), spelling).toBe("https://example.com/post?keep=1");
+    }
+  });
+
+  it.each(DOCUMENTED_NAMES)("removes %s in the spelling the documentation gives it", (name) => {
     expect(stripTrackingParams(`https://example.com/post?${name}=abc`)).toBe("https://example.com/post");
   });
+
+  it.each(["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_anything_new", "UTM_Source"])(
+    "removes %s: every name that starts with utm_",
+    (name) => {
+      expect(stripTrackingParams(`https://example.com/post?${name}=abc`)).toBe("https://example.com/post");
+    },
+  );
 
   it("removes a tracking parameter that has no value, and every repeat of one", () => {
     expect(stripTrackingParams("https://example.com/post?ref&r=1&r=2")).toBe("https://example.com/post");

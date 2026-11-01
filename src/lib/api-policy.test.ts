@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   API_V1_BASE,
   API_VERSION,
+  BATCH_MAX_BODY_BYTES,
+  BATCH_MAX_REQUESTS,
+  BATCH_PATH,
   DEPRECATIONS,
   DEPRECATION_NOTICE_DAYS,
   RATE_LIMIT_POLICY,
@@ -53,5 +56,15 @@ describe("the published policy", () => {
     expect(versioning).toContain(`${DEPRECATION_NOTICE_DAYS} days`);
     const limits = RATE_LIMIT_POLICY_TEXT.join(" ");
     expect(limits).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+  });
+});
+
+describe("the batch limits", () => {
+  it("sits under the versioned base and bounds both operations and body size", () => {
+    expect(BATCH_PATH).toBe(`${API_V1_BASE}/batch`);
+    expect(Number.isInteger(BATCH_MAX_REQUESTS)).toBe(true);
+    expect(BATCH_MAX_REQUESTS).toBeGreaterThan(1);
+    expect(BATCH_MAX_REQUESTS).toBeLessThanOrEqual(100);
+    expect(BATCH_MAX_BODY_BYTES).toBeGreaterThanOrEqual(BATCH_MAX_REQUESTS * 64);
   });
 });

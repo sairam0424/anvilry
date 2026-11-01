@@ -17,6 +17,13 @@ export const API_VERSION_HEADER = "API-Version";
 /** Base path of the versioned JSON API. Unversioned /api/* paths are aliases of version 1. */
 export const API_V1_BASE = "/api/v1";
 
+/** The one write-shaped route: a read-only batch of /api/v1 GET operations. */
+export const BATCH_PATH = `${API_V1_BASE}/batch`;
+
+/** Most operations one batch may carry, and the largest request body it accepts, in bytes. */
+export const BATCH_MAX_REQUESTS = 25;
+export const BATCH_MAX_BODY_BYTES = 16_384;
+
 /** Minimum days between announcing a deprecation and removing the deprecated surface. */
 export const DEPRECATION_NOTICE_DAYS = 180;
 

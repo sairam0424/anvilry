@@ -24,6 +24,13 @@ export default defineConfig({
     // Setting it here is deterministic regardless of the calling shell, and scoped to
     // the Vitest worker only — the separate `next build` process still runs in production.
     env: { NODE_ENV: "test" },
+    // `vitest run` is the first step of the Vercel build, which runs the whole suite in parallel on
+    // a loaded container. The first test of a DOM file cold-imports a large module graph (pages,
+    // content layer, OpenAPI document) and can take far longer than vitest's 5 s default there,
+    // although it takes well under a second on a quiet machine. A generous ceiling costs nothing
+    // when tests are fast and turns a spurious deploy failure into a pass; a real hang still fails.
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
     projects: [
       {
         extends: true,

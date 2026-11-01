@@ -83,6 +83,14 @@ describe("jsonResponse and listResponse", () => {
     expect(await res.json()).toEqual({ a: 1 });
   });
 
+  it("adds the headers it is given without dropping the content type", async () => {
+    const res = jsonResponse({ a: 1 }, { "Cache-Control": "no-store" });
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(res.headers.get("content-type")).toBe(
+      "application/json; charset=utf-8",
+    );
+  });
+
   it("wraps a list as { count, items } with a count that matches", async () => {
     expect(await listResponse(["x", "y"]).json()).toEqual({
       count: 2,

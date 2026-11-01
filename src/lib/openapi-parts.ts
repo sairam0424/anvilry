@@ -72,18 +72,24 @@ const ERROR_DESCRIPTIONS: Record<number, string> = {
   400: "The request is malformed: a missing or invalid parameter, or an API-Version this server does not serve.",
   404: "No route or content item exists at this path.",
   405: "The route exists but not for this HTTP method; the Allow header lists the methods it accepts.",
+  413: "The request body is larger than the route accepts; the operation description gives the limit.",
   406: "The Accept header asks for a format this route cannot produce.",
   429: "This client is over its request budget; wait for the number of seconds in Retry-After.",
   500: "The server failed while handling a valid request.",
 };
 
-/** A typed JSON error response for each requested status, all referencing the Error schema. */
+/**
+ * A typed JSON error response for each requested status, all referencing the Error schema. An
+ * operation whose status means something more specific than the shared wording (the batch's 413
+ * names its two limits) passes its own text in `overrides`.
+ */
 export function errorResponses(
   statuses: readonly number[],
+  overrides: Readonly<Record<number, string>> = {},
 ): Record<string, OpenApiResponse> {
   const responses: Record<string, OpenApiResponse> = {};
   for (const status of statuses) {
-    const description = ERROR_DESCRIPTIONS[status];
+    const description = overrides[status] ?? ERROR_DESCRIPTIONS[status];
     if (!description)
       throw new Error(`errorResponses: no description for status ${status}`);
     const headers: Record<string, OpenApiHeader> = {

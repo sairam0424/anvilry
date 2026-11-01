@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BATCH_PATH } from "@/lib/api-policy";
 import { allArticles, allNotes, allProjects, allWork } from "@/lib/content";
 import { buildResumeJson } from "@/lib/resume-json";
 import { SITE_URL } from "@/lib/site-url";
@@ -30,8 +31,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("route coverage", () => {
-  it("has a handler for every documented path and documents every handler", () => {
-    expect(Object.keys(ROUTES).sort()).toEqual(Object.keys(v1Paths).sort());
+  it("has a handler for every documented GET path and documents every handler", () => {
+    const documentedGets = Object.keys(v1Paths).filter((p) => v1Paths[p].get);
+    expect(Object.keys(ROUTES).sort()).toEqual(documentedGets.sort());
+  });
+
+  it("documents one more path, the batch endpoint, which only takes POST and is tested in batch/route.test.ts", () => {
+    const others = Object.keys(v1Paths).filter((p) => !v1Paths[p].get);
+    expect(others).toEqual([BATCH_PATH]);
+    expect(Object.keys(v1Paths[BATCH_PATH])).toEqual(["post"]);
   });
 });
 

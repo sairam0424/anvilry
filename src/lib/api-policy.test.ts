@@ -4,6 +4,7 @@ import {
   API_VERSION,
   BATCH_MAX_BODY_BYTES,
   BATCH_MAX_REQUESTS,
+  BATCH_MAX_RESPONSE_BYTES,
   BATCH_PATH,
   DEPRECATIONS,
   DEPRECATION_NOTICE_DAYS,
@@ -59,6 +60,21 @@ describe("the published policy", () => {
     // The batch route carries many operations in one request; the policy must say how that is counted.
     expect(limits).toContain(`${BATCH_PATH} counts as one request`);
     expect(limits).toContain(`up to ${BATCH_MAX_REQUESTS} operations`);
+  });
+});
+
+describe("the published batch limits", () => {
+  // These literals are written out on purpose. They are numbers clients and the public docs rely on,
+  // so changing one must fail a test and be a deliberate, reviewed edit, not a quiet change of a constant.
+  it("are 25 operations, a 16384-byte request and a 1048576-byte answer", () => {
+    expect(BATCH_MAX_REQUESTS).toBe(25);
+    expect(BATCH_MAX_BODY_BYTES).toBe(16384);
+    expect(BATCH_MAX_RESPONSE_BYTES).toBe(1048576);
+  });
+
+  it("keep the answer cap above the request cap, in whole bytes", () => {
+    expect(Number.isInteger(BATCH_MAX_RESPONSE_BYTES)).toBe(true);
+    expect(BATCH_MAX_RESPONSE_BYTES).toBeGreaterThan(BATCH_MAX_BODY_BYTES);
   });
 });
 

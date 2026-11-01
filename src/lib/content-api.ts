@@ -58,10 +58,10 @@ export function parseTextParam(raw: string | null): string | null {
   return value && value.length <= MAX_TEXT_PARAM_LENGTH ? value : null;
 }
 
-export function jsonResponse(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    headers: { "Content-Type": JSON_CONTENT_TYPE },
-  });
+export function jsonResponse(body: unknown, headers: HeadersInit = {}): Response {
+  const merged = new Headers(headers);
+  merged.set("Content-Type", JSON_CONTENT_TYPE);
+  return new Response(JSON.stringify(body), { headers: merged });
 }
 
 /** Every list route answers `{ count, items }`, and `count` is always `items.length`. */

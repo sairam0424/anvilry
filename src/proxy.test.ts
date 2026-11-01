@@ -342,3 +342,86 @@ describe("proxy — OPTIONS on read-only public paths", () => {
     expect(res.headers.get("x-middleware-next")).toBe("1");
   });
 });
+
+describe("proxy — the batch endpoint is the one public POST besides MCP", () => {
+  const BATCH = "/api/v1/batch";
+  let nextIp = 0;
+  const send = (path: string, method: string, headers: Record<string, string> = {}, ip = `198.18.0.${++nextIp}`) =>
+    proxy(
+      new NextRequest(`https://anvilry.vercel.app${path}`, {
+        method,
+        headers: { "x-vercel-forwarded-for": ip, ...headers },
+      }),
+    );
+
+  it("lets a POST through to the route, stamped with the version and the budget", async () => {
+    const res = await send(BATCH, "POST");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-middleware-next")).toBe("1");
+    expect(res.headers.get("API-Version")).toBe("1");
+    expect(res.headers.get("RateLimit-Remaining")).toBe("299");
+  });
+
+  it("counts a batch as one request against the budget", async () => {
+    const ip = "198.18.1.1";
+    await send(BATCH, "POST", {}, ip);
+    const second = await send(BATCH, "POST", {}, ip);
+    expect(second.headers.get("RateLimit-Remaining")).toBe("298");
+  });
+
+  it("answers GET, HEAD, PUT, PATCH and DELETE with the shared JSON 405 that advertises POST", async () => {
+    for (const method of ["GET", "HEAD", "PUT", "PATCH", "DELETE"]) {
+      const res = await send(BATCH, method);
+      expect(res.status, method).toBe(405);
+      expect(res.headers.get("Allow"), method).toBe("POST, OPTIONS");
+      if (method !== "HEAD") {
+        const body = await res.json();
+        expect(body, method).toMatchObject({ code: "method_not_allowed", status: 405 });
+        expect(body.hint, method).toContain("POST, OPTIONS");
+      }
+    }
+  });
+
+  it("answers a preflight with 204 and the Allow list of the batch endpoint, without spending budget", async () => {
+    const ip = "198.18.2.2";
+    const preflight = await send(BATCH, "OPTIONS", {}, ip);
+    expect(preflight.status).toBe(204);
+    expect(preflight.headers.get("Allow")).toBe("POST, OPTIONS");
+    expect(preflight.headers.get("API-Version")).toBe("1");
+    expect(preflight.headers.get("x-middleware-next")).toBeNull();
+    const after = await send(BATCH, "POST", {}, ip);
+    expect(after.headers.get("RateLimit-Remaining")).toBe("299");
+  });
+
+  it("still rejects another API-Version on a POST with the JSON 400", async () => {
+    const res = await send(BATCH, "POST", { "API-Version": "2" });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "invalid_request" });
+  });
+
+  it("answers 429 to a POST once the budget is spent", async () => {
+    const ip = "198.18.3.3";
+    for (let i = 0; i < 300; i++) await send(BATCH, "POST", {}, ip);
+    const res = await send(BATCH, "POST", {}, ip);
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toMatch(/^[1-9]\d*$/);
+  });
+
+  it("treats a trailing slash like the batch path itself", async () => {
+    expect((await send(`${BATCH}/`, "POST")).status).toBe(200);
+    expect((await send(`${BATCH}/`, "GET")).headers.get("Allow")).toBe("POST, OPTIONS");
+  });
+
+  it("changes nothing for the other read-only paths, the MCP endpoint included", async () => {
+    for (const path of ["/api/v1/projects", `${BATCH}/extra`, "/api/resume.json", "/llms.txt"]) {
+      const post = await send(path, "POST");
+      expect(post.status, path).toBe(405);
+      expect(post.headers.get("Allow"), path).toBe("GET, HEAD, OPTIONS");
+      expect((await send(path, "OPTIONS")).headers.get("Allow"), path).toBe("GET, HEAD, OPTIONS");
+      expect((await send(path, "GET")).headers.get("x-middleware-next"), path).toBe("1");
+    }
+    expect((await send("/api/mcp/mcp", "POST")).headers.get("x-middleware-next")).toBe("1");
+    expect((await send("/api/mcp/mcp", "OPTIONS")).headers.get("x-middleware-next")).toBe("1");
+  });
+});
+

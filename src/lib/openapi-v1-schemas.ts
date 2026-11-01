@@ -1,4 +1,9 @@
-import { API_VERSION } from "@/lib/api-policy";
+import { API_VERSION, BATCH_MAX_REQUESTS } from "@/lib/api-policy";
+import {
+  BATCH_MAX_ID_LENGTH,
+  BATCH_MAX_PATH_LENGTH,
+  BATCH_PATH_PATTERN,
+} from "@/lib/batch";
 import { projectGroups } from "@/lib/content";
 import type { V1_RESOURCES } from "@/lib/content-api";
 import type { Json } from "@/lib/openapi";
@@ -264,5 +269,62 @@ export const V1_SCHEMAS: Record<string, Json> = {
       "Case studies and projects that match, case studies first.",
     ),
     skills: list(schemaRef("SkillMatch"), "Skill groups that match."),
+  }),
+  BatchRequestItem: {
+    ...object(
+      "One read-only operation of a batch.",
+      {
+        id: text(
+          "Your own label for the operation. It comes back unchanged on its result, so it must be unique within the batch.",
+          { minLength: 1, maxLength: BATCH_MAX_ID_LENGTH },
+        ),
+        method: text("The HTTP method. Only GET is accepted, and it is the default.", {
+          enum: ["GET"],
+          default: "GET",
+        }),
+        path: text(
+          "A GET route of the versioned API, with its query string if it takes one, for example /api/v1/projects/trelix or /api/v1/search?q=kafka. It must start with /api/v1, with no scheme, host, dot segments or percent-escapes in the path part.",
+          {
+            minLength: 1,
+            maxLength: BATCH_MAX_PATH_LENGTH,
+            pattern: BATCH_PATH_PATTERN,
+            examples: ["/api/v1/projects/trelix", "/api/v1/search?q=kafka"],
+          },
+        ),
+      },
+      ["id", "path"],
+    ),
+    additionalProperties: false,
+  },
+  BatchRequest: {
+    ...object("A batch of read-only operations, run together.", {
+      requests: {
+        ...list(
+          schemaRef("BatchRequestItem"),
+          `The operations to run, ${BATCH_MAX_REQUESTS} at most.`,
+        ),
+        minItems: 1,
+        maxItems: BATCH_MAX_REQUESTS,
+      },
+    }),
+    additionalProperties: false,
+  },
+  BatchResponseItem: object("The outcome of one operation of a batch.", {
+    id: text("The id the request item carried."),
+    status: prop("The HTTP status the operation would have answered on its own.", {
+      type: "integer",
+      minimum: 100,
+      maximum: 599,
+    }),
+    body: prop(
+      "What the operation's route answered, parsed: the same JSON as calling it directly, or the shared error object when it failed. Null when the answer was not JSON.",
+      { type: ["object", "null"], additionalProperties: true },
+    ),
+  }),
+  BatchResponse: object("The results of a batch.", {
+    responses: list(
+      schemaRef("BatchResponseItem"),
+      "One result per request item, in the order the items were sent.",
+    ),
   }),
 };

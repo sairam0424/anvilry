@@ -20,9 +20,15 @@ export const API_V1_BASE = "/api/v1";
 /** The one write-shaped route: a read-only batch of /api/v1 GET operations. */
 export const BATCH_PATH = `${API_V1_BASE}/batch`;
 
-/** Most operations one batch may carry, and the largest request body it accepts, in bytes. */
+/**
+ * Most operations one batch may carry, the largest request body it accepts and the largest answer
+ * it will send, both in bytes. The answer is capped because a batch counts as one request against
+ * the budget: without a ceiling, 25 copies of the largest route would be 25 requests' worth of
+ * traffic for one. A batch over the ceiling is refused whole (413), never truncated.
+ */
 export const BATCH_MAX_REQUESTS = 25;
 export const BATCH_MAX_BODY_BYTES = 16_384;
+export const BATCH_MAX_RESPONSE_BYTES = 1_048_576;
 
 /** Minimum days between announcing a deprecation and removing the deprecated surface. */
 export const DEPRECATION_NOTICE_DAYS = 180;

@@ -6,7 +6,7 @@ import { appendVary, negotiate, PRODUCES } from "@/lib/accept-negotiation";
 import { apiError } from "@/lib/api-error";
 import { API_VERSION, API_VERSION_HEADER, deprecationHeaders } from "@/lib/api-policy";
 import { classifyPath } from "@/lib/markdown-routing";
-import { isPublicApiPath } from "@/lib/public-api-paths";
+import { allowedMethods, isPublicApiPath } from "@/lib/public-api-paths";
 import { publicApiClientKey, publicApiLimiter, rateLimitHeaders } from "@/lib/public-api-limit";
 
 /**
@@ -109,8 +109,6 @@ function stamp(res: Response, req: NextRequest, rateLimit: [string, string][]): 
 }
 
 const MCP_PREFIX = "/api/mcp/";
-const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
-const READ_ALLOW = "GET, HEAD, OPTIONS";
 
 function servePublicApi(req: NextRequest): Response {
   const { pathname } = req.nextUrl;
@@ -125,21 +123,25 @@ function servePublicApi(req: NextRequest): Response {
     );
   }
 
+  // Which methods this path takes: reading, plus the one POST the table in public-api-paths.ts names.
+  const allowed = allowedMethods(pathname);
+  const allow = allowed.join(", ");
+
   // Preflight requests are not API calls and must never spend a client's budget. A prerendered
   // file would answer OPTIONS with a bare 405, contradicting the Allow list of our own 405, so
-  // the proxy answers for every read-only path; the MCP route has its own OPTIONS handling.
+  // the proxy answers for every path it governs; the MCP route has its own OPTIONS handling.
   if (req.method === "OPTIONS") {
     if (pathname.startsWith(MCP_PREFIX)) return stamp(negotiateMarkdown(req), req, []);
-    return stamp(new Response(null, { status: 204, headers: { Allow: READ_ALLOW } }), req, []);
+    return stamp(new Response(null, { status: 204, headers: { Allow: allow } }), req, []);
   }
 
-  // Everything public is read-only except the MCP endpoint, so say so in the shared error shape
-  // (a prerendered file would otherwise answer a bare, empty 405).
-  if (!pathname.startsWith(MCP_PREFIX) && !READ_METHODS.has(req.method)) {
+  // Everything public is read-only except the MCP endpoint and the batch endpoint, so say so in
+  // the shared error shape (a prerendered file would otherwise answer a bare, empty 405).
+  if (!pathname.startsWith(MCP_PREFIX) && !allowed.includes(req.method)) {
     return stamp(
       apiError(405, "method_not_allowed", "Method not allowed for this route.", {
-        hint: `Use one of: ${READ_ALLOW}.`,
-        headers: { Allow: READ_ALLOW },
+        hint: `Use one of: ${allow}.`,
+        headers: { Allow: allow },
       }),
       req,
       [],

@@ -57,6 +57,22 @@ describe("OpenAPI document", () => {
     expect(doc.externalDocs.url).toBe(`${SITE_URL}/developers`);
   });
 
+  it("describes the write-shaped routes truthfully: the introduction names every POST operation the document has, and no other", () => {
+    const posts = operations.filter((o) => o.method === "post").map((o) => o.path);
+    expect(posts.length).toBeGreaterThanOrEqual(2); // the MCP endpoint and the batch endpoint
+    const opening = doc.info.description.split(". ")[0];
+    expect(opening).not.toMatch(/everything here is a get/i);
+    expect(opening).toMatch(/read-only/i);
+    const words = ["no", "one", "two", "three", "four", "five"];
+    expect(opening).toContain(`plus ${words[posts.length]} POST route`);
+    for (const path of posts) expect(opening).toContain(path);
+    // Every path the sentence names is a real POST operation.
+    for (const named of opening.match(/\/api\/[A-Za-z0-9/_-]+/g) ?? []) expect(posts).toContain(named);
+    // And "read-only" is not a claim the document breaks: nothing in it writes.
+    const methods = new Set(operations.map((o) => o.method));
+    expect([...methods].filter((m) => !["get", "post"].includes(m))).toEqual([]);
+  });
+
   it("declares that no credentials are needed", () => {
     expect(doc.security).toEqual([]);
   });
@@ -251,5 +267,63 @@ describe("the public API contract on every operation", () => {
         }
       }
     }
+  });
+});
+
+/**
+ * The MCP operation's prose names the JSON-RPC codes and statuses the route answers with. Each one is
+ * read off the live route here, so the text cannot drift from the code again.
+ */
+describe("the MCP operation text matches what the route answers", () => {
+  const mcp = doc.paths["/api/mcp/mcp"].post as {
+    description: string;
+    responses: Record<string, { description: string }>;
+  };
+  const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" };
+
+  async function answer(body: string): Promise<{ status: number; code: number | undefined; raw: string }> {
+    const { POST } = await import("@/app/api/mcp/[transport]/route");
+    const res = await POST(new Request(`${SITE_URL}/api/mcp/mcp`, { method: "POST", headers, body }));
+    const raw = await res.text();
+    const data = raw.startsWith("event:") ? raw.split("\n").find((l) => l.startsWith("data:"))?.slice(5) : raw;
+    return { status: res.status, code: data ? JSON.parse(data).error?.code : undefined, raw };
+  }
+  const request = (method: string, params?: unknown) =>
+    JSON.stringify({ jsonrpc: "2.0", id: 1, method, ...(params === undefined ? {} : { params }) });
+
+  it("says a body that is not JSON is a parse error, and JSON that is not a JSON-RPC message is an invalid request", async () => {
+    const notJson = await answer("{not json");
+    const notRpc = await answer("{}");
+    expect(notJson.code).not.toBe(notRpc.code);
+    expect(String(mcp.responses["400"].description)).toContain(`${notJson.code} `);
+    expect(String(mcp.responses["400"].description)).toContain(`${notRpc.code} `);
+    // The two sentences name them the right way round.
+    expect(mcp.responses["400"].description).toMatch(new RegExp(`not valid JSON[^.]*\\(${notJson.code}[ ,]`));
+    expect(mcp.responses["400"].description).toMatch(new RegExp(`not a valid JSON-RPC[^.]*${notRpc.code}`));
+    for (const status of [notJson.status, notRpc.status]) expect(mcp.responses).toHaveProperty(String(status));
+  });
+
+  it("says an empty array and a batch with a malformed member are rejected whole", async () => {
+    const empty = await answer("[]");
+    const malformed = await answer(`[${request("tools/list")},${request("tools/call", {})}]`);
+    expect([empty.status, malformed.status]).toEqual([400, 400]);
+    expect(mcp.responses["400"].description).toContain(`${empty.code} `);
+    expect(mcp.responses["400"].description).toContain(`${malformed.code} `);
+    expect(mcp.responses["400"].description).toMatch(/whole array is rejected/);
+  });
+
+  it("says a request whose params do not fit its method, and an unknown method, are JSON-RPC errors inside a 200", async () => {
+    const badParams = await answer(request("tools/call", {}));
+    const unknownMethod = await answer(request("foo/bar"));
+    expect([badParams.status, unknownMethod.status]).toEqual([200, 200]);
+    expect(mcp.responses["200"].description).toContain(`${badParams.code} `);
+    expect(mcp.responses["200"].description).toContain(`${unknownMethod.code} `);
+    expect(mcp.responses["200"].description).toMatch(/isError/);
+  });
+
+  it("says a notification is answered 202 with no body", async () => {
+    const notification = await answer(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
+    expect(notification).toMatchObject({ status: 202, raw: "" });
+    expect(mcp.description).toMatch(/notification[^.]*202[^.]*no body/i);
   });
 });

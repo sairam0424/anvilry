@@ -1,4 +1,10 @@
-import { API_V1_BASE } from "@/lib/api-policy";
+import {
+  API_V1_BASE,
+  BATCH_MAX_BODY_BYTES,
+  BATCH_MAX_REQUESTS,
+  BATCH_MAX_RESPONSE_BYTES,
+  BATCH_PATH,
+} from "@/lib/api-policy";
 import {
   MAX_TEXT_PARAM_LENGTH,
   SLUG_PATTERN,
@@ -91,12 +97,31 @@ const textQueryParameter = (args: {
   schema: { type: "string", minLength: 1, maxLength: MAX_TEXT_PARAM_LENGTH },
 });
 
+/**
+ * One complete, valid batch body. /developers and llms.txt print it from the document, and
+ * openapi-v1-batch.test.ts runs it through the route, so the example every reader copies works.
+ * It is a variable and not an inline literal because the document type has no `example` on a
+ * request body media object (a response one does), and a variable is not excess-property checked.
+ */
+const BATCH_EXAMPLE_BODY = {
+  requests: [
+    { id: "profile", path: `${API_V1_BASE}/profile` },
+    { id: "trelix", method: "GET", path: `${API_V1_BASE}/projects/trelix` },
+    { id: "kafka", path: `${API_V1_BASE}/search?q=kafka` },
+  ],
+};
+const BATCH_REQUEST_MEDIA = {
+  schema: schemaRef("BatchRequest"),
+  example: BATCH_EXAMPLE_BODY,
+};
+
 /** Statuses a route can answer besides 200, always with 429 (from the proxy) and 500. */
 // The proxy answers 405 for any write to a read-only public path, so every v1 route lists it.
 const STATIC_ERRORS = [405, 429, 500] as const;
 const ITEM_ERRORS = [400, 404, 405, 429, 500] as const;
 const INPUT_ERRORS = [400, 405, 429, 500] as const;
 const DYNAMIC_ERRORS = [405, 429, 500] as const;
+const BATCH_ERRORS = [400, 405, 413, 429, 500] as const;
 
 function getOperation(args: {
   operationId: string;
@@ -107,6 +132,8 @@ function getOperation(args: {
   okDescription: string;
   errors: readonly number[];
   parameters?: OpenApiParameter[];
+  requestBody?: OpenApiOperation["requestBody"];
+  errorDescriptions?: Readonly<Record<number, string>>;
 }): OpenApiOperation {
   const {
     operationId,
@@ -117,6 +144,8 @@ function getOperation(args: {
     okDescription,
     errors,
     parameters = [],
+    requestBody,
+    errorDescriptions,
   } = args;
   return {
     operationId,
@@ -124,13 +153,14 @@ function getOperation(args: {
     description,
     tags: [tag],
     parameters: [apiVersionParameter(), ...parameters],
+    ...(requestBody && { requestBody }),
     responses: {
       "200": {
         description: okDescription,
         headers: successHeaders(),
         content: { "application/json": { schema: schemaRef(schema) } },
       },
-      ...errorResponses(errors),
+      ...errorResponses(errors, errorDescriptions),
       default: { $ref: "#/components/responses/Error" },
     },
   };
@@ -204,6 +234,25 @@ export function buildV1Paths(): Record<
         schema: "ApiIndex",
         okDescription: "The API index.",
         errors: STATIC_ERRORS,
+      }),
+    },
+    [BATCH_PATH]: {
+      post: getOperation({
+        operationId: "runBatch",
+        summary: `Run up to ${BATCH_MAX_REQUESTS} read-only operations in one request`,
+        description: `Runs up to ${BATCH_MAX_REQUESTS} read-only operations in one request, so an agent that needs many items can fetch them in bulk instead of looping. Send { requests: [{ id, path }] }: each path is a GET route under ${API_V1_BASE}/ with its query string if it takes one, such as ${API_V1_BASE}/projects/trelix or ${API_V1_BASE}/search?q=kafka, and id is your own label, unique within the batch. Validation is all-or-nothing and happens first: a malformed item, a duplicate id, a path outside ${API_V1_BASE}/, a batch inside a batch, more than ${BATCH_MAX_REQUESTS} items or a body over ${BATCH_MAX_BODY_BYTES} bytes rejects the whole batch (400, or 413 for size) and nothing runs. A batch that passes always answers 200 with { responses: [{ id, status, body }] } in request order. An item that fails has its own status and the shared error object as its body, 404 for a path no route matches or 500 if the server failed on it, and never affects the other items. The answer is capped at ${BATCH_MAX_RESPONSE_BYTES} bytes: a batch whose results would add up to more is refused whole with 413 and nothing is truncated, so ask for fewer or smaller operations. A batch counts as one request against the rate-limit budget whatever it carries, and the same operation listed twice is run once. Only GET operations of this API can be batched; the batch endpoint, the unversioned aliases and the MCP endpoint cannot.`,
+        tag: "API",
+        schema: "BatchResponse",
+        okDescription: "One result per request item, in request order.",
+        errors: BATCH_ERRORS,
+        errorDescriptions: {
+          413: `The batch is too large: its request body is over ${BATCH_MAX_BODY_BYTES} bytes, or the response it would produce is over ${BATCH_MAX_RESPONSE_BYTES} bytes. An oversized request is not read and an oversized response is refused whole, never truncated.`,
+        },
+        requestBody: {
+          required: true,
+          description: `A JSON object with a requests array of 1 to ${BATCH_MAX_REQUESTS} items, each { id, path } and optionally method GET, in a body of at most ${BATCH_MAX_BODY_BYTES} bytes. Send Content-Type: application/json.`,
+          content: { "application/json": BATCH_REQUEST_MEDIA },
+        },
       }),
     },
     [V1_RESOURCES.profile]: {

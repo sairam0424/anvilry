@@ -200,7 +200,7 @@ article has an `externalUrl` and all 7 distinct `linkedNote` values resolve to a
 
 `body: s.mdx()` is **not** a field of Project, Work, Note or Article. Each has a body-only sibling collection over the same glob: `ProjectBody`, `WorkBody`, `NoteBody`, `ArticleBody`, built by `bodyOnly()` from shared `PATTERNS` and registered as `projectBodies` / `workBodies` / `noteBodies` / `articleBodies` (`velite.config.ts:181-190`). Their records are `{ slug, body }`; `slug` is a plain `s.string()` there because the metadata collection over the same files already validates its format and uniqueness. `.velite/` therefore holds eight JSON files, and `src/lib/content-bodies.ts` is the only reader of the four `*Bodies.json`.
 
-Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (9 tests; importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs` (`MDX_MARKER` at `scripts/bundle-budget.mjs:96`, the failing check at `:168-177`). Measured on the v3.16.0 tree: first-load JS for `/` was 976,936 B, against 1,188,350 B at the v3.15.0 cut (the peak before the split was 1,298,585 B), which left 359,064 B under the then-current `MAX_FIRST_LOAD_BYTES` (1_336_000). After v3.16.0 (shipped in v3.16.1) the prune of three low-priority open-source items (#333: two project cards and the Shop.this feed entry) took `/` to 972,887 B, the same on CI and on a local macOS build, and the ceiling was lowered to 988_000. A build at HEAD `91381b5` (`next build` over the existing `.next`, not a wiped one) measures `/` at 966,794 B, the same as at commit `1f7fb7e` (973,291 B before the dependency security batch, which took 6,497 B off; 972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx` line 26 and 371 B more after the agent-readiness change), so 21,206 B (about 2.1%) of headroom remain: a growth allowance, not jitter room, since #333 shed 4,049 B with two cards and their graph nodes.
+Why: `src/lib/content.ts` is imported by about a dozen client modules, and a bundler cannot tree-shake a JSON module, so a body on the metadata collections shipped in the shared first-load chunk of every route (about 300 KB across the four collections, about 11 KB per project card). Guards: `src/lib/content-bodies.test.ts` (9 tests; importer allowlist) and the compiled-MDX marker in `scripts/bundle-budget.mjs` (`MDX_MARKER` at `scripts/bundle-budget.mjs:96`, the failing check at `:168-177`). Measured on the v3.16.0 tree: first-load JS for `/` was 976,936 B, against 1,188,350 B at the v3.15.0 cut (the peak before the split was 1,298,585 B), which left 359,064 B under the then-current `MAX_FIRST_LOAD_BYTES` (1_336_000). After v3.16.0 (shipped in v3.16.1) the prune of three low-priority open-source items (#333: two project cards and the Shop.this feed entry) took `/` to 972,887 B, the same on CI and on a local macOS build, and the ceiling was lowered to 988_000. A build at HEAD `953db82` (`next build` over the existing `.next`, not a wiped one, then `node scripts/bundle-budget.mjs`) measures `/` at 966,798 B, +4 B (it was 966,794 B at `91381b5` and in v3.17.0, the same as at commit `1f7fb7e`; 973,291 B before the dependency security batch, which took 6,497 B off; 972,887 B plus 33 B from the one-sentence rewrite in `content/projects/anvilry.mdx` line 26 and 371 B more after the agent-readiness change), so 21,202 B (about 2.1%) of headroom remain: a growth allowance, not jitter room, since #333 shed 4,049 B with two cards and their graph nodes.
 
 ## Content inventory
 
@@ -451,7 +451,7 @@ drafts dropped, newest first, regardless of the flag — only the `/notes` route
 `notes/[slug]/opengraph-image.tsx` use it, because `cacheComponents` needs a non-empty
 `generateStaticParams`). `allNotes` (`:66`) is `publishedNotes` when `NOTES_ENABLED` is true and
 `[]` otherwise; `hasNotes`, `getNote`, `inkforgeNotes` and `inkforgeArticles` derive from it. So
-with the default (`NEXT_PUBLIC_NOTES_ENABLED` unset) `llms.txt` (`src/lib/llms-txt.ts:55-63`, `:148-149`),
+with the default (`NEXT_PUBLIC_NOTES_ENABLED` unset) `llms.txt` (`src/lib/llms-txt.ts:58-66`, `:152-153`),
 `feed.xml` (`src/app/feed.xml/route.ts:24`), the MCP `list_all_content`/`get_content_item` tools
 (`src/lib/mcp-tools.ts`), the chat corpus, sitemap (`src/app/sitemap.ts:43-60`) and both raw-`.md`
 handler sets, the `/api/v1/notes` routes (an empty list, and a 404 for every slug) and the `notes` page twin (the Markdown 404) can no longer publish a note the `/notes` pages 404. `allArticles` (`:90-93`) also drops
@@ -479,10 +479,10 @@ per note, and all resolve to an existing note slug (the previously dangling targ
 Nothing enforces resolution: `linkedNote` is a bare `s.string()` (`velite.config.ts:160`), and no
 test asserts it (`notes-dark.test.ts` only re-implements the note-only predicate). A future typo
 would surface only when the flag is on, as a 404 redirect target. The consumers build the href
-unconditionally when `NOTES_ENABLED` — `src/components/article-group-card.tsx:21-22`,
+unconditionally when `NOTES_ENABLED` — `src/lib/article-href.ts:19-20` (the rule the article card, the homepage JSON-LD list and the homepage Markdown twin share),
 `src/app/articles/page.tsx:199-200` (and `:272`), `src/components/related-writing.tsx:13-14`, and the
-`redirect()` at `src/app/articles/[slug]/page.tsx:74-75`. `src/lib/llms-txt.ts:46-48` builds the same
-`/notes/<linkedNote>` URL for the AI-discovery file. With notes on, `tombstone-v1-2-devto` (whose
+`redirect()` at `src/app/articles/[slug]/page.tsx:74-75`. `src/lib/llms-txt.ts:49-51` builds the same
+`/notes/<linkedNote>` URL for the AI-discovery file. The homepage reads one selection of articles: `homeArticleGroups()` (`src/lib/home-articles.ts:14-17`, the newest `HOME_ARTICLE_COUNT` = 2 groups after grouping, none while articles are disabled) feeds the writing preview, the latest-articles JSON-LD list and the homepage Markdown twin, and an article's JSON-LD entity URL loses tracking parameters (`stripTrackingParams`, `src/lib/strip-tracking-params.ts:60`) while the visible link keeps what the author wrote; the `/articles.md` twin (`page-markdown-lists.ts`) and `related-writing.tsx` still keep their own copy of the notes-link rule. With notes on, `tombstone-v1-2-devto` (whose
 `externalUrl` equals the note URL) yields a feed item whose `link`/`guid`
 (`src/app/feed.xml/route.ts:34-35`) duplicates the note's own item.
 
@@ -512,8 +512,8 @@ the native-inline render path is never reached.
 `constraints` and `tradeoffs` (`:36-63`, id `work:<slug>:constraints|tradeoffs`, titled
 "Constraints"/"Tradeoffs", empty `tags`). Today that is 63 project entries + 10 work entries = 73
 (`DECISION_COUNTS`, `:72-76`); `decisionsByTag(tag)` is at `:67`. Consumers: the `/decisions` page
-(`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:206-227`,
-registered at `src/app/api/mcp/[transport]/route.ts:110`, documented at `src/app/mcp/page.tsx:57`).
+(`src/app/decisions/page.tsx:7`), the MCP `list_decisions` tool (`src/lib/mcp-tools.ts:354-377`,
+registered at `src/app/api/mcp/[transport]/route.ts:127`, documented at `src/app/mcp/page.tsx:62`).
 `src/lib/decisions.test.ts` (build-chained) enforces bidirectional coverage — an entry per populated
 project decision (`:16`) and per populated work field (`:31`), verbatim title/body tracing to real
 content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching counts (`:88`) and
@@ -638,9 +638,9 @@ content (`:44`), valid Classic deep-links (`:75`), unique ids (`:83`), matching 
   `Accept: text/markdown` at the HTML URL reaches the same function through `src/proxy.ts` (see
   [02](./02-api-routes.md)); every response carries `Content-Type: text/markdown`, `Vary: Accept`, a
   revalidating `Cache-Control` and `Link: <…>; rel="canonical"` (`markdownResponse`).
-- `src/lib/llms-txt.ts:141-159` advertises `<BASE>/<collection>/<slug>.md` for work, projects, notes
-  (`:148-149`, "(none yet)" while dark), "Articles (native only)" (`:151-155`), which filters on
-  `!a.externalUrl` (`:153`), and, since the API-policy change, a "Pages" list of the `.md` URL of each page twin that exists (`:157-158`; `articles` only when one is published, `notes` only when notes are on) rather than `source === "native"` — the same set today (only
+- `src/lib/llms-txt.ts:145-163` advertises `<BASE>/<collection>/<slug>.md` for work, projects, notes
+  (`:152-153`, "(none yet)" while dark), "Articles (native only)" (`:155-159`), which filters on
+  `!a.externalUrl` (`:157`), and, since the API-policy change, a "Pages" list of the `.md` URL of each page twin that exists (`:161-162`; `articles` only when one is published, `notes` only when notes are on) rather than `source === "native"` — the same set today (only
   `how-dns-works`, and that is empty while notes are dark). Cross-posted articles are body-less, but
   their `.md` is no longer empty text: when the file has no body, `describeArticle` (`markdown-content.ts:43`)
   returns the title, summary, source and date, the external and canonical URLs and the tags.

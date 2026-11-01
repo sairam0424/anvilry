@@ -15,12 +15,12 @@ version: v3.17.0
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
 > `requireAdmin`, the telemetry page); overlay voice entry points are gated by `isVoiceViewActive`; the
 > bundle-budget gate asserts `MIN_ROUTES = 17` and verified-dead components were removed (`article-card.tsx`,
-> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`). v3.16.1 adds three more, all landing here: (23) the removal of three low-priority open-source items takes the projects collection from 20 to 18 (16 of them public) and the graph from 25 nodes to 23 and from 28 edges to 24 (subsystem 9, 3D / WebGL; the cards and the feed-allowlist entries themselves are subsystem 1, `14-subsystems.md`); (24) the production gate, a Vercel Deployment Check that holds a new production deployment off the production domain until the `Post-deploy smoke` commit status is green, with a GitHub issue opened when a smoke step does not succeed (subsystem 10, build & deploy); and (25) the bundle gate's `MAX_FIRST_LOAD_BYTES` of 988,000 B (was 1,336,000 B) together with a bounded, retried E2E browser install (subsystem 10). v3.17.0 adds two more, both landing here: (26) the agent-readable surface, whose `src/proxy.ts` job beside the `/admin` gate is subsystem 7 and whose six extra smoke checks (26 in all, was 20) are subsystem 10; and (27) the dependency security release — Next 16.3.5 to 16.4.3, the MCP SDK pin 1.32.0, fourteen pnpm overrides (twelve before), `vite` declared, the search-index script that works under Vercel's adapter layout, and `/` at 966,794 B of first-load JS (subsystem 10). The unreleased (28), the API-policy change, lands in three places: the proxy's third job beside the `/admin` gate and the Markdown negotiation (subsystem 7), the public API contract with its versioned JSON API, limiter and catalog (subsystem 11), and the Markdown twins of ten pages (subsystem 12); it also takes the smoke gate to 30 checks (subsystem 10).
+> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`). v3.16.1 adds three more, all landing here: (23) the removal of three low-priority open-source items takes the projects collection from 20 to 18 (16 of them public) and the graph from 25 nodes to 23 and from 28 edges to 24 (subsystem 9, 3D / WebGL; the cards and the feed-allowlist entries themselves are subsystem 1, `14-subsystems.md`); (24) the production gate, a Vercel Deployment Check that holds a new production deployment off the production domain until the `Post-deploy smoke` commit status is green, with a GitHub issue opened when a smoke step does not succeed (subsystem 10, build & deploy); and (25) the bundle gate's `MAX_FIRST_LOAD_BYTES` of 988,000 B (was 1,336,000 B) together with a bounded, retried E2E browser install (subsystem 10). v3.17.0 adds two more, both landing here: (26) the agent-readable surface, whose `src/proxy.ts` job beside the `/admin` gate is subsystem 7 and whose six extra smoke checks (26 in all, was 20) are subsystem 10; and (27) the dependency security release — Next 16.3.5 to 16.4.3, the MCP SDK pin 1.32.0, fourteen pnpm overrides (twelve before), `vite` declared, the search-index script that works under Vercel's adapter layout, and `/` at 966,794 B of first-load JS (subsystem 10). The unreleased (28), the API-policy change, lands in three places: the proxy's third job beside the `/admin` gate and the Markdown negotiation (subsystem 7), the public API contract with its versioned JSON API, limiter and catalog (subsystem 11), and the Markdown twins of ten pages (subsystem 12); it also takes the smoke gate to 30 checks (subsystem 10). Its later pass lands in four more places: the batch endpoint (subsystem 13), the JSON-LD lists and the hardened serialiser (subsystem 14), the source of the `anvilry` command-line client and the flag that keeps the site's wording about it honest (subsystem 15) and the split of `/developers` into section components (subsystem 16); its typed MCP parameters and JSON-RPC errors are subsystem 5 in `14-subsystems.md`.
 > Continues [`14-subsystems.md`](./14-subsystems.md), which maps subsystems 1–6 (content pipeline · view
 > system · chat/LLM · voice · MCP · telemetry).
 
-**Scope:** the "how the parts connect" layer — **subsystems 7–12 of 12** (auth & security surface · feature
-flags · 3D / WebGL · build & deploy · public API contract · page Markdown twins), plus the cross-subsystem coupling table, the entry-point cheat sheet,
+**Scope:** the "how the parts connect" layer — **subsystems 7–16 of 16** (auth & security surface · feature
+flags · 3D / WebGL · build & deploy · public API contract · page Markdown twins · batch endpoint · structured data (JSON-LD) · the `anvilry` CLI package and its publish flag · the `/developers` section architecture), plus the cross-subsystem coupling table, the entry-point cheat sheet,
 and the UNVERIFIED / carried-forward ledger covering **both** parts. Every fact below is sourced from
 sections 01–13 of this index (each of which cites its own reads) or from a direct read recorded inline.
 **Files indexed:** none — this is a synthesis pass; it maps flows, entry/exit points, failure modes and the
@@ -40,12 +40,17 @@ subsystem; "exit point" is the last thing the subsystem produces before somethin
 | 10 | Build & deploy | `git push` (CI runs on `branches: ["**"]`), a PR into `develop` or `main`, or a manual `make deploy-preview` / `make deploy-prod` | A Vercel Preview URL (from `develop`) or the production deployment (from `main`) whose build also emits the Pagefind index, five live cron schedules, and one `[config]` cold-start line per server process |
 | 11 | Public API contract (versioned JSON API, limiter, catalog) | Any request for a path `isPublicApiPath` accepts — the `/api/v1` routes, the unversioned `/api/resume.json` and `/api/github/stats`, the MCP endpoint, the discovery files and the Markdown twins — which `src/proxy.ts` stamps and counts before the route answers; a client reads the contract at `/api/v1`, `/openapi.json`, `/developers` and `/.well-known/api-catalog` | The route's own answer carrying `API-Version: 1` and the `RateLimit` fields, or a JSON 400 / 405 / 429 in the shared error shape, with `Retry-After` on the 429 |
 | 12 | Markdown twins of pages | `GET /<page>.md` (rewritten to `/api/md/pages/<page>`) or `Accept: text/markdown` on `/<page>`, for one of ten pages: about, articles, contact, decisions, developers, mcp, notes, privacy, projects, work | A Markdown document with one `#` heading, absolute links and a footer naming the HTML page; or the Markdown 404 (`/notes` while the notes flag is off, `/articles` with nothing published); or the shared JSON 500 if a prose page cannot be converted |
+| 13 | Batch endpoint (`POST /api/v1/batch`) | `POST /api/v1/batch` with `{ "requests": [ { "id", "method"?, "path" } ] }`, `Content-Type: application/json`, which `src/proxy.ts` counts as one request of the 300 / 60 s budget before `src/app/api/v1/batch/route.ts` reads the body | `200 { "responses": [ { id, status, body } ] }` in request order, each item with the status its own `/api/v1` route answered; or, with nothing run, a 400 `invalid_request`, a 413 `payload_too_large` (body over 16,384 bytes, or an answer over 1,048,576), a JSON 405 or a 429 |
+| 14 | Structured data (JSON-LD) | A crawler or agent reading the HTML of `/`, `/developers`, `/mcp` or an article or note page | `<script type="application/ld+json">` blocks: three `ItemList`s on `/`, a `WebAPI` and a `TechArticle` on `/developers`, a `WebAPI` on `/mcp`, all serialised by `safeJsonLd` |
+| 15 | The `anvilry` CLI package and its publish flag | A terminal running `anvilry <command>` (`npx anvilry`, now that the package is on npm; from a clone, `node cli/bin/anvilry.mjs`) and `src/lib/developer-tools.ts`, the site's one descriptor of the CLI | JSON on stdout, errors on stderr, an exit code 0 to 3; on the site, the CLI section of `/developers`, its Markdown twin and the CLI line of `llms.txt`, all worded from `CLI.published` |
+| 16 | The `/developers` section architecture | `GET /developers`, or `GET /developers.md` and `Accept: text/markdown` on `/developers` | An HTML page, or a Markdown document that contains everything the HTML shows, both made from the components listed in `src/app/developers/sections/index.ts` |
 
 ## Coverage
 
-**Mapped in this file (6 of 12):** 7. auth & security surface · 8. feature flags · 9. 3D / WebGL ·
-10. build & deploy · 11. public API contract · 12. page Markdown twins — followed by the cross-subsystem coupling table (28 multi-site contracts), the
-entry-point cheat sheet ("if you want to change X, start at file Y", ~54 tasks), and the UNVERIFIED /
+**Mapped in this file (10 of 16):** 7. auth & security surface · 8. feature flags · 9. 3D / WebGL ·
+10. build & deploy · 11. public API contract · 12. page Markdown twins · 13. batch endpoint · 14. structured data (JSON-LD) ·
+15. the `anvilry` CLI package and its publish flag · 16. the `/developers` section architecture — followed by the cross-subsystem coupling table (36 multi-site contracts), the
+entry-point cheat sheet ("if you want to change X, start at file Y", ~59 tasks), and the UNVERIFIED /
 carried-forward ledger for both parts.
 **Subsystems 1–6 are in [`14-subsystems.md`](./14-subsystems.md):** content pipeline · view system ·
 chat/LLM request path · voice pipeline · MCP server · telemetry & observability.
@@ -88,7 +93,7 @@ GET /admin/telemetry
         then `await connection()` (request-time, required by cacheComponents)                    :478
 ```
 
-One predicate, three callers: `proxy()` (`src/proxy.ts:166-175`), `requireAdmin(req)` (`admin-auth.ts:48-50`, whose deny
+One predicate, three callers: `proxy()` (`src/proxy.ts:173-182`), `requireAdmin(req)` (`admin-auth.ts:48-50`, whose deny
 response adds `WWW-Authenticate` + `Cache-Control: no-store`, `:61-69`), and the telemetry page (`:470`). The
 Proxy docblock (`proxy.ts:12-22`) states the runtime and the layering plainly: Node by default (the Next docs
 say `runtime` is not configurable in Proxy files — `file-conventions/proxy.md`, § Runtime, in the docs bundled under `node_modules/next/dist/docs/`),
@@ -130,20 +135,24 @@ any request whose Accept header mentions text/markdown   (the conditional matche
            "text/markdown" → rewrite to /api/md/home, /api/md/<kind>/<slug> or /api/md/pages/<page>   :71-72
                              (not-found → /api/md/not-found?p=<path>, a real 404, Markdown body)   :73-75
            null on a negotiated page → 406 text/plain, Vary: Accept, Cache-Control: no-store       :80-89
-           otherwise HTML → NextResponse.next(), Vary: Accept appended on negotiated routes        :92-94
+           otherwise HTML → NextResponse.next(), Vary: Accept appended on negotiated routes        :92-94   (the proxy's own response)
 ```
 
-The matcher entry is conditional so that browsers and crawlers, which never ask for Markdown, never invoke the proxy for it (the other matcher entries wake it for the admin gate and the public API paths, below). The decision logic lives in two pure modules with their own tests (`accept-negotiation.test.ts`, `markdown-routing.test.ts`), and `src/proxy.test.ts` pins the outcomes. The static half of the same contract is in `next.config.ts` (`headers()`, `:286-300`): `Vary: Accept` and a `Link: <…md>; rel="alternate"; type="text/markdown"` header on `/`, on each of the ten page twins and on `/<kind>/:slug` (the slug pattern excludes dots, so an explicit `.md` URL does not advertise itself), with the RFC 8631 `service-desc` and `service-doc` links and the RFC 9727 `api-catalog` link on `/`; `src/next-config.test.ts` pins it. Two properties make the second job safe to leave in the security map: the response for a Markdown 404 echoes the requested path only after `sanitizeRequestedPath` (every character outside `[A-Za-z0-9/._~%-]` becomes `?`, 80 characters at most), and `markdownForContent` reads a file only for a slug that is in the Velite collection. The one way it can go wrong for visitors is a new extension-less page missing from both `PAGE_TWINS` and `HTML_ONLY_PAGES`, which would answer a Markdown client with a 404 for a page that exists; `markdown-routing.test.ts` walks `src/app` and fails first.
+The matcher entry is conditional so that browsers and crawlers, which never ask for Markdown, never invoke the proxy for it (the other matcher entries wake it for the admin gate and the public API paths, below). The decision logic lives in two pure modules with their own tests (`accept-negotiation.test.ts`, `markdown-routing.test.ts`), and `src/proxy.test.ts` pins the outcomes. The static half of the same contract is in `next.config.ts` (`headers()`, `:286-300`): a request for `Vary: Accept` and a `Link: <…md>; rel="alternate"; type="text/markdown"` header on `/`, on each of the ten page twins and on `/<kind>/:slug` (the slug pattern excludes dots, so an explicit `.md` URL does not advertise itself), with the RFC 8631 `service-desc` and `service-doc` links and the RFC 9727 `api-catalog` link on `/`; `src/next-config.test.ts` pins it. Next replaces `Vary` on HTML responses and keeps it on Markdown ones (the comment at `next.config.ts:265-267`), so `Vary: Accept` is claimed only for the Markdown responses and the `Link` header is what lasts on the HTML pages. Two properties make the second job safe to leave in the security map: the response for a Markdown 404 echoes the requested path only after `sanitizeRequestedPath` (every character outside `[A-Za-z0-9/._~%-]` becomes `?`, 80 characters at most), and `markdownForContent` reads a file only for a slug that is in the Velite collection. The one way it can go wrong for visitors is a new extension-less page missing from both `PAGE_TWINS` and `HTML_ONLY_PAGES`, which would answer a Markdown client with a 404 for a page that exists; `markdown-routing.test.ts` walks `src/app` and fails first.
 
 ### The proxy's third job — the public API contract
 
 Since the API-policy change `src/proxy.ts` also stamps and counts the free, read-only public surface (docblock
-`:29-35`). After the admin gate, `proxy()` asks `isPublicApiPath(pathname)` (`:177`; `src/lib/public-api-paths.ts:31-39`)
-and hands a public path to `servePublicApi` (`:115-161`) instead of `negotiateMarkdown` (which it still calls last,
-`:160`). `servePublicApi` runs in a fixed order: a request `API-Version` other than `1` is a JSON 400 (`:117-126`); `OPTIONS`
-is answered 204 with `Allow: GET, HEAD, OPTIONS`, never counted, except on the MCP path (`:131-134`); a write method on
-any other public path is a JSON 405 (`:138-147`); then the client's budget is spent (`:149`) and an over-budget request is a
-JSON 429 with `Retry-After` (`:151-158`). `stamp` (`:100-109`) adds `API-Version: 1`, the `RateLimit` fields and, when
+`:29-35`). After the admin gate, `proxy()` asks `isPublicApiPath(pathname)` (`src/proxy.ts:184`; `src/lib/public-api-paths.ts:57-62`)
+and hands a public path to `servePublicApi` (`src/proxy.ts:126-168`) instead of `negotiateMarkdown` (which it still calls last,
+`:167`). `servePublicApi` runs in a fixed order: a request `API-Version` other than `1` is a JSON 400 (`versionRejection`, `:113-124`,
+called at `:128-129`); `OPTIONS` is answered 204 with `Allow` set to the path's own list, never counted, except on the MCP path,
+which hands the request to its own handler (`:138-141`); a method that the path's entry in the method table does not list is a
+JSON 405 carrying that `Allow` (`:145-154`, again not on the MCP path); then the client's budget is spent (`:156`) and an
+over-budget request is a JSON 429 with `Retry-After` (`:158-166`). The method table is `allowedMethods` in
+`src/lib/public-api-paths.ts:41-55`: `GET, HEAD, OPTIONS` for every public path except `/api/v1/batch`, the one POST of the free
+API besides MCP, which takes `POST, OPTIONS` (subsystem 13); the batch route's own 405 stubs name the same list
+(the OpenAPI 405 responses document only a generic `Allow` header). `stamp` (`:100-109`) adds `API-Version: 1`, the `RateLimit` fields and, when
 `DEPRECATIONS` matches the path, `Deprecation`, `Sunset` and a successor `Link`. The paths, the numbers, the limiter and
 the routes behind them are subsystem 11; the point for this map is that the matcher (`:41-59`) and the predicate must name
 the same paths, or the proxy never wakes for one and its responses silently lose the headers
@@ -256,7 +265,7 @@ not one of the three classes above.
 | **Model output → markdown** | react-markdown vdom (never `dangerouslySetInnerHTML`) + `skipHtml` + default `urlTransform` + `rehype-sanitize` as defense-in-depth. Markdown **images are not stripped** — the component map has no `img` override and rehype-sanitize's default schema keeps `<img src="http(s)…">` — so the CSP `img-src` allowlist (`next.config.ts:53`) is the only barrier to a model-emitted image beacon. No test exercises this pipeline: `markdown-message.test.ts` covers only `closeOpenMarkdown` | `src/components/chat/markdown-message.tsx:9-16,47-84,88-95` |
 | **Telemetry egress** | `redact()` on `message` and `stack` before `emit()`; salted 16-hex IP/UA hashes; transcript text, prompt text and the stored reasoning summary never emitted (a cache hit's event carries no reasoning text, only the boolean `reasoning_replayed`; a cache-error event cuts the Upstash `, command was:` echo and caps the message at 300 characters) | `src/lib/telemetry/schema.ts:88-111,129-136`; `api/error/route.ts:151-167`; `api/transcribe/route.ts:106-113`; `chat/route.ts:340-341`; `chat-cache.ts:225-227` |
 | **External redirect** | `/articles/<slug>` redirects only after asserting an `https://` or `http://` prefix, else `notFound()` — the open-redirect guard | `src/app/articles/[slug]/page.tsx:78-84` |
-| **JSON-LD** | `safeJsonLd` = `JSON.stringify(data).replace(/<\//g, "<\\/")`, because `JSON.stringify` alone does not escape `</script>` | `src/components/json-ld.tsx:5-11` |
+| **JSON-LD** | `safeJsonLd` escapes every `<`, `>`, `&`, U+2028 and U+2029 as its `\uXXXX` JSON escape, because `JSON.stringify` leaves them and `</script>`, `<!--` and `<script` change how the HTML parser reads a block (the parsed object is identical) | `src/components/json-ld.tsx:5-28` |
 | **Voice engine params** | `validateVoiceForEngine` rejects unknown ids, engine mismatches, and tier disagreements server-side; no `tier` field is accepted from the client | `src/lib/voice-catalog.ts:346-367`; `api/tts/route.ts:104-106`, `api/tts-google/route.ts:102-104` |
 | **Analytics** | `commandEventName` returns the registered command word or the literal `"unknown"` — never raw input or args | `src/components/game/terminal/commands.ts:755-758` |
 | **FAQ cache write and read** | Only a clean `end_turn` completion from the primary rung is cached (a `fell_back` answer never is), after control-byte stripping and a 1–4000-character bound; first-turn string questions only; 24 h TTL; entries are tagged with the id of the deployment that wrote them (`chat-cache.ts:193-195`), so another deployment's answers are never served and a cold start or a new instance changes nothing; only a host with no deployment id falls back to the corpus stamp, which `src/instrumentation.ts:98` rewrites on every production process start. It checks completion *cleanliness*, not content safety — a jailbreak that finishes cleanly would be cached, which is why the purge route exists. The reasoning summary is stored beside the answer, stripped of control bytes like the answer, trimmed and bounded to 1–4000 characters (`MAX_CACHEABLE_REASONING_CHARS`), and only when the normalized question is at most 200 characters (`MAX_REASONING_QUESTION_CHARS`), because the summary of a long question is the likeliest to carry what the visitor typed; an unusable summary is dropped and the answer is still cached. The summary is normalized again on an exact-tier read (same strip, trim and bound), re-stripped and trimmed once more in the route before it is replayed, and removed from a semantic hit | `src/lib/chat-cache.ts:23-55,68,84,90,96,173-185,281,329,347-365,371-373`; `chat/route.ts:288-298,313-318` |
@@ -266,7 +275,7 @@ not one of the three classes above.
 | Failure | Mechanism |
 |---|---|
 | `/admin` open | Both `src/proxy.ts` not executing (matcher edited, file moved) **and** the page's own re-check removed (`admin/telemetry/page.tsx:470`). Either alone still denies; with only the page check, an unauthorised request gets a `404`, not a `401` challenge. |
-| A new `/api/admin/*` route is open | The proxy does not gate it: only `/admin/*` is gated (`proxy.ts:166-175`), and the `/api/:path*` matcher entry (`:44`) wakes the proxy for it, which then passes the request on (`classifyPath` passes `/api/` through untouched); only an explicit `requireAdmin(req)` (as at `purge/route.ts:33`) protects it, and no test or lint rule catches a missing call. |
+| A new `/api/admin/*` route is open | The proxy does not gate it: only `/admin/*` is gated (`proxy.ts:173-182`), and the `/api/:path*` matcher entry (`:44`) wakes the proxy for it, which then passes the request on (`classifyPath` passes `/api/` through untouched); only an explicit `requireAdmin(req)` (as at `purge/route.ts:33`) protects it, and no test or lint rule catches a missing call. |
 | `/admin` locked out entirely | `ADMIN_PASSWORD` unset — deliberate (`admin-auth.ts:26-31`); the client sees a bare 401 challenge, the server logs `[admin-auth]`. |
 | All five crons 401 | `CRON_SECRET` unset — deliberate fail-closed (`cron-auth.ts:11-12`). Nothing then refreshes the health result, whose Redis key `anvilry:health:latest` expires 90,000 s (25 h) after the last run that reached the write (`health-check/route.ts:220-221`), so the dashboard's "Site health" tile falls back to its "run /api/cron/health-check to populate" placeholder (`admin/telemetry/page.tsx:829-842`) about a day later. |
 | Eval cron self-throttles | The `CRON_SECRET` bearer removed from the eval cron's `/api/chat` calls (`eval/route.ts:124-126`), or `hasValidCronSecret` dropped from `checkRateLimit` (`rate-limit.ts:100`) — 12 sequential chats then hit the 8/min chat bucket. Both halves are pinned (`eval/route.test.ts`: the bearer on all 12 calls; `rate-limit.test.ts:255-`: the bypass). A separate budget risk remains: each call is bounded by `AbortSignal.timeout(25_000)` (`eval/route.ts:131`) inside `maxDuration = 60` (`:5`), so a slow chain can outlive the function before the Redis write (`:176`). |
@@ -340,8 +349,8 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 
 | Flag | Export | Default | Predicate | Gates |
 |---|---|---|---|---|
-| `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **true** | `!== "false"` (the only opt-out) `:19-20` | `/articles` subtree via `articles/layout.tsx:12`; nav link (`site-nav.tsx:45`); sitemap (`sitemap.ts:71`); `WritingPreview` (`home/writing-preview.tsx:11`) |
-| `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | false | `=== "true"` `:22` | **The data layer:** `allNotes` is `[]` while off (`lib/content.ts:66`), so llms.txt, the RSS feed, the MCP tools, the chat corpus and both `.md` handler sets publish no notes, and articles whose only destination is a note are dropped (`content.ts:92`). Route layer: `/notes` via `notes/page.tsx:21`; `/notes/[slug]` via `notFound()` at `notes/[slug]/page.tsx:52` (its `generateStaticParams` still prerenders every *published* slug as a 404, `:16-26`); article `linkedNote` redirects (`articles/[slug]/page.tsx:74`); nav (`site-nav.tsx:48`); sitemap (`sitemap.ts:44`). The `linkedNote` → `/notes/<slug>` link is chosen only while the flag is on in `article-group-card.tsx:21`, `related-writing.tsx:13`, `articles/page.tsx:199,272` and `llms-txt.ts:46` (otherwise the entry uses `externalUrl`). Two older per-surface filters for note-only articles remain (`sitemap.ts:67-69`, `articles/[slug]/page.tsx:44`, with a matching guard at `:87-89`) and are now subsumed by `allArticles`. Pinned by `src/lib/notes-dark.test.ts` |
+| `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **true** | `!== "false"` (the only opt-out) `:19-20` | `/articles` subtree via `articles/layout.tsx:12`; nav link (`site-nav.tsx:45`); sitemap (`sitemap.ts:71`); `WritingPreview` (`home/writing-preview.tsx:8-12`, through `homeArticleGroups`, `src/lib/home-articles.ts:14-17`, which the homepage JSON-LD list and the homepage Markdown twin read too) |
+| `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | false | `=== "true"` `:22` | **The data layer:** `allNotes` is `[]` while off (`lib/content.ts:66`), so llms.txt, the RSS feed, the MCP tools, the chat corpus and both `.md` handler sets publish no notes, and articles whose only destination is a note are dropped (`content.ts:92`). Route layer: `/notes` via `notes/page.tsx:21`; `/notes/[slug]` via `notFound()` at `notes/[slug]/page.tsx:52` (its `generateStaticParams` still prerenders every *published* slug as a 404, `:16-26`); article `linkedNote` redirects (`articles/[slug]/page.tsx:74`); nav (`site-nav.tsx:48`); sitemap (`sitemap.ts:44`). The `linkedNote` → `/notes/<slug>` link is chosen only while the flag is on in `article-href.ts:19` (shared by the card, the homepage JSON-LD list and the homepage twin), `related-writing.tsx:13`, `articles/page.tsx:199,272` and `llms-txt.ts:49` (otherwise the entry uses `externalUrl`). Two older per-surface filters for note-only articles remain (`sitemap.ts:67-69`, `articles/[slug]/page.tsx:44`, with a matching guard at `:87-89`) and are now subsumed by `allArticles`. Pinned by `src/lib/notes-dark.test.ts` |
 | `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:24` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:140`); the chat and developer views also subtract the banner's height (`OPEN_TO_WORK_BANNER_HEIGHT_REM`, `:34`) from their exact-height `<main>` (`chat-view.tsx:79-81`, `developer-view.tsx:39-41`) |
 | `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | false | `:38` | **Nav + sitemap only** (`site-nav.tsx:53`, `sitemap.ts:90`) — `/stats` still renders and prerenders |
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | false | `:40` | **Nav + sitemap only** (`site-nav.tsx:54`, `sitemap.ts:100`) — same as `/stats` |
@@ -645,7 +654,7 @@ LOCAL RE-RUN OF THE LAST BUILD STEP
 |---|---|---|
 | 1 | `package.json:5-7,9-21` | **13** scripts. `predev` = bare `velite` (`:9`); `dev` = plain `next dev` (`:10`); `build` = the four-step chain (`:11`); `analyze` (`:12`); `seal-claims` (`:18`); `clean` deletes `.next .turbo node_modules/.cache .velite` (`:19`). `engines.node` is `">=22 <23"` (`:5-7`), matching `.nvmrc` (`22`). |
 | 2 | `velite.config.ts` | Content compile step 1; `output.clean: false` by default (`:179`), the `build`/`content` scripts pass `--clean` explicitly. |
-| 3 | `vitest.config.ts:17,26-45` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`. 149 test files (105 node + 44 dom), 1955 tests, all passing at this tree (vitest 5.0.5; 131 files and 1572 tests at v3.17.0; 115 files and 1356 tests before the agent-readiness change, 130 files and 1566 tests before the search-index script's own test file). |
+| 3 | `vitest.config.ts:17,26-54` | Two projects (`node` / `dom`); `resolve.tsconfigPaths`; `env: { NODE_ENV: "test" }`; `testTimeout: 30_000` and `hookTimeout: 60_000` for both projects (`:32-33`), because the Vercel build runs the whole suite in parallel on a loaded container and the first test of a DOM file cold-imports a large module graph; they only bound a hang. The `dom` project also loads `tests/setup/dom-async-timeout.ts` (`setupFiles`, `:50-51`), which raises Testing Library's `waitFor` limit from 1 s to 10 s for the same reason. The `tests/**` globs are live (`tests/cli/**` runs in the `node` project). 185 test files (132 node + 53 dom; 170 under `src/`, 15 under `tests/cli/`), 2734 tests: 2732 pass and 2 are skipped (the two `skipIf(CLI.published)` release-step rehearsals in `tests/cli/readme.test.ts`; 2733 and 1 before the CLI-published flip), at this tree (vitest 5.0.5; 149 files and 1955 tests before round 3, 131 files and 1572 tests at v3.17.0, 115 files and 1356 tests before the agent-readiness change, 130 files and 1566 tests before the search-index script's own test file). |
 | 4 | `next.config.ts` | Headers/CSP, `cacheComponents`, `inlineCss`, Turbopack root pin, the `.md` rewrites (the four content kinds and the ten page twins), the developer-URL `redirects()`, `NEXT_PUBLIC_BUILD_YEAR`, the dev-only Velite watcher, `withBundleAnalyzer` (`:5-7` — still wrapping, but now reachable only through `pnpm analyze`; see § The bundle budget gate). |
 | 5 | `scripts/build-search-index.mjs` + `src/lib/build-search-index.test.ts` | Build step 4, the Pagefind index (`package.json:11`; alone via `make search-index`, `Makefile:65-66`). `resolveSearchSource` (`scripts/build-search-index.mjs:47-77`) picks the classic `.next/server/app` tree when it holds any `.html`, otherwise stages the adapter layout `.next/server/route-cache/APP_PAGE/<hash>/$/` into `.next/search-site` under URL paths, and throws when neither has a page; `main` (`:79-91`) then runs `pagefind --site <that dir> --output-path public/pagefind` and exits with its status. Exports `SERVER_DIR`, `STAGE_DIR`, `OUTPUT_PATH`, `listHtml` and `resolveSearchSource` (`:22-24,27,47`). Six tests (`src/lib/build-search-index.test.ts:26-85`: five on `resolveSearchSource`, one on `listHtml`) build both layouts by hand and run inside `pnpm build`'s `vitest run`. |
 | 6 | `.github/workflows/ci.yml` | The merge gate: five jobs (above). `pnpm/action-setup` is pinned to `ea17c68…` (v6.1.0) in four jobs; `ci`, `e2e` and the opt-in job use `version: 10`, `install-pnpm-11` uses `version: 11` (`:24,:108,:155,:230`). Also carries the `Bundle budget` step (`:190-191`). |
@@ -671,8 +680,8 @@ A Vercel Preview URL (from `develop`) or the production deployment (from `main`)
 ### Tests as a gate — what that actually means
 
 `pnpm build` is `velite --clean && vitest run && next build && node scripts/build-search-index.mjs` (`package.json:11`). The `&&` chain
-is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 149 test files
-(1955 tests) is a deploy blocker on the Vercel build path. That build runs Vitest with the flag on (its environment has `NEXT_PUBLIC_NOTES_ENABLED=true`: observed, not in the repository; see 10 UNVERIFIED), whereas GitHub CI leaves it unset, so a test that assumes the default flags passes in CI and can fail the Vercel build; five tests in four suites did, and four suites now pin the flag themselves (10 § `src/lib/notes-dark.test.ts`). Concretely, these invariants block a deploy:
+is the gate: a failing Vitest assertion aborts before `next build`, so every one of the 185 test files
+(2734 tests, two skipped) is a deploy blocker on the Vercel build path. That build runs Vitest with the flag on (its environment has `NEXT_PUBLIC_NOTES_ENABLED=true`: observed, not in the repository; see 10 UNVERIFIED), whereas GitHub CI leaves it unset, so a test that assumes the default flags passes in CI and can fail the Vercel build; five tests in four suites did, and four suites now pin the flag themselves (10 § `src/lib/notes-dark.test.ts`). Concretely, these invariants block a deploy:
 
 - graph↔content bijection — `src/lib/game-model.test.ts:22-58`
 - the decisions ledger ↔ content coverage and anti-fabrication gate — `src/lib/decisions.test.ts`
@@ -688,6 +697,13 @@ is the gate: a failing Vitest assertion aborts before `next build`, so every one
   `src/app/api/error/route.test.ts`, and `src/app/api/cron/eval/route.test.ts` (bearer on all 12 chat calls)
 - notes dark on every public surface — `src/lib/notes-dark.test.ts`
 - MCP tool table documented — `src/app/mcp/tools-documented.test.ts`
+- the batch endpoint and the MCP protocol — `src/lib/batch.test.ts`, `src/lib/batch-run.test.ts`, `src/app/api/v1/batch/*.test.ts`,
+  `src/app/api/mcp/[transport]/route.test.ts` and `route-protocol.test.ts` (validation, the in-process run, both caps, the typed
+  parameters, the JSON-RPC error codes)
+- JSON-LD safety and parity — `src/components/json-ld.dom.test.tsx` (escaping), `json-ld-lists.dom.test.tsx`,
+  `json-ld-articles.dom.test.tsx`, `json-ld-parity.dom.test.tsx`, `json-ld-api.dom.test.tsx`
+- the CLI package and the site's wording about it — `src/lib/developer-tools.test.ts` (`CLI.published` pinned to `true` by the release gate, the
+  command list equal to `cli/lib/commands.mjs`) and `tests/cli/**` (15 files, 279 tests)
 - last-XFF-segment IP derivation — `src/lib/telemetry/with-trace.test.ts:220-230`, and, across **all
   four** `clientIp` copies, `src/lib/client-ip-consistency.test.ts` (`:26-31` the enumerated copies —
   `rate-limit.ts`, `telemetry/with-trace.ts`, `api/visit/route.ts` and, since the API-policy change,
@@ -736,13 +752,13 @@ When it was deleted no status check was required on `develop` or `main` (a live 
 flag and no second build — but **only** under Turbopack (`node_modules/next/dist/build/index.js:2922-2923`
 gates `writeRouteBundleStats` on `bundler === Bundler.Turbopack`). So it describes exactly what ships.
 Records are `{ route, firstLoadUncompressedJsBytes, firstLoadChunkPaths }` (`scripts/bundle-budget.mjs:120-125`);
-the floor is 17, set when the tree had 16 `page.tsx` routes plus `/_not-found` and now documented in the script as "a floor, not a count" (`:39-40`; the tree has 19 `page.tsx` routes), and a local
-`.next/diagnostics/route-bundle-stats.json` of unknown provenance (built 19 Sep, Next 16.3.5) does hold 17
-records.
+the floor is 17, set when the tree had 16 `page.tsx` routes plus `/_not-found` and now documented in the script as "a floor, not a count" (`:39-40`; the tree has 19 `page.tsx` routes), and the local
+`.next/diagnostics/route-bundle-stats.json` (built at 00:34 on 2 Nov by Next 16.4.3, the build that gave `/` 966,798 B) holds 20
+records (an older one of unknown provenance held 17).
 
 | Assertion | Value | Cite |
 |---|---|---|
-| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 988_000`, raised four times since the gate landed at 1,285,000 (→ 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000), then lowered once to 988,000 after v3.16.0 (shipped in v3.16.1). The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four raises (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes; the lowering is a standalone commit as well. The in-file comment now says why (`:66-67`): `/` measured 976,936 B at the v3.16.0 cut (#329 had taken it from 1,298,585 B, about a quarter), 972,887 B after the later prune of three low-priority open-source items (#333, `a665991`: two project cards and the Shop.this feed entry) and 972,920 B when the ceiling was set. The 972,887 B was the same on CI (ubuntu-latest, run 39779046431) and on a local macOS build, and the 33 B since is the one-sentence rewrite in `content/projects/anvilry.mdx` line 26. Until the lowering the ceiling had stayed at 1,336,000 B and left 363,113 B of slack. After the dependency security batch (Next 16.4.3) the gate measured `/` at 966,794 B (`node scripts/bundle-budget.mjs` prints it), 6,126 B below the figure when the ceiling was set, so 21,206 B (about 2.1%) of headroom remain under 988,000 B. The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two cards and their graph nodes, so it covers roughly ten cards of that size, while any eager import of about 21 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added. The 966,794 B and 21,206 B figures come from the gate run for the dependency security batch, which the coordinator ran again on a build at HEAD `91381b5` (over the existing `.next`, not a wiped one) with the same result (not measured by this pass); the 972,920 B, 972,887 B, run and macOS figures are quoted from the in-file comment and the CI log. The comment still narrates the last raise (1,333,521 B, `:57-64`) and opens with an older figure (1,322,132 B, now worded "at the time", `:43`), and the local artifact above shows `/` at 1,184,096 B — all history, none of them is the current baseline | `scripts/bundle-budget.mjs:72` |
+| Per-route first-load ceiling | `MAX_FIRST_LOAD_BYTES = 988_000`, raised four times since the gate landed at 1,285,000 (→ 1,290,000 → 1,326,000 → 1,332,000 → 1,336,000), then lowered once to 988,000 after v3.16.0 (shipped in v3.16.1). The in-file rule (`:69-71`) is one commit per raise, quoting measured before/after bytes, but only one of the four raises (`61c9cb8`) was a standalone commit — `2b08f83`, `338effd` and `d412aac` moved the constant inside code changes; the lowering is a standalone commit as well. The in-file comment now says why (`:66-67`): `/` measured 976,936 B at the v3.16.0 cut (#329 had taken it from 1,298,585 B, about a quarter), 972,887 B after the later prune of three low-priority open-source items (#333, `a665991`: two project cards and the Shop.this feed entry) and 972,920 B when the ceiling was set. The 972,887 B was the same on CI (ubuntu-latest, run 39779046431) and on a local macOS build, and the 33 B since is the one-sentence rewrite in `content/projects/anvilry.mdx` line 26. Until the lowering the ceiling had stayed at 1,336,000 B and left 363,113 B of slack. After the dependency security batch (Next 16.4.3) the gate measured `/` at 966,794 B (`node scripts/bundle-budget.mjs` prints it), 6,126 B below the figure when the ceiling was set, and at `953db82` after round 3 it measures 966,798 B (+4 B), so 21,202 B (about 2.1%) of headroom remain under 988,000 B (21,206 B before round 3). The headroom is a growth allowance, not jitter room: #333 shed 4,049 B with two cards and their graph nodes, so it covers roughly ten cards of that size, while any eager import of about 21 KB or more fails. Rebuilds of an unchanged tree have been byte-identical in CI, and CI and macOS agreed on the trees compared, so no jitter margin is added. The 966,794 B and 21,206 B figures come from the gate run for the dependency security batch, which the lead ran again on a build at HEAD `91381b5` (over the existing `.next`, not a wiped one) with the same result; the 966,798 B and 21,202 B figures are the lead's measurement at `953db82` after an incremental `next build` (neither was measured by this pass); the 972,920 B, 972,887 B, run and macOS figures are quoted from the in-file comment and the CI log. The comment still narrates the last raise (1,333,521 B, `:57-64`) and opens with an older figure (1,322,132 B, now worded "at the time", `:43`), and the local artifact above shows `/` at 1,184,096 B — all history, none of them is the current baseline | `scripts/bundle-budget.mjs:72` |
 | Route-count floor | `MIN_ROUTES = 17`; fewer means the artifact's shape changed and the gate is lying about coverage. (The script's header still quotes an older measurement — "16 routes; … `/` is 1220794", `:27` — while the `MIN_ROUTES` docblock at `:39` says 17; the assertion uses the constant.) | `:40,:114-119` |
 | three.js off the first-load critical path | exactly **1** chunk contains `WebGLRenderer` — 897,249 B (876.2 KiB), i.e. the single "876 KB" copy recorded at `next.config.ts:185-196` — and it appears in **0** of the routes' first-load sets | `:76-77` (comment), `:84` (marker), `:158-166` (check) |
 | Every first-load chunk path exists on disk | otherwise the artifact and the build output disagree and the measurement is untrustworthy | `:149-156` |
@@ -787,7 +803,7 @@ where it comes from. `make pr` opens feature → `develop`;
 `develop` **and `main`** pushes/PRs plus a weekly cron (`main` added because a hotfix straight to `main`
 would otherwise deploy unscanned); and Dependabot reads `dependabot.yml` from the
 **default branch only**, so the `typescript`/`eslint` ignores were inert while they lived on `develop`
-(`CHANGELOG.md:1094-1095`).
+(`CHANGELOG.md:1197-1198`).
 
 ### The Pagefind search-index step
 
@@ -826,7 +842,7 @@ and the build prefers it over `app/…` when an adapter is set and `output` is n
 |---|---|
 | Module resolution failure in vitest and next build | `pnpm content` / `velite --clean` skipped; `.velite/` is gitignored. |
 | "React.act is not a function" ⇒ every DOM test fails ⇒ deploy fails | Removing `env: { NODE_ENV: "test" }` (`vitest.config.ts:26`). Vitest only defaults `NODE_ENV=test` when unset, but the Vercel build shell sets `production`, which makes React load its prod bundle without `act` (`:19-25`). |
-| Every DOM suite runs twice, once without happy-dom globals | Removing the `node` project's `exclude: ["**/*.dom.test.{ts,tsx}", …]` (`vitest.config.ts:34`) — `src/x.dom.test.ts` also matches `src/**/*.test.ts`. |
+| Every DOM suite runs twice, once without happy-dom globals | Removing the `node` project's `exclude: ["**/*.dom.test.{ts,tsx}", …]` (`vitest.config.ts:41`) — `src/x.dom.test.ts` also matches `src/**/*.test.ts`. |
 | "Failing test blocks deployment" property lost | Reordering or splitting the `build` chain into independent commands. |
 | Playwright tests a stale build | Without the `webServer` block, a leftover process on :3000 is silently tested — recorded as having produced 5 phantom failures during a release audit (`playwright.config.ts:25-36`). |
 | `Executable doesn't exist at .../chromium_headless_shell-<rev>` (or the same for `webkit-<rev>/pw_run.sh` now that `playwright.config.ts` has the `mobile-safari` project) | Installing browsers with anything other than `pnpm exec playwright install --with-deps chromium webkit`, which pins to the installed `@playwright/test` (`ci.yml:166-173`). Omitting `webkit` here installs cleanly and passes silently — it only breaks the instant a `mobile-safari` spec actually runs. |
@@ -844,8 +860,8 @@ and the build prefers it over `app/…` when an adapter is set and `output` is n
 | CI runs twice on every PR branch | `push` on `"**"` and `pull_request` both trigger `ci.yml`, with no `concurrency` group (`ci.yml:3-7`). |
 | A docs edit reds the PR | Editing or deleting a line the index cites: `node scripts/check-index-citations.mjs` (`ci.yml:76-77`) fails on stale **text** (the cited text is gone from its file, or is duplicated and matches no line shift seen elsewhere in that file), an unresolvable file or line, an inverted range, or a citation on an empty line; a pure relocation from inserted lines is only a warning. Re-fingerprint with `--write` once the prose is re-pointed (`ci.yml:74-75`). |
 | The `@react-three/postprocessing` types regression returns | `package.json:34` is now the exact pin `3.1.1`, past the broken `3.0.5`; the version-scoped Dependabot `ignore` for `["3.0.5"]` (`dependabot.yml:82-84`) is still there and its comment (`:80`) still says "Pinned to 3.0.4". Loosening the pin, or dropping the `ignore` while the pin moves back, re-opens it — verify against the `3.0.5` regression before treating the pair as removable. |
-| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.21`, `@>=3` → `^5.0.12`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:1065-1067`). |
-| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` was exact-pinned to `1.26.0`, equal to `mcp-handler`'s literal peer (`pnpm-lock.yaml:3716`), which produced `security_update_not_possible` (`CHANGELOG.md:1075-1077`) — the situation the `pnpm-workspace.yaml` overrides work around. The pin is now `1.32.0` (`package.json:29`) while the peer still says `1.26.0`: a tolerated mismatch, resolved as `mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0…)` (`pnpm-lock.yaml:8535`). |
+| eslint chain breaks | Collapsing the two `brace-expansion` overrides (`@1` → `^1.1.21`, `@>=3` → `^5.0.12`, `pnpm-workspace.yaml:30-31`) into one blanket pin, which forces `minimatch@3` onto 5.x (`CHANGELOG.md:1168-1170`). |
+| Dependabot cannot move a transitive advisory | `@modelcontextprotocol/sdk` was exact-pinned to `1.26.0`, equal to `mcp-handler`'s literal peer (`pnpm-lock.yaml:3716`), which produced `security_update_not_possible` (`CHANGELOG.md:1178-1180`) — the situation the `pnpm-workspace.yaml` overrides work around. The pin is now `1.32.0` (`package.json:29`) while the peer still says `1.26.0`: a tolerated mismatch, resolved as `mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0…)` (`pnpm-lock.yaml:8535`). |
 | `three` bump breaks a peer | `postprocessing@6.39.5` declares `three: >= 0.168.0 < 0.187.0` (`pnpm-lock.yaml:4132`) against a declared `^0.186.0` — only the 0.186.x line satisfies both. |
 
 ### Flags / env that alter it
@@ -873,10 +889,10 @@ not checked here — would put production on a different major than the repo's `
 New with the API-policy change (in no release yet; branch `feat/api-policy-ratelimit-md-twins`). The free,
 read-only surface of the site has one published contract, and `src/lib/api-policy.ts` is its single source:
 version `"1"` (`:12`), the `API-Version` header (`:15`), the `/api/v1` base path (`:18`), 180 days of notice
-before a deprecated surface is removed (`:21`), a budget of 300 requests per 60 seconds (`:24-28`), an empty
-`DEPRECATIONS` list (`:44`), the header builder `deprecationHeaders` (`:56-72`) and the sentences that both
-`/developers` and the OpenAPI `info.description` print (`VERSIONING_POLICY` `:87-92`, `RATE_LIMIT_POLICY_TEXT`
-`:95-100`). The `RateLimit` fields are sent only on responses that count against the budget (and on the 429); a malformed
+before a deprecated surface is removed (`:38`), a budget of 300 requests per 60 seconds (`:41-45`), an empty
+`DEPRECATIONS` list (`:61`), the header builder `deprecationHeaders` (`:73-89`) and the sentences that both
+`/developers` and the OpenAPI `info.description` print (`VERSIONING_POLICY` `:104-109`, `RATE_LIMIT_POLICY_TEXT`
+`:112-118`). The `RateLimit` fields are sent only on responses that count against the budget (and on the 429); a malformed
 `API-Version` (400), a refused method (405) and a preflight carry `API-Version` only. `src/proxy.ts` enforces it on every public path, because most of those responses are prerendered or
 cached and cannot compute a per-client number themselves. The two numbers (300 per 60 s, 180 days) are defaults
 that still await the owner's decision; each is a one-line change.
@@ -884,22 +900,24 @@ that still await the owner's decision; each is a one-line change.
 ### Flow
 
 ```
-GET /api/v1/projects/trelix    (or /api/resume.json, /api/github/stats, /api/mcp/mcp, /llms.txt, /openapi.json, /about.md …)
+GET /api/v1/projects/trelix    (or /api/resume.json, /api/github/stats, /api/mcp/mcp, /llms.txt, /openapi.json, /about.md …;
+                                the one POST is /api/v1/batch, subsystem 13)
    → config.matcher entries "/api/:path*", "/.well-known/api-catalog", "/llms.txt", "/llms-full.txt",
      "/openapi.json", "/feed.xml", "/sitemap.xml", "/robots.txt", "/:page.md", "/:kind(…)/:slug.md"   src/proxy.ts:44-53
-   → proxy(): the admin gate first, then isPublicApiPath(pathname) → servePublicApi(req)                  :177
-        exact set, prefixes /api/v1/ and /api/mcp/, /<page>.md and /<kind>/<slug>.md  src/lib/public-api-paths.ts:11-22,25,28-29
-        request header API-Version ≠ "1"          → JSON 400 invalid_request (hint names the one version)  :117-126
-        OPTIONS                                    → 204 + Allow: GET, HEAD, OPTIONS, never counted;
-                                                     the MCP path passes through to its own handler         :131-134
-        method outside GET/HEAD/OPTIONS (not MCP)  → JSON 405 + Allow                                       :138-147
-        publicApiLimiter.hit(publicApiClientKey(req))  fixed window per IP, in server memory                :149
+   → proxy(): the admin gate first, then isPublicApiPath(pathname) → servePublicApi(req)                  :184
+        exact set, prefixes /api/v1/ and /api/mcp/, /<page>.md and /<kind>/<slug>.md  src/lib/public-api-paths.ts:13-24,27,30-31
+        request header API-Version ≠ "1"          → JSON 400 invalid_request (hint names the one version)  versionRejection :113-124, called :128-129
+        allowed = allowedMethods(pathname)         GET, HEAD, OPTIONS; /api/v1/batch takes POST, OPTIONS    :132-133, public-api-paths.ts:53-55
+        OPTIONS                                    → 204 + Allow: <allowed>, never counted;
+                                                     the MCP path passes through to its own handler         :138-141
+        method not in <allowed> (not MCP)          → JSON 405 + Allow: <allowed>                            :145-154
+        publicApiLimiter.hit(publicApiClientKey(req))  fixed window per IP, in server memory                :156
                                                      (src/lib/public-api-limit.ts:67-93)
-           over budget → JSON 429 rate_limited + Retry-After + the RateLimit fields                         :151-158
+           over budget → JSON 429 rate_limited + Retry-After + the RateLimit fields                         :158-166
         otherwise negotiateMarkdown(req), then stamp(): API-Version: 1, RateLimit-Policy, RateLimit,
-           RateLimit-Limit / -Remaining / -Reset, and Deprecation / Sunset / Link when DEPRECATIONS matches  :100-109,:160
+           RateLimit-Limit / -Remaining / -Reset, and Deprecation / Sunset / Link when DEPRECATIONS matches  :100-109,:167
    → the answering route or file
-        /api/v1/**     src/app/api/v1/**/route.ts, 14 GET routes; data from mcp-tools.ts through content-api.ts
+        /api/v1/**     src/app/api/v1/**/route.ts, 14 GET routes and the one POST (batch); the GET data comes from mcp-tools.ts through content-api.ts
         /.well-known/api-catalog   src/app/.well-known/api-catalog/route.ts → buildApiCatalog() (RFC 9727 Linkset)
         /api/resume.json, /api/github/stats   the unversioned aliases of version 1 (/api/v1/resume and
                        /api/v1/github/stats serve the same data; the latter calls the alias's own handler)
@@ -909,16 +927,16 @@ GET /api/v1/projects/trelix    (or /api/resume.json, /api/github/stats, /api/mcp
 
 | # | File | Exact role |
 |---|---|---|
-| 1 | `src/lib/api-policy.ts:12-28,44,56-81,87-100` | The constants, `deprecationHeaders` (`Deprecation: @<unix>` RFC 9745, `Sunset` RFC 8594, `Link rel="successor-version"` RFC 5829), `givesEnoughNotice` (checks an entry against the 180 days) and the two prose arrays. Imports nothing. |
-| 2 | `src/lib/public-api-paths.ts:11-39` | `isPublicApiPath`: the exact set (`:11-22`), the two prefixes (`:25`), the `.md` twin pattern (`:28-29`); a trailing slash is ignored. Imports nothing, so the proxy bundle stays free of the content layer. |
-| 3 | `src/proxy.ts:41-59,100-109,115-161,177` | The matcher, `stamp`, `servePublicApi` and the dispatch. The matcher and the predicate must name the same paths. |
+| 1 | `src/lib/api-policy.ts:12-45,61,73-118` | The constants (version `:12`, header `:15`, base path `:18`, `BATCH_PATH` `:21` and the three batch limits `:33-35`, the 180-day notice `:38`, the budget `:41-45`), the empty `DEPRECATIONS` (`:61`), `deprecationHeaders` (`:73-89`; `Deprecation: @<unix>` RFC 9745, `Sunset` RFC 8594, `Link rel="successor-version"` RFC 5829), `givesEnoughNotice` (`:92-98`, checks an entry against the 180 days) and the two prose arrays (`:104-109`, `:112-118`; the second says a batch counts as one request). Imports nothing. |
+| 2 | `src/lib/public-api-paths.ts:13-62` | `isPublicApiPath` (`:57-62`): the exact set (`:13-24`), the two prefixes (`:27`), the `.md` twin pattern (`:30-31`); a trailing slash is ignored (`:34-38`). `allowedMethods` (`:53-55`) says which methods a public path takes: reading and the preflight (`READ_ONLY_METHODS`, `:41`) unless the table `METHOD_EXCEPTIONS` (`:48-50`) lists it, and it lists one path, `/api/v1/batch`, which takes `POST` and `OPTIONS`. Imports only `BATCH_PATH` from `api-policy.ts`, which imports nothing, so the proxy bundle stays free of the content layer. |
+| 3 | `src/proxy.ts:41-59,100-109,113-168,184` | The matcher, `stamp`, `versionRejection` (`:113-124`), `servePublicApi` (`:126-168`) and the dispatch. The matcher and the predicate must name the same paths; the method table decides both the JSON 405 (with its `Allow`) and the `OPTIONS` 204. |
 | 4 | `src/lib/public-api-limit.ts:36-96,99-102,112-127,135-144` | `createWindowLimiter`: one `Map` of `{count, resetAt}` per client, at most 10,000 clients (`:36`; when full, expired ones go first and then the oldest live ones, `:57-64`), expired buckets also swept once per window at the next request (`:50-55,:71`); `rateLimitHeaders` (the IETF draft fields and the earlier-draft names with the same numbers, `Retry-After` only on a refusal); its own `clientIp` (`x-vercel-forwarded-for`, else the LAST `x-forwarded-for` segment, else `x-real-ip`, else `anonymous`): the fourth copy, listed in `client-ip-consistency.test.ts:26-31`. Deliberately not Redis: a crawler cannot spend the Upstash quota the chat cost guard needs. |
-| 5 | `src/lib/api-error.ts:20-72` | Eight codes since `internal_error` (500, `:53`) joined the catalogue; `withJsonErrors` (`:121-132`) wraps a handler so an uncaught exception, or a rejected promise, leaves as the shared 500 and only the error name is logged. |
+| 5 | `src/lib/api-error.ts:20-73` | Eight codes since `internal_error` (500, `:54`) joined the catalogue; `withJsonErrors` (`:122-133`) wraps a handler so an uncaught exception, or a rejected promise, leaves as the shared 500 and only the error name is logged. |
 | 6 | `src/lib/content-api.ts:14,18,21,26-37,61,68,93` | What the v1 handlers share: the slug rule (`^[A-Za-z0-9_-]{1,120}$`), the 100-character limit on `q` and `tag`, `V1_RESOURCES`, `jsonResponse`, `listResponse` (`{count, items}`) and `respondWithItem` (a 400 for a malformed slug that is not echoed, a 404 naming the collection with at most 30 valid slugs in the hint). |
-| 7 | `src/app/api/v1/**/route.ts` (14) | Seven prerendered routes that export `GET` only (`/api/v1`, `profile`, `work`, `projects`, `articles`, `notes`, `resume`) and seven dynamic ones (the four `[slug]` routes, `decisions`, `search`, `github/stats`) wrapped in `withJsonErrors` and carrying the JSON 405 stubs and an `OPTIONS`. The data comes from the functions the MCP tools use (`mcp-tools.ts`), so the REST view and the tools cannot disagree. |
+| 7 | `src/app/api/v1/**/route.ts` (15) | Seven prerendered routes that export `GET` only (`/api/v1`, `profile`, `work`, `projects`, `articles`, `notes`, `resume`) and seven dynamic ones (the four `[slug]` routes, `decisions`, `search`, `github/stats`) wrapped in `withJsonErrors` and carrying the JSON 405 stubs and an `OPTIONS`; the fifteenth, `batch/route.ts`, is the one `POST` (subsystem 13). The data comes from the functions the MCP tools use (`mcp-tools.ts`), so the REST view and the tools cannot disagree. |
 | 8 | `src/lib/api-catalog.ts:11-51` + `src/app/.well-known/api-catalog/route.ts` | The RFC 9727 catalog: `application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"`; lists `/api/v1` (service-desc `/openapi.json`, service-doc `/developers`, status `/api/v1`) and the MCP endpoint (service-doc `/mcp`). The homepage `Link` header points at it (`next.config.ts:280-284`). |
-| 9 | `src/lib/openapi.ts:107-146` + `openapi-v1.ts:25,193` + `openapi-legacy.ts:169` + `openapi-schemas.ts` + `openapi-v1-schemas.ts` + `openapi-parts.ts:24,67,81` | `/openapi.json`: 29 operations, the 14 v1 ones first (`{ ...buildV1Paths(), ...legacyPaths() }`, `:146`) and the 15 older ones. `openapi.ts` is now types and assembly; `openapi-parts.ts` supplies the optional `API-Version` header parameter, the version and `RateLimit` headers on every 2xx and the typed error responses that reference the `Error` schema. |
-| 10 | `src/lib/developers-content.ts:38,90,122` + `src/app/developers/page.tsx` | `RESPONSE_HEADERS` (nine headers), `deprecationSummary`, `buildCurlRecipes`; the page renders them with the policy text under the anchors `authentication`, `versioning`, `rate-limits`, `sdk`, `cli` and `errors`, and says there is no official SDK and no published CLI. |
+| 9 | `src/lib/openapi.ts:115-152` + `openapi-v1.ts:31,223` + `openapi-legacy.ts:169` + `openapi-schemas.ts` + `openapi-v1-schemas.ts` + `openapi-parts.ts:24,67,86` | `/openapi.json`: 30 operations, the 15 v1 ones first (14 GETs and `runBatch`; `{ ...buildV1Paths(), ...legacyPaths() }`, `openapi.ts:152`) and the 15 older ones. `openapi.ts` is types and assembly (`buildOpenApiDocument`, `openapi.ts:150`); a POST that never changes anything carries `x-read-only: true` (`runBatch`, `callMcpServer`) and the document's opening sentence about POST routes is generated from the marked ones by `postRoutesSentence` (`:115-135`), so an unmarked POST gets a neutral clause instead of a false "only reads"; `openapi-parts.ts` supplies the optional `API-Version` header parameter, the version and `RateLimit` headers on every 2xx and the typed error responses that reference the `Error` schema. |
+| 10 | `src/lib/developers-content.ts:42,94,126` + `src/app/developers/page.tsx` | `RESPONSE_HEADERS` (nine headers), `deprecationSummary`, `buildCurlRecipes`; the page renders them, through the section components of subsystem 16, with the policy text under the anchors `authentication`, `versioning`, `rate-limits`, `sdk`, `cli` and `errors`, and says there is no official SDK; its CLI section is worded from `CLI.published` (true: the published wording). |
 | 11 | `src/lib/privacy-facts.ts:18-20` + `src/app/privacy/page.tsx` | `publicApiRequests` and `publicApiWindowSeconds`, pinned to `api-policy.ts` by `privacy-facts.test.ts`, and the paragraph that says the counter lives only in the memory of the server instance that answers, under the IP address (not hashed), and is not written to Upstash or to any log; it also says expired counters are swept out about once a minute, whenever the instance handles a request (never on a timer), and that every counter is gone when the instance restarts. `agent-pages.dom.test.tsx` pins the in-memory and not-written sentences, not the sweep sentence. |
 
 ### Entry point
@@ -943,7 +961,7 @@ shared error shape (`error`, `code`, `status`, `hint`, `docs`) with `Retry-After
 | A crawler is limited | The discovery files and the `.md` twins count against the same budget (`/sitemap.xml`, `/robots.txt`, `/feed.xml` included). |
 | A client that sends `API-Version: v1` gets a 400 | Only `1` is accepted; any other value is refused so a client never receives a contract it did not ask for. |
 | A handler throws | `withJsonErrors` answers the shared 500 (`internal_error`); the prerendered routes are not wrapped and fail at build time instead. |
-| A browser on another origin cannot call the API | No CORS headers are added (a decision left to the owner). |
+| A browser on another origin cannot call part of the API | The app adds no CORS headers (a decision left to the owner). Vercel adds `Access-Control-Allow-Origin: *` to static responses (most prerendered pages, the seven static `/api/v1` routes, `/openapi.json`, `/llms.txt`, `/llms-full.txt`, `/feed.xml`, `/api/resume.json`, `/sitemap.xml`, `/robots.txt`, the API catalog and `/index.md`), so those are readable cross-origin; the dynamic routes (the slug routes, `search`, `decisions`, `github/stats`, MCP; the new `batch` route is not on production yet and, as a dynamic POST route, is inferred to answer none), the `.md` twins of pages and content (`/about.md`, `/projects/<slug>.md`) and the `use cache` pages `/projects` and `/projects/[slug]` answer none (observed on production, previous release, 2026-11-01). |
 
 ### Flags / env that alter it
 
@@ -975,7 +993,7 @@ GET /privacy.md                     (or GET /privacy with Accept: text/markdown)
         buildPageMarkdown(name) is null             → markdownNotFound  (articles / notes with nothing to show)
         about, projects, work, decisions, articles, notes → the builders of page-markdown-lists.ts,
                                  written from the same data modules the pages read
-        contact, developers, mcp, privacy           → renderProseMarkdown(page)                  page-markdown-prose.ts:44-
+        contact, developers, mcp, privacy           → renderProseMarkdown(page)                  page-markdown-prose.ts:64-
                                  calls the page's own function and converts the elements it returns
                                  with elementToMarkdown(Page(), { callable, sections })           element-markdown.ts:400
    → markdownResponse(body, { canonicalPath })      text/markdown, Vary: Accept, Link rel="canonical"
@@ -987,14 +1005,14 @@ GET /privacy.md                     (or GET /privacy with Accept: text/markdown)
 |---|---|---|
 | 1 | `src/lib/page-twins.ts:16-35` | `PAGE_TWINS` and `isPageTwin`. Imports nothing, because the proxy reaches it through `markdown-routing.ts`. |
 | 2 | `src/lib/markdown-routing.ts:27,35-53` | `HTML_ONLY_PAGES` and `classifyPath`: a page twin rewrites to `/api/md/pages/<page>` (`:48-49`), an HTML-only page passes (`:51`), any other extension-less path is the Markdown 404. |
-| 3 | `next.config.ts:91-102,292-295,313` | The config's own copy of the page list (the file imports nothing from `src/`; `next-config.test.ts` fails if it differs from `page-twins.ts`), the `Vary: Accept` and `Link` rules for the ten HTML pages, and the rewrite. |
+| 3 | `next.config.ts:91-102,292-295,313` | The config's own copy of the page list (the file imports nothing from `src/`; `next-config.test.ts` fails if it differs from `page-twins.ts`), the `Link` and `Vary: Accept` rules for the ten HTML pages (Next keeps `Vary` only on Markdown responses), and the rewrite. |
 | 4 | `src/app/api/md/pages/[page]/route.ts:13-26` | The handler, wrapped in `withJsonErrors`, with the JSON 405 stubs and an `OPTIONS`. |
 | 5 | `src/lib/page-markdown.ts:23-50` | `buildPageMarkdown` (the switch) and `markdownForPage` (the response, or the Markdown 404 for a name with no twin and for a page that would itself be a 404). |
 | 6 | `src/lib/page-markdown-lists.ts:47,98,110,133,172,197` | `buildAboutMarkdown`, `buildProjectsMarkdown`, `buildWorkMarkdown`, `buildDecisionsMarkdown`, `buildArticlesMarkdown`, `buildNotesMarkdown`. The last two return `null` when there is nothing to show (no published article; notes dark). |
-| 7 | `src/lib/page-markdown-prose.ts:24-53` | `PROSE_PAGES` (loaded on first use, so a fault in one page cannot take the others down) and `renderProseMarkdown`: the page is the source, so the privacy numbers, the API tables and the policy text cannot differ from what a browser shows. |
+| 7 | `src/lib/page-markdown-prose.ts:38-73` | `PROSE_PAGES` (loaded on first use, so a fault in one page cannot take the others down) and `renderProseMarkdown`: the page is the source, so the privacy numbers, the API tables and the policy text cannot differ from what a browser shows. |
 | 8 | `src/lib/element-markdown.ts:400` | `elementToMarkdown`: walks the React elements a server component returns (table cells escape a pipe through `escapeCellPipes`, `:408-418`, by the parity of the backslash run before it: after an odd run the pipe is already escaped and stays, otherwise it gets one more backslash; a CodeQL `js/incomplete-sanitization` fix pinned by two tests). It exists because `react-dom/server` is not usable where a route handler runs. Host elements are converted, components on an allow-list are called, section components become headings, a component given an `href` is a link, any other component contributes its children only, and an async component or an unreadable node throws (the route then answers the shared JSON 500 rather than a half page). |
 | 9 | `src/lib/page-markdown-shared.ts` | `abs`, `linkText`, `pageAndTwinLinks` (`[name](url)` for an HTML page followed by the link to its Markdown twin, `:13`), `section`, `joinParts` and `twinFooter` (the closing line that names the HTML page). |
-| 10 | `src/lib/llms-txt.ts:23-29,87,157-158` | `llms.txt` lists the `.md` URL of every page that has a twin and exists (`articles` only when an article is published, `notes` only when notes are on) under "Pages", and tells an agent that every page has a `.md` URL. |
+| 10 | `src/lib/llms-txt.ts:26-32,90,161-162` | `llms.txt` lists the `.md` URL of every page that has a twin and exists (`articles` only when an article is published, `notes` only when notes are on) under "Pages", and tells an agent that every page has a `.md` URL. |
 
 ### Entry point
 
@@ -1023,18 +1041,271 @@ published decides the `articles` twin. No environment variable was added.
 
 ---
 
+## 13. Batch endpoint (`POST /api/v1/batch`)
+
+New with the later pass of the API-policy change ("round 3", in no release yet; branch `feat/agent-readiness-round3`). It is the one `POST` of
+the free API besides the MCP endpoint, and it only ever reads: the body lists `GET` operations of `/api/v1`, and the answer carries one result
+for each. An agent that needs a profile, a project and a search result makes one request instead of three. Three numbers bound it, all in
+`src/lib/api-policy.ts`: at most `BATCH_MAX_REQUESTS` = 25 operations (`:33`), a request body of at most `BATCH_MAX_BODY_BYTES` = 16384 bytes
+(`:34`) and an answer of at most `BATCH_MAX_RESPONSE_BYTES` = 1048576 bytes (`:35`), pinned as literals in `api-policy.test.ts`. What actually
+bounds the traffic one batch can pull is **each operation once**: a batch that repeats an operation is rejected, so it is at most 25 different
+`GET`s, and the answer cap is a backstop in case a route's answer grows (`api-policy.ts:23-32`). A batch counts as **one** request of the
+300 per 60 s budget (the proxy counts when the `POST` arrives, `:116` says so in the published policy text).
+
+### Flow
+
+```
+POST /api/v1/batch   {"requests":[{"id":"trelix","path":"/api/v1/projects/trelix"}, …]}   Content-Type: application/json
+   → src/proxy.ts   isPublicApiPath (prefix /api/v1/) → servePublicApi: API-Version check, then
+                    allowedMethods("/api/v1/batch") = POST, OPTIONS (every other public path: GET, HEAD, OPTIONS)      proxy.ts:126-168, public-api-paths.ts:48-55
+                    → counted once against the budget, 429 when spent, stamped with the RateLimit fields
+   → src/app/api/v1/batch/route.ts   POST = withJsonErrors(…)                                                         :27-50
+        Content-Type is not application/json            → 400 invalid_request ("nothing ran")                         :28-30
+        readBodyWithin(req, 16384)  more than 16384 BYTES → 413 payload_too_large, before parsing                      :32-42 (batch.ts:244-273)
+        not valid UTF-8                                  → 400                                                         :43-44
+        parseBatchBody(text)  any problem at all         → 400, nothing runs, the hint names the item                  :46-47 (batch.ts:170-219)
+        runBatch(items)  each item in process, through the real GET handler of the route its path names, all at once  :49 (batch.ts:381-392)
+        answerBatch(results)  over 1048576 bytes         → 413 payload_too_large, none of the results, nothing truncated
+                              else 200 { "responses": [ { id, status, body }, … ] } in request order, Cache-Control: no-store   (batch.ts:405-415)
+```
+
+### Participating files, in flow order
+
+| # | File | Exact role |
+|---|---|---|
+| 1 | `src/lib/api-policy.ts:21,33-35,116` | `BATCH_PATH`, the three limits and the sentence of `RATE_LIMIT_POLICY_TEXT` that says a batch counts as one request, printed by `/developers` and the OpenAPI description. |
+| 2 | `src/lib/public-api-paths.ts:41-55` | `READ_ONLY_METHODS`, the one-entry table `METHOD_EXCEPTIONS` and `allowedMethods(path)`; the proxy reads it for both the JSON 405 (with its `Allow`) and the `OPTIONS` 204. |
+| 3 | `src/proxy.ts:114-168` | `versionRejection` and `servePublicApi`: the `API-Version` check and the budget still apply to a `POST`; the MCP path is unchanged. |
+| 4 | `src/app/api/v1/batch/route.ts:27-58` | The route: `POST` wrapped in `withJsonErrors`, and `GET`/`PUT`/`PATCH`/`DELETE` as JSON 405 stubs advertising `POST` with an `OPTIONS` (`:52-58`). It reads a body, so it is dynamic. |
+| 5 | `src/lib/batch.ts:20-33` | The id and path limits (64 characters counted as code points, 512) and the path allowlist `BATCH_PATH_PATTERN`: `/api/v1` followed by segments of letters, digits, hyphen and underscore, and an optional query of printable ASCII without space, `#` or backslash. No dot segment, percent-escape, backslash, double slash, scheme, host or control character can be written. |
+| 6 | `src/lib/batch.ts:55-111` | `BATCH_ROUTES`, the closed list of 14 `/api/v1` GET handlers a batch can run, with per route the query parameters it reads (`decisions` reads `tag`, `search` reads `q`). The batch endpoint, admin, cron, chat, voice, the MCP endpoint and the unversioned aliases are absent, so a batch can neither reach them nor recurse; `batch.test.ts` pins the list to the OpenAPI document. |
+| 7 | `src/lib/batch.ts:132-219,329-337` | `itemProblem` and `parseBatchBody`: all-or-nothing validation, the first problem found names the index and never repeats what the client sent; `operationKey` decides when two items are the same operation (the route template, the slug and the values of the parameters that route reads, the query parsed exactly as the handler parses it). |
+| 8 | `src/lib/batch.ts:244-273` | `readBodyWithin`: believes the declared `Content-Length` only to refuse early, counts the bytes that arrive (so a chunked body or a lying header cannot pass), cancels the stream past the cap, and decodes with `fatal: true` so invalid UTF-8 is reported, not repaired. |
+| 9 | `src/lib/batch.ts:284-392` | `toOutcome`, `resolveRoute`, `execute` and `runBatch`: each item calls the real handler in process with a bare `GET` for this site (no client headers) and its slug as Next 16 passes it; a non-JSON sub-response has a null body; an unmatched path is a 404 item (`notBatchable` lists the batchable paths); a throwing handler is a 500 item `internal_error`, logged by name only. |
+| 10 | `src/lib/batch.ts:395-415` | `responseBytes` and `answerBatch`: the 1048576-byte cap is measured on the serialised answer, and over it the whole answer is refused. |
+| 11 | `src/lib/openapi-v1.ts:106-116,239-262` + `src/lib/openapi-v1-schemas.ts:273-330` | The operation `runBatch` (tag API, `x-read-only: true`), its request example `BATCH_EXAMPLE_BODY` (tested against the real parser and run end to end) and the schemas `BatchRequest`, `BatchRequestItem`, `BatchResponse`, `BatchResponseItem`. |
+| 12 | `src/lib/developers-content.ts:165-199` + `src/app/developers/sections/intro.tsx:67-86` + `src/lib/llms-txt.ts:101` | `buildBatchRecipe` (the curl call, built from the document's own example), `batchSentence` and `batchSemantics`, printed on `/developers` and in its Markdown twin, and the "Anvilry batch endpoint" line of `llms.txt`. |
+| 13 | `cli/lib/commands.mjs` (the `batch` command) + `cli/lib/request.mjs:24-38` | The CLI's `anvilry batch <path>...` sends one `POST` with the paths numbered from 1 (subsystem 15). |
+
+### Entry point
+
+`POST /api/v1/batch` with a JSON body `{ "requests": [ { "id", "method"?, "path" } ] }`: 1 to 25 items, an `id` of 1 to 64 characters unique in the
+batch, `method` absent or `"GET"`, a `path` of at most 512 characters that starts with `/api/v1`. Only the keys `id`, `method` and `path`, and
+`requests` at the top level, are accepted.
+
+### Exit point
+
+`200 { "responses": [ { id, status, body } ] }` in request order, each item carrying the status its own route answered (a 404 for an unknown slug or
+an unmatched path, a 400 for a malformed slug or query, a 500 when its handler failed), `Cache-Control: no-store`; or, with nothing run, a 400
+`invalid_request`, a 413 `payload_too_large`, a JSON 405 or a 429, all in the shared error shape.
+
+### Failure modes
+
+| Failure | Mechanism |
+|---|---|
+| A batch is used to amplify traffic | The same operation twice is a 400 (`requests[N] repeats requests[M]; send each operation once`); two items count as the same when the route would read the same values from both, so a parameter a route ignores makes no difference and a second `?` cannot hide one; the one route that calls GitHub is therefore called at most once per batch (`batch/route.test.ts`). The cap is then a backstop: the largest all-distinct batch measures about 140 KB (140,742 B by the procedure of `batch-run.test.ts` with the notes flag unset or `false`, 142,923 B with it `true`; about 13 to 14% of the cap), well under half of it. |
+| A batch reaches a route it should not | It can only name a row of `BATCH_ROUTES`; the path allowlist leaves no way to write a traversal or a host, and a nested batch is refused (`batch.ts:160-162`). A well-formed path no row matches is a 404 item and no call is made. |
+| A new `/api/v1` route is not batchable, or a removed one is still listed | `batch.test.ts` fails when `BATCH_ROUTES` and the OpenAPI document disagree, including the query parameters each route declares. |
+| The answer grows without bound | Over 1048576 bytes the whole answer is a 413 and none of the results are sent; a long list is split across batches (`batch-cap.test.ts` replaces `runBatch` with an oversized result; `batch-run.test.ts` stubs a route that answers more than the cap). |
+| A client re-sends or loses a batch | There is no write to repeat: every operation is a read, the answer is never cached (`no-store`) and the budget is charged once per call. |
+| One bad item hides the good ones | Validation is all or nothing and happens first; after it, items run independently and one failing item never fails another. |
+| A `POST` reaches a read-only path | The proxy's method table lists `/api/v1/batch` alone; everywhere else a `POST` is the JSON 405 (`public-api-paths.test.ts`, `proxy.test.ts`). |
+
+### Flags / env that alter it
+
+None: no environment variable was added. `NEXT_PUBLIC_NOTES_ENABLED` changes what the note items return (`batch/batch-notes.test.ts` pins both states).
+
+---
+
+## 14. Structured data (JSON-LD)
+
+New with round 3. The site already described the owner (`PersonJsonLd`, `OrganizationJsonLd`, `WebSiteJsonLd`, `FaqJsonLd` in the root layout,
+`src/app/layout.tsx:125-128`, `ProfilePageJsonLd` on `/about`) and, for each article and note page, a `BlogPosting`. Round 3 adds
+what search and agents had no structured data for: the three lists the homepage shows, the developer documentation, and the MCP server; it
+also hardens the one serialiser all of them go through. Every entity says only what its page says, and a DOM test renders the real page and
+compares.
+
+### Flow
+
+```
+src/app/page.tsx   after <ViewRouter>, outside <main> (so not part of the page text)                         :43-47
+   → <FeaturedWorkJsonLd />      allWork                       → featuredWorkItemList      json-ld-lists.tsx:91-110    (CreativeWork, the owner as `contributor`)
+   → <FeaturedProjectsJsonLd />  featuredProjects              → featuredProjectsItemList  :114-137                   (SoftwareSourceCode via softwareSourceCodeEntity; codeRepository only for a public repo)
+   → <LatestArticlesJsonLd />    homeArticleGroups()           → latestArticlesItemList    :151-174                   (BlogPosting; url = articleUrl(group), :145-148)
+        ListScript renders nothing for an empty list (:177-179), otherwise JsonLdScript                         json-ld.tsx:37-47
+            JsonLdScript = { "@context": "https://schema.org", ...data } → safeJsonLd(…)                        json-ld.tsx:26-28, escapes :18-24
+/developers  → <DevelopersJsonLd />   WebAPI "Anvilry public API" + TechArticle                                   json-ld-api.tsx:27-54,70-77 (page.tsx:76)
+/mcp         → <McpServerJsonLd />    WebAPI "Anvilry MCP server"                                                json-ld-api.tsx:57-67,80-82 (mcp/page.tsx:216)
+articles/[slug] and notes/[slug]  → JsonLdScript (the same escaper)                                              articles/[slug]/page.tsx:140, notes/[slug]/page.tsx:111
+```
+
+### Participating files, in flow order
+
+| # | File | Exact role |
+|---|---|---|
+| 1 | `src/lib/home-articles.ts:6-17` | `homeArticleGroups()` and `HOME_ARTICLE_COUNT` (2): none while articles are disabled, otherwise the newest two **after** grouping, so two platform copies of one article are one card. `WritingPreview` (`home/writing-preview.tsx:8-12`), the JSON-LD list and the homepage Markdown twin all read it, so they cannot disagree about which articles the page shows. |
+| 2 | `src/lib/article-href.ts:13-28` | `resolveCanonicalHref(group, notesEnabled)`: where an article card sends a visitor (the on-site note while notes are enabled, else the canonical's external URL, else the first syndicated copy with a URL, else the on-site page). Pure and import-light so the article card (a client component), the JSON-LD list and the homepage Markdown twin (server code, which cannot call functions exported by a client module) share one rule. It is not the only copy: the `/articles.md` twin (`page-markdown-lists.ts`) and `related-writing.tsx` keep their own. |
+| 3 | `src/lib/strip-tracking-params.ts:2-74` | `stripTrackingParams(url)`: removes the 20 documented tracking names (`TRACKING_PARAMS`, `:16-37`) and any `utm_` parameter, matched whole, lower-cased and percent-decoded; returns the input unchanged when there is nothing to strip or it is not an absolute URL. Applied **only** to the URL of a JSON-LD entity (`json-ld-lists.tsx:145-148`); a visible link stays as the author wrote it. |
+| 4 | `src/components/json-ld-lists.tsx:1-193` | The three list builders and the three components (`:181-193`). Each entry is built from the data its section component reads, in its order; text is passed through as shown, and the test fails if a title ever carries markdown or HTML. The project entity is the same call `/projects/[slug]` makes; the work entity says `contributor` where `/work/[slug]` says `author` (a deliberate difference: every case study's register reads "Co-built"). |
+| 5 | `src/components/json-ld-api.tsx:18-82` | `publicApiEntity`, `developersArticleEntity`, `mcpServerEntity` and the two components; no terms of service and no publication date are declared because there are none. |
+| 6 | `src/components/json-ld.tsx:5-52` | `safeJsonLd` and `JSON_LD_ESCAPES` (`:18-28`), `JsonLdScript` (`:37-47`), `authorPerson` (`:50-52`). The serialiser escapes every `<`, `>`, `&`, U+2028 and U+2029 as its `\uXXXX` JSON escape (it used to escape only `</`): `<` can begin `</script>`, `<!--` or `<script`, and after `<!--` a later `<script` puts the HTML tokenizer in its "double escaped" state, where the block's own `</script>` no longer closes it and the rest of the page, with every JSON-LD block after it, is swallowed. `JSON.parse` reads the escapes back to the same characters, so the parsed object is identical. |
+| 7 | `src/lib/home-markdown.ts:35-40` | The homepage Markdown twin links the same articles through `homeArticleGroups()` and `resolveCanonicalHref`, so with notes on its link for a cross-posted article is the on-site note page, not a Substack share link. |
+| 8 | `src/components/json-ld-lists-support.tsx:1-136` | A test helper, not production code (it imports Vitest): renders the real homepage sections with the notes and articles flags pinned and reads the JSON-LD back out of the server HTML, for `json-ld-lists.dom.test.tsx` and `json-ld-articles.dom.test.tsx`. |
+
+### Entry point
+
+A crawler or agent reading the HTML of `/`, `/developers`, `/mcp` or an article or note page.
+
+### Exit point
+
+`<script type="application/ld+json">` blocks: three `ItemList`s on `/` (`@id` `…/#production-work`, `…/#open-source-projects`, `…/#latest-articles`), a `WebAPI` and a
+`TechArticle` on `/developers`, a `WebAPI` on `/mcp`.
+
+### Failure modes
+
+| Failure | Mechanism |
+|---|---|
+| A title or summary ends the script block or swallows the rest of the page | Fixed in `safeJsonLd`; `json-ld.dom.test.tsx` asserts on the serialised text for hostile strings, because happy-dom does not model the HTML parser states that make `<!--` and `<script` dangerous, and checks every component of the file uses it. |
+| The list says something the page does not | Each list is compared with the cards its section renders (`json-ld-lists.dom.test.tsx`, `json-ld-articles.dom.test.tsx`); the project and work entities are compared with their own pages (`json-ld-parity.dom.test.tsx`). |
+| A private repository leaks | `repoLink()` returns `null` for a private project and the entity then has no `codeRepository`; a test asserts the URL never appears. |
+| An article has several URLs in the index | The JSON-LD URL is the card's link without tracking parameters, so one article has one URL (`json-ld-articles.dom.test.tsx`). |
+| A list is emitted for an empty section | `ListScript` renders nothing for `numberOfItems === 0`, and `LatestArticlesJsonLd` is absent when articles are disabled. |
+
+### Flags / env that alter it
+
+`NEXT_PUBLIC_ARTICLES_ENABLED` (no article list when disabled) and `NEXT_PUBLIC_NOTES_ENABLED` (a cross-posted article points at the note only while notes
+are enabled). Nothing else.
+
+---
+
+## 15. The `anvilry` CLI package and its publish flag
+
+New with round 3. The source of a command-line client for the public API lives in `cli/` (npm name `anvilry`, zero dependencies).
+The owner published `anvilry` 0.1.0 to npm on 2026-11-01 (by hand, no provenance, from the tree before the publish flip); `cli/package.json` is 0.1.1, a README-only patch prepared for the owner to publish, so the registry's latest is 0.1.0 until then.
+Every sentence about the CLI on `/developers`, in its Markdown twin and in `llms.txt` is built from one descriptor and one flag, `CLI.published`, which is `true` in this tree and flips them together; production, observed 2026-11-01, runs the previous release, so its `/developers` and `llms.txt` still say there is no published CLI until this deploys. The package
+is indexed file by file in [11](./11-config-build-ci-infra.md) (`### cli/`); this section is how it connects to the rest.
+
+### Flow
+
+```
+anvilry <command> [args] [flags]     (npx anvilry; from a clone: node cli/bin/anvilry.mjs)
+   → cli/bin/anvilry.mjs   passes in only ANVILRY_BASE_URL; exits 0 quietly if the reader of a pipe leaves             :5-16
+   → run(argv, { env, stdout, stderr, fetch })                                                                         cli/lib/run.mjs:24-52
+        planInvocation(argv, env)   parse, validate, build the request; every usage error is raised here, before any network call   plan.mjs:33
+        send(request, { fetch, timeoutMs })   redirect "manual" (a 3xx is a result, never followed), body read under 10 MiB, one deadline   http.mjs:22-47
+        interpretResponse(response, plan)   stdout, stderr, exit code: 0 ok · 2 API error / 429 / 3xx / not JSON / too big / failed batch item
+                                            (3 no answer, 1 usage)                                                    report.mjs:40
+   → GET https://anvilry.vercel.app/api/v1/…  (or POST /api/v1/batch, subsystem 13)  with Accept, API-Version: 1 and User-Agent anvilry-cli/<version>
+
+the site side:
+src/lib/developer-tools.ts   CLI = { name "anvilry", registry "npm", published: true, … }                              :35-43   ← the single switch
+   → cliHeading / cliStatus / cliSourceNote / cliInstallLines / cliLlmsLine                                             :115-150
+   → /developers #cli (sections/cli.tsx:31-104), /developers.md (the same components), llms.txt "Developer resources" (llms-txt.ts:109)
+```
+
+### Participating files, in flow order
+
+| # | File | Exact role |
+|---|---|---|
+| 1 | `cli/package.json`, `cli/bin/anvilry.mjs`, `cli/lib/*.mjs` | The package (11 `### cli/`). |
+| 2 | `cli/lib/commands.mjs` | The command and flag tables: the contract the site pins its documentation to; frozen, so they cannot change at run time. |
+| 3 | `cli/lib/constants.mjs` | The numbers it shares with `src/` (API version and header, slug rule, the 25-operation batch limit, the canonical origin); it cannot import from the site, so `tests/cli/drift.test.ts` is the only thing that ties them together. |
+| 4 | `src/lib/developer-tools.ts:35-150` | `CLI` (the descriptor and the flag), `CLI_COMMANDS` (the site's copy of the command table, pinned to `cli/lib/commands.mjs` by `developer-tools.test.ts`) and the wording helpers. Published (the state of this tree): the section is headed "Anvilry CLI", names the package, offers `npx anvilry` and `npm install --global anvilry` and lists every command; unpublished (the flag-false branch of this tree's helpers, covered by the wording tests): headed "Anvilry command-line use", says there is no published CLI package, adds where the source is (`cli/`) and offers no install or run command; production, which runs the previous release, shows an older wording without the source note until this deploys (the same heading, "There is no published CLI package for Anvilry." and curl recipes; observed 2026-11-02). |
+| 5 | `src/app/developers/sections/cli.tsx:31-104` + `src/lib/llms-txt.ts:109` | `CliCommandsTable`, `CliInstall`, `CliSection` and the `llms.txt` line, all reading `CLI`. |
+| 6 | `cli/README.md` (156 lines) | Carries no status block and no "Once published:" lead-in now (they exist exactly while the flag is false, `tests/cli/readme.test.ts`); Install is at `:12` and the maintainers' list at `:142-152` ends at verifying a clean install. |
+| 7 | `.gitignore` | `~/`, `**/~/` and `.npm/`: a literal `~` directory once appeared under `cli/`. |
+| 8 | `tests/cli/**` (15 files, 279 tests) | Commands, planning, running (in process and as a child process), hostile servers, pipes, packaging, README, drift. |
+
+### Entry point
+
+A terminal (`npx anvilry`, now that the package is on npm; from a clone, `node cli/bin/anvilry.mjs`), and `src/lib/developer-tools.ts` for the site's wording.
+
+### Exit point
+
+JSON on stdout, errors on stderr, an exit code 0 to 3; and, on the site, the CLI section of `/developers` (headed "Anvilry CLI" while the flag is true), its twin and `llms.txt`.
+
+### Failure modes
+
+| Failure | Mechanism |
+|---|---|
+| The site says the CLI is installable when it is not, or denies one that exists | Not possible by editing prose: the wording comes from `CLI.published`; `developer-tools.test.ts` pins the flag to `true` (the package is on npm; lower it, and the gate, only if the package is withdrawn) and `readme.test.ts` fails if a README status block or lead-in disagrees with the flag. The four edits publishing takes (flag, block, lead-in, gate) were made in the change that flipped it. |
+| The package and the site disagree about a command or a number | `developer-tools.test.ts` compares `CLI_COMMANDS` with `cli/lib/commands.mjs` in name, summary and usage; `drift.test.ts` compares the shared values with `src/`. |
+| A hostile `--base-url` server attacks the terminal | Control and format characters in what the CLI prints are written as `\uXXXX`; `--raw` is byte-exact on purpose; redirects are never followed (a batch body is never re-sent elsewhere); a body over 10 MiB, an unprintable body or one nested past the pretty-print limits is refused with exit 2. |
+| `anvilry openapi \| head -1` crashes | `exitWhenReaderLeaves` makes `EPIPE`, `ENOTCONN` and `ECONNRESET` on stdout or stderr exit 0 quietly; any other stream error is rethrown. |
+| The package ships a stray file | The `files` whitelist, and `package.test.ts` (`npm pack --dry-run`, skipped with a visible reason without `npm`). |
+| The package publishes with provenance from a laptop | The manifest asks for none (`publishConfig` is only `access: public`): npm can generate provenance only on a supported CI provider. |
+
+### Flags / env that alter it
+
+`CLI.published` (a source constant, currently `true`, not an environment variable). The CLI itself reads exactly one variable, `ANVILRY_BASE_URL`, and writes no file.
+
+---
+
+## 16. The `/developers` section architecture
+
+New with round 3. `src/app/developers/page.tsx` is 79 lines: a metadata block and a short `DevelopersPage` (`:43-79`) that lays out section components imported from `./sections`. Before
+round 3 it was one long page; the split exists so each piece stays small and so the Markdown twin can be made by the same components.
+
+### Flow
+
+```
+/developers (HTML)   page.tsx:43-79   buildOpenApiDocument() once → <Section …> IntroSection, QuickstartSection, AuthenticationSection, EndpointsSection, VersioningSection,
+                     RateLimitsSection, ResponseHeadersSection, DeprecationNote, MarkdownSection, ErrorsSection, ErrorCodesSection, McpSection, SdkSection, CliSection, DiscoverySection, LimitsSection
+                     + <DevelopersJsonLd />
+                     every component comes from  src/app/developers/sections/index.ts  (26 lines, the single list)
+/developers.md (Markdown twin)   page-markdown-prose.ts:38-46   import page + import sections → components: Object.values(sections)
+                     → renderProseMarkdown (:64-73): elementToMarkdown(Page(), { callable: CALLABLE ∪ components, sections: SECTIONS })
+                     a component not in index.ts is read through, keeping only its children: it would vanish from the twin without an error
+```
+
+### Participating files, in flow order
+
+| # | File | Exact role |
+|---|---|---|
+| 1 | `src/app/developers/page.tsx:43-79` | Metadata and the layout; no prose of its own. |
+| 2 | `src/app/developers/sections/index.ts:1-26` | The one export list, read by the page and by the twin. |
+| 3 | `src/app/developers/sections/intro.tsx:34-90` | `IntroSection`, `QuickstartSection` (the curl recipes, including the batch call, `:63-86`). |
+| 4 | `src/app/developers/sections/contract.tsx:9-112` | `AuthenticationSection`, `EndpointsSection` (rendered from the OpenAPI document by `ApiTable`, `api-table.tsx:23`), `VersioningSection`, `RateLimitsSection`, `ResponseHeadersSection`, `DeprecationNote`. |
+| 5 | `src/app/developers/sections/guides.tsx:48-212` | `MarkdownSection`, `ErrorsSection` (the `errors` anchor, `:94`), `ErrorCodesSection` (the table rendered from `API_ERROR_CODES`, `:127`), `McpSection`, `SdkSection`, `DiscoverySection`, `LimitsSection`. |
+| 6 | `src/app/developers/sections/cli.tsx:31-104` | `CliCommandsTable`, `CliInstall`, `CliSection` (subsystem 15). |
+| 7 | `src/lib/developers-content.ts:42-199` | The facts the sections state that are not prose: `RESPONSE_HEADERS`, `deprecationSummary`, `buildCurlRecipes`, `buildBatchRecipe`, `batchSentence`, `batchSemantics`. |
+| 8 | `src/lib/page-markdown-prose.ts:38-73` | The prose-page registry; `developers` is the one entry that also loads the sections. |
+
+### Entry point
+
+`GET /developers`, or `GET /developers.md` and `Accept: text/markdown` on `/developers`.
+
+### Exit point
+
+An HTML page, or a Markdown document that contains everything the HTML shows (`page-markdown.dom.test.tsx`).
+
+### Failure modes
+
+| Failure | Mechanism |
+|---|---|
+| A section silently disappears from `/developers.md` | It was not exported by `index.ts`. `sections.test.ts` fails when a component of the folder is missing from it. |
+| The page grows back into one long file | `sections.test.ts` fails when a function is over 50 lines, a file over 500, or `DevelopersPage` is not short. |
+| A table on the page and in the twin disagree with the code | The endpoint table is rendered from the OpenAPI document, the error table from `API_ERROR_CODES`, the header table from `RESPONSE_HEADERS`, the commands from `CLI_COMMANDS`; nothing is retyped. |
+| The CLI section says the wrong thing | It is built from `CLI`; see subsystem 15. |
+
+### Flags / env that alter it
+
+`CLI.published` changes the `#cli` section. Nothing else.
+
+---
+
 ---
 
 ## Cross-subsystem coupling points
 
-Places where one subsystem's change breaks another, gathered from all twelve maps — subsystems 1–6 in
-[`14-subsystems.md`](./14-subsystems.md), 7–12 above.
+Places where one subsystem's change breaks another, gathered from all sixteen maps — subsystems 1–6 in
+[`14-subsystems.md`](./14-subsystems.md), 7–16 above.
 
 | Coupling | Sites that must agree |
 |---|---|
 | Project group names (2 copies) | `velite.config.ts:4-9` · `src/lib/content.ts:40-45` |
 | Graph node ↔ content slug | `src/lib/graph-data.ts:18-92` (`graphNodes`, 23 entries) · `src/lib/game-model.ts:36-67` (`NODE_CONTENT`) · gate `src/lib/game-model.test.ts:22-58` |
-| Base URL `https://anvilry.vercel.app` (**22 non-test files / 27 lines** at this tree, prose and comments included; 38 files / 65 lines with tests; newer machine-readable code imports `SITE_URL` from `src/lib/site-url.ts` instead of repeating the host) | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:31,146,216,253,266,312` (6 lines, one of them inside FAQ prose at `:312`). One site is **functional, not cosmetic**: `OWN_NOTES_URL_PREFIX` (`src/lib/content.ts:79`) is how `isNoteOnlyArticle` recognises an article whose `externalUrl` is one of its own note URLs — change the domain without it and note-only articles stop being dropped while notes are dark (`content.ts:92`). `src/lib/mcp-tools.test.ts:94,107` asserts against the same host |
+| Base URL `https://anvilry.vercel.app` (**22 production files / 26 lines** at this tree, prose and comments included; 24 files / 28 lines counting the two test-support helpers `mcp-test-support.ts` and `json-ld-lists-support.tsx`; 46 files / 85 lines with all `src/` test files; 56 files / 104 lines once `tests/` and `cli/` are searched too, the CLI carrying its own `DEFAULT_BASE_URL`; newer machine-readable code imports `SITE_URL` from `src/lib/site-url.ts` instead of repeating the host) | The per-file table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority; re-verify with `grep -rn 'anvilry\.vercel\.app' src Makefile \| grep -v '\.test\.'`. Densest site: `src/components/json-ld.tsx:72,255,292,305,351` (5 lines, the last one inside FAQ answer prose). One site is **functional, not cosmetic**: `OWN_NOTES_URL_PREFIX` (`src/lib/content.ts:79`) is how `isNoteOnlyArticle` recognises an article whose `externalUrl` is one of its own note URLs — change the domain without it and note-only articles stop being dropped while notes are dark (`content.ts:92`). `src/lib/mcp-tools.test.ts:104,117` asserts against the same host, and `cli/lib/constants.mjs` (`DEFAULT_BASE_URL`) is a copy outside `src/` that `tests/cli/drift.test.ts` ties to the canonical origin |
 | Error dedupe flag string | `src/app/error.tsx:39` · `src/app/global-error.tsx:34` · `src/instrumentation-client.ts:68-69` |
 | Beacon `source` enum | `src/lib/telemetry/beacon.ts:42` · `src/app/api/error/route.ts:84` (declared source of truth) |
 | Telemetry kind union (8 kinds) | `src/lib/telemetry/schema.ts:37-50` · `src/app/admin/telemetry/page.tsx:47` (fetch loop over `KIND_LITERALS`) and its render switches (`:384,:414-416`) · `scripts/replay-trace.mjs:47-55` (**hardcoded copy with 7 kinds — `chat.cache` is missing**, so `make trace` never replays FAQ-cache spans) · the union is pinned by `schema.test.ts:138-155`. Three of the eight — `tts.request`, `transcribe.request`, `budget.tick` — have **no emitter** anywhere in `src/` (TTS/STT failures are emitted as `server.error`), so the dashboard's four voice-latency tiles (`page.tsx:729-762`) stay on their empty placeholders |
@@ -1049,17 +1320,25 @@ Places where one subsystem's change breaks another, gathered from all twelve map
 | Palette `value` pinning | `command-palette-content.tsx:361` (`copy-email`), `:478` (`voice-tts`), plus six other voice actions (`voice-pick` `:415`, `voice-settings` `:429`, `voice-engine` `:506`, `voice-stt-engine` `:534`, `voice-surface` `:563`, `voice-wake` `:588`) — cmdk re-scores when a label mutates |
 | `MDXContent` ↔ CSP | `src/components/mdx-content.tsx:14-17` · `next.config.ts:43-51` (`'unsafe-eval'`) |
 | `.md` passthrough (two implementations) | `next.config.ts:305-319` (4 rewrites → `/api/md/*`, plus the page rule at `:313` → `/api/md/pages/:page`, subsystem 12) · `src/app/<collection>/[slug].md/route.ts` (4 filesystem handlers) and `src/app/api/md/<collection>/[slug]/route.ts` (the rewrite targets). Both are thin wrappers around the one `markdownForContent` (`src/lib/markdown-content.ts`: frontmatter strip, `content/` read from disk, a Markdown 404 when the slug is not in the content layer); resolution order not exercised. The collection lookup runs before the file read, which is the only path-traversal guard; since the consolidation it lives in one place and `markdown-content.test.ts` has a test that a traversal slug never reads outside the content folder. |
-| Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:166-175`), `src/app/admin/telemetry/page.tsx:470`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:33`. The admin matcher entry (`proxy.ts:41-59`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
+| Admin credential predicate | `src/lib/admin-auth.ts:24` (`isAdminAuthorized`) is the single implementation; callers `proxy()` (`src/proxy.ts:173-182`), `src/app/admin/telemetry/page.tsx:470`, and `requireAdmin` (`admin-auth.ts:48`) → `api/admin/faq-cache/purge/route.ts:33`. The admin matcher entry (`proxy.ts:41-59`) covers only `/admin/:path*`, so every `/api/admin/*` route must call `requireAdmin` itself |
 | Cron secret predicate | `src/lib/cron-auth.ts:15` (`hasValidCronSecret`) ← the five cron routes via `unauthorizedUnlessCron` **and** `rate-limit.ts:100` (limiter bypass); the eval cron's outbound `Authorization` + `X-Chat-Skip-Cache` headers (`eval/route.ts:123,126`) are what the bypass and `chat/route.ts:288` read. `cron-auth.routes.test.ts:19-25` lists the routes it covers |
 | Rate-limit class ↔ route | `src/lib/rate-limit.ts` (`RateLimitClass` at `:19`, prefixes `:25-29`) ↔ callers `chat/route.ts:145`, `tts/route.ts:70`, `tts-google/route.ts:68`, `transcribe/route.ts:64`, `error/route.ts:102`; each pairing is pinned by a test — the three voice routes by `voice-rate-limit-class.test.ts`, `chat` by `chat/route.test.ts:131-137`, `beacon` by `error/route.test.ts:266-272` — but a new route is pinned by nothing |
 | Extension-less pages ↔ the Markdown proxy | `PAGE_TWINS` (`src/lib/page-twins.ts:16-27`, ten pages) and `HTML_ONLY_PAGES` (`src/lib/markdown-routing.ts:27`, three) ↔ the `page.tsx` files under `src/app` (19 at this tree): a page missing from both lists is answered with a Markdown 404 when the client asks for Markdown. Gate: `src/lib/markdown-routing.test.ts` walks `src/app`; `page-twins.test.ts` ties the twin list to pages that exist. The ten names are also spelled in the `next.config.ts` copy (`:91-102`) and in the page rewrite (`:313`), which `src/next-config.test.ts` ties to `page-twins.ts`. The same slug pattern is spelled in `CONTENT_TWIN` (`markdown-routing.ts:33`), in the `next.config.ts` `headers()` source (`:296-299`) and in the rewrites (`:314-317`); `src/next-config.test.ts` pins the config side. |
 | Voice surfaces ↔ BuildGraph gate | `voice-surface-mutex.ts:31` (`VoiceSurfaceId`: `modal` \| `inline` \| `core`) ↔ the three stores (`talk-overlay-store.ts`, `anvil-inline-store.ts`, `anvil-core-store.ts`) ↔ `game/build-graph.tsx:35-38` (ORs the same three "open" hooks so only one GL context is live) ↔ `header-orb-trigger.tsx:68-79` and `command-palette-content.tsx:437-439` (both gated by `isVoiceViewActive`, `voice-surface-mutex.ts:27`; the palette gate is pinned by `command-palette-content.dom.test.tsx:123-140`, the orb gate by no test). A fourth surface must be added to all of them |
 | Dark notes | `src/lib/content.ts:57-66` (`publishedNotes` raw vs `allNotes` gated) ↔ the `/notes` route files, the only readers of `publishedNotes` (`notes/[slug]/page.tsx:26`, `notes/[slug]/opengraph-image.tsx:13`) ↔ `src/lib/notes-dark.test.ts` (llms.txt, feed, MCP, corpus, `.md` handlers); the `/api/v1/notes` list is empty and its items are 404s while the notes flag is off (`v1-notes.test.ts`, which also pins the flag-on answers), and the `notes` page twin is the Markdown 404 (`page-markdown.test.ts`) |
-| Decisions ledger | Velite fields (`decisions` on Project, `constraints` / `tradeoffs` on Work — `velite.config.ts:70,97-98`) → `src/lib/decisions.ts:23-65` (`allDecisions`, one flat typed ledger) → the `/decisions` client page (`src/app/decisions/page.tsx:7,33-34`) and MCP `list_decisions` (`mcp-tools.ts:215-227`, registered at `api/mcp/[transport]/route.ts:110-119`); gate `src/lib/decisions.test.ts:15-93` — every populated source field has an entry, every entry matches its source verbatim, hrefs match `/^\/(work\|projects)\/[a-z0-9-]+$/`, ids are unique — and it is build-blocking |
-| Public API paths | `src/proxy.ts:44-53` (the matcher entries) ↔ `src/lib/public-api-paths.ts:11-39` (`isPublicApiPath`) ↔ the operations documented in `openapi-v1.ts` and `openapi-legacy.ts`: a path in the predicate but not in the matcher never reaches the proxy, so its responses lose `API-Version` and the `RateLimit` fields. Gate: `src/lib/public-api-paths.test.ts` (Next's `unstable_doesMiddlewareMatch` against every documented path). |
-| Public API numbers (version `1`, 300 per 60 s, 180 days) | `src/lib/api-policy.ts:12-28` ← the OpenAPI `info.description`, `/developers`, `llms.txt` "Developer resources", `GET /api/v1` (`src/app/api/v1/route.ts:10-31`), `privacy-facts.ts:18-20` (pinned by `privacy-facts.test.ts`, which also checks the limiter never touches Redis) and the `api-v1-index` smoke check. Changing a number is a one-line edit in `api-policy.ts`; the tests fail where a copy was typed instead of read. |
+| Decisions ledger | Velite fields (`decisions` on Project, `constraints` / `tradeoffs` on Work — `velite.config.ts:70,97-98`) → `src/lib/decisions.ts:23-65` (`allDecisions`, one flat typed ledger) → the `/decisions` client page (`src/app/decisions/page.tsx:7,33-34`) and MCP `list_decisions` (`mcp-tools.ts:365-377`, registered at `api/mcp/[transport]/route.ts:127-137`); gate `src/lib/decisions.test.ts:15-93` — every populated source field has an entry, every entry matches its source verbatim, hrefs match `/^\/(work\|projects)\/[a-z0-9-]+$/`, ids are unique — and it is build-blocking |
+| Public API paths | `src/proxy.ts:44-53` (the matcher entries) ↔ `src/lib/public-api-paths.ts:13-62` (`isPublicApiPath`) ↔ the operations documented in `openapi-v1.ts` and `openapi-legacy.ts`: a path in the predicate but not in the matcher never reaches the proxy, so its responses lose `API-Version` and the `RateLimit` fields. Gate: `src/lib/public-api-paths.test.ts` (Next's `unstable_doesMiddlewareMatch` against every documented path). |
+| Public API numbers (version `1`, 300 per 60 s, 180 days) | `src/lib/api-policy.ts:12-45` ← the OpenAPI `info.description`, `/developers`, `llms.txt` "Developer resources", `GET /api/v1` (`src/app/api/v1/route.ts:10-31`), `privacy-facts.ts:18-20` (pinned by `privacy-facts.test.ts`, which also checks the limiter never touches Redis) and the `api-v1-index` smoke check. Changing a number is a one-line edit in `api-policy.ts`; the tests fail where a copy was typed instead of read. |
 | The `clientIp` helper (4 copies) | `src/lib/rate-limit.ts` · `src/lib/telemetry/with-trace.ts` · `src/app/api/visit/route.ts` · `src/lib/public-api-limit.ts:135-141`, all deliberately duplicated; gate `src/lib/client-ip-consistency.test.ts:26-31` (the enumerated copies) and `:102` (a discovery check that fails on an unlisted one). |
-| API error codes (8) | `src/lib/api-error.ts:20-72` (`API_ERROR_CODES`) ↔ the `Error` schema in the OpenAPI document ↔ the errors table on `/developers#errors` ↔ the source files that emit them; gates `api-error.test.ts` (every code bound to one status and emitted somewhere), `openapi.test.ts` and `agent-pages.dom.test.tsx`. |
+| API error codes (8) | `src/lib/api-error.ts:20-73` (`API_ERROR_CODES`) ↔ the `Error` schema in the OpenAPI document ↔ the errors table on `/developers#errors` ↔ the source files that emit them; gates `api-error.test.ts` (every code bound to one status and emitted somewhere), `openapi.test.ts` and `agent-pages.dom.test.tsx`. |
+| Batch registry ↔ OpenAPI ↔ route files | `BATCH_ROUTES` (`src/lib/batch.ts:55-111`, 14 rows with the query parameters each route reads) ↔ the GET operations of `buildV1Paths()` (`openapi-v1.ts`) ↔ the `src/app/api/v1/**/route.ts` files. A new `/api/v1` GET route that is not added to `BATCH_ROUTES` is silently not batchable; a stale row is a dead operation. Gate: `batch.test.ts` pins the list to the OpenAPI document, parameters included. |
+| Batch limits and counting rule | `BATCH_MAX_REQUESTS` 25, `BATCH_MAX_BODY_BYTES` 16384, `BATCH_MAX_RESPONSE_BYTES` 1048576 (`api-policy.ts:33-35`) ← `batch.ts` (the checks), the `runBatch` operation text in `openapi-v1.ts`, `/developers` (`developers-content.ts:181-199`), `llms.txt:101`, `RATE_LIMIT_POLICY_TEXT` (`api-policy.ts:116`, "counts as one request") and the CLI (`cli/lib/constants.mjs`, pinned by `tests/cli/drift.test.ts`); the literals are pinned in `api-policy.test.ts` without reading the constants. |
+| Method table ↔ proxy ↔ route stubs | `METHOD_EXCEPTIONS` (`public-api-paths.ts:48-50`) ↔ the proxy's 405 and `OPTIONS` answers (`proxy.ts:132-154`) ↔ the batch route's own stubs (`batch/route.ts:52-58`): all three must name `POST, OPTIONS` for the batch path and `GET, HEAD, OPTIONS` elsewhere (the OpenAPI 405 responses document only a generic `Allow` header, `openapi-parts.ts:98-103`). Gates: `public-api-paths.test.ts`, `proxy.test.ts`, `batch/route.test.ts`. |
+| `x-read-only` ↔ the document's opening sentence | An operation marked `x-read-only: true` (`runBatch`, `callMcpServer`) ↔ `postRoutesSentence` (`openapi.ts:115-135`), which says "read-only" only of marked POSTs; `openapi.test.ts` fails for an unmarked POST. A new POST route must be marked or described neutrally. |
+| MCP parameters ↔ page ↔ route | `TOOL_INPUT_SHAPES` (`mcp-tools.ts`) is read by the route's registrations and by `src/app/mcp/page.tsx` (the parameter lines it lists come from the advertised JSON Schema); `mcp/page.tsx` also keeps the hand-written `TOOLS` table, which `tools-documented.test.ts` ties to the route's `registerTool` calls. |
+| The CLI ↔ the site | `cli/lib/commands.mjs` (the command and flag tables) ↔ `CLI_COMMANDS` in `src/lib/developer-tools.ts:49-112` (the site's copy, pinned by `developer-tools.test.ts`) ↔ `cli/lib/constants.mjs` (API version and header, slug rule, batch limit, canonical origin; pinned to `src/` by `tests/cli/drift.test.ts`) ↔ `CLI.published` (`developer-tools.ts:38`), which drives the wording of the `/developers` CLI section, its Markdown twin and the `llms.txt` line, and must change in the same commit as the status block between the `status:unpublished` markers of `cli/README.md` and the "Once published:" lead-in (present while the flag is false, absent now that it is true; `tests/cli/readme.test.ts`). |
+| JSON-LD lists ↔ the sections they describe | `featuredWorkItemList` / `featuredProjectsItemList` / `latestArticlesItemList` (`json-ld-lists.tsx`) ↔ the data the homepage sections render (`allWork`, `featuredProjects`, `homeArticleGroups()`); the article list, the `WritingPreview` card and the homepage Markdown twin share `home-articles.ts` and `article-href.ts`. Gates: `json-ld-lists.dom.test.tsx`, `json-ld-articles.dom.test.tsx`, `json-ld-parity.dom.test.tsx` (the project and work entities equal their own pages'; the `contributor` / `author` difference is pinned), `home-markdown-articles.dom.test.tsx`. |
+| `/developers` sections ↔ the Markdown twin | `sections/index.ts` ↔ `page.tsx` ↔ `page-markdown-prose.ts:38-49` (`developers` registers `Object.values(sections)`): a component the page uses that `index.ts` does not export is read through by the converter and vanishes from `/developers.md` without an error. Gate: `sections.test.ts` (completeness, functions under 50 lines, files under 500) and `page-markdown.dom.test.tsx`. |
 
 ---
 
@@ -1091,13 +1370,13 @@ Places where one subsystem's change breaks another, gathered from all twelve map
 | Change voice defaults or add a persisted setting | `src/lib/voice-settings-context.tsx:77-88` (`DEFAULTS`) + `:129-158` (`parse`) | Every capability must stay default-OFF; `voice-settings-context.test.ts` asserts it. `parse` must never throw. |
 | Add a voice surface | `src/components/chat/voice-surface-mutex.ts:31` (`VoiceSurfaceId`) | Create a store that calls `registerVoiceSurface` at module scope and `claimVoiceSurface` at the top of `open*()` (as `talk-overlay-store.ts:31,46` does); route to it from `header-orb-trigger.tsx:70-79`; add its open hook to the `talkOpen` OR in `game/build-graph.tsx:35-38`. |
 | Change how the mic opens | `src/components/chat/use-speech-recognition.ts:162` | `continuous = false` is load-bearing for the whole half-duplex loop (`use-voice-session.ts:26-31`). `mic-button.tsx:59-64` is the consent gate. |
-| Add an MCP tool | `src/lib/mcp-tools.ts` (impl + Zod raw-shape schema) | Then register it in `src/app/api/mcp/[transport]/route.ts`, via `T.wrapToolResult()`. Also update the hand-written `TOOLS` table at `src/app/mcp/page.tsx:40-60`. The count has drifted and been fixed twice: 7→9 (`list_all_content`/`get_content_item` were live but undocumented), then 9→10 (`list_decisions` shipped the same way). The page now documents all ten and `route.ts:13` says 10 too. It is enforced, not just corrected — `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree (helpers `:25-42`, assertions `:52-`), so it cannot silently drift again. If the new tool's data function returns an array, `wrapToolResult` wraps it in `{ items }` automatically — a bare array fails the MCP SDK's `structuredContent` validation. Never import `personal.ts` (`mcp-tools.test.ts:24-46`). |
-| Change the MCP not-found contract | `src/lib/mcp-tools.ts:60-72` | `mcp-tools.ts:242` (`wrapToolResult`, moved here from the route file) keys `isError` on the literal `notFound` property (`:243,:250`); renaming it turns errors into successes. |
+| Add an MCP tool | `src/lib/mcp-tools.ts` (the implementation, its Zod raw-shape schema and a `TOOL_INPUT_SHAPES` entry, `:486-497`) | Then register it in `src/app/api/mcp/[transport]/route.ts` with `inputSchema: T.TOOL_INPUT_SHAPES.<name>`, `annotations: T.READ_ONLY_TOOL_ANNOTATIONS` and `T.wrapToolResult()`, and add a row to the hand-written `TOOLS` table in `src/app/mcp/page.tsx:45` (the page lists each tool's parameters from `TOOL_INPUT_SHAPES`). The count has drifted and been fixed twice: 7→9, then 9→10. It is enforced, not just corrected: `src/app/mcp/tools-documented.test.ts` reads both the page's `TOOLS` block and the route's `registerTool` calls from source and fails the build if they disagree, and a second `describe` in the same file fails when a tool is registered with an inline or foreign schema instead of its `TOOL_INPUT_SHAPES` entry. If the data function returns an array, `wrapToolResult` wraps it in `{ items }` automatically (a bare array fails the SDK's `structuredContent` validation). A parameter should be optional so that a call without arguments keeps returning what it always did. Never import `personal.ts` (`mcp-tools.test.ts:34-56`). |
+| Change the MCP not-found contract | `src/lib/mcp-tools.ts:136-148` | `mcp-tools.ts:393` (`wrapToolResult`, moved here from the route file) keys `isError` on the literal `notFound` property (`:394`, `:401`); renaming it turns errors into successes. |
 | Add a telemetry span kind | `src/lib/telemetry/schema.ts:37-50` | The dashboard fetches every kind in `KIND_LITERALS` (`page.tsx:47`) but colours/summarises through switches (`:384,:414-416`), and `scripts/replay-trace.mjs:47-55` has its own hardcoded `KINDS` (already missing `chat.cache`). `schema.test.ts:138-155` pins the 8-kind union. |
 | Change what is redacted from telemetry | `src/lib/telemetry/schema.ts:88-111` | Order is load-bearing (email → 32-char token → 12–19 digit run). Callers must redact **before** `emit` — `emit` does none (`emit.ts:30-35`). |
 | Change telemetry retention | `src/lib/telemetry/emit.ts:42` (`SEVEN_DAYS_MS`) | The trim itself runs on only 1-in-20 writes (`TRIM_SAMPLE_EVERY`, `:54`; trim at `:85-94`). Also `scripts/replay-trace.mjs:64`, which computes its own `since` from the same window. |
 | Add a dashboard tile | `src/app/admin/telemetry/page.tsx` | Add the Redis read to the `Promise.all` at `:493-`; every fetch helper must stay fail-soft (`:22-41,229-239,290-298`). Warn thresholds are inline magic numbers (`:548,598,620,742,761,772`). |
-| Change `/admin` auth | `src/lib/admin-auth.ts:24-59` (the predicate) | One predicate, three callers: `proxy()` (`src/proxy.ts:166-175`), `requireAdmin`, and the telemetry page (`:470`) — edit the predicate, not the callers. Guards: `proxy.test.ts`, `admin-auth.test.ts`, `admin/telemetry/page.test.tsx`. |
+| Change `/admin` auth | `src/lib/admin-auth.ts:24-59` (the predicate) | One predicate, three callers: `proxy()` (`src/proxy.ts:173-182`), `requireAdmin`, and the telemetry page (`:470`) — edit the predicate, not the callers. Guards: `proxy.test.ts`, `admin-auth.test.ts`, `admin/telemetry/page.test.tsx`. |
 | Add an authenticated route | `/admin/*` page: nothing to do — `src/proxy.ts:41-59` (the first `config.matcher` entry, `"/admin/:path*"`) already covers it (and re-check in the page as `telemetry/page.tsx:470` does). `/api/admin/*` route: call `requireAdmin(req)` first (`purge/route.ts:33`). | The proxy does **not** gate `/api/admin/*` (its `/api/:path*` entry wakes the proxy and the request passes on); nothing enforces the call. |
 | Add a cron job | `vercel.json:3-7` + a new `src/app/api/cron/<name>/route.ts` | Start the handler with `const denied = unauthorizedUnlessCron(req); if (denied) return denied;` (e.g. `github-sync/route.ts:19-20`), add the route to `cron-auth.routes.test.ts:19-25`, and set `maxDuration`. All five existing crons are fail-closed on `CRON_SECRET`. |
 | Change the CSP or a security header | `next.config.ts:37-85,119-147` | `'unsafe-eval'` is required by `MDXContent`; the three speech WebSocket hosts keep voice working in Chrome/Edge; the `/resume` override is a literal string replace of `:41` (at `:256-259`). HSTS is deliberately absent. |
@@ -1111,18 +1390,23 @@ Places where one subsystem's change breaks another, gathered from all twelve map
 | Add a terminal command | `src/components/game/terminal/commands.ts:689-722` (registry) | 32 entries today (28 visible + 4 hidden eggs: `secret`, `personal`, `uses`, `now`). Keep `COMMAND_NAMES` `!hidden`-filtered (`:745-747`) **and** the independent re-filter at `terminal.tsx:17-19`. Return a `NavAction`; never import the router. |
 | Change build ordering or add a build step | `package.json:11` | The `&&` chain is the deploy gate (velite → vitest → next build → `scripts/build-search-index.mjs`). `lint` and `tsc --noEmit` are CI-only (`ci.yml:57-61`), as is the bundle budget (`ci.yml:190-191`). Do **not** add `--webpack` to `build`: it silently stops `.next/diagnostics/route-bundle-stats.json` being written and the budget gate then fails by design (`scripts/bundle-budget.mjs:107-111`). |
 | Raise the first-load JS budget, or profile what is in a chunk | `scripts/bundle-budget.mjs:72` (`MAX_FIRST_LOAD_BYTES`) · `pnpm analyze` (`package.json:12`) for attribution | Raise the constant in its **own** commit quoting measured before/after bytes (`:69-71`) — never by adding `continue-on-error` to the step. `pnpm analyze` is local-only, needs the explicit `--webpack`, and writes `.next/analyze/{client,edge,nodejs}.html`; re-run `pnpm build` afterwards or the gate has no artifact to read. |
-| Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` (`:26`) or the `node` project's `dom` exclude (`:34`). |
+| Change the test runner setup | `vitest.config.ts` | Do not remove `env: { NODE_ENV: "test" }` or the `node` project's `dom` exclude. `testTimeout: 30_000` and `hookTimeout: 60_000` (`:32-33`) are there for the Vercel build, which runs the whole suite in parallel on a loaded container; they only bound a hang, so a test must still not depend on wall-clock time. The `dom` project's `setupFiles` (`:50-51`) loads `tests/setup/dom-async-timeout.ts`, which sets Testing Library's `waitFor` limit to 10 s (its default is 1 s); an explicit shorter `timeout` option on a `waitFor` call would undercut it, so none remains. Both projects' `tests/**` globs are live: `tests/cli/**` runs in the `node` project. |
 | Change E2E coverage | `e2e/views.spec.ts` · `e2e/resume.spec.ts` · `playwright.config.ts` | `webServer` runs `pnpm start`, so CI builds first (`ci.yml:175-177`); both a `chromium` and a `mobile-safari` project run. E2E does not block `pnpm build`. |
-| Point a custom domain at the deployment | `src/app/layout.tsx:40` (`siteUrl`) | Then the rest of the base-URL set (22 non-test files / 27 lines; plus `src/lib/mcp-tools.test.ts:94,107` and the `next.config.ts:247` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority — and `content.ts:79`, which is functional (coupling table above). |
+| Point a custom domain at the deployment | `src/app/layout.tsx:40` (`siteUrl`) | Then the rest of the base-URL set (22 non-test files / 26 lines; plus `src/lib/mcp-tools.test.ts:104,117` and the `next.config.ts:247` comment) — the enumerated table in [15 § The hardcoded base URL](./15-invariants-and-gotchas.md#the-hardcoded-base-url) is the single authority — and `content.ts:79`, which is functional (coupling table above). |
 | Regenerate the search index | `pnpm build` (last step, `package.json:11`) or `make search-index` (`Makefile:65-66`) | The index needs the prerendered HTML (`.next/server/app`, or `.next/server/route-cache/APP_PAGE/` under a deployment adapter), so it can only follow `next build`; `pnpm search-index` does not exist and both entry points run `node scripts/build-search-index.mjs`. Output goes to the untracked `public/pagefind/`. |
 | Add or bump a dependency | `package.json:23-80` (35 prod + 19 dev) | Respect the exact pins (`next` `16.4.3` / `eslint-config-next` `16.4.3`, `react`/`react-dom` `19.3.0`, `@modelcontextprotocol/sdk` `1.32.0`, `@react-three/postprocessing` `3.1.1`), the `three < 0.187.0` ceiling from `postprocessing` (`pnpm-lock.yaml:4132`), and the 14 overrides — which live in `pnpm-workspace.yaml:18-47`, **not** a `pnpm` field in `package.json`. `vite` is a declared devDependency (`^8.1.6`, `package.json:77`; resolved `8.3.5`, `pnpm-lock.yaml:4744`) next to `vitest` (`^5.0.3`, `package.json:78`; resolved `5.0.5`, `pnpm-lock.yaml:4787`). A new dependency with an install script needs an `allowBuilds` decision (`pnpm-workspace.yaml:84-87`) or `pnpm-build-allowlist-consistency.test.ts` fails the deploy. |
 | Add a Dependabot hold | `.github/dependabot.yml` | It is read from the **default branch only** — on any other branch it is inert. `ignore` entries accept a version-scoped `versions: ["x.y.z"]` form as well as a bare package name. |
 | Replay one request end to end | `make trace TRACE_ID=…` → `scripts/replay-trace.mjs` | The id comes from the `x-anvilry-trace-id` response header (`with-trace.ts:207`). Needs both Upstash vars; window is 7 days; FAQ-cache spans are not replayed (see the coupling table). |
-| Change the public API rate limit, the version or the notice period | `src/lib/api-policy.ts:21-28` (`DEPRECATION_NOTICE_DAYS`, `RATE_LIMIT_POLICY`) | Nothing else needs editing: the OpenAPI description, `/developers`, `llms.txt` and the headers read the constants. `PRIVACY_FACTS.publicApiRequests` / `publicApiWindowSeconds` (`privacy-facts.ts:19-20`) must follow or `privacy-facts.test.ts` fails, and `lastUpdated` should move with the privacy text. |
-| Add a public path (a file, an endpoint, a twin) | `src/lib/public-api-paths.ts:11-29` **and** the matcher in `src/proxy.ts:44-53` | They must agree (`public-api-paths.test.ts`). A path that costs money (`/api/chat`, the voice routes) or is operator-only stays out. |
-| Add a `/api/v1` route | `src/app/api/v1/<name>/route.ts`, a row in `src/app/api/v1/v1-test-support.ts` (`ROUTES`), the path in `src/lib/openapi-v1.ts` and its schema in `openapi-v1-schemas.ts` | A route that reads the request needs the JSON 405 stubs and `withJsonErrors`; a static one must export `GET` only. `v1-contract.test.ts` validates the real answer against the schema in strict mode. |
-| Deprecate a surface | `DEPRECATIONS` in `src/lib/api-policy.ts:44` | At least 180 days between `deprecatedOn` and `sunsetOn` (`givesEnoughNotice`, `api-policy.test.ts`); the proxy then sends `Deprecation`, `Sunset` and a successor `Link` on every matching response. |
-| Add or change a page that agents read | `src/lib/page-twins.ts:16-27` (twin) or `HTML_ONLY_PAGES` (`src/lib/markdown-routing.ts:27`) | A twin also needs the name in `next.config.ts:91-102` and a builder (`page-markdown-lists.ts`) or an entry in `PROSE_PAGES` (`page-markdown-prose.ts:24-29`); a prose page must stay free of async components. |
+| Change the public API rate limit, the version or the notice period | `src/lib/api-policy.ts:38-45` (`DEPRECATION_NOTICE_DAYS`, `RATE_LIMIT_POLICY`) | Nothing else needs editing: the OpenAPI description, `/developers`, `llms.txt` and the headers read the constants. `PRIVACY_FACTS.publicApiRequests` / `publicApiWindowSeconds` (`privacy-facts.ts:19-20`) must follow or `privacy-facts.test.ts` fails, and `lastUpdated` should move with the privacy text. |
+| Add a public path (a file, an endpoint, a twin) | `src/lib/public-api-paths.ts:13-62` **and** the matcher in `src/proxy.ts:44-53` | They must agree (`public-api-paths.test.ts`). A path that costs money (`/api/chat`, the voice routes) or is operator-only stays out. |
+| Add a `/api/v1` route | `src/app/api/v1/<name>/route.ts`, a row in `src/app/api/v1/v1-test-support.ts` (`ROUTES`), the path in `src/lib/openapi-v1.ts` and its schema in `openapi-v1-schemas.ts` | A GET route must also join `BATCH_ROUTES` in `src/lib/batch.ts:55` (with the query parameters it reads), or it is silently not batchable; `batch.test.ts` compares the registry with the OpenAPI document and fails when they disagree. A route that reads the request needs the JSON 405 stubs and `withJsonErrors`; a static one must export `GET` only. `v1-contract.test.ts` validates the real answer against the schema in strict mode. |
+| Deprecate a surface | `DEPRECATIONS` in `src/lib/api-policy.ts:61` | At least 180 days between `deprecatedOn` and `sunsetOn` (`givesEnoughNotice`, `api-policy.test.ts`); the proxy then sends `Deprecation`, `Sunset` and a successor `Link` on every matching response. |
+| Add or change a page that agents read | `src/lib/page-twins.ts:16-27` (twin) or `HTML_ONLY_PAGES` (`src/lib/markdown-routing.ts:27`) | A twin also needs the name in `next.config.ts:91-102` and a builder (`page-markdown-lists.ts`) or an entry in `PROSE_PAGES` (`page-markdown-prose.ts:38-49`); a prose page must stay free of async components. |
+| Change the batch limits, or what a batch may run | `src/lib/api-policy.ts:33-35` (the three numbers) and `BATCH_ROUTES` in `src/lib/batch.ts:55` | The numbers are read by `batch.ts`, the OpenAPI text, `/developers`, `llms.txt` and the CLI's copy (`cli/lib/constants.mjs`); `api-policy.test.ts` pins the literals, so changing one is a deliberate two-place edit. Never put the batch endpoint, admin, cron, chat, voice, MCP or an unversioned alias in the registry. |
+| Release a new version of the `anvilry` CLI | Bump `version` in `cli/package.json` (0.1.1, a README-only patch, is prepared in the repository; the registry's latest is 0.1.0 until the owner publishes it), check `cd cli && npm pack --dry-run`, then publish by hand with the owner's npm credentials (steps in `cli/README.md:142-152`) | `CLI.published` is already `true`: the flag, the README status block, the lead-in and the release gate were handled in the change that first published (`developer-tools.test.ts:46` pins the flag; lower it only if the package is withdrawn). `tests/cli/readme.test.ts` fails if a status block or lead-in comes back while the flag is true. A new command or flag also goes into `CLI_COMMANDS` (next row). |
+| Add or change a CLI command or flag | `cli/lib/commands.mjs` (the table), then `cli/lib/plan.mjs` and `report.mjs` | Mirror it in `CLI_COMMANDS` (`src/lib/developer-tools.ts:49-112`) and the help text; `developer-tools.test.ts` and `tests/cli/drift.test.ts` fail when the site and the package disagree. The package has no dependencies and must keep none (`tests/cli/package.test.ts`). |
+| Add or change a `/developers` section | `src/app/developers/sections/<file>.tsx`, then export it from `sections/index.ts` and place it in `src/app/developers/page.tsx` | `sections.test.ts` fails when a component is not exported by `index.ts` (it would vanish from `/developers.md`), when a function passes 50 lines or a file 500; `page-markdown.dom.test.tsx` compares the twin with the page. |
+| Add a JSON-LD block or list | `src/components/json-ld.tsx` (entities and `JsonLdScript`), `json-ld-lists.tsx` (homepage lists), `json-ld-api.tsx` (API entities) | Serialise only through `JsonLdScript` / `safeJsonLd`, which escape `<`, `>`, `&`, U+2028 and U+2029 (`json-ld.dom.test.tsx` checks every component of the file does); build a list from the data its section renders, and add the parity test. Entity URLs go through `stripTrackingParams`, visible links do not. |
 | Audit which env vars are set | `make env-check` / `make flags-show` | Both read the **process** environment, not `.env.local`, so they under-report locally (`Makefile:289-321,155-180`). |
 
 ---
@@ -1186,7 +1470,7 @@ record the outcome rather than the original open question.
   `github-sync/route.ts:32-33`, `seo-audit/route.ts:21`, each the `https://${process.env.VERCEL_URL}` ternary) —
   see *Still open*.
 - **`/mcp` as `(force-static)`** — the documentation/source mismatch this index recorded is gone.
-  `src/app/mcp/page.tsx` exports only `metadata` (`:9`) and a grep for `force-static` (and for
+  `src/app/mcp/page.tsx` exports only `metadata` (`:14`) and a grep for `force-static` (and for
   `export const runtime | revalidate | dynamic`) across `src/` still finds no segment-config export — only
   comments that say one was removed (re-verified for a929932 plus the five fixes).
 - **Whether `next build` still uses webpack by default in Next 16 — it does NOT, and the claim this index
@@ -1230,7 +1514,7 @@ record the outcome rather than the original open question.
   `deletion`, `non_fast_forward` and `pull_request` (0 required approvals). It has **no**
   `required_status_checks` rule, so no CI job — E2E included — is a required check on either branch, and no
   required check disappeared when `bundle-analysis.yml` was deleted. (Earlier text, including this index and
-  `CHANGELOG.md:927`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
+  `CHANGELOG.md:1030`, recorded `protected: false` from the classic endpoint; the ruleset is why the branches
   API now reports `protected: true`.) **Update 2026-10-22:** the ruleset now also has a `required_status_checks` rule (`Lint · Type-check · Test` and `E2E (Playwright)`, GitHub Actions app id 15368, non-strict) and one bypass actor, the repository-admin role in `pull_request` mode, so a red E2E run (a bundle regression included) now blocks the merge of a pull request except through that bypass.
 - **What generates `public/static/`, and the manifest screenshots defect.** `public/static/` is Velite's asset
   output directory (`velite.config.ts:171-173`: `assets: "public/static"`, `base: "/static/"`), untracked (git does not
@@ -1262,7 +1546,7 @@ record the outcome rather than the original open question.
   the request, so all are prerenderable under `cacheComponents`, but no build manifest was inspected to
   confirm each was actually prerendered.
 - **Render-mode / revalidate / prerendered-slug values** in section 01's route matrix came from a local,
-  gitignored build and reflect that machine's `.env.local` flag values (notably whether
+  gitignored build (the `.next` of 00:34 on 2 Nov, see section 01) and reflect that machine's flag values (notably whether
   `NEXT_PUBLIC_NOTES_ENABLED` was on). A production build with different `NEXT_PUBLIC_*` values prerenders
   a different slug set. Segment-config columns are read from source and are env-independent.
 - **Whether `/articles/<slug>` routes that `redirect()` emit a prerendered page artifact.** Several slugs
@@ -1281,7 +1565,7 @@ record the outcome rather than the original open question.
   `2f309d2` flags it as NOT VERIFIED (needs a real browser upload); build and typecheck pass but the
   extraction path was never exercised post-bump.
 - **Whether migrating `zod` from `^3.25.76` to v4 breaks the raw-shape schema handoff** to `mcp-handler`'s
-  `registerTool` (`src/lib/mcp-tools.ts:38-55`, and `:206,:229`). The one constraining peer — `@modelcontextprotocol/sdk`
+  `registerTool` (`src/lib/mcp-tools.ts:58-131`, `:354-361` and `:379-384`). The one constraining peer — `@modelcontextprotocol/sdk`
   — already permits v4 (`zod: ^3.25 || ^4.0`, `pnpm-lock.yaml:1012`; `mcp-handler@1.1.0` declares no `zod` peer,
   `:3712-3720`), but nothing in the repo exercises v4.
 - **Whether `eslint.config.mjs`'s `globalIgnores` replaces or merges with `eslint-config-next`'s built-in
@@ -1348,5 +1632,21 @@ record the outcome rather than the original open question.
   The limit is counted per server instance: how many instances Vercel runs for this project, and so what
   a client really sees across them, is not knowable from the repository. The numbers 300 per 60 s and 180 days
   are defaults awaiting the owner. `public-api-paths.test.ts` relies on `unstable_doesMiddlewareMatch`, an
-  experimental Next testing API whose behaviour on a Next upgrade is untested. No CORS headers exist; whether a
-  browser client on another origin is wanted is open.
+  experimental Next testing API whose behaviour on a Next upgrade is untested. The app adds no CORS headers (Vercel adds
+  `Access-Control-Allow-Origin: *` to static responses, not to dynamic routes or the `use cache` pages); whether a browser client on another origin is wanted is open.
+- **Subsystems 13 to 16 (round 3 of the API-policy change, in no release yet) were read from the source and the tests.** The one thing
+  this edition ran is Vitest over the whole tree with the JSON reporter: 185 files and 2734 tests, of which 2733 passed, 1 was skipped
+  and none failed (before the CLI-published flip; with it the lead's full run gives 2732 passed and 2 skipped, and this edition re-ran the two flag-sensitive files, `developer-tools.test.ts` and `tests/cli/readme.test.ts`: 26 passed, 2 skipped). `pnpm build`, `pnpm e2e`, `tsc --noEmit`, `eslint` and `node scripts/bundle-budget.mjs` were not run by this pass, the
+  CLI was not started, and no request was made to a deployment. Not known from the repository: how a batch of 25 operations behaves
+  inside a real Vercel function's memory and time limits (the unit tests call the handlers in process); whether the
+  production deployment, which still runs the previous release (observed 2026-11-01), serves any of it before this change is released
+  (it has no batch endpoint, MCP parameters, JSON-LD lists or published-CLI wording: its `/developers` still says there is no published CLI); whether search engines index `/developers`, `/mcp` and the new
+  structured data (that is decided in the owner's Search Console and Bing Webmaster accounts); whether `npx anvilry` works as
+  `cli/README.md` describes (0.1.0 is on npm and the lead verified `npx anvilry@0.1.0 version` and `status` from a clean directory, which this edition did not repeat; 0.1.1 is not published yet); and what a browser really receives in
+  `Vary` on an HTML page (the comment at `next.config.ts:265-267` says Next replaces it).
+- **Open decisions left open by round 3, not decided by this index:** publishing `cli/package.json` 0.1.1, the README-only patch (the owner's step);
+  the Search Console and Bing Webmaster indexing requests; CORS, which the app does not add (Vercel's `*` on static responses is not the app's doing); the release version
+  (everything stays under `[Unreleased]` and no version is chosen here); the `/articles.md` twin (`page-markdown-lists.ts`) and
+  `related-writing.tsx`, which still keep their own copy of the notes-link rule that `article-href.ts` now holds for the card, the JSON-LD
+  list and the homepage twin; and `/api/v1/articles` and the MCP tools, which still list articles when `NEXT_PUBLIC_ARTICLES_ENABLED` is
+  `false` while the `/articles` pages answer 404 (production has articles on).

@@ -3,11 +3,52 @@ import { now } from "@/lib/personal";
 import { SITE_URL } from "@/lib/site-url";
 
 // Safe serialisation for <script type="application/ld+json"> blocks.
-// JSON.stringify alone does NOT escape `</script>` — a content field containing
-// that literal string would break out of the script tag and execute as HTML.
-// Standard fix: replace `</` with `<\/` (valid JSON, ignored by JSON parsers).
+// JSON.stringify leaves the characters below untouched, and each can change how the HTML parser
+// reads a <script> element:
+//   <  begins `</script>` (ends the block early), `<!--` and `<script`. After `<!--` a later
+//      `<script` puts the tokenizer in its "double escaped" state, where the block's own `</script>`
+//      no longer closes it and the rest of the page, with every JSON-LD block after this one, is
+//      swallowed. Browsers and spec-compliant parsers do this; happy-dom does not model it, so
+//      the tests assert on the serialised text.
+//   >  and &  close `-->` and begin character references; escaping them costs nothing.
+//   U+2028 and U+2029  are line terminators in JavaScript source, escaped by convention so the
+//      block is also a valid JS literal.
+// Each becomes its JSON \uXXXX escape, which JSON.parse reads back to the same character, so the
+// parsed object is identical to the one that was serialised.
+const JSON_LD_ESCAPES: Readonly<Record<string, string>> = {
+  "<": "\\u003c",
+  ">": "\\u003e",
+  "&": "\\u0026",
+  "\u2028": "\\u2028",
+  "\u2029": "\\u2029",
+};
+
 function safeJsonLd(data: unknown): string {
-  return JSON.stringify(data).replace(/<\//g, "<\\/");
+  return JSON.stringify(data).replace(/[<>&\u2028\u2029]/g, (char) => JSON_LD_ESCAPES[char]);
+}
+
+const SCHEMA_CONTEXT = "https://schema.org";
+
+/**
+ * One JSON-LD block: puts the schema.org context first and serialises through `safeJsonLd`.
+ * Used by the list and API components in json-ld-lists.tsx and json-ld-api.tsx, which keep this file
+ * under its size limit.
+ */
+export function JsonLdScript({ data }: { data: object }) {
+  return (
+    <script
+      type="application/ld+json"
+      // Owner-authored data only (content frontmatter, profile.ts), and escaped anyway: see safeJsonLd.
+      dangerouslySetInnerHTML={{
+        __html: safeJsonLd({ "@context": SCHEMA_CONTEXT, ...data }),
+      }}
+    />
+  );
+}
+
+/** The site owner as a schema.org Person reference. A function, so every caller gets its own object. */
+export function authorPerson() {
+  return { "@type": "Person", name: profile.name, url: SITE_URL };
 }
 
 // Machine-readable "open to work" signal — derived from the owner-authored now.focus
@@ -110,9 +151,24 @@ const PROGRAMMING_LANGUAGES = new Set([
   "WebAssembly",
 ]);
 
-/** SoftwareSourceCode for an OSS project page — entity-graph + AI-recruiter parsing.
+export interface SoftwareSourceCodeInput {
+  name: string;
+  description: string;
+  url: string;
+  /** Omit for a private repository: advertising a URL that 404s helps no crawler. */
+  codeRepository?: string;
+  tech: readonly string[];
+  /** Real GitHub repo creation date (ISO date) — omit rather than guess for private repos. */
+  dateCreated?: string;
+  /** SPDX license ID — omit rather than guess for repos with no license file. */
+  license?: string;
+}
+
+/** The SoftwareSourceCode entity for an OSS project, without the @context. /projects/[slug] and the
+ *  homepage list (json-ld-lists.tsx) both build it here and pass the same arguments, so they describe
+ *  a project with the same properties and values.
  *  programmingLanguage carries ONLY real languages; frameworks/protocols → keywords. */
-export function SoftwareSourceCodeJsonLd({
+export function softwareSourceCodeEntity({
   name,
   description,
   url,
@@ -120,42 +176,25 @@ export function SoftwareSourceCodeJsonLd({
   tech,
   dateCreated,
   license,
-}: {
-  name: string;
-  description: string;
-  url: string;
-  /** Omit for a private repository: advertising a URL that 404s helps no crawler. */
-  codeRepository?: string;
-  tech: string[];
-  /** Real GitHub repo creation date (ISO date) — omit rather than guess for private repos. */
-  dateCreated?: string;
-  /** SPDX license ID — omit rather than guess for repos with no license file. */
-  license?: string;
-}) {
+}: SoftwareSourceCodeInput) {
   const languages = tech.filter((t) => PROGRAMMING_LANGUAGES.has(t));
-  const data = {
-    "@context": "https://schema.org",
+  return {
     "@type": "SoftwareSourceCode",
     name,
     description,
     url,
     ...(codeRepository && { codeRepository }),
-    author: {
-      "@type": "Person",
-      name: profile.name,
-      url: "https://anvilry.vercel.app",
-    },
+    author: authorPerson(),
     ...(languages.length > 0 && { programmingLanguage: languages }),
     keywords: tech.join(", "),
     ...(dateCreated && { dateCreated }),
     ...(license && { license: `https://spdx.org/licenses/${license}.html` }),
   };
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
-    />
-  );
+}
+
+/** SoftwareSourceCode for an OSS project page — entity-graph + AI-recruiter parsing. */
+export function SoftwareSourceCodeJsonLd(props: SoftwareSourceCodeInput) {
+  return <JsonLdScript data={softwareSourceCodeEntity(props)} />;
 }
 
 /** Stable identifier other blocks (WebSite.publisher) use to point at the Organization below. */

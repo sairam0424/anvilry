@@ -78,23 +78,32 @@ function streamingResponse(chunks: string[]): Response {
   return { ok: true, body, status: 200 } as unknown as Response;
 }
 
-/** Like streamingResponse, but with a real delay between each chunk. Needed
- *  whenever a test must observe an INTERMEDIATE state (e.g. mid-thinking,
- *  before the answer arrives) — streamingResponse's synchronous start()
- *  enqueues every chunk before the reader's first read() resolves, so the
- *  whole exchange settles before any waitFor can catch the middle. */
-function delayedStreamingResponse(chunks: string[], delayMs = 40): Response {
+/** Like streamingResponse, but the stream stays OPEN after `first` has been delivered and only
+ *  continues with `rest` once the test calls release(). Needed whenever a test must observe an
+ *  INTERMEDIATE state (e.g. mid-thinking, before the answer arrives): streamingResponse enqueues
+ *  every chunk synchronously, so the whole exchange settles before any waitFor can catch the
+ *  middle. This used to be a fixed 40 ms delay between chunks, which a polling waitFor had to land
+ *  inside; on a loaded machine (the Vercel build runs the whole suite in parallel) both chunks
+ *  arrived before the first poll and the test failed. Holding the stream until released makes the
+ *  intermediate state last exactly as long as the test needs, whatever the load. */
+function gatedStreamingResponse(
+  first: string[],
+  rest: string[],
+): { response: Response; release: () => void } {
   const encoder = new TextEncoder();
+  let release: () => void = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
-      for (const c of chunks) {
-        controller.enqueue(encoder.encode(c));
-        await new Promise((r) => setTimeout(r, delayMs));
-      }
+      for (const c of first) controller.enqueue(encoder.encode(c));
+      await gate;
+      for (const c of rest) controller.enqueue(encoder.encode(c));
       controller.close();
     },
   });
-  return { ok: true, body, status: 200 } as unknown as Response;
+  return { response: { ok: true, body, status: 200 } as unknown as Response, release };
 }
 
 afterEach(() => {
@@ -185,16 +194,13 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     // isThinking && isStreaming) is never mounted — a real, live-only gap: that
     // <pre> shipped with aria-live="polite", a THIRD independent instance of the
     // exact double-speak bug class this session already fixed twice elsewhere.
+    const stream = gatedStreamingResponse(
+      [THINKING_SENTINEL, "Weighing which project best demonstrates depth..."],
+      [THINKING_END, "AAVA Code is my strongest backend work."],
+    );
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        delayedStreamingResponse([
-          THINKING_SENTINEL,
-          "Weighing which project best demonstrates depth...",
-          THINKING_END,
-          "AAVA Code is my strongest backend work.",
-        ]),
-      ),
+      vi.fn(async () => stream.response),
     );
 
     const { container } = render(
@@ -225,6 +231,7 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     expectExactlyOneLiveAnnouncer(container);
 
     // Let it settle to the final answer and re-check.
+    stream.release();
     await waitFor(
       () =>
         expect(
@@ -236,11 +243,9 @@ describe("Chat surface — single aria-live announcer invariant (composed tree)"
     );
     // Also wait for isStreaming to genuinely flip false (the Send button's
     // accessible name only reverts from "Stop" once streaming ends) before
-    // this test finishes and cleanup() unmounts. delayedStreamingResponse's
-    // mocked stream still has a pending setTimeout after the last chunk (the
-    // same per-chunk delay applies before its final controller.close()) --
-    // asserting only on answer text can let the test end and cleanup fire
-    // while that timer is still outstanding, a latent flakiness risk in CI.
+    // this test finishes and cleanup() unmounts: asserting only on answer text can
+    // let the test end and cleanup fire while the stream is still closing, a latent
+    // flakiness risk in CI.
     await waitFor(
       () => expect(screen.getByRole("button", { name: "Send" })).toBeTruthy(),
       { timeout: 1000 },

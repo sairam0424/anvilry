@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { API_V1_BASE, DEPRECATION_NOTICE_DAYS, RATE_LIMIT_POLICY } from "./api-policy";
+import {
+  API_V1_BASE,
+  BATCH_MAX_REQUESTS,
+  BATCH_PATH,
+  DEPRECATION_NOTICE_DAYS,
+  RATE_LIMIT_POLICY,
+} from "./api-policy";
+import { CLI, CLI_COMMANDS, cliLlmsLine } from "./developer-tools";
+import { COMMANDS, developerGuideSource, forceDeveloperState, restoreDeveloperState } from "./developer-states-support";
 import { API_CATALOG_PATH } from "./api-catalog";
 import { buildLlmsTxt } from "./llms-txt";
 import { PAGE_TWINS } from "./page-twins";
@@ -134,23 +142,37 @@ describe("buildLlmsTxt — developer resources", () => {
     expect(block).toContain(`- Anvilry API catalog (RFC 9727): ${BASE}${API_CATALOG_PATH}\n`);
   });
 
-  it("lists SDK and command-line use at their anchors and says plainly that neither is published", () => {
+  it("lists the SDK at its anchor and says plainly that there is no official one", () => {
     const sdk = lines.find((l) => l.startsWith("- Anvilry SDK and client libraries:")) ?? "";
-    const cli = lines.find((l) => l.startsWith("- Anvilry command-line use:")) ?? "";
     expect(sdk).toContain(`${BASE}/developers#sdk`);
     expect(sdk).toMatch(/no official SDK/i);
-    expect(cli).toContain(`${BASE}/developers#cli`);
-    expect(cli).toMatch(/no published CLI/i);
-    expect(`${sdk}${cli}`).not.toMatch(/npm (install|i) |pip install |go get |brew install /i);
+    expect(sdk).not.toMatch(/npm (install|i) |pip install |go get |brew install /i);
   });
 
+  // The CLI line is whatever CLI.published says (src/lib/developer-tools.ts); the forced states are below.
+  it("lists the command-line tool at its anchor, worded by CLI.published, and advertises npx only once it is published", () => {
+    const cli = lines.find((l) => l.startsWith("- Anvilry command-line use:") || l.startsWith("- Anvilry CLI:")) ?? "";
+    expect(cli).toBe(cliLlmsLine(CLI, CLI_COMMANDS, BASE));
+    expect(cli).toContain(`${BASE}/developers#cli`);
+    if (CLI.published) expect(cli).toContain(CLI.runCommand);
+    else {
+      expect(cli).toMatch(/no published CLI/i);
+      expect(txt).not.toMatch(/npx anvilry|npm install --global anvilry/);
+    }
+  });
+
+  it("lists the batch endpoint with its path and its limit", () => {
+    expect(block).toContain(
+      `- Anvilry batch endpoint: POST ${BASE}${BATCH_PATH}, up to ${BATCH_MAX_REQUESTS} read operations per request\n`,
+    );
+  });
   it("prints the published numbers, not copies of them", () => {
     expect(block).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
     expect(block).toContain(`at least ${DEPRECATION_NOTICE_DAYS} days`);
   });
 
   it("points only at anchors the developer guide really has", () => {
-    const guide = readFileSync("src/app/developers/page.tsx", "utf8");
+    const guide = developerGuideSource();
     const anchors = [...block.matchAll(/\/developers#([a-z-]+)/g)].map((m) => m[1]);
     expect(anchors.length).toBeGreaterThanOrEqual(6);
     for (const anchor of anchors) expect(guide, `#${anchor}`).toContain(`id="${anchor}"`);
@@ -201,5 +223,52 @@ describe("buildLlmsTxt — the /notes Markdown URL follows the notes flag", () =
 
   it("lists /notes.md once the section is switched on", async () => {
     expect(await pagesWithNotes(true)).toContain("- https://anvilry.vercel.app/notes.md\n");
+  });
+});
+
+/**
+ * The developer block follows one state that lives outside llms.txt: CLI.published (the owner flips
+ * it after `npm publish`). Each case forces it, imports the generator afresh and reads the block.
+ */
+describe("buildLlmsTxt — developer block in each state", () => {
+  const BASE = "https://anvilry.vercel.app";
+  afterEach(restoreDeveloperState);
+
+  async function developerLines(state: { cliPublished: boolean }): Promise<string[]> {
+    forceDeveloperState(state);
+    const { buildLlmsTxt: build } = await import("./llms-txt");
+    const block = (build().split("## Developer resources\n")[1] ?? "").split(/\n## /)[0];
+    return block.split("\n").filter((l) => l.startsWith("- "));
+  }
+
+  it("keeps the old command-line line, plus where the source is, while the CLI is unpublished", async () => {
+    const lines = await developerLines({ cliPublished: false });
+    const cli = lines.find((l) => l.includes("#cli")) ?? "";
+    expect(cli).toBe(
+      `- Anvilry command-line use: ${BASE}/developers#cli (there is no published CLI package; the page shows curl recipes against ${BASE}${API_V1_BASE}; the CLI source is in the repository's cli/ directory and is not yet on npm)`,
+    );
+    expect(lines.join("\n")).not.toContain("npx anvilry");
+  });
+
+  it("names the package, the commands to run and install it, and every CLI command once it is published", async () => {
+    const cli = (await developerLines({ cliPublished: true })).find((l) => l.includes("#cli")) ?? "";
+    expect(cli.startsWith("- Anvilry CLI: ")).toBe(true);
+    expect(cli).toContain("npx anvilry");
+    expect(cli).toContain("npm install --global anvilry");
+    expect(cli).toContain(COMMANDS.map((c) => c.name).join(", "));
+    expect(cli).toContain("https://www.npmjs.com/package/anvilry");
+    expect(cli).not.toMatch(/no published CLI/i);
+  });
+
+  it("lists the batch endpoint with its limit in either state of the CLI", async () => {
+    const line = `- Anvilry batch endpoint: POST ${BASE}${BATCH_PATH}, up to ${BATCH_MAX_REQUESTS} read operations per request`;
+    expect(await developerLines({ cliPublished: false })).toContain(line);
+    expect(await developerLines({ cliPublished: true })).toContain(line);
+  });
+
+  it("starts every line of the block with the product name, in every state", async () => {
+    for (const state of [{ cliPublished: false }, { cliPublished: true }]) {
+      for (const line of await developerLines(state)) expect(line, line).toMatch(/^- Anvilry /);
+    }
   });
 });

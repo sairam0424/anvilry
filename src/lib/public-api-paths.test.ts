@@ -1,7 +1,7 @@
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { describe, expect, it } from "vitest";
-import { API_V1_BASE } from "./api-policy";
-import { isPublicApiPath } from "./public-api-paths";
+import { API_V1_BASE, BATCH_PATH } from "./api-policy";
+import { allowedMethods, isPublicApiPath } from "./public-api-paths";
 import { buildOpenApiDocument, listOperations } from "./openapi";
 import { config as proxyConfig } from "../proxy";
 
@@ -57,6 +57,42 @@ describe("isPublicApiPath", () => {
   });
 });
 
+describe("allowedMethods", () => {
+  const READ = ["GET", "HEAD", "OPTIONS"];
+
+  it("is read-only for every public path by default", () => {
+    for (const path of [
+      API_V1_BASE,
+      `${API_V1_BASE}/projects/trelix`,
+      "/api/resume.json",
+      "/llms.txt",
+      "/openapi.json",
+      "/projects/trelix.md",
+    ]) {
+      expect(allowedMethods(path), path).toEqual(READ);
+    }
+  });
+
+  it("lets the batch endpoint take POST and nothing else but OPTIONS", () => {
+    expect(allowedMethods(BATCH_PATH)).toEqual(["POST", "OPTIONS"]);
+  });
+
+  it("ignores a trailing slash, as isPublicApiPath does", () => {
+    expect(allowedMethods(`${BATCH_PATH}/`)).toEqual(["POST", "OPTIONS"]);
+    expect(allowedMethods(`${API_V1_BASE}/work/`)).toEqual(READ);
+  });
+
+  it("does not extend the exception to a path below or beside the batch endpoint", () => {
+    for (const path of [`${BATCH_PATH}/extra`, `${BATCH_PATH}x`, `${API_V1_BASE}/batches`]) {
+      expect(allowedMethods(path), path).toEqual(READ);
+    }
+  });
+
+  it("keeps the batch endpoint a public API path, so it gets the headers and the budget", () => {
+    expect(isPublicApiPath(BATCH_PATH)).toBe(true);
+  });
+});
+
 describe("proxy matcher", () => {
   const wakes = (path: string) =>
     unstable_doesMiddlewareMatch({ config: proxyConfig, url: `https://anvilry.vercel.app${path}` });
@@ -65,6 +101,7 @@ describe("proxy matcher", () => {
     for (const path of [
       `${API_V1_BASE}`,
       `${API_V1_BASE}/work/pensieve`,
+      BATCH_PATH,
       "/api/resume.json",
       "/api/github/stats",
       "/api/mcp/mcp",

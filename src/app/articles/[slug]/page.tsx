@@ -7,7 +7,7 @@ import { allArticles, getArticle } from "@/lib/content";
 import { getArticleBody } from "@/lib/content-bodies";
 import { NOTES_ENABLED } from "@/lib/writing-flags";
 import { MDXContent } from "@/components/mdx-content";
-import { BreadcrumbJsonLd } from "@/components/json-ld";
+import { BreadcrumbJsonLd, JsonLdScript } from "@/components/json-ld";
 import { Reveal } from "@/components/ui/reveal";
 import { profile } from "@/lib/profile";
 
@@ -88,8 +88,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     notFound();
   }
 
+  // JsonLdScript adds the schema.org @context and serialises through the hardened escaper.
   const jsonLd = {
-    "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: article.title,
     description: article.summary,
@@ -137,7 +137,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <MDXContent code={body} />
         </div>
       </article>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLdScript data={jsonLd} />
       <BreadcrumbJsonLd
         items={[
           { name: "Home", url: BASE },

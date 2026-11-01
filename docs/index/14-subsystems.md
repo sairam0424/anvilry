@@ -14,10 +14,10 @@ version: v3.17.0
 > `beacon`) with an eval-cron bypass, built on `src/lib/cron-auth.ts`; admin auth goes through the shared
 > `isAdminAuthorized` (`src/proxy.ts`, `requireAdmin`, the telemetry page); overlay voice entry points are gated
 > by `isVoiceViewActive`; the bundle-budget gate asserts `MIN_ROUTES = 17` and dead components were removed. v3.16.0 adds three more, all landing in subsystem 1 (content pipeline): nine new projects in a fourth group (20 projects, 25 graph nodes), a private-repository marker (`visibility` on the Project schema, `repoLink()` in `src/lib/content.ts`), and compiled MDX moved out of `content.ts` into body-only collections that only `src/lib/content-bodies.ts` reads. v3.16.1 adds three more and one lands here, in subsystem 1: (23) the removal of three low-priority open-source items takes the collection from 20 projects to 18 (the `grpc-microservices` and `not-humans-lab` cards are gone and their pages return 404; 16 of the 18 are public), the 3D graph from 25 nodes to 23 and from 28 edges to 24, and the `REPO_ALLOWLIST` in `src/lib/github.ts` from 22 entries to 19 (the entries for the two retired cards and Shop.this left it); the production gate (24) and the lowered bundle ceiling (25) are mapped in [`14b-subsystems.md`](./14b-subsystems.md). v3.17.0 adds two more, (26) the agent-readable surface and (27) the dependency security release. Change (26) touches three subsystems here: in subsystem 1 the content now also leaves the app as Markdown twins (`src/lib/markdown-content.ts`, `src/lib/home-markdown.ts`, eight thin `.md` handlers, two Markdown-only routes) and `llms.txt` gains "when to use" and "how to read" sections; in subsystem 5 every MCP response passes through `ensureJsonError`; and in subsystem 6 the new JSON error shape is what a failing `/api/*` request now returns. Its fourth part, `src/proxy.ts` growing a Markdown-negotiation job beside the `/admin` gate, is mapped in subsystem 7 of [`14b-subsystems.md`](./14b-subsystems.md). Change (27) lands here in subsystem 5 (the MCP SDK pin moves to 1.32.0 while `mcp-handler` 1.1.0 keeps its exact 1.26.0 peer) and at the end of subsystem 1's build chain (`scripts/build-search-index.mjs` is now the last step); its other parts (Next 16.4.3, the fourteen pnpm overrides, `vite` declared, the first-load figure) are mapped in subsystem 10 of [`14b-subsystems.md`](./14b-subsystems.md). The unreleased change (28), the API-policy change, touches three subsystems here: in subsystem 1 `llms.txt` gains a "Developer resources" block and a "Pages" list, and the content pipeline gains the Markdown twins of ten pages as new exits; in subsystem 5 the REST view under `/api/v1` reads the same data functions as the MCP tools, and the MCP endpoint is now counted by the proxy's public API budget; in subsystem 6 the proxy's new job emits no span, so a request it refuses leaves no `http.request`, and the `/api/v1` routes are untraced. The contract, the limiter and the routes are subsystem 11, and the page twins subsystem 12, of [`14b-subsystems.md`](./14b-subsystems.md).
-> Continued in [`14b-subsystems.md`](./14b-subsystems.md) — subsystems 7–12, the cross-subsystem coupling
+> Continued in [`14b-subsystems.md`](./14b-subsystems.md) — subsystems 7–16, the cross-subsystem coupling
 > table, the entry-point cheat sheet, and the UNVERIFIED ledger for both parts.
 
-**Scope:** the "how the parts connect" layer — **subsystems 1–6 of 12** (content pipeline · view system ·
+**Scope:** the "how the parts connect" layer — **subsystems 1–6 of 16** (content pipeline · view system ·
 chat/LLM · voice · MCP · telemetry & observability). Every fact below is sourced from sections 01–13 of this
 index (each of which cites its own reads) or from a direct read recorded inline.
 **Files indexed:** none — this is a synthesis pass; it maps flows, entry/exit points, failure modes and the
@@ -36,15 +36,16 @@ subsystem; "exit point" is the last thing the subsystem produces before somethin
 | 2 | View system (six-member union; 4 server-rendered pills → 5 after hydration on desktop) | `/` only — a `?view=` deep link, a user gesture (`ViewSwitcher`, ⌘K), or a `[[cmd:view:…]]` chat token | The mounted view component's DOM, the rewritten `?view=` query string, the completed view-transition animation |
 | 3 | Chat / LLM request path | `useChat.send()` from one of three surfaces, or a direct `POST /api/chat` (the eval cron does exactly this, 12× per run, with the cache-skip header and its cron bearer) | A `text/plain` stream terminated by the trace frame plus `x-anvilry-trace-id` (a first-turn FAQ-cache hit returns the stored answer + trace frame in one body with `X-Chat-Cache: hit`; an exact-tier hit whose entry stored a reasoning summary leads with it in the live thinking framing unless `EXTENDED_THINKING=false`); on the client, sanitized markdown + resolved cards |
 | 4 | Voice pipeline | Any of the five doors, all funnelling through `claimVoiceSurface` — except the voice **view**, which enters through `ViewRouter` | Audio from `speechSynthesis` or an `<audio>` object URL; the visible caption and `aria-live` line; the orb's rAF-driven pixels |
-| 5 | MCP server | `POST /api/mcp/mcp` (Streamable HTTP; `/api/mcp/sse` is deliberately 404'd by `disableSse: true`) | A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `structuredContent` (bare arrays wrapped as `{ items }`), `isError: true` on not-found; a text error from the transport library is returned as the shared JSON error shape |
+| 5 | MCP server | `POST /api/mcp/mcp` (Streamable HTTP; `/api/mcp/sse` is deliberately 404'd by `disableSse: true`) | A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `structuredContent` (bare arrays wrapped as `{ items }`), `isError: true` on not-found; a text error from the transport library is returned as the shared JSON error shape; a malformed request is a JSON-RPC `-32700` / `-32600` / `-32602` error (round 3, unreleased) |
 | 6 | Telemetry & observability | Any `/api/*` request wrapped in `withTrace`; any browser error or unhandled rejection; the five cron snapshot writers | A `[trace]` line in Vercel Runtime Logs, a member in `anvilry:trace:<kind>` (eight kinds), the trace-id response header, the `/admin/telemetry` HTML, `replay-trace.mjs` stdout |
 
 ## Coverage
 
-**Mapped in this file (6 of 12):** 1. content pipeline · 2. view system · 3. chat/LLM request path ·
+**Mapped in this file (6 of 16):** 1. content pipeline · 2. view system · 3. chat/LLM request path ·
 4. voice pipeline · 5. MCP server · 6. telemetry & observability.
 **Continued in [`14b-subsystems.md`](./14b-subsystems.md):** 7. auth & security surface · 8. feature flags ·
-9. 3D / WebGL · 10. build & deploy, plus the cross-subsystem coupling table, the entry-point cheat sheet and
+9. 3D / WebGL · 10. build & deploy · 11. public API contract · 12. page Markdown twins · 13. batch endpoint · 14. structured data (JSON-LD) ·
+15. the `anvilry` CLI package and its publish flag · 16. the `/developers` section architecture, plus the cross-subsystem coupling table, the entry-point cheat sheet and
 the UNVERIFIED / carried-forward ledger for both parts.
 **Synthesized from** sections [01](./01-routes-pages.md)–[13](./13-dependencies-and-versions.md) (each cites
 its own reads), plus direct source reads recorded inline: `src/lib/voice-catalog.ts:62,317-320`
@@ -110,9 +111,9 @@ carries the list). The `/decisions` page reads only `decisions.ts`.
 | 6 | `src/lib/game-model.ts:36-67` | `NODE_CONTENT`: 23 graph-node ids → `{kind, slug}`. `resolveNode()` (`:79-88`) returns `null` on a miss; `questNodes` `flatMap`s nulls away (`:113-126`). |
 | 7 | `src/lib/graph-data.ts:18-92` | Hand-authored 23 nodes + 24 edges (`graphEdges` `:94-128`) + `kindColor` (`:130-135`). No `Math.random` — build output is stable (`:1-6`); the docblock defers the node count to `graphNodes` instead of hardcoding it (`:3`). |
 | 8 | `src/lib/corpus.ts:13-96` | The whole chatbot grounding document as one markdown string: work, projects, skills, achievements, optional personal + testimonials sections, and the `## Writing` notes section (`:75-77`) — which is omitted when `allNotes` is empty (notes dark). Never reads articles. |
-| 9 | `src/lib/llms-txt.ts:21-160` | `/llms.txt`. Dedupes articles through `groupArticles` (`:40`), truncates summaries (100/80 chars, `:49,60`), emits a `## Markdown Versions` block (`:141-159`) whose notes list is `(none yet)` while notes are dark and which ends with a "Pages" list of the `.md` URL of each page twin that exists (`:157-158`). Since the agent-readiness change it also emits a `## When to use this site` section (what the site answers and what it does not) and a `## How to read this site` section (the `Accept: text/markdown` and `.md` forms, `/index.md`, the résumé JSON, the MCP endpoint, `/openapi.json`, `/developers`, `/llms-full.txt`), takes its availability sentence from `profile.availability`, and links `/developers`, `/openapi.json`, `/contact` and `/privacy`. Since the API-policy change it also emits a `## Developer resources` block (`:94-106`; every line starts "Anvilry …": the documentation, the OpenAPI specification, the `/api/v1` base URL, the API catalog, the MCP server, authentication, versioning, rate limits, errors, SDK and command-line use, the numbers read from `api-policy.ts`). |
+| 9 | `src/lib/llms-txt.ts:24-164` | `/llms.txt`. Dedupes articles through `groupArticles` (`:43`), truncates summaries (100/80 chars, `:52,63`), emits a `## Markdown Versions` block (`:145-163`) whose notes list is `(none yet)` while notes are dark and which ends with a "Pages" list of the `.md` URL of each page twin that exists (`:161-162`). Since the agent-readiness change it also emits a `## When to use this site` section (what the site answers and what it does not) and a `## How to read this site` section (the `Accept: text/markdown` and `.md` forms, `/index.md`, the résumé JSON, the MCP endpoint, `/openapi.json`, `/developers`, `/llms-full.txt`), takes its availability sentence from `profile.availability`, and links `/developers`, `/openapi.json`, `/contact` and `/privacy`. Since the API-policy change it also emits a `## Developer resources` block (`:97-109`; every line starts "Anvilry …": the documentation, the OpenAPI specification, the `/api/v1` base URL, the batch endpoint, the API catalog, the MCP server, authentication, versioning, rate limits, errors, SDK and CLI, the numbers read from `api-policy.ts`). |
 | 10 | `src/lib/resume-json.ts:12-72` | jsonresume.org v1.0.0 payload; prefixes `register` into each work summary (`:54`) and stamps `meta.canonical` (`resume-json.ts:70`). |
-| 11 | `src/lib/mcp-tools.ts:74-331` | Ten pure tool functions + Zod input shapes + `wrapToolResult`. |
+| 11 | `src/lib/mcp-tools.ts:37-497` | Ten pure tool functions + Zod input shapes (gathered in `TOOL_INPUT_SHAPES`) + `wrapToolResult`. |
 | 12 | `src/lib/article-grouping.ts:51-118` | Two-pass syndication dedup keyed by `linkedNote` or `canonicalUrl` (the per-article key choice is `article-grouping.ts:62`). |
 | 13 | `src/lib/decisions.ts:1-76` | Pure derivation: `Project.decisions[]` + `Work.constraints` / `Work.tradeoffs` → flat `allDecisions: LedgerEntry[]` (`:65`), `decisionsByTag` (`:67`). Consumed by `src/app/decisions/page.tsx` and `mcp-tools.ts` (`list_decisions`). Zero duplication of prose; `decisions.test.ts` asserts bidirectional coverage. |
 | 14 | `src/lib/markdown-content.ts` | `markdownForContent(kind, slug)`: the Markdown twin of one content page. The slug must be in the Velite collection before any file is read; the raw file is read at request time and its front matter stripped; a metadata-only article is described rather than served empty; a miss is a Markdown 404. |
@@ -209,7 +210,7 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
                         ViewProvider context { view, setView }  → useView()
                                                │
                                                ▼
-   ViewRouter (view-router.tsx:52)  — the ONLY mount site, from src/app/page.tsx:25
+   ViewRouter (view-router.tsx:52)  — the ONLY mount site, from src/app/page.tsx:31
      ├─ Classic  → children, hidden={view!=="classic"}       ← never unmounted
      ├─ chat     → ChatView        ┐
      ├─ gamified → GameView        │ next/dynamic, ssr:false, SkeletonViewTransition fallback,
@@ -241,7 +242,7 @@ GET /?view=chat  ───────────┤ getServerSnapshot() → DE
 | 7 | `src/components/view-context.tsx:236-248,261-263` | `ViewQuerySync` + its dedicated `<Suspense>` boundary inside `ViewProvider`. |
 | 8 | `src/components/view-context.tsx:151-164,58-66` | `ViewRouterBridge` (module-level `routerBridge` so the non-React `setViewInternal` can `router.push`) and the one-shot `setPendingChatQuery` / `consumePendingChatQuery` hand-off the command palette uses to open Chat with a query. |
 | 9 | `src/components/providers.tsx:52-55` | `MotionConfig reducedMotion="user"` → `ViewProvider` → `TooltipProvider` → `ScrollFlagsSync`. |
-| 10 | `src/app/page.tsx:25-36` | Server-renders the Classic `<main>` and hands it to `ViewRouter` as `children`. |
+| 10 | `src/app/page.tsx:31-48` | Server-renders the Classic `<main>` and hands it to `ViewRouter` as `children` (`:31-42`); after it, outside `<main>`, come the three invisible JSON-LD lists of the sections above (`:43-47`, subsystem 14 in `14b-subsystems.md`). |
 | 11 | `src/components/view-router.tsx:56-69` | The `viewTransitionName: "view-body"` wrapper + the six branches. |
 | 12 | `src/lib/enabled-views.ts:20-40` | `isViewEnabled()`; `classic` and `resume` are unconditionally true. |
 | 13 | `src/components/view-switcher.tsx:75-112` | 4 server-rendered pills; Voice appended only when `mounted && !compact && isViewEnabled("voice")` (`:102-105`). Per-instance `layoutId`, disambiguated by an optional `scope` prop for a third (drawer) render site (`:112`). |
@@ -642,18 +643,24 @@ persisted `voice-settings-context` fields.
 
 ```
 MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any agent)
-   → GET|POST|DELETE  https://anvilry.vercel.app/api/mcp/mcp
-   → src/app/api/mcp/[transport]/route.ts   (maxDuration = 30, :10; no `runtime` export, :7-9)
-   → createMcpHandler(server => { 10 × server.registerTool(...) },
-                      {},
-                      { basePath: "/api/mcp", disableSse: true })          :19-21,:121,:128
+   → POST  https://anvilry.vercel.app/api/mcp/mcp      (GET and DELETE are exported only so the library answers them with a JSON-RPC 405;
+                                                        PUT, PATCH and HEAD are the shared JSON 405; every 405 and OPTIONS says "Allow: POST, OPTIONS")
+   → src/proxy.ts   (a public API path: API-Version and RateLimit headers, counted against the 300 per 60 s budget; OPTIONS is not counted)
+   → src/app/api/mcp/[transport]/route.ts   (maxDuration = 30, :15; no `runtime` export, :12-14)
+   → jsonErrors  :278-302   POST body parsed first: not JSON ⇒ JSON-RPC -32700 (400, id null) before the library sees it
+   → createMcpHandler(server => { 10 × server.registerTool(name, { title, description,
+                                    inputSchema: T.TOOL_INPUT_SHAPES.<name>, annotations: T.READ_ONLY_TOOL_ANNOTATIONS }, handler) },
+                      {}, { basePath: "/api/mcp", disableSse: true })          registrations :26-137, options :146
    → each tool body → T.wrapToolResult(T.<name>Data(...))  from src/lib/mcp-tools.ts
                       (pure, transport-agnostic)
    → mcp-tools.ts reads @/lib/content (allProjects, allWork, allArticles, allNotes,
                                        getProject, getWork) + @/lib/profile + @/lib/decisions
    → wrapToolResult(data)  →  { content: [{ type:"text", text: JSON.stringify(data,null,2) }],
                       structuredContent: data (a bare array is wrapped as { items: data }),
-                      isError: true  ⟸ IFF the payload has a `notFound` key }   mcp-tools.ts:242-252
+                      isError: true  ⟸ IFF the payload has a `notFound` key }   mcp-tools.ts:393-403
+   → after the library answers (:293-301): JSON that is not a message, or an empty array ⇒ -32600; params that do not fit
+                      tools/call, tools/list or initialize ⇒ -32602 (200, id echoed, one short sentence); the library's own
+                      404, 406 and 415 checks come first
    → every response then passes through ensureJsonError (src/lib/api-error.ts): a bare text 404/405 from
                       mcp-handler becomes the shared JSON error shape; JSON-RPC and event-stream bodies are untouched
    → JSON-RPC response over Streamable HTTP
@@ -661,38 +668,48 @@ MCP client (Claude Desktop via `npx -y mcp-remote`, Cursor via direct HTTP, any 
 
 ### The ten registered tools
 
-| Tool | Input schema | Impl | Not-found |
-|---|---|---|---|
-| `get_profile` | `{}` | `getProfileData()` `mcp-tools.ts:74` | n/a |
-| `list_projects` | `{}` | `listProjectsData()` `:99` | n/a |
-| `get_project` | `projectSlugSchema` `:37-39` | `getProjectData()` `:111` | `notFound("project", slug, projectSlugs())` `:113` |
-| `list_work` | `{}` | `listWorkData()` `:127` | n/a |
-| `get_work` | `workSlugSchema` `:40-42` | `getWorkData()` `:139` | `notFound("work", slug, workSlugs())` `:141` |
-| `search_experience` | `searchSchema` `:43-49` | `searchExperienceData()` `:155` | none — `{ query, matches: [], skills: [] }` |
-| `get_resume_variant` | `resumeRoleSchema` `:50-54` (enum of `RESUME_ROLES`, currently only `"master"`, `:24`) | `getResumeVariantData()` `:193` | `notFound("resume_variant", role, [...RESUME_ROLES])` `:196` |
-| `list_all_content` | `{}` | `listAllContentData()` `:253` | n/a |
-| `get_content_item` | `contentTypeSchema` `:228-231` | `getContentItemData()` `:287` | delegates, or `notFound("article"\|"note", …)` `:299`,`:316` |
-| `list_decisions` | `decisionsTagSchema` `:205-210` (optional `tag`) | `listDecisionsData()` `:214` — maps `allDecisions` from `src/lib/decisions.ts` to `{sourceKind, sourceName, title, body, tags, url}` | n/a — an unknown tag returns `[]` |
+All ten carry `READ_ONLY_TOOL_ANNOTATIONS` (`mcp-tools.ts:51-56`: `readOnlyHint` true, `destructiveHint` false, `idempotentHint` true,
+`openWorldHint` false), and every one is registered from its own entry of `TOOL_INPUT_SHAPES` (`:486-497`), the single registry the
+route and the `/mcp` page both read. Four tools gained typed, optional parameters; a call without arguments returns exactly what it
+returned before.
 
-Registration sites: `route.ts:21, 31, 41, 50, 60, 69, 79, 89, 99, 110` (`list_decisions` is the tenth, `:110-119`).
+| Tool | Input (`TOOL_INPUT_SHAPES`) | Impl | Not-found |
+|---|---|---|---|
+| `get_profile` | optional `sections`: 1 to 4 of `identity`, `links`, `skills`, `achievements` (`profileSectionsSchema` `:79-88`, `PROFILE_SECTIONS` `:37`) | `getProfileData(sections?)` `:192-207` | n/a |
+| `list_projects` | optional `group` (1 to 80 characters, exact match, case-insensitive) and `limit` (1 to 100) (`projectListSchema` `:101-111`) | `listProjectsData(options)` `:221-236` | an unknown group returns `{ items: [], notFound: true, kind: "project_group", given, valid }` and so `isError` (`:230`) |
+| `get_project` | `projectSlugSchema` `:59-61` | `getProjectData()` `:250` | `notFound("project", slug, projectSlugs())` `:252` |
+| `list_work` | optional `tech` (1 to 60 characters, case-insensitive substring of a tech entry) and `limit` (1 to 50) (`workListSchema` `:112-122`) | `listWorkData(options)` `:267-286` | n/a: an unmatched `tech` returns `[]` |
+| `get_work` | `workSlugSchema` `:62-64` | `getWorkData()` `:288` | `notFound("work", slug, workSlugs())` `:290` |
+| `search_experience` | `searchSchema` `:65-73` (`query`, 1 to 120 characters) | `searchExperienceData()` `:304` | none: `{ query, matches: [], skills: [] }` |
+| `get_resume_variant` | `resumeRoleSchema` `:74-78` (enum of `RESUME_ROLES`, currently only `"master"`, `:25`) | `getResumeVariantData()` `:342` | `notFound("resume_variant", role, [...RESUME_ROLES])` `:345` |
+| `list_all_content` | optional `type` (`work`, `project`, `article`, `note`) and `limit` (1 to 200) (`contentListSchema` `:123-131`) | `listAllContentData(options)` `:406-440` | n/a |
+| `get_content_item` | `contentTypeSchema` `:379-384` | `getContentItemData()` `:443` | delegates, or `notFound("article"\|"note", …)` `:452`, `:469` |
+| `list_decisions` | `decisionsTagSchema` `:354-361` (optional `tag`, an exact, case-sensitive match) | `listDecisionsData()` `:365-377` — maps `allDecisions` from `src/lib/decisions.ts` to `{sourceKind, sourceName, title, body, tags, url}` | n/a — an unknown tag returns `[]` |
+
+Each filter parameter states its own matching rule in its description (exact or substring, and the case rule), and
+`mcp-tools.test.ts:426-474` classifies every parameter of every tool as a filter or not, so a new one cannot skip stating it.
+An empty `group` or `tech` is rejected by the schema (`minLength` 1); a `group` of only spaces gets the not-found result with the valid
+groups, a `tech` of only spaces applies no filter, and an empty `tag` returns every decision (`route.test.ts:341-391`).
+
+Registration sites: `route.ts:26, 37, 49, 59, 71, 81, 92, 103, 115, 127` (`list_decisions` is the tenth, `:127-137`).
 **The count is 10** and every copy of it agrees: the route's own docblock reads "10 read-only tools"
-(`src/app/api/mcp/[transport]/route.ts:13`), `CLAUDE.md` (its MCP Server section and Key Files table) says 10 in both places, the hand-written
-`TOOLS` table on `/mcp` lists all ten rows (`src/app/mcp/page.tsx:40-60`), and `src/lib/mcp-tools.ts` exports
-ten `*Data` functions (`:73,99,111,127,139,155,193,214,253,287`). History: the server grew 7 → 9 at v3.0.0
-(`CHANGELOG.md:1297-1298`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:962-964`); the tenth
-tool has **no CHANGELOG entry** yet.
+(`src/app/api/mcp/[transport]/route.ts:18`), `CLAUDE.md` (its MCP Server section and Key Files table) says 10 in both places, the hand-written
+`TOOLS` table on `/mcp` lists all ten rows (`src/app/mcp/page.tsx:45-65`), and `src/lib/mcp-tools.ts` exports
+ten `*Data` functions. History: the server grew 7 → 9 at v3.0.0
+(`CHANGELOG.md:1400-1401`) and `/mcp` was brought back in line in v3.5.0 (`CHANGELOG.md:1065-1067`); the tenth
+tool has **no CHANGELOG entry** yet, and the typed parameters are under `[Unreleased]`.
 
 ### Participating files, in flow order
 
 | # | File | Exact role |
 |---|---|---|
-| 1 | `src/app/api/mcp/[transport]/route.ts:1,19-167` | Thin transport wiring: ten `registerTool` calls (`:21-119`), the `createMcpHandler` options (`:121-128`), and `jsonErrors` (`:138-154`), which answers a non-JSON `POST` body with the JSON-RPC parse error and runs everything else through `ensureJsonError`; it is bound to `GET`/`POST`/`DELETE`, while `PUT`/`PATCH`/`HEAD` are the JSON 405 and `OPTIONS` lists the methods that work (`:156-167`). Result wrapping is **not** here — it is `T.wrapToolResult` in `mcp-tools.ts`. |
-| 2 | `src/lib/mcp-tools.ts` | Ten pure data functions, six Zod **raw-shape** input schemas (plain objects of `z.*` fields, which is what `registerTool` takes — `:38-55,206-211,229-232`), `notFound()` (`:67-72`), `wrapToolResult` (`:242-252`), `ROLE_TO_LABEL` (`:29-35`), hardcoded `BASE` (`:23`). Since the API-policy change the same data functions also back the REST routes under `/api/v1` (through `src/lib/content-api.ts`), so the two views cannot disagree. |
+| 1 | `src/app/api/mcp/[transport]/route.ts:6,17-315` | Thin transport wiring: ten `registerTool` calls (`:26-137`), the `createMcpHandler` options (`:146`), and `jsonErrors` (`:278-302`), which answers a non-JSON `POST` body with the JSON-RPC parse error, turns a JSON body that is not a message into `-32600` and malformed params into `-32602` (`:173-176`, `:195-199`, `:232-269`), and runs everything else through `ensureJsonError`. It is bound to `GET`/`POST`/`DELETE`, while `PUT`/`PATCH`/`HEAD` are the JSON 405 and `OPTIONS` lists the one method that works (`:304-315`). Result wrapping is **not** here — it is `T.wrapToolResult` in `mcp-tools.ts`. |
+| 2 | `src/lib/mcp-tools.ts` | Ten pure data functions, the Zod **raw-shape** input schemas (plain objects of `z.*` fields, which is what `registerTool` takes — `:59-131`, `:354-361`, `:379-384`) gathered in `TOOL_INPUT_SHAPES` (`:486-497`), `READ_ONLY_TOOL_ANNOTATIONS` (`:51-56`), `notFound()` (`:143-148`), `wrapToolResult` (`:393-403`), `ROLE_TO_LABEL` (`:29-35`), hardcoded `BASE` (`:23`). Since the API-policy change the same data functions also back the REST routes under `/api/v1` (through `src/lib/content-api.ts`), so the two views cannot disagree. |
 | 3 | `src/lib/content.ts` | The allowlist the tools resolve against; `allNotes` is empty while notes are dark, so `list_all_content` / `get_content_item` expose no note then (`src/lib/notes-dark.test.ts:55`). |
 | 4 | `src/lib/profile.ts` | Identity, skills, achievements, `resumeVariants`. |
 | 5 | `src/lib/decisions.ts` | Source of `list_decisions` (`allDecisions`, project `decisions[]` + work `constraints`/`tradeoffs`). |
-| 6 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:6`; the `TOOLS` table (`:40-60`) is a hand-maintained duplicate, but it is **enforced** rather than trusted — the comment at `:37-39` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. |
-| 7 | `src/lib/llms-txt.ts:124` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:955-958`). |
+| 6 | `src/app/mcp/page.tsx` | Human-readable docs; `ENDPOINT` constant at `:11`; the `TOOLS` table (`:45-65`) is a hand-maintained list of names and one-line descriptions, but it is **enforced** rather than trusted — the comment at `:42-44` points at `src/app/mcp/tools-documented.test.ts`, which set-equality-checks it against the route's `registerTool` calls. The parameters under each row are **not** hand-written: `describeParams` (`:93-112`) converts the tool's `TOOL_INPUT_SHAPES` entry with the SDK's own JSON-Schema converter, so the page says what `tools/list` says. |
+| 7 | `src/lib/llms-txt.ts` | Advertises the server to agents: publishes the working `${BASE}/api/mcp/mcp` (it used to publish the 404'd `/api/mcp/sse`, `CHANGELOG.md:1058-1061`). |
 | 8 | `src/app/api/cron/health-check/route.ts:62` | Probes `/api/mcp/mcp` as a P2 check. The expected status is per-check (`expectedStatus`, `:107`, gated by `isExpectedStatus` at `:109`) and `mcp_get` expects **405**, not 200 (`src/lib/health-expectations.ts:30-32`). |
 
 ### Entry point
@@ -707,38 +724,44 @@ A JSON-RPC result whose `content[0].text` is pretty-printed JSON, mirrored in `s
 ### What is deliberately excluded
 
 - **`src/lib/personal.ts` is never imported** — the professional-only boundary is stated at
-  `src/lib/mcp-tools.ts:20-22` and asserted by `src/lib/mcp-tools.test.ts:24` ("does NOT leak personal.ts").
+  `src/lib/mcp-tools.ts:20-22` and asserted by `src/lib/mcp-tools.test.ts:34` ("does NOT leak personal.ts").
 - **`getProfileData()` hand-picks fields** rather than spreading `profile`: `links` carries only the public
   profile URLs (github, linkedin, npm, pypi, devto, substack, site); `email` and `calendlyUrl` are not returned
-  (`mcp-tools.ts:74-98`).
-- **Legacy SSE transport** — `disableSse: true` (`route.ts:128`).
+  (`mcp-tools.ts:150-174`). `PROFILE_KEY_SECTION` (`:178-189`) is typed over those keys, so a new key must pick a `sections` value.
+- **Legacy SSE transport** — `disableSse: true` (`route.ts:146`).
 - **`export const runtime`** — removed because `cacheComponents` rejects the export's mere presence
-  (`route.ts:7-9`).
+  (`route.ts:12-14`).
+- **JSON-RPC 2.0 batches (section 6) are not claimed.** An array is accepted only when every member is a well-formed
+  message; one invalid member rejects the whole array with a single error object, HTTP 400 and a null id (`route.ts:167-172`). The MCP spec
+  dropped batching in 2025-06-18.
 
 ### The not-found (`isError`) contract
 
-`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:67-72`). `wrapToolResult()`
-detects the **literal `notFound` property** and sets `isError: true` (`mcp-tools.ts:243,249`), so the calling
+`notFound()` returns `{ notFound: true, kind, given, valid }` (`mcp-tools.ts:143-148`). `wrapToolResult()`
+detects the **literal `notFound` property** and sets `isError: true` (`mcp-tools.ts:394,401`), so the calling
 agent receives the list of valid options instead of a fabricated answer. Renaming that field turns every
 not-found into a silent success. The same function guards a second contract: MCP requires
 `structuredContent` to be an object, and the SDK's runtime validation rejected the bare arrays the
-`list_*` / `search_*` tools return on every real call until they were wrapped as `{ items }` (`:243-245`,
-pinned by `mcp-tools.test.ts:115`); `content[0].text` keeps the raw array.
+`list_*` / `search_*` tools return on every real call until they were wrapped as `{ items }` (`:395-397`,
+pinned by `mcp-tools.test.ts:125`); `content[0].text` keeps the raw array.
 
 ### Failure modes
 
 | Failure | Mechanism |
 |---|---|
-| Unhandled 500 on `/api/mcp/sse` | Removing `disableSse: true` — the `[transport]` segment matches `"sse"`, mcp-handler enters its Redis init and throws `redisUrl is required`, because this project uses Upstash REST, not `REDIS_URL`/`KV_URL` (`route.ts:122-128`). |
-| A non-JSON `POST` leaves the request open until `maxDuration` | `mcp-handler` raises inside a stream for a body that is not JSON and never settles the request, so `jsonErrors` parses the body first and answers a JSON-RPC parse error (`code: -32700`, HTTP 400; `route.ts:139-152`, comment `:134-137`); `route.test.ts` pins both a non-JSON and an empty body. The same file rejects `HEAD` as a 405 for the same reason. |
-| Every not-found reported as success | Renaming the `notFound` key in `mcp-tools.ts` (`:243`). |
-| Every array-returning tool errors | Passing a bare array as `structuredContent` instead of `{ items }` (`mcp-tools.ts:244-246`; `mcp-tools.test.ts:115`). |
-| `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:7-9`). |
-| `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:29-35`) hardcodes the exact string `"Sairam Resume"` for the only role, `master`. Adding a role needs three edits (the `RESUME_ROLES` keyword, its exact label, the PDF in `public/resume/`) or it returns `notFound` (`:29-33`). `mcp-tools.test.ts:90` asserts every role resolves to a PDF that exists on disk. |
-| Tool list drifts from content | `mcp-tools.test.ts:48` asserts `list_projects`/`list_work` cover the whole content layer; `:101` covers `list_decisions`. |
-| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts:124` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:955-958`), and `src/lib/llms-txt.test.ts:28` pins the live path and `:32` the absence of `/api/mcp/sse`. |
-| `/mcp` docs drift | `src/app/mcp/page.tsx:40-60` is hand-maintained, but **guarded**: `src/app/mcp/tools-documented.test.ts:76,81,90` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. |
-| Health check flaps on MCP | The cron probes `GET /api/mcp/mcp`, which `mcp-handler` answers **405** by itself, so `mcp_get` must expect 405 (`health-expectations.ts:30-32`); `health-expectations.test.ts:27,41` pins it and `:161,173` pin the installed `mcp-handler` behaviour it depends on. |
+| Unhandled 500 on `/api/mcp/sse` | Removing `disableSse: true` — the `[transport]` segment matches `"sse"`, mcp-handler enters its Redis init and throws `redisUrl is required`, because this project uses Upstash REST, not `REDIS_URL`/`KV_URL` (`route.ts:140-146`). |
+| A non-JSON `POST` leaves the request open until `maxDuration` | `mcp-handler` raises inside a stream for a body that is not JSON and never settles the request, so `jsonErrors` parses the body first and answers a JSON-RPC parse error (`code: -32700`, HTTP 400; `route.ts:282-291`, comment `:154-155`); `route.test.ts:82-110` pins both a non-JSON and an empty body. The same file rejects `HEAD` as a 405 for the same reason. |
+| A JSON body that is not a message is labelled "parse error" | The library answers it 400 with `-32700` and a null id; the route recognises that (`isRejectedMessage`, `:221-225`) and an empty array's bare 202 (`isAcceptedEmptyBatch`, `:228-229`) and answers `-32600` with the request's id echoed when it has one (`:293-295`). `route-protocol.test.ts` pins both, and that the library's 404, 406 and 415 come first (`:285-311`). |
+| `tools/call` without a name gets `-32603` and the validator's raw issue list | `PARAMS_SCHEMAS` (`:195-199`) runs the library's own request schemas after it has answered; a miss becomes `-32602` with one sentence capped at 200 characters (`paramsProblem` `:232-250`, `invalidParams` `:260-269`, applied at `:296-300`). The method lookup uses `Object.hasOwn`, so `__proto__` and `toString` are not treated as methods (`route-protocol.test.ts:221-230`). |
+| Every not-found reported as success | Renaming the `notFound` key in `mcp-tools.ts` (`:394`). |
+| Every array-returning tool errors | Passing a bare array as `structuredContent` instead of `{ items }` (`mcp-tools.ts:395-397`; `mcp-tools.test.ts:125`). |
+| `cacheComponents` build failure | Re-adding `export const runtime` (`route.ts:12-14`). |
+| `get_resume_variant` silently breaks | Renaming a `resumeVariants[].label` in `profile.ts` — `ROLE_TO_LABEL` (`mcp-tools.ts:29-35`) hardcodes the exact string `"Sairam Resume"` for the only role, `master`. Adding a role needs three edits (the `RESUME_ROLES` keyword, its exact label, the PDF in `public/resume/`) or it returns `notFound` (`:31-34`). `mcp-tools.test.ts:100` asserts every role resolves to a PDF that exists on disk. |
+| Tool list drifts from content | `mcp-tools.test.ts:58` asserts `list_projects`/`list_work` cover the whole content layer; `:111` covers `list_decisions`. |
+| A tool is registered with an inline schema, or without an entry in `TOOL_INPUT_SHAPES` | `src/app/mcp/tools-documented.test.ts:101-116` fails: it compares the registry's keys with the registered tools and checks that every registration reads `T.TOOL_INPUT_SHAPES.<its own name>`. |
+| Agents pointed at a dead endpoint | Publishing the legacy `/api/mcp/sse` path, which `disableSse: true` 404s. `src/lib/llms-txt.ts` used to do exactly that; it now advertises `${BASE}/api/mcp/mcp` (`CHANGELOG.md:1058-1061`), and `src/lib/llms-txt.test.ts:36` pins the live path and `:40` the absence of `/api/mcp/sse`. |
+| `/mcp` docs drift | The tool names are hand-maintained in `src/app/mcp/page.tsx:45-65` but **guarded**: `src/app/mcp/tools-documented.test.ts:77,82,91` asserts the documented set equals the route's `registerTool` set, and `vitest run` is chained into `pnpm build`, so adding a tool without documenting it fails the build. The parameters are generated, and `src/app/mcp/page.dom.test.tsx` renders the real page and fails when a property of a schema is missing from a row. |
+| Health check flaps on MCP | The cron probes `GET /api/mcp/mcp`, which the route answers **405** itself (a stateless server), so `mcp_get` must expect 405 (`health-expectations.ts:30-32`); `health-expectations.test.ts:27,41` pins it and `:161,173` pin the installed `mcp-handler` behaviour it depends on. |
 
 ### Flags / env that alter it
 
@@ -845,7 +868,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 | Failure | Mechanism |
 |---|---|
 | Every error double-beacons | Renaming `DEDUPE_FLAG = "__anvilry_error_recently__"` in one of its three homes: `src/app/error.tsx:39`, `src/app/global-error.tsx:34`, `src/instrumentation-client.ts:65-71` (100 ms window). |
-| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All four copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, `src/app/api/visit/route.ts:35` and, since the API-policy change, `src/lib/public-api-limit.ts:139` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:987-992`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`src/app/api/visit/route.ts:26`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:141` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed list (`:102,119`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:60-70`). |
+| Rate-limit bypass via spoofed header | Taking the **first** `x-forwarded-for` segment instead of the last. All four copies take the last: `src/lib/rate-limit.ts:78`, `src/lib/telemetry/with-trace.ts:71`, `src/app/api/visit/route.ts:35` and, since the API-policy change, `src/lib/public-api-limit.ts:139` — the third was the odd one out (it took the leftmost segment and carried a comment asserting that was correct), and it was **fixed in v3.5.0** (`CHANGELOG.md:1090-1095`). It was never exploitable in production: the counter is flag-off by default, the handler returns early on absent Redis before `clientIp` (`src/app/api/visit/route.ts:26`) runs, and `x-vercel-forwarded-for` is checked first. Pinned two ways — `src/lib/telemetry/with-trace.test.ts:220-230` for the telemetry copy, and `src/lib/client-ip-consistency.test.ts:141` for every copy, which **discovers** `clientIp` bodies under `src/` rather than assuming a fixed list (`:102,119`) and rejects `.reverse().pop()` / `.slice(0,1).pop()` look-alikes (`:60-70`). |
 | Secrets in the trace log | A producer emitting without `redact()` first — `emit` does none (`emit.ts:30-35`). `src/app/api/error/route.test.ts:294-331` pins redact-before-emit. `componentStack` is deliberately **not** redacted (React-internal, `api/error/route.ts:148-166`). |
 | Retention stops trimming | The trim is piggybacked on writes **and** sampled: it runs only when `event.ts % 20 === 0` (`emit.ts:54,85-87`), so a kind that stops receiving events is never trimmed again, and even a busy kind is trimmed on ~5% of writes (each cheap `ZADD` is unconditional; the `ZREMRANGEBYSCORE` is what was cut to spare Upstash's command quota). |
 | Telemetry failure becomes request failure | Removing a `.catch()` from either Redis promise, or awaiting `emit` (it returns `void` by design, `emit.ts:25-35,56`). |
@@ -870,7 +893,7 @@ A `[trace]` line in Vercel Runtime Logs (the declared source of truth), a member
 `src/app/api/error/route.ts:93` (`.env.example:147` used to describe it as disabling "all event emission",
 which is broader than the single read; it and the `TELEMETRY_ENABLED` row of `docs/configuration.md` now state
 the narrow, beacon-only behaviour); `ADMIN_PASSWORD` (Basic auth for
-`/admin/*` — checked first by `src/proxy.ts:166-175` and again by the page `:470`; unset ⇒ locked out for
+`/admin/*` — checked first by `src/proxy.ts:173-182` and again by the page `:470`; unset ⇒ locked out for
 everyone, `admin-auth.ts:24-31`; it also gates `POST /api/admin/faq-cache/purge` through `requireAdmin`);
 `VERCEL_ENV` (corpus timestamp gate); `CRON_SECRET` (bearer for the five cron routes, `vercel.json:3-7`, all
 through the shared fail-closed `unauthorizedUnlessCron`; the same bearer skips the rate limiter for the eval

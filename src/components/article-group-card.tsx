@@ -5,7 +5,7 @@ import { ExternalLink, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import type { ArticleGroup } from "@/lib/article-grouping";
 import { PlatformBadge } from "@/components/platform-badge";
-import { NOTES_ENABLED } from "@/lib/writing-flags";
+import { resolveCanonicalHref } from "@/lib/article-href";
 
 /** Absolute, human-readable date (UTC). */
 function fmt(iso: string): string {
@@ -13,20 +13,6 @@ function fmt(iso: string): string {
   return Number.isNaN(d.getTime())
     ? iso
     : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
-}
-
-function resolveCanonicalHref(group: ArticleGroup): { href: string; external: boolean } {
-  const { canonical, externalPlatforms } = group;
-  // Route to /notes only when the notes section is enabled.
-  if (canonical.linkedNote && NOTES_ENABLED)
-    return { href: `/notes/${canonical.linkedNote}`, external: false };
-  // Use canonical's own externalUrl if present.
-  if (canonical.externalUrl) return { href: canonical.externalUrl, external: true };
-  // Fallback: use first available externalPlatform URL (e.g. DNS Essay has
-  // no externalUrl itself but Dev.to/Hashnode are in externalPlatforms).
-  const firstExternal = externalPlatforms.find((p) => p.externalUrl);
-  if (firstExternal?.externalUrl) return { href: firstExternal.externalUrl, external: true };
-  return { href: canonical.url, external: false };
 }
 
 export function ArticleGroupCard({ group }: { group: ArticleGroup }) {

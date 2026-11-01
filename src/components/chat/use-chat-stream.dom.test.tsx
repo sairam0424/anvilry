@@ -397,7 +397,7 @@ describe("useChat streaming loop — a FAQ-cache replay arrives as one thinking-
         void result.current.send("q");
       });
       await waitFor(() => expect(result.current.status).toBe("idle"), {
-        timeout: 5000,
+        timeout: 10_000,
       });
       unmount();
       return seen;

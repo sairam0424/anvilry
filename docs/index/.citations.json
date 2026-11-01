@@ -1322,6 +1322,20 @@
       ],
       "preview": ".claude/.proven-config-version"
     },
+    ".gitignore:72": {
+      "fp": "05292b25783a",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "~/"
+    },
+    ".gitignore:74": {
+      "fp": "e1b323fd136f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": ".npm/"
+    },
     ".nvmrc:1": {
       "fp": "785f3ec7eb32",
       "citedBy": [
@@ -1329,7 +1343,7 @@
       ],
       "preview": "22"
     },
-    "ARCHITECTURE.md:106": {
+    "ARCHITECTURE.md:110": {
       "fp": "ed771fd6ccde",
       "citedBy": [
         "11-config-build-ci-infra.md"
@@ -1407,27 +1421,107 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "e9db95fc6d1f",
+      "fp": "f9e9a51b5c75",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.17.0 (`package.js"
     },
-    "CHANGELOG.md:1002": {
+    "CHANGELOG.md:1001": {
+      "fp": "d7d08591d295",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "itself a build failure, then runs the guard below."
+    },
+    "CHANGELOG.md:1008": {
+      "fp": "78c2d4537bb4",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
+    },
+    "CHANGELOG.md:1030": {
+      "fp": "5095a19adb55",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
+    },
+    "CHANGELOG.md:1042": {
+      "fp": "0c595a592a06",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "README.md"
+      ],
+      "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
+    },
+    "CHANGELOG.md:1044": {
+      "fp": "f8dc5506feac",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "## [3.5.0] — 2026-08-21"
+    },
+    "CHANGELOG.md:1058": {
+      "fp": "b10847c33a09",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the"
+    },
+    "CHANGELOG.md:1061": {
+      "fp": "a876bd2d0d1b",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "pointing them at nothing. **Public artifact change.**"
+    },
+    "CHANGELOG.md:1065": {
+      "fp": "907db8726a39",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "14-subsystems.md"
+      ],
+      "preview": "- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`"
+    },
+    "CHANGELOG.md:1067": {
+      "fp": "c967c6044c37",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "14-subsystems.md"
+      ],
+      "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
+    },
+    "CHANGELOG.md:1090": {
+      "fp": "b87d6402a897",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the"
+    },
+    "CHANGELOG.md:1095": {
+      "fp": "6904a0e277ed",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "is a latent fallback inconsistency, not a live bypass."
+    },
+    "CHANGELOG.md:1105": {
       "fp": "e87c24791291",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- Corrected in-code comments that misdescribed their own code, including a banner claiming a test"
     },
-    "CHANGELOG.md:1004": {
+    "CHANGELOG.md:1107": {
       "fp": "c414e36c7415",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`@react-three/rapier` described as loaded when it is imported nowhere."
     },
-    "CHANGELOG.md:1020": {
+    "CHANGELOG.md:1123": {
       "fp": "0926a918ce91",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1437,7 +1531,7 @@
       ],
       "preview": "- **Node version pin:** `.nvmrc` (22) and `engines.node` (`>=22 <23`), matching the CI pin. Without"
     },
-    "CHANGELOG.md:1023": {
+    "CHANGELOG.md:1126": {
       "fp": "d5609bbaa648",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1446,7 +1540,7 @@
       ],
       "preview": "collides with vitest's happy-dom global injection."
     },
-    "CHANGELOG.md:1026": {
+    "CHANGELOG.md:1129": {
       "fp": "9b69baeb014e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1456,14 +1550,14 @@
       ],
       "preview": "- **pnpm settings moved to `pnpm-workspace.yaml`.** pnpm v11 no longer reads the `pnpm` field of"
     },
-    "CHANGELOG.md:1030": {
+    "CHANGELOG.md:1133": {
       "fp": "9199ac98b998",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "release, signalled only by a warning line that reads like boilerplate."
     },
-    "CHANGELOG.md:1032": {
+    "CHANGELOG.md:1135": {
       "fp": "f8f7365f53b0",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1471,7 +1565,7 @@
       ],
       "preview": "Both pnpm 10 and 11 read the new location. Verified by regenerating the lockfile with each"
     },
-    "CHANGELOG.md:1036": {
+    "CHANGELOG.md:1139": {
       "fp": "ce9c976af644",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1479,7 +1573,7 @@
       ],
       "preview": "0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9."
     },
-    "CHANGELOG.md:1039": {
+    "CHANGELOG.md:1142": {
       "fp": "b8c3c33d4077",
       "citedBy": [
         "07-components-3d.md",
@@ -1490,7 +1584,7 @@
       ],
       "preview": "- `@react-three/rapier` and `@react-three/offscreen` — declared dependencies with **zero imports**"
     },
-    "CHANGELOG.md:1040": {
+    "CHANGELOG.md:1143": {
       "fp": "8e6657d9183e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1498,7 +1592,7 @@
       ],
       "preview": "anywhere in `src/`. Deferred until the overrides migration made lockfile regeneration safe."
     },
-    "CHANGELOG.md:1041": {
+    "CHANGELOG.md:1144": {
       "fp": "3a0b2a614fe4",
       "citedBy": [
         "07-components-3d.md",
@@ -1506,7 +1600,7 @@
       ],
       "preview": "Measured impact: 3 packages removed, 0 added, 1 version change"
     },
-    "CHANGELOG.md:1043": {
+    "CHANGELOG.md:1146": {
       "fp": "d9ea6ad36d1f",
       "citedBy": [
         "07-components-3d.md",
@@ -1517,42 +1611,42 @@
       ],
       "preview": "was the only remaining consumer)."
     },
-    "CHANGELOG.md:1045": {
+    "CHANGELOG.md:1148": {
       "fp": "8b7a5c9e23e9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.4.2] — 2026-08-15"
     },
-    "CHANGELOG.md:1047": {
+    "CHANGELOG.md:1150": {
       "fp": "559cc1eadd9a",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Security patch.** Resolves all 23 open Dependabot advisories across 10 packages, 11 of them"
     },
-    "CHANGELOG.md:1048": {
+    "CHANGELOG.md:1151": {
       "fp": "0aa70116c274",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "high severity. Also wires E2E into CI and makes the Playwright suite self-managing."
     },
-    "CHANGELOG.md:1050": {
+    "CHANGELOG.md:1153": {
       "fp": "533a2492391b",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "Until this release, production served the vulnerable versions — the fixes had been merged to"
     },
-    "CHANGELOG.md:1051": {
+    "CHANGELOG.md:1154": {
       "fp": "2dd0f67dda39",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "`develop` (Preview only) but not promoted."
     },
-    "CHANGELOG.md:1053": {
+    "CHANGELOG.md:1156": {
       "fp": "a4ff72c5e89e",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1560,63 +1654,63 @@
       ],
       "preview": "### Security"
     },
-    "CHANGELOG.md:1054": {
+    "CHANGELOG.md:1157": {
       "fp": "e71e1c282194",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`pdfjs-dist` 6.0.227 -> 6.2.108** (high) — arbitrary JavaScript execution upon opening a"
     },
-    "CHANGELOG.md:1056": {
+    "CHANGELOG.md:1159": {
       "fp": "1ebceb043643",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "user-selected PDFs client-side."
     },
-    "CHANGELOG.md:1057": {
+    "CHANGELOG.md:1160": {
       "fp": "84f8bcd6d3bc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`ip-address` 10.2.0 -> 10.5.0** (high) — `Address4` decodes leading-zero octets as decimal"
     },
-    "CHANGELOG.md:1059": {
+    "CHANGELOG.md:1162": {
       "fp": "9957c7303189",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`mcp-handler` -> `@modelcontextprotocol/sdk` -> `express-rate-limit`; server-side only."
     },
-    "CHANGELOG.md:1060": {
+    "CHANGELOG.md:1163": {
       "fp": "6cef5f81b648",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`hono` 4.12.25 -> 4.13.2** (medium x3, low x1) — `memo()` retained SSR output across requests"
     },
-    "CHANGELOG.md:1062": {
+    "CHANGELOG.md:1165": {
       "fp": "9e87e4da5492",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "middleware, Proxy Helper header leak."
     },
-    "CHANGELOG.md:1063": {
+    "CHANGELOG.md:1166": {
       "fp": "4863beb796a6",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`js-yaml` 4.2.0 -> 4.3.1** (high) — quadratic CPU consumption in `!!omap` resolution."
     },
-    "CHANGELOG.md:1064": {
+    "CHANGELOG.md:1167": {
       "fp": "1b691181626d",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`fast-uri` 3.1.2 -> 3.1.5** (high) — host confusion via backslash authority introducer."
     },
-    "CHANGELOG.md:1065": {
+    "CHANGELOG.md:1168": {
       "fp": "2495da8e6183",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1625,7 +1719,7 @@
       ],
       "preview": "- **`brace-expansion` -> 1.1.18 and 5.0.9** (high) — two separate major lines, each patched within"
     },
-    "CHANGELOG.md:1067": {
+    "CHANGELOG.md:1170": {
       "fp": "5e8fcd724c24",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1634,49 +1728,49 @@
       ],
       "preview": "onto 5.x and broken the eslint chain."
     },
-    "CHANGELOG.md:1068": {
+    "CHANGELOG.md:1171": {
       "fp": "d3c528f5bdfa",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`sharp` 0.34.5 -> 0.35.3** (high) — only velite's build-time instance was affected; Next 16.3.0"
     },
-    "CHANGELOG.md:1069": {
+    "CHANGELOG.md:1172": {
       "fp": "6ab0f5a0e9c7",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "already carried the patched 0.35.3."
     },
-    "CHANGELOG.md:1070": {
+    "CHANGELOG.md:1173": {
       "fp": "4582bda8000e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`@hono/node-server` -> 1.19.17** (medium) — `serve-static` path traversal via `%5C` on Windows."
     },
-    "CHANGELOG.md:1071": {
+    "CHANGELOG.md:1174": {
       "fp": "96a9fda4290b",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`postcss` -> 8.5.23+** (medium/high) — attacker-controlled `sourceMappingURL` read arbitrary"
     },
-    "CHANGELOG.md:1072": {
+    "CHANGELOG.md:1175": {
       "fp": "85aef74adb7e",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`.map` files when `from` is unset."
     },
-    "CHANGELOG.md:1073": {
+    "CHANGELOG.md:1176": {
       "fp": "9b6a6fd9c8da",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **`body-parser` 2.2.2 -> 2.3.0** (low)."
     },
-    "CHANGELOG.md:1075": {
+    "CHANGELOG.md:1178": {
       "fp": "8e7bfd4cc727",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1685,7 +1779,7 @@
       ],
       "preview": "Six were transitive and lockfile-pinned, so `pnpm update` could not move them —"
     },
-    "CHANGELOG.md:1077": {
+    "CHANGELOG.md:1180": {
       "fp": "96a5b77bacc5",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1694,28 +1788,28 @@
       ],
       "preview": "`security_update_not_possible`. Fixed via `pnpm.overrides`."
     },
-    "CHANGELOG.md:1080": {
+    "CHANGELOG.md:1183": {
       "fp": "6fadeed9bf1b",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **E2E is now a CI gate.** `pnpm e2e` was referenced by no workflow, so the suite had rotted"
     },
-    "CHANGELOG.md:1084": {
+    "CHANGELOG.md:1187": {
       "fp": "12f193f55671",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "because the default `GITHUB_TOKEN` cannot read the Dependabot alerts API."
     },
-    "CHANGELOG.md:1085": {
+    "CHANGELOG.md:1188": {
       "fp": "8f99540d284a",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Playwright `webServer`** — the suite now starts and health-checks its own server. Previously a"
     },
-    "CHANGELOG.md:1094": {
+    "CHANGELOG.md:1197": {
       "fp": "b3318f770342",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1725,7 +1819,7 @@
       ],
       "preview": "- Dependabot ignores now live on `main`. Dependabot reads `dependabot.yml` from the DEFAULT BRANCH"
     },
-    "CHANGELOG.md:1095": {
+    "CHANGELOG.md:1198": {
       "fp": "382750558133",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1736,91 +1830,91 @@
       ],
       "preview": "only, so the `typescript`/`eslint` semver-major ignores added on `develop` had been inert."
     },
-    "CHANGELOG.md:1105": {
+    "CHANGELOG.md:1208": {
       "fp": "920375370fab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `react` / `react-dom` 19.2.7 -> **19.2.8** (patch)"
     },
-    "CHANGELOG.md:1115": {
+    "CHANGELOG.md:1218": {
       "fp": "783808ceb2d5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- `@types/three` ^0.184.1 -> **^0.185.4**, finally tracking runtime `three@0.185.1`. Caret"
     },
-    "CHANGELOG.md:1117": {
+    "CHANGELOG.md:1220": {
       "fp": "abc4b971d2ca",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "follow the runtime bump on its own."
     },
-    "CHANGELOG.md:1118": {
+    "CHANGELOG.md:1221": {
       "fp": "f8379cf83c34",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- Dev tooling: `velite` ^0.3.1 -> ^0.4.0, `@types/node` ^20 -> ^26, `vitest` -> ^4.1.10,"
     },
-    "CHANGELOG.md:1133": {
+    "CHANGELOG.md:1236": {
       "fp": "8e54b98b74ac",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`typescript` major (7.x)** — `@typescript-eslint/typescript-estree` 8.61.0 crashes on load"
     },
-    "CHANGELOG.md:1137": {
+    "CHANGELOG.md:1240": {
       "fp": "e7b06f5096ab",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "toolchain fails."
     },
-    "CHANGELOG.md:1138": {
+    "CHANGELOG.md:1241": {
       "fp": "e4e610a95c54",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "- **`eslint` major (10.x)** — separately blocked upstream (`eslint-plugin-react` calls APIs"
     },
-    "CHANGELOG.md:1141": {
+    "CHANGELOG.md:1244": {
       "fp": "1bc184f28e2a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "patches still flow."
     },
-    "CHANGELOG.md:1167": {
+    "CHANGELOG.md:1270": {
       "fp": "df5cd9b282c9",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **Migrated all 26 route segment configs** that Cache Components rejects — 13 `runtime`,"
     },
-    "CHANGELOG.md:1169": {
+    "CHANGELOG.md:1272": {
       "fp": "132dd7e8a2d4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "uniformly: `/projects` uses `\"use cache\"` + `cacheLife(\"hours\")` because it awaits a live"
     },
-    "CHANGELOG.md:1276": {
+    "CHANGELOG.md:1379": {
       "fp": "f2d3f71a827e",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- **`/llms-full.txt`** — full chatbot corpus (~6KB) as `text/plain` with"
     },
-    "CHANGELOG.md:1297": {
+    "CHANGELOG.md:1400": {
       "fp": "6c9694a6dced",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "- **2 new MCP tools** — `list_all_content` (all work/project/article/note items) and"
     },
-    "CHANGELOG.md:1298": {
+    "CHANGELOG.md:1401": {
       "fp": "2dee0866a4a4",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1828,36 +1922,21 @@
       ],
       "preview": "`get_content_item` (fetch by type + slug). MCP server grows from 7 → 9 tools."
     },
-    "CHANGELOG.md:136": {
-      "fp": "277e2d40abc7",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "README.md"
-      ],
-      "preview": "answered, and the published policy says so."
-    },
-    "CHANGELOG.md:138": {
-      "fp": "29421ce75282",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "## [3.17.0] — 2026-10-31"
-    },
-    "CHANGELOG.md:1419": {
+    "CHANGELOG.md:1522": {
       "fp": "5bd4b1b4d54d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- `streamWithFallback` docblock claimed \"Opus 4.6 primary\" while the `BEDROCK_CHAIN` array"
     },
-    "CHANGELOG.md:1421": {
+    "CHANGELOG.md:1524": {
       "fp": "b1d0b68e19dc",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "ambiguous about the expected primary model."
     },
-    "CHANGELOG.md:1701": {
+    "CHANGELOG.md:1804": {
       "fp": "5ca93d9cf04d",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1865,7 +1944,7 @@
       ],
       "preview": "[1.6.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.6.0"
     },
-    "CHANGELOG.md:1709": {
+    "CHANGELOG.md:1812": {
       "fp": "07652699e8f2",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1873,42 +1952,57 @@
       ],
       "preview": "[1.0.0]: https://github.com/sairam0424/anvilry/releases/tag/v1.0.0"
     },
-    "CHANGELOG.md:246": {
+    "CHANGELOG.md:239": {
+      "fp": "277e2d40abc7",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md",
+        "README.md"
+      ],
+      "preview": "answered, and the published policy says so."
+    },
+    "CHANGELOG.md:241": {
+      "fp": "29421ce75282",
+      "citedBy": [
+        "12-docs-knowledge-and-harness.md"
+      ],
+      "preview": "## [3.17.0] — 2026-10-31"
+    },
+    "CHANGELOG.md:349": {
       "fp": "9a299ace90c0",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "- **Transitive overrides** in `pnpm-workspace.yaml` (now 14 entries, 7 exact; the others are ranges "
     },
-    "CHANGELOG.md:248": {
+    "CHANGELOG.md:351": {
       "fp": "ed7273fd58e4",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "`hono` 4.13.13, `qs` 6.16.1, `brace-expansion` 1.1.21 and 5.0.12. Every version listed is a release "
     },
-    "CHANGELOG.md:253": {
+    "CHANGELOG.md:356": {
       "fp": "c9038a0ad4c7",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "bug is in `serveStatic`, which nothing uses) and `minimatch` (moderate; dev-only, via eslint)."
     },
-    "CHANGELOG.md:255": {
+    "CHANGELOG.md:358": {
       "fp": "d6fb24fde00e",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "## [3.16.1] — 2026-10-22"
     },
-    "CHANGELOG.md:308": {
+    "CHANGELOG.md:411": {
       "fp": "923d26213ba5",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "alert script."
     },
-    "CHANGELOG.md:60": {
+    "CHANGELOG.md:64": {
       "fp": "c7ac77e28ef8",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
@@ -1923,7 +2017,7 @@
       ],
       "preview": "## [Unreleased]"
     },
-    "CHANGELOG.md:849": {
+    "CHANGELOG.md:952": {
       "fp": "87a4c32b93f0",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
@@ -1931,7 +2025,7 @@
       ],
       "preview": "## [3.6.0] — 2026-08-21"
     },
-    "CHANGELOG.md:853": {
+    "CHANGELOG.md:956": {
       "fp": "afe76b8d59a6",
       "citedBy": [
         "11-config-build-ci-infra.md",
@@ -1939,113 +2033,26 @@
       ],
       "preview": "### Fixed"
     },
-    "CHANGELOG.md:870": {
+    "CHANGELOG.md:973": {
       "fp": "a2656816da7a",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "**Same blind spot as v3.5.0's `pnpm`-field migration, one key later**: *CI passes* is not *it instal"
     },
-    "CHANGELOG.md:893": {
+    "CHANGELOG.md:996": {
       "fp": "f7f3216c3072",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "not a constraint), so one omission would fall through `:59` and render a raw `devto`."
     },
-    "CHANGELOG.md:896": {
+    "CHANGELOG.md:999": {
       "fp": "9edfda6966ef",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
       "preview": "- **`ci.yml` job `install-pnpm-11`** (`ci.yml:124-171`) — the only job running a pnpm other than the"
-    },
-    "CHANGELOG.md:898": {
-      "fp": "d7d08591d295",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "itself a build failure, then runs the guard below."
-    },
-    "CHANGELOG.md:905": {
-      "fp": "78c2d4537bb4",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "stays under 1,285,000 B and (b) **three.js stays off the first-load critical path**, which a"
-    },
-    "CHANGELOG.md:927": {
-      "fp": "5095a19adb55",
-      "citedBy": [
-        "14b-subsystems.md"
-      ],
-      "preview": "`main` is not branch-protected and the check was already absent from PR #155's rollup, so no gate"
-    },
-    "CHANGELOG.md:939": {
-      "fp": "0c595a592a06",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "README.md"
-      ],
-      "preview": "- `web-vitals` `5.3.0 → 6.1.1` — **major**, but the three functions this repo uses (`onLCP`, `onINP`"
-    },
-    "CHANGELOG.md:941": {
-      "fp": "f8dc5506feac",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md"
-      ],
-      "preview": "## [3.5.0] — 2026-08-21"
-    },
-    "CHANGELOG.md:955": {
-      "fp": "b10847c33a09",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "- **`llms.txt` advertised a dead MCP transport.** It published `${BASE}/api/mcp/sse`, but the"
-    },
-    "CHANGELOG.md:958": {
-      "fp": "a876bd2d0d1b",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "pointing them at nothing. **Public artifact change.**"
-    },
-    "CHANGELOG.md:962": {
-      "fp": "907db8726a39",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "14-subsystems.md"
-      ],
-      "preview": "- **`/mcp` documented 7 of 9 registered MCP tools.** `list_all_content` and `get_content_item`"
-    },
-    "CHANGELOG.md:964": {
-      "fp": "c967c6044c37",
-      "citedBy": [
-        "12-docs-knowledge-and-harness.md",
-        "14-subsystems.md"
-      ],
-      "preview": "set-equality against the route's `registerTool` calls, so the build fails if they drift."
-    },
-    "CHANGELOG.md:987": {
-      "fp": "b87d6402a897",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "- **`/api/visit` resolved the client IP from the spoofable end of `x-forwarded-for`.** It took the"
-    },
-    "CHANGELOG.md:992": {
-      "fp": "6904a0e277ed",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "is a latent fallback inconsistency, not a live bypass."
-    },
-    "CLAUDE.md:259": {
-      "fp": "826a4efde0f6",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "**10 tools** (all sourced from `src/lib/mcp-tools.ts`, transport-agnostic pure functions):"
     },
     "CLAUDE.md:269": {
       "fp": "69784a891e97",
@@ -2054,29 +2061,22 @@
       ],
       "preview": "| `get_resume_variant` | The canonical résumé PDF URL (`master`) |"
     },
-    "CLAUDE.md:384": {
-      "fp": "80b708b421cf",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "| `src/app/api/mcp/[transport]/route.ts` | MCP server (10 read-only tools); every transport response"
-    },
-    "CLAUDE.md:436": {
+    "CLAUDE.md:442": {
       "fp": "b934a36f8b73",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
-    "CLAUDE.md:438": {
-      "fp": "3db4bf12f93e",
+    "CLAUDE.md:444": {
+      "fp": "9a306be0aa22",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **38"
+      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **56"
     },
-    "CLAUDE.md:465": {
-      "fp": "0cfa76afe740",
+    "CLAUDE.md:471": {
+      "fp": "bf79bd00650f",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "15-invariants-and-gotchas.md"
@@ -2105,7 +2105,7 @@
       "preview": "table ever disagrees with it."
     },
     "DEPLOY.md:5": {
-      "fp": "7c861a7b1243",
+      "fp": "ee244fcf39bb",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -2140,7 +2140,7 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "99dac38963ab",
+      "fp": "9076ee0867d3",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -3109,6 +3109,28 @@
         "11-config-build-ci-infra.md"
       ],
       "preview": "return h;"
+    },
+    "next.config.ts:265": {
+      "fp": "a97f2a86051b",
+      "citedBy": [
+        "02-api-routes.md",
+        "10-tests-and-quality-gates.md",
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Pages with a Markdown twin vary with Accept (https://acceptmarkdown.com): ask for Vary and"
+    },
+    "next.config.ts:267": {
+      "fp": "e5247c74e687",
+      "citedBy": [
+        "02-api-routes.md",
+        "10-tests-and-quality-gates.md",
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// The slug pattern excludes dots so /projects/x.md does not advertise \"x.md.md\" as its alternate."
     },
     "next.config.ts:280": {
       "fp": "a8e0d4ea94ef",
@@ -6578,69 +6600,27 @@
       "preview": "// of those, so removing it does not change the effective GitHub-polling cadence."
     },
     "src/app/api/mcp/[transport]/route.ts:1": {
-      "fp": "9d46e54aa9af",
+      "fp": "e0cbdab30393",
       "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14-subsystems.md"
+        "13-dependencies-and-versions.md"
       ],
-      "preview": "import { createMcpHandler } from \"mcp-handler\";"
+      "preview": "import {"
     },
-    "src/app/api/mcp/[transport]/route.ts:10": {
-      "fp": "4799a6f6e27b",
-      "citedBy": [
-        "13-dependencies-and-versions.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export const maxDuration = 30;"
-    },
-    "src/app/api/mcp/[transport]/route.ts:110": {
+    "src/app/api/mcp/[transport]/route.ts:103": {
       "fp": "abd9c5281100",
       "citedBy": [
-        "09-content-and-schemas.md",
-        "14b-subsystems.md"
+        "15-invariants-and-gotchas.md"
       ],
       "preview": "server.registerTool("
     },
-    "src/app/api/mcp/[transport]/route.ts:119": {
-      "fp": "9d8b2b5670d1",
+    "src/app/api/mcp/[transport]/route.ts:104": {
+      "fp": "f6320ef5ea5b",
       "citedBy": [
-        "14b-subsystems.md",
-        "README.md"
-      ],
-      "preview": ");"
-    },
-    "src/app/api/mcp/[transport]/route.ts:128": {
-      "fp": "5dc910c00777",
-      "citedBy": [
-        "03-lib-content-data.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "{ basePath: \"/api/mcp\", disableSse: true },"
+      "preview": "\"list_all_content\","
     },
-    "src/app/api/mcp/[transport]/route.ts:13": {
-      "fp": "f880bab68267",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md",
-        "README.md"
-      ],
-      "preview": "* Portfolio MCP server — exposes the real content layer as 10 read-only tools so a"
-    },
-    "src/app/api/mcp/[transport]/route.ts:156": {
-      "fp": "018758a06362",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "const notAllowed = methodNotAllowed([\"GET\", \"POST\", \"DELETE\"]);"
-    },
-    "src/app/api/mcp/[transport]/route.ts:21": {
-      "fp": "abd9c5281100",
-      "citedBy": [
-        "README.md"
-      ],
-      "preview": "server.registerTool("
-    },
-    "src/app/api/mcp/[transport]/route.ts:7": {
+    "src/app/api/mcp/[transport]/route.ts:12": {
       "fp": "79214e4ca231",
       "citedBy": [
         "02-api-routes.md",
@@ -6649,14 +6629,23 @@
       ],
       "preview": "// NOTE: `export const runtime = \"nodejs\"` was removed for cacheComponents (which rejects the"
     },
-    "src/app/api/mcp/[transport]/route.ts:89": {
+    "src/app/api/mcp/[transport]/route.ts:127": {
       "fp": "abd9c5281100",
       "citedBy": [
-        "15-invariants-and-gotchas.md"
+        "09-content-and-schemas.md",
+        "14b-subsystems.md"
       ],
       "preview": "server.registerTool("
     },
-    "src/app/api/mcp/[transport]/route.ts:9": {
+    "src/app/api/mcp/[transport]/route.ts:137": {
+      "fp": "9d8b2b5670d1",
+      "citedBy": [
+        "14b-subsystems.md",
+        "README.md"
+      ],
+      "preview": ");"
+    },
+    "src/app/api/mcp/[transport]/route.ts:14": {
       "fp": "bce1209cd3b0",
       "citedBy": [
         "02-api-routes.md",
@@ -6665,12 +6654,73 @@
       ],
       "preview": "// Components requires it; only `runtime = \"edge\"` is unsupported. Behaviour is unchanged."
     },
-    "src/app/api/mcp/[transport]/route.ts:90": {
-      "fp": "f6320ef5ea5b",
+    "src/app/api/mcp/[transport]/route.ts:146": {
+      "fp": "5dc910c00777",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "{ basePath: \"/api/mcp\", disableSse: true },"
+    },
+    "src/app/api/mcp/[transport]/route.ts:15": {
+      "fp": "4799a6f6e27b",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const maxDuration = 30;"
+    },
+    "src/app/api/mcp/[transport]/route.ts:18": {
+      "fp": "f880bab68267",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md",
+        "README.md"
+      ],
+      "preview": "* Portfolio MCP server — exposes the real content layer as 10 read-only tools so a"
+    },
+    "src/app/api/mcp/[transport]/route.ts:195": {
+      "fp": "f27b2c62ca30",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"list_all_content\","
+      "preview": "const PARAMS_SCHEMAS: Record<string, ParamsSchema> = {"
+    },
+    "src/app/api/mcp/[transport]/route.ts:199": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "};"
+    },
+    "src/app/api/mcp/[transport]/route.ts:26": {
+      "fp": "abd9c5281100",
+      "citedBy": [
+        "README.md"
+      ],
+      "preview": "server.registerTool("
+    },
+    "src/app/api/mcp/[transport]/route.ts:304": {
+      "fp": "241225edcdc2",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "const notAllowed = methodNotAllowed(ALLOWED_METHODS);"
+    },
+    "src/app/api/mcp/[transport]/route.ts:5": {
+      "fp": "60f4bac39e59",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "} from \"@modelcontextprotocol/sdk/types.js\";"
+    },
+    "src/app/api/mcp/[transport]/route.ts:6": {
+      "fp": "9d46e54aa9af",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md"
+      ],
+      "preview": "import { createMcpHandler } from \"mcp-handler\";"
     },
     "src/app/api/md/pages/[page]/route.ts:13": {
       "fp": "321f80deb92a",
@@ -7071,6 +7121,41 @@
       ],
       "preview": "// surfaces immediately rather than masquerading as Joanna."
     },
+    "src/app/api/v1/batch/route.test.ts:367": {
+      "fp": "9335cc8f2c5d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"refuses to ask for the same operation 25 ways, so the one route that calls GitHub is called at m"
+    },
+    "src/app/api/v1/batch/route.test.ts:428": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/app/api/v1/batch/route.ts:27": {
+      "fp": "69d52d8743d3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const POST = withJsonErrors(async (req: Request) => {"
+    },
+    "src/app/api/v1/batch/route.ts:52": {
+      "fp": "0e492579801b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// Methods this route does not implement answer a JSON 405 (with Allow) instead of Next's empty one."
+    },
+    "src/app/api/v1/batch/route.ts:58": {
+      "fp": "1163c3ef4eb4",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const OPTIONS = optionsFor([\"POST\"]);"
+    },
     "src/app/api/v1/route.ts:10": {
       "fp": "7ef0978540a2",
       "citedBy": [
@@ -7219,6 +7304,14 @@
         "01-routes-pages.md"
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
+    },
+    "src/app/articles/[slug]/page.tsx:140": {
+      "fp": "8ef41882dfd9",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<JsonLdScript data={jsonLd} />"
     },
     "src/app/articles/[slug]/page.tsx:17": {
       "fp": "8c5398c01898",
@@ -7433,20 +7526,326 @@
       ],
       "preview": "import { allDecisions, type LedgerEntry } from \"@/lib/decisions\";"
     },
-    "src/app/developers/page.tsx:17": {
+    "src/app/developers/page.tsx:2": {
+      "fp": "1e9ba25f8f7c",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "import { DevelopersJsonLd } from \"@/components/json-ld-api\";"
+    },
+    "src/app/developers/page.tsx:27": {
       "fp": "60aaa8cc585c",
       "citedBy": [
         "01-routes-pages.md"
       ],
       "preview": "export const metadata: Metadata = {"
     },
-    "src/app/developers/page.tsx:228": {
+    "src/app/developers/page.tsx:43": {
+      "fp": "e0f39fc67837",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export default function DevelopersPage() {"
+    },
+    "src/app/developers/page.tsx:79": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/api-table.tsx:23": {
+      "fp": "540f4b8e0355",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function ApiTable({"
+    },
+    "src/app/developers/sections/cli.tsx:104": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/cli.tsx:26": {
+      "fp": "39047e56fb76",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "const cliIntro = () =>"
+    },
+    "src/app/developers/sections/cli.tsx:29": {
+      "fp": "f4e03f84971e",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": ".join(\" \");"
+    },
+    "src/app/developers/sections/cli.tsx:31": {
+      "fp": "b74ab60951f7",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function CliCommandsTable() {"
+    },
+    "src/app/developers/sections/cli.tsx:82": {
+      "fp": "e935ae9f1795",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "const recipes = buildCurlRecipes(openApi);"
+    },
+    "src/app/developers/sections/cli.tsx:85": {
+      "fp": "2a022749c2e0",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ProseH2 id=\"cli\">{cliHeading(CLI)}</ProseH2>"
+    },
+    "src/app/developers/sections/contract.tsx:106": {
+      "fp": "b17d653f502f",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "{deprecationSummary()} A preflight (<InlineCode>OPTIONS</InlineCode>)"
+    },
+    "src/app/developers/sections/contract.tsx:112": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/contract.tsx:12": {
+      "fp": "9cece13d2572",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ProseH2 id=\"authentication\">Authentication</ProseH2>"
+    },
+    "src/app/developers/sections/contract.tsx:19": {
+      "fp": "0d2d7cb95e16",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "</ProseP>"
+    },
+    "src/app/developers/sections/contract.tsx:52": {
+      "fp": "d5ed54fde2f5",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "rows={listOperations(openApi).map(({ path, method, operation }) => ({"
+    },
+    "src/app/developers/sections/contract.tsx:66": {
+      "fp": "c0fb074e2925",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ProseList items={VERSIONING_POLICY} />"
+    },
+    "src/app/developers/sections/contract.tsx:9": {
+      "fp": "3994311c38d4",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function AuthenticationSection() {"
+    },
+    "src/app/developers/sections/guides.tsx:108": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/guides.tsx:127": {
+      "fp": "bee6fb98bfb8",
+      "citedBy": [
+        "01-routes-pages.md",
+        "02-api-routes.md"
+      ],
+      "preview": "rows={API_ERROR_CODES.map(({ code, status, meaning }) => ({"
+    },
+    "src/app/developers/sections/guides.tsx:157": {
+      "fp": "93f4dbcf2ca5",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ProseH2 id=\"sdk\">Anvilry SDK and client libraries</ProseH2>"
+    },
+    "src/app/developers/sections/guides.tsx:18": {
+      "fp": "68cefb997535",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "const ERROR_EXAMPLE = JSON.stringify("
+    },
+    "src/app/developers/sections/guides.tsx:191": {
+      "fp": "656eb160c557",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export function LimitsSection() {"
+    },
+    "src/app/developers/sections/guides.tsx:212": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "01-routes-pages.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/guides.tsx:30": {
+      "fp": "fa4930ee9023",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "const DISCOVERY = ["
+    },
+    "src/app/developers/sections/guides.tsx:46": {
+      "fp": "6e2a9b95d72e",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "] as const;"
+    },
+    "src/app/developers/sections/guides.tsx:48": {
+      "fp": "64e064c9fab6",
+      "citedBy": [
+        "01-routes-pages.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "export function MarkdownSection() {"
+    },
+    "src/app/developers/sections/guides.tsx:51": {
+      "fp": "f1e1dc5c7c8a",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<ProseH2 id=\"markdown\">Markdown for agents</ProseH2>"
+    },
+    "src/app/developers/sections/guides.tsx:60": {
+      "fp": "6314b3c19c33",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "{PAGE_TWINS.map((page, i) => ("
+    },
+    "src/app/developers/sections/guides.tsx:89": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/guides.tsx:91": {
+      "fp": "7de7aaf3695a",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export function ErrorsSection() {"
+    },
+    "src/app/developers/sections/guides.tsx:94": {
       "fp": "63345c91825b",
       "citedBy": [
+        "01-routes-pages.md",
         "02-api-routes.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "<ProseH2 id=\"errors\">Errors</ProseH2>"
+    },
+    "src/app/developers/sections/index.ts:1": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "/**"
+    },
+    "src/app/developers/sections/index.ts:26": {
+      "fp": "1dd9c0689e8c",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export { IntroSection, QuickstartSection } from \"./intro\";"
+    },
+    "src/app/developers/sections/intro.tsx:34": {
+      "fp": "a5624b02c746",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function IntroSection() {"
+    },
+    "src/app/developers/sections/intro.tsx:42": {
+      "fp": "f26816883b5d",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "and no cost. Each client address may send {RATE_LIMIT_POLICY.requests}{\" \"}"
+    },
+    "src/app/developers/sections/intro.tsx:43": {
+      "fp": "1a9777835323",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "requests per {RATE_LIMIT_POLICY.windowSeconds} seconds (see{\" \"}"
+    },
+    "src/app/developers/sections/intro.tsx:63": {
+      "fp": "ebd6654769e5",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export function QuickstartSection({ openApi }: { openApi: OpenApiDocument }) {"
+    },
+    "src/app/developers/sections/intro.tsx:67": {
+      "fp": "946d7bc5926b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "title: \"// several reads in one request (batch)\","
+    },
+    "src/app/developers/sections/intro.tsx:68": {
+      "fp": "43ac50fc6390",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "command: buildBatchRecipe(openApi),"
+    },
+    "src/app/developers/sections/intro.tsx:80": {
+      "fp": "c77d91da51fb",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "<CopyButton value={command} label=\"Copy command\" />"
+    },
+    "src/app/developers/sections/intro.tsx:86": {
+      "fp": "1633b5cf3019",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "{batchSentence()} {batchSemantics()}"
+    },
+    "src/app/developers/sections/intro.tsx:90": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "01-routes-pages.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/app/developers/sections/sections.test.ts:40": {
+      "fp": "f3f5f05524c4",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"are all exported by index.ts, which is the list the Markdown twin calls\", async () => {"
+    },
+    "src/app/developers/sections/sections.test.ts:70": {
+      "fp": "e9bd79b5984d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(page.split(\"\\n\").length).toBeLessThan(MAX_FILE_LINES);"
     },
     "src/app/error.tsx:35": {
       "fp": "21e688761736",
@@ -7854,14 +8253,16 @@
     "src/app/layout.tsx:125": {
       "fp": "ef46929c5406",
       "citedBy": [
-        "08-components-site-shell-ui.md"
+        "08-components-site-shell-ui.md",
+        "14b-subsystems.md"
       ],
       "preview": "<PersonJsonLd />"
     },
     "src/app/layout.tsx:128": {
       "fp": "93ea46d79207",
       "citedBy": [
-        "08-components-site-shell-ui.md"
+        "08-components-site-shell-ui.md",
+        "14b-subsystems.md"
       ],
       "preview": "<FaqJsonLd />"
     },
@@ -8054,14 +8455,56 @@
       ],
       "preview": "// manifest.test.ts asserts every declared src resolves, so it will hold you to it."
     },
-    "src/app/mcp/page.tsx:108": {
+    "src/app/mcp/page.tsx:11": {
+      "fp": "c7a7d22c179d",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "const ENDPOINT = \"https://anvilry.vercel.app/api/mcp/mcp\";"
+    },
+    "src/app/mcp/page.tsx:14": {
+      "fp": "60aaa8cc585c",
+      "citedBy": [
+        "01-routes-pages.md"
+      ],
+      "preview": "export const metadata: Metadata = {"
+    },
+    "src/app/mcp/page.tsx:140": {
+      "fp": "f370677cbbcc",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<CopyButton value={ENDPOINT} label=\"Copy URL\" />"
+    },
+    "src/app/mcp/page.tsx:160": {
       "fp": "34b5dc5adf6e",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<CopyButton value={CURSOR_CONFIG} />"
     },
-    "src/app/mcp/page.tsx:40": {
+    "src/app/mcp/page.tsx:2": {
+      "fp": "609d21164d33",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { toJsonSchemaCompat } from \"@modelcontextprotocol/sdk/server/zod-json-schema-compat.js\";"
+    },
+    "src/app/mcp/page.tsx:216": {
+      "fp": "24880bff83eb",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "<McpServerJsonLd />"
+    },
+    "src/app/mcp/page.tsx:4": {
+      "fp": "24a7c06b2ab0",
+      "citedBy": [
+        "13-dependencies-and-versions.md"
+      ],
+      "preview": "import { z } from \"zod\";"
+    },
+    "src/app/mcp/page.tsx:45": {
       "fp": "272296ea19e0",
       "citedBy": [
         "02-api-routes.md",
@@ -8074,48 +8517,49 @@
       ],
       "preview": "const TOOLS = ["
     },
-    "src/app/mcp/page.tsx:57": {
+    "src/app/mcp/page.tsx:62": {
       "fp": "0559c9865e4e",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "\"list_decisions\","
     },
-    "src/app/mcp/page.tsx:6": {
-      "fp": "c7a7d22c179d",
-      "citedBy": [
-        "01-routes-pages.md"
-      ],
-      "preview": "const ENDPOINT = \"https://anvilry.vercel.app/api/mcp/mcp\";"
-    },
-    "src/app/mcp/page.tsx:60": {
+    "src/app/mcp/page.tsx:65": {
       "fp": "358ba3f22237",
       "citedBy": [
         "02-api-routes.md",
         "03-lib-content-data.md",
         "12-docs-knowledge-and-harness.md",
         "14-subsystems.md",
-        "14b-subsystems.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
       "preview": "];"
     },
-    "src/app/mcp/page.tsx:88": {
-      "fp": "f370677cbbcc",
+    "src/app/mcp/page.tsx:7": {
+      "fp": "2ada69f17831",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
-      "preview": "<CopyButton value={ENDPOINT} label=\"Copy URL\" />"
+      "preview": "import { McpServerJsonLd } from \"@/components/json-ld-api\";"
     },
-    "src/app/mcp/page.tsx:9": {
-      "fp": "60aaa8cc585c",
+    "src/app/mcp/tools-documented.test.ts:101": {
+      "fp": "c6560f55b31a",
       "citedBy": [
-        "01-routes-pages.md"
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "export const metadata: Metadata = {"
+      "preview": "describe(\"every tool is registered from its own TOOL_INPUT_SHAPES entry\", () => {"
     },
-    "src/app/mcp/tools-documented.test.ts:76": {
+    "src/app/mcp/tools-documented.test.ts:116": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/app/mcp/tools-documented.test.ts:77": {
       "fp": "fabbf3837f3f",
       "citedBy": [
         "14-subsystems.md",
@@ -8123,7 +8567,7 @@
       ],
       "preview": "it(\"documents no tool the route does not register\", () => {"
     },
-    "src/app/mcp/tools-documented.test.ts:81": {
+    "src/app/mcp/tools-documented.test.ts:82": {
       "fp": "ab498aed852c",
       "citedBy": [
         "03-lib-content-data.md"
@@ -8264,6 +8708,14 @@
       ],
       "preview": "}"
     },
+    "src/app/notes/[slug]/page.tsx:111": {
+      "fp": "8ef41882dfd9",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "<JsonLdScript data={jsonLd} />"
+    },
     "src/app/notes/[slug]/page.tsx:14": {
       "fp": "f9af003f247a",
       "citedBy": [
@@ -8356,37 +8808,63 @@
       ],
       "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
     },
+    "src/app/page.tsx:11": {
+      "fp": "e0cbdab30393",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "import {"
+    },
+    "src/app/page.tsx:15": {
+      "fp": "1bbda225260c",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "} from \"@/components/json-ld-lists\";"
+    },
     "src/app/page.tsx:25": {
+      "fp": "5568edf05600",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "export default function Home() {"
+    },
+    "src/app/page.tsx:31": {
       "fp": "d7128aabf3b5",
       "citedBy": [
-        "08-components-site-shell-ui.md",
         "14-subsystems.md",
         "README.md"
       ],
       "preview": "<ViewRouter>"
     },
-    "src/app/page.tsx:27": {
+    "src/app/page.tsx:33": {
       "fp": "1eab17062247",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<Hero />"
     },
-    "src/app/page.tsx:34": {
+    "src/app/page.tsx:40": {
       "fp": "d2f7073948c6",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<Contact />"
     },
-    "src/app/page.tsx:36": {
+    "src/app/page.tsx:42": {
       "fp": "e4b45f6f936a",
       "citedBy": [
         "08-components-site-shell-ui.md",
-        "14-subsystems.md",
         "README.md"
       ],
       "preview": "</ViewRouter>"
+    },
+    "src/app/page.tsx:48": {
+      "fp": "c4a3cc8fc53c",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "</>"
     },
     "src/app/privacy/page.tsx:10": {
       "fp": "60aaa8cc585c",
@@ -8971,23 +9449,6 @@
       ],
       "preview": "// `export const revalidate = 3600` removed for cacheComponents (which rejects it)."
     },
-    "src/components/article-group-card.tsx:21": {
-      "fp": "94b61cd82740",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "if (canonical.linkedNote && NOTES_ENABLED)"
-    },
-    "src/components/article-group-card.tsx:22": {
-      "fp": "1b8e96b99ba3",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "return { href: `/notes/${canonical.linkedNote}`, external: false };"
-    },
     "src/components/article-group-card.tsx:5": {
       "fp": "34196aeda4ce",
       "citedBy": [
@@ -9481,14 +9942,14 @@
       ],
       "preview": "import { useChatA11y } from \"@/components/chat/use-chat-a11y\";"
     },
-    "src/components/chat/chat-surface-live-region.dom.test.tsx:105": {
+    "src/components/chat/chat-surface-live-region.dom.test.tsx:114": {
       "fp": "8d64a30d9de1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "/**"
     },
-    "src/components/chat/chat-surface-live-region.dom.test.tsx:121": {
+    "src/components/chat/chat-surface-live-region.dom.test.tsx:130": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -14723,27 +15184,170 @@
       ],
       "preview": "if (!TESTIMONIALS_ENABLED) return null;"
     },
-    "src/components/home/writing-preview.tsx:11": {
-      "fp": "9a825c280e05",
+    "src/components/home/writing-preview.tsx:12": {
+      "fp": "1687afb8ec01",
       "citedBy": [
         "08-components-site-shell-ui.md",
         "14b-subsystems.md"
       ],
-      "preview": "if (!ARTICLES_ENABLED || allArticles.length === 0) return null;"
+      "preview": "if (preview.length === 0) return null;"
     },
-    "src/components/json-ld.tsx:11": {
+    "src/components/home/writing-preview.tsx:8": {
+      "fp": "0576107ea724",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function WritingPreview() {"
+    },
+    "src/components/json-ld-api.tsx:18": {
+      "fp": "9874c23bbbe9",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const DEVELOPERS_URL = `${SITE_URL}/developers`;"
+    },
+    "src/components/json-ld-api.tsx:27": {
+      "fp": "c6fc61aa1507",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function publicApiEntity() {"
+    },
+    "src/components/json-ld-api.tsx:54": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/components/json-ld.tsx:31": {
-      "fp": "405a6d04d62f",
+    "src/components/json-ld-api.tsx:57": {
+      "fp": "7cb34ea87009",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "url: \"https://anvilry.vercel.app\","
+      "preview": "export function mcpServerEntity() {"
+    },
+    "src/components/json-ld-api.tsx:67": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-api.tsx:82": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-lists-support.tsx:1": {
+      "fp": "bf8a004f9c9a",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "import type { ReactNode } from \"react\";"
+    },
+    "src/components/json-ld-lists-support.tsx:136": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-lists.tsx:1": {
+      "fp": "e0cbdab30393",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "import {"
+    },
+    "src/components/json-ld-lists.tsx:110": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-lists.tsx:145": {
+      "fp": "868708576f0e",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "function articleUrl(group: ArticleGroup): string {"
+    },
+    "src/components/json-ld-lists.tsx:148": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-lists.tsx:193": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld-lists.tsx:91": {
+      "fp": "0debb8a4e23d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function featuredWorkItemList(work: readonly Work[]): ItemListLd {"
+    },
+    "src/components/json-ld.dom.test.tsx:174": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/components/json-ld.dom.test.tsx:84": {
+      "fp": "1f91ff9e177f",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"JsonLdScript\", () => {"
+    },
+    "src/components/json-ld.tsx:18": {
+      "fp": "17ca76bf2be7",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const JSON_LD_ESCAPES: Readonly<Record<string, string>> = {"
+    },
+    "src/components/json-ld.tsx:26": {
+      "fp": "6af721ab9616",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "function safeJsonLd(data: unknown): string {"
+    },
+    "src/components/json-ld.tsx:28": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld.tsx:37": {
+      "fp": "7829fce74a14",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function JsonLdScript({ data }: { data: object }) {"
+    },
+    "src/components/json-ld.tsx:47": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
     },
     "src/components/json-ld.tsx:5": {
       "fp": "0ef7dac074d3",
@@ -14751,6 +15355,20 @@
         "14b-subsystems.md"
       ],
       "preview": "// Safe serialisation for <script type=\"application/ld+json\"> blocks."
+    },
+    "src/components/json-ld.tsx:52": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/components/json-ld.tsx:72": {
+      "fp": "405a6d04d62f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "url: \"https://anvilry.vercel.app\","
     },
     "src/components/mdx-content.tsx:12": {
       "fp": "261f544b83b1",
@@ -16536,13 +17154,34 @@
       ],
       "preview": "export const API_ERROR_CODES = ["
     },
-    "src/lib/api-error.ts:72": {
+    "src/lib/api-error.ts:73": {
       "fp": "6e2a9b95d72e",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "] as const;"
+    },
+    "src/lib/api-policy.test.ts:69": {
+      "fp": "df031f9a4b90",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"are 25 operations, a 16384-byte request and a 1048576-byte answer\", () => {"
+    },
+    "src/lib/api-policy.test.ts:72": {
+      "fp": "b942a3b79814",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "expect(BATCH_MAX_RESPONSE_BYTES).toBe(1048576);"
+    },
+    "src/lib/api-policy.ts:116": {
+      "fp": "a171be8561a7",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "`A call to ${BATCH_PATH} counts as one request however many operations it carries (up to ${BATCH_MAX"
     },
     "src/lib/api-policy.ts:12": {
       "fp": "ce99f66287a6",
@@ -16559,20 +17198,57 @@
       "preview": "export const API_V1_BASE = \"/api/v1\";"
     },
     "src/lib/api-policy.ts:21": {
+      "fp": "92217902e371",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const BATCH_PATH = `${API_V1_BASE}/batch`;"
+    },
+    "src/lib/api-policy.ts:23": {
+      "fp": "8d64a30d9de1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "/**"
+    },
+    "src/lib/api-policy.ts:32": {
+      "fp": "ed9623369ff0",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "*/"
+    },
+    "src/lib/api-policy.ts:33": {
+      "fp": "0a26e62dd629",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const BATCH_MAX_REQUESTS = 25;"
+    },
+    "src/lib/api-policy.ts:35": {
+      "fp": "a7869fa10172",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const BATCH_MAX_RESPONSE_BYTES = 1_048_576;"
+    },
+    "src/lib/api-policy.ts:38": {
       "fp": "326e2a0704d3",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export const DEPRECATION_NOTICE_DAYS = 180;"
     },
-    "src/lib/api-policy.ts:24": {
+    "src/lib/api-policy.ts:41": {
       "fp": "5cd5f56ad0ac",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "export const RATE_LIMIT_POLICY = {"
     },
-    "src/lib/api-policy.ts:28": {
+    "src/lib/api-policy.ts:45": {
       "fp": "ba9801d22e0a",
       "citedBy": [
         "02-api-routes.md",
@@ -16580,7 +17256,7 @@
       ],
       "preview": "} as const;"
     },
-    "src/lib/api-policy.ts:44": {
+    "src/lib/api-policy.ts:61": {
       "fp": "a990e6993c36",
       "citedBy": [
         "14b-subsystems.md"
@@ -16707,6 +17383,37 @@
       ],
       "preview": "}"
     },
+    "src/lib/article-href.ts:13": {
+      "fp": "214fde45ae95",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function resolveCanonicalHref("
+    },
+    "src/lib/article-href.ts:19": {
+      "fp": "2b7cd6cb7568",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "if (canonical.linkedNote && notesEnabled)"
+    },
+    "src/lib/article-href.ts:20": {
+      "fp": "1b8e96b99ba3",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return { href: `/notes/${canonical.linkedNote}`, external: false };"
+    },
+    "src/lib/article-href.ts:28": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/avatar-glb.test.ts:132": {
       "fp": "7c23ee1ac96e",
       "citedBy": [
@@ -16757,6 +17464,155 @@
         "07-components-3d.md"
       ],
       "preview": "});"
+    },
+    "src/lib/batch-run.test.ts:482": {
+      "fp": "3e6771e450c5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"is at most 25 different operations, so what a batch can pull is bounded by what 25 routes hold: "
+    },
+    "src/lib/batch-run.test.ts:498": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/batch.test.ts:26": {
+      "fp": "1d1a37b3552c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"BATCH_ROUTES, the registry of what a batch may run\", () => {"
+    },
+    "src/lib/batch.test.ts:65": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/batch.ts:111": {
+      "fp": "358ba3f22237",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "];"
+    },
+    "src/lib/batch.ts:132": {
+      "fp": "53a579ab6b1e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "function itemProblem(entry: unknown, index: number): string | null {"
+    },
+    "src/lib/batch.ts:160": {
+      "fp": "729a5c42cd82",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "if (path.split(\"?\")[0] === BATCH_PATH) {"
+    },
+    "src/lib/batch.ts:162": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/batch.ts:170": {
+      "fp": "f3156791ca7c",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function parseBatchBody("
+    },
+    "src/lib/batch.ts:20": {
+      "fp": "ddc3ffae4f78",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const BATCH_MAX_ID_LENGTH = 64;"
+    },
+    "src/lib/batch.ts:219": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/batch.ts:244": {
+      "fp": "42605750c831",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export async function readBodyWithin("
+    },
+    "src/lib/batch.ts:273": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/batch.ts:284": {
+      "fp": "25d28705e0bc",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "async function toOutcome(res: Response): Promise<Outcome> {"
+    },
+    "src/lib/batch.ts:33": {
+      "fp": "17480521512e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const PATH_REGEX = new RegExp(BATCH_PATH_PATTERN);"
+    },
+    "src/lib/batch.ts:381": {
+      "fp": "9014ae120635",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export async function runBatch("
+    },
+    "src/lib/batch.ts:392": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/batch.ts:395": {
+      "fp": "2c311503db8e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function responseBytes(results: readonly BatchResult[]): number {"
+    },
+    "src/lib/batch.ts:405": {
+      "fp": "c319d8ff3723",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function answerBatch("
+    },
+    "src/lib/batch.ts:415": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/batch.ts:55": {
+      "fp": "fca997f1e870",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const BATCH_ROUTES: readonly BatchRoute[] = ["
     },
     "src/lib/build-search-index.test.ts:26": {
       "fp": "4b9b002cc02b",
@@ -17365,12 +18221,12 @@
       ],
       "preview": "}"
     },
-    "src/lib/content-api.ts:61": {
-      "fp": "4f6290a05f6a",
+    "src/lib/content-api.ts:62": {
+      "fp": "4e05225fb8c0",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "export function jsonResponse(body: unknown): Response {"
+      "preview": "const merged = new Headers(headers);"
     },
     "src/lib/content-api.ts:65": {
       "fp": "d10b36aa74a5",
@@ -17986,7 +18842,97 @@
       ],
       "preview": "});"
     },
-    "src/lib/developers-content.ts:38": {
+    "src/lib/developer-tools.test.ts:166": {
+      "fp": "05631d6da9ec",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it.skipIf(!CLI.published)(\"has the package's source in the repository once the CLI is declared publi"
+    },
+    "src/lib/developer-tools.test.ts:45": {
+      "fp": "d5c0ecf3a230",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "describe(\"the release gate\", () => {"
+    },
+    "src/lib/developer-tools.test.ts:49": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/developer-tools.ts:112": {
+      "fp": "358ba3f22237",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "];"
+    },
+    "src/lib/developer-tools.ts:150": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/developer-tools.ts:35": {
+      "fp": "928989ebb943",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const CLI: CliInfo = {"
+    },
+    "src/lib/developer-tools.ts:38": {
+      "fp": "f706b1e18a04",
+      "citedBy": [
+        "11-config-build-ci-infra.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "published: true,"
+    },
+    "src/lib/developer-tools.ts:43": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/developer-tools.ts:49": {
+      "fp": "4c9ad8be5724",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export const CLI_COMMANDS: readonly CliCommand[] = ["
+    },
+    "src/lib/developers-content.ts:165": {
+      "fp": "56e2fc956565",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function buildBatchRecipe(doc: OpenApiDocument): string {"
+    },
+    "src/lib/developers-content.ts:181": {
+      "fp": "924e5e97fd09",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export function batchSentence(): string {"
+    },
+    "src/lib/developers-content.ts:199": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/developers-content.ts:42": {
       "fp": "4ed79f08cd67",
       "citedBy": [
         "14b-subsystems.md"
@@ -18915,6 +19861,29 @@
       ],
       "preview": "* anvil-inline-store.ts so project-card.tsx can subscribe with useSyncExternalStore."
     },
+    "src/lib/home-articles.ts:14": {
+      "fp": "2b6048998f1f",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "export function homeArticleGroups(): ArticleGroup[] {"
+    },
+    "src/lib/home-articles.ts:17": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "09-content-and-schemas.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/home-articles.ts:6": {
+      "fp": "f6fc935a0487",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const HOME_ARTICLE_COUNT = 2;"
+    },
     "src/lib/home-markdown.ts:20": {
       "fp": "b23abb2e421d",
       "citedBy": [
@@ -18922,7 +19891,21 @@
       ],
       "preview": "export function buildHomeMarkdown(): string {"
     },
-    "src/lib/home-markdown.ts:95": {
+    "src/lib/home-markdown.ts:35": {
+      "fp": "9c8d5cbfe1b6",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "// The articles and the link of each are the ones the \"Latest articles\" cards show: the same"
+    },
+    "src/lib/home-markdown.ts:40": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/home-markdown.ts:96": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "02-api-routes.md"
@@ -20266,44 +21249,71 @@
       ],
       "preview": "} from \"@/lib/llm-trace\";"
     },
-    "src/lib/llms-txt.test.ts:17": {
+    "src/lib/llms-txt.test.ts:25": {
       "fp": "843d66dc8a70",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"advertises the Streamable HTTP transport, not the disabled SSE one\", () => {"
     },
-    "src/lib/llms-txt.test.ts:28": {
+    "src/lib/llms-txt.test.ts:36": {
       "fp": "345cfcff7a93",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "expect(line).toContain(\"/api/mcp/mcp\");"
     },
-    "src/lib/llms-txt.test.ts:31": {
+    "src/lib/llms-txt.test.ts:39": {
       "fp": "09108de3970f",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"never mentions /api/mcp/sse anywhere — the route 404s that path on purpose\", () => {"
     },
-    "src/lib/llms-txt.test.ts:33": {
+    "src/lib/llms-txt.test.ts:41": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/lib/llms-txt.ts:124": {
+    "src/lib/llms-txt.ts:101": {
+      "fp": "db7062495aec",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "- Anvilry batch endpoint: POST ${BASE}${BATCH_PATH}, up to ${BATCH_MAX_REQUESTS} read operations per"
+    },
+    "src/lib/llms-txt.ts:103": {
+      "fp": "0cc1b917558a",
+      "citedBy": [
+        "03-lib-content-data.md"
+      ],
+      "preview": "- Anvilry MCP server: ${BASE}/mcp (Streamable HTTP endpoint ${BASE}/api/mcp/mcp)"
+    },
+    "src/lib/llms-txt.ts:104": {
+      "fp": "83da92487003",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": "- Anvilry authentication: none, no API keys and no accounts; every documented route is public and re"
+    },
+    "src/lib/llms-txt.ts:109": {
+      "fp": "7291656c594d",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "${cliLlmsLine(CLI, CLI_COMMANDS, BASE)}"
+    },
+    "src/lib/llms-txt.ts:128": {
       "fp": "20d0bc3fe923",
       "citedBy": [
         "03-lib-content-data.md",
-        "14-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "- MCP server (for AI agents): ${BASE}/api/mcp/mcp"
     },
-    "src/lib/llms-txt.ts:141": {
+    "src/lib/llms-txt.ts:145": {
       "fp": "6556e462b582",
       "citedBy": [
         "02-api-routes.md",
@@ -20312,21 +21322,27 @@
       "preview": "## Markdown Versions"
     },
     "src/lib/llms-txt.ts:159": {
+      "fp": "b862428ee4f4",
+      "citedBy": [
+        "02-api-routes.md"
+      ],
+      "preview": ".join(\"\\n\")}"
+    },
+    "src/lib/llms-txt.ts:163": {
       "fp": "f9be879c57de",
       "citedBy": [
-        "02-api-routes.md",
         "09-content-and-schemas.md"
       ],
       "preview": "`;"
     },
-    "src/lib/llms-txt.ts:160": {
+    "src/lib/llms-txt.ts:164": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/lib/llms-txt.ts:21": {
+    "src/lib/llms-txt.ts:24": {
       "fp": "11c93aa6278f",
       "citedBy": [
         "03-lib-content-data.md",
@@ -20334,21 +21350,21 @@
       ],
       "preview": "export function buildLlmsTxt(): string {"
     },
-    "src/lib/llms-txt.ts:23": {
+    "src/lib/llms-txt.ts:26": {
       "fp": "249cde1cdd67",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "const hasPage: Record<(typeof PAGE_TWINS)[number], boolean> = {"
     },
-    "src/lib/llms-txt.ts:29": {
+    "src/lib/llms-txt.ts:32": {
       "fp": "06ef33becd2c",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": ".join(\"\\n\");"
     },
-    "src/lib/llms-txt.ts:46": {
+    "src/lib/llms-txt.ts:49": {
       "fp": "a31387222ac9",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -20357,7 +21373,7 @@
       ],
       "preview": "const href = g.canonical.linkedNote && NOTES_ENABLED"
     },
-    "src/lib/llms-txt.ts:48": {
+    "src/lib/llms-txt.ts:51": {
       "fp": "7e65810a0f7c",
       "citedBy": [
         "09-content-and-schemas.md",
@@ -20365,54 +21381,47 @@
       ],
       "preview": ": (g.canonical.externalUrl ?? `${BASE}${g.canonical.url}`);"
     },
-    "src/lib/llms-txt.ts:55": {
+    "src/lib/llms-txt.ts:58": {
       "fp": "56e5efa6cf07",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": "const notes ="
     },
-    "src/lib/llms-txt.ts:56": {
+    "src/lib/llms-txt.ts:59": {
       "fp": "20ec8f82b797",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "allNotes.length > 0"
     },
-    "src/lib/llms-txt.ts:57": {
+    "src/lib/llms-txt.ts:60": {
       "fp": "9d7e7ee06ae1",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "? allNotes"
     },
-    "src/lib/llms-txt.ts:63": {
+    "src/lib/llms-txt.ts:66": {
       "fp": "b7a0e76f28fa",
       "citedBy": [
         "09-content-and-schemas.md"
       ],
       "preview": ": \"\";"
     },
-    "src/lib/llms-txt.ts:75": {
+    "src/lib/llms-txt.ts:78": {
       "fp": "cdbd5a1080d5",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "## When to use this site"
     },
-    "src/lib/llms-txt.ts:82": {
+    "src/lib/llms-txt.ts:85": {
       "fp": "196e16c12e0b",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "something is not on the site, say it is not published rather than guessing."
-    },
-    "src/lib/llms-txt.ts:99": {
-      "fp": "0cc1b917558a",
-      "citedBy": [
-        "03-lib-content-data.md"
-      ],
-      "preview": "- Anvilry MCP server: ${BASE}/mcp (Streamable HTTP endpoint ${BASE}/api/mcp/mcp)"
     },
     "src/lib/markdown-content.test.ts:18": {
       "fp": "047ef847da92",
@@ -20649,22 +21658,7 @@
       ],
       "preview": "export const DIRECTIONS = ["
     },
-    "src/lib/mcp-tools.test.ts:115": {
-      "fp": "1698b4ee672d",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "it(\"wrapToolResult's structuredContent is always an object, even for array-returning tools\", () => {"
-    },
-    "src/lib/mcp-tools.test.ts:24": {
-      "fp": "e6f11f167cce",
-      "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "it(\"get_profile returns identity + skills + achievements and does NOT leak personal.ts\", () => {"
-    },
-    "src/lib/mcp-tools.test.ts:90": {
+    "src/lib/mcp-tools.test.ts:100": {
       "fp": "3ccd3850eef8",
       "citedBy": [
         "03-lib-content-data.md",
@@ -20672,13 +21666,28 @@
       ],
       "preview": "it(\"every résumé role maps to a real variant whose PDF exists on disk\", () => {"
     },
-    "src/lib/mcp-tools.test.ts:94": {
+    "src/lib/mcp-tools.test.ts:104": {
       "fp": "7729b5ef9ac4",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
       "preview": "const path = (v.url ?? \"\").replace(\"https://anvilry.vercel.app\", \"\");"
+    },
+    "src/lib/mcp-tools.test.ts:125": {
+      "fp": "1698b4ee672d",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"wrapToolResult's structuredContent is always an object, even for array-returning tools\", () => {"
+    },
+    "src/lib/mcp-tools.test.ts:34": {
+      "fp": "e6f11f167cce",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"get_profile returns identity + skills + achievements and does NOT leak personal.ts\", () => {"
     },
     "src/lib/mcp-tools.ts:1": {
       "fp": "24a7c06b2ab0",
@@ -20688,13 +21697,6 @@
       ],
       "preview": "import { z } from \"zod\";"
     },
-    "src/lib/mcp-tools.ts:106": {
-      "fp": "bd6a51bf131d",
-      "citedBy": [
-        "02-api-routes.md"
-      ],
-      "preview": "repo: repoLink(p),"
-    },
     "src/lib/mcp-tools.ts:12": {
       "fp": "d3613316c5c7",
       "citedBy": [
@@ -20702,12 +21704,61 @@
       ],
       "preview": "import { allDecisions } from \"@/lib/decisions\";"
     },
+    "src/lib/mcp-tools.ts:131": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/mcp-tools.ts:136": {
+      "fp": "be7570764379",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "/** A not-found result carrying the valid options (so the calling agent can self-correct). */"
+    },
     "src/lib/mcp-tools.ts:14": {
       "fp": "8d64a30d9de1",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "/**"
+    },
+    "src/lib/mcp-tools.ts:143": {
+      "fp": "d8781ab77677",
+      "citedBy": [
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const notFound = (kind: string, given: string, valid: string[]): NotFound => ({"
+    },
+    "src/lib/mcp-tools.ts:148": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14-subsystems.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/mcp-tools.ts:150": {
+      "fp": "6cacf5376687",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "function buildFullProfile() {"
+    },
+    "src/lib/mcp-tools.ts:174": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "}"
     },
     "src/lib/mcp-tools.ts:20": {
       "fp": "ff390c0fc175",
@@ -20717,27 +21768,12 @@
       ],
       "preview": "* Deliberately PROFESSIONAL-ONLY: personal.ts (hobbies/now/uses) is NOT exposed — those"
     },
-    "src/lib/mcp-tools.ts:206": {
-      "fp": "c6dd79745a1b",
-      "citedBy": [
-        "09-content-and-schemas.md"
-      ],
-      "preview": "export const decisionsTagSchema = {"
-    },
     "src/lib/mcp-tools.ts:21": {
       "fp": "8c2e7d28a741",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "* stay reachable on-site via the eggs, not handed to every AI agent as structured data."
-    },
-    "src/lib/mcp-tools.ts:215": {
-      "fp": "6ec1d87b29f6",
-      "citedBy": [
-        "01-routes-pages.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "export function listDecisionsData(tag?: string) {"
     },
     "src/lib/mcp-tools.ts:22": {
       "fp": "ed9623369ff0",
@@ -20747,14 +21783,6 @@
       ],
       "preview": "*/"
     },
-    "src/lib/mcp-tools.ts:227": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "09-content-and-schemas.md",
-        "14b-subsystems.md"
-      ],
-      "preview": "}"
-    },
     "src/lib/mcp-tools.ts:23": {
       "fp": "f9af003f247a",
       "citedBy": [
@@ -20762,40 +21790,12 @@
       ],
       "preview": "const BASE = \"https://anvilry.vercel.app\";"
     },
-    "src/lib/mcp-tools.ts:242": {
-      "fp": "dd3243a42a5c",
-      "citedBy": [
-        "02-api-routes.md",
-        "03-lib-content-data.md",
-        "13-dependencies-and-versions.md",
-        "14-subsystems.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "export function wrapToolResult(data: unknown) {"
-    },
-    "src/lib/mcp-tools.ts:243": {
-      "fp": "72aba18a365b",
-      "citedBy": [
-        "02-api-routes.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "const isNotFound = !!data && typeof data === \"object\" && \"notFound\" in data;"
-    },
     "src/lib/mcp-tools.ts:244": {
-      "fp": "bfbe9071c8b4",
+      "fp": "bd6a51bf131d",
       "citedBy": [
-        "14-subsystems.md"
+        "02-api-routes.md"
       ],
-      "preview": "const structuredContent = Array.isArray(data)"
-    },
-    "src/lib/mcp-tools.ts:246": {
-      "fp": "9db8b33b7a44",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": ": (data as Record<string, unknown>);"
+      "preview": "repo: repoLink(p),"
     },
     "src/lib/mcp-tools.ts:25": {
       "fp": "0ee66e632657",
@@ -20803,24 +21803,6 @@
         "14b-subsystems.md"
       ],
       "preview": "export const RESUME_ROLES = [\"master\"] as const;"
-    },
-    "src/lib/mcp-tools.ts:252": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "02-api-routes.md",
-        "03-lib-content-data.md",
-        "13-dependencies-and-versions.md",
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "}"
-    },
-    "src/lib/mcp-tools.ts:277": {
-      "fp": "810696ff7f8c",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "...allNotes.map((n) => ({"
     },
     "src/lib/mcp-tools.ts:29": {
       "fp": "f7b7d17ee1e4",
@@ -20845,13 +21827,6 @@
       ],
       "preview": "// RESUME_ROLES above, its exact resumeVariants[].label here, and the PDF in public/resume/."
     },
-    "src/lib/mcp-tools.ts:331": {
-      "fp": "d10b36aa74a5",
-      "citedBy": [
-        "14-subsystems.md"
-      ],
-      "preview": "}"
-    },
     "src/lib/mcp-tools.ts:35": {
       "fp": "df3982fd6101",
       "citedBy": [
@@ -20861,64 +21836,131 @@
       ],
       "preview": "};"
     },
-    "src/lib/mcp-tools.ts:38": {
-      "fp": "ba5aedc67261",
+    "src/lib/mcp-tools.ts:354": {
+      "fp": "7aef6711c9b3",
       "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "09-content-and-schemas.md"
       ],
-      "preview": "export const projectSlugSchema = {"
+      "preview": "const decisionsTagSchema = {"
     },
-    "src/lib/mcp-tools.ts:55": {
-      "fp": "df3982fd6101",
+    "src/lib/mcp-tools.ts:365": {
+      "fp": "6ec1d87b29f6",
       "citedBy": [
-        "13-dependencies-and-versions.md",
-        "14b-subsystems.md",
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "};"
-    },
-    "src/lib/mcp-tools.ts:60": {
-      "fp": "be7570764379",
-      "citedBy": [
-        "03-lib-content-data.md",
+        "01-routes-pages.md",
         "14b-subsystems.md"
       ],
-      "preview": "/** A not-found result carrying the valid options (so the calling agent can self-correct). */"
+      "preview": "export function listDecisionsData(tag?: string) {"
     },
-    "src/lib/mcp-tools.ts:67": {
-      "fp": "d8781ab77677",
+    "src/lib/mcp-tools.ts:37": {
+      "fp": "e740cb112fdf",
       "citedBy": [
-        "14-subsystems.md",
-        "15-invariants-and-gotchas.md"
+        "14-subsystems.md"
       ],
-      "preview": "const notFound = (kind: string, given: string, valid: string[]): NotFound => ({"
+      "preview": "export const PROFILE_SECTIONS = [\"identity\", \"links\", \"skills\", \"achievements\"] as const;"
     },
-    "src/lib/mcp-tools.ts:72": {
-      "fp": "29576b54e255",
+    "src/lib/mcp-tools.ts:377": {
+      "fp": "d10b36aa74a5",
       "citedBy": [
+        "09-content-and-schemas.md",
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/mcp-tools.ts:393": {
+      "fp": "dd3243a42a5c",
+      "citedBy": [
+        "02-api-routes.md",
         "03-lib-content-data.md",
+        "13-dependencies-and-versions.md",
         "14-subsystems.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "});"
+      "preview": "export function wrapToolResult(data: unknown) {"
     },
-    "src/lib/mcp-tools.ts:74": {
-      "fp": "8df3da22cd47",
+    "src/lib/mcp-tools.ts:394": {
+      "fp": "72aba18a365b",
+      "citedBy": [
+        "02-api-routes.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "const isNotFound = !!data && typeof data === \"object\" && \"notFound\" in data;"
+    },
+    "src/lib/mcp-tools.ts:395": {
+      "fp": "bfbe9071c8b4",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": "const structuredContent = Array.isArray(data)"
+    },
+    "src/lib/mcp-tools.ts:397": {
+      "fp": "9db8b33b7a44",
+      "citedBy": [
+        "14-subsystems.md"
+      ],
+      "preview": ": (data as Record<string, unknown>);"
+    },
+    "src/lib/mcp-tools.ts:403": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "02-api-routes.md",
+        "03-lib-content-data.md",
+        "13-dependencies-and-versions.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/mcp-tools.ts:431": {
+      "fp": "810696ff7f8c",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "...allNotes.map((n) => ({"
+    },
+    "src/lib/mcp-tools.ts:486": {
+      "fp": "510f4d4b68d1",
+      "citedBy": [
+        "02-api-routes.md",
+        "03-lib-content-data.md"
+      ],
+      "preview": "export const TOOL_INPUT_SHAPES = {"
+    },
+    "src/lib/mcp-tools.ts:497": {
+      "fp": "ba9801d22e0a",
       "citedBy": [
         "03-lib-content-data.md",
         "14-subsystems.md"
       ],
-      "preview": "export function getProfileData() {"
+      "preview": "} as const;"
     },
-    "src/lib/mcp-tools.ts:98": {
-      "fp": "d10b36aa74a5",
+    "src/lib/mcp-tools.ts:51": {
+      "fp": "e419add229d2",
       "citedBy": [
-        "14-subsystems.md"
+        "03-lib-content-data.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
       ],
-      "preview": "}"
+      "preview": "export const READ_ONLY_TOOL_ANNOTATIONS = {"
+    },
+    "src/lib/mcp-tools.ts:56": {
+      "fp": "ba9801d22e0a",
+      "citedBy": [
+        "03-lib-content-data.md",
+        "14-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "} as const;"
+    },
+    "src/lib/mcp-tools.ts:58": {
+      "fp": "f374f09be052",
+      "citedBy": [
+        "13-dependencies-and-versions.md",
+        "14b-subsystems.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// Zod input schemas (raw-shape form for mcp-handler's registerTool)."
     },
     "src/lib/notes-dark.test.ts:10": {
       "fp": "f9af003f247a",
@@ -21036,6 +22078,20 @@
       ],
       "preview": "export function legacyPaths(): OpenApiDocument[\"paths\"] {"
     },
+    "src/lib/openapi-legacy.ts:339": {
+      "fp": "a217c3afd125",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"x-read-only\": true,"
+    },
+    "src/lib/openapi-parts.ts:103": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
     "src/lib/openapi-parts.ts:24": {
       "fp": "c80c491fec23",
       "citedBy": [
@@ -21043,68 +22099,152 @@
       ],
       "preview": "export function apiVersionParameter(): OpenApiParameter {"
     },
-    "src/lib/openapi-v1.ts:25": {
+    "src/lib/openapi-parts.ts:98": {
+      "fp": "a694cd61c2a8",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "if (status === 405) {"
+    },
+    "src/lib/openapi-v1-schemas.ts:273": {
+      "fp": "a01d934a844b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "BatchRequestItem: {"
+    },
+    "src/lib/openapi-v1-schemas.ts:330": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/openapi-v1.ts:106": {
+      "fp": "51faae84cf18",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const BATCH_EXAMPLE_BODY = {"
+    },
+    "src/lib/openapi-v1.ts:116": {
+      "fp": "df3982fd6101",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "};"
+    },
+    "src/lib/openapi-v1.ts:242": {
+      "fp": "a217c3afd125",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "\"x-read-only\": true,"
+    },
+    "src/lib/openapi-v1.ts:31": {
       "fp": "03b76cf6f07c",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export const V1_TAGS: { name: string; description: string }[] = ["
     },
-    "src/lib/openapi.test.ts:121": {
+    "src/lib/openapi.test.ts:160": {
       "fp": "cbb3b99e4588",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "it(\"documents exactly the catalogued error codes (api-error.test.ts checks each is emitted)\", () => "
     },
-    "src/lib/openapi.test.ts:128": {
+    "src/lib/openapi.test.ts:167": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/lib/openapi.test.ts:164": {
+    "src/lib/openapi.test.ts:204": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/lib/openapi.test.ts:50": {
+    "src/lib/openapi.test.ts:56": {
       "fp": "433131f38bda",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"OpenAPI document\", () => {"
     },
-    "src/lib/openapi.ts:107": {
+    "src/lib/openapi.test.ts:66": {
+      "fp": "5dc82229f379",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "it(\"marks every POST operation read-only on purpose, so a POST that writes cannot be added without a"
+    },
+    "src/lib/openapi.test.ts:89": {
+      "fp": "29576b54e255",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "});"
+    },
+    "src/lib/openapi.ts:115": {
+      "fp": "5bfe2fdd27e3",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function postRoutesSentence(paths: Record<string, Record<string, OpenApiOperation>>): string "
+    },
+    "src/lib/openapi.ts:135": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/openapi.ts:150": {
       "fp": "5d1bc77ff1b4",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function buildOpenApiDocument(): OpenApiDocument {"
     },
-    "src/lib/openapi.ts:146": {
-      "fp": "1c126d75dac8",
+    "src/lib/openapi.ts:152": {
+      "fp": "6e549dd220eb",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "paths: { ...buildV1Paths(), ...legacyPaths() },"
+      "preview": "const paths = { ...buildV1Paths(), ...legacyPaths() };"
     },
-    "src/lib/openapi.ts:161": {
+    "src/lib/openapi.ts:205": {
       "fp": "1ea741059a01",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "Error: {"
     },
-    "src/lib/openapi.ts:179": {
+    "src/lib/openapi.ts:223": {
       "fp": "e52a1813c460",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "},"
+    },
+    "src/lib/openapi.ts:61": {
+      "fp": "9d2a6b7a59c6",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "export interface OpenApiOperation {"
+    },
+    "src/lib/openapi.ts:81": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "}"
     },
     "src/lib/page-markdown-lists.ts:172": {
       "fp": "1e47d6149c0d",
@@ -21120,7 +22260,7 @@
       ],
       "preview": "export function buildAboutMarkdown(): string {"
     },
-    "src/lib/page-markdown-prose.ts:24": {
+    "src/lib/page-markdown-prose.ts:38": {
       "fp": "70fa5644fac3",
       "citedBy": [
         "14b-subsystems.md",
@@ -21128,21 +22268,35 @@
       ],
       "preview": "const PROSE_PAGES = {"
     },
-    "src/lib/page-markdown-prose.ts:29": {
-      "fp": "74ed0836544c",
+    "src/lib/page-markdown-prose.ts:45": {
+      "fp": "41a4a9a19b14",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "return { Page, components: Object.values(sections) };"
+    },
+    "src/lib/page-markdown-prose.ts:46": {
+      "fp": "e52a1813c460",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "} satisfies Record<string, () => Promise<{ default: () => ReactNode }>>;"
+      "preview": "},"
     },
-    "src/lib/page-markdown-prose.ts:44": {
+    "src/lib/page-markdown-prose.ts:49": {
+      "fp": "71c58b10dc8a",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "} satisfies Record<string, () => Promise<ProsePageLoad>>;"
+    },
+    "src/lib/page-markdown-prose.ts:64": {
       "fp": "d56e79d5014e",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export async function renderProseMarkdown(page: ProsePage): Promise<string> {"
     },
-    "src/lib/page-markdown-prose.ts:53": {
+    "src/lib/page-markdown-prose.ts:73": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -21467,7 +22621,7 @@
       ],
       "preview": "import { unstable_doesMiddlewareMatch } from \"next/experimental/testing/server\";"
     },
-    "src/lib/public-api-paths.ts:11": {
+    "src/lib/public-api-paths.ts:13": {
       "fp": "4bfee859b08f",
       "citedBy": [
         "14b-subsystems.md",
@@ -21475,28 +22629,56 @@
       ],
       "preview": "const EXACT_PATHS = new Set(["
     },
-    "src/lib/public-api-paths.ts:22": {
+    "src/lib/public-api-paths.ts:24": {
       "fp": "0ae47a13980f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "]);"
     },
-    "src/lib/public-api-paths.ts:29": {
-      "fp": "acef22eb8fb5",
+    "src/lib/public-api-paths.ts:41": {
+      "fp": "3d3ab6d9ad4a",
       "citedBy": [
         "14b-subsystems.md"
       ],
-      "preview": "/^\\/(?:(?:projects|work|articles|notes)\\/)?[A-Za-z0-9_-]+\\.md$/;"
+      "preview": "const READ_ONLY_METHODS = [\"GET\", \"HEAD\", \"OPTIONS\"] as const;"
     },
-    "src/lib/public-api-paths.ts:31": {
+    "src/lib/public-api-paths.ts:48": {
+      "fp": "f42f48513ac1",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "const METHOD_EXCEPTIONS: ReadonlyMap<string, readonly string[]> = new Map(["
+    },
+    "src/lib/public-api-paths.ts:50": {
+      "fp": "0ae47a13980f",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "]);"
+    },
+    "src/lib/public-api-paths.ts:53": {
+      "fp": "9bfd2a762046",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export function allowedMethods(rawPathname: string): readonly string[] {"
+    },
+    "src/lib/public-api-paths.ts:55": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/lib/public-api-paths.ts:57": {
       "fp": "ddd8da89d20f",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export function isPublicApiPath(rawPathname: string): boolean {"
     },
-    "src/lib/public-api-paths.ts:39": {
+    "src/lib/public-api-paths.ts:62": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "14b-subsystems.md",
@@ -22127,6 +23309,27 @@
         "13-dependencies-and-versions.md"
       ],
       "preview": "import { useStickToBottom } from \"use-stick-to-bottom\";"
+    },
+    "src/lib/strip-tracking-params.ts:2": {
+      "fp": "07e2b302c09e",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "export const TRACKING_PARAM_PREFIX = \"utm_\";"
+    },
+    "src/lib/strip-tracking-params.ts:60": {
+      "fp": "d7041634df7e",
+      "citedBy": [
+        "09-content-and-schemas.md"
+      ],
+      "preview": "export function stripTrackingParams(input: string): string {"
+    },
+    "src/lib/strip-tracking-params.ts:74": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
     },
     "src/lib/telemetry/beacon.dom.test.ts:79": {
       "fp": "73a5c6177c72",
@@ -23050,42 +24253,42 @@
       ],
       "preview": "process.env.NEXT_PUBLIC_CHROME_TTS_BANNER === \"true\";"
     },
-    "src/next-config.test.ts:142": {
+    "src/next-config.test.ts:143": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/next-config.test.ts:154": {
+    "src/next-config.test.ts:155": {
       "fp": "1af37f489c34",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"next.config — predictable developer URLs\", () => {"
     },
-    "src/next-config.test.ts:194": {
+    "src/next-config.test.ts:195": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/next-config.test.ts:29": {
+    "src/next-config.test.ts:30": {
       "fp": "d8f5b6420135",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "describe(\"next.config — Markdown negotiation headers\", () => {"
     },
-    "src/next-config.test.ts:92": {
+    "src/next-config.test.ts:93": {
       "fp": "29576b54e255",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "});"
     },
-    "src/next-config.test.ts:94": {
+    "src/next-config.test.ts:95": {
       "fp": "2a6fff6e09e4",
       "citedBy": [
         "15-invariants-and-gotchas.md"
@@ -23183,19 +24386,13 @@
       ],
       "preview": "const MCP_PREFIX = \"/api/mcp/\";"
     },
-    "src/proxy.ts:113": {
-      "fp": "b5a7781136d0",
+    "src/proxy.ts:114": {
+      "fp": "62edda1c983a",
       "citedBy": [
-        "02-api-routes.md"
+        "04-lib-ai-voice-infra.md",
+        "14b-subsystems.md"
       ],
-      "preview": "const READ_ALLOW = \"GET, HEAD, OPTIONS\";"
-    },
-    "src/proxy.ts:117": {
-      "fp": "baa77be490fc",
-      "citedBy": [
-        "04-lib-ai-voice-infra.md"
-      ],
-      "preview": "const requested = req.headers.get(API_VERSION_HEADER)?.trim();"
+      "preview": "function versionRejection(req: NextRequest): Response | null {"
     },
     "src/proxy.ts:12": {
       "fp": "8d64a30d9de1",
@@ -23203,6 +24400,27 @@
         "14b-subsystems.md"
       ],
       "preview": "/**"
+    },
+    "src/proxy.ts:124": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "}"
+    },
+    "src/proxy.ts:126": {
+      "fp": "60bbf0be168b",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "function servePublicApi(req: NextRequest): Response {"
+    },
+    "src/proxy.ts:128": {
+      "fp": "eab1ca5af855",
+      "citedBy": [
+        "04-lib-ai-voice-infra.md"
+      ],
+      "preview": "const badVersion = versionRejection(req);"
     },
     "src/proxy.ts:13": {
       "fp": "43b2044cffb5",
@@ -23212,19 +24430,19 @@
       ],
       "preview": "* Next 16 Proxy (formerly Middleware) — runs on the Node.js runtime by default"
     },
-    "src/proxy.ts:131": {
-      "fp": "dac76e6b5c98",
+    "src/proxy.ts:132": {
+      "fp": "3c81b090d8b2",
       "citedBy": [
-        "02-api-routes.md"
+        "14b-subsystems.md"
       ],
-      "preview": "if (req.method === \"OPTIONS\") {"
+      "preview": "const allowed = allowedMethods(pathname);"
     },
-    "src/proxy.ts:134": {
-      "fp": "d10b36aa74a5",
+    "src/proxy.ts:139": {
+      "fp": "eccda4d4540b",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "}"
+      "preview": "if (pathname.startsWith(MCP_PREFIX)) return stamp(negotiateMarkdown(req), req, []);"
     },
     "src/proxy.ts:14": {
       "fp": "fe4c30b84f66",
@@ -23234,28 +24452,36 @@
       ],
       "preview": "* (see node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md),"
     },
-    "src/proxy.ts:147": {
+    "src/proxy.ts:154": {
       "fp": "d10b36aa74a5",
       "citedBy": [
-        "04-lib-ai-voice-infra.md"
+        "04-lib-ai-voice-infra.md",
+        "14b-subsystems.md"
       ],
       "preview": "}"
     },
-    "src/proxy.ts:149": {
+    "src/proxy.ts:156": {
       "fp": "28b84e6be601",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const decision = publicApiLimiter.hit(publicApiClientKey(req));"
     },
-    "src/proxy.ts:150": {
+    "src/proxy.ts:157": {
       "fp": "a9c5d356613d",
       "citedBy": [
         "04-lib-ai-voice-infra.md"
       ],
       "preview": "const headers = rateLimitHeaders(decision);"
     },
-    "src/proxy.ts:166": {
+    "src/proxy.ts:168": {
+      "fp": "d10b36aa74a5",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "}"
+    },
+    "src/proxy.ts:173": {
       "fp": "95c871781ae8",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -23265,28 +24491,28 @@
       ],
       "preview": "if (pathname === \"/admin\" || pathname.startsWith(\"/admin/\")) {"
     },
-    "src/proxy.ts:167": {
+    "src/proxy.ts:174": {
       "fp": "b6d366f3efcc",
       "citedBy": [
         "11-config-build-ci-infra.md"
       ],
       "preview": "if (!isAdminAuthorized(req.headers.get(\"Authorization\"))) {"
     },
-    "src/proxy.ts:168": {
-      "fp": "3a56fd579c14",
+    "src/proxy.ts:176": {
+      "fp": "b175699b18c2",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "return new NextResponse(\"Unauthorized\", {"
+      "preview": "status: 401,"
     },
-    "src/proxy.ts:171": {
+    "src/proxy.ts:178": {
       "fp": "29576b54e255",
       "citedBy": [
         "02-api-routes.md"
       ],
       "preview": "});"
     },
-    "src/proxy.ts:175": {
+    "src/proxy.ts:182": {
       "fp": "d10b36aa74a5",
       "citedBy": [
         "04-lib-ai-voice-infra.md",
@@ -23295,6 +24521,13 @@
         "15-invariants-and-gotchas.md"
       ],
       "preview": "}"
+    },
+    "src/proxy.ts:184": {
+      "fp": "94abb26045c9",
+      "citedBy": [
+        "14b-subsystems.md"
+      ],
+      "preview": "if (isPublicApiPath(pathname)) return servePublicApi(req);"
     },
     "src/proxy.ts:2": {
       "fp": "8c367ae1f95c",
@@ -23387,7 +24620,7 @@
       "preview": "}"
     },
     "TELEMETRY.md:7": {
-      "fp": "f4c84cfbc402",
+      "fp": "313fbd7b62e6",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "14b-subsystems.md"
@@ -23798,6 +25031,22 @@
       "preview": "env: { NODE_ENV: \"test\" },"
     },
     "vitest.config.ts:27": {
+      "fp": "e96e67731296",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "// `vitest run` is the first step of the Vercel build, which runs the whole suite in parallel on"
+    },
+    "vitest.config.ts:33": {
+      "fp": "260faf235bd5",
+      "citedBy": [
+        "10-tests-and-quality-gates.md",
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "hookTimeout: 60_000,"
+    },
+    "vitest.config.ts:34": {
       "fp": "eb49b2148a7a",
       "citedBy": [
         "10-tests-and-quality-gates.md",
@@ -23805,21 +25054,21 @@
       ],
       "preview": "projects: ["
     },
-    "vitest.config.ts:30": {
+    "vitest.config.ts:37": {
       "fp": "aeb1e43aead2",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "test: {"
     },
-    "vitest.config.ts:33": {
+    "vitest.config.ts:40": {
       "fp": "5a6a6123421e",
       "citedBy": [
         "15-invariants-and-gotchas.md"
       ],
       "preview": "include: [\"src/**/*.test.{ts,tsx}\", \"tests/**/*.test.{ts,tsx}\"],"
     },
-    "vitest.config.ts:34": {
+    "vitest.config.ts:41": {
       "fp": "0a483f5db7ff",
       "citedBy": [
         "14b-subsystems.md",
@@ -23827,35 +25076,49 @@
       ],
       "preview": "exclude: [\"**/*.dom.test.{ts,tsx}\", \"**/node_modules/**\"],"
     },
-    "vitest.config.ts:35": {
+    "vitest.config.ts:42": {
       "fp": "e52a1813c460",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "},"
     },
-    "vitest.config.ts:38": {
-      "fp": "34b340af9e18",
+    "vitest.config.ts:44": {
+      "fp": "021fb596db81",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
-      "preview": "extends: true,"
+      "preview": "{"
     },
-    "vitest.config.ts:41": {
+    "vitest.config.ts:48": {
       "fp": "8295746600ad",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
       "preview": "environment: \"happy-dom\","
     },
-    "vitest.config.ts:43": {
+    "vitest.config.ts:50": {
+      "fp": "301152f81d2b",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "// Testing Library's waitFor gives up after 1 s by default; the setup file raises it to 10 s."
+    },
+    "vitest.config.ts:51": {
+      "fp": "c681c33d9601",
+      "citedBy": [
+        "10-tests-and-quality-gates.md"
+      ],
+      "preview": "setupFiles: [\"tests/setup/dom-async-timeout.ts\"],"
+    },
+    "vitest.config.ts:53": {
       "fp": "e52a1813c460",
       "citedBy": [
         "10-tests-and-quality-gates.md"
       ],
       "preview": "},"
     },
-    "vitest.config.ts:45": {
+    "vitest.config.ts:54": {
       "fp": "39d4b54e0416",
       "citedBy": [
         "10-tests-and-quality-gates.md"

@@ -23,7 +23,7 @@ import { allDecisions } from "@/lib/decisions";
 const BASE = "https://anvilry.vercel.app";
 
 export const RESUME_ROLES = ["master"] as const;
-export type ResumeRole = (typeof RESUME_ROLES)[number];
+type ResumeRole = (typeof RESUME_ROLES)[number];
 
 // Map the public role keyword -> the real resumeVariants label (single source).
 const ROLE_TO_LABEL: Record<ResumeRole, string> = {
@@ -34,28 +34,104 @@ const ROLE_TO_LABEL: Record<ResumeRole, string> = {
   // Never publish more than one label for the same employer and dates.
 };
 
+export const PROFILE_SECTIONS = ["identity", "links", "skills", "achievements"] as const;
+type ProfileSection = (typeof PROFILE_SECTIONS)[number];
+
+const CONTENT_TYPES = ["work", "project", "article", "note"] as const;
+type ContentType = (typeof CONTENT_TYPES)[number];
+
+/** Upper bounds of the `limit` parameters: far above today's counts, below any payload worth capping. */
+export const MAX_PROJECT_LIMIT = 100;
+export const MAX_WORK_LIMIT = 50;
+export const MAX_CONTENT_LIMIT = 200;
+const MAX_GROUP_LENGTH = 80;
+const MAX_TECH_LENGTH = 60;
+
+/** Every tool only reads the content layer: hints for clients that gate or auto-approve calls. */
+export const READ_ONLY_TOOL_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+} as const;
+
 // Zod input schemas (raw-shape form for mcp-handler's registerTool).
-export const projectSlugSchema = {
+const projectSlugSchema = {
   slug: z.string().describe("project slug, e.g. mindforge"),
 };
-export const workSlugSchema = {
+const workSlugSchema = {
   slug: z.string().describe("work slug, e.g. pensieve"),
 };
-export const searchSchema = {
+const searchSchema = {
   query: z
     .string()
     .min(1)
     .max(120)
-    .describe("keywords, e.g. 'kafka' or 'multi-agent'"),
+    .describe(
+      "Keywords, e.g. 'kafka' or 'multi-agent'. The rule is a case-insensitive substring match of the whole query as one phrase (not word by word) against work, project and skill text.",
+    ),
 };
-export const resumeRoleSchema = {
+const resumeRoleSchema = {
   role: z
     .enum(RESUME_ROLES)
     .describe("target role flavor for the résumé variant"),
 };
+const profileSectionsSchema = {
+  sections: z
+    .array(z.enum(PROFILE_SECTIONS))
+    .min(1)
+    .max(PROFILE_SECTIONS.length)
+    .optional()
+    .describe(
+      "Which parts of the profile to return: identity (name, role, company, tenure, location, headline, summary), links, skills, achievements. Omit to get all four.",
+    ),
+};
 
-export const projectSlugs = () => allProjects.map((p) => p.slug);
-export const workSlugs = () => allWork.map((w) => w.slug);
+const limitSchema = (max: number, what: string, detail = "") =>
+  z
+    .number()
+    .int()
+    .min(1)
+    .max(max)
+    .optional()
+    .describe(
+      `Maximum number of ${what} to return, from 1 to ${max}. ${detail}Omit for all of them.`,
+    );
+
+const projectListSchema = {
+  group: z
+    .string()
+    .min(1)
+    .max(MAX_GROUP_LENGTH)
+    .optional()
+    .describe(
+      "Return only the projects in this group. The rule is an exact match on the whole group name, case-insensitive and ignoring surrounding spaces, e.g. 'Tooling & Lab'. An unknown name (text of only spaces included) returns an error that lists the valid groups; the empty string is rejected. Omit for every group.",
+    ),
+  limit: limitSchema(MAX_PROJECT_LIMIT, "projects"),
+};
+const workListSchema = {
+  tech: z
+    .string()
+    .min(1)
+    .max(MAX_TECH_LENGTH)
+    .optional()
+    .describe(
+      "Return only the case studies whose tech list has an entry containing this text. The rule is a case-insensitive substring match against each entry, e.g. 'python' or 'sse'. Text of only spaces applies no filter; the empty string is rejected. Omit for all of them.",
+    ),
+  limit: limitSchema(MAX_WORK_LIMIT, "case studies"),
+};
+const contentListSchema = {
+  type: z
+    .enum(CONTENT_TYPES)
+    .optional()
+    .describe(
+      "Return only this kind of content: work, project, article or note. The rule is an exact match on the item's type. Notes are listed only while the notes section is published. Omit for every kind.",
+    ),
+  limit: limitSchema(MAX_CONTENT_LIMIT, "items", "Applied after the type filter. "),
+};
+
+const projectSlugs = () => allProjects.map((p) => p.slug);
+const workSlugs = () => allWork.map((w) => w.slug);
 
 /** A not-found result carrying the valid options (so the calling agent can self-correct). */
 export type NotFound = {
@@ -71,7 +147,7 @@ const notFound = (kind: string, given: string, valid: string[]): NotFound => ({
   valid,
 });
 
-export function getProfileData() {
+function buildFullProfile() {
   return {
     name: profile.name,
     role: profile.role,
@@ -96,8 +172,70 @@ export function getProfileData() {
     })),
   };
 }
+type ProfileData = ReturnType<typeof buildFullProfile>;
 
-export function listProjectsData() {
+// Which `sections` value each top-level key of the profile belongs to (typed, so a new key must pick one).
+const PROFILE_KEY_SECTION: Record<keyof ProfileData, ProfileSection> = {
+  name: "identity",
+  role: "identity",
+  company: "identity",
+  tenure: "identity",
+  location: "identity",
+  headline: "identity",
+  summary: "identity",
+  links: "links",
+  skills: "skills",
+  achievements: "achievements",
+};
+
+/** The whole profile, or only the requested `sections` (keys keep their canonical order). */
+export function getProfileData(): ProfileData;
+export function getProfileData(
+  sections: readonly ProfileSection[] | undefined,
+): Partial<ProfileData>;
+export function getProfileData(
+  sections?: readonly ProfileSection[],
+): Partial<ProfileData> {
+  const full = buildFullProfile();
+  if (!sections) return full;
+  const wanted = new Set(sections);
+  return Object.fromEntries(
+    Object.entries(full).filter(([key]) =>
+      wanted.has(PROFILE_KEY_SECTION[key as keyof ProfileData]),
+    ),
+  );
+}
+
+export const projectGroups = () => [...new Set(allProjects.map((p) => p.group))];
+
+type ProjectListOptions = {
+  readonly group?: string;
+  readonly limit?: number;
+};
+/** Unknown group: an empty `items` plus the valid groups, so the calling agent can self-correct. */
+type GroupNotFound = NotFound & { items: [] };
+
+const normalizeText = (text: string) => text.trim().toLowerCase();
+
+/** Every project, or those in one `group` (case-insensitive), capped to `limit`. */
+export function listProjectsData(): ReturnType<typeof projectRows>;
+export function listProjectsData(
+  options: ProjectListOptions,
+): ReturnType<typeof projectRows> | GroupNotFound;
+export function listProjectsData(options: ProjectListOptions = {}) {
+  const { group, limit } = options;
+  const wanted = group === undefined ? undefined : normalizeText(group);
+  const groups = projectGroups();
+  if (group !== undefined && !groups.some((g) => normalizeText(g) === wanted)) {
+    return { ...notFound("project_group", group, groups), items: [] as [] };
+  }
+  const rows = projectRows().filter(
+    (row) => wanted === undefined || normalizeText(row.group) === wanted,
+  );
+  return limit === undefined ? rows : rows.slice(0, limit);
+}
+
+function projectRows() {
   return allProjects.map((p) => ({
     slug: p.slug,
     name: p.name,
@@ -125,16 +263,26 @@ export function getProjectData(slug: string) {
   };
 }
 
-export function listWorkData() {
-  return allWork.map((w) => ({
-    slug: w.slug,
-    name: w.name,
-    role: w.role,
-    register: w.register,
-    metrics: w.metrics,
-    tech: w.tech,
-    url: `${BASE}${w.url}`,
-  }));
+/** Every case study, or those whose tech has an entry containing `tech` (case-insensitive), capped to `limit`. */
+export function listWorkData(
+  options: { readonly tech?: string; readonly limit?: number } = {},
+) {
+  const needle = options.tech === undefined ? "" : normalizeText(options.tech);
+  const rows = allWork
+    .filter(
+      (w) =>
+        needle === "" || w.tech.some((t) => t.toLowerCase().includes(needle)),
+    )
+    .map((w) => ({
+      slug: w.slug,
+      name: w.name,
+      role: w.role,
+      register: w.register,
+      metrics: w.metrics,
+      tech: w.tech,
+      url: `${BASE}${w.url}`,
+    }));
+  return options.limit === undefined ? rows : rows.slice(0, options.limit);
 }
 
 export function getWorkData(slug: string) {
@@ -203,11 +351,13 @@ export function getResumeVariantData(role: ResumeRole) {
   };
 }
 
-export const decisionsTagSchema = {
+const decisionsTagSchema = {
   tag: z
     .string()
     .optional()
-    .describe("filter to decisions carrying this tag; omit for all"),
+    .describe(
+      "Return only the decisions carrying this tag. The rule is an exact, case-sensitive match against each tag ('Performance' is not 'performance'); a tag nothing carries returns an empty list, not an error, and the empty string applies no filter. Omit for all of them.",
+    ),
 };
 
 /** All architecture-decision entries (project Key Decisions + work constraints/tradeoffs),
@@ -226,12 +376,13 @@ export function listDecisionsData(tag?: string) {
   }));
 }
 
-export const contentTypeSchema = {
-  type: z.enum(["work", "project", "article", "note"]).describe("content type"),
+const contentTypeSchema = {
+  type: z
+    .enum(CONTENT_TYPES)
+    .describe("Kind of content item to fetch: work, project, article or note."),
   slug: z.string().describe("content slug, e.g. 'pensieve' or 'mindforge'"),
 };
 
-/** Flat list of all content items (work, projects, articles, notes) — slug + title + type. */
 /** Wrap a tool result as MCP content + structuredContent; mark not-found as an error.
  *  structuredContent must be an object per the MCP spec — the list_* / search_* tools
  *  above return a bare array, which the SDK's runtime validation rejects ("expected
@@ -251,8 +402,11 @@ export function wrapToolResult(data: unknown) {
   };
 }
 
-export function listAllContentData() {
-  return [
+/** Every content item, or only one `type`, capped to `limit` (work, projects, articles, notes, in that order). */
+export function listAllContentData(
+  options: { readonly type?: ContentType; readonly limit?: number } = {},
+) {
+  const items = [
     ...allWork.map((w) => ({
       type: "work" as const,
       slug: w.slug,
@@ -281,14 +435,12 @@ export function listAllContentData() {
       summary: n.summary,
       url: `${BASE}${n.url}`,
     })),
-  ];
+  ].filter((item) => options.type === undefined || item.type === options.type);
+  return options.limit === undefined ? items : items.slice(0, options.limit);
 }
 
 /** Get a single content item by type + slug. */
-export function getContentItemData(
-  type: "work" | "project" | "article" | "note",
-  slug: string,
-) {
+export function getContentItemData(type: ContentType, slug: string) {
   switch (type) {
     case "work":
       return getWorkData(slug);
@@ -329,3 +481,17 @@ export function getContentItemData(
     }
   }
 }
+
+/** The input shape of every tool, by tool name: the route registers from it, /mcp documents from it. */
+export const TOOL_INPUT_SHAPES = {
+  get_profile: profileSectionsSchema,
+  list_projects: projectListSchema,
+  get_project: projectSlugSchema,
+  list_work: workListSchema,
+  get_work: workSlugSchema,
+  search_experience: searchSchema,
+  get_resume_variant: resumeRoleSchema,
+  list_all_content: contentListSchema,
+  get_content_item: contentTypeSchema,
+  list_decisions: decisionsTagSchema,
+} as const;

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   API_V1_BASE,
   API_VERSION,
+  BATCH_MAX_BODY_BYTES,
+  BATCH_MAX_REQUESTS,
+  BATCH_MAX_RESPONSE_BYTES,
+  BATCH_PATH,
   DEPRECATIONS,
   DEPRECATION_NOTICE_DAYS,
   RATE_LIMIT_POLICY,
@@ -53,5 +57,33 @@ describe("the published policy", () => {
     expect(versioning).toContain(`${DEPRECATION_NOTICE_DAYS} days`);
     const limits = RATE_LIMIT_POLICY_TEXT.join(" ");
     expect(limits).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+    // The batch route carries many operations in one request; the policy must say how that is counted.
+    expect(limits).toContain(`${BATCH_PATH} counts as one request`);
+    expect(limits).toContain(`up to ${BATCH_MAX_REQUESTS} operations`);
+  });
+});
+
+describe("the published batch limits", () => {
+  // These literals are written out on purpose. They are numbers clients and the public docs rely on,
+  // so changing one must fail a test and be a deliberate, reviewed edit, not a quiet change of a constant.
+  it("are 25 operations, a 16384-byte request and a 1048576-byte answer", () => {
+    expect(BATCH_MAX_REQUESTS).toBe(25);
+    expect(BATCH_MAX_BODY_BYTES).toBe(16384);
+    expect(BATCH_MAX_RESPONSE_BYTES).toBe(1048576);
+  });
+
+  it("keep the answer cap above the request cap, in whole bytes", () => {
+    expect(Number.isInteger(BATCH_MAX_RESPONSE_BYTES)).toBe(true);
+    expect(BATCH_MAX_RESPONSE_BYTES).toBeGreaterThan(BATCH_MAX_BODY_BYTES);
+  });
+});
+
+describe("the batch limits", () => {
+  it("sits under the versioned base and bounds both operations and body size", () => {
+    expect(BATCH_PATH).toBe(`${API_V1_BASE}/batch`);
+    expect(Number.isInteger(BATCH_MAX_REQUESTS)).toBe(true);
+    expect(BATCH_MAX_REQUESTS).toBeGreaterThan(1);
+    expect(BATCH_MAX_REQUESTS).toBeLessThanOrEqual(100);
+    expect(BATCH_MAX_BODY_BYTES).toBeGreaterThanOrEqual(BATCH_MAX_REQUESTS * 64);
   });
 });

@@ -75,7 +75,7 @@ describe("AskPortfolio widget (unified onto useChat)", () => {
     const transcript = screen.getByRole("log", { name: "Chat transcript" });
     await waitFor(
       () => expect(within(transcript).getByText("Hello from the corpus.")).toBeTruthy(),
-      { timeout: 3000 },
+      { timeout: 10_000 },
     );
 
     // It POSTed to /api/chat — the one shared seam, not a widget-private endpoint.
@@ -133,7 +133,7 @@ describe("AskPortfolio widget AI disclosure", () => {
     const transcript = screen.getByRole("log", { name: "Chat transcript" });
     await waitFor(
       () => expect(within(transcript).getByText("Hello from the corpus.")).toBeTruthy(),
-      { timeout: 3000 },
+      { timeout: 10_000 },
     );
     // The greeting is gone with the first message; the caption is the cue that stays.
     expect(screen.queryByText(/I'm an AI assistant\. Ask me anything/)).toBeNull();

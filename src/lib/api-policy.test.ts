@@ -56,6 +56,9 @@ describe("the published policy", () => {
     expect(versioning).toContain(`${DEPRECATION_NOTICE_DAYS} days`);
     const limits = RATE_LIMIT_POLICY_TEXT.join(" ");
     expect(limits).toContain(`${RATE_LIMIT_POLICY.requests} requests per ${RATE_LIMIT_POLICY.windowSeconds} seconds`);
+    // The batch route carries many operations in one request; the policy must say how that is counted.
+    expect(limits).toContain(`${BATCH_PATH} counts as one request`);
+    expect(limits).toContain(`up to ${BATCH_MAX_REQUESTS} operations`);
   });
 });
 

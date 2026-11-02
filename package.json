@@ -1,6 +1,6 @@
 {
   "name": "anvilry",
-  "version": "3.18.0",
+  "version": "3.18.1",
   "private": true,
   "engines": {
     "node": ">=22 <23"

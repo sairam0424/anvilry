@@ -3,13 +3,13 @@ kind: doc
 title: Cross-cutting subsystem maps (part 1 of 2)
 domain: [content]
 status: current
-version: v3.18.0
+version: v3.18.1
 ---
 
 # Cross-cutting subsystem maps — part 1 of 2
 
-> Part of the Anvilry v3.18.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` at a929932 plus twenty-eight post-a929932 changes in all (all released: (26) and (27) in v3.17.0, the twenty-eighth in v3.18.0), those that touch these subsystems described by behaviour, starting with five fixes — notes are
+> Part of the Anvilry v3.18.1 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.18.1 (`package.json` 3.18.1), i.e. `main` at a929932 plus twenty-eight post-a929932 changes in all (all released: (26) and (27) in v3.17.0, the twenty-eighth in v3.18.0, and the v3.18.1 patch on top of them (the zod 4 security fix and the Search Console ownership tag)), those that touch these subsystems described by behaviour, starting with five fixes — notes are
 > hidden at the data layer when `NOTES_ENABLED` is off (the default of a default build and of GitHub CI; the Vercel build environment has it on (observed, not in the repository; see 10 UNVERIFIED)); rate limiting has per-class buckets (`chat` / `voice` /
 > `beacon`) with an eval-cron bypass, built on `src/lib/cron-auth.ts`; admin auth goes through the shared
 > `isAdminAuthorized` (`src/proxy.ts`, `requireAdmin`, the telemetry page); overlay voice entry points are gated

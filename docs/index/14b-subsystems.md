@@ -3,19 +3,19 @@ kind: doc
 title: Cross-cutting subsystem maps (part 2 of 2)
 domain: [content]
 status: current
-version: v3.17.0
+version: v3.18.0
 ---
 
 # Cross-cutting subsystem maps — part 2 of 2
 
-> Part of the Anvilry v3.17.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
-> **Baseline:** describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus twenty-eight
-> post-a929932 changes in all (twenty-seven released, the twenty-eighth not yet in any version), those that touch these subsystems described by behaviour, starting with five fixes — notes are hidden at the data layer when `NOTES_ENABLED` is
+> Part of the Anvilry v3.18.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> **Baseline:** describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` at a929932 (`package.json` 3.6.0, 297 commits past the v3.6.0 tag) plus twenty-eight
+> post-a929932 changes in all (all released: (26) and (27) in v3.17.0, the twenty-eighth in v3.18.0), those that touch these subsystems described by behaviour, starting with five fixes — notes are hidden at the data layer when `NOTES_ENABLED` is
 > off (the default of a default build and of GitHub CI; the Vercel build environment has it on (observed, not in the repository; see 10 UNVERIFIED)); rate limiting has per-class buckets (`chat` / `voice` / `beacon`) with an eval-cron bypass, built on
 > `src/lib/cron-auth.ts`; admin auth goes through the shared `isAdminAuthorized` (`src/proxy.ts`,
 > `requireAdmin`, the telemetry page); overlay voice entry points are gated by `isVoiceViewActive`; the
 > bundle-budget gate asserts `MIN_ROUTES = 17` and verified-dead components were removed (`article-card.tsx`,
-> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`). v3.16.1 adds three more, all landing here: (23) the removal of three low-priority open-source items takes the projects collection from 20 to 18 (16 of them public) and the graph from 25 nodes to 23 and from 28 edges to 24 (subsystem 9, 3D / WebGL; the cards and the feed-allowlist entries themselves are subsystem 1, `14-subsystems.md`); (24) the production gate, a Vercel Deployment Check that holds a new production deployment off the production domain until the `Post-deploy smoke` commit status is green, with a GitHub issue opened when a smoke step does not succeed (subsystem 10, build & deploy); and (25) the bundle gate's `MAX_FIRST_LOAD_BYTES` of 988,000 B (was 1,336,000 B) together with a bounded, retried E2E browser install (subsystem 10). v3.17.0 adds two more, both landing here: (26) the agent-readable surface, whose `src/proxy.ts` job beside the `/admin` gate is subsystem 7 and whose six extra smoke checks (26 in all, was 20) are subsystem 10; and (27) the dependency security release — Next 16.3.5 to 16.4.3, the MCP SDK pin 1.32.0, fourteen pnpm overrides (twelve before), `vite` declared, the search-index script that works under Vercel's adapter layout, and `/` at 966,794 B of first-load JS (subsystem 10). The unreleased (28), the API-policy change, lands in three places: the proxy's third job beside the `/admin` gate and the Markdown negotiation (subsystem 7), the public API contract with its versioned JSON API, limiter and catalog (subsystem 11), and the Markdown twins of ten pages (subsystem 12); it also takes the smoke gate to 30 checks (subsystem 10). Its later pass lands in four more places: the batch endpoint (subsystem 13), the JSON-LD lists and the hardened serialiser (subsystem 14), the source of the `anvilry` command-line client and the flag that keeps the site's wording about it honest (subsystem 15) and the split of `/developers` into section components (subsystem 16); its typed MCP parameters and JSON-RPC errors are subsystem 5 in `14-subsystems.md`.
+> `ui/button.tsx`, `ui/empty-state.tsx`, `ArticleJsonLd` in `json-ld.tsx`). v3.16.0 adds three more, two of which land here: the projects collection grows to 20 in four groups with 25 graph nodes (subsystem 9, 3D / WebGL), and the compiled-MDX split moves the bundle gate's first-load figure for `/` to 976,936 B (subsystem 10, build & deploy); the private-repository marker lands in subsystem 1 (`14-subsystems.md`). v3.16.1 adds three more, all landing here: (23) the removal of three low-priority open-source items takes the projects collection from 20 to 18 (16 of them public) and the graph from 25 nodes to 23 and from 28 edges to 24 (subsystem 9, 3D / WebGL; the cards and the feed-allowlist entries themselves are subsystem 1, `14-subsystems.md`); (24) the production gate, a Vercel Deployment Check that holds a new production deployment off the production domain until the `Post-deploy smoke` commit status is green, with a GitHub issue opened when a smoke step does not succeed (subsystem 10, build & deploy); and (25) the bundle gate's `MAX_FIRST_LOAD_BYTES` of 988,000 B (was 1,336,000 B) together with a bounded, retried E2E browser install (subsystem 10). v3.17.0 adds two more, both landing here: (26) the agent-readable surface, whose `src/proxy.ts` job beside the `/admin` gate is subsystem 7 and whose six extra smoke checks (26 in all, was 20) are subsystem 10; and (27) the dependency security release — Next 16.3.5 to 16.4.3, the MCP SDK pin 1.32.0, fourteen pnpm overrides (twelve before), `vite` declared, the search-index script that works under Vercel's adapter layout, and `/` at 966,794 B of first-load JS (subsystem 10). (28), the API-policy change (v3.18.0), lands in three places: the proxy's third job beside the `/admin` gate and the Markdown negotiation (subsystem 7), the public API contract with its versioned JSON API, limiter and catalog (subsystem 11), and the Markdown twins of ten pages (subsystem 12); it also takes the smoke gate to 30 checks (subsystem 10). Its later pass lands in four more places: the batch endpoint (subsystem 13), the JSON-LD lists and the hardened serialiser (subsystem 14), the source of the `anvilry` command-line client and the flag that keeps the site's wording about it honest (subsystem 15) and the split of `/developers` into section components (subsystem 16); its typed MCP parameters and JSON-RPC errors are subsystem 5 in `14-subsystems.md`.
 > Continues [`14-subsystems.md`](./14-subsystems.md), which maps subsystems 1–6 (content pipeline · view
 > system · chat/LLM · voice · MCP · telemetry).
 
@@ -886,7 +886,7 @@ not checked here — would put production on a different major than the repo's `
 
 ## 11. Public API contract (versioned JSON API, limiter, catalog)
 
-New with the API-policy change (in no release yet; branch `feat/api-policy-ratelimit-md-twins`). The free,
+New with the API-policy change (released in v3.18.0; branch `feat/api-policy-ratelimit-md-twins`). The free,
 read-only surface of the site has one published contract, and `src/lib/api-policy.ts` is its single source:
 version `"1"` (`:12`), the `API-Version` header (`:15`), the `/api/v1` base path (`:18`), 180 days of notice
 before a deprecated surface is removed (`:38`), a budget of 300 requests per 60 seconds (`:41-45`), an empty
@@ -961,7 +961,7 @@ shared error shape (`error`, `code`, `status`, `hint`, `docs`) with `Retry-After
 | A crawler is limited | The discovery files and the `.md` twins count against the same budget (`/sitemap.xml`, `/robots.txt`, `/feed.xml` included). |
 | A client that sends `API-Version: v1` gets a 400 | Only `1` is accepted; any other value is refused so a client never receives a contract it did not ask for. |
 | A handler throws | `withJsonErrors` answers the shared 500 (`internal_error`); the prerendered routes are not wrapped and fail at build time instead. |
-| A browser on another origin cannot call part of the API | The app adds no CORS headers (a decision left to the owner). Vercel adds `Access-Control-Allow-Origin: *` to static responses (most prerendered pages, the seven static `/api/v1` routes, `/openapi.json`, `/llms.txt`, `/llms-full.txt`, `/feed.xml`, `/api/resume.json`, `/sitemap.xml`, `/robots.txt`, the API catalog and `/index.md`), so those are readable cross-origin; the dynamic routes (the slug routes, `search`, `decisions`, `github/stats`, MCP; the new `batch` route is not on production yet and, as a dynamic POST route, is inferred to answer none), the `.md` twins of pages and content (`/about.md`, `/projects/<slug>.md`) and the `use cache` pages `/projects` and `/projects/[slug]` answer none (observed on production, previous release, 2026-11-01). |
+| A browser on another origin cannot call part of the API | The app adds no CORS headers (a decision left to the owner). Vercel adds `Access-Control-Allow-Origin: *` to static responses (most prerendered pages, the seven static `/api/v1` routes, `/openapi.json`, `/llms.txt`, `/llms-full.txt`, `/feed.xml`, `/api/resume.json`, `/sitemap.xml`, `/robots.txt`, the API catalog and `/index.md`), so those are readable cross-origin; the dynamic routes (the slug routes, `search`, `decisions`, `github/stats`, MCP and the new `batch` route), the `.md` twins of pages and content (`/about.md`, `/projects/<slug>.md`) and the `use cache` pages `/projects` and `/projects/[slug]` answer none (observed on production on 2026-11-01, on the earlier deploy (the API-policy round, #357/#359, without round 3); for `batch`, observed on 2026-11-02 after the deploy: a `GET` to `/api/v1/batch` answers 405 with `Allow: POST, OPTIONS` and no `Access-Control-Allow-Origin`). |
 
 ### Flags / env that alter it
 
@@ -973,7 +973,7 @@ None: no environment variable was added. The numbers live in `src/lib/api-policy
 
 ## 12. Markdown twins of pages
 
-New with the API-policy change (in no release yet). Ten pages (`about`, `articles`, `contact`, `decisions`,
+New with the API-policy change (released in v3.18.0). Ten pages (`about`, `articles`, `contact`, `decisions`,
 `developers`, `mcp`, `notes`, `privacy`, `projects`, `work`; `PAGE_TWINS`, `src/lib/page-twins.ts:16-27`) answer
 `Accept: text/markdown` and have a `/<page>.md` URL, the way the homepage and every content item already did
 (subsystem 7). `/resume`, `/search` and `/stats` stay HTML-only on purpose (`HTML_ONLY_PAGES`,
@@ -1043,7 +1043,7 @@ published decides the `articles` twin. No environment variable was added.
 
 ## 13. Batch endpoint (`POST /api/v1/batch`)
 
-New with the later pass of the API-policy change ("round 3", in no release yet; branch `feat/agent-readiness-round3`). It is the one `POST` of
+New with the later pass of the API-policy change ("round 3", released in v3.18.0; branch `feat/agent-readiness-round3`). It is the one `POST` of
 the free API besides the MCP endpoint, and it only ever reads: the body lists `GET` operations of `/api/v1`, and the answer carries one result
 for each. An agent that needs a profile, a project and a search result makes one request instead of three. Three numbers bound it, all in
 `src/lib/api-policy.ts`: at most `BATCH_MAX_REQUESTS` = 25 operations (`:33`), a request body of at most `BATCH_MAX_BODY_BYTES` = 16384 bytes
@@ -1182,7 +1182,7 @@ are enabled). Nothing else.
 
 New with round 3. The source of a command-line client for the public API lives in `cli/` (npm name `anvilry`, zero dependencies).
 The owner published `anvilry` 0.1.0 to npm on 2026-11-01 (by hand, no provenance, from the tree before the publish flip); `cli/package.json` is 0.1.1, a README-only patch prepared for the owner to publish, so the registry's latest is 0.1.0 until then.
-Every sentence about the CLI on `/developers`, in its Markdown twin and in `llms.txt` is built from one descriptor and one flag, `CLI.published`, which is `true` in this tree and flips them together; production, observed 2026-11-01, runs the previous release, so its `/developers` and `llms.txt` still say there is no published CLI until this deploys. The package
+Every sentence about the CLI on `/developers`, in its Markdown twin and in `llms.txt` is built from one descriptor and one flag, `CLI.published`, which is `true` in this tree and flips them together; production, observed 2026-11-01, ran the earlier deploy (the API-policy round, #357/#359, without round 3), so its `/developers` and `llms.txt` still said there was no published CLI; since the deploy of 2026-11-02 they show the published wording (observed: `npx anvilry` and `npm install --global anvilry` on `/developers` and `/developers.md`, the official npm package named on the `llms.txt` line). The package
 is indexed file by file in [11](./11-config-build-ci-infra.md) (`### cli/`); this section is how it connects to the rest.
 
 ### Flow
@@ -1210,7 +1210,7 @@ src/lib/developer-tools.ts   CLI = { name "anvilry", registry "npm", published: 
 | 1 | `cli/package.json`, `cli/bin/anvilry.mjs`, `cli/lib/*.mjs` | The package (11 `### cli/`). |
 | 2 | `cli/lib/commands.mjs` | The command and flag tables: the contract the site pins its documentation to; frozen, so they cannot change at run time. |
 | 3 | `cli/lib/constants.mjs` | The numbers it shares with `src/` (API version and header, slug rule, the 25-operation batch limit, the canonical origin); it cannot import from the site, so `tests/cli/drift.test.ts` is the only thing that ties them together. |
-| 4 | `src/lib/developer-tools.ts:35-150` | `CLI` (the descriptor and the flag), `CLI_COMMANDS` (the site's copy of the command table, pinned to `cli/lib/commands.mjs` by `developer-tools.test.ts`) and the wording helpers. Published (the state of this tree): the section is headed "Anvilry CLI", names the package, offers `npx anvilry` and `npm install --global anvilry` and lists every command; unpublished (the flag-false branch of this tree's helpers, covered by the wording tests): headed "Anvilry command-line use", says there is no published CLI package, adds where the source is (`cli/`) and offers no install or run command; production, which runs the previous release, shows an older wording without the source note until this deploys (the same heading, "There is no published CLI package for Anvilry." and curl recipes; observed 2026-11-02). |
+| 4 | `src/lib/developer-tools.ts:35-150` | `CLI` (the descriptor and the flag), `CLI_COMMANDS` (the site's copy of the command table, pinned to `cli/lib/commands.mjs` by `developer-tools.test.ts`) and the wording helpers. Published (the state of this tree): the section is headed "Anvilry CLI", names the package, offers `npx anvilry` and `npm install --global anvilry` and lists every command; unpublished (the flag-false branch of this tree's helpers, covered by the wording tests): headed "Anvilry command-line use", says there is no published CLI package, adds where the source is (`cli/`) and offers no install or run command; production before the deploy of 2026-11-02 showed an older wording without the source note (the same heading, "There is no published CLI package for Anvilry." and curl recipes; observed 2026-11-02), and since that deploy it shows the published wording (observed). |
 | 5 | `src/app/developers/sections/cli.tsx:31-104` + `src/lib/llms-txt.ts:109` | `CliCommandsTable`, `CliInstall`, `CliSection` and the `llms.txt` line, all reading `CLI`. |
 | 6 | `cli/README.md` (156 lines) | Carries no status block and no "Once published:" lead-in now (they exist exactly while the flag is false, `tests/cli/readme.test.ts`); Install is at `:12` and the maintainers' list at `:142-152` ends at verifying a clean install. |
 | 7 | `.gitignore` | `~/`, `**/~/` and `.npm/`: a literal `~` directory once appeared under `cli/`. |
@@ -1626,7 +1626,7 @@ record the outcome rather than the original open question.
   `game-model.ts:28` reads "a graph node id that does NOT equal its content slug" (count-free) and names the one affected id; `scene.tsx:18-19` is
   count-agnostic ("Count is taken from `graphNodes.length`"); and `agent-trace.ts:13-16` no longer claims the
   test "BLOCKS shipping" (see [§ Tests as a gate](#tests-as-a-gate--what-that-actually-means)).
-- **Subsystems 11 and 12 (the API-policy change, in no release yet) were read from the source and the tests, not
+- **Subsystems 11 and 12 (the API-policy change, released in v3.18.0) were read from the source and the tests, not
   observed on a deployment by this edition.** The 429 behaviour (the 301st request in a minute answers with
   `Retry-After: 60`) was checked on a production build by the author of the change and is not re-measured here.
   The limit is counted per server instance: how many instances Vercel runs for this project, and so what
@@ -1634,19 +1634,19 @@ record the outcome rather than the original open question.
   are defaults awaiting the owner. `public-api-paths.test.ts` relies on `unstable_doesMiddlewareMatch`, an
   experimental Next testing API whose behaviour on a Next upgrade is untested. The app adds no CORS headers (Vercel adds
   `Access-Control-Allow-Origin: *` to static responses, not to dynamic routes or the `use cache` pages); whether a browser client on another origin is wanted is open.
-- **Subsystems 13 to 16 (round 3 of the API-policy change, in no release yet) were read from the source and the tests.** The one thing
+- **Subsystems 13 to 16 (round 3 of the API-policy change, released in v3.18.0) were read from the source and the tests.** The one thing
   this edition ran is Vitest over the whole tree with the JSON reporter: 185 files and 2734 tests, of which 2733 passed, 1 was skipped
   and none failed (before the CLI-published flip; with it the lead's full run gives 2732 passed and 2 skipped, and this edition re-ran the two flag-sensitive files, `developer-tools.test.ts` and `tests/cli/readme.test.ts`: 26 passed, 2 skipped). `pnpm build`, `pnpm e2e`, `tsc --noEmit`, `eslint` and `node scripts/bundle-budget.mjs` were not run by this pass, the
   CLI was not started, and no request was made to a deployment. Not known from the repository: how a batch of 25 operations behaves
   inside a real Vercel function's memory and time limits (the unit tests call the handlers in process); whether the
-  production deployment, which still runs the previous release (observed 2026-11-01), serves any of it before this change is released
-  (it has no batch endpoint, MCP parameters, JSON-LD lists or published-CLI wording: its `/developers` still says there is no published CLI); whether search engines index `/developers`, `/mcp` and the new
+  production deployment serves the release as described (it ran the earlier deploy (the API-policy round, #357/#359, without round 3) when this was written, observed 2026-11-01, with
+  no batch endpoint, MCP parameters, JSON-LD lists or published-CLI wording; the deploy of 2026-11-02 changed that, see 10 UNVERIFIED); whether search engines index `/developers`, `/mcp` and the new
   structured data (that is decided in the owner's Search Console and Bing Webmaster accounts); whether `npx anvilry` works as
   `cli/README.md` describes (0.1.0 is on npm and the lead verified `npx anvilry@0.1.0 version` and `status` from a clean directory, which this edition did not repeat; 0.1.1 is not published yet); and what a browser really receives in
   `Vary` on an HTML page (the comment at `next.config.ts:265-267` says Next replaces it).
-- **Open decisions left open by round 3, not decided by this index:** publishing `cli/package.json` 0.1.1, the README-only patch (the owner's step);
-  the Search Console and Bing Webmaster indexing requests; CORS, which the app does not add (Vercel's `*` on static responses is not the app's doing); the release version
-  (everything stays under `[Unreleased]` and no version is chosen here); the `/articles.md` twin (`page-markdown-lists.ts`) and
+- **Open decisions left open by round 3, not decided by this index (the release number, open then, is v3.18.0 now):** publishing `cli/package.json` 0.1.1, the README-only patch (the owner's step);
+  the Search Console and Bing Webmaster indexing requests; CORS, which the app does not add (Vercel's `*` on static responses is not the app's doing);
+  the `/articles.md` twin (`page-markdown-lists.ts`) and
   `related-writing.tsx`, which still keep their own copy of the notes-link rule that `article-href.ts` now holds for the card, the JSON-LD
   list and the homepage twin; and `/api/v1/articles` and the MCP tools, which still list articles when `NEXT_PUBLIC_ARTICLES_ENABLED` is
   `false` while the `/articles` pages answer 404 (production has articles on).

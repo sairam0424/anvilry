@@ -149,7 +149,7 @@ is ~$0.024/min. Both stay negligible at recruiter traffic and are off by default
 ## 4. Custom domain (optional)
 1. Project → Settings → Domains → add your domain (e.g. `example.com` and `www.example.com`).
 2. Point DNS per Vercel's instructions (A/ALIAS to Vercel, or move nameservers).
-3. The base URL `https://anvilry.vercel.app` is hardcoded in **56 files / 104 lines** (28 files / 35 lines outside tests, `cli/` included) — not
+3. The base URL `https://anvilry.vercel.app` is hardcoded in **57 files / 106 lines** (28 files / 35 lines outside tests, `cli/` included) — not
    the four this step used to list. The count moves; find every one with:
 
    ```bash

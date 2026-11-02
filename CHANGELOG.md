@@ -4,6 +4,16 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Search Console ownership tag.** `metadata.verification.google` in `src/app/layout.tsx` makes Next render a
+  `<meta name="google-site-verification">` tag in the `<head>`; Google verified the site on 2026-11-02 through the
+  HTML-tag method, and removing the tag loses the verification. `src/app/layout-metadata.test.ts` (2 tests) pins
+  it and checks that the canonical base and the crawl rules did not move. The suite is 186 test files and 2736
+  tests (2734 pass, 2 skipped).
+- **`anvilry` 0.1.1 is on npm.** The owner published the README-only patch on 2026-11-02; the registry's `latest`
+  is now 0.1.1 and its package page no longer carries the pre-release note (0.1.0 stays on the registry).
+
 ## [3.18.0] — 2026-11-02
 
 The public API gets a published contract. A JSON API now lives under `/api/v1`, every public response states

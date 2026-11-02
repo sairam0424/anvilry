@@ -389,3 +389,23 @@ describe("MCP text filters and empty text", () => {
     expect(ok(await call("list_decisions", { tag: "" })).items).toEqual(all);
   });
 });
+
+/**
+ * The endpoint is public and unauthenticated, so what a caller sends must cost the server about what
+ * it cost to send. zod 3, and zod 4 before 4.6.6, recorded one issue per failing element of an array
+ * before looking at its length: a 4 MB `sections` list made the route build a 113 MB validation answer
+ * and take 0.5 to 1.5 GB of extra memory. A list over its limit is refused on its length alone, with one short error.
+ */
+describe("MCP oversized arguments are refused on their size, not element by element", () => {
+  const OVERSIZED_ELEMENTS = 100_000;
+  const MAX_ANSWER_BYTES = 2_000;
+
+  it("answers a get_profile sections list far over its limit with one short -32602 error", async () => {
+    const sections = new Array<string>(OVERSIZED_ELEMENTS).fill("not-a-section");
+    const outcome = await send({ POST }, toolCall("get_profile", { sections }));
+    const text = toolErrorText(only(outcome));
+    expect(text).toContain("-32602");
+    expect(text).toContain("sections");
+    expect(outcome.raw.length).toBeLessThan(MAX_ANSWER_BYTES);
+  });
+});

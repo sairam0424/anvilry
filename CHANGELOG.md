@@ -6,11 +6,29 @@ All notable changes to Anvilry are documented here. The format follows
 
 ## [Unreleased]
 
+- **Security: `zod` 3.25.76 to 4.6.7 (GHSA-mrhx-c7xc-m3w5).** Before zod 4.6.6 an array was validated element by
+  element, one issue per failing element, before its length was looked at, and zod 3 does the same. v3.18.0 added
+  the app's only request-facing array, `get_profile`'s `sections` (`src/lib/mcp-tools.ts`), so an anonymous POST of
+  4 MB to `/api/mcp/mcp` (a million invalid elements, just under the MCP SDK's 4 MiB body limit) made the route
+  build a 113 MB validation answer, taking 2 to 3 s and 0.5 to 1.5 GB of extra memory (runs vary). That was measured
+  against the route handler on a development machine; production was not probed. With zod 4.6.7 the same request is
+  refused on the list's length alone: a 246-byte answer in about 0.1 s and 60 MB (reading the body). The last test of
+  `src/app/api/mcp/[transport]/route.test.ts` sends 100 000 elements and fails on zod 3 (a 12 MB answer). zod 4.6.7
+  was checked before it was adopted: its npm provenance names zod's `release.yml` run on commit `b500a2ee`, it has
+  no install scripts and no dependencies, and it differs from 4.6.6 (the first patched version) only in its
+  version string.
+- **What the zod 4 move changes.** One line of code: `z.record(z.string(), z.unknown())` in
+  `src/lib/telemetry/schema.ts`, because zod 4 dropped the one-argument form. In a request-by-request comparison
+  with v3.18.0 (41 requests), the valid calls probed, `initialize`, a batch and the route's own errors answered byte for
+  byte as before. Two things differ, and neither was documented: validation errors use zod 4's wording (`Too small:
+  expected number to be >=1` where zod 3 said `Number must be greater than or equal to 1`; the HTTP status, the
+  `-32602` code and `isError` are unchanged), and `tools/list` no longer says `additionalProperties: false` on the
+  ten input schemas (unknown arguments were accepted and ignored before, and still are).
 - **Search Console ownership tag.** `metadata.verification.google` in `src/app/layout.tsx` makes Next render a
   `<meta name="google-site-verification">` tag in the `<head>`; Google verified the site on 2026-11-02 through the
   HTML-tag method, and removing the tag loses the verification. `src/app/layout-metadata.test.ts` (2 tests) pins
-  it and checks that the canonical base and the crawl rules did not move. The suite is 186 test files and 2736
-  tests (2734 pass, 2 skipped).
+  it and checks that the canonical base and the crawl rules did not move. The suite is 186 test files and 2737
+  tests (2735 pass, 2 skipped).
 - **`anvilry` 0.1.1 is on npm.** The owner published the README-only patch on 2026-11-02; the registry's `latest`
   is now 0.1.1 and its package page no longer carries the pre-release note (0.1.0 stays on the registry).
 

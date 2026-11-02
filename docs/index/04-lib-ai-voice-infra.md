@@ -346,7 +346,7 @@ The rationale (docblock above `checkRateLimit`, rate-limit.ts:90-93): a cost gua
 | `route` | string, min 1 | optional | :77 |
 | `level` | `"info" \| "warn" \| "error"` | yes | :78 (literals at :56) |
 | `message` | string | optional | :79 |
-| `attrs` | `z.record(z.unknown())` — opaque | yes | :80 |
+| `attrs` | `z.record(z.string(), z.unknown())` — opaque | yes | :80 |
 
 The 8 `kind` literals (`KIND_LITERALS`, schema.ts:37-50): `http.request`, `llm.attempt`, `tts.request`, `transcribe.request`, `client.error`, `server.error`, `budget.tick`, `chat.cache`. `chat.cache` is the FAQ-cache hit/miss span, deliberately separate from `llm.attempt` because a cache hit has zero real LLM usage and would corrupt the dashboard's cache-hit-rate and cost tiles; the route emits it per cache lookup with `attrs.outcome`/`tier` (plus `saved_usd`/`model`/`reasoning_replayed` on a hit, the last a boolean and never the summary text, and `similarity` on a semantic hit). `chat-cache.ts` itself emits `server.error` (not `chat.cache`) when a Redis operation fails.
 

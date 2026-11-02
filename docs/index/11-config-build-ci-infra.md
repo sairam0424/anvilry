@@ -181,7 +181,7 @@ in the `ci`, `claims-integrity-autocommit` and `e2e` jobs (`.github/workflows/ci
 
 **Node version is pinned three ways, and the pin is load-bearing.** `package.json:5-7` declares
 `engines: { node: ">=22 <23" }`, `.nvmrc:1` is `22` and every `setup-node` step in `ci.yml` uses `node-version: 22`
-(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:1133-1136` records the
+(`:29`, `:113`, `:160`, `:235`) — deliberately a *ceiling*, not just a floor. `CHANGELOG.md:1151-1154` records the
 failure that motivated it: a contributor on Node 26 saw **9 failing tests and a red `pnpm build` with no explanation**,
 because Node 26 exposes a native `localStorage` global (unavailable without `--localstorage-file`) that collides with
 vitest's happy-dom global injection. Widening the range re-opens that trap. Limits: `engines` **warns rather than
@@ -277,7 +277,7 @@ All defined in `next.config.ts`. `securityHeaders` (`next.config.ts:121-147`) ha
 
 **`worker-src` outlived the package it was written for.** The directive was added for an R3F
 `@react-three/offscreen` worker/`OffscreenCanvas` offload that **never existed in `src/`** — that package was
-declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:1152-1156`). The
+declared but imported nowhere, and it was **removed from `package.json` in v3.5.0** (`CHANGELOG.md:1170-1174`). The
 directive itself is still correct and still needed, but for a different reason than the one it was written for:
 `'self'` is what lets pdf.js start its worker. `blob:` is the residue — a repo-wide grep finds **no
 `new Worker(` and no `OffscreenCanvas` anywhere under `src/`**, and the only `URL.createObjectURL` call sites are
@@ -371,9 +371,9 @@ grep of every `process.env.*` read under `src/`. "Required?" reflects what the c
 | `NEXT_PUBLIC_AVATAR_POSITION` | No (default `hero-side`) | `src/components/hero-avatar/index.tsx:51` | Avatar placement | Documented in `.env.example:202` |
 | `NEXT_PUBLIC_ABOUT_MASCOT` | No (default off) | `src/lib/mascot-flags.ts:11` | About portrait beside the intro (`src/app/about/page.tsx`); only the exact string `"true"` enables it | Documented in `.env.example:203` |
 | `NEXT_PUBLIC_404_MASCOT` | No (default on) | `src/lib/mascot-flags.ts:16` | Rotating thirteen-character 404 mascot (`src/components/mascot/not-found-mascot.tsx`); only the exact string `"false"` removes it | Documented in `.env.example:204` |
-| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:1152-1156`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:1115-1117`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:110`) |
+| `NEXT_PUBLIC_GRAPH_PHYSICS` | No (default off) | `src/components/hero-graph/index.tsx:10` | `"true"` swaps the lazy hero-graph chunk from `./scene` to `./scene-physics`'s `HeroGraphScenePhysics` (`src/components/hero-graph/index.tsx:18-23`) | **Not Rapier physics — and there is no longer a Rapier dependency at all.** `scene-physics.tsx` wraps `HeroGraphInner` in a `<group>` and *sets* `position.x/y/z` from `Math.sin`/`Math.cos(clock.elapsedTime)` each `useFrame` (`src/components/hero-graph/scene-physics.tsx:37-45`); its own header says "No RigidBody / Rapier needed for this effect" (`:10-16`). `@react-three/rapier` was declared but imported nowhere; **removed from `package.json` in v3.5.0** (`CHANGELOG.md:1170-1174`) — measured impact 3 packages removed, 0 added, and `@dimforge/rapier3d-compat` 0.19.2 → 0.12.0, correct because `@types/three` was its only remaining consumer. Neither package appears in the current dependency set; both are documented as deleted in [13 § Removed in v3.5.0](./13-dependencies-and-versions.md#removed-in-v350) — a count-free anchor, deliberately, because the earlier link embedded the prod-dependency count and died the moment that count moved. The call-site comment (`src/components/hero-graph/index.tsx:13-17`) is now accurate: it says "a drift variant is loaded instead of the static scene", "despite the flag name, there is no physics engine involved", and that `@react-three/rapier` "was declared in package.json but imported nowhere, and was removed in v3.5.0". Only the flag name and the filename remain historical (the stale comment was corrected in v3.5.0, `CHANGELOG.md:1133-1135`). Undocumented in `.env.example` (listed in `ARCHITECTURE.md:110`) |
 | `NEXT_PUBLIC_MULTIMODAL_ATTACHMENTS` | No (default off) | `src/components/chat/chat-view.tsx:259` | Image/file attachments in chat | Undocumented in `.env.example` |
-| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:1167-1169`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
+| `NEXT_PUBLIC_PDF_ATTACHMENTS` | No (default off) | `src/components/chat/file-picker-button.tsx:7` | PDF attachments (client-side `pdfjs-dist` parse) | Undocumented in `.env.example`. This is the code path the v3.4.2 `pdfjs-dist` advisory was reachable through (`CHANGELOG.md:1185-1187`), and the only thing on the site that starts a Web Worker — so it is what `worker-src 'self'` actually covers |
 | `NEXT_PUBLIC_EXTENDED_THINKING` | No (default on) | `src/components/chat/chat-messages.tsx:165` | Client-side thinking-block rendering (`!== "false"`) | Undocumented in `.env.example` |
 | `VERCEL` | Platform | `next.config.ts:84` | Set only by Vercel's own infrastructure (Preview and Production); gates `upgrade-insecure-requests` in the CSP | Never set by `next dev` or `next start`, even in production mode — this is what keeps local WebKit/Playwright `mobile-safari` runs working (see the CSP table) |
 | `VERCEL_URL` | Platform | `src/app/api/chat/route.ts:40-41`; `cron/{eval:105-106, github-sync:32-33, seo-audit:20-21}`; `src/lib/health-expectations.ts:56` | Self-referential base URL | Set by Vercel; absent locally. **`cron/health-check` never reads it directly** — it resolves its base through `probeBase()` (`src/app/api/cron/health-check/route.ts:155`), where `VERCEL_URL` is only the *fallback* (`src/lib/health-expectations.ts:56`). `VERCEL_URL` is the per-deployment host, which is SSO-protected on this project; `src/lib/health-expectations.test.ts:140-145` asserts the route never reads `process.env.VERCEL_URL` directly |
@@ -522,7 +522,7 @@ Three `ignore` entries on the npm ecosystem, each with a recorded root cause:
   `@babel/eslint-parser` lacks `ScopeManager#addGlobals`. Re-check trigger: `jsx-eslint/eslint-plugin-react#4022`
   (`:95-101`).
 
-**Gotcha:** `CHANGELOG.md:1207-1208` records that Dependabot reads `dependabot.yml` from the **default branch
+**Gotcha:** `CHANGELOG.md:1225-1226` records that Dependabot reads `dependabot.yml` from the **default branch
 only**, so these ignores were inert while they lived on `develop`.
 
 **CodeRabbit** (`.coderabbit.yaml`): `quiet` profile, auto-review only when the PR base is `^develop$`
@@ -535,8 +535,8 @@ it — `gitleaks.yml`'s header records it "currently lives only on develop" (`gi
 
 **`package.json` has no `pnpm` field at all.** Every setting group lives in `pnpm-workspace.yaml`, the single source
 of truth: two groups moved there in v3.5.0, one was already there, `allowBuilds` was added in v3.6.0 (see
-`CHANGELOG.md:966-1006`). The `patchedDependencies` entry and the `browserslist` override landed later and have
-no CHANGELOG entry (`grep -n "browserslist\|patchedDependencies" CHANGELOG.md` finds nothing); the exact `fast-uri` pin and the `qs`, `proxy-addr` and `source-map-js` overrides are listed in the `[3.17.0]` Security bullet (`CHANGELOG.md:359-361`):
+`CHANGELOG.md:984-1024`). The `patchedDependencies` entry and the `browserslist` override landed later and have
+no CHANGELOG entry (`grep -n "browserslist\|patchedDependencies" CHANGELOG.md` finds nothing); the exact `fast-uri` pin and the `qs`, `proxy-addr` and `source-map-js` overrides are listed in the `[3.17.0]` Security bullet (`CHANGELOG.md:377-379`):
 
 | Setting | Location | Reads it | Value |
 |---|---|---|---|
@@ -561,7 +561,7 @@ resolved tree and runs both inside `pnpm build` (via `vitest run`) and in the `i
 `13-dependencies-and-versions.md`.
 
 **Why it moved out of `package.json`, and why this counts as a security fix** (`pnpm-workspace.yaml:1-12`,
-`CHANGELOG.md:1139-1149` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
+`CHANGELOG.md:1157-1167` — filed under `### Security`, not `### Changed`): **pnpm v11 no longer reads the `pnpm` field of
 `package.json`**. It prints `The "pnpm" field in package.json is no longer read by pnpm` and skips it — a warning line
 that reads like boilerplate. Nothing was broken yet, because `pnpm-lock.yaml` already encoded the resolved graph and CI
 pins pnpm 10 (`ci.yml:24`) — but **one `pnpm install` on pnpm 11 would have regenerated the lockfile without the
@@ -573,11 +573,11 @@ pnpm 10 → byte-identical again (the proof CI's resolution does not move); then
 exit 0. The ten pins that existed at the time were re-confirmed **applied in the resolved graph, not merely declared**:
 `hono` 4.13.2 · `@hono/node-server` 1.19.17 · `ip-address` 10.5.0 · `fast-uri` 3.1.5 · `js-yaml` 4.3.1 ·
 `postcss` 8.5.23/8.5.26 · `sharp` 0.35.3 · `body-parser` 2.3.0 · `brace-expansion` 1.1.18 and 5.0.9
-(`CHANGELOG.md:1145-1149`).
+(`CHANGELOG.md:1163-1167`).
 
 This is also what unblocked the v3.5.0 dependency removals: pruning `@react-three/rapier` and
 `@react-three/offscreen` requires regenerating the lockfile, which was unsafe until the overrides lived somewhere
-both pnpm majors read — `CHANGELOG.md:1152-1153` records the removal as "deferred until the overrides migration
+both pnpm majors read — `CHANGELOG.md:1170-1171` records the removal as "deferred until the overrides migration
 made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), which also added `.nvmrc` and
 `engines.node`. The third package the lockfile lost was `mitt`, a transitive of the two removed packages.
 
@@ -586,22 +586,22 @@ made lockfile regeneration safe". Both landed in the same commit (`ceae0d1`), wh
 one (`pnpm why <pkg>` plus the 3.4.2 CHANGELOG entry). The YAML carries those comments; `package.json` never could.
 Its header at `:5` still says "the ten security `overrides` shipped in v3.4.2" — historically accurate, because it
 is talking about that release. The lockfile mirrors all fourteen ranges verbatim at `pnpm-lock.yaml:7-21`. The advisories
-for the first ten are transcribed from `CHANGELOG.md:1166-1190` (release 3.4.2, "resolves all 23 open Dependabot
-advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:1160-1161`); the other four are `browserslist`, which no CHANGELOG entry covers, and `qs`, `proxy-addr` and `source-map-js`, whose pins the `[3.17.0]` Security bullet lists (`CHANGELOG.md:359-361`; it gives a reason only for `proxy-addr`, critical IP spoofing), so their advisory text below is transcribed from the
+for the first ten are transcribed from `CHANGELOG.md:1184-1208` (release 3.4.2, "resolves all 23 open Dependabot
+advisories across 10 packages, 11 of them high severity", `CHANGELOG.md:1178-1179`); the other four are `browserslist`, which no CHANGELOG entry covers, and `qs`, `proxy-addr` and `source-map-js`, whose pins the `[3.17.0]` Security bullet lists (`CHANGELOG.md:377-379`; it gives a reason only for `proxy-addr`, critical IP spoofing), so their advisory text below is transcribed from the
 YAML comments.
 
 | Override | Range pinned | Advisory / reason as stated in the source |
 |---|---|---|
-| `hono` | **exact** `4.13.13` (was `^4.12.34`) | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:1173-1175`) |
-| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:1183`) |
-| `ip-address` | **exact** `10.7.4` (was `^10.3.1`) | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:1170-1172`) |
-| `fast-uri` | **exact** `3.1.9` (was `3.1.6`, before that `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:1177`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
-| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:1176`) |
-| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:1184-1185`) |
+| `hono` | **exact** `4.13.13` (was `^4.12.34`) | 4.12.25 → 4.13.2 (medium ×3, low ×1): `memo()` retained SSR output across requests (cross-user data disclosure), ReDoS in CORS middleware, algorithmic-complexity DoS in Language middleware, Proxy Helper header leak (`CHANGELOG.md:1191-1193`) |
+| `@hono/node-server` | `^1.19.15` | → 1.19.17 (medium): `serve-static` path traversal via `%5C` on Windows (`CHANGELOG.md:1201`) |
+| `ip-address` | **exact** `10.7.4` (was `^10.3.1`) | 10.2.0 → 10.5.0 (high): `Address4` decodes leading-zero octets as decimal while resolvers decode them as octal → SSRF / trust-boundary bypass. Reached via `mcp-handler` → `@modelcontextprotocol/sdk` → `express-rate-limit`; server-side only (`CHANGELOG.md:1188-1190`) |
+| `fast-uri` | **exact** `3.1.9` (was `3.1.6`, before that `^3.1.5`) | 3.1.2 → 3.1.5 (high): host confusion via backslash authority introducer (`CHANGELOG.md:1195`). Now an exact pin: pnpm 11's default `minimumReleaseAge` check rejected a lockfile entry resolved to a version published too recently (it caught 3.1.7, published <24 h before a CI run, on the `Install on pnpm 11` job), and a caret range would re-resolve to whatever is newest at install time and fail again (`pnpm-workspace.yaml:22-27`) |
+| `js-yaml` | `^4.3.1` | 4.2.0 → 4.3.1 (high): quadratic CPU consumption in `!!omap` resolution (`CHANGELOG.md:1194`) |
+| `postcss` | `^8.5.23` | (medium/high): attacker-controlled `sourceMappingURL` read arbitrary `.map` files when `from` is unset (`CHANGELOG.md:1202-1203`) |
 | `brace-expansion@1` | `^1.1.21` (floor raised from `^1.1.16`) | (high) — the 1.x line, patched **within its line** |
-| `brace-expansion@>=3` | `^5.0.12` (floor raised from `^5.0.7`) | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:1178-1180`) |
-| `sharp` | **exact** `0.35.5` (was `^0.35.0`) | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:1181-1182`) |
-| `body-parser` | **exact** `2.4.0` (was `^2.3.0`) | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:1186`) |
+| `brace-expansion@>=3` | `^5.0.12` (floor raised from `^5.0.7`) | (high) — the 5.x line. Two version-scoped overrides instead of one blanket override: "A blanket override would have forced `minimatch@3` onto 5.x and broken the eslint chain" (`CHANGELOG.md:1196-1198`) |
+| `sharp` | **exact** `0.35.5` (was `^0.35.0`) | 0.34.5 → 0.35.3 (high): "only velite's build-time instance was affected; Next 16.3.0 already carried the patched 0.35.3" (`CHANGELOG.md:1199-1200`) |
+| `body-parser` | **exact** `2.4.0` (was `^2.3.0`) | 2.2.2 → 2.3.0 (low) (`CHANGELOG.md:1204`) |
 | `browserslist` | **exact** `4.28.8` | GHSA-covered crash/prototype-write + OOM (Dependabot #54/#55), transitive via `next` → `styled-jsx` and `eslint-config-next` → `@babel/core`. Exact for the same `minimumReleaseAge` reason as `fast-uri`: 4.28.8 (2026-08-08) has aged past the gate (`pnpm-workspace.yaml:34-38`) |
 | `qs` | **exact** `6.16.1` (was `6.16.0`) | GHSA-covered DoS + array-limit bypass (Dependabot #53/#56), transitive via `body-parser` → `express` → `@modelcontextprotocol/sdk`. 6.16.1 (2026-10-14) is the oldest release outside the advisory range (`<=6.16.0`); 6.16.2 and 6.17.x were younger than the 7-day Dependabot cooldown when it was pinned; if pnpm 11's release-age gate rejects it, "that's the CI signal to wait and retry, not a reason to skip the fix" (`pnpm-workspace.yaml:42-47`) |
 | `proxy-addr` | `^2.0.8` | critical IP spoofing (Dependabot #87), transitive via `express` → `@modelcontextprotocol/sdk` (`pnpm-workspace.yaml:39-40`); new in the dependency security batch |
@@ -609,7 +609,7 @@ YAML comments.
 
 Root cause for needing overrides at all: "Six were transitive and lockfile-pinned, so `pnpm update` could not
 move them — `@modelcontextprotocol/sdk` is pinned exactly to `1.26.0`, which is why Dependabot reported
-`security_update_not_possible`" (`CHANGELOG.md:1188-1190`). At that time `package.json:29` pinned
+`security_update_not_possible`" (`CHANGELOG.md:1206-1208`). At that time `package.json:29` pinned
 `"@modelcontextprotocol/sdk": "1.26.0"` with no range operator; it is now `"1.32.0"`, still exact, while `mcp-handler@1.1.0`
 still declares an exact `1.26.0` peer (`13-dependencies-and-versions.md`), a mismatch pnpm tolerates. `pdfjs-dist` was fixable by a direct bump
 (`^6.2.108`, `package.json:48`) rather than an override. The exact pins (now seven: `hono`, `ip-address`, `fast-uri`, `sharp`, `body-parser`, `browserslist`, `qs`) trade
@@ -730,8 +730,8 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
   `next 16.4.3` is **exact** (no caret, `:47`) and `eslint-config-next 16.4.3` is exact (`:70`); `react`/`react-dom`
   are exact `19.3.0` (`:50-51`); `@modelcontextprotocol/sdk` exact `1.32.0` (`:29`);
   `@react-three/postprocessing` exact `3.1.1` (`:34`). Other versions: `three ^0.186.0`, `vitest ^5.0.3`, `vite ^8.1.6` (declared since the dependency security batch, `:77`), `happy-dom ^21.0.4`,
-  `@playwright/test ^1.62.1`, `tailwindcss ^4`, `typescript ^5`, `velite ^0.4.0`, `pagefind ^1.5.2`. `zod` is `^3.25.76`
-  — v3, not v4 (`:58`). `web-vitals` `^6.1.1` is a **dev**Dependency (`:79`), not a prod one, and so is
+  `@playwright/test ^1.62.1`, `tailwindcss ^4`, `typescript ^5`, `velite ^0.4.0`, `pagefind ^1.5.2`. `zod` is `^4.6.7`
+  — v4 since the fix for GHSA-mrhx-c7xc-m3w5, v3.18.0 had `^3.25.76` (`:58`). `web-vitals` `^6.1.1` is a **dev**Dependency (`:79`), not a prod one, and so is
   `@next/bundle-analyzer` `^16.4.3` (`:61`) — which **stays** even though no workflow uses it any more, because
   the local `analyze` script (`:12`) still does. `tsx ^4.23.13` (`:74`) is also a devDependency: it runs
   `scripts/seal-claims.ts` in CI and locally.
@@ -1083,5 +1083,5 @@ project" now quotes the full `build` chain, including `vitest run` and `pagefind
   with them. The comment at `:8` says "Override default ignores", and the list re-declares the four defaults
   (`.next/**`, `out/**`, `build/**`, `next-env.d.ts`) alongside six project-specific ones — implying a replace,
   but I did not verify the flat-config merge semantics against the installed package.
-- Whether the six smoke checks added with the agent-readiness change pass against a real deployment, and whether a built server really sends the `Vary: Accept` / `Link` headers (the comment at `next.config.ts:265-267` says `Vary` survives only on Markdown responses, which this edition did not check on a server) and serves `/index.md`. The smoke script only does that against a deployed URL and `pnpm e2e` against `pnpm start`; this edition ran neither. `src/lib/deploy-smoke.test.ts` covers the checks against a fake site and `src/next-config.test.ts` reads the `headers()` and `rewrites()` the config returns, in isolation. The first-load figure for `/` (966,798 B) is the lead's measurement at HEAD `953db82` over the existing `.next` (966,794 B on the dependency-batch tree, commit `1f7fb7e`, and again at `91381b5`), not one taken while this page was written; `pnpm audit` was reported by the coordinator as 0 critical and 1 high (`zod`, no patched 3.x), plus moderates in `@hono/node-server` and `minimatch`, and was not run for this page.
+- Whether the six smoke checks added with the agent-readiness change pass against a real deployment, and whether a built server really sends the `Vary: Accept` / `Link` headers (the comment at `next.config.ts:265-267` says `Vary` survives only on Markdown responses, which this edition did not check on a server) and serves `/index.md`. The smoke script only does that against a deployed URL and `pnpm e2e` against `pnpm start`; this edition ran neither. `src/lib/deploy-smoke.test.ts` covers the checks against a fake site and `src/next-config.test.ts` reads the `headers()` and `rewrites()` the config returns, in isolation. The first-load figure for `/` (966,798 B) is the lead's measurement at HEAD `953db82` over the existing `.next` (966,794 B on the dependency-batch tree, commit `1f7fb7e`, and again at `91381b5`), not one taken while this page was written; `pnpm audit` was reported by the coordinator as 0 critical and 1 high (`zod`, no patched 3.x; closed since by the zod 4 move), plus moderates in `@hono/node-server` and `minimatch`, and was not run for this page.
 - Whether `scripts/build-search-index.mjs` indexes the same pages on a real Vercel build as on a local one. This edition ran neither `pnpm build` nor the script itself; it read the script and `src/lib/build-search-index.test.ts`, whose tests build both layouts by hand in a temp directory. That Next >= 16.4 on Vercel writes the `route-cache/APP_PAGE/<hash>/$/` layout comes from the script's header comment (`scripts/build-search-index.mjs:7-8`), not from a build observed here. The coordinator of this edition reports that both layouts give the same index (38 pages, 3953 words); that figure was not re-measured by the indexing pass.

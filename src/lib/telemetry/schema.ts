@@ -61,10 +61,10 @@ const LEVEL_LITERALS = ["info", "warn", "error"] as const;
  * a client.error has no parent span; an http.request usually has no message
  * because the kind + route + status already say it all).
  *
- * Why z.unknown() inside attrs.passthrough() — z.record(z.unknown()) at the top
- * level forces zod to materialize the record on every parse, which (in zod 3.25)
+ * Why z.unknown() inside attrs.passthrough() — z.record(z.string(), z.unknown()) at the top
+ * level forces zod to materialize the record on every parse, which (measured on zod 3.25)
  * eagerly walks unknown values and slows the hot path. A z.object({}).passthrough()
- * with `attrs: z.record(z.unknown())` parses the envelope structurally and treats
+ * with `attrs: z.record(z.string(), z.unknown())` parses the envelope structurally and treats
  * attrs as opaque; the call site's own zod schema (or hand-narrowing) does the
  * detailed shape check. Faster + simpler at this scale.
  */
@@ -77,7 +77,7 @@ export const TelemetryEventSchema = z.object({
   route: z.string().min(1).optional(),
   level: z.enum(LEVEL_LITERALS),
   message: z.string().optional(),
-  attrs: z.record(z.unknown()),
+  attrs: z.record(z.string(), z.unknown()),
 });
 
 export type TelemetryEvent = z.infer<typeof TelemetryEventSchema>;

@@ -8215,13 +8215,6 @@
       ],
       "preview": "import { AnvilInlinePanel } from \"@/components/chat/anvil-inline-panel\";"
     },
-    "src/app/layout.tsx:109": {
-      "fp": "ca2d89ce1d5b",
-      "citedBy": [
-        "15-invariants-and-gotchas.md"
-      ],
-      "preview": "suppressHydrationWarning"
-    },
     "src/app/layout.tsx:11": {
       "fp": "027259e25a42",
       "citedBy": [
@@ -8229,7 +8222,14 @@
       ],
       "preview": "import { AnvilCoreSurface } from \"@/components/chat/anvil-core-surface\";"
     },
-    "src/app/layout.tsx:112": {
+    "src/app/layout.tsx:111": {
+      "fp": "ca2d89ce1d5b",
+      "citedBy": [
+        "15-invariants-and-gotchas.md"
+      ],
+      "preview": "suppressHydrationWarning"
+    },
+    "src/app/layout.tsx:114": {
       "fp": "0cc498ace2cd",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -8243,14 +8243,14 @@
       ],
       "preview": "import { WakeWordController } from \"@/components/chat/wake-word-controller\";"
     },
-    "src/app/layout.tsx:124": {
+    "src/app/layout.tsx:126": {
       "fp": "cc80a2b0dd23",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "/>"
     },
-    "src/app/layout.tsx:125": {
+    "src/app/layout.tsx:127": {
       "fp": "ef46929c5406",
       "citedBy": [
         "08-components-site-shell-ui.md",
@@ -8258,27 +8258,13 @@
       ],
       "preview": "<PersonJsonLd />"
     },
-    "src/app/layout.tsx:128": {
+    "src/app/layout.tsx:130": {
       "fp": "93ea46d79207",
       "citedBy": [
         "08-components-site-shell-ui.md",
         "14b-subsystems.md"
       ],
       "preview": "<FaqJsonLd />"
-    },
-    "src/app/layout.tsx:138": {
-      "fp": "70319a5df06f",
-      "citedBy": [
-        "08-components-site-shell-ui.md"
-      ],
-      "preview": "<Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>"
-    },
-    "src/app/layout.tsx:139": {
-      "fp": "538431ae1de2",
-      "citedBy": [
-        "08-components-site-shell-ui.md"
-      ],
-      "preview": "<SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />"
     },
     "src/app/layout.tsx:14": {
       "fp": "8a5049afc12d",
@@ -8288,6 +8274,20 @@
       "preview": "import { EasterEggs } from \"@/components/game/easter-eggs\";"
     },
     "src/app/layout.tsx:140": {
+      "fp": "70319a5df06f",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<Providers discoveryBadgesEnabled={discoveryBadgesEnabled}>"
+    },
+    "src/app/layout.tsx:141": {
+      "fp": "538431ae1de2",
+      "citedBy": [
+        "08-components-site-shell-ui.md"
+      ],
+      "preview": "<SiteNav hasNotes={hasNotes} hasArticles={hasArticles} />"
+    },
+    "src/app/layout.tsx:142": {
       "fp": "6c0a3ea199fc",
       "citedBy": [
         "08-components-site-shell-ui.md",
@@ -8295,28 +8295,28 @@
       ],
       "preview": "{OPEN_TO_WORK && <OpenToWorkBanner />}"
     },
-    "src/app/layout.tsx:148": {
+    "src/app/layout.tsx:150": {
       "fp": "6335ce5900dc",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<SiteFooter />"
     },
-    "src/app/layout.tsx:149": {
+    "src/app/layout.tsx:151": {
       "fp": "23d6aa6056b7",
       "citedBy": [
         "08-components-site-shell-ui.md"
       ],
       "preview": "<CommandPalette discoveryBadgesEnabled={discoveryBadgesEnabled} />"
     },
-    "src/app/layout.tsx:153": {
+    "src/app/layout.tsx:155": {
       "fp": "9026a0a38ac2",
       "citedBy": [
         "05-components-chat-voice.md"
       ],
       "preview": "<TalkModeMount />"
     },
-    "src/app/layout.tsx:164": {
+    "src/app/layout.tsx:166": {
       "fp": "922be55a2e14",
       "citedBy": [
         "08-components-site-shell-ui.md"
@@ -8358,21 +8358,21 @@
       ],
       "preview": "import { AskPortfolio } from \"@/components/ask-portfolio\";"
     },
-    "src/app/layout.tsx:87": {
+    "src/app/layout.tsx:89": {
       "fp": "85d2376cda32",
       "citedBy": [
         "14b-subsystems.md"
       ],
       "preview": "export default async function RootLayout({"
     },
-    "src/app/layout.tsx:90": {
+    "src/app/layout.tsx:92": {
       "fp": "4d62de6580f9",
       "citedBy": [
         "03-lib-content-data.md"
       ],
       "preview": "const discoveryBadgesEnabled = await getDiscoveryBadgesEnabled();"
     },
-    "src/app/layout.tsx:91": {
+    "src/app/layout.tsx:93": {
       "fp": "4cbb97b85a18",
       "citedBy": [
         "14b-subsystems.md"

@@ -1421,11 +1421,11 @@
       "preview": "> **Version:** v1.0.0 — knowledge base bootstrapped 2026-06-24. Active domains: content, seo, perfor"
     },
     "ARCHITECTURE.md:9": {
-      "fp": "f9e9a51b5c75",
+      "fp": "821c81ad8a35",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.17.0 (`package.js"
+      "preview": "> **Scope:** the domain table, layout map and invariants below describe Anvilry v3.18.0 (`package.js"
     },
     "CHANGELOG.md:1001": {
       "fp": "d7d08591d295",
@@ -2010,12 +2010,12 @@
       "preview": "purpose, so `HTML_ONLY_PAGES` shrinks from 13 pages to 3. Table cells go through `escapeCellPipes` i"
     },
     "CHANGELOG.md:7": {
-      "fp": "1da42e1a6a94",
+      "fp": "fb2baf330198",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "README.md"
       ],
-      "preview": "## [Unreleased]"
+      "preview": "## [3.18.0] — 2026-11-02"
     },
     "CHANGELOG.md:952": {
       "fp": "87a4c32b93f0",
@@ -2105,11 +2105,11 @@
       "preview": "table ever disagrees with it."
     },
     "DEPLOY.md:5": {
-      "fp": "ee244fcf39bb",
+      "fp": "12e76fb86dee",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "Claude on **AWS Bedrock**. Describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` @ `a929932"
+      "preview": "Claude on **AWS Bedrock**. Describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` @ `a929932"
     },
     "DEPLOY.md:96": {
       "fp": "f5c419e6b5b6",
@@ -2140,11 +2140,11 @@
       "preview": "| `NEXT_PUBLIC_AVATAR_POSITION` | v3.3 | Avatar layout position when `NEXT_PUBLIC_HERO_MODE=avatar`."
     },
     "docs/configuration.md:5": {
-      "fp": "9076ee0867d3",
+      "fp": "c24c0b389cae",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
-      "preview": "> **Scope:** describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` @ `a929932` (`package.js"
+      "preview": "> **Scope:** describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` @ `a929932` (`package.js"
     },
     "docs/README.md:29": {
       "fp": "3df16b7c843e",
@@ -2238,7 +2238,7 @@
       "preview": "**Also note:** the per-route `.md` endpoints are *not* covered by Google's \"ignores them\" assurance "
     },
     "domains/seo/README.md:50": {
-      "fp": "96bd7d412439",
+      "fp": "423aecd43718",
       "citedBy": [
         "12-docs-knowledge-and-harness.md"
       ],
@@ -3546,14 +3546,14 @@
       "preview": "\"@modelcontextprotocol/sdk\": \"1.32.0\","
     },
     "package.json:3": {
-      "fp": "37ed2abda9e9",
+      "fp": "38bc6bbac41e",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "13-dependencies-and-versions.md",
         "15-invariants-and-gotchas.md",
         "README.md"
       ],
-      "preview": "\"version\": \"3.17.0\","
+      "preview": "\"version\": \"3.18.0\","
     },
     "package.json:33": {
       "fp": "aa55e91eacb8",
@@ -24620,12 +24620,12 @@
       "preview": "}"
     },
     "TELEMETRY.md:7": {
-      "fp": "313fbd7b62e6",
+      "fp": "f522ee61cfde",
       "citedBy": [
         "12-docs-knowledge-and-harness.md",
         "14b-subsystems.md"
       ],
-      "preview": "> **Scope:** describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` @ `a929932` (v3.6.0) **p"
+      "preview": "> **Scope:** describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` @ `a929932` (v3.6.0) **p"
     },
     "tsconfig.json:26": {
       "fp": "84bbcb60e727",

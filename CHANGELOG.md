@@ -4,15 +4,15 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.18.0] — 2026-11-02
 
 The public API gets a published contract. A JSON API now lives under `/api/v1`, every public response states
 its version and its rate-limit state, a deprecation will be announced in headers, an API catalog lets an agent
 find all of it from one URL, and ten pages gain a Markdown twin. A later pass adds a read-only batch endpoint,
 typed optional parameters on four MCP tools, structured data for the lists the homepage shows and for the
-developer docs, and an `anvilry` command-line client (source in `cli/`, on npm since 2026-11-01). No version number is chosen yet ("unreleased" here means in no tagged
-version: observed 2026-11-01, production already serves the API contract, the catalog and the page twins, which
-are merged to main, but not the batch endpoint, the MCP parameters, the JSON-LD lists or the CLI wording, which still says there is no published CLI). The
+developer docs, and an `anvilry` command-line client (source in `cli/`, on npm as 0.1.0 since 2026-11-01). The API contract (not yet the batch endpoint), the catalog and the page twins had been
+on production since 2026-11-01 (observed; the earlier deploy, the API-policy round, #357/#359, without round 3); the batch endpoint, the MCP parameters, the JSON-LD lists and the published-CLI wording are live since
+the deploy of 2026-11-02, verified after it. The
 deployed site gains no environment variable (the `cli/` package reads `ANVILRY_BASE_URL`), and `/api/resume.json` and `/api/github/stats` keep working as aliases of
 version 1.
 
@@ -126,8 +126,8 @@ version 1.
 - **Developer wording that follows one publish flag** (`src/lib/developer-tools.ts`). `CLI.published` is the single
   switch and is now true: `/developers` (`#cli`), its Markdown twin and `llms.txt` call the CLI the npm package
   `anvilry`, show `npx anvilry` and `npm install --global anvilry` and list its commands; while it was false they said
-  that no CLI package is published, and production still does until this deploys (observed 2026-11-01). The site's command
-  list is pinned to the client's (`cli/lib/commands.mjs`). Publishing took four edits, all made in this change: the flag, the release gate
+  that no CLI package is published, as production did on 2026-11-01 (observed); since the deploy of 2026-11-02 it shows the published CLI. The site's command
+  list is pinned to the client's (`cli/lib/commands.mjs`). Publishing took four edits, all made in this release: the flag, the release gate
   in `src/lib/developer-tools.test.ts` (it now pins the flag to true; lower it only if the package is withdrawn), and the removal of the README status block and Install lead-in.
 - Tests: 1162 more (1572 to 2734, two of them skipped) across 54 more files (131 to 185), counted since v3.17.0, among them `v1-contract.test.ts`, which
   validates the real response of every v1 route strictly against its OpenAPI schema
@@ -215,15 +215,15 @@ version 1.
 
 - **`safeJsonLd` escapes everything that can end a script block.** It escaped only `</`; it now turns every `<`,
   `>`, `&`, U+2028 and U+2029 into a `\uXXXX` escape, and the article and note detail pages serialise through
-  the same `JsonLdScript`.
+  the same `JsonLdScript`. CodeQL's `js/incomplete-url-substring-sanitization` finding on the URL assertion in `json-ld-api.dom.test.tsx` (a `startsWith` check also accepts `https://schema.org.example`) is fixed: the test now compares URL origins.
 - **`CODE_OF_CONDUCT.md` and `.github/CONTRIBUTING.md` name the address the site publishes**, the one
   `SECURITY.md` names, and `src/lib/security-contact.test.ts` now covers all three files.
 
 ### Not done (needs the owner)
 - **Publishing `anvilry` 0.1.1.** 0.1.0 is on npm (the owner published it by hand); `cli/package.json` is 0.1.1, a
   README-only patch prepared in the repo for the owner to publish with their own npm credentials. Until then the
-  registry's `latest` is 0.1.0, whose README still carries the pre-release note ("Not published to npm yet"), and
-  production's `/developers` and `llms.txt` say there is no published CLI until this change deploys (observed 2026-11-01).
+  registry's `latest` is 0.1.0 (re-checked 2026-11-02), whose README still carries the pre-release note ("Not published to npm yet"), and
+  production's `/developers` and `llms.txt` show the published CLI since the deploy of 2026-11-02 (observed).
 - **Search indexing.** `/developers` and `/mcp` are in the sitemap, but submitting them to Search Console and
   Bing Webmaster Tools needs the owner's accounts.
 - **CORS headers.** The app adds none. Observed 2026-11-01: Vercel adds `Access-Control-Allow-Origin: *` to static responses (most prerendered pages and the static API and discovery files) but not to dynamic routes or to the `use cache` pages `/projects` and `/projects/[slug]`.

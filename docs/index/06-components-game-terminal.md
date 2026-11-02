@@ -3,14 +3,14 @@ kind: doc
 title: Components — Gamified View & Developer Terminal
 domain: [content]
 status: current
-version: v3.17.0
+version: v3.18.0
 ---
 
 # Components — Gamified View & Developer Terminal
 
-> Part of the Anvilry v3.17.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.18.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.17.0 (`package.json` 3.17.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets with a cron bypass; shared admin auth; command-palette talk-mode gated by `isVoiceViewActive`; `MIN_ROUTES=17` and dead-component removal). None of the five changes a file in this scope. Line citations are re-pointed to that tree. v3.15.0 (the page-mascot head) changes no file in this scope either; only the `src/app/not-found.tsx` consumer lines cited below moved and are already re-pointed. v3.16.0 changes one file in this scope, `terminal/commands.ts` (the `stats` command counts public repos only, from `publicProjects`), and one input of it: `dossierFor` in `src/lib/game-model.ts` takes the dossier's `repo` from `repoLink()`, so a private project has no repo link. v3.16.1 changes no file in this scope; its removal of two project cards drops two nodes and their `NODE_CONTENT` mappings from `src/lib/game-model.ts`, an input of `dossierFor`. v3.17.0 changes no file in this scope either: since v3.16.1 only `json-ld.tsx`, `site-footer.tsx` and the new `ui/prose.tsx` changed under `src/components`.
+> Describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off; per-class rate-limit buckets with a cron bypass; shared admin auth; command-palette talk-mode gated by `isVoiceViewActive`; `MIN_ROUTES=17` and dead-component removal). None of the five changes a file in this scope. Line citations are re-pointed to that tree. v3.15.0 (the page-mascot head) changes no file in this scope either; only the `src/app/not-found.tsx` consumer lines cited below moved and are already re-pointed. v3.16.0 changes one file in this scope, `terminal/commands.ts` (the `stats` command counts public repos only, from `publicProjects`), and one input of it: `dossierFor` in `src/lib/game-model.ts` takes the dossier's `repo` from `repoLink()`, so a private project has no repo link. v3.16.1 changes no file in this scope; its removal of two project cards drops two nodes and their `NODE_CONTENT` mappings from `src/lib/game-model.ts`, an input of `dossierFor`. v3.17.0 changes no file in this scope either: since v3.16.1 only `json-ld.tsx`, `site-footer.tsx` and the new `ui/prose.tsx` changed under `src/components`.
 
 **Scope:** `src/components/game/**` (incl. `src/components/game/terminal/**`), excluding `*.test.*` / `*.dom.test.*`
 **Files indexed:** 23

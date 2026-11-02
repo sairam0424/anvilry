@@ -3,14 +3,14 @@ kind: doc
 title: Components — 3D / WebGL (R3F hero graph & avatar)
 domain: [content]
 status: current
-version: v3.18.0
+version: v3.18.1
 ---
 
 # Components — 3D / WebGL (R3F hero graph & avatar)
 
-> Part of the Anvilry v3.18.0 codebase index. Master entry point: [docs/index/README.md](./README.md)
+> Part of the Anvilry v3.18.1 codebase index. Master entry point: [docs/index/README.md](./README.md)
 >
-> Describes Anvilry v3.18.0 (`package.json` 3.18.0), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets, shared admin auth, voice-view-aware command palette, `MIN_ROUTES=17` and dead-component removal). None of those touch this subsystem, so every line citation below is against the current tree. v3.16.0 changes one input of it and no component: `src/lib/graph-data.ts` gains nine project nodes and nine edges (25 nodes, 28 edges), which the hero graph (`graphNodes` / `graphEdges`, with the instanced mesh sized from `graphNodes.length`) and the Play view (`questNodes` and `graphEdgesResolved`, both derived from them in `src/lib/game-model.ts`) pick up without any component change. v3.16.1 changes that same input once more, again with no component change, as post-`a929932` change (23): the `grpc` and `nhl` nodes go with the `grpc-microservices` and `not-humans-lab` project cards (#333), six edges go with them and two are added (`tombstone`-`inkforge` and `daily-dose`-`nh-deck`), which leaves 23 nodes and 24 edges. v3.17.0 changes no file in this scope: since v3.16.1 only `json-ld.tsx`, `site-footer.tsx` and the new `ui/prose.tsx` changed under `src/components`, and `graph-data.ts` is untouched.
+> Describes Anvilry v3.18.1 (`package.json` 3.18.1), i.e. `main` at a929932 plus five later fixes (notes hidden at the data layer when `NOTES_ENABLED` is off, per-class rate-limit buckets, shared admin auth, voice-view-aware command palette, `MIN_ROUTES=17` and dead-component removal). None of those touch this subsystem, so every line citation below is against the current tree. v3.16.0 changes one input of it and no component: `src/lib/graph-data.ts` gains nine project nodes and nine edges (25 nodes, 28 edges), which the hero graph (`graphNodes` / `graphEdges`, with the instanced mesh sized from `graphNodes.length`) and the Play view (`questNodes` and `graphEdgesResolved`, both derived from them in `src/lib/game-model.ts`) pick up without any component change. v3.16.1 changes that same input once more, again with no component change, as post-`a929932` change (23): the `grpc` and `nhl` nodes go with the `grpc-microservices` and `not-humans-lab` project cards (#333), six edges go with them and two are added (`tombstone`-`inkforge` and `daily-dose`-`nh-deck`), which leaves 23 nodes and 24 edges. v3.17.0 changes no file in this scope: since v3.16.1 only `json-ld.tsx`, `site-footer.tsx` and the new `ui/prose.tsx` changed under `src/components`, and `graph-data.ts` is untouched.
 
 **Scope:**
 - `src/components/hero-avatar/**` (non-test files)

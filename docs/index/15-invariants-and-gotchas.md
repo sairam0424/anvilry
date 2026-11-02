@@ -407,10 +407,10 @@ Sections A–C abort `pnpm build` (and therefore the Vercel deploy); § D lists 
 `CLAUDE.md` used to say the base URL lived in **exactly four** files. **That was a live defect and it is
 fixed:** the root docs now point at a grep instead of a list. Measured on this tree, `https://anvilry.vercel.app`
 (or the bare host as display text) appears in **22 files / 26 occurrences** outside test files (24 files / 28 occurrences counting the two test-support helpers `src/app/api/mcp/[transport]/mcp-test-support.ts` and `src/components/json-ld-lists-support.tsx`), in
-**46 files / 85 occurrences** once the 22 test files under `src/` that mention it are counted, and in **56 files / 104 occurrences** once `tests/` and `cli/` are searched too (among the `src/` test files are `src/lib/mcp-tools.test.ts`,
+**46 files / 86 occurrences** once the 23 test files under `src/` that mention it are counted, and in **57 files / 106 occurrences** once `tests/` and `cli/` are searched too (among the `src/` test files are `src/lib/mcp-tools.test.ts`,
 `src/lib/rate-limit.test.ts`, `src/lib/notes-dark.test.ts`, `src/lib/health-expectations.test.ts`, `src/lib/llms-txt.test.ts`,
 `src/lib/home-markdown.test.ts`, `src/lib/markdown-content.test.ts`, `src/lib/markdown-response.test.ts`,
-`src/components/json-ld.dom.test.tsx`, `src/app/api/mcp/[transport]/route.test.ts`, `src/app/api/md/not-found/route.test.ts`, and, added by the API-policy round, `src/app/agent-pages.dom.test.tsx`, `src/lib/api-policy.test.ts`, `src/lib/page-markdown.dom.test.tsx`, `src/lib/public-api-paths.test.ts` and `src/proxy.test.ts`).
+`src/components/json-ld.dom.test.tsx`, `src/app/api/mcp/[transport]/route.test.ts`, `src/app/api/md/not-found/route.test.ts`, and, added by the API-policy round, `src/app/agent-pages.dom.test.tsx`, `src/lib/api-policy.test.ts`, `src/lib/page-markdown.dom.test.tsx`, `src/lib/public-api-paths.test.ts` and `src/proxy.test.ts`, and, added after v3.18.0, `src/app/layout-metadata.test.ts`, which holds the host twice).
 Since the agent-readiness change there is also one constant, `SITE_URL` in `src/lib/site-url.ts`, that the Markdown, OpenAPI,
 error-catalogue, Organization JSON-LD and developer-page code imports instead of repeating the host; it is the model to move
 the rest toward. Re-verify with

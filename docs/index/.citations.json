@@ -2085,11 +2085,11 @@
       "preview": "**Critical gotcha:** Never use `AWS_REGION` — Vercel corrupts it to `s-east-1` in production (missin"
     },
     "CLAUDE.md:444": {
-      "fp": "9a306be0aa22",
+      "fp": "8302ab486ea5",
       "citedBy": [
         "02-api-routes.md"
       ],
-      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **56"
+      "preview": "**Custom domain:** `https://anvilry.vercel.app` is hardcoded across `src/` and the `Makefile` — **57"
     },
     "CLAUDE.md:471": {
       "fp": "bf79bd00650f",

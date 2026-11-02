@@ -35,7 +35,7 @@ subsystem; "exit point" is the last thing the subsystem produces before somethin
 | # | Subsystem | Entry point | Exit point |
 |---|---|---|---|
 | 7 | Auth & security surface | Two credential schemes: HTTP Basic (`ADMIN_PASSWORD`) on `/admin/*` (`src/proxy.ts`, Node runtime, first `config.matcher` entry `"/admin/:path*"`, re-checked by the telemetry page) and on `POST /api/admin/faq-cache/purge` (route-level `requireAdmin`; the proxy does not gate it: its `/api/:path*` matcher entry wakes the proxy and the request passes on); `Bearer ${CRON_SECRET}` on all five `/api/cron/*` routes (`unauthorizedUnlessCron`) | `401`, `notFound()` (the page re-check) or `NextResponse.next()` (the proxy's second job, Markdown negotiation, is a content concern, not an auth one: see § The proxy's second job); everything else is public, guarded only by the enforced CSP + six other headers, three per-class rate-limit buckets (plus a separate `/api/visit` limiter), and nine sanitisation boundaries |
-| 8 | Feature flags | Two mechanisms: build-time `NEXT_PUBLIC_*` reads (30 flags, a redeploy to change) and the Vercel Flags SDK when `FLAG_DRIVER=vercel` (seconds, exactly one migrated flag) | A boolean at each read site — for the one SDK flag, awaited in `RootLayout` (`src/app/layout.tsx:87-91`) and threaded as a prop into `<Providers>` and `<CommandPalette>` — plus one `[flags]` log line per resolution |
+| 8 | Feature flags | Two mechanisms: build-time `NEXT_PUBLIC_*` reads (30 flags, a redeploy to change) and the Vercel Flags SDK when `FLAG_DRIVER=vercel` (seconds, exactly one migrated flag) | A boolean at each read site — for the one SDK flag, awaited in `RootLayout` (`src/app/layout.tsx:89-93`) and threaded as a prop into `<Providers>` and `<CommandPalette>` — plus one `[flags]` log line per resolution |
 | 9 | 3D / WebGL | Mounting `<Hero>` on `/` (both hero slots), entering the gamified view (`BuildGraph`), opening any voice surface (`VoiceOrb`), or the 404 page with `NEXT_PUBLIC_404_ORB=true` | Pixels in a `<canvas>`; the hero, avatar, voice-orb and 404-orb wrappers are `aria-hidden` and decorative, the Build Graph canvas is a pointer-driven enhancement, and the accessible content is elsewhere |
 | 10 | Build & deploy | `git push` (CI runs on `branches: ["**"]`), a PR into `develop` or `main`, or a manual `make deploy-preview` / `make deploy-prod` | A Vercel Preview URL (from `develop`) or the production deployment (from `main`) whose build also emits the Pagefind index, five live cron schedules, and one `[config]` cold-start line per server process |
 | 11 | Public API contract (versioned JSON API, limiter, catalog) | Any request for a path `isPublicApiPath` accepts — the `/api/v1` routes, the unversioned `/api/resume.json` and `/api/github/stats`, the MCP endpoint, the discovery files and the Markdown twins — which `src/proxy.ts` stamps and counts before the route answers; a client reads the contract at `/api/v1`, `/openapi.json`, `/developers` and `/.well-known/api-catalog` | The route's own answer carrying `API-Version: 1` and the `RateLimit` fields, or a JSON 400 / 405 / 429 in the shared error shape, with `Retry-After` on the 429 |
@@ -330,10 +330,10 @@ getDiscoveryBadgesEnabled()                                     src/lib/flags.ts
   │     false → process.env.NEXT_PUBLIC_DISCOVERY_BADGES === "true"   (:58)
   │             → logs [flags] {driver, value, source: "env_var" | "default_false"}   (:59-70)
   ▼
-src/app/layout.tsx:87-91  RootLayout awaits it server-side (the await is :90)
+src/app/layout.tsx:89-93  RootLayout awaits it server-side (the await is :92)
   ▼
-threaded as a PROP into <Providers discoveryBadgesEnabled>       layout.tsx:138
-                    and into <CommandPalette discoveryBadgesEnabled>   layout.tsx:149
+threaded as a PROP into <Providers discoveryBadgesEnabled>       layout.tsx:140
+                    and into <CommandPalette discoveryBadgesEnabled>   layout.tsx:151
   ▼
 src/components/providers.tsx:60  mounts <DiscoveryBadge> only when true
 src/components/command-palette-content.tsx:230-244  adds the "Unlock all discoveries" action only when true
@@ -351,7 +351,7 @@ remain plain `NEXT_PUBLIC_` reads in their own files. `DiscoveryBadge` itself ne
 |---|---|---|---|---|
 | `NEXT_PUBLIC_ARTICLES_ENABLED` | `ARTICLES_ENABLED` | **true** | `!== "false"` (the only opt-out) `:19-20` | `/articles` subtree via `articles/layout.tsx:12`; nav link (`site-nav.tsx:45`); sitemap (`sitemap.ts:71`); `WritingPreview` (`home/writing-preview.tsx:8-12`, through `homeArticleGroups`, `src/lib/home-articles.ts:14-17`, which the homepage JSON-LD list and the homepage Markdown twin read too) |
 | `NEXT_PUBLIC_NOTES_ENABLED` | `NOTES_ENABLED` | false | `=== "true"` `:22` | **The data layer:** `allNotes` is `[]` while off (`lib/content.ts:66`), so llms.txt, the RSS feed, the MCP tools, the chat corpus and both `.md` handler sets publish no notes, and articles whose only destination is a note are dropped (`content.ts:92`). Route layer: `/notes` via `notes/page.tsx:21`; `/notes/[slug]` via `notFound()` at `notes/[slug]/page.tsx:52` (its `generateStaticParams` still prerenders every *published* slug as a 404, `:16-26`); article `linkedNote` redirects (`articles/[slug]/page.tsx:74`); nav (`site-nav.tsx:48`); sitemap (`sitemap.ts:44`). The `linkedNote` → `/notes/<slug>` link is chosen only while the flag is on in `article-href.ts:19` (shared by the card, the homepage JSON-LD list and the homepage twin), `related-writing.tsx:13`, `articles/page.tsx:199,272` and `llms-txt.ts:49` (otherwise the entry uses `externalUrl`). Two older per-surface filters for note-only articles remain (`sitemap.ts:67-69`, `articles/[slug]/page.tsx:44`, with a matching guard at `:87-89`) and are now subsumed by `allArticles`. Pinned by `src/lib/notes-dark.test.ts` |
-| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:24` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:140`); the chat and developer views also subtract the banner's height (`OPEN_TO_WORK_BANNER_HEIGHT_REM`, `:34`) from their exact-height `<main>` (`chat-view.tsx:79-81`, `developer-view.tsx:39-41`) |
+| `NEXT_PUBLIC_OPEN_TO_WORK` | `OPEN_TO_WORK` | false | `:24` | `OpenToWorkBanner`, gated in the caller (`layout.tsx:142`); the chat and developer views also subtract the banner's height (`OPEN_TO_WORK_BANNER_HEIGHT_REM`, `:34`) from their exact-height `<main>` (`chat-view.tsx:79-81`, `developer-view.tsx:39-41`) |
 | `NEXT_PUBLIC_STATS_ENABLED` | `STATS_ENABLED` | false | `:38` | **Nav + sitemap only** (`site-nav.tsx:53`, `sitemap.ts:90`) — `/stats` still renders and prerenders |
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `SEARCH_ENABLED` | false | `:40` | **Nav + sitemap only** (`site-nav.tsx:54`, `sitemap.ts:100`) — same as `/stats` |
 | `NEXT_PUBLIC_TESTIMONIALS_ENABLED` | `TESTIMONIALS_ENABLED` | false | `:44-45` | `home/testimonials.tsx:13` — the only gate; with the flag on and an empty `testimonials` array it renders a "recommendations coming soon" card (`:15-36`). (`hasTestimonials` is consumed by the chat corpus, `corpus.ts:69`, not by this component.) |
@@ -1120,7 +1120,7 @@ None: no environment variable was added. `NEXT_PUBLIC_NOTES_ENABLED` changes wha
 ## 14. Structured data (JSON-LD)
 
 New with round 3. The site already described the owner (`PersonJsonLd`, `OrganizationJsonLd`, `WebSiteJsonLd`, `FaqJsonLd` in the root layout,
-`src/app/layout.tsx:125-128`, `ProfilePageJsonLd` on `/about`) and, for each article and note page, a `BlogPosting`. Round 3 adds
+`src/app/layout.tsx:127-130`, `ProfilePageJsonLd` on `/about`) and, for each article and note page, a `BlogPosting`. Round 3 adds
 what search and agents had no structured data for: the three lists the homepage shows, the developer documentation, and the MCP server; it
 also hardens the one serialiser all of them go through. Every entity says only what its page says, and a DOM test renders the real page and
 compares.
@@ -1594,7 +1594,7 @@ record the outcome rather than the original open question.
   subscribe — in fact `useHighlightedSlug` (`highlight-store.ts:49`) has **no importer**, only `highlightProject` is called
   (`chat-messages.tsx:334`), so the `[[cmd:highlight:<slug>]]` token drives a store nothing reads;
   `open-to-work-banner.tsx:6-8` "Hidden via CSS (h-0) when the flag is off" (the banner has no such CSS; the
-  caller gates it, `layout.tsx:140`); `home/resume-view.tsx:13-16` "ViewEscapeHatch auto-rendered by
+  caller gates it, `layout.tsx:142`); `home/resume-view.tsx:13-16` "ViewEscapeHatch auto-rendered by
   view-router" (`view-router.tsx` never renders it; the non-classic views mount it themselves — `chat-view.tsx:85`,
   `anvil-view.tsx:35`, `developer-view.tsx:45`, `game-view.tsx:32` — and `resume-view.tsx` does not);
   `anvil-core-surface.tsx:26` "~200px reactive orb"; `use-trace-runner.ts:69-70` "Reset when the scenario changes";

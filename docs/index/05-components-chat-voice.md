@@ -382,7 +382,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 ### `chat/anvil-inline-panel.tsx`
 - **Role:** The non-modal Siri-style disclosure panel anchored under the header orb.
 - **Exports:** `AnvilInlinePanel` (component, no props).
-- **Consumed by:** `app/layout.tsx:10` (mounted at :157).
+- **Consumed by:** `app/layout.tsx:10` (mounted at :159).
 - **Behaviour notes:** Uses the ARIA **disclosure** pattern, not `role="dialog"` — the element is `role="region" aria-label="Anvil voice"` with `id="anvil-inline-panel"` (`PANEL_ID`, :35, :113-115). Position is measured from the orb's `getBoundingClientRect()` (top = `bottom + 8`, right = `max(8, innerWidth - rect.right)`) and re-measured on `resize` (:43-57). `aria-expanded` + `aria-controls` are written imperatively onto the live orb button (:70-80). On open, focus moves to the first `button[type="button"]` in the panel (:83-87). An outside `pointerdown` in the **capture** phase closes it, excluding the panel and the orb itself (:92-105).
 - **Gotchas / invariants:** No focus trap, no scroll lock, no `inert` — trapping a non-modal surface would be a WCAG 2.1.2 failure (:13-17). Esc is handled by `TalkMode`'s existing window listener; adding a second handler here is explicitly forbidden (:25). `autoStart` is only safe because the P2 one-mic mutex guarantees no other surface is listening (:130-132).
 
@@ -390,7 +390,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** The minimal orb-only "CORE" voice surface — enlarged orb, mic-hot dot, frosted answer card, nothing else.
 - **Exports:** `AnvilCoreSurface` (component, no props).
 - **Reads / depends on:** `useVoiceSession`, `MarkdownMessage` (as of 2026-09-18, lazy via `next/dynamic` with `ssr:false`, `SkeletonMarkdownLine` loading fallback — was a static import before the bundle-size fix in PR #260), `anvil-core-store`.
-- **Consumed by:** `app/layout.tsx:11` (import), mounted at `:160`.
+- **Consumed by:** `app/layout.tsx:11` (import), mounted at `:162`.
 - **Behaviour notes:** Self-gates — returns `null` when closed (:114). Auto-starts once per open and resets `autoStarted` on close (:48-54). `close()` stops the session, clears the store flag, and focuses the opener (:58-62). Esc (window) and capture-phase outside `pointerdown` both close, excluding the orb (:67-89). `aria-expanded`/`aria-controls` are set imperatively on the opener with id `anvil-core-surface` (:92-98). Renders the CSS-only `anvil-orb-idle` blob at `h-16 w-16` (:161) — **not** the reactive 3D orb, despite the header comment describing a ~200px reactive orb (:26).
 - **Gotchas / invariants:** `posRef` is read inside a Motion `style` object with an eslint disable for `react-hooks/refs` — as of 2026-09-18 THREE separate disable comments (:137, :140, :142), not one two-line span, after a formatter reflowed the JSX attribute onto multiple lines and broke a single shared suppression. The answer card renders the **raw** `messages[i].content` through `MarkdownMessage` (:196) — card tokens are *not* stripped here (contrast `talk-mode.tsx:264`, which uses `toCaptionText`). The surface is mounted unconditionally in the root layout, so `useVoiceSession()` (→ `useChat` + STT + TTS hooks) is instantiated on every page even while closed (`anvil-core-surface.tsx:44-45`); and `stop()` does not clear `messages` (`use-voice-session.ts:133-139`), so a reopened card can show the previous answer until the next turn.
 
@@ -426,7 +426,7 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 - **Role:** Drive the opt-in wake word and render its mandatory trust surface.
 - **Exports:** `WakeWordController` (component, no props).
 - **Reads / depends on:** `useWakeWord`, `useVoiceSettings`, `useView`, `openTalkMode`.
-- **Consumed by:** `app/layout.tsx:12` (mounted at :163).
+- **Consumed by:** `app/layout.tsx:12` (mounted at :165).
 - **Behaviour notes:** `ACTIVE_VIEWS = new Set(["chat"])` (:29). `wantsOn = settings.wakeWord && supported && ACTIVE_VIEWS.has(view)`; `shouldListen` additionally requires session-local `accepted`; `showDisclosure` is `wantsOn && !accepted` (:44-47) — all derived, never reset in an effect. The single arming effect calls `arm(() => openTalkMode())` or `disarm()`, and its cleanup always disarms (:49-54). While listening it renders a fixed bottom-centre `role="status" aria-live="polite"` banner with a ping dot + ear icon + one-tap Stop (:106-131).
 - **Gotchas / invariants:** `accepted` is component state, not persisted, so re-enabling in a later session discloses again (:36-39). Scoping to `chat` only is a hard safety requirement — arming on the voice view would stack a second concurrent mic (:22-26).
 
@@ -476,14 +476,14 @@ shared context, so two simultaneously-open surfaces = two concurrent mics talkin
 See **Store & hook map** above. All three are structurally identical: module `open` + `opener`, a `Set` of listeners, `useSyncExternalStore` with a `false` server snapshot, a `claimVoiceSurface` call at the top of `open*()`, and a module-scope `registerVoiceSurface`. They exist as three separate stores specifically so two surfaces can never both believe they are open (`anvil-inline-store.ts:9-11`).
 
 ### `chat/talk-mode-mount.tsx`, `chat/talk-launch-button.tsx`
-- **`TalkModeMount`** — the single global mount of the modal, wiring `useTalkModeOpen` / `setTalkModeOpen` / `getTalkOpener` into `TalkModeOverlay`. Mounted at `app/layout.tsx:153` so every entry point drives one overlay instance and focus restore works regardless of entry point.
+- **`TalkModeMount`** — the single global mount of the modal, wiring `useTalkModeOpen` / `setTalkModeOpen` / `getTalkOpener` into `TalkModeOverlay`. Mounted at `app/layout.tsx:155` so every entry point drives one overlay instance and focus restore works regardless of entry point.
 - **`TalkLaunchButton`** — renders `null` unless the browser exposes `SpeechRecognition`/`webkitSpeechRecognition` **and** `settings.talkSurface === "modal"` (:28), so the 5th-view surface doesn't produce two doors to one mode. Passes `e.currentTarget` as the focus-restore target (:33).
 
 ### `ask-portfolio.tsx`
 - **Role:** The floating "Ask my portfolio" widget available on every non-chat view.
 - **Exports:** `AskPortfolio` (component). Internal: `AskPortfolioWidget`, `SUGGESTED`.
 - **Reads / depends on:** `useView`, `useChat`, `MicButton`, `parseCards`, `ChatCard`, lazy `MarkdownMessage`, `useAutoScroll`, `JumpToLatest`, `SkeletonMarkdownLine`.
-- **Consumed by:** `app/layout.tsx:8` (rendered at :150).
+- **Consumed by:** `app/layout.tsx:8` (rendered at :152).
 - **Behaviour notes:**
   - Returns `null` when `view === "chat"` — the Chat view *is* the concierge (:40-41).
   - The inner widget is keyed by `view` (:42), so any view change remounts it and resets `useChat`'s message list — transcript/open state never leaks across a classic↔gamified switch, with no setState-in-effect (:32-38).

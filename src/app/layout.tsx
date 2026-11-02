@@ -82,6 +82,8 @@ export const metadata: Metadata = {
     images: [siteUrl + "/opengraph-image"],
   },
   robots: { index: true, follow: true },
+  // Google Search Console ownership (HTML-tag method): Next renders it as <meta name="google-site-verification">.
+  verification: { google: "Ut4TGdySKH8adIfZZc46tCtoyPRMpXwPN7BOg_5omSA" },
 };
 
 export default async function RootLayout({

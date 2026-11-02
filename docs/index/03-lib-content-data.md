@@ -362,7 +362,7 @@ New in v3.17.0 with the agent-readiness change (branch `feat/agent-readiness`, f
 - **Role:** The dual-driver resolver for the single flag migrated to the Vercel Flags SDK.
 - **Exports:** `getDiscoveryBadgesEnabled(): Promise<boolean>` (`:41`).
 - **Reads / depends on:** `flag` from `flags/next` (`flags@^4.3.0`), env `FLAG_DRIVER`, `NEXT_PUBLIC_DISCOVERY_BADGES`, and `FLAGS_SECRET` (read only to log its presence, `:51`).
-- **Consumed by:** `src/app/layout.tsx` — imported at `src/app/layout.tsx:25`, awaited at `src/app/layout.tsx:90`.
+- **Consumed by:** `src/app/layout.tsx` — imported at `src/app/layout.tsx:25`, awaited at `src/app/layout.tsx:92`.
 - **Behaviour notes / gotchas:** See the flag table above. Documented contract: call only from a Server Component or Route Handler, never a client component (`:33-34`). The SDK checks the override cookie **before** invoking `decide()`, which is why `decide: () => false` does not defeat dashboard overrides (`:25-28`). Both paths log exactly one `[flags]` JSON line — grep handle documented as `vercel logs | grep '\[flags\]'` (`:36-39`). The module docblock states that **all other** beast-mode flags remain plain `NEXT_PUBLIC_` reads in their own files (`:7-8`). No dedicated test file.
 
 ### `src/lib/writing-flags.ts`

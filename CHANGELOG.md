@@ -4,14 +4,14 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.18.1] — 2026-11-02
 
 - **Security: `zod` 3.25.76 to 4.6.7 (GHSA-mrhx-c7xc-m3w5).** Before zod 4.6.6 an array was validated element by
-  element, one issue per failing element, before its length was looked at, and zod 3 does the same. v3.18.0 added
-  the app's only request-facing array, `get_profile`'s `sections` (`src/lib/mcp-tools.ts`), so an anonymous POST of
+  element, one issue per failing element, even when its length limit had already failed, and zod 3 does the same. v3.18.0 added
+  the app's only request-facing zod array, `get_profile`'s `sections` (`src/lib/mcp-tools.ts`), so an anonymous POST of
   4 MB to `/api/mcp/mcp` (a million invalid elements, just under the MCP SDK's 4 MiB body limit) made the route
   build a 113 MB validation answer, taking 2 to 3 s and 0.5 to 1.5 GB of extra memory (runs vary). That was measured
-  against the route handler on a development machine; production was not probed. With zod 4.6.7 the same request is
+  against the route handler on a development machine; production only ever got a harmless 170 KB probe. With zod 4.6.7 the same request is
   refused on the list's length alone: a 246-byte answer in about 0.1 s and 60 MB (reading the body). The last test of
   `src/app/api/mcp/[transport]/route.test.ts` sends 100 000 elements and fails on zod 3 (a 12 MB answer). zod 4.6.7
   was checked before it was adopted: its npm provenance names zod's `release.yml` run on commit `b500a2ee`, it has
@@ -22,7 +22,7 @@ All notable changes to Anvilry are documented here. The format follows
   with v3.18.0 (41 requests), the valid calls probed, `initialize`, a batch and the route's own errors answered byte for
   byte as before. Two things differ, and neither was documented: validation errors use zod 4's wording (`Too small:
   expected number to be >=1` where zod 3 said `Number must be greater than or equal to 1`; the HTTP status, the
-  `-32602` code and `isError` are unchanged), and `tools/list` no longer says `additionalProperties: false` on the
+  `-32602` code and `isError` are unchanged; a string sent where `sections` wants a list also gets a second, misleading line, `Too big: expected string to have <=4 characters`), and `tools/list` no longer says `additionalProperties: false` on the
   ten input schemas (unknown arguments were accepted and ignored before, and still are).
 - **Search Console ownership tag.** `metadata.verification.google` in `src/app/layout.tsx` makes Next render a
   `<meta name="google-site-verification">` tag in the `<head>`; Google verified the site on 2026-11-02 through the

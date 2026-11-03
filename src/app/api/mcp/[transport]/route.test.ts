@@ -392,8 +392,8 @@ describe("MCP text filters and empty text", () => {
 
 /**
  * The endpoint is public and unauthenticated, so what a caller sends must cost the server about what
- * it cost to send. zod 3, and zod 4 before 4.6.6, recorded one issue per failing element of an array
- * before looking at its length: a 4 MB `sections` list made the route build a 113 MB validation answer
+ * it cost to send. zod 3, and zod 4 before 4.6.6, still recorded one issue per failing element of an array
+ * after its length limit had already failed: a 4 MB `sections` list made the route build a 113 MB validation answer
  * and take 0.5 to 1.5 GB of extra memory. A list over its limit is refused on its length alone, with one short error.
  */
 describe("MCP oversized arguments are refused on their size, not element by element", () => {

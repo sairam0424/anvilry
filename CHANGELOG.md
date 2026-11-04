@@ -4,6 +4,17 @@ All notable changes to Anvilry are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **MCP: an unknown tool is now a JSON-RPC error.** A single `tools/call` that names a tool the server does not
+  have answers `-32602` with `Unknown tool: <name>` (HTTP 200, the request's `id` echoed, the name cut at 64
+  characters and kept well-formed), as the protocol specifies. It used to answer a result with `isError: true` and
+  the text `MCP error -32602: Tool <name> not found`. Inside a batch the answer is unchanged (this wrapper can
+  only reject a batch as a whole, which would discard the other members' results), and a notification still gets
+  its empty 202. Arguments that a tool that exists rejects stay a tool result with `isError: true`, where the
+  2025-11-25 spec puts a tool's input validation. The OpenAPI description of the MCP endpoint (`/openapi.json`)
+  says so. The suite is 186 test files and 2745 tests (2743 pass, 2 skipped).
+
 ## [3.18.1] — 2026-11-02
 
 - **Security: `zod` 3.25.76 to 4.6.7 (GHSA-mrhx-c7xc-m3w5).** Before zod 4.6.6 an array was validated element by

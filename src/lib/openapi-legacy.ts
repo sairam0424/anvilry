@@ -355,7 +355,7 @@ export function legacyPaths(): OpenApiDocument["paths"] {
           responses: {
             "200": {
               description:
-                "A JSON-RPC response, as JSON or as a server-sent event stream. Errors inside a call are part of it: an unknown method answers -32601 (method not found), a request whose params do not fit its method (for example tools/call without a name) answers -32602 (invalid params) with a one-line message, and a failed tool call (unknown tool, bad arguments, unknown slug) is a result with isError true.",
+                "A JSON-RPC response, as JSON or as a server-sent event stream. Errors inside a call are part of it: an unknown method answers -32601 (method not found), a request whose params do not fit its method (for example tools/call without a name) answers -32602 (invalid params) with a one-line message, a single tools/call that names a tool the server does not have answers -32602 too (\"Unknown tool: <name>\"; inside a batch it stays a result with isError true), and a failed call to a tool that exists (bad arguments, unknown slug) is a result with isError true.",
               content: {
                 "application/json": {
                   schema: { $ref: "#/components/schemas/McpResponse" },

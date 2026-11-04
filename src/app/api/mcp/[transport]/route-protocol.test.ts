@@ -15,10 +15,10 @@ import {
 } from "./mcp-test-support";
 
 describe("MCP error answers", () => {
-  it("answers an unknown tool with an isError result that names it", async () => {
-    const message = only(await send({ POST }, toolCall("no_such_tool", {}, 7)));
-    expect(message.id).toBe(7);
-    expect(toolErrorText(message)).toContain("no_such_tool");
+  it("answers an unknown tool with -32602 and a message that names it, echoing the id", async () => {
+    const outcome = await send({ POST }, toolCall("no_such_tool", {}, 7));
+    expectRpcError(only(outcome), 7);
+    expect([outcome.status, only(outcome).error]).toEqual([200, { code: -32602, message: "Unknown tool: no_such_tool" }]);
   });
 
   it.each([
@@ -115,10 +115,10 @@ describe("MCP error answers", () => {
     expect(message.error?.code).toBe(-32602);
   });
 
-  it("leaves well-formed calls alone, including a tools/call whose tool does not exist", async () => {
+  it("leaves well-formed calls alone, including a tools/call whose arguments a real tool rejects", async () => {
     expect(only(await send({ POST }, request("initialize", validInitialize))).result).toHaveProperty("protocolVersion");
     expect(only(await send({ POST }, request("tools/list", { cursor: "x" }))).result).toHaveProperty("tools");
-    expect(only(await send({ POST }, toolCall("no_such_tool", { anything: 1 }))).result?.isError).toBe(true);
+    expect(only(await send({ POST }, toolCall("get_profile", { sections: ["bad"] }))).result?.isError).toBe(true);
     expect(only(await send({ POST }, toolCall("get_profile", { sections: ["links"] }))).error).toBeUndefined();
   });
 
@@ -307,5 +307,78 @@ describe("MCP empty array behind the transport's own checks", () => {
     const res = await POST(new Request(MCP_URL.replace(/mcp$/, "nope"), { method: "POST", headers: MCP_HEADERS, body: empty }));
     expect(res.status).toBe(404);
     expect((await res.json()).code).toBe("not_found");
+  });
+});
+
+// The protocol makes a call to a tool the server does not have an error of the request itself (-32602,
+// "Unknown tool: <name>"); only a failure inside a tool that exists is an isError result, which is also
+// where the 2025-11-25 spec puts a tool's input validation. The first test of this file pins the plain case.
+describe("MCP unknown tools", () => {
+  it("keeps arguments that a real tool rejects an isError result, not a JSON-RPC error", async () => {
+    const message = only(await send({ POST }, toolCall("get_profile", { sections: ["bad"] }, 8)));
+    expect(message.error).toBeUndefined();
+    expect(message.id).toBe(8);
+    expect(toolErrorText(message)).toContain("-32602");
+  });
+
+  it("echoes at most 64 characters of the unknown tool's name", async () => {
+    const message = only(await send({ POST }, toolCall("x".repeat(500), {}, 9)));
+    expect(message.error?.code).toBe(-32602);
+    expect(message.error?.message).toBe(`Unknown tool: ${"x".repeat(64)}`);
+  });
+
+  it("never calls a listed tool unknown", async () => {
+    const listed = (only(await send({ POST }, request("tools/list"))).result as { tools: { name: string }[] }).tools;
+    expect(listed.length).toBeGreaterThan(0);
+    for (const { name } of listed) {
+      const outcome = await send({ POST }, toolCall(name, {}));
+      expect(outcome.messages.filter((message) => message.error), name).toEqual([]);
+    }
+  });
+
+  it("leaves a batch alone: the unknown tool keeps the library's isError result and the other member is answered", async () => {
+    const outcome = await send(
+      { POST },
+      rpcBody([
+        { jsonrpc: "2.0", id: 1, method: "tools/list" },
+        { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "no_such_tool", arguments: {} } },
+        { jsonrpc: "2.0", method: "tools/call", params: { name: "no_such_tool", arguments: {} } },
+      ]),
+    );
+    expect(outcome.status).toBe(200);
+    expect(outcome.messages.filter((message) => message.error)).toEqual([]);
+    const byId = new Map(outcome.messages.map((message) => [message.id, message]));
+    expect([...byId.keys()].sort()).toEqual([1, 2]);
+    expect(byId.get(1)?.result).toHaveProperty("tools");
+    expect(toolErrorText(byId.get(2) as RpcMessage)).toContain("no_such_tool");
+  });
+
+  it("answers a tools/call notification that names an unknown tool with no error, as it does any notification", async () => {
+    const outcome = await send(
+      { POST },
+      rpcBody({ jsonrpc: "2.0", method: "tools/call", params: { name: "no_such_tool", arguments: {} } }),
+    );
+    expect(outcome.messages.filter((message) => message.error)).toEqual([]);
+  });
+
+  it("calls the names of inherited object properties unknown tools too", async () => {
+    for (const name of ["constructor", "toString", "__proto__", "hasOwnProperty", "valueOf"]) {
+      const message = only(await send({ POST }, toolCall(name, {}, 3)));
+      expect([message.error?.code, message.error?.message], name).toEqual([-32602, `Unknown tool: ${name}`]);
+    }
+  });
+
+  it("ignores a name in the params of a request that is not a tools/call", async () => {
+    const message = only(await send({ POST }, request("tools/list", { name: "no_such_tool" }, 4)));
+    expect(message.error).toBeUndefined();
+    expect((message.result as { tools: unknown[] }).tools.length).toBeGreaterThan(0);
+  });
+
+  it("echoes a well-formed name when the cut, or the caller, leaves half of a surrogate pair", async () => {
+    for (const name of [`${"a".repeat(63)}\u{1F600}tail`, "bad\uD83Dname"]) {
+      const message = only(await send({ POST }, toolCall(name, {}, 5)));
+      expect(message.error?.code, name).toBe(-32602);
+      expect((message.error?.message as string).isWellFormed(), name).toBe(true);
+    }
   });
 });

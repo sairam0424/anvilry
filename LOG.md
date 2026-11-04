@@ -28,6 +28,12 @@ awk '/^## 20/{p=/^## 2026-06/} p' LOG.md
 
 ---
 
+## 2026-11-04 · MCP: an unknown tool is now a JSON-RPC error · #fix #docs
+What: a `tools/call` that names a tool the server does not have now answers `-32602` with `Unknown tool: <name>` (HTTP 200, the request's `id` echoed, the name cut at 64 characters and kept well-formed) instead of a result with `isError: true`, as the protocol specifies; inside a batch the library's per-member answer is unchanged, a notification still gets its empty 202, and arguments that a tool that exists rejects stay an `isError` result. Eight tests were added to `route-protocol.test.ts` and two changed with the behaviour they pinned; the OpenAPI description of the MCP endpoint says so. The suite is 2745 tests in 186 files (2743 pass, 2 skipped).
+Refs: [CHANGELOG](CHANGELOG.md) `[Unreleased]` (new), [CLAUDE.md](CLAUDE.md), [docs/index](docs/index/README.md) (updated); `src/app/api/mcp/[transport]/route.ts`, `src/app/api/mcp/[transport]/route-protocol.test.ts`, `src/lib/openapi-legacy.ts`.
+
+---
+
 ## 2026-11-02 · v3.18.1: the zod 4 security fix and the Search Console tag · #fix #release #docs
 What: v3.18.1, a patch on v3.18.0, moves `zod` from 3.25.76 to 4.6.7 for GHSA-mrhx-c7xc-m3w5 (a 4 MB POST to the MCP route no longer makes the server build a validation answer of about 113 MB, measured on a development machine; MCP validation errors now use zod 4's wording and `tools/list` no longer says `additionalProperties: false`) and adds the Search Console ownership tag (`metadata.verification.google` in `src/app/layout.tsx`, pinned by `src/app/layout-metadata.test.ts`); the `anvilry` CLI 0.1.1, a README-only patch, is on npm too. The suite is 2737 tests in 186 files (2735 pass, 2 skipped). All of it was in production on 2026-11-02 (Post-deploy smoke 30/30); the release commits change only the version string in `package.json` and the docs.
 Refs: [CHANGELOG](CHANGELOG.md) `[3.18.1]` (new), [CLAUDE.md](CLAUDE.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DEPLOY.md](DEPLOY.md), [TELEMETRY.md](TELEMETRY.md), [README.md](README.md), [docs/configuration.md](docs/configuration.md) (updated); PRs #364 and #365 (the Search Console tag), #366 (the docs follow-up), #368 and #369 (the zod 4 fix).

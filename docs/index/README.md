@@ -20,7 +20,7 @@ times (211 green, 11 red) and produced zero artifacts, ever (`CHANGELOG.md:980-1
 commits past that tag with no version bump and no `CHANGELOG.md` entry; `3.7.0` was the first bump since, so `3.18.1`
 names the *declared* version of this tree, and the `v3.6.0` tag marks an older tree.
 
-**Stack:** Next.js 16.4.3 (App Router, `cacheComponents: true`) · React 19.3.0 · TypeScript 5.9 (strict) ·
+**Stack:** Next.js 16.4.5 (App Router, `cacheComponents: true`) · React 19.3.1 · TypeScript 5.9 (strict) ·
 Tailwind v4 (CSS-first, no JS config) · Velite 0.4 (MDX → typed collections) · AWS Bedrock / Anthropic SDK ·
 Upstash Redis (rate limits, FAQ response cache, telemetry) · React Three Fiber + three.js 0.186 ·
 Vitest 5 + Playwright 1.62 · deployed on Vercel.

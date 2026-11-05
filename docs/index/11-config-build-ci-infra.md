@@ -35,7 +35,7 @@ edition the config/CI count went 21 → 25: `.github/workflows/gitleaks.yml`, `.
 
 | File | Role | Key exports |
 |---|---|---|
-| `package.json` | name `anvilry`, version `3.18.1`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 19 devDeps (`vite` is declared since the dependency security batch). **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.4.3`, `react`/`react-dom 19.3.0`, `@modelcontextprotocol/sdk 1.32.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
+| `package.json` | name `anvilry`, version `3.18.1`, `private: true`, `engines.node: ">=22 <23"`. 13 scripts (`analyze` and `seal-claims` are the newest), 35 deps, 19 devDeps (`vite` is declared since the dependency security batch). **Carries no `pnpm` field** — every pnpm setting lives in `pnpm-workspace.yaml`. Runtime pins: `next 16.4.5`, `react`/`react-dom 19.3.1`, `@modelcontextprotocol/sdk 1.32.0`, `@react-three/postprocessing 3.1.1` (all exact) | n/a (JSON) |
 | `.nvmrc` | Single line, `22`. Matches `engines.node` and the CI pin (`.github/workflows/ci.yml:26-29`) | n/a |
 | `next.config.ts` | 322-line Next config: enforced CSP + 6 other security headers (7 total, including COOP/CORP), `upgrade-insecure-requests` only when `process.env.VERCEL` is set, per-route `/resume` header override, rules that ask for `Vary: Accept` and set a combined `Link` header for `/`, the ten page twins and the four content kinds (Markdown negotiation; Next replaces `Vary` on HTML responses, so only Markdown responses keep it), 6 rewrites (the four content-kind `.md` ones, the page-twin pattern and `/index.md`), `cacheComponents`, `inlineCss`, Turbopack root pin, dev-only Velite watch, bundle-analyzer wrapper (**local-only** — inert unless `pnpm analyze` supplies both `ANALYZE=true` *and* `--webpack`) | `default` — `withBundleAnalyzer(nextConfig)` |
 | `tsconfig.json` | `strict`, `noEmit`, `allowJs`, `moduleResolution: "bundler"`, `target: ES2017`, `@/*` → `./src/*`, `next` TS plugin. `include` is `**/*.ts`, `**/*.tsx`, `**/*.mts` plus `.next/types` and `.next/dev/types`; `exclude` is only `node_modules` — so `scripts/`, `e2e/` and tests are all type-checked | n/a (JSON) |
@@ -727,12 +727,12 @@ matches the patch key. What pnpm does then (drop silently, or fail the install) 
 - **Reads / depends on:** n/a (declarative).
 - **Behaviour notes:** `private: true` (`:4`) — never published. `engines.node` `">=22 <23"` (`:5-7`). 13 scripts
   (`:8-22`), 35 `dependencies` (`:23-59`) and 19 `devDependencies` (`:60-80`). Runtime pins worth knowing:
-  `next 16.4.3` is **exact** (no caret, `:47`) and `eslint-config-next 16.4.3` is exact (`:70`); `react`/`react-dom`
-  are exact `19.3.0` (`:50-51`); `@modelcontextprotocol/sdk` exact `1.32.0` (`:29`);
+  `next 16.4.5` is **exact** (no caret, `:47`) and `eslint-config-next 16.4.5` is exact (`:70`); `react`/`react-dom`
+  are exact `19.3.1` (`:50-51`); `@modelcontextprotocol/sdk` exact `1.32.0` (`:29`);
   `@react-three/postprocessing` exact `3.1.1` (`:34`). Other versions: `three ^0.186.0`, `vitest ^5.0.3`, `vite ^8.1.6` (declared since the dependency security batch, `:77`), `happy-dom ^21.0.4`,
   `@playwright/test ^1.62.1`, `tailwindcss ^4`, `typescript ^5`, `velite ^0.4.0`, `pagefind ^1.5.2`. `zod` is `^4.6.7`
   — v4 since the fix for GHSA-mrhx-c7xc-m3w5 (shipped in v3.18.1), v3.18.0 had `^3.25.76` (`:58`). `web-vitals` `^6.1.1` is a **dev**Dependency (`:79`), not a prod one, and so is
-  `@next/bundle-analyzer` `^16.4.3` (`:61`) — which **stays** even though no workflow uses it any more, because
+  `@next/bundle-analyzer` `^16.4.5` (`:61`) — which **stays** even though no workflow uses it any more, because
   the local `analyze` script (`:12`) still does. `tsx ^4.23.13` (`:74`) is also a devDependency: it runs
   `scripts/seal-claims.ts` in CI and locally.
 - **Gotchas / invariants:**

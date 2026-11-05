@@ -3622,11 +3622,11 @@
       "preview": "\"flags\": \"^4.3.0\","
     },
     "package.json:47": {
-      "fp": "9bcfe2e26c6f",
+      "fp": "6058bc9d1e4e",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "\"next\": \"16.4.3\","
+      "preview": "\"next\": \"16.4.5\","
     },
     "package.json:48": {
       "fp": "42a512bca14f",
@@ -3677,14 +3677,14 @@
       "preview": "\"devDependencies\": {"
     },
     "package.json:61": {
-      "fp": "9c33c67278ca",
+      "fp": "81a560e509e4",
       "citedBy": [
         "11-config-build-ci-infra.md",
         "13-dependencies-and-versions.md",
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "\"@next/bundle-analyzer\": \"^16.4.3\","
+      "preview": "\"@next/bundle-analyzer\": \"^16.4.5\","
     },
     "package.json:66": {
       "fp": "6512c4a5a5b5",
@@ -3878,11 +3878,11 @@
       "preview": "zod: ^3.25 || ^4.0"
     },
     "pnpm-lock.yaml:1104": {
-      "fp": "199e39d7728f",
+      "fp": "b77a0a77ef98",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "'@next/bundle-analyzer@16.4.3':"
+      "preview": "'@next/bundle-analyzer@16.4.5':"
     },
     "pnpm-lock.yaml:1219": {
       "fp": "93f0d8755c75",
@@ -3976,11 +3976,11 @@
       "preview": "path: patches/@react-three__fiber@9.7.0.patch"
     },
     "pnpm-lock.yaml:2823": {
-      "fp": "699b1b5eb16f",
+      "fp": "154f991230e5",
       "citedBy": [
         "13-dependencies-and-versions.md"
       ],
-      "preview": "eslint-config-next@16.4.3:"
+      "preview": "eslint-config-next@16.4.5:"
     },
     "pnpm-lock.yaml:3234": {
       "fp": "d03bb848a48e",
@@ -4121,12 +4121,12 @@
       "preview": "overrides:"
     },
     "pnpm-lock.yaml:8535": {
-      "fp": "bb5cfea8ef1b",
+      "fp": "f58f5c4a18b2",
       "citedBy": [
         "14b-subsystems.md",
         "15-invariants-and-gotchas.md"
       ],
-      "preview": "mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0(zod@4.6.7))(next@16.4.3(@babel/core@7.29.7)(@play"
+      "preview": "mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.32.0(zod@4.6.7))(next@16.4.5(@babel/core@7.29.7)(@play"
     },
     "pnpm-lock.yaml:8537": {
       "fp": "36284c69e6d8",

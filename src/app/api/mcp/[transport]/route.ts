@@ -150,7 +150,7 @@ const handler = createMcpHandler(
 // every response through ensureJsonError so errors are JSON like the rest of the API
 // (a JSON-RPC body is only labelled, never rewritten, so MCP clients see what they expect).
 //
-// Three answers the library gets wrong or leaves out are made here, around it:
+// Three answers the library gets wrong or leaves out are made here, around it (a fourth, for an unknown tool in a single request, is unknownToolProblem at the end of the file):
 //  - It never settles a POST whose body is not JSON (it raises inside a stream and the request stays
 //    open until maxDuration), so that is answered up front with -32700, the protocol's parse error.
 //  - A body that IS JSON but not a JSON-RPC message gets the library's 400, labelled -32700 with a
@@ -262,7 +262,7 @@ function invalidParams(body: unknown): Response | null {
     const problem = body.map(paramsProblem).find((text) => text !== null);
     return problem ? jsonRpcError(JSON_RPC_INVALID_PARAMS, problem, null) : null;
   }
-  const problem = paramsProblem(body);
+  const problem = paramsProblem(body) ?? unknownToolProblem(body);
   return problem
     ? jsonRpcError(JSON_RPC_INVALID_PARAMS, problem, echoableId(body), 200)
     : null;
@@ -313,3 +313,30 @@ export {
   notAllowed as HEAD,
   options as OPTIONS,
 };
+
+const MAX_TOOL_NAME_ECHO = 64;
+
+/**
+ * "Unknown tool: <name>" for a single tools/call request that names a tool this server does not have, else null.
+ *
+ * The library answers such a call with a result that has isError set. The protocol makes an unknown tool an
+ * error of the request itself, -32602, so invalidParams decides it here, after the library has answered and
+ * once paramsProblem has found the params fit the library's schema. Two cases are left to the library on
+ * purpose: arguments that a tool that exists rejects stay an isError tool result (where the 2025-11-25 spec
+ * puts a tool's input validation), and so does a call inside a batch, because this wrapper can only reject a
+ * batch as a whole and that would throw away the answers to its other members. The name is cut, and kept
+ * well-formed, so the answer cannot be made to repeat a long input or to carry half of a surrogate pair.
+ */
+function unknownToolProblem(message: unknown): string | null {
+  const { method, params } = (message ?? {}) as { method?: unknown; params?: { name?: unknown } };
+  const name = params?.name;
+  if (
+    echoableId(message) === null || // a notification is never answered
+    method !== "tools/call" ||
+    typeof name !== "string" ||
+    Object.hasOwn(T.TOOL_INPUT_SHAPES, name)
+  ) {
+    return null;
+  }
+  return `Unknown tool: ${name.slice(0, MAX_TOOL_NAME_ECHO).toWellFormed()}`;
+}
